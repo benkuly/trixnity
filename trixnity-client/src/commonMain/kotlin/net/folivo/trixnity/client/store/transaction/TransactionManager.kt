@@ -69,7 +69,7 @@ class TransactionManagerImpl(
     private val retrySchedule =
         Schedule.exponential<Throwable>(0.5.seconds)
             .and(Schedule.recurs(3))
-            .whileInput<Throwable> { it !is CancellationException }
+            .and(Schedule.doWhile { it !is CancellationException })
             .logInput {
                 if (it !is CancellationException) log.warn { "retry failed transaction" }
             }
@@ -79,7 +79,7 @@ class TransactionManagerImpl(
         forEach { transaction ->
             try {
                 retrySchedule.retry {
-                    // even if the scope is cancelled, just finish the current transaction
+                    // even if the outer scope is cancelled, just finish the current transaction
                     withContext(NonCancellable) {
                         // span a large db transaction
                         rtm.writeTransaction {
@@ -89,11 +89,12 @@ class TransactionManagerImpl(
                                 }
                             }
                         }
-                        transaction.transactionHasBeenApplied.value = true
                     }
                 }
+                transaction.transactionHasBeenApplied.value = true
                 asyncTransactions.update { it - transaction }
             } catch (throwable: Throwable) {
+                log.info { "try rollback transaction id=${transaction.id}" }
                 withContext(NonCancellable) {
                     transaction.onRollback()
                 }

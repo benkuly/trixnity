@@ -13,7 +13,7 @@ import net.folivo.trixnity.client.store.repository.TwoDimensionsRepository
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 
 class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
-    timeout = 10_000
+    timeout = 5_000
     lateinit var repository: TwoDimensionsRepository<String, String, String>
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: TwoDimensionsRepositoryStateFlowCache<String, String, String, TwoDimensionsRepository<String, String, String>>
@@ -23,18 +23,15 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
         override suspend fun withWriteTransaction(
             onRollback: suspend () -> Unit,
             block: suspend () -> Unit
-        ): StateFlow<Boolean>? {
-            block()
-            return null
-        }
+        ): StateFlow<Boolean> =
+            throw AssertionError("should not call withWriteTransaction")
 
         override suspend fun <T> readOperation(block: suspend () -> T): T {
             return block().also { readOperationWasCalled.value = true }
         }
 
-        override suspend fun writeOperation(block: suspend () -> Unit) {
-            block()
-        }
+        override suspend fun writeOperation(block: suspend () -> Unit) =
+            throw AssertionError("should not call writeOperation")
 
         override suspend fun writeOperationAsync(key: String, block: suspend () -> Unit): StateFlow<Boolean>? {
             block()

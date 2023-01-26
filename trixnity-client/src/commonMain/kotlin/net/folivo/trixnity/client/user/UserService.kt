@@ -82,12 +82,9 @@ class UserServiceImpl(
                             notMembership = LEAVE
                         ).getOrThrow()
                         memberEvents.chunked(500).forEach { chunk ->
-                            tm.withWriteTransaction(
-                                onRollback = { roomStore.update(roomId) { it?.copy(membersLoaded = false) } }
-                            ) {
+                            tm.withWriteTransaction {
                                 chunk.forEach { api.sync.emitEvent(it) }
-
-                            }
+                            }?.first { it } // wait for transaction to be applied
                         }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }
 
