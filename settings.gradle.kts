@@ -26,7 +26,6 @@ include(
     "trixnity-client:trixnity-client-repository-exposed",
     "trixnity-client:trixnity-client-repository-indexeddb",
     "trixnity-client:trixnity-client-repository-realm",
-    "trixnity-client:trixnity-client-repository-sqldelight",
 )
 include("trixnity-applicationservice")
 include("test-utils")

@@ -95,6 +95,8 @@ This project contains the following modules, which can be used independently:
           maintained at the moment!
     - [x] extremely fast reactive cache on top of the database using async
       transactions
+  - [x] extremely fast reactive cache on top of the database using async
+    transactions
     - [x] exchangeable media store
         - in memory (e. g. for tests)
         - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio)
@@ -102,8 +104,8 @@ This project contains the following modules, which can be used independently:
           store with [okio](https://github.com/square/okio). This supports
           JVM/Android/Native/NodeJs.
         - [trixnity-client-media-indexeddb](/trixnity-client/trixnity-client-media-indexeddb)
-          implements a file system based media
-          store with [indexeddb](https://github.com/JuulLabs/indexeddb). This
+          implements a store
+          with [indexeddb](https://github.com/JuulLabs/indexeddb). This
           supports JS (browser).
     - [x] very fast sync processing because of async transactions, so Trixnity
       doesn't need to wait until all events are saved to the database
