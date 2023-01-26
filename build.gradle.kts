@@ -4,9 +4,6 @@ buildscript {
         mavenCentral()
         maven("https://www.jetbrains.com/intellij-repository/releases")
     }
-    dependencies {
-        classpath("com.squareup.sqldelight:gradle-plugin:${Versions.sqlDelight}")
-    }
 }
 
 plugins {
