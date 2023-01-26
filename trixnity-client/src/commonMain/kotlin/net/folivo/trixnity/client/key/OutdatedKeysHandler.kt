@@ -101,7 +101,7 @@ class OutdatedKeysHandler(
                                     log.debug { "updated outdated keys of $userId" }
                                     keyStore.updateOutdatedKeys { it - userId }
                                 }
-                            }
+                            }?.first { it } // wait for transaction to be applied
                         }
                     }
                 }
