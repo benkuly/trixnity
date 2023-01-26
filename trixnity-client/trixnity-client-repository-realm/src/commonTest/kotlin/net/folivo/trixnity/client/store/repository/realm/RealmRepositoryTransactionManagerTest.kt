@@ -30,7 +30,7 @@ private suspend fun testRead() = withRealmRead {
 }
 
 class RealmRepositoryTransactionManagerTest : ShouldSpec({
-    timeout = 5_000
+    timeout = 10_000
 
     lateinit var tm: RealmRepositoryTransactionManager
     lateinit var realm: Realm

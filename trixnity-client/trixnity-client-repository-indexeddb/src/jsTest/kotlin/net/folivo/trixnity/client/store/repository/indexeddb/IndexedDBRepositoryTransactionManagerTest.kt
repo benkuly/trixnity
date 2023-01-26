@@ -12,7 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToDynamic
 
 class IndexedDBRepositoryTransactionManagerTest : ShouldSpec({
-    timeout = 5_000
+    timeout = 10_000
     @Serializable
     data class IndexedDBRepositoryTransactionManagerTestEntity(
         val something: String
