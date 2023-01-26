@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.repository.OlmForgetFallbackKeyAfterRepo
 internal class IndexedDBOlmForgetFallbackKeyAfterRepository(
     json: Json,
 ) : OlmForgetFallbackKeyAfterRepository,
-    IndexedDBMinimalStoreRepository<Long, Instant>(
+    IndexedDBFullRepository<Long, Instant>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.toString()) },
         valueSerializer = serializer(),

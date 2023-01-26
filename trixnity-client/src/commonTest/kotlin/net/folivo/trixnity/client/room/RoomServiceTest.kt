@@ -384,7 +384,7 @@ class RoomServiceTest : ShouldSpec({
         )
 
         should("return true if it is the event of the user and the user's power level is at least as high as the needed event redaction level") {
-            roomStateStore.update(
+            roomStateStore.save(
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
@@ -407,7 +407,7 @@ class RoomServiceTest : ShouldSpec({
         }
 
         should("return true if it is the event of another user but the user's power level is at least as high as the needed redaction power level") {
-            roomStateStore.update(
+            roomStateStore.save(
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
@@ -427,7 +427,7 @@ class RoomServiceTest : ShouldSpec({
             ).firstOrNull() shouldBe true
         }
         should("return false if the user has no high enough power level for event redactions") {
-            roomStateStore.update(
+            roomStateStore.save(
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
@@ -449,7 +449,7 @@ class RoomServiceTest : ShouldSpec({
             ).firstOrNull() shouldBe false
         }
         should("return false if the user has no high enough power level for redactions of events of other users") {
-            roomStateStore.update(
+            roomStateStore.save(
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
@@ -470,7 +470,7 @@ class RoomServiceTest : ShouldSpec({
         }
 
         should("not allow to redact an already redacted event") {
-            roomStateStore.update(
+            roomStateStore.save(
                 StateEvent(
                     content = PowerLevelsEventContent(
                         users = mapOf(
@@ -503,7 +503,7 @@ class RoomServiceTest : ShouldSpec({
 
         context("react to changes in the power levels") {
             should("react to changes in the user's power levels") {
-                roomStateStore.update(
+                roomStateStore.save(
                     StateEvent(
                         content = PowerLevelsEventContent(
                             users = mapOf(
@@ -522,7 +522,7 @@ class RoomServiceTest : ShouldSpec({
                     timelineEvent = timelineEventByOtherUser,
                 )
                 resultFlow.first() shouldBe true
-                roomStateStore.update(
+                roomStateStore.save(
                     StateEvent(
                         content = PowerLevelsEventContent(
                             users = mapOf(

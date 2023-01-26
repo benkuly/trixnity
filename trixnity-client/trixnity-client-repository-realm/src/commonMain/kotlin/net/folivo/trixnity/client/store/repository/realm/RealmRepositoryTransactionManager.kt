@@ -6,7 +6,7 @@ import io.realm.kotlin.TypedRealm
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import kotlin.coroutines.CoroutineContext
 
 class RealmReadTransaction(
@@ -33,11 +33,8 @@ suspend fun <T> withRealmWrite(block: MutableRealm.() -> T) = coroutineScope {
     block(checkNotNull(coroutineContext[RealmWriteTransaction]?.realm))
 }
 
-class RealmRepositoryTransactionManager(
-    private val realm: Realm,
-) : RepositoryTransactionManager {
-    override val supportsParallelWrite: Boolean = false
-    override suspend fun <T> writeTransaction(block: suspend () -> T): T = coroutineScope {
+class RealmRepositoryTransactionManager(private val realm: Realm) : RepositoryTransactionManager {
+    override suspend fun writeTransaction(block: suspend () -> Unit) = coroutineScope {
         val existingRealmWriteTransaction = coroutineContext[RealmWriteTransaction]
         val existingRealmReadTransaction = coroutineContext[RealmReadTransaction]
         if (existingRealmWriteTransaction != null && existingRealmReadTransaction != null) block()// just re-use existing transaction (nested)

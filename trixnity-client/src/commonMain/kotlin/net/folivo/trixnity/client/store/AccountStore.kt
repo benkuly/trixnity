@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.repository.AccountRepository
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.UserId
 
 class AccountStore(
     private val repository: AccountRepository,
-    private val rtm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
     private val storeScope: CoroutineScope
 ) : Store {
     val olmPickleKey = MutableStateFlow<String?>(null)
@@ -27,7 +27,7 @@ class AccountStore(
     val avatarUrl = MutableStateFlow<String?>(null)
 
     override suspend fun init() {
-        val account = rtm.readTransaction { repository.get(1) }
+        val account = tm.readOperation { repository.get(1) }
         olmPickleKey.value = account?.olmPickleKey
         baseUrl.value = account?.baseUrl?.let { Url(it) }
         userId.value = account?.userId
@@ -65,14 +65,14 @@ class AccountStore(
                     displayName = values[8] as String?,
                     avatarUrl = values[9] as String?,
                 )
-            }.collect { rtm.writeTransaction { repository.save(1, it) } }
+            }.collect { tm.writeOperationAsync(repository.serializeKey(1)) { repository.save(1, it) } }
         }
     }
 
     override suspend fun clearCache() {}
 
     override suspend fun deleteAll() {
-        rtm.writeTransaction { repository.deleteAll() }
+        tm.writeOperation { repository.deleteAll() }
         olmPickleKey.value = null
         baseUrl.value = null
         userId.value = null

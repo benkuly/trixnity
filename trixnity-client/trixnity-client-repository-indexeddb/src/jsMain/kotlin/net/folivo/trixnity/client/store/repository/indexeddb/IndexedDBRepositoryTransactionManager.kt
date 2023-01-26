@@ -6,7 +6,7 @@ import com.juul.indexeddb.Transaction
 import com.juul.indexeddb.WriteTransaction
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import kotlin.coroutines.CoroutineContext
 
 class IndexedDBReadTransaction(
@@ -45,10 +45,7 @@ class IndexedDBRepositoryTransactionManager(
     private val database: Database,
     private val allObjectStores: Array<String>,
 ) : RepositoryTransactionManager {
-    // theoretically it is supported, but we always claim all object stores, because we don't know which of them are used within the transaction
-    override val supportsParallelWrite: Boolean = false
-
-    override suspend fun <T> writeTransaction(block: suspend () -> T): T = coroutineScope {
+    override suspend fun writeTransaction(block: suspend () -> Unit): Unit = coroutineScope {
         val existingReadTransaction = coroutineContext[IndexedDBReadTransaction]?.transaction
         val existingWriteTransaction = coroutineContext[IndexedDBWriteTransaction]?.transaction
         if (existingReadTransaction != null && existingWriteTransaction != null) block() // just re-use existing transaction (nested)

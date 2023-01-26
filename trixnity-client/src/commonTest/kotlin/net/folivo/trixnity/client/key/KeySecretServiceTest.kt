@@ -68,7 +68,7 @@ private val body: ShouldSpec.() -> Unit = {
             val event = GlobalAccountDataEvent(
                 UserSigningKeyEventContent(mapOf("KEY" to json.encodeToJsonElement(encryptedData)))
             )
-            globalAccountDataStore.update(event)
+            globalAccountDataStore.save(event)
 
             cut.decryptMissingSecrets(key, "KEY", SecretKeyEventContent.AesHmacSha2Key())
             keyStore.secrets.value shouldBe existingPrivateKeys + mapOf(

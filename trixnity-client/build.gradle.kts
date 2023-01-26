@@ -46,6 +46,7 @@ kotlin {
 
                 implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
 
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")

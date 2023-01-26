@@ -7,6 +7,7 @@ import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.UserInfo
@@ -59,6 +60,7 @@ class UserServiceImpl(
     presenceEventHandler: PresenceEventHandler,
     private val currentSyncState: CurrentSyncState,
     userInfo: UserInfo,
+    private val tm: TransactionManager,
     private val scope: CoroutineScope,
 ) : UserService {
 
@@ -78,9 +80,14 @@ class UserServiceImpl(
                         val memberEvents = api.rooms.getMembers(
                             roomId = roomId,
                             notMembership = LEAVE
-                        ).getOrThrow().toList()
-                        memberEvents.forEach { api.sync.emitEvent(it) }
+                        ).getOrThrow()
+                        memberEvents.chunked(500).forEach { chunk ->
+                            tm.withWriteTransaction {
+                                chunk.forEach { api.sync.emitEvent(it) }
+                            }?.first { it } // wait for transaction to be applied
+                        }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }
+
                     }
                 }
                 currentlyLoadingMembers.update { it - roomId }

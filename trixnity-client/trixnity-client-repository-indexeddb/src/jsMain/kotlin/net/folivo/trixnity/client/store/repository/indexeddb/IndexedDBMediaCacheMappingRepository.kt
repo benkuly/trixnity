@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.repository.MediaCacheMappingRepository
 internal class IndexedDBMediaCacheMappingRepository(
     json: Json,
 ) : MediaCacheMappingRepository,
-    IndexedDBMinimalStoreRepository<String, MediaCacheMapping>(
+    IndexedDBFullRepository<String, MediaCacheMapping>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it) },
         valueSerializer = serializer(),

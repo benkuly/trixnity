@@ -11,7 +11,7 @@ import net.folivo.trixnity.crypto.olm.StoredOlmSession
 internal class IndexedDBOlmSessionRepository(
     json: Json
 ) : OlmSessionRepository,
-    IndexedDBMinimalStoreRepository<Key.Curve25519Key, Set<StoredOlmSession>>(
+    IndexedDBFullRepository<Key.Curve25519Key, Set<StoredOlmSession>>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.value) },
         valueSerializer = serializer(),

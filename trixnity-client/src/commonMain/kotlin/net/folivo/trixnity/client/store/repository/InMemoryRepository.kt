@@ -15,7 +15,7 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 
-open class InMemoryMinimalStoreRepository<K, V> : MinimalStoreRepository<K, V> {
+abstract class InMemoryMinimalRepository<K, V> : MinimalRepository<K, V> {
     val content = MutableStateFlow<Map<K, V>>(mapOf())
     override suspend fun get(key: K): V? = content.value[key]
 
@@ -32,8 +32,12 @@ open class InMemoryMinimalStoreRepository<K, V> : MinimalStoreRepository<K, V> {
     }
 }
 
-open class InMemoryTwoDimensionsStoreRepository<K1, K2, V> : TwoDimensionsStoreRepository<K1, K2, V>,
-    InMemoryMinimalStoreRepository<K1, Map<K2, V>>() {
+abstract class InMemoryFullRepository<K, V> : FullRepository<K, V>, InMemoryMinimalRepository<K, V>() {
+    override suspend fun getAll(): List<V> = content.value.values.toList()
+}
+
+abstract class InMemoryTwoDimensionsRepository<K1, K2, V> : TwoDimensionsRepository<K1, K2, V>,
+    InMemoryMinimalRepository<K1, Map<K2, V>>() {
     override suspend fun getBySecondKey(firstKey: K1, secondKey: K2): V? =
         get(firstKey)?.get(secondKey)
 
@@ -46,76 +50,68 @@ open class InMemoryTwoDimensionsStoreRepository<K1, K2, V> : TwoDimensionsStoreR
     }
 }
 
-class InMemoryAccountRepository : AccountRepository, InMemoryMinimalStoreRepository<Long, Account>()
-class InMemoryOutdatedKeysRepository : OutdatedKeysRepository, InMemoryMinimalStoreRepository<Long, Set<UserId>>()
+class InMemoryAccountRepository : AccountRepository, InMemoryMinimalRepository<Long, Account>()
+class InMemoryOutdatedKeysRepository : OutdatedKeysRepository, InMemoryMinimalRepository<Long, Set<UserId>>()
 class InMemoryDeviceKeysRepository : DeviceKeysRepository,
-    InMemoryMinimalStoreRepository<UserId, Map<String, StoredDeviceKeys>>()
+    InMemoryMinimalRepository<UserId, Map<String, StoredDeviceKeys>>()
 
 class InMemoryCrossSigningKeysRepository : CrossSigningKeysRepository,
-    InMemoryMinimalStoreRepository<UserId, Set<StoredCrossSigningKeys>>()
+    InMemoryMinimalRepository<UserId, Set<StoredCrossSigningKeys>>()
 
 class InMemoryKeyVerificationStateRepository : KeyVerificationStateRepository,
-    InMemoryMinimalStoreRepository<KeyVerificationStateKey, KeyVerificationState>()
+    InMemoryMinimalRepository<KeyVerificationStateKey, KeyVerificationState>()
 
 class InMemorySecretsRepository : SecretsRepository,
-    InMemoryMinimalStoreRepository<Long, Map<SecretType, StoredSecret>>()
+    InMemoryMinimalRepository<Long, Map<SecretType, StoredSecret>>()
 
-class InMemoryOlmAccountRepository : OlmAccountRepository, InMemoryMinimalStoreRepository<Long, String>()
+class InMemoryOlmAccountRepository : OlmAccountRepository, InMemoryMinimalRepository<Long, String>()
 class InMemoryOlmForgetFallbackKeyAfterRepository : OlmForgetFallbackKeyAfterRepository,
-    InMemoryMinimalStoreRepository<Long, Instant>()
+    InMemoryMinimalRepository<Long, Instant>()
 
 class InMemoryOlmSessionRepository : OlmSessionRepository,
-    InMemoryMinimalStoreRepository<Key.Curve25519Key, Set<StoredOlmSession>>()
+    InMemoryMinimalRepository<Key.Curve25519Key, Set<StoredOlmSession>>()
 
 class InMemoryInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRepository,
-    InMemoryMinimalStoreRepository<InboundMegolmMessageIndexRepositoryKey, StoredInboundMegolmMessageIndex>()
+    InMemoryMinimalRepository<InboundMegolmMessageIndexRepositoryKey, StoredInboundMegolmMessageIndex>()
 
 class InMemoryOutboundMegolmSessionRepository : OutboundMegolmSessionRepository,
-    InMemoryMinimalStoreRepository<RoomId, StoredOutboundMegolmSession>()
+    InMemoryMinimalRepository<RoomId, StoredOutboundMegolmSession>()
 
-class InMemoryRoomUserRepository : RoomUserRepository, InMemoryTwoDimensionsStoreRepository<RoomId, UserId, RoomUser>()
+class InMemoryRoomUserRepository : RoomUserRepository, InMemoryTwoDimensionsRepository<RoomId, UserId, RoomUser>()
 class InMemoryRoomStateRepository : RoomStateRepository,
-    InMemoryTwoDimensionsStoreRepository<RoomStateRepositoryKey, String, Event<*>>()
+    InMemoryTwoDimensionsRepository<RoomStateRepositoryKey, String, Event<*>>()
 
 class InMemoryTimelineEventRepository : TimelineEventRepository,
-    InMemoryMinimalStoreRepository<TimelineEventKey, TimelineEvent>()
+    InMemoryMinimalRepository<TimelineEventKey, TimelineEvent>()
 
 class InMemoryTimelineEventRelationRepository : TimelineEventRelationRepository,
-    InMemoryTwoDimensionsStoreRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>>()
+    InMemoryTwoDimensionsRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>>()
 
 class InMemoryMediaCacheMappingRepository : MediaCacheMappingRepository,
-    InMemoryMinimalStoreRepository<String, MediaCacheMapping>()
+    InMemoryMinimalRepository<String, MediaCacheMapping>()
 
 class InMemoryGlobalAccountDataRepository : GlobalAccountDataRepository,
-    InMemoryTwoDimensionsStoreRepository<String, String, Event.GlobalAccountDataEvent<*>>()
+    InMemoryTwoDimensionsRepository<String, String, Event.GlobalAccountDataEvent<*>>()
 
 class InMemoryRoomAccountDataRepository : RoomAccountDataRepository,
-    InMemoryTwoDimensionsStoreRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>>()
+    InMemoryTwoDimensionsRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>>()
 
 class InMemorySecretKeyRequestRepository : SecretKeyRequestRepository,
-    InMemoryMinimalStoreRepository<String, StoredSecretKeyRequest>() {
-    override suspend fun getAll(): List<StoredSecretKeyRequest> = content.value.values.toList()
-}
+    InMemoryFullRepository<String, StoredSecretKeyRequest>()
 
 class InMemoryRoomKeyRequestRepository : RoomKeyRequestRepository,
-    InMemoryMinimalStoreRepository<String, StoredRoomKeyRequest>() {
-    override suspend fun getAll(): List<StoredRoomKeyRequest> = content.value.values.toList()
-}
+    InMemoryFullRepository<String, StoredRoomKeyRequest>()
 
 class InMemoryInboundMegolmSessionRepository : InboundMegolmSessionRepository,
-    InMemoryMinimalStoreRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>() {
+    InMemoryMinimalRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>() {
     override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> =
         content.value.values.filter { it.hasBeenBackedUp.not() }.toSet()
 }
 
-class InMemoryRoomRepository : RoomRepository, InMemoryMinimalStoreRepository<RoomId, Room>() {
-    override suspend fun getAll(): List<Room> = content.value.values.toList()
-}
+class InMemoryRoomRepository : RoomRepository, InMemoryFullRepository<RoomId, Room>()
 
 class InMemoryRoomOutboxMessageRepository : RoomOutboxMessageRepository,
-    InMemoryMinimalStoreRepository<String, RoomOutboxMessage<*>>() {
-    override suspend fun getAll(): List<RoomOutboxMessage<*>> = content.value.values.toList()
-}
+    InMemoryFullRepository<String, RoomOutboxMessage<*>>()
 
 class InMemoryKeyChainLinkRepository : KeyChainLinkRepository {
     private val values = MutableStateFlow<Set<KeyChainLink>>(setOf())

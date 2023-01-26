@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
@@ -50,7 +49,7 @@ class KeyMemberEventHandler(
                 Membership.JOIN, Membership.INVITE -> {
                     if (event.unsigned?.previousContent?.membership != event.content.membership
                         && keyStore.getDeviceKeys(userId).first() == null
-                    ) keyStore.outdatedKeys.update { it + userId }
+                    ) keyStore.updateOutdatedKeys { it + userId }
                 }
 
                 else -> {

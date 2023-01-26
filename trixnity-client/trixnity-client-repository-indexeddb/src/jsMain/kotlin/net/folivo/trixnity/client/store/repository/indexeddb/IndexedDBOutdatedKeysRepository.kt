@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.UserId
 internal class IndexedDBOutdatedKeysRepository(
     json: Json
 ) : OutdatedKeysRepository,
-    IndexedDBMinimalStoreRepository<Long, Set<UserId>>(
+    IndexedDBFullRepository<Long, Set<UserId>>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.toString()) },
         valueSerializer = serializer(),

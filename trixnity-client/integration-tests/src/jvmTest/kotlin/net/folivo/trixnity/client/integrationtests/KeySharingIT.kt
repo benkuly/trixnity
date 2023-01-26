@@ -52,8 +52,10 @@ class KeySharingIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        startedClient1 = registerAndStartClient("client1", "user1", baseUrl)
-        startedClient2 = registerAndStartClient("client2", "user2", baseUrl)
+        startedClient1 =
+            registerAndStartClient("client1", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
+        startedClient2 =
+            registerAndStartClient("client2", "user2", baseUrl, createExposedRepositoriesModule(newDatabase()))
     }
 
     @AfterTest

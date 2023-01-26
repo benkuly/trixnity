@@ -7,9 +7,9 @@ import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.InMemoryAccountRepository
-import net.folivo.trixnity.client.store.repository.NoOpRepositoryTransactionManager
 import net.folivo.trixnity.core.model.UserId
 import kotlin.time.Duration.Companion.seconds
 
@@ -22,7 +22,7 @@ class AccountStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         repository = InMemoryAccountRepository()
-        cut = AccountStore(repository, NoOpRepositoryTransactionManager, storeScope)
+        cut = AccountStore(repository, TransactionManagerMock(), storeScope)
     }
     afterTest {
         storeScope.cancel()

@@ -7,12 +7,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.transformLatest
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RedactedStateEventContent
@@ -23,17 +24,23 @@ import kotlin.reflect.KClass
 
 class RoomStateStore(
     private val roomStateRepository: RoomStateRepository,
-    private val rtm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
     private val contentMappings: EventContentSerializerMappings,
+    config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
 ) : Store {
-    private val roomStateCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomStateRepository, rtm)
+    private val roomStateCache = TwoDimensionsRepositoryStateFlowCache(
+        storeScope,
+        roomStateRepository,
+        tm,
+        config.cacheExpireDurations.roomState
+    )
 
     override suspend fun init() {}
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
-        rtm.writeTransaction {
+        tm.writeOperation {
             roomStateRepository.deleteAll()
         }
         roomStateCache.reset()
@@ -44,7 +51,7 @@ class RoomStateStore(
             ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
     }
 
-    suspend fun update(event: Event<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
+    suspend fun save(event: Event<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
@@ -54,8 +61,12 @@ class RoomStateStore(
                 else -> contentMappings.state.find { it.kClass.isInstance(event.content) }?.type
             }
                 ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
-            roomStateCache.updateBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey) {
-                if (skipWhenAlreadyPresent && it != null) it else event
+            if (skipWhenAlreadyPresent) {
+                roomStateCache.updateBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey) {
+                    it ?: event
+                }
+            } else {
+                roomStateCache.saveBySecondKey(RoomStateRepositoryKey(roomId, eventType), stateKey, event)
             }
         }
     }

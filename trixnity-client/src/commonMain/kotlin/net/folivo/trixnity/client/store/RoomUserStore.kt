@@ -4,25 +4,28 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
 class RoomUserStore(
     private val roomUserRepository: RoomUserRepository,
-    private val rtm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
+    config: MatrixClientConfiguration,
     storeScope: CoroutineScope
 ) : Store {
-    private val roomUserCache = TwoDimensionsRepositoryStateFlowCache(storeScope, roomUserRepository, rtm)
+    private val roomUserCache =
+        TwoDimensionsRepositoryStateFlowCache(storeScope, roomUserRepository, tm, config.cacheExpireDurations.roomUser)
 
     override suspend fun init() {}
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
-        rtm.writeTransaction { roomUserRepository.deleteAll() }
+        tm.writeOperation { roomUserRepository.deleteAll() }
         roomUserCache.reset()
     }
 

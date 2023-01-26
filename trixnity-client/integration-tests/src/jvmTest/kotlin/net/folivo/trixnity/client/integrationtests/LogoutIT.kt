@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient.LoginState
 import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_IN
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User
@@ -31,8 +32,12 @@ class LogoutIT {
 
     @Test
     fun shouldLogoutOnDeviceDeletion(): Unit = runBlocking {
-        val startedClient1 = registerAndStartClient("client1", "user1", getBaseUrl())
-        val startedClient2 = startClient("client2", "user1", getBaseUrl())
+        val startedClient1 = registerAndStartClient(
+            "client1", "user1", getBaseUrl(),
+            createExposedRepositoriesModule(newDatabase())
+        )
+        val startedClient2 =
+            startClient("client2", "user1", getBaseUrl(), createExposedRepositoriesModule(newDatabase()))
 
         withClue("check client2 is logged in and sync is running") {
             withTimeout(30_000) {

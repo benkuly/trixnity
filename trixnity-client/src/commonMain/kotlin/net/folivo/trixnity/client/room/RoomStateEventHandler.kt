@@ -22,6 +22,6 @@ class RoomStateEventHandler(
     }
 
     internal suspend fun setState(event: Event<StateEventContent>) {
-        roomStateStore.update(event)
+        roomStateStore.save(event)
     }
 }

@@ -7,6 +7,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
@@ -32,7 +34,8 @@ class OlmStoreTest : ShouldSpec({
             inboundMegolmSessionRepository,
             InMemoryInboundMegolmMessageIndexRepository(),
             InMemoryOutboundMegolmSessionRepository(),
-            NoOpRepositoryTransactionManager,
+            TransactionManagerMock(),
+            MatrixClientConfiguration(),
             storeScope
         )
     }

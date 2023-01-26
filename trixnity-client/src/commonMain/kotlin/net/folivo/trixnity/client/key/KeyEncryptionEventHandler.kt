@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
@@ -40,7 +39,7 @@ class KeyEncryptionEventHandler(
             val outdatedKeys = roomStateStore.members(event.roomId, allowedMemberships).filterNot {
                 keyStore.isTracked(it)
             }
-            keyStore.outdatedKeys.update { it + outdatedKeys }
+            keyStore.updateOutdatedKeys { it + outdatedKeys }
         }
     }
 }

@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.repository.TimelineEventRepository
 internal class IndexedDBTimelineEventRepository(
     json: Json
 ) : TimelineEventRepository,
-    IndexedDBMinimalStoreRepository<TimelineEventKey, TimelineEvent>(
+    IndexedDBFullRepository<TimelineEventKey, TimelineEvent>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.roomId.full, it.eventId.full) },
         valueSerializer = serializer(),

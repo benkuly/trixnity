@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store.repository.indexeddb
 import com.juul.indexeddb.openDatabase
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.*
+import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf

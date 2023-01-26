@@ -123,7 +123,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
             delay(500)
-            roomStateStore.update(
+            roomStateStore.save(
                 Event.StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("\$event"),
@@ -187,7 +187,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             keyStore.outdatedKeys.value shouldContain alice
 
-            keyStore.outdatedKeys.value = setOf()
+            keyStore.updateOutdatedKeys { setOf() }
 
             cut.handleMemberEvents(
                 Event.StateEvent(

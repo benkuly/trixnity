@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.Event
 internal class IndexedDBRoomStateRepository(
     json: Json
 ) : RoomStateRepository,
-    IndexedDBTwoDimensionsStoreRepository<RoomStateRepositoryKey, String, Event<*>>(
+    IndexedDBTwoDimensionsRepository<RoomStateRepositoryKey, String, Event<*>>(
         objectStoreName = objectStoreName,
         firstKeySerializer = { arrayOf(it.roomId.full, it.type) },
         secondKeySerializer = { arrayOf(it) },

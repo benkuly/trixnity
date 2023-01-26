@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
 
 internal class IndexedDBAccountRepository(json: Json) : AccountRepository,
-    IndexedDBMinimalStoreRepository<Long, Account>(
+    IndexedDBFullRepository<Long, Account>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.toString()) },
         valueSerializer = serializer(),

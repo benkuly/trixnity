@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.client.store.sqldelight.db.Database
+import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -58,8 +59,9 @@ fun createSqlDelightRepositoriesModule(
     log.debug { "create database and store from driver" }
     val db = Database(driver)
     return module {
+        single { db }
         single<RepositoryTransactionManager> {
-            SqlDelightRepositoriesTransactionManager(db, blockingTransactionCoroutineContext)
+            SqlDelightRepositoriesTransactionManager(get(), blockingTransactionCoroutineContext)
         }
         single<AccountRepository> {
             SqlDelightAccountRepository(db.accountQueries, databaseCoroutineContext)

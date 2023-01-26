@@ -9,10 +9,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.login
 import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
@@ -21,6 +21,7 @@ import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import org.jetbrains.exposed.sql.Database
+import org.koin.core.module.Module
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
@@ -75,32 +76,39 @@ fun newDatabase() = Database.connect("jdbc:h2:mem:${uuid4()};DB_CLOSE_DELAY=-1;"
 
 data class StartedClient(
     val scope: CoroutineScope,
-    val database: Database,
     val client: MatrixClient,
     val password: String
 )
 
-suspend fun registerAndStartClient(name: String, username: String = name, baseUrl: Url): StartedClient {
+suspend fun registerAndStartClient(
+    name: String,
+    username: String = name,
+    baseUrl: Url,
+    repositoriesModule: Module,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): StartedClient {
     val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
-    val database = newDatabase()
-    val repositoriesModule = createExposedRepositoriesModule(database)
-
     val client = MatrixClient.loginWith(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
         scope = scope,
-        getLoginInfo = { it.register(username, password, name) }
+        getLoginInfo = { it.register(username, password, name) },
+        configuration = configuration,
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
-    return StartedClient(scope, database, client, password)
+    return StartedClient(scope, client, password)
 }
 
-suspend fun startClient(name: String, username: String = name, baseUrl: Url): StartedClient {
+suspend fun startClient(
+    name: String,
+    username: String = name,
+    baseUrl: Url,
+    repositoriesModule: Module,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): StartedClient {
     val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
-    val database = newDatabase()
-    val repositoriesModule = createExposedRepositoriesModule(database)
 
     val client = MatrixClient.login(
         baseUrl = baseUrl,
@@ -110,8 +118,9 @@ suspend fun startClient(name: String, username: String = name, baseUrl: Url): St
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
         scope = scope,
+        configuration = configuration,
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
-    return StartedClient(scope, database, client, password)
+    return StartedClient(scope, client, password)
 }

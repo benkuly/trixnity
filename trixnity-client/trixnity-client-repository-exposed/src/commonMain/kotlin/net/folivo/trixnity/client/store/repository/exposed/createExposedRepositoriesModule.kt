@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store.repository.exposed
 import kotlinx.coroutines.Dispatchers
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.*
+import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -48,7 +49,8 @@ suspend fun createExposedRepositoriesModule(
     }
     log.debug { "finished create missing tables and columns" }
     return module {
-        single<RepositoryTransactionManager> { ExposedRepositoryTransactionManager(database) }
+        single { database }
+        singleOf(::ExposedRepositoryTransactionManager) { bind<RepositoryTransactionManager>() }
         singleOf(::ExposedAccountRepository) { bind<AccountRepository>() }
         singleOf(::ExposedOutdatedKeysRepository) { bind<OutdatedKeysRepository>() }
         singleOf(::ExposedDeviceKeysRepository) { bind<DeviceKeysRepository>() }

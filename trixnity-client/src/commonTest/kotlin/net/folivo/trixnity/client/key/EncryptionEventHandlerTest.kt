@@ -82,7 +82,7 @@ private val body: ShouldSpec.() -> Unit = {
                     1234,
                     stateKey = bob.full
                 ),
-            ).forEach { roomStateStore.update(it) }
+            ).forEach { roomStateStore.save(it) }
             cut.handleEncryptionEvents(
                 Event.StateEvent(
                     EncryptionEventContent(),
@@ -115,7 +115,7 @@ private val body: ShouldSpec.() -> Unit = {
                     1234,
                     stateKey = bob.full
                 ),
-            ).forEach { roomStateStore.update(it) }
+            ).forEach { roomStateStore.save(it) }
             cut.handleEncryptionEvents(
                 Event.StateEvent(
                     EncryptionEventContent(),

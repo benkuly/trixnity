@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.events.Event
 internal class IndexedDBGlobalAccountDataRepository(
     json: Json
 ) : GlobalAccountDataRepository,
-    IndexedDBTwoDimensionsStoreRepository<String, String, Event.GlobalAccountDataEvent<*>>(
+    IndexedDBTwoDimensionsRepository<String, String, Event.GlobalAccountDataEvent<*>>(
         objectStoreName = objectStoreName,
         firstKeySerializer = { arrayOf(it) },
         secondKeySerializer = { arrayOf(it) },

@@ -4,18 +4,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
-import net.folivo.trixnity.client.store.cache.RepositoryStateFlowCache
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
+import net.folivo.trixnity.client.store.transaction.TransactionManager
+import kotlin.time.Duration
 
 class RoomOutboxMessageStore(
     private val roomOutboxMessageRepository: RoomOutboxMessageRepository,
-    private val rtm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
     storeScope: CoroutineScope
 ) : Store {
-    private val roomOutboxMessageCache = RepositoryStateFlowCache(
-        storeScope, roomOutboxMessageRepository, infiniteCache = true,
-        rtm = rtm
+    private val roomOutboxMessageCache = MinimalRepositoryStateFlowCache(
+        storeScope, roomOutboxMessageRepository, tm = tm, Duration.INFINITE
     )
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -29,14 +29,14 @@ class RoomOutboxMessageStore(
             .stateIn(storeScope, Eagerly, listOf())
 
     override suspend fun init() {
-        roomOutboxMessageCache.init(rtm.readTransaction { roomOutboxMessageRepository.getAll() }
+        roomOutboxMessageCache.init(tm.readOperation { roomOutboxMessageRepository.getAll() }
             .associateBy { it.transactionId })
     }
 
     override suspend fun clearCache() = deleteAll()
 
     override suspend fun deleteAll() {
-        rtm.writeTransaction {
+        tm.writeOperation {
             roomOutboxMessageRepository.deleteAll()
         }
         roomOutboxMessageCache.reset()

@@ -14,6 +14,7 @@ import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.push
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -43,8 +44,12 @@ class NotificationIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        startedClient1 = registerAndStartClient("client1", "user1", baseUrl)
-        startedClient2 = registerAndStartClient("client2", "user2", baseUrl)
+        startedClient1 = registerAndStartClient(
+            "client1", "user1", baseUrl,
+            createExposedRepositoriesModule(newDatabase())
+        )
+        startedClient2 =
+            registerAndStartClient("client2", "user2", baseUrl, createExposedRepositoriesModule(newDatabase()))
     }
 
     @AfterTest

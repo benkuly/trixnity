@@ -6,9 +6,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.transformLatest
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
@@ -17,31 +18,37 @@ import kotlin.reflect.KClass
 
 class GlobalAccountDataStore(
     private val globalAccountDataRepository: GlobalAccountDataRepository,
-    private val rtm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
     private val contentMappings: EventContentSerializerMappings,
+    config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
 ) : Store {
     private val globalAccountDataCache =
-        TwoDimensionsRepositoryStateFlowCache(storeScope, globalAccountDataRepository, rtm)
+        TwoDimensionsRepositoryStateFlowCache(
+            storeScope,
+            globalAccountDataRepository,
+            tm,
+            config.cacheExpireDurations.globalAccountDate
+        )
 
     override suspend fun init() {}
 
     override suspend fun clearCache() = deleteAll()
 
     override suspend fun deleteAll() {
-        rtm.writeTransaction {
+        tm.writeOperation {
             globalAccountDataRepository.deleteAll()
         }
         globalAccountDataCache.reset()
     }
 
-    suspend fun update(event: GlobalAccountDataEvent<out GlobalAccountDataEventContent>) {
+    suspend fun save(event: GlobalAccountDataEvent<out GlobalAccountDataEventContent>) {
         val eventType = when (val content = event.content) {
             is UnknownGlobalAccountDataEventContent -> content.eventType
             else -> contentMappings.globalAccountData.find { it.kClass.isInstance(event.content) }?.type
         }
-            ?: throw IllegalArgumentException("Cannot update account data event $event, because it is not supported. You need to register it first.")
-        globalAccountDataCache.updateBySecondKey(eventType, event.key) { event }
+            ?: throw IllegalArgumentException("Cannot save account data event $event, because it is not supported. You need to register it first.")
+        globalAccountDataCache.saveBySecondKey(eventType, event.key, event)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

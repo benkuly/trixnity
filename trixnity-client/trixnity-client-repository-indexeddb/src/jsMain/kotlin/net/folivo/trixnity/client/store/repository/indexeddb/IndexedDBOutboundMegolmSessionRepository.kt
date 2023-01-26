@@ -11,7 +11,7 @@ import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 internal class IndexedDBOutboundMegolmSessionRepository(
     json: Json
 ) : OutboundMegolmSessionRepository,
-    IndexedDBMinimalStoreRepository<RoomId, StoredOutboundMegolmSession>(
+    IndexedDBFullRepository<RoomId, StoredOutboundMegolmSession>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.full) },
         valueSerializer = serializer(),

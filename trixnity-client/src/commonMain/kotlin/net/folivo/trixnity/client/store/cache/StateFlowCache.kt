@@ -10,15 +10,15 @@ import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger { }
 
-/* TODO Currently the cache has the limitation, that some calls to readWithCache and writeWithCache could keep the cache full of values.
-* This happens if V is a collection and readWithCache and writeWithCache are used to retrieve less values, than the collection actually
-* holds at the moment. If that causes issues of huge caches, we should make the removerJobs a bit smarter. */
+// TODO Currently the cache has the limitation, that some calls to readWithCache and writeWithCache could keep the cache full of values.
+//  This happens if V is a collection and readWithCache and writeWithCache are used to retrieve less values, than the collection actually
+//  holds at the moment. If that causes issues of huge caches, we should make the removerJobs a bit smarter.
 open class StateFlowCache<K, V>(
     private val name: String,
     private val cacheScope: CoroutineScope,
-    val infiniteCache: Boolean = false,
-    val cacheDuration: Duration = 1.minutes,
+    val expireDuration: Duration = 1.minutes,
 ) {
+    private val infiniteCache = expireDuration.isInfinite()
     private val internalCache: MutableStateFlow<Map<K, StateFlowCacheValue<V?>>> = MutableStateFlow(emptyMap())
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -26,16 +26,19 @@ open class StateFlowCache<K, V>(
         .mapLatest { value -> value.mapValues { it.value.value.asStateFlow() } }
         .shareIn(cacheScope, WhileSubscribed(replayExpirationMillis = 0))
 
+    // TODO move this to a better place (like FullRepositoryStateFlowCache)
     fun init(initialValues: Map<K, V>) {
-        require(infiniteCache) { "Cache cannot be initialized with values, when infiniteCache is disabled." }
+        require(infiniteCache) { "Cache cannot be initialized with values, when expireDuration is not infinite." }
         internalCache.value =
             initialValues.mapValues {
                 val removeTime = MutableStateFlow(Duration.INFINITE)
                 val stateFlowValue: MutableStateFlow<V?> = MutableStateFlow(it.value)
+                val persistedFlows = MutableStateFlow(setOf<StateFlow<Boolean>>())
                 StateFlowCacheValue(
                     stateFlowValue,
                     removeTime,
-                    removeFromCacheJob(it.key, stateFlowValue.subscriptionCount, removeTime)
+                    persistedFlows,
+                    removeFromCacheJob(it.key, stateFlowValue.subscriptionCount, removeTime, persistedFlows)
                 )
             }.toMap()
     }
@@ -54,7 +57,7 @@ open class StateFlowCache<K, V>(
             updater = { it },
             isContainedInCache = isContainedInCache,
             retrieveAndUpdateCache = retrieveAndUpdateCache,
-            persist = {})
+            persist = { null })
         result.removerJob.start()
         emitAll(result.value)
     }
@@ -64,7 +67,7 @@ open class StateFlowCache<K, V>(
         updater: suspend (oldValue: V?) -> V?,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean,
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
-        persist: suspend (newValue: V?) -> Unit
+        persist: suspend (newValue: V?) -> StateFlow<Boolean>?
     ) {
         val result = internalCache.update(
             key = key,
@@ -81,7 +84,7 @@ open class StateFlowCache<K, V>(
         updater: suspend (oldValue: V?) -> V?,
         isContainedInCache: suspend (cacheValue: V?) -> Boolean,
         retrieveAndUpdateCache: suspend (cacheValue: V?) -> V?,
-        persist: suspend (newValue: V?) -> Unit
+        persist: suspend (newValue: V?) -> StateFlow<Boolean>?
     ): StateFlowCacheValue<V?> =
         updateAndGet { oldCache ->
             val cacheValue = oldCache[key]
@@ -89,13 +92,15 @@ open class StateFlowCache<K, V>(
                 log.trace { "$name: no cache hit for key $key" }
                 val retrievedValue = retrieveAndUpdateCache(null)
                 val newValue = updater(retrievedValue)
-                    .also { persist(it) }
-                val removeTime = MutableStateFlow(cacheDuration)
+                val persisted = persist(newValue)
+                val persistedFlows = MutableStateFlow(setOfNotNull(persisted))
+                val removeTime = MutableStateFlow(expireDuration)
                 val newStateFlowValue: MutableStateFlow<V?> = MutableStateFlow(newValue)
                 oldCache + (key to StateFlowCacheValue(
                     newStateFlowValue,
                     removeTime,
-                    removeFromCacheJob(key, newStateFlowValue.subscriptionCount, removeTime)
+                    persistedFlows,
+                    removeFromCacheJob(key, newStateFlowValue.subscriptionCount, removeTime, persistedFlows)
                 ))
             } else {
                 cacheValue.value.update { oldCacheValue ->
@@ -104,8 +109,11 @@ open class StateFlowCache<K, V>(
                             log.trace { "$name: no deep cache hit int $oldCacheValue for key $key" }
                             retrieveAndUpdateCache(oldCacheValue)
                         } else oldCacheValue
-                    updater(oldValue)
-                        .also { persist(it) }
+                    val newValue = updater(oldValue)
+                    persist(newValue)?.let { persisted ->
+                        cacheValue.persisted.update { it + persisted }
+                    }
+                    newValue
                 }
                 oldCache
             }
@@ -115,14 +123,24 @@ open class StateFlowCache<K, V>(
     private fun removeFromCacheJob(
         key: K,
         subscriptionCountFlow: StateFlow<Int>,
-        removeTimerFlow: StateFlow<Duration>
+        removeTimerFlow: StateFlow<Duration>,
+        persistedFlows: StateFlow<Set<StateFlow<Boolean>>>,
     ): Job {
         return cacheScope.launch(start = CoroutineStart.LAZY) {
             if (infiniteCache.not())
-                combine(subscriptionCountFlow, removeTimerFlow) { subscriptionCount, removeTimer ->
-                    subscriptionCount to removeTimer
-                }.collectLatest { (subscriptionCount, removeTimer) ->
+                combine(
+                    subscriptionCountFlow,
+                    removeTimerFlow,
+                    persistedFlows
+                ) { subscriptionCount, removeTimer, persisted ->
+                    Triple(subscriptionCount, removeTimer, persisted)
+                }.collectLatest { (subscriptionCount, removeTimer, persisted) ->
                     delay(removeTimer)
+                    // waiting for the cache value to be written into the repository
+                    // otherwise cache and repository could get out of sync
+                    persisted.forEach { persistedFlow ->
+                        persistedFlow.first { it }
+                    }
                     internalCache.update {
                         if (subscriptionCount == 0) {
                             log.trace { "$name: remove value from cache with key $key" }
@@ -133,3 +151,10 @@ open class StateFlowCache<K, V>(
         }
     }
 }
+
+data class StateFlowCacheValue<T>(
+    val value: MutableStateFlow<T>,
+    val removeTimer: MutableStateFlow<Duration>,
+    val persisted: MutableStateFlow<Set<StateFlow<Boolean>>>,
+    val removerJob: Job
+)

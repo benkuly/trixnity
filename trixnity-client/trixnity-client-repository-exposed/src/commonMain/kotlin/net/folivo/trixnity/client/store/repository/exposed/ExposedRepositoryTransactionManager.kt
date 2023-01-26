@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
 import kotlinx.coroutines.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -40,15 +40,11 @@ suspend fun <T> withExposedWrite(block: () -> T) = coroutineScope {
     }
 }
 
-class ExposedRepositoryTransactionManager(
-    private val database: Database,
-) : RepositoryTransactionManager {
-    override val supportsParallelWrite: Boolean = true
-
+class ExposedRepositoryTransactionManager(private val database: Database) : RepositoryTransactionManager {
     // a single transaction is only allowed to read and write in one thread (no parallelism)
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun newLimitedDispatcher() = Dispatchers.IO.limitedParallelism(1)
-    override suspend fun <T> writeTransaction(block: suspend () -> T): T = coroutineScope {
+    override suspend fun writeTransaction(block: suspend () -> Unit) = coroutineScope {
         val existingReadTransaction = coroutineContext[ExposedReadTransaction]?.transaction
         val existingWriteTransaction = coroutineContext[ExposedWriteTransaction]?.transaction
         if (existingReadTransaction != null && existingWriteTransaction != null) block() // just re-use existing transaction (nested)

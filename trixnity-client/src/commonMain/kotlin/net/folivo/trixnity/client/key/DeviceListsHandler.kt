@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import mu.KotlinLogging
 import net.folivo.trixnity.client.store.KeyStore
@@ -28,12 +27,12 @@ class DeviceListsHandler(
         if (deviceList == null) return
         log.debug { "set outdated device keys or remove old device keys" }
         deviceList.changed?.let { userIds ->
-            keyStore.outdatedKeys.update { oldUserIds ->
+            keyStore.updateOutdatedKeys { oldUserIds ->
                 oldUserIds + userIds.filter { keyStore.isTracked(it) }
             }
         }
         deviceList.left?.forEach { userId ->
-            keyStore.outdatedKeys.update { it - userId }
+            keyStore.updateOutdatedKeys { it - userId }
             keyStore.updateDeviceKeys(userId) { null }
             keyStore.updateCrossSigningKeys(userId) { null }
         }

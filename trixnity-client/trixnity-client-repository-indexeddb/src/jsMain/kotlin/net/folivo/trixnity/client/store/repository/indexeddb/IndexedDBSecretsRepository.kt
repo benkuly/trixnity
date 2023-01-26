@@ -11,7 +11,7 @@ import net.folivo.trixnity.crypto.SecretType
 internal class IndexedDBSecretsRepository(
     json: Json
 ) : SecretsRepository,
-    IndexedDBMinimalStoreRepository<Long, Map<SecretType, StoredSecret>>(
+    IndexedDBFullRepository<Long, Map<SecretType, StoredSecret>>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.toString()) },
         valueSerializer = serializer(),

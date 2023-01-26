@@ -76,13 +76,13 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                keyStore.outdatedKeys.value = setOf()
+                keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe Key.Curve25519Key(null, "key")
             }
             should("return null when no identity key found") {
                 val result = async { cut.findCurve25519Key(alice, aliceDevice) }
                 keyStore.outdatedKeys.first { it.contains(alice) }
-                keyStore.outdatedKeys.value = setOf()
+                keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe null
             }
         }
@@ -117,13 +117,13 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                keyStore.outdatedKeys.value = setOf()
+                keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe Key.Ed25519Key(null, "key")
             }
             should("return null when no signing key found") {
                 val result = async { cut.findEd25519Key(alice, aliceDevice) }
                 keyStore.outdatedKeys.first { it.contains(alice) }
-                keyStore.outdatedKeys.value = setOf()
+                keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe null
             }
         }
@@ -157,13 +157,13 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                keyStore.outdatedKeys.value = setOf()
+                keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe deviceKeys
             }
             should("return null when no device key found") {
                 val result = async { cut.findDeviceKeys(alice, Key.Curve25519Key(null, "key")) }
                 keyStore.outdatedKeys.first { it.contains(alice) }
-                keyStore.outdatedKeys.value = setOf()
+                keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe null
             }
         }

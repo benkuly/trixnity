@@ -24,7 +24,7 @@ class GlobalAccountDataEventHandler(
 
     internal suspend fun setGlobalAccountData(accountDataEvent: Event<GlobalAccountDataEventContent>) {
         if (accountDataEvent is Event.GlobalAccountDataEvent) {
-            globalAccountDataStore.update(accountDataEvent)
+            globalAccountDataStore.save(accountDataEvent)
         }
     }
 }

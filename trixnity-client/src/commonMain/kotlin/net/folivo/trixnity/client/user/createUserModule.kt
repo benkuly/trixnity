@@ -34,7 +34,8 @@ fun createUserModule() = module {
             get(named<PresenceEventHandler>()),
             get(),
             get(),
-            get()
+            get(),
+            get(),
         )
     }
 }

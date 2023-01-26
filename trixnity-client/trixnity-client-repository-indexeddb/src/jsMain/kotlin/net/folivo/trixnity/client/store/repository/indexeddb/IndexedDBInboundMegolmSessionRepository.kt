@@ -34,12 +34,15 @@ internal class IndexedDBInboundMegolmSessionRepository(
 
     // We need this, because hasBeenBackedUp cannot be indexed as boolean.
     private val internalRepository =
-        IndexedDBMinimalStoreRepository<InboundMegolmSessionRepositoryKey, IndexedDBInboundMegolmSession>(
+        object : IndexedDBFullRepository<InboundMegolmSessionRepositoryKey, IndexedDBInboundMegolmSession>(
             objectStoreName = objectStoreName,
             keySerializer = { arrayOf(it.roomId.full, it.sessionId) },
             valueSerializer = serializer(),
             json = json
-        )
+        ) {
+            override fun serializeKey(key: InboundMegolmSessionRepositoryKey): String =
+                this@IndexedDBInboundMegolmSessionRepository.serializeKey(key)
+        }
 
     companion object {
         const val objectStoreName = "inbound_megolm_session"

@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.UserId
 internal class IndexedDBRoomUserRepository(
     json: Json
 ) : RoomUserRepository,
-    IndexedDBTwoDimensionsStoreRepository<RoomId, UserId, RoomUser>(
+    IndexedDBTwoDimensionsRepository<RoomId, UserId, RoomUser>(
         objectStoreName = objectStoreName,
         firstKeySerializer = { arrayOf(it.full) },
         secondKeySerializer = { arrayOf(it.full) },

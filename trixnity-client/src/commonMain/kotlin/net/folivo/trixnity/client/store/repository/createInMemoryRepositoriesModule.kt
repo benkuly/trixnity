@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.store.repository
 
+import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 

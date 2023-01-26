@@ -11,7 +11,7 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 internal class IndexedDBInboundMegolmMessageIndexRepository(
     json: Json,
 ) : InboundMegolmMessageIndexRepository,
-    IndexedDBMinimalStoreRepository<InboundMegolmMessageIndexRepositoryKey, StoredInboundMegolmMessageIndex>(
+    IndexedDBFullRepository<InboundMegolmMessageIndexRepositoryKey, StoredInboundMegolmMessageIndex>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.roomId.full, it.sessionId, it.messageIndex.toString()) },
         valueSerializer = serializer(),

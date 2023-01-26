@@ -30,7 +30,7 @@ internal suspend inline fun <reified T : Key> KeyStore.getOrFetchKeyFromDevice(
 ): T? {
     val key = this.getFromDevice<T>(userId, deviceId)
     return if (key == null) {
-        outdatedKeys.update { it + userId }
+        updateOutdatedKeys { it + userId }
         waitForUpdateOutdatedKey(userId)
         this.getFromDevice(userId, deviceId)
     } else key
@@ -41,7 +41,7 @@ internal suspend inline fun <reified T : Key> KeyStore.getOrFetchKeysFromDevice(
     deviceId: String?
 ): Set<T>? {
     val userKeys = getDeviceKeys(userId).first() ?: run {
-        outdatedKeys.update { it + userId }
+        updateOutdatedKeys { it + userId }
         waitForUpdateOutdatedKey(userId)
         getDeviceKeys(userId).first()
     }
@@ -56,7 +56,7 @@ internal suspend inline fun <reified T : Key> KeyStore.getDeviceKeyByValue(
     return getDeviceKeys(userId).first()?.map { deviceKeys ->
         deviceKeys.value.value.signed.keys.keys.filterIsInstance<T>().find { it.value == keyValue }
     }?.filterNotNull()?.firstOrNull() ?: run {
-        outdatedKeys.update { it + userId }
+        updateOutdatedKeys { it + userId }
         waitForUpdateOutdatedKey(userId)
         getDeviceKeys(userId).first()?.map { deviceKeys ->
             deviceKeys.value.value.signed.keys.keys.filterIsInstance<T>().find { it.value == keyValue }
@@ -71,7 +71,7 @@ internal suspend inline fun <reified T : Key> KeyStore.getAllKeysFromUser(
     filterUsage: CrossSigningKeysUsage? = null
 ): Set<T> {
     val deviceKeys = (getDeviceKeys(userId).first() ?: run {
-        outdatedKeys.update { it + userId }
+        updateOutdatedKeys { it + userId }
         waitForUpdateOutdatedKey(userId)
         getDeviceKeys(userId).first()
     })?.entries?.filter { if (filterDeviceId != null) it.key == filterDeviceId else true }

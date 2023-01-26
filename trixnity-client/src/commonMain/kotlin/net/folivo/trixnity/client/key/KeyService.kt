@@ -240,7 +240,7 @@ class KeyServiceImpl(
                         }
                 }.mapCatching { uiaFlow ->
                     uiaFlow.injectOnSuccessIntoUIA {
-                        keyStore.outdatedKeys.update { oldOutdatedKeys -> oldOutdatedKeys + userInfo.userId }
+                        keyStore.updateOutdatedKeys { oldOutdatedKeys -> oldOutdatedKeys + userInfo.userId }
                         log.debug { "wait for outdated keys" }
                         keyStore.waitForUpdateOutdatedKey(userInfo.userId)
                         val masterKey =
