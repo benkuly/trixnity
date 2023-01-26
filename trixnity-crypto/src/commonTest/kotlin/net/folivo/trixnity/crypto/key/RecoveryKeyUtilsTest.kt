@@ -59,16 +59,16 @@ class RecoveryKeyUtilsTest : ShouldSpec({
         }
     }
     should("create recoveryKeyFromPassphrase") {
-        val salt = Random.nextBytes(32)
+        val salt = Random.nextBytes(32).encodeBase64()
         val key = generatePbkdf2Sha512(
             password = "super secret passphrase",
-            salt = salt,
+            salt = salt.encodeToByteArray(),
             iterationCount = 10_000, // just a test, not secure
             keyBitLength = 32 * 8
         )
         recoveryKeyFromPassphrase(
             "super secret passphrase",
-            Pbkdf2(salt = salt.encodeBase64(), iterations = 10_000, bits = 32 * 8)
+            Pbkdf2(salt = salt, iterations = 10_000, bits = 32 * 8)
         ) shouldBe key
     }
 })

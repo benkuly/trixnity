@@ -64,10 +64,10 @@ class SelfVerificationMethodTest : ShouldSpec({
         context(AesHmacSha2RecoveryKeyWithPbkdf2Passphrase::verify.name) {
             should("decode pbkdf2 recovery key and decrypt missing keys with it") {
                 val iv = Random.nextBytes(16)
-                val salt = Random.nextBytes(32)
+                val salt = Random.nextBytes(32).encodeBase64()
                 val key = generatePbkdf2Sha512(
                     password = "password",
-                    salt = salt,
+                    salt = salt.encodeToByteArray(),
                     iterationCount = 1_000, // just a test, not secure
                     keyBitLength = 32 * 8
                 )
@@ -79,7 +79,7 @@ class SelfVerificationMethodTest : ShouldSpec({
                 ).mac
                 val info = SecretKeyEventContent.AesHmacSha2Key(
                     passphrase = Pbkdf2(
-                        salt = salt.encodeBase64(),
+                        salt = salt,
                         iterations = 1_000, // just a test, not secure
                         bits = 32 * 8
                     ),
