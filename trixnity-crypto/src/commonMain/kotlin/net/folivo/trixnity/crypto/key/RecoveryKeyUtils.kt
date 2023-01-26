@@ -38,11 +38,12 @@ suspend fun recoveryKeyFromPassphrase(
         is AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2 -> {
             generatePbkdf2Sha512(
                 password = passphrase,
-                salt = info.salt.decodeBase64Bytes(),
+                salt = info.salt.encodeToByteArray(),
                 iterationCount = info.iterations,
                 keyBitLength = info.bits ?: (32 * 8)
             )
         }
+
         is AesHmacSha2Key.SecretStorageKeyPassphrase.Unknown ->
             throw IllegalArgumentException("unknown algorithm not supported")
     }
