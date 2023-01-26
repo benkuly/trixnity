@@ -93,7 +93,8 @@ This project contains the following modules, which can be used independently:
           with [sqldelight](https://github.com/cashapp/sqldelight/). This is not
           actively
           maintained at the moment!
-    - [x] extremely fast reactive cache on top of the database
+    - [x] extremely fast reactive cache on top of the database using async
+      transactions
     - [x] exchangeable media store
         - in memory (e. g. for tests)
         - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio)
@@ -104,13 +105,16 @@ This project contains the following modules, which can be used independently:
           implements a file system based media
           store with [indexeddb](https://github.com/JuulLabs/indexeddb). This
           supports JS (browser).
+    - [x] very fast sync processing because of async transactions, so Trixnity
+      doesn't need to wait until all events are saved to the database
     - [x] media support (thumbnail generation, offline "upload", huge files,
       etc.)
     - [x] E2E (olm, megolm)
     - [x] verification
     - [x] cross signing
     - [x] room key backup
-    - [x] room key requests (only between own verified devices)
+    - [x] room key requests (only between own verified devices and when key
+      backup is disabled)
     - [x] room list
     - [x] timelines
     - [x] user and room display name calculation
