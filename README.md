@@ -95,8 +95,6 @@ This project contains the following modules, which can be used independently:
           maintained at the moment!
     - [x] extremely fast reactive cache on top of the database using async
       transactions
-    - [x] extremely fast reactive cache on top of the database using async
-      transactions
     - [x] exchangeable media store
         - in memory (e. g. for tests)
         - [trixnity-client-media-okio](/trixnity-client/trixnity-client-media-okio)
