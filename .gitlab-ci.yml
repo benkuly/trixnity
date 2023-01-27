@@ -51,7 +51,7 @@ variables:
 
 build-trixnity-build-linux-image:
   stage: prepare-build
-  tags: [ "trixnity-linux-internal" ]
+  tags: [ "saas-linux-large-amd64" ]
   image: docker:20
   services:
     - name: docker:20-dind
@@ -75,7 +75,7 @@ build-mac:
 
 build-linux:
   stage: build
-  tags: [ "trixnity-linux-internal" ]
+  tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:20-dind
@@ -101,7 +101,7 @@ publish-snapshot-mac:
 
 publish-snapshot-linux:
   stage: publish-snapshot-linux
-  tags: [ "trixnity-linux-internal" ]
+  tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:20-dind
@@ -115,7 +115,7 @@ publish-snapshot-linux:
 
 create-nexus-staging-repo:
   stage: prepare-publish
-  tags: [ "trixnity-linux-internal" ]
+  tags: [ "saas-linux-small-amd64" ]
   image: ubuntu:latest
   rules:
     - *if-release
@@ -154,7 +154,7 @@ publish-mac:
 
 publish-linux:
   stage: publish-linux
-  tags: [ "trixnity-linux-internal" ]
+  tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:20-dind
