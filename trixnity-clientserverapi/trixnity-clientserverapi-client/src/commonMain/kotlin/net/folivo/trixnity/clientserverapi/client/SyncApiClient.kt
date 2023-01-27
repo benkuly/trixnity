@@ -19,6 +19,9 @@ import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
+import kotlin.time.measureTimedValue
 
 typealias SyncResponseSubscriber = suspend (Sync.Response) -> Unit
 typealias DeviceListsSubscriber = suspend (Sync.Response.DeviceLists?) -> Unit
@@ -284,6 +287,7 @@ class SyncApiClientImpl(
         _currentSyncState.value = STOPPED
     }
 
+    @OptIn(ExperimentalTime::class)
     private suspend fun syncAndResponse(
         currentBatchToken: MutableStateFlow<String?>,
         filter: String?,
@@ -293,23 +297,27 @@ class SyncApiClientImpl(
         asUserId: UserId?,
     ): Sync.Response {
         val batchToken = currentBatchToken.value
-        val response = sync(
-            filter = filter,
-            setPresence = setPresence,
-            fullState = false,
-            since = batchToken,
-            timeout = if (batchToken == null) 0L else timeout,
-            asUserId = asUserId
-        ).getOrThrow()
-        log.debug { "received sync response with token $batchToken" }
-        withTransaction(
-            { // on rollback
-                currentBatchToken.value = batchToken
-            }
-        ) {
-            processSyncResponse(response)
+        val (response, measuredSyncDuration) = measureTimedValue {
+            sync(
+                filter = filter,
+                setPresence = setPresence,
+                fullState = false,
+                since = batchToken,
+                timeout = if (batchToken == null) 0L else timeout,
+                asUserId = asUserId
+            ).getOrThrow()
         }
-        log.debug { "processed sync response with token $batchToken" }
+        log.debug { "received sync response after $measuredSyncDuration with token $batchToken" }
+        val measuredProcessDuration = measureTime {
+            withTransaction(
+                { // on rollback
+                    currentBatchToken.value = batchToken
+                }
+            ) {
+                processSyncResponse(response)
+            }
+        }
+        log.debug { "processed sync response in ${measuredProcessDuration.absoluteValue} with token $batchToken" }
         currentBatchToken.value = response.nextBatch
         updateSyncState(RUNNING)
         return response
