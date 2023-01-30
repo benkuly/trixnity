@@ -63,5 +63,5 @@ val MatrixClient.verification
 val MatrixClient.key
     get() = di.get<KeyService>()
 
-val MatrixClient.notifications
+val MatrixClient.notification
     get() = di.get<NotificationService>()
