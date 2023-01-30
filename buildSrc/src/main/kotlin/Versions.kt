@@ -23,9 +23,11 @@ object Versions {
     const val juulLabsIndexeddb = "0.5.0" // https://github.com/JuulLabs/indexeddb/releases
     const val h2 = "2.1.214" // https://github.com/h2database/h2database/releases
     const val realm = "1.6.0" // https://github.com/realm/realm-kotlin/tags
-    const val kotlinLogging = "3.0.4" // https://github.com/MicroUtils/kotlin-logging/releases
-    const val logback = "1.4.5" // https://github.com/qos-ch/logback/tags
     const val downloadGradlePlugin = "5.3.0" // https://github.com/michel-kraemer/gradle-download-task/releases
+
+    // upgrade only, as soon as https://github.com/tony19/logback-android/issues/249 is resolved
+    const val kotlinLogging = "2.1.23" // https://github.com/MicroUtils/kotlin-logging/releases
+    const val logback = "1.2.11" // https://github.com/qos-ch/logback/tags
 
     // make sure to update the build images, when you change a version here!
     const val androidTargetSdk = 33
