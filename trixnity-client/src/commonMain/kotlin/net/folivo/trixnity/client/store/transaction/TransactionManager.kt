@@ -14,7 +14,7 @@ import kotlin.time.ExperimentalTime
 private val log = KotlinLogging.logger { }
 
 interface TransactionManager {
-    suspend fun withWriteTransaction(
+    suspend fun withAsyncWriteTransaction(
         onRollback: suspend () -> Unit = {},
         block: suspend () -> Unit
     ): StateFlow<Boolean>?
@@ -104,7 +104,7 @@ class TransactionManagerImpl(
         if (isNotEmpty()) log.trace { "finished write transactions into database ids=${map { it.id }}" }
     }
 
-    override suspend fun withWriteTransaction(
+    override suspend fun withAsyncWriteTransaction(
         onRollback: suspend () -> Unit,
         block: suspend () -> Unit
     ): StateFlow<Boolean>? =
@@ -138,7 +138,7 @@ class TransactionManagerImpl(
 
     override suspend fun writeOperationAsync(key: String, block: suspend () -> Unit): StateFlow<Boolean>? =
         if (config.enableAsyncTransactions) {
-            withWriteTransaction {
+            withAsyncWriteTransaction {
                 val transactionContext = currentCoroutineContext()[AsyncTransactionContext]
                 checkNotNull(transactionContext)
                 transactionContext.addOperation(key) {
