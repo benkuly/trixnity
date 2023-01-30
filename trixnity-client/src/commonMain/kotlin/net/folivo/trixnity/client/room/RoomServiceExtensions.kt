@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -23,10 +24,10 @@ import kotlin.time.Duration.Companion.minutes
  */
 fun RoomService.getTimeline(
     roomId: RoomId,
-    decryptionTimeout: Duration,
-    fetchTimeout: Duration,
-    limitPerFetch: Long,
-    loadingSize: Long,
+    decryptionTimeout: Duration = Duration.INFINITE,
+    fetchTimeout: Duration = 1.minutes,
+    limitPerFetch: Long = 20,
+    loadingSize: Long = 20,
 ): SimpleTimeline =
     getTimeline(
         roomId = roomId,
@@ -62,13 +63,25 @@ inline fun <reified C : StateEventContent> RoomService.getAllState(
  * the outer flow is debounced by default.
  */
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(debounceTimeout: Duration = 200.milliseconds): Flow<Set<Room>> =
+fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(
+    debounceTimeout: Duration = 200.milliseconds,
+    filterUpgradedRooms: Boolean = true,
+): Flow<Set<Room>> =
     debounce(debounceTimeout)
         .flatMapLatest {
             if (it.isEmpty()) flowOf(arrayOf())
             else combine(it.values) { transform -> transform }
         }
-        .mapLatest { it.filterNotNull().toSet() }
+        .mapLatest { rooms ->
+            val notNullRooms = rooms.filterNotNull()
+            notNullRooms.filterNot { room ->
+                filterUpgradedRooms
+                        && room.nextRoomId?.let { replacedBy ->
+                    notNullRooms.any { it.roomId == replacedBy && it.membership == Membership.JOIN && it.previousRoomId == room.roomId }
+                } == true
+            }
+                .toSet()
+        }
 
 /**
  * Converts a flow of timeline events into a flow of list of timeline events limited by [maxSize].

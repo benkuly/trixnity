@@ -42,7 +42,7 @@ class TransactionManagerImpl(
     private val asyncTransactions = MutableStateFlow(listOf<AsyncTransaction>())
 
     init {
-        if (config.enableAsyncTransactions) {
+        if (config.asyncTransactions) {
             scope.launch {
                 try {
                     asyncTransactions.collect { transactions ->
@@ -108,7 +108,7 @@ class TransactionManagerImpl(
         onRollback: suspend () -> Unit,
         block: suspend () -> Unit
     ): StateFlow<Boolean>? =
-        if (config.enableAsyncTransactions) {
+        if (config.asyncTransactions) {
             val existingTransactionContext = currentCoroutineContext()[AsyncTransactionContext]
             if (existingTransactionContext == null) {
                 val newTransactionContext = AsyncTransactionContext()
@@ -137,7 +137,7 @@ class TransactionManagerImpl(
     override suspend fun writeOperation(block: suspend () -> Unit): Unit = rtm.writeTransaction(block)
 
     override suspend fun writeOperationAsync(key: String, block: suspend () -> Unit): StateFlow<Boolean>? =
-        if (config.enableAsyncTransactions) {
+        if (config.asyncTransactions) {
             withAsyncWriteTransaction {
                 val transactionContext = currentCoroutineContext()[AsyncTransactionContext]
                 checkNotNull(transactionContext)

@@ -88,7 +88,7 @@ class TransactionManagerTest {
 
     @Test
     fun shouldJustDoWriteTransactionWhenAsyncDisabled() = runTest {
-        config.enableAsyncTransactions = false
+        config.asyncTransactions = false
         val block: suspend () -> Unit = {}
         cut.withAsyncWriteTransaction(block = block) shouldBe null
         rtm.writeTransactionCalled.value[0] shouldBe block
@@ -138,7 +138,7 @@ class TransactionManagerTest {
 
     @Test
     fun shouldJustDoWriteTransactionWhenAsyncDisabled2() = runTest {
-        config.enableAsyncTransactions = false
+        config.asyncTransactions = false
         val block: suspend () -> Unit = {}
         cut.writeOperation(block = block)
         rtm.writeTransactionCalled.value[0] shouldBe block
