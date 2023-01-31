@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -69,6 +70,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
             roomStore.update(roomId2) {
                 Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
             }
+            roomStore.getAll().first { it.size == 2 }
             cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
 
             joinCalled shouldBe true
@@ -81,6 +83,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
             roomStore.update(roomId2) {
                 Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
             }
+            roomStore.getAll().first { it.size == 2 }
             cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
 
             joinCalled shouldBe false
@@ -92,6 +95,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
             roomStore.update(roomId2) {
                 Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
             }
+            roomStore.getAll().first { it.size == 2 }
             cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
 
             joinCalled shouldBe false
@@ -103,6 +107,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
             roomStore.update(roomId2) {
                 Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
             }
+            roomStore.getAll().first { it.size == 2 }
             cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
 
             joinCalled shouldBe false
