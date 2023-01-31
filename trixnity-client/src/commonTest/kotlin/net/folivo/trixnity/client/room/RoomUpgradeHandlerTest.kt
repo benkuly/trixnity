@@ -23,6 +23,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
     timeout = 10_000
     lateinit var roomStore: RoomStore
     lateinit var apiConfig: PortableMockEngineConfig
+    lateinit var config: MatrixClientConfiguration
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
     val mappings = DefaultEventContentSerializerMappings
@@ -34,10 +35,11 @@ class RoomUpgradeHandlerTest : ShouldSpec({
         roomStore = getInMemoryRoomStore(scope)
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
+        config = MatrixClientConfiguration()
         cut = RoomUpgradeHandler(
             api,
             roomStore,
-            MatrixClientConfiguration(),
+            config,
         )
     }
 
@@ -70,6 +72,18 @@ class RoomUpgradeHandlerTest : ShouldSpec({
             cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
 
             joinCalled shouldBe true
+        }
+        should("not join upgraded room when disabled") {
+            config.autoJoinUpgradedRooms = false
+            roomStore.update(roomId1) {
+                Room(roomId = roomId1, nextRoomId = roomId2)
+            }
+            roomStore.update(roomId2) {
+                Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
+            }
+            cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
+
+            joinCalled shouldBe false
         }
         should("not join upgraded room, when previous room does not match") {
             roomStore.update(roomId1) {

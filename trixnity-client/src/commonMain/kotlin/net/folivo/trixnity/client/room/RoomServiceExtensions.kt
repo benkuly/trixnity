@@ -74,17 +74,19 @@ fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(
         }
         .mapLatest { rooms ->
             val notNullRooms = rooms.filterNotNull()
-            notNullRooms.filterNot { room ->
-                filterUpgradedRooms &&
-                        room.nextRoomId?.let { replacedBy ->
+            notNullRooms.filter { room ->
+                if (filterUpgradedRooms) {
+                    val foundReplacementRoom =
+                        room.nextRoomId?.let { nextRoomId ->
                             notNullRooms.any {
-                                it.roomId == replacedBy
+                                it.roomId == nextRoomId
                                         && it.previousRoomId == room.roomId
                                         && it.membership == Membership.JOIN
                             }
                         } == true
-            }
-                .toSet()
+                    foundReplacementRoom.not()
+                } else true
+            }.toSet()
         }
 
 /**
