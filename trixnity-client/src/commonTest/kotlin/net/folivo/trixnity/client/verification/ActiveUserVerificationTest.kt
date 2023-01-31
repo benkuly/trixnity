@@ -241,7 +241,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
     should("send verification step and encrypt it") {
-        roomServiceMock.returnGetTimelineEvent = MutableStateFlow(null)
+        roomServiceMock.returnGetTimelineEvent = flowOf()
         var sendMessageCalled = false
         val encrypted = MegolmEncryptedEventContent("", Curve25519Key(null, ""), "", "")
         apiConfig.endpoints {
@@ -258,7 +258,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         sendMessageCalled shouldBe true
     }
     should("send verification step and use unencrypted when encrypt failed") {
-        roomServiceMock.returnGetTimelineEvent = MutableStateFlow(null)
+        roomServiceMock.returnGetTimelineEvent = flowOf()
         var sendMessageCalled = false
         apiConfig.endpoints {
             matrixJsonEndpoint(
@@ -296,7 +296,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         cut.startLifecycle(this)
     }
     should("stop lifecycle, when timed out") {
-        roomServiceMock.returnGetTimelineEvent = MutableStateFlow(null)
+        roomServiceMock.returnGetTimelineEvent = flowOf()
         createCut(Clock.System.now() - 9.9.minutes)
         cut.startLifecycle(this)
     }

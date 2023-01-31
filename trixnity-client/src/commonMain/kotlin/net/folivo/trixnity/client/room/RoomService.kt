@@ -26,7 +26,6 @@ import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
@@ -54,21 +53,21 @@ interface RoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): Flow<TimelineEvent?>
+    ): Flow<TimelineEvent>
 
     fun getPreviousTimelineEvent(
         event: TimelineEvent,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): Flow<TimelineEvent?>?
+    ): Flow<TimelineEvent>?
 
     fun getNextTimelineEvent(
         event: TimelineEvent,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
-    ): Flow<TimelineEvent?>?
+    ): Flow<TimelineEvent>?
 
     fun getLastTimelineEvent(
         roomId: RoomId,
@@ -249,7 +248,7 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<TimelineEvent?> = channelFlow {
+    ): Flow<TimelineEvent> = channelFlow {
         roomTimelineStore.get(eventId, roomId)
             .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
@@ -320,7 +319,8 @@ class RoomServiceImpl(
                         getTimelineEventMutex.update { it - key }
                     }
                 }
-            }.collect { send(it) }
+            }.filterNotNull()
+            .collect { send(it) }
     }
 
     override fun getPreviousTimelineEvent(
@@ -328,7 +328,7 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<TimelineEvent?>? {
+    ): Flow<TimelineEvent>? {
         return event.previousEventId?.let {
             getTimelineEvent(it, event.roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
         }
@@ -339,7 +339,7 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<TimelineEvent?>? {
+    ): Flow<TimelineEvent>? {
         return event.nextEventId?.let {
             getTimelineEvent(
                 eventId = it,
@@ -545,8 +545,7 @@ class RoomServiceImpl(
         keepMediaInCache: Boolean,
         builder: suspend MessageBuilder.() -> Unit
     ) {
-        val isEncryptedRoom = roomStore.get(roomId).first()?.encryptionAlgorithm == Megolm
-        val content = MessageBuilder(isEncryptedRoom, mediaService).build(builder)
+        val content = MessageBuilder(roomId, this, mediaService).build(builder)
         requireNotNull(content)
         val transactionId = uuid4().toString()
         roomOutboxMessageStore.update(transactionId) {

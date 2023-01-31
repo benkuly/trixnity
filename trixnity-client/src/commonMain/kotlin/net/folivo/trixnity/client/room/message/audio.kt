@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.ByteFlow
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
@@ -19,6 +20,7 @@ suspend fun MessageBuilder.audio(
     val format: AudioInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
+    val isEncryptedRoom = roomService.getById(roomId).first()?.encryptionAlgorithm != null
     if (isEncryptedRoom) {
 
         encryptedFile = mediaService.prepareUploadEncryptedMedia(audio)
@@ -40,7 +42,7 @@ suspend fun MessageBuilder.audio(
     contentBuilder = { relatesTo ->
         when (relatesTo) {
             is RelatesTo.Replace -> AudioMessageEventContent(
-                body = "*$body",
+                body = "* $body",
                 info = format,
                 url = url,
                 file = encryptedFile,

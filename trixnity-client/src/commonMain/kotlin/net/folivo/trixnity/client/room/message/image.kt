@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.ByteFlow
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
@@ -20,6 +21,7 @@ suspend fun MessageBuilder.image(
     val format: ImageInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
+    val isEncryptedRoom = roomService.getById(roomId).first()?.encryptionAlgorithm != null
     if (isEncryptedRoom) {
         val (thumbnailFile, thumbnailInfo) = mediaService.prepareUploadEncryptedThumbnail(image, type)
             ?: Pair(null, null)
@@ -52,7 +54,7 @@ suspend fun MessageBuilder.image(
     contentBuilder = { relatesTo ->
         when (relatesTo) {
             is RelatesTo.Replace -> ImageMessageEventContent(
-                body = "*$body",
+                body = "* $body",
                 info = format,
                 url = url,
                 file = encryptedFile,

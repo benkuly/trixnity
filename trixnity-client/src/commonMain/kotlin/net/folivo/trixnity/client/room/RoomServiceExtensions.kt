@@ -196,3 +196,5 @@ suspend fun RoomService.getTimelineEventsAround(
     }
     eventsBefore.await() + startEvent + eventsAfter.await()
 }
+
+suspend fun Flow<TimelineEvent>.firstWithContent(): TimelineEvent = first { it.content != null }
