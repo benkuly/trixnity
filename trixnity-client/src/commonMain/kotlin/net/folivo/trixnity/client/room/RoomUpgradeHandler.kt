@@ -53,7 +53,7 @@ class RoomUpgradeHandler(
         }
     }
 
-    internal suspend fun joinUpgradedRooms(syncResponse: Sync.Response) { // FIXME test
+    internal suspend fun joinUpgradedRooms(syncResponse: Sync.Response) {
         if (configuration.autoJoinUpgradedRooms.not()) return
 
         val allRooms =
