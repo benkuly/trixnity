@@ -131,7 +131,7 @@ class DirectRoomEventHandler(
         }.toSet()
         allDirectRooms.forEach { room -> roomStore.update(room) { oldRoom -> oldRoom?.copy(isDirect = true) } }
 
-        val allRooms = roomStore.getAll().value.keys
+        val allRooms = roomStore.getAll().first().keys
         allRooms.subtract(allDirectRooms)
             .forEach { room -> roomStore.update(room) { oldRoom -> oldRoom?.copy(isDirect = false) } }
     }

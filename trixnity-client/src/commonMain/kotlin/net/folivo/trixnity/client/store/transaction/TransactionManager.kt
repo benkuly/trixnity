@@ -14,7 +14,7 @@ import kotlin.time.ExperimentalTime
 private val log = KotlinLogging.logger { }
 
 interface TransactionManager {
-    suspend fun withWriteTransaction(
+    suspend fun withAsyncWriteTransaction(
         onRollback: suspend () -> Unit = {},
         block: suspend () -> Unit
     ): StateFlow<Boolean>?
@@ -42,7 +42,7 @@ class TransactionManagerImpl(
     private val asyncTransactions = MutableStateFlow(listOf<AsyncTransaction>())
 
     init {
-        if (config.enableAsyncTransactions) {
+        if (config.asyncTransactions) {
             scope.launch {
                 try {
                     asyncTransactions.collect { transactions ->
@@ -104,11 +104,11 @@ class TransactionManagerImpl(
         if (isNotEmpty()) log.trace { "finished write transactions into database ids=${map { it.id }}" }
     }
 
-    override suspend fun withWriteTransaction(
+    override suspend fun withAsyncWriteTransaction(
         onRollback: suspend () -> Unit,
         block: suspend () -> Unit
     ): StateFlow<Boolean>? =
-        if (config.enableAsyncTransactions) {
+        if (config.asyncTransactions) {
             val existingTransactionContext = currentCoroutineContext()[AsyncTransactionContext]
             if (existingTransactionContext == null) {
                 val newTransactionContext = AsyncTransactionContext()
@@ -137,8 +137,8 @@ class TransactionManagerImpl(
     override suspend fun writeOperation(block: suspend () -> Unit): Unit = rtm.writeTransaction(block)
 
     override suspend fun writeOperationAsync(key: String, block: suspend () -> Unit): StateFlow<Boolean>? =
-        if (config.enableAsyncTransactions) {
-            withWriteTransaction {
+        if (config.asyncTransactions) {
+            withAsyncWriteTransaction {
                 val transactionContext = currentCoroutineContext()[AsyncTransactionContext]
                 checkNotNull(transactionContext)
                 transactionContext.addOperation(key) {

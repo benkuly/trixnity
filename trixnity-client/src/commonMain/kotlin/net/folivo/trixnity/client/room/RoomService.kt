@@ -9,6 +9,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
+import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.room.message.MessageBuilder
@@ -25,7 +26,9 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
+import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
@@ -169,6 +172,12 @@ interface RoomService {
     suspend fun abortSendMessage(transactionId: String)
 
     suspend fun retrySendMessage(transactionId: String)
+
+    /**
+     * Upgraded rooms ([Room.hasBeenReplaced]) should not be rendered.
+     *
+     * [flatten] can be used to get rid of the nested flows.
+     */
     fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>>
 
     fun getById(roomId: RoomId): Flow<Room?>
@@ -371,6 +380,11 @@ class RoomServiceImpl(
         }.distinctUntilChanged()
     }
 
+    private interface FollowTimelineResult {
+        data class Continue(val timelineEventFlow: Flow<TimelineEvent?>) : FollowTimelineResult
+        object Stop : FollowTimelineResult
+    }
+
     override fun getTimelineEvents(
         startFrom: EventId,
         roomId: RoomId,
@@ -381,7 +395,7 @@ class RoomServiceImpl(
         minSize: Long?,
         maxSize: Long?,
     ): Flow<Flow<TimelineEvent>> =
-        channelFlow {
+        flow {
             val loopDetectionEventIds = mutableListOf(startFrom)
             fun TimelineEvent.needsFetchGap(): Boolean {
                 return gap != null && (gap.hasGapBoth && isLast.not() && isFirst.not()
@@ -389,55 +403,96 @@ class RoomServiceImpl(
                         || direction == BACKWARDS && gap.hasGapBefore && isFirst.not())
             }
 
-            var currentTimelineEventFlow: Flow<TimelineEvent?> =
-                getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
-            send(currentTimelineEventFlow.filterNotNull())
+            var currentTimelineEventFlow: Flow<TimelineEvent> =
+                getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
+            emit(currentTimelineEventFlow)
             var size = 1
-            while (isActive) {
-                // check for break conditions
-                val timelineEventSnapshot = currentTimelineEventFlow.filterNotNull().first()
-                log.trace { "getTimelineEvents: size=$size minSize=$minSize maxSize=$maxSize direction=${direction.name} currentTimelineEvent=$timelineEventSnapshot" }
-                if (direction == BACKWARDS && timelineEventSnapshot.isFirst) {
-                    log.debug { "getTimelineEvents: reached start of timeline $roomId" }
-                    break
-                }
-                if (minSize != null && size >= minSize
-                    && (timelineEventSnapshot.needsFetchGap() || (direction == FORWARDS && timelineEventSnapshot.isLast))
-                ) {
-                    log.debug { "getTimelineEvents: found a gap and complete flow, because minSize reached" }
-                    break
-                }
-                if (maxSize != null && size >= maxSize) {
-                    log.debug { "getTimelineEvents: complete flow because maxSize reached" }
-                    break
-                }
+            while (currentCoroutineContext().isActive) {
+                val followTimelineResult: FollowTimelineResult = currentTimelineEventFlow
+                    .transform { currentTimelineEvent ->
+                        val currentRoomId = currentTimelineEvent.roomId
 
-                currentTimelineEventFlow = currentTimelineEventFlow
-                    .filterNotNull()
-                    .onEach { currentTimelineEvent ->
+                        // check for room upgrades
+                        data class RoomEventIdPair(val eventId: EventId, val roomId: RoomId)
+
+                        val predecessor: RoomEventIdPair? =
+                            if (direction == BACKWARDS && currentTimelineEvent.isFirst) {
+                                getState<CreateEventContent>(currentTimelineEvent.roomId).first()?.content?.predecessor
+                                    ?.let { RoomEventIdPair(it.eventId, it.roomId) }
+                            } else null
+                        val timelineEventSnapshotContent = currentTimelineEvent.content?.getOrNull()
+                        val successor: RoomEventIdPair? =
+                            if (direction == FORWARDS && timelineEventSnapshotContent is TombstoneEventContent) {
+                                getState<CreateEventContent>(timelineEventSnapshotContent.replacementRoom).first()
+                                    ?.getEventId()
+                                    ?.let { RoomEventIdPair(it, timelineEventSnapshotContent.replacementRoom) }
+                            } else null
+
+                        // check for break conditions
+                        log.trace { "getTimelineEvents: size=$size minSize=$minSize maxSize=$maxSize direction=${direction.name} predecessor=$predecessor successor=$successor currentTimelineEvent=$currentTimelineEvent" }
+                        if (direction == BACKWARDS && currentTimelineEvent.isFirst && predecessor == null) {
+                            log.debug { "getTimelineEvents: reached start of timeline $currentRoomId" }
+                            emit(FollowTimelineResult.Stop)
+                        }
+                        if (minSize != null && size >= minSize
+                            && (currentTimelineEvent.needsFetchGap() || (direction == FORWARDS && currentTimelineEvent.isLast))
+                        ) {
+                            log.debug { "getTimelineEvents: found a gap and complete flow, because minSize reached" }
+                            emit(FollowTimelineResult.Stop)
+                        }
+                        if (maxSize != null && size >= maxSize) {
+                            log.debug { "getTimelineEvents: complete flow because maxSize reached" }
+                            emit(FollowTimelineResult.Stop)
+                        }
+
                         if (currentTimelineEvent.needsFetchGap()) {
                             log.debug { "found ${currentTimelineEvent.gap} at ${currentTimelineEvent.eventId}" }
                             fillTimelineGaps(currentTimelineEvent.eventId, currentTimelineEvent.roomId, limitPerFetch)
-                        }
-                    }
-                    .filter { it.needsFetchGap().not() }
-                    .mapNotNull { currentTimelineEvent ->
-                        when (direction) {
-                            BACKWARDS -> getPreviousTimelineEvent(
-                                event = currentTimelineEvent,
-                                decryptionTimeout = decryptionTimeout,
-                                fetchTimeout = ZERO
-                            )
+                        } else {
+                            val continueWith = when (direction) {
+                                BACKWARDS ->
+                                    if (predecessor == null)
+                                        getPreviousTimelineEvent(
+                                            event = currentTimelineEvent,
+                                            decryptionTimeout = decryptionTimeout,
+                                            fetchTimeout = ZERO
+                                        )
+                                    else getTimelineEvent(
+                                        eventId = predecessor.eventId,
+                                        roomId = predecessor.roomId,
+                                        decryptionTimeout = decryptionTimeout,
+                                        fetchTimeout = fetchTimeout,
+                                        limitPerFetch = limitPerFetch,
+                                    )
 
-                            FORWARDS -> getNextTimelineEvent(
-                                event = currentTimelineEvent,
-                                decryptionTimeout = decryptionTimeout,
-                                fetchTimeout = ZERO
+                                FORWARDS ->
+                                    if (successor == null)
+                                        getNextTimelineEvent(
+                                            event = currentTimelineEvent,
+                                            decryptionTimeout = decryptionTimeout,
+                                            fetchTimeout = ZERO
+                                        )
+                                    else getTimelineEvent(
+                                        eventId = successor.eventId,
+                                        roomId = successor.roomId,
+                                        decryptionTimeout = decryptionTimeout,
+                                        fetchTimeout = fetchTimeout,
+                                        limitPerFetch = limitPerFetch,
+                                    )
+                            }
+                            if (continueWith != null) emit(
+                                FollowTimelineResult.Continue(continueWith)
                             )
                         }
                     }
                     .first()
-                    .filterNotNull()
+
+                when (followTimelineResult) {
+                    is FollowTimelineResult.Continue ->
+                        currentTimelineEventFlow = followTimelineResult.timelineEventFlow.filterNotNull()
+
+                    is FollowTimelineResult.Stop -> break
+                }
 
                 // check for loop
                 val newTimelineEventSnapshot = currentTimelineEventFlow.first()
@@ -450,7 +505,7 @@ class RoomServiceImpl(
                     throw IllegalStateException(message)
                 } else loopDetectionEventIds.add(newTimelineEventSnapshot.eventId)
 
-                send(currentTimelineEventFlow)
+                emit(currentTimelineEventFlow)
                 size++
             }
         }.buffer(0)

@@ -59,7 +59,7 @@ class TimelineEventHandlerImpl(
             val roomId = room.key
             room.value.timeline?.also {
                 timelineMutex.withLock(roomId) {
-                    tm.withWriteTransaction { // if something fails, no event is saved at all
+                    tm.withAsyncWriteTransaction { // if something fails, no event is saved at all
                         addEventsToTimelineAtEnd(
                             roomId = roomId,
                             newEvents = it.events,
@@ -75,7 +75,7 @@ class TimelineEventHandlerImpl(
         syncResponse.room?.leave?.entries?.forEach { room ->
             room.value.timeline?.also {
                 timelineMutex.withLock(room.key) {
-                    tm.withWriteTransaction { // if something fails, no event is saved at all
+                    tm.withAsyncWriteTransaction { // if something fails, no event is saved at all
                         addEventsToTimelineAtEnd(
                             roomId = room.key,
                             newEvents = it.events,
@@ -226,7 +226,7 @@ class TimelineEventHandlerImpl(
             }
 
             if (insertNewEvents)
-                tm.withWriteTransaction { // if something fails, no event is saved at all
+                tm.withAsyncWriteTransaction { // if something fails, no event is saved at all
                     roomTimelineStore.addEventsToTimeline(
                         startEvent = startEvent,
                         roomId = roomId,

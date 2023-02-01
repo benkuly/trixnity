@@ -14,9 +14,14 @@ class MatrixClientConfiguration {
     var setOwnMessagesAsFullyRead: Boolean = false
 
     /**
+     * Automatically join upgraded rooms.
+     */
+    var autoJoinUpgradedRooms: Boolean = true
+
+    /**
      * Enables async database transactions. It adds a huge performance boost on processing syncs.
      */
-    var enableAsyncTransactions: Boolean = true
+    var asyncTransactions: Boolean = true
 
     /**
      * Specifies how long values are kept in the cache when not used by anyone.

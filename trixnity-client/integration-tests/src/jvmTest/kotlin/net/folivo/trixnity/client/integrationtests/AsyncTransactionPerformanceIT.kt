@@ -61,14 +61,14 @@ class AsyncTransactionPerformanceIT {
             "client2", "user1", baseUrl,
             repositoriesModule = createInMemoryRepositoriesModule(),
         ) {
-            enableAsyncTransactions = true
+            asyncTransactions = true
             modules = createDefaultModules() + delayedRepositoryTransactionManagerModule
         }
         startedClientReference = startClient(
             "client3", "user1", baseUrl,
             repositoriesModule = createInMemoryRepositoriesModule(),
         ) {
-            enableAsyncTransactions = false
+            asyncTransactions = false
             modules = createDefaultModules() + delayedRepositoryTransactionManagerModule
         }
     }
@@ -107,7 +107,7 @@ class AsyncTransactionPerformanceIT {
             val asyncTransactionsTime = startedClientAsyncTransactions.measureSyncProcessing()
             val referenceTime = startedClientReference.measureSyncProcessing()
             val diff = referenceTime - asyncTransactionsTime
-            
+
             println("################################")
             println("reference transaction: $referenceTime")
             println("################################")

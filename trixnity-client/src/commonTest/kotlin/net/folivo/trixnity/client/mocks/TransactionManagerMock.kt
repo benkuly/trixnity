@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 
 class TransactionManagerMock : TransactionManager {
-    override suspend fun withWriteTransaction(
+    override suspend fun withAsyncWriteTransaction(
         onRollback: suspend () -> Unit,
         block: suspend () -> Unit
     ): StateFlow<Boolean>? {

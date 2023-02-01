@@ -19,7 +19,7 @@ class MinimalRepositoryStateFlowCacheTest : ShouldSpec({
     val readOperationWasCalled = MutableStateFlow(false)
     val writeOperationWasCalled = MutableStateFlow(false)
     val tm = object : TransactionManager {
-        override suspend fun withWriteTransaction(
+        override suspend fun withAsyncWriteTransaction(
             onRollback: suspend () -> Unit,
             block: suspend () -> Unit
         ): StateFlow<Boolean> =

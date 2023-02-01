@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.Clock
 import mu.KotlinLogging
 import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.OneTimeKeysCount
@@ -18,10 +19,8 @@ import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
-import kotlin.time.measureTimedValue
 
 typealias SyncResponseSubscriber = suspend (Sync.Response) -> Unit
 typealias DeviceListsSubscriber = suspend (Sync.Response.DeviceLists?) -> Unit
@@ -287,7 +286,6 @@ class SyncApiClientImpl(
         _currentSyncState.value = STOPPED
     }
 
-    @OptIn(ExperimentalTime::class)
     private suspend fun syncAndResponse(
         currentBatchToken: MutableStateFlow<String?>,
         filter: String?,
@@ -297,7 +295,7 @@ class SyncApiClientImpl(
         asUserId: UserId?,
     ): Sync.Response {
         val batchToken = currentBatchToken.value
-        val (response, measuredSyncDuration) = measureTimedValue {
+        val (response, measuredSyncDuration) = measureTime<Sync.Response> {
             sync(
                 filter = filter,
                 setPresence = setPresence,
@@ -307,7 +305,7 @@ class SyncApiClientImpl(
                 asUserId = asUserId
             ).getOrThrow()
         }
-        log.debug { "received sync response after $measuredSyncDuration with token $batchToken" }
+        log.debug { "received sync response after about $measuredSyncDuration with token $batchToken" }
         val measuredProcessDuration = measureTime {
             withTransaction(
                 { // on rollback
@@ -317,7 +315,7 @@ class SyncApiClientImpl(
                 processSyncResponse(response)
             }
         }
-        log.debug { "processed sync response in ${measuredProcessDuration.absoluteValue} with token $batchToken" }
+        log.debug { "processed sync response in about $measuredProcessDuration with token $batchToken" }
         currentBatchToken.value = response.nextBatch
         updateSyncState(RUNNING)
         return response
@@ -396,4 +394,13 @@ class SyncApiClientImpl(
             if (it != STOPPING) newSyncState else it
         }
     }
+
+    private suspend fun <T> measureTime(block: suspend () -> T): Pair<T, Duration> {
+        val start = Clock.System.now()
+        val result = block()
+        val stop = Clock.System.now()
+        return result to (stop - start)
+    }
+
+    private suspend fun measureTime(block: suspend () -> Unit): Duration = measureTime<Unit>(block).second
 }

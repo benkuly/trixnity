@@ -18,4 +18,6 @@ data class Room(
     val encryptionAlgorithm: EncryptionAlgorithm? = null,
     val membership: Membership = Membership.JOIN,
     val membersLoaded: Boolean = false,
+    val previousRoomId: RoomId? = null,
+    val nextRoomId: RoomId? = null,
 )
