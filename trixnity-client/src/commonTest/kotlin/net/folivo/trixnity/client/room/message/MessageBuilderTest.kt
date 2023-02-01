@@ -177,16 +177,15 @@ class MessageBuilderTest : ShouldSpec({
                 "format",
                 """
                     <mx-reply>
-                    <blockquote><a href="https://matrix.to/#/!room:server/dino">In reply to</a>
+                    <blockquote>
+                    <a href="https://matrix.to/#/!room:server/dino">In reply to</a>
                     <a href="https://matrix.to/#/@sender:server">@sender:server</a>
                     <br />
-                    dino
-                    <br />
-                    unicorn
+                    dino<br />unicorn
                     </blockquote>
                     </mx-reply>
                     formatted_body
-                """.trimIndent().lines().joinToString(""),
+                """.trimIndent(),
                 RelatesTo.Reply(RelatesTo.ReplyTo(EventId("bla")))
             )
         }
@@ -199,16 +198,15 @@ class MessageBuilderTest : ShouldSpec({
                 "format",
                 """
                     <mx-reply>
-                    <blockquote><a href="https://matrix.to/#/!room:server/dino">In reply to</a>
+                    <blockquote>
+                    <a href="https://matrix.to/#/!room:server/dino">In reply to</a>
                     <a href="https://matrix.to/#/@sender:server">@sender:server</a>
                     <br />
-                    dino
-                    <br />
-                    unicorn
+                    dino<br />unicorn
                     </blockquote>
                     </mx-reply>
                     formatted_body
-                """.trimIndent().lines().joinToString(""),
+                """.trimIndent(),
                 RelatesTo.Thread(EventId("bla"), RelatesTo.ReplyTo(EventId("bla")), true)
             )
         }
