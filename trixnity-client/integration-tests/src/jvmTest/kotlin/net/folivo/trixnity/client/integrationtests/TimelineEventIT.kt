@@ -9,9 +9,12 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room
+import net.folivo.trixnity.client.room.getState
+import net.folivo.trixnity.client.room.getTimeline
 import net.folivo.trixnity.client.room.getTimelineEventsAround
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
@@ -22,6 +25,7 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWA
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
@@ -268,6 +272,40 @@ class TimelineEventIT {
                     }.mapNotNull { it.first().removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun shouldFollowRoomUpgrades(): Unit = runBlocking {
+        withTimeout(30_000) {
+            val oldRoom = client1.api.rooms.createRoom(
+                invite = setOf(client2.userId),
+                roomVersion = "9"
+            ).getOrThrow()
+            client1.room.sendMessage(oldRoom) { text("hi old") }
+            client1.room.getLastTimelineEvent(oldRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
+                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+            }.first { it } // wait for sync
+
+            val newRoom = client1.api.rooms.upgradeRoom(oldRoom, "10").getOrThrow()
+            client1.room.sendMessage(newRoom) { text("hi new") }
+            client1.room.getLastTimelineEvent(newRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
+                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+            }.first { it } // wait for sync
+
+            val timelineFromOldRoom =
+                client1.room.getTimeline(oldRoom, loadingSize = 40).apply {
+                    init(client1.room.getState<CreateEventContent>(oldRoom).first()?.getEventId().shouldNotBeNull())
+                }
+            val timelineFromNewRoom =
+                client1.room.getTimeline(newRoom, loadingSize = 40).apply {
+                    init(client1.room.getById(newRoom).first()?.lastEventId.shouldNotBeNull())
+                    loadBefore()
+                }
+
+            timelineFromOldRoom.state.first().elements.map { it.first().eventId } shouldBe
+                    timelineFromNewRoom.state.first().elements.map { it.first().eventId }
         }
     }
 

@@ -118,6 +118,7 @@ This project contains the following modules, which can be used independently:
       backup is disabled)
     - [x] room list
     - [x] timelines
+    - [x] room upgrades (invisible due to merged timelines and auto-join)
     - [x] user and room display name calculation
     - [x] asynchronous message sending without caring about E2E stuff or online
       status

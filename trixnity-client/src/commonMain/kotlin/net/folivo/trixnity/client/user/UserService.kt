@@ -82,7 +82,7 @@ class UserServiceImpl(
                             notMembership = LEAVE
                         ).getOrThrow()
                         memberEvents.chunked(500).forEach { chunk ->
-                            tm.withWriteTransaction {
+                            tm.withAsyncWriteTransaction {
                                 chunk.forEach { api.sync.emitEvent(it) }
                             }?.first { it } // wait for transaction to be applied
                         }

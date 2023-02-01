@@ -13,15 +13,19 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.startOnce
+import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
@@ -33,6 +37,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     timeout = 5_000
 
     val room = simpleRoom.roomId
+    val sender = UserId("sender", "server")
     lateinit var roomStore: RoomStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomAccountDataStore: RoomAccountDataStore
@@ -91,7 +96,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 senderKey = Key.Curve25519Key(value = "key")
             ),
             EventId("\$event$i"),
-            UserId("sender", "server"),
+            sender,
             room,
             i
         )
@@ -237,6 +242,60 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     timelineEvent2,
                     timelineEvent1.copy(gap = null, previousEventId = null)
                 )
+            }
+        }
+        context("room upgrades") {
+            val newRoom = RoomId("new", "server")
+            val tombstoneEvent = Event.StateEvent(
+                TombstoneEventContent("upgrade", newRoom),
+                EventId("\$tombstone"),
+                sender,
+                room,
+                2000,
+                stateKey = "",
+            )
+            val createEvent = Event.StateEvent(
+                CreateEventContent(sender, predecessor = CreateEventContent.PreviousRoom(room, EventId("\$tombstone"))),
+                EventId("\$create"),
+                sender,
+                newRoom,
+                2000,
+                stateKey = "",
+            )
+            val tombstoneTimelineEvent = TimelineEvent(
+                event = tombstoneEvent,
+                roomId = room,
+                previousEventId = event2.id,
+                nextEventId = null,
+                gap = TimelineEvent.Gap.GapAfter("3")
+            )
+            val createTimelineEvent = TimelineEvent(
+                event = createEvent,
+                roomId = newRoom,
+                previousEventId = null,
+                nextEventId = event3.id,
+                gap = null
+            )
+            val timeline = listOf(
+                timelineEvent1.copy(gap = null, previousEventId = null),
+                timelineEvent2.copy(nextEventId = tombstoneTimelineEvent.eventId),
+                tombstoneTimelineEvent,
+                // new room
+                createTimelineEvent,
+                timelineEvent3.copy(roomId = newRoom, previousEventId = createTimelineEvent.eventId),
+            )
+            beforeTest {
+                roomTimelineStore.addAll(timeline)
+                roomStateStore.save(tombstoneEvent)
+                roomStateStore.save(createEvent)
+            }
+            should("follow room upgrade from old to new room") {
+                cut.getTimelineEvents(event1.id, room, FORWARDS, minSize = 5)
+                    .take(5).toList().map { it.first() } shouldBe timeline
+            }
+            should("follow room upgrade from new to old room") {
+                cut.getTimelineEvents(event3.id, newRoom, BACKWARDS, minSize = 5)
+                    .take(5).toList().map { it.first() } shouldBe timeline.reversed()
             }
         }
         context("toFlowList") {
@@ -442,7 +501,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val event10 = MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("hi"),
                 EventId("\$event10"),
-                UserId("sender", "server"),
+                sender,
                 room,
                 10
             )

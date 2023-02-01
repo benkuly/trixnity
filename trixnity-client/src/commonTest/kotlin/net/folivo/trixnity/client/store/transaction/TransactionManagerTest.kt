@@ -45,7 +45,7 @@ class TransactionManagerTest {
         var blockCalled = false
         val block: suspend () -> Unit = { blockCalled = true }
         val result =
-            cut.withWriteTransaction(onRollback) {
+            cut.withAsyncWriteTransaction(onRollback) {
                 currentCoroutineContext()[AsyncTransactionContext].shouldNotBeNull()
                 cut.writeOperationAsync("key", block)
             }
@@ -61,7 +61,7 @@ class TransactionManagerTest {
         val block: suspend () -> Unit = { blockCalled = true }
         val transactionContext = AsyncTransactionContext()
         withContext(transactionContext) {
-            cut.withWriteTransaction(block = block) shouldBe transactionContext.transactionHasBeenApplied
+            cut.withAsyncWriteTransaction(block = block) shouldBe transactionContext.transactionHasBeenApplied
         }
         blockCalled shouldBe true
     }
@@ -76,7 +76,7 @@ class TransactionManagerTest {
             throw RuntimeException("unicorn not found")
         }
         val result =
-            cut.withWriteTransaction(onRollback) {
+            cut.withAsyncWriteTransaction(onRollback) {
                 currentCoroutineContext()[AsyncTransactionContext].shouldNotBeNull()
                 cut.writeOperationAsync("key", block)
             }.shouldNotBeNull()
@@ -88,9 +88,9 @@ class TransactionManagerTest {
 
     @Test
     fun shouldJustDoWriteTransactionWhenAsyncDisabled() = runTest {
-        config.enableAsyncTransactions = false
+        config.asyncTransactions = false
         val block: suspend () -> Unit = {}
-        cut.withWriteTransaction(block = block) shouldBe null
+        cut.withAsyncWriteTransaction(block = block) shouldBe null
         rtm.writeTransactionCalled.value[0] shouldBe block
     }
 
@@ -138,7 +138,7 @@ class TransactionManagerTest {
 
     @Test
     fun shouldJustDoWriteTransactionWhenAsyncDisabled2() = runTest {
-        config.enableAsyncTransactions = false
+        config.asyncTransactions = false
         val block: suspend () -> Unit = {}
         cut.writeOperation(block = block)
         rtm.writeTransactionCalled.value[0] shouldBe block
