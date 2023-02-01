@@ -34,7 +34,7 @@ fun MessageBuilder.notice(
                 val repliedEventContent = repliedEvent?.content?.getOrNull()
                 val richReplyBody = if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
                     "<${repliedEvent.event.sender.full}> ${repliedEventContent.body}"
-                        .split("\n").joinToString("\n") { "> $it" }
+                        .splitToSequence("\n").joinToString("\n") { "> $it" }
                 } else body
                 val richReplyFormattedBody =
                     if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
@@ -51,7 +51,7 @@ fun MessageBuilder.notice(
                         </blockquote>
                         </mx-reply>
                         ${formattedBody ?: body.replace("\n", "<br />")}
-                    """.trimIndent().lines().joinToString("")
+                    """.trimIndent()
                     } else formattedBody
                 NoticeMessageEventContent(
                     body = richReplyBody,

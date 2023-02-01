@@ -235,3 +235,28 @@ fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
     is VerificationRequestMessageEventContent,
     is VideoMessageEventContent -> null
 }
+
+val RoomMessageEventContent.bodyWithoutFallback: String
+    get() =
+        if (this.relatesTo?.replyTo != null) {
+            var fallbackEnded = false
+            body.lineSequence().filter {
+                if (fallbackEnded) true
+                else {
+                    it.startsWith("> ")
+                        .also { isFallback -> if (isFallback.not()) fallbackEnded = true }
+                }
+            }.joinToString("\n")
+        } else body
+
+val TextMessageEventContent.formattedBodyWithoutFallback: String?
+    get() = formattedBody?.removeFallbackFromFormattedBody()
+
+val NoticeMessageEventContent.formattedBodyWithoutFallback: String?
+    get() = formattedBody?.removeFallbackFromFormattedBody()
+
+val EmoteMessageEventContent.formattedBodyWithoutFallback: String?
+    get() = formattedBody?.removeFallbackFromFormattedBody()
+
+private fun String.removeFallbackFromFormattedBody(): String =
+    substringAfter("</mx-reply>").removePrefix("\n")
