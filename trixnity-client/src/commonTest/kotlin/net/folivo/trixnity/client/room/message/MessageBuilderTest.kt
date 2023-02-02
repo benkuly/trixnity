@@ -173,7 +173,7 @@ class MessageBuilderTest : ShouldSpec({
                 reply(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent(
-                "> <@sender:server> dino\n> unicorn",
+                "> <@sender:server> dino\n> unicorn\nbody",
                 "format",
                 """
                     <mx-reply>
@@ -194,7 +194,7 @@ class MessageBuilderTest : ShouldSpec({
                 thread(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent(
-                "> <@sender:server> dino\n> unicorn",
+                "> <@sender:server> dino\n> unicorn\nbody",
                 "format",
                 """
                     <mx-reply>
@@ -208,6 +208,52 @@ class MessageBuilderTest : ShouldSpec({
                     formatted_body
                 """.trimIndent(),
                 RelatesTo.Thread(EventId("bla"), RelatesTo.ReplyTo(EventId("bla")), true)
+            )
+        }
+        should("create fallback text on reply to image") {
+            val roomService = RoomServiceMock().apply {
+                rooms.value = mapOf(
+                    encryptedRoom to MutableStateFlow(
+                        Room(
+                            encryptedRoom,
+                            encryptionAlgorithm = EncryptionAlgorithm.Megolm
+                        )
+                    ),
+                    unencryptedRoom to MutableStateFlow(Room(unencryptedRoom)),
+                )
+                returnGetTimelineEvent = flowOf(
+                    TimelineEvent(
+                        event = Event.MessageEvent(
+                            ImageMessageEventContent(body = "", url = "http://localhost/media/123456"), // <- image!
+                            EventId("dino"),
+                            UserId("sender", "server"),
+                            RoomId("room", "server"),
+                            1234
+                        ),
+                        gap = null,
+                        nextEventId = null,
+                        previousEventId = null,
+                    )
+                )
+            }
+            MessageBuilder(encryptedRoom, roomService, mediaService).build {
+                reply(timelineEvent(EventId("bla")))
+                text("body", "format", "formatted_body")
+            } shouldBe TextMessageEventContent(
+                "> <@sender:server> sent an image.\nbody",
+                "format",
+                """
+                    <mx-reply>
+                    <blockquote>
+                    <a href="https://matrix.to/#/!room:server/dino">In reply to</a>
+                    <a href="https://matrix.to/#/@sender:server">@sender:server</a>
+                    <br />
+                    sent an image.
+                    </blockquote>
+                    </mx-reply>
+                    formatted_body
+                """.trimIndent(),
+                RelatesTo.Reply(RelatesTo.ReplyTo(EventId("bla")))
             )
         }
     }

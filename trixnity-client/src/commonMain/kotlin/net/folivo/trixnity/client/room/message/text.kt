@@ -1,11 +1,13 @@
 package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.client.room.firstWithContent
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.getFormattedBody
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
+import net.folivo.trixnity.core.model.events.m.room.getFormattedBodyReference
 
 @TrixnityDsl
 fun MessageBuilder.text(
@@ -26,27 +28,8 @@ fun MessageBuilder.text(
                 val repliedEvent = relatesTo.replyTo?.eventId
                     ?.let { roomService.getTimelineEvent(it, roomId).firstWithContent() }
                 val repliedEventContent = repliedEvent?.content?.getOrNull()
-                val richReplyBody = if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
-                    "<${repliedEvent.event.sender.full}> ${repliedEventContent.body}"
-                        .splitToSequence("\n").joinToString("\n") { "> $it" }
-                } else body
-                val richReplyFormattedBody =
-                    if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
-                        """
-                        <mx-reply>
-                        <blockquote>
-                        <a href="https://matrix.to/#/${repliedEvent.roomId.full}/${repliedEvent.eventId.full}">In reply to</a>
-                        <a href="https://matrix.to/#/${repliedEvent.event.sender.full}">${repliedEvent.event.sender.full}</a>
-                        <br />
-                        ${
-                            repliedEventContent.getFormattedBody()
-                                ?: repliedEventContent.body.replace("\n", "<br />")
-                        }
-                        </blockquote>
-                        </mx-reply>
-                        ${formattedBody ?: body.replace("\n", "<br />")}
-                    """.trimIndent()
-                    } else formattedBody
+                val (richReplyBody, richReplyFormattedBody) =
+                    computeRichReplies(repliedEvent, body, repliedEventContent, formattedBody)
                 TextMessageEventContent(
                     body = richReplyBody,
                     format = format,
@@ -64,3 +47,47 @@ fun MessageBuilder.text(
         }
     }
 }
+
+internal fun computeRichReplies(
+    repliedEvent: TimelineEvent?,
+    body: String,
+    repliedEventContent: RoomEventContent?,
+    formattedBody: String?
+): Pair<String, String?> {
+    val richReplyBody = if (repliedEvent == null) {
+        body
+    } else {
+        val sender = "<${repliedEvent.event.sender.full}>"
+        when (repliedEventContent) {
+            is TextMessageEventContent -> "$sender ${repliedEventContent.body}".fallback()
+            is NoticeMessageEventContent -> "$sender ${repliedEventContent.body}".fallback()
+            is EmoteMessageEventContent -> "$sender ${repliedEventContent.body}".fallback()
+            is ImageMessageEventContent -> "$sender sent an image.".fallback()
+            is VideoMessageEventContent -> "$sender sent a video.".fallback()
+            is AudioMessageEventContent -> "$sender sent an audio.".fallback()
+            is FileMessageEventContent -> "$sender sent a file.".fallback()
+            is RoomMessageEventContent -> "$sender ${repliedEventContent.body}".fallback()
+            else -> "$sender sent unknown data.".fallback()
+        } + "\n$body"
+    }
+    val richReplyFormattedBody =
+        if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
+            """
+            <mx-reply>
+            <blockquote>
+            <a href="https://matrix.to/#/${repliedEvent.roomId.full}/${repliedEvent.eventId.full}">In reply to</a>
+            <a href="https://matrix.to/#/${repliedEvent.event.sender.full}">${repliedEvent.event.sender.full}</a>
+            <br />
+            ${
+                repliedEventContent.getFormattedBodyReference()
+                    ?: repliedEventContent.body.replace("\n", "<br />")
+            }
+            </blockquote>
+            </mx-reply>
+            ${formattedBody ?: body.replace("\n", "<br />")}
+            """.trimIndent()
+        } else formattedBody
+    return Pair(richReplyBody, richReplyFormattedBody)
+}
+
+private fun String.fallback(): String = this.splitToSequence("\n").joinToString("\n") { "> $it" }
