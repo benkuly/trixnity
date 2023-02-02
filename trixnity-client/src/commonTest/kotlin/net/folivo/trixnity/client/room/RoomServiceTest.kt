@@ -259,54 +259,61 @@ class RoomServiceTest : ShouldSpec({
             }
         }
         context("content has been replaced") {
-            should("replace content with content of other timeline event") {
-                val replaceTimelineEvent = TimelineEvent(
-                    event = MessageEvent(
-                        encryptedEventContent, // in reality there is a relatesTo
-                        EventId("\$event2"),
-                        UserId("sender", "server"),
-                        room,
-                        1
-                    ),
-                    content = Result.success(
-                        TextMessageEventContent(
-                            "*edited hi",
-                            relatesTo = RelatesTo.Replace(
-                                EventId("\$event1"),
-                                TextMessageEventContent("edited hi")
-                            )
+            val replaceTimelineEvent = TimelineEvent(
+                event = MessageEvent(
+                    encryptedEventContent, // in reality there is a relatesTo
+                    EventId("\$event2"),
+                    UserId("sender", "server"),
+                    room,
+                    1
+                ),
+                content = Result.success(
+                    TextMessageEventContent(
+                        "*edited hi",
+                        relatesTo = RelatesTo.Replace(
+                            EventId("\$event1"),
+                            TextMessageEventContent("edited hi")
                         )
-                    ),
-                    previousEventId = null,
-                    nextEventId = null,
-                    gap = null
-                )
-                val timelineEvent = TimelineEvent(
-                    event = MessageEvent(
-                        encryptedEventContent,
-                        EventId("\$event1"),
-                        UserId("sender", "server"),
-                        room,
-                        1,
-                        UnsignedRoomEventData.UnsignedMessageEventData(
-                            aggregations = Aggregations(
-                                mapOf(
-                                    RelationType.Replace to Aggregation.Replace(
-                                        replaceTimelineEvent.eventId,
-                                        replaceTimelineEvent.event.sender,
-                                        replaceTimelineEvent.event.originTimestamp
-                                    )
+                    )
+                ),
+                previousEventId = null,
+                nextEventId = null,
+                gap = null
+            )
+            val timelineEvent = TimelineEvent(
+                event = MessageEvent(
+                    encryptedEventContent,
+                    EventId("\$event1"),
+                    UserId("sender", "server"),
+                    room,
+                    1,
+                    UnsignedRoomEventData.UnsignedMessageEventData(
+                        aggregations = Aggregations(
+                            mapOf(
+                                RelationType.Replace to Aggregation.Replace(
+                                    replaceTimelineEvent.eventId,
+                                    replaceTimelineEvent.event.sender,
+                                    replaceTimelineEvent.event.originTimestamp
                                 )
                             )
                         )
-                    ),
-                    previousEventId = null,
-                    nextEventId = null,
-                    gap = null
-                )
+                    )
+                ),
+                content = Result.success(TextMessageEventContent("hi")),
+                previousEventId = null,
+                nextEventId = null,
+                gap = null
+            )
+            should("replace content with content of other timeline event") {
                 roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
                 cut.getTimelineEvent(eventId, room).first() shouldBe timelineEvent.copy(
                     content = Result.success(TextMessageEventContent("edited hi"))
+                )
+            }
+            should("not replace content when disabled") {
+                roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
+                cut.getTimelineEvent(eventId, room, allowReplaceContent = false).first() shouldBe timelineEvent.copy(
+                    content = Result.success(TextMessageEventContent("hi"))
                 )
             }
         }

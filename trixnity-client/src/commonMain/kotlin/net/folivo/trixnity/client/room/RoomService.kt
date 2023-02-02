@@ -56,6 +56,7 @@ interface RoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
+        allowReplaceContent: Boolean = true,
     ): Flow<TimelineEvent>
 
     fun getPreviousTimelineEvent(
@@ -63,6 +64,7 @@ interface RoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
+        allowReplaceContent: Boolean = true,
     ): Flow<TimelineEvent>?
 
     fun getNextTimelineEvent(
@@ -70,6 +72,7 @@ interface RoomService {
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
+        allowReplaceContent: Boolean = true,
     ): Flow<TimelineEvent>?
 
     fun getLastTimelineEvent(
@@ -246,10 +249,6 @@ class RoomServiceImpl(
 
     private val getTimelineEventMutex = MutableStateFlow<Map<Pair<EventId, RoomId>, Mutex>>(mapOf())
 
-    /**
-     * @param coroutineScope The [CoroutineScope] is used to fetch and/or decrypt the [TimelineEvent] and to determine,
-     * how long the [TimelineEvent] should be hold in cache.
-     */
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTimelineEvent(
         eventId: EventId,
@@ -257,17 +256,18 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
+        allowReplaceContent: Boolean,
     ): Flow<TimelineEvent> = channelFlow {
         roomTimelineStore.get(eventId, roomId)
             .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
-                if (event is MessageEvent) {
+                if (allowReplaceContent && event is MessageEvent) {
                     val replacedBy = event.unsigned?.aggregations?.replace
                     if (replacedBy != null) {
                         emitAll(getTimelineEvent(replacedBy.eventId, roomId)
                             .map { replacedByTimelineEvent ->
                                 val newContent =
-                                    replacedByTimelineEvent?.content
+                                    replacedByTimelineEvent.content
                                         ?.map { content ->
                                             if (content is MessageEventContent) {
                                                 val relatesTo = content.relatesTo
@@ -337,9 +337,17 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
+        allowReplaceContent: Boolean,
     ): Flow<TimelineEvent>? {
         return event.previousEventId?.let {
-            getTimelineEvent(it, event.roomId, decryptionTimeout, fetchTimeout, limitPerFetch)
+            getTimelineEvent(
+                eventId = it,
+                roomId = event.roomId,
+                decryptionTimeout = decryptionTimeout,
+                fetchTimeout = fetchTimeout,
+                limitPerFetch = limitPerFetch,
+                allowReplaceContent = allowReplaceContent,
+            )
         }
     }
 
@@ -348,6 +356,7 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
+        allowReplaceContent: Boolean,
     ): Flow<TimelineEvent>? {
         return event.nextEventId?.let {
             getTimelineEvent(
@@ -355,7 +364,8 @@ class RoomServiceImpl(
                 roomId = event.roomId,
                 decryptionTimeout = decryptionTimeout,
                 fetchTimeout = fetchTimeout,
-                limitPerFetch = limitPerFetch
+                limitPerFetch = limitPerFetch,
+                allowReplaceContent = allowReplaceContent,
             )
         }
     }

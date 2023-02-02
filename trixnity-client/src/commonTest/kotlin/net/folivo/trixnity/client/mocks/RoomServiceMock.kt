@@ -35,6 +35,7 @@ class RoomServiceMock : RoomService {
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
+        allowReplaceContent: Boolean
     ): Flow<TimelineEvent> {
         return returnGetTimelineEvent
     }
@@ -43,7 +44,8 @@ class RoomServiceMock : RoomService {
         event: TimelineEvent,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
-        limitPerFetch: Long
+        limitPerFetch: Long,
+        allowReplaceContent: Boolean
     ): Flow<TimelineEvent>? {
         throw NotImplementedError()
     }
@@ -52,7 +54,8 @@ class RoomServiceMock : RoomService {
         event: TimelineEvent,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
-        limitPerFetch: Long
+        limitPerFetch: Long,
+        allowReplaceContent: Boolean
     ): Flow<TimelineEvent>? {
         throw NotImplementedError()
     }
