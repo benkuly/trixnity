@@ -236,17 +236,25 @@ fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
     is VideoMessageEventContent -> null
 }
 
+fun RoomMessageEventContent.getFormattedBodyReference(): String? = when (this) {
+    is TextMessageEventContent -> formattedBody
+    is NoticeMessageEventContent -> formattedBody
+    is EmoteMessageEventContent -> formattedBody
+    is AudioMessageEventContent -> "sent an audio."
+    is FileMessageEventContent -> "sent a file."
+    is ImageMessageEventContent -> "sent an image."
+    is VideoMessageEventContent -> "sent a video."
+    is UnknownRoomMessageEventContent -> null
+    is VerificationRequestMessageEventContent -> null
+}
+
 val RoomMessageEventContent.bodyWithoutFallback: String
     get() =
         if (this.relatesTo?.replyTo != null) {
-            var fallbackEnded = false
-            body.lineSequence().filter {
-                if (fallbackEnded) true
-                else {
-                    it.startsWith("> ")
-                        .also { isFallback -> if (isFallback.not()) fallbackEnded = true }
-                }
-            }.joinToString("\n")
+            body.lineSequence()
+                .dropWhile { it.startsWith("> ") }
+                .dropWhile { it == "" }
+                .joinToString("\n")
         } else body
 
 val TextMessageEventContent.formattedBodyWithoutFallback: String?
