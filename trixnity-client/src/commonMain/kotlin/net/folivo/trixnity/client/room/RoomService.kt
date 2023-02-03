@@ -128,13 +128,13 @@ interface RoomService {
      * These gaps in the timeline are not filled automatically. Gap filling is available in
      * [getTimelineEvents] and [getLastTimelineEvents].
      *
-     * @param syncResponseBufferSize the size of the buffer for consuming the sync response. When set to 0, the sync will
-     * be suspended until all events from the sync response are consumed. This could prevent decryption, because keys may
-     * be received in a later sync response.
+     * @param syncResponseBufferSize the number of syncs that will be buffered. When set to 0, the sync will
+     * be suspended until all events from the current sync response are consumed. This could prevent decryption,
+     * because keys may be received in a later sync response.
      */
     fun getTimelineEventsFromNowOn(
         decryptionTimeout: Duration = 30.seconds,
-        syncResponseBufferSize: Int = 10,
+        syncResponseBufferSize: Int = 4,
     ): Flow<TimelineEvent>
 
     /**
@@ -164,11 +164,16 @@ interface RoomService {
         relationType: RelationType,
     ): Flow<Set<TimelineEventRelation>?>
 
+    /**
+     * Puts a message to the outbox.
+     *
+     * @return The transaction id that was used to send the message.
+     */
     suspend fun sendMessage(
         roomId: RoomId,
         keepMediaInCache: Boolean = true,
         builder: suspend MessageBuilder.() -> Unit
-    )
+    ): String
 
     suspend fun abortSendMessage(transactionId: String)
 
@@ -546,7 +551,7 @@ class RoomServiceImpl(
             val subscriber: AfterSyncResponseSubscriber = { send(it) }
             api.sync.subscribeAfterSyncResponse(subscriber)
             awaitClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
-        }.flatMapConcat { syncResponse ->
+        }.buffer(syncResponseBufferSize).flatMapConcat { syncResponse ->
             coroutineScope {
                 val timelineEvents =
                     syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
@@ -600,7 +605,7 @@ class RoomServiceImpl(
         roomId: RoomId,
         keepMediaInCache: Boolean,
         builder: suspend MessageBuilder.() -> Unit
-    ) {
+    ): String {
         val isEncryptedRoom = roomStore.get(roomId).first()?.encryptionAlgorithm == Megolm
         val content = MessageBuilder(isEncryptedRoom, mediaService).build(builder)
         requireNotNull(content)
@@ -615,6 +620,7 @@ class RoomServiceImpl(
                 mediaUploadProgress = MutableStateFlow(null)
             )
         }
+        return transactionId
     }
 
     override suspend fun abortSendMessage(transactionId: String) {
