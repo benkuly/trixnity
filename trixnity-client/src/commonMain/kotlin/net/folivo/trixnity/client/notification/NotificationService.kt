@@ -42,7 +42,7 @@ interface NotificationService {
 
     fun getNotifications(
         decryptionTimeout: Duration = 5.seconds,
-        syncResponseBufferSize: Int = 0
+        syncResponseBufferSize: Int = 4
     ): Flow<Notification>
 }
 

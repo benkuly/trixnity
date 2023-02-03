@@ -126,7 +126,7 @@ class RoomServiceMock : RoomService {
         roomId: RoomId,
         keepMediaInCache: Boolean,
         builder: suspend MessageBuilder.() -> Unit
-    ) {
+    ): String {
         throw NotImplementedError()
     }
 
