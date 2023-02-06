@@ -6,6 +6,7 @@ import net.folivo.trixnity.client.store.transaction.TransactionManager
 class TransactionManagerMock : TransactionManager {
     override suspend fun withAsyncWriteTransaction(
         onRollback: suspend () -> Unit,
+        wait: Boolean,
         block: suspend () -> Unit
     ): StateFlow<Boolean>? {
         block()
