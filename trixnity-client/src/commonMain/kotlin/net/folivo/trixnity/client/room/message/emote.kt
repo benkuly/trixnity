@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.room.message
 import net.folivo.trixnity.client.room.firstWithContent
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.EmoteMessageEventContent
 
 @TrixnityDsl
@@ -33,7 +32,7 @@ fun MessageBuilder.emote(
                 val repliedEventContent = repliedEvent?.content?.getOrNull()
                 val (richReplyBody, richReplyFormattedBody) =
                     computeRichReplies(repliedEvent, body, repliedEventContent, formattedBody)
-                RoomMessageEventContent.TextMessageEventContent(
+                EmoteMessageEventContent(
                     body = richReplyBody,
                     format = format,
                     formattedBody = richReplyFormattedBody,
