@@ -425,9 +425,10 @@ class MatrixClientImpl internal constructor(
         startSync()
     }
 
-    private val syncTransaction: suspend (onRollback: suspend () -> Unit, block: suspend () -> Unit) -> Unit =
-        if (config.asyncTransactions) tm::withAsyncWriteTransaction
-        else { _, b -> b() }
+    private val syncTransaction: suspend (block: suspend () -> Unit) -> Unit =
+        if (config.asyncTransactions) { b -> tm.withAsyncWriteTransaction(wait = true, block = b) }
+        else { b -> b() }
+
 
     override suspend fun startSync() {
         startMatrixClient()

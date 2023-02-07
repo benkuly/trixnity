@@ -22,6 +22,7 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
     val tm = object : TransactionManager {
         override suspend fun withAsyncWriteTransaction(
             onRollback: suspend () -> Unit,
+            wait: Boolean,
             block: suspend () -> Unit
         ): StateFlow<Boolean> =
             throw AssertionError("should not call withWriteTransaction")
