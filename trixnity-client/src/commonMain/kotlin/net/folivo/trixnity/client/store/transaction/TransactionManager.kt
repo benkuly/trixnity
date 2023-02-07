@@ -5,6 +5,7 @@ import arrow.fx.coroutines.retry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClientConfiguration
@@ -16,6 +17,7 @@ private val log = KotlinLogging.logger { }
 interface TransactionManager {
     suspend fun withAsyncWriteTransaction(
         onRollback: suspend () -> Unit = {},
+        wait: Boolean = false,
         block: suspend () -> Unit
     ): StateFlow<Boolean>?
 
@@ -106,6 +108,7 @@ class TransactionManagerImpl(
 
     override suspend fun withAsyncWriteTransaction(
         onRollback: suspend () -> Unit,
+        wait: Boolean,
         block: suspend () -> Unit
     ): StateFlow<Boolean>? =
         if (config.asyncTransactions) {
@@ -126,6 +129,8 @@ class TransactionManagerImpl(
                 log.trace { "use existing async transaction id=${existingTransactionContext.id}" }
                 block()
                 existingTransactionContext.transactionHasBeenApplied
+            }.also { transactionHasBeenApplied ->
+                if (wait) transactionHasBeenApplied.first { it }
             }
         } else {
             rtm.writeTransaction(block)

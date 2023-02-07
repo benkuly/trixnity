@@ -103,7 +103,7 @@ interface SyncApiClient : EventEmitter {
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
-        withTransaction: suspend (onRollback: suspend () -> Unit, block: suspend () -> Unit) -> Unit = { _, b -> b() },
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
         asUserId: UserId? = null,
         wait: Boolean = false,
         scope: CoroutineScope,
@@ -114,7 +114,7 @@ interface SyncApiClient : EventEmitter {
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 0,
-        withTransaction: suspend (onRollback: suspend () -> Unit, block: suspend () -> Unit) -> Unit = { _, b -> b() },
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
         asUserId: UserId? = null,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T>
@@ -128,7 +128,7 @@ suspend fun SyncApiClient.startOnce(
     setPresence: Presence? = null,
     currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
     timeout: Long = 0,
-    withTransaction: suspend (onRollback: suspend () -> Unit, block: suspend () -> Unit) -> Unit = { _, b -> b() },
+    withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
     asUserId: UserId? = null,
 ): Result<Unit> =
     startOnce(
@@ -205,7 +205,7 @@ class SyncApiClientImpl(
         setPresence: Presence?,
         currentBatchToken: MutableStateFlow<String?>,
         timeout: Long,
-        withTransaction: suspend (onRollback: suspend () -> Unit, block: suspend () -> Unit) -> Unit,
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
         wait: Boolean,
         scope: CoroutineScope,
@@ -265,7 +265,7 @@ class SyncApiClientImpl(
         setPresence: Presence?,
         currentBatchToken: MutableStateFlow<String?>,
         timeout: Long,
-        withTransaction: suspend (onRollback: suspend () -> Unit, block: suspend () -> Unit) -> Unit,
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T> = kotlin.runCatching {
@@ -291,7 +291,7 @@ class SyncApiClientImpl(
         filter: String?,
         setPresence: Presence?,
         timeout: Long,
-        withTransaction: suspend (onRollback: suspend () -> Unit, block: suspend () -> Unit) -> Unit,
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
     ): Sync.Response {
         val batchToken = currentBatchToken.value
@@ -307,11 +307,7 @@ class SyncApiClientImpl(
         }
         log.debug { "received sync response after about $measuredSyncDuration with token $batchToken" }
         val measuredProcessDuration = measureTime {
-            withTransaction(
-                { // on rollback
-                    currentBatchToken.value = batchToken
-                }
-            ) {
+            withTransaction {
                 processSyncResponse(response)
             }
         }
