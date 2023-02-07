@@ -55,18 +55,14 @@ internal fun computeRichReplies(
     repliedEventContent: RoomEventContent?,
     formattedBody: String?
 ): Pair<String, String?> {
-    val richReplyBody = if (repliedEvent == null) {
-        body
-    } else {
+    val richReplyBody = if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
         val sender = "<${repliedEvent.event.sender.full}>"
-        if (repliedEventContent is RoomMessageEventContent) {
-            when (repliedEventContent) {
-                is EmoteMessageEventContent -> "* $sender ${repliedEventContent.body}".fallback() + "\n$body"
-                else -> "$sender ${repliedEventContent.body}".fallback() + "\n$body"
-            }
-        } else {
-            body
+        when (repliedEventContent) {
+            is EmoteMessageEventContent -> "* $sender ${repliedEventContent.body}".fallback() + "\n$body"
+            else -> "$sender ${repliedEventContent.body}".fallback() + "\n$body"
         }
+    } else {
+        body
     }
     val richReplyFormattedBody =
         if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
