@@ -224,7 +224,10 @@ class MessageBuilderTest : ShouldSpec({
                 returnGetTimelineEvent = flowOf(
                     TimelineEvent(
                         event = Event.MessageEvent(
-                            ImageMessageEventContent(body = "", url = "http://localhost/media/123456"), // <- image!
+                            ImageMessageEventContent(
+                                body = "image.png",
+                                url = "http://localhost/media/123456"
+                            ), // <- image!
                             EventId("dino"),
                             UserId("sender", "server"),
                             RoomId("room", "server"),
@@ -240,7 +243,7 @@ class MessageBuilderTest : ShouldSpec({
                 reply(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent(
-                "> <@sender:server> sent an image.\nbody",
+                "> <@sender:server> image.png\nbody",
                 "format",
                 """
                     <mx-reply>
@@ -248,7 +251,7 @@ class MessageBuilderTest : ShouldSpec({
                     <a href="https://matrix.to/#/!room:server/dino">In reply to</a>
                     <a href="https://matrix.to/#/@sender:server">@sender:server</a>
                     <br />
-                    sent an image.
+                    image.png
                     </blockquote>
                     </mx-reply>
                     formatted_body

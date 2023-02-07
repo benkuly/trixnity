@@ -6,8 +6,8 @@ import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
-import net.folivo.trixnity.core.model.events.m.room.getFormattedBodyReference
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.getFormattedBody
 
 @TrixnityDsl
 fun MessageBuilder.text(
@@ -58,17 +58,11 @@ internal fun computeRichReplies(
         body
     } else {
         val sender = "<${repliedEvent.event.sender.full}>"
-        when (repliedEventContent) {
-            is TextMessageEventContent -> "$sender ${repliedEventContent.body}".fallback()
-            is NoticeMessageEventContent -> "$sender ${repliedEventContent.body}".fallback()
-            is EmoteMessageEventContent -> "$sender ${repliedEventContent.body}".fallback()
-            is ImageMessageEventContent -> "$sender sent an image.".fallback()
-            is VideoMessageEventContent -> "$sender sent a video.".fallback()
-            is AudioMessageEventContent -> "$sender sent an audio.".fallback()
-            is FileMessageEventContent -> "$sender sent a file.".fallback()
-            is RoomMessageEventContent -> "$sender ${repliedEventContent.body}".fallback()
-            else -> "$sender sent unknown data.".fallback()
-        } + "\n$body"
+        if (repliedEventContent is RoomMessageEventContent) {
+            "$sender ${repliedEventContent.body}".fallback() + "\n$body"
+        } else {
+            body
+        }
     }
     val richReplyFormattedBody =
         if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
@@ -79,7 +73,7 @@ internal fun computeRichReplies(
             <a href="https://matrix.to/#/${repliedEvent.event.sender.full}">${repliedEvent.event.sender.full}</a>
             <br />
             ${
-                repliedEventContent.getFormattedBodyReference()
+                repliedEventContent.getFormattedBody()
                     ?: repliedEventContent.body.replace("\n", "<br />")
             }
             </blockquote>
