@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
@@ -27,34 +28,34 @@ class UserServiceMock : UserService {
     }
 
 
-    override fun getById(userId: UserId, roomId: RoomId): Flow<RoomUser?> {
+    override fun getById(roomId: RoomId, userId: UserId): Flow<RoomUser?> {
         throw NotImplementedError()
     }
 
     override fun canKickUser(
-        userId: UserId,
-        roomId: RoomId
+        roomId: RoomId,
+        userId: UserId
     ): Flow<Boolean> {
         throw NotImplementedError()
     }
 
     override fun canBanUser(
-        userId: UserId,
-        roomId: RoomId
+        roomId: RoomId,
+        userId: UserId
     ): Flow<Boolean> {
         throw NotImplementedError()
     }
 
     override fun canUnbanUser(
-        userId: UserId,
-        roomId: RoomId
+        roomId: RoomId,
+        userId: UserId
     ): Flow<Boolean> {
         throw NotImplementedError()
     }
 
     override fun canInviteUser(
-        userId: UserId,
-        roomId: RoomId
+        roomId: RoomId,
+        userId: UserId
     ): Flow<Boolean> {
         throw NotImplementedError()
     }
@@ -63,7 +64,15 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
-    override fun getPowerLevel(userId: UserId, roomId: RoomId): Flow<Int> {
+    override fun canRedactEvent(roomId: RoomId, eventId: EventId): Flow<Boolean> {
+        throw NotImplementedError()
+    }
+
+    override fun canSendMessages(roomId: RoomId): Flow<Boolean> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Int> {
         throw NotImplementedError()
     }
 
@@ -76,8 +85,8 @@ class UserServiceMock : UserService {
     }
 
     override fun canSetPowerLevelToMax(
-        userId: UserId,
-        roomId: RoomId
+        roomId: RoomId,
+        userId: UserId
     ): Flow<Int?> {
         throw NotImplementedError()
     }

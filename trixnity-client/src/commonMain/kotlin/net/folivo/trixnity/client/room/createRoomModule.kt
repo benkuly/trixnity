@@ -82,7 +82,6 @@ fun createRoomModule() = module {
             get(named<TypingEventHandler>()),
             get(),
             get(),
-            get(),
         )
     }
 }

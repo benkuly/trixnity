@@ -28,7 +28,7 @@ fun MessageBuilder.notice(
 
             is RelatesTo.Reply, is RelatesTo.Thread -> {
                 val repliedEvent = relatesTo.replyTo?.eventId
-                    ?.let { roomService.getTimelineEvent(it, roomId).firstWithContent() }
+                    ?.let { roomService.getTimelineEvent(roomId, it).firstWithContent() }
                 val repliedEventContent = repliedEvent?.content?.getOrNull()
                 val (richReplyBody, richReplyFormattedBody) =
                     computeRichReplies(repliedEvent, body, repliedEventContent, formattedBody)

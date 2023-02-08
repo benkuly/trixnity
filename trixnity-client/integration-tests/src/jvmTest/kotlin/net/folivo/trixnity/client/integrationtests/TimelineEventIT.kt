@@ -158,7 +158,7 @@ class TimelineEventIT {
                 val content = it?.first()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }?.first()?.eventId.shouldNotBeNull()
-            val expectedTimeline = client1.room.getTimelineEvents(startFrom, room)
+            val expectedTimeline = client1.room.getTimelineEvents(room, startFrom)
                 .toFlowList(MutableStateFlow(31), MutableStateFlow(31))
                 .first()
                 .mapNotNull { it.first().removeUnsigned() }
@@ -182,7 +182,7 @@ class TimelineEventIT {
                 val content = it?.first()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
-            val timelineFromGappySync = client2.room.getTimelineEvents(startFrom, room)
+            val timelineFromGappySync = client2.room.getTimelineEvents(room, startFrom)
                 .toFlowList(MutableStateFlow(31), MutableStateFlow(31))
                 .first()
                 .mapNotNull { it.first().removeUnsigned() }
@@ -217,7 +217,7 @@ class TimelineEventIT {
                 content is RoomMessageEventContent && content.body == "29"
             }
             val timelineFromGappySync =
-                client2.room.getTimelineEvents(expectedTimeline.last().eventId, room, direction = FORWARDS)
+                client2.room.getTimelineEvents(room, expectedTimeline.last().eventId, direction = FORWARDS)
                     .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
                     .first { list -> list.any { it.first().nextEventId == null } }
                     .mapNotNull { it.first().removeUnsigned() }
@@ -255,8 +255,8 @@ class TimelineEventIT {
             }
             val timelineFromGappySync =
                 client2.room.getTimelineEventsAround(
-                    expectedTimeline[18].eventId,
                     room,
+                    expectedTimeline[18].eventId,
                     maxSizeBefore = MutableStateFlow(100),
                     maxSizeAfter = MutableStateFlow(100)
                 ).debounce(100)
@@ -268,7 +268,7 @@ class TimelineEventIT {
                     }.also { list ->
                         val last = list.last().first().shouldNotBeNull()
                         while (list.last().first().gap != null)
-                            client2.room.fillTimelineGaps(last.eventId, last.roomId)
+                            client2.room.fillTimelineGaps(last.roomId, last.eventId)
                     }.mapNotNull { it.first().removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
@@ -312,13 +312,13 @@ class TimelineEventIT {
     private suspend fun MatrixClient.getExpectedTimelineToBeginning(
         startFrom: EventId,
         roomId: RoomId
-    ) = room.getTimelineEvents(startFrom, roomId)
+    ) = room.getTimelineEvents(roomId, startFrom)
         .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
         .first { list -> list.map { it.first() }.any { it.previousEventId == null } }
         .also { list ->
             val last = list.last().first().shouldNotBeNull()
             while (list.last().first().gap != null)
-                client1.room.fillTimelineGaps(last.eventId, last.roomId)
+                client1.room.fillTimelineGaps(last.roomId, last.eventId)
         }
         .mapNotNull { it.first().removeUnsigned() }
 

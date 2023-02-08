@@ -17,7 +17,6 @@ import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
-import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
@@ -25,7 +24,6 @@ import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -49,12 +47,6 @@ class RoomServiceTest : ShouldSpec({
     val json = createMatrixEventJson()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
     val thisUser = UserId("thisUser")
-    val userInfo = UserInfo(
-        thisUser,
-        "deviceId",
-        signingPublicKey = Key.Ed25519Key(value = ""),
-        Key.Curve25519Key(value = "")
-    )
 
     lateinit var cut: RoomServiceImpl
 
@@ -77,7 +69,6 @@ class RoomServiceTest : ShouldSpec({
             TimelineEventHandlerMock(),
             TypingEventHandler(api),
             CurrentSyncState(currentSyncState),
-            userInfo,
             scope
         )
     }
@@ -160,7 +151,7 @@ class RoomServiceTest : ShouldSpec({
                         )
                     )
                 )
-                val timelineEventFlow = cut.getTimelineEvent(eventId, room)
+                val timelineEventFlow = cut.getTimelineEvent(room, eventId)
                 roomTimelineStore.addAll(
                     listOf(
                         TimelineEvent(
@@ -198,11 +189,11 @@ class RoomServiceTest : ShouldSpec({
                 )
             ) { timelineEvent ->
                 roomTimelineStore.addAll(listOf(timelineEvent))
-                cut.getTimelineEvent(eventId, room).first() shouldBe timelineEvent
+                cut.getTimelineEvent(room, eventId).first() shouldBe timelineEvent
 
                 // event gets changed later (e.g. redaction)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = cut.getTimelineEvent(eventId, room)
+                val result = cut.getTimelineEvent(room, eventId)
                 delay(20)
                 roomTimelineStore.addAll(listOf(timelineEvent))
                 delay(20)
@@ -214,7 +205,7 @@ class RoomServiceTest : ShouldSpec({
                 val expectedDecryptedEvent = TextMessageEventContent("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = { Result.success(expectedDecryptedEvent) }
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = cut.getTimelineEvent(eventId, room)
+                val result = cut.getTimelineEvent(room, eventId)
                     .first { it?.content?.getOrNull() != null }
                 assertSoftly(result) {
                     assertNotNull(this)
@@ -228,7 +219,7 @@ class RoomServiceTest : ShouldSpec({
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
                 (0..99).map {
                     async {
-                        cut.getTimelineEvent(eventId, room)
+                        cut.getTimelineEvent(room, eventId)
                             .first { it?.content?.getOrNull() != null }
                     }
                 }.awaitAll()
@@ -240,7 +231,7 @@ class RoomServiceTest : ShouldSpec({
                     null
                 }
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = async { cut.getTimelineEvent(eventId, room, 0.seconds).first() }
+                val result = async { cut.getTimelineEvent(room, eventId, 0.seconds).first() }
                 // await would suspend infinite, when there is INFINITE timeout, because the coroutine spawned within async would wait for megolm keys
                 result.await() shouldBe encryptedTimelineEvent
                 result.job.children.count() shouldBe 0
@@ -249,7 +240,7 @@ class RoomServiceTest : ShouldSpec({
                 roomEventDecryptionServiceMock.returnDecrypt =
                     { Result.failure(DecryptionException.ValidationFailed("")) }
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = cut.getTimelineEvent(eventId, room)
+                val result = cut.getTimelineEvent(room, eventId)
                     .first { it?.content?.isFailure == true }
                 assertSoftly(result) {
                     assertNotNull(this)
@@ -306,13 +297,13 @@ class RoomServiceTest : ShouldSpec({
             )
             should("replace content with content of other timeline event") {
                 roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
-                cut.getTimelineEvent(eventId, room).first() shouldBe timelineEvent.copy(
+                cut.getTimelineEvent(room, eventId).first() shouldBe timelineEvent.copy(
                     content = Result.success(TextMessageEventContent("edited hi"))
                 )
             }
             should("not replace content when disabled") {
                 roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
-                cut.getTimelineEvent(eventId, room, allowReplaceContent = false).first() shouldBe timelineEvent.copy(
+                cut.getTimelineEvent(room, eventId, allowReplaceContent = false).first() shouldBe timelineEvent.copy(
                     content = Result.success(TextMessageEventContent("hi"))
                 )
             }
@@ -361,190 +352,6 @@ class RoomServiceTest : ShouldSpec({
                     content shouldBe content
                     transactionId.length shouldBeGreaterThan 12
                 }
-            }
-        }
-    }
-    context(RoomServiceImpl::canBeRedacted.name) {
-        val timelineEventByUser = TimelineEvent(
-            event = MessageEvent(
-                content = TextMessageEventContent(body = "Hi"),
-                id = EventId("4711"),
-                sender = thisUser,
-                roomId = room,
-                originTimestamp = 0L,
-            ),
-            previousEventId = null,
-            nextEventId = null,
-            gap = null,
-        )
-        val timelineEventByOtherUser = TimelineEvent(
-            event = MessageEvent(
-                content = TextMessageEventContent(body = "Hi"),
-                id = EventId("4711"),
-                sender = UserId("otherUser"),
-                roomId = room,
-                originTimestamp = 0L,
-            ),
-            previousEventId = null,
-            nextEventId = null,
-            gap = null,
-        )
-
-        should("return true if it is the event of the user and the user's power level is at least as high as the needed event redaction level") {
-            roomStateStore.save(
-                StateEvent(
-                    content = PowerLevelsEventContent(
-                        users = mapOf(
-                            thisUser to 40,
-                        ),
-                        events = mapOf(
-                            "m.room.redaction" to 30,
-                        )
-                    ),
-                    id = EventId("eventId"),
-                    sender = thisUser,
-                    roomId = room,
-                    originTimestamp = 0L,
-                    stateKey = "",
-                )
-            )
-            cut.canBeRedacted(
-                timelineEvent = timelineEventByUser,
-            ).firstOrNull() shouldBe true
-        }
-
-        should("return true if it is the event of another user but the user's power level is at least as high as the needed redaction power level") {
-            roomStateStore.save(
-                StateEvent(
-                    content = PowerLevelsEventContent(
-                        users = mapOf(
-                            thisUser to 40,
-                        ),
-                        redact = 30,
-                    ),
-                    id = EventId("eventId"),
-                    sender = thisUser,
-                    roomId = room,
-                    originTimestamp = 0L,
-                    stateKey = "",
-                )
-            )
-            cut.canBeRedacted(
-                timelineEvent = timelineEventByOtherUser,
-            ).firstOrNull() shouldBe true
-        }
-        should("return false if the user has no high enough power level for event redactions") {
-            roomStateStore.save(
-                StateEvent(
-                    content = PowerLevelsEventContent(
-                        users = mapOf(
-                            thisUser to 20,
-                        ),
-                        events = mapOf(
-                            "m.room.redaction" to 30,
-                        )
-                    ),
-                    id = EventId("eventId"),
-                    sender = thisUser,
-                    roomId = room,
-                    originTimestamp = 0L,
-                    stateKey = "",
-                )
-            )
-            cut.canBeRedacted(
-                timelineEvent = timelineEventByUser,
-            ).firstOrNull() shouldBe false
-        }
-        should("return false if the user has no high enough power level for redactions of events of other users") {
-            roomStateStore.save(
-                StateEvent(
-                    content = PowerLevelsEventContent(
-                        users = mapOf(
-                            thisUser to 20,
-                        ),
-                        redact = 30,
-                    ),
-                    id = EventId("eventId"),
-                    sender = thisUser,
-                    roomId = room,
-                    originTimestamp = 0L,
-                    stateKey = "",
-                )
-            )
-            cut.canBeRedacted(
-                timelineEvent = timelineEventByOtherUser,
-            ).firstOrNull() shouldBe false
-        }
-
-        should("not allow to redact an already redacted event") {
-            roomStateStore.save(
-                StateEvent(
-                    content = PowerLevelsEventContent(
-                        users = mapOf(
-                            thisUser to 40,
-                        ),
-                        redact = 30,
-                    ),
-                    id = EventId("eventId"),
-                    sender = thisUser,
-                    roomId = room,
-                    originTimestamp = 0L,
-                    stateKey = "",
-                )
-            )
-            cut.canBeRedacted(
-                timelineEvent = TimelineEvent(
-                    event = MessageEvent(
-                        content = RedactedMessageEventContent(eventType = "redacted"),
-                        id = EventId("event"),
-                        sender = thisUser,
-                        roomId = room,
-                        originTimestamp = 0L
-                    ),
-                    previousEventId = null,
-                    nextEventId = null,
-                    gap = null,
-                ),
-            ).firstOrNull() shouldBe false
-        }
-
-        context("react to changes in the power levels") {
-            should("react to changes in the user's power levels") {
-                roomStateStore.save(
-                    StateEvent(
-                        content = PowerLevelsEventContent(
-                            users = mapOf(
-                                thisUser to 40,
-                            ),
-                            redact = 30,
-                        ),
-                        id = EventId("eventId"),
-                        sender = thisUser,
-                        roomId = room,
-                        originTimestamp = 0L,
-                        stateKey = "",
-                    )
-                )
-                val resultFlow = cut.canBeRedacted(
-                    timelineEvent = timelineEventByOtherUser,
-                )
-                resultFlow.first() shouldBe true
-                roomStateStore.save(
-                    StateEvent(
-                        content = PowerLevelsEventContent(
-                            users = mapOf(
-                                thisUser to 20,
-                            ),
-                            redact = 30,
-                        ),
-                        id = EventId("eventId"),
-                        sender = thisUser,
-                        roomId = room,
-                        originTimestamp = 0L,
-                        stateKey = "",
-                    )
-                )
-                resultFlow.first() shouldBe false
             }
         }
     }
