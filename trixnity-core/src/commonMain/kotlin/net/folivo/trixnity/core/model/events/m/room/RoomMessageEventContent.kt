@@ -239,14 +239,10 @@ fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
 val RoomMessageEventContent.bodyWithoutFallback: String
     get() =
         if (this.relatesTo?.replyTo != null) {
-            var fallbackEnded = false
-            body.lineSequence().filter {
-                if (fallbackEnded) true
-                else {
-                    it.startsWith("> ")
-                        .also { isFallback -> if (isFallback.not()) fallbackEnded = true }
-                }
-            }.joinToString("\n")
+            body.lineSequence()
+                .dropWhile { it.startsWith("> ") }
+                .dropWhile { it == "" }
+                .joinToString("\n")
         } else body
 
 val TextMessageEventContent.formattedBodyWithoutFallback: String?
