@@ -17,10 +17,13 @@ fun MessageBuilder.reply(
     event: Event.MessageEvent<*>,
 ) = reply(event.id, event.content.relatesTo)
 
+/**
+ * Important: [eventRelatesTo] should be set from the event, that is replied. Otherwise, thread support is dropped.
+ */
 @TrixnityDsl
 fun MessageBuilder.reply(
     eventId: EventId,
-    eventRelatesTo: RelatesTo? = null,
+    eventRelatesTo: RelatesTo?,
 ) {
     val replyTo = RelatesTo.ReplyTo(eventId)
     relatesTo =

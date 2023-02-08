@@ -223,3 +223,36 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
         encoder.encodeJsonElement(jsonElement)
     }
 }
+
+fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
+    is TextMessageEventContent -> formattedBody
+    is NoticeMessageEventContent -> formattedBody
+    is EmoteMessageEventContent -> formattedBody
+    is AudioMessageEventContent,
+    is FileMessageEventContent,
+    is ImageMessageEventContent,
+    is UnknownRoomMessageEventContent,
+    is VerificationRequestMessageEventContent,
+    is VideoMessageEventContent -> null
+}
+
+val RoomMessageEventContent.bodyWithoutFallback: String
+    get() =
+        if (this.relatesTo?.replyTo != null) {
+            body.lineSequence()
+                .dropWhile { it.startsWith("> ") }
+                .dropWhile { it == "" }
+                .joinToString("\n")
+        } else body
+
+val TextMessageEventContent.formattedBodyWithoutFallback: String?
+    get() = formattedBody?.removeFallbackFromFormattedBody()
+
+val NoticeMessageEventContent.formattedBodyWithoutFallback: String?
+    get() = formattedBody?.removeFallbackFromFormattedBody()
+
+val EmoteMessageEventContent.formattedBodyWithoutFallback: String?
+    get() = formattedBody?.removeFallbackFromFormattedBody()
+
+private fun String.removeFallbackFromFormattedBody(): String =
+    substringAfter("</mx-reply>").removePrefix("\n")

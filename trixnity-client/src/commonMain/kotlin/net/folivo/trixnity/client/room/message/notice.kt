@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.room.message
 
+import net.folivo.trixnity.client.room.firstWithContent
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.NoticeMessageEventContent
@@ -13,9 +14,9 @@ fun MessageBuilder.notice(
     contentBuilder = { relatesTo ->
         when (relatesTo) {
             is RelatesTo.Replace -> NoticeMessageEventContent(
-                body = "*$body",
+                body = "* $body",
                 format = format,
-                formattedBody = formattedBody?.let { "*$it" },
+                formattedBody = formattedBody?.let { "* $it" },
                 relatesTo = relatesTo.copy(
                     newContent = NoticeMessageEventContent(
                         body,
@@ -24,6 +25,20 @@ fun MessageBuilder.notice(
                     )
                 )
             )
+
+            is RelatesTo.Reply, is RelatesTo.Thread -> {
+                val repliedEvent = relatesTo.replyTo?.eventId
+                    ?.let { roomService.getTimelineEvent(it, roomId).firstWithContent() }
+                val repliedEventContent = repliedEvent?.content?.getOrNull()
+                val (richReplyBody, richReplyFormattedBody) =
+                    computeRichReplies(repliedEvent, body, repliedEventContent, formattedBody)
+                NoticeMessageEventContent(
+                    body = richReplyBody,
+                    format = format,
+                    formattedBody = richReplyFormattedBody,
+                    relatesTo = relatesTo
+                )
+            }
 
             else -> NoticeMessageEventContent(
                 body = body,

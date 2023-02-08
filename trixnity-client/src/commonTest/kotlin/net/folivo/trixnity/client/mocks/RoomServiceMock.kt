@@ -28,14 +28,15 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    lateinit var returnGetTimelineEvent: Flow<TimelineEvent?>
+    lateinit var returnGetTimelineEvent: Flow<TimelineEvent>
     override fun getTimelineEvent(
         eventId: EventId,
         roomId: RoomId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
-    ): Flow<TimelineEvent?> {
+        allowReplaceContent: Boolean
+    ): Flow<TimelineEvent> {
         return returnGetTimelineEvent
     }
 
@@ -43,8 +44,9 @@ class RoomServiceMock : RoomService {
         event: TimelineEvent,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
-        limitPerFetch: Long
-    ): Flow<TimelineEvent?>? {
+        limitPerFetch: Long,
+        allowReplaceContent: Boolean
+    ): Flow<TimelineEvent>? {
         throw NotImplementedError()
     }
 
@@ -52,8 +54,9 @@ class RoomServiceMock : RoomService {
         event: TimelineEvent,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
-        limitPerFetch: Long
-    ): Flow<TimelineEvent?>? {
+        limitPerFetch: Long,
+        allowReplaceContent: Boolean
+    ): Flow<TimelineEvent>? {
         throw NotImplementedError()
     }
 
@@ -142,8 +145,9 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
+    val rooms = MutableStateFlow(mapOf<RoomId, StateFlow<Room?>>())
     override fun getById(roomId: RoomId): StateFlow<Room?> {
-        throw NotImplementedError()
+        return checkNotNull(rooms.value[roomId])
     }
 
     override fun <C : RoomAccountDataEventContent> getAccountData(

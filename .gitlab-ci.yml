@@ -54,7 +54,7 @@ build-trixnity-build-linux-image:
   tags: [ "saas-linux-large-amd64" ]
   image: docker:20
   services:
-    - name: docker:20-dind
+    - name: docker:dind
       command: [ "--tls=false" ]
   when: manual
   script:
@@ -78,7 +78,7 @@ build-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
-    - name: docker:20-dind
+    - name: docker:dind
       command: [ "--tls=false" ]
   cache:
     - *build-cache
@@ -104,7 +104,7 @@ publish-snapshot-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
-    - name: docker:20-dind
+    - name: docker:dind
       command: [ "--tls=false" ]
   cache:
     - *build-cache
@@ -157,7 +157,7 @@ publish-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
-    - name: docker:20-dind
+    - name: docker:dind
       command: [ "--tls=false" ]
   cache:
     - *build-cache
