@@ -53,7 +53,7 @@ interface RoomService {
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
         allowReplaceContent: Boolean = true,
-    ): Flow<TimelineEvent>
+    ): Flow<TimelineEvent?>
 
     fun getPreviousTimelineEvent(
         event: TimelineEvent,
@@ -61,7 +61,7 @@ interface RoomService {
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
         allowReplaceContent: Boolean = true,
-    ): Flow<TimelineEvent>?
+    ): Flow<TimelineEvent?>?
 
     fun getNextTimelineEvent(
         event: TimelineEvent,
@@ -69,7 +69,7 @@ interface RoomService {
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
         allowReplaceContent: Boolean = true,
-    ): Flow<TimelineEvent>?
+    ): Flow<TimelineEvent?>?
 
     fun getLastTimelineEvent(
         roomId: RoomId,
@@ -253,7 +253,7 @@ class RoomServiceImpl(
         fetchTimeout: Duration,
         limitPerFetch: Long,
         allowReplaceContent: Boolean,
-    ): Flow<TimelineEvent> = channelFlow {
+    ): Flow<TimelineEvent?> = channelFlow {
         roomTimelineStore.get(eventId, roomId)
             .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
@@ -263,7 +263,7 @@ class RoomServiceImpl(
                         emitAll(getTimelineEvent(roomId, replacedBy.eventId)
                             .map { replacedByTimelineEvent ->
                                 val newContent =
-                                    replacedByTimelineEvent.content
+                                    replacedByTimelineEvent?.content
                                         ?.map { content ->
                                             if (content is MessageEventContent) {
                                                 val relatesTo = content.relatesTo
@@ -324,7 +324,7 @@ class RoomServiceImpl(
                         getTimelineEventMutex.update { it - key }
                     }
                 }
-            }.filterNotNull()
+            }
             .collect { send(it) }
     }
 
@@ -334,7 +334,7 @@ class RoomServiceImpl(
         fetchTimeout: Duration,
         limitPerFetch: Long,
         allowReplaceContent: Boolean,
-    ): Flow<TimelineEvent>? {
+    ): Flow<TimelineEvent?>? {
         return event.previousEventId?.let {
             getTimelineEvent(
                 eventId = it,
@@ -353,7 +353,7 @@ class RoomServiceImpl(
         fetchTimeout: Duration,
         limitPerFetch: Long,
         allowReplaceContent: Boolean,
-    ): Flow<TimelineEvent>? {
+    ): Flow<TimelineEvent?>? {
         return event.nextEventId?.let {
             getTimelineEvent(
                 eventId = it,

@@ -133,10 +133,10 @@ class KeyBackupIT {
                     .map { it.map { it.first().eventId } }
                     .first { it.size == 2 }
                 events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
-                    .first { it.content != null }.content?.getOrThrow()
+                    .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2"))
                 events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
-                    .first { it.content != null }.content?.getOrThrow()
+                    .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
                 scope.cancel()
             }
