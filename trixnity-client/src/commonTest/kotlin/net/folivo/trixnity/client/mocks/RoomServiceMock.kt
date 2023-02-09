@@ -24,14 +24,14 @@ import kotlin.time.Duration
 
 class RoomServiceMock : RoomService {
     override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> = MutableStateFlow(mapOf())
-    override suspend fun fillTimelineGaps(startEventId: EventId, roomId: RoomId, limit: Long) {
+    override suspend fun fillTimelineGaps(roomId: RoomId, startEventId: EventId, limit: Long) {
         throw NotImplementedError()
     }
 
     lateinit var returnGetTimelineEvent: Flow<TimelineEvent>
     override fun getTimelineEvent(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
@@ -70,8 +70,8 @@ class RoomServiceMock : RoomService {
     var returnGetTimelineEvents: Flow<Flow<TimelineEvent>> = flowOf()
 
     override fun getTimelineEvents(
-        startFrom: EventId,
         roomId: RoomId,
+        startFrom: EventId,
         direction: GetEvents.Direction,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
@@ -111,15 +111,15 @@ class RoomServiceMock : RoomService {
     }
 
     override fun getTimelineEventRelations(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> {
         throw NotImplementedError()
     }
 
     override fun getTimelineEventRelations(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
         relationType: RelationType,
     ): Flow<Set<TimelineEventRelation>?> {
         throw NotImplementedError()
@@ -174,10 +174,6 @@ class RoomServiceMock : RoomService {
         roomId: RoomId,
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Event<C>?>?> {
-        throw NotImplementedError()
-    }
-
-    override fun canBeRedacted(timelineEvent: TimelineEvent): Flow<Boolean> {
         throw NotImplementedError()
     }
 }

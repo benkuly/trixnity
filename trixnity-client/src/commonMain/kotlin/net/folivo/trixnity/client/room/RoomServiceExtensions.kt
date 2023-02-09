@@ -140,8 +140,8 @@ fun Flow<Flow<Flow<TimelineEvent>>?>.toFlowList(
  *
  */
 fun RoomService.getTimelineEventsAround(
-    startFrom: EventId,
     roomId: RoomId,
+    startFrom: EventId,
     decryptionTimeout: Duration = Duration.INFINITE,
     fetchTimeout: Duration = 1.minutes,
     limitPerFetch: Long = 20,
@@ -150,18 +150,18 @@ fun RoomService.getTimelineEventsAround(
 ): Flow<List<Flow<TimelineEvent>>> =
     channelFlow {
         val startEvent =
-            getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
+            getTimelineEvent(roomId, startFrom, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
         startEvent.first()
         combine(
             getTimelineEvents(
-                startFrom, roomId,
+                roomId, startFrom,
                 GetEvents.Direction.BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
             )
                 .drop(1)
                 .toFlowList(maxSizeBefore)
                 .map { it.reversed() },
             getTimelineEvents(
-                startFrom, roomId,
+                roomId, startFrom,
                 GetEvents.Direction.FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
             )
                 .drop(1)
@@ -178,8 +178,8 @@ fun RoomService.getTimelineEventsAround(
  *
  */
 suspend fun RoomService.getTimelineEventsAround(
-    startFrom: EventId,
     roomId: RoomId,
+    startFrom: EventId,
     decryptionTimeout: Duration = Duration.INFINITE,
     fetchTimeout: Duration = 1.minutes,
     limitPerFetch: Long = 20,
@@ -188,7 +188,7 @@ suspend fun RoomService.getTimelineEventsAround(
     maxSizeBefore: Long = 10,
     maxSizeAfter: Long = maxSizeBefore,
 ): List<Flow<TimelineEvent>> = coroutineScope {
-    val startEvent = getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
+    val startEvent = getTimelineEvent(roomId, startFrom, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
     val eventsBefore = async {
         getTimelineEvents(
             startFrom = startFrom,

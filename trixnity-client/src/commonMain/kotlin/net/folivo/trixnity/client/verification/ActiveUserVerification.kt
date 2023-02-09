@@ -77,7 +77,7 @@ class ActiveUserVerification(
 
     override suspend fun lifecycle() = coroutineScope {
         val timelineJob = launch {
-            room.getTimelineEvents(requestEventId, roomId, FORWARDS)
+            room.getTimelineEvents(roomId, requestEventId, FORWARDS)
                 .collect { timelineEvent ->
                     val searchResult = timelineEvent.filterNotNull().map {
                         val contentResult = it.content

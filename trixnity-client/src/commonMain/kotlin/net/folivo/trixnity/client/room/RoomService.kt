@@ -8,10 +8,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
-import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.getEventId
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.MediaService
-import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
@@ -20,14 +18,12 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
-import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
-import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -41,8 +37,8 @@ private val log = KotlinLogging.logger {}
 interface RoomService {
     val usersTyping: StateFlow<Map<RoomId, TypingEventContent>>
     suspend fun fillTimelineGaps(
-        startEventId: EventId,
         roomId: RoomId,
+        startEventId: EventId,
         limit: Long = 20
     )
 
@@ -51,8 +47,8 @@ interface RoomService {
      * to find it by filling the sync-gaps.
      */
     fun getTimelineEvent(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
         limitPerFetch: Long = 20,
@@ -97,8 +93,8 @@ interface RoomService {
      * @param maxSize Flow completes, when this value is reached (including the start event).
      */
     fun getTimelineEvents(
-        startFrom: EventId,
         roomId: RoomId,
+        startFrom: EventId,
         direction: Direction = BACKWARDS,
         decryptionTimeout: Duration = INFINITE,
         fetchTimeout: Duration = 1.minutes,
@@ -156,13 +152,13 @@ interface RoomService {
     ): Timeline<T>
 
     fun getTimelineEventRelations(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?>
 
     fun getTimelineEventRelations(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
         relationType: RelationType,
     ): Flow<Set<TimelineEventRelation>?>
 
@@ -208,10 +204,6 @@ interface RoomService {
         roomId: RoomId,
         eventContentClass: KClass<C>,
     ): Flow<Map<String, Event<C>?>?>
-
-    fun canBeRedacted(
-        timelineEvent: TimelineEvent,
-    ): Flow<Boolean>
 }
 
 class RoomServiceImpl(
@@ -226,14 +218,13 @@ class RoomServiceImpl(
     private val timelineEventHandler: TimelineEventHandler,
     typingEventHandler: TypingEventHandler,
     private val currentSyncState: CurrentSyncState,
-    private val userInfo: UserInfo,
     private val scope: CoroutineScope,
 ) : RoomService {
     override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> = typingEventHandler.usersTyping
 
     override suspend fun fillTimelineGaps(
-        startEventId: EventId,
         roomId: RoomId,
+        startEventId: EventId,
         limit: Long
     ) {
         scope.async {
@@ -256,8 +247,8 @@ class RoomServiceImpl(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTimelineEvent(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
         limitPerFetch: Long,
@@ -269,7 +260,7 @@ class RoomServiceImpl(
                 if (allowReplaceContent && event is MessageEvent) {
                     val replacedBy = event.unsigned?.aggregations?.replace
                     if (replacedBy != null) {
-                        emitAll(getTimelineEvent(replacedBy.eventId, roomId)
+                        emitAll(getTimelineEvent(roomId, replacedBy.eventId)
                             .map { replacedByTimelineEvent ->
                                 val newContent =
                                     replacedByTimelineEvent.content
@@ -384,8 +375,8 @@ class RoomServiceImpl(
             coroutineScope {
                 if (room?.lastEventId != null) emit(
                     getTimelineEvent(
-                        room.lastEventId,
                         roomId,
+                        room.lastEventId,
                         decryptionTimeout
                     ).filterNotNull()
                 )
@@ -401,8 +392,8 @@ class RoomServiceImpl(
     }
 
     override fun getTimelineEvents(
-        startFrom: EventId,
         roomId: RoomId,
+        startFrom: EventId,
         direction: Direction,
         decryptionTimeout: Duration,
         fetchTimeout: Duration,
@@ -419,7 +410,7 @@ class RoomServiceImpl(
             }
 
             var currentTimelineEventFlow: Flow<TimelineEvent> =
-                getTimelineEvent(startFrom, roomId, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
+                getTimelineEvent(roomId, startFrom, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
             emit(currentTimelineEventFlow)
             var size = 1
             while (currentCoroutineContext().isActive) {
@@ -462,7 +453,7 @@ class RoomServiceImpl(
 
                         if (currentTimelineEvent.needsFetchGap()) {
                             log.debug { "found ${currentTimelineEvent.gap} at ${currentTimelineEvent.eventId}" }
-                            fillTimelineGaps(currentTimelineEvent.eventId, currentTimelineEvent.roomId, limitPerFetch)
+                            fillTimelineGaps(currentTimelineEvent.roomId, currentTimelineEvent.eventId, limitPerFetch)
                         } else {
                             val continueWith = when (direction) {
                                 BACKWARDS ->
@@ -567,7 +558,7 @@ class RoomServiceImpl(
                             syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
                 timelineEvents.map {
                     async {
-                        getTimelineEvent(it.id, it.roomId, decryptionTimeout)
+                        getTimelineEvent(it.roomId, it.id, decryptionTimeout)
                     }
                 }.asFlow()
                     .map { timelineEventFlow ->
@@ -599,13 +590,13 @@ class RoomServiceImpl(
         )
 
     override fun getTimelineEventRelations(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
     ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> = roomTimelineStore.getRelations(eventId, roomId)
 
     override fun getTimelineEventRelations(
-        eventId: EventId,
         roomId: RoomId,
+        eventId: EventId,
         relationType: RelationType,
     ): Flow<Set<TimelineEventRelation>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
 
@@ -670,24 +661,4 @@ class RoomServiceImpl(
     ): Flow<Map<String, Event<C>?>?> {
         return roomStateStore.get(roomId, eventContentClass)
     }
-
-    override fun canBeRedacted(
-        timelineEvent: TimelineEvent,
-    ): Flow<Boolean> {
-        return roomStateStore.getByStateKey(timelineEvent.roomId, "", PowerLevelsEventContent::class)
-            .filterNotNull()
-            .map { it.content }
-            .map { powerLevels ->
-                val userPowerLevel = powerLevels.users[userInfo.userId] ?: powerLevels.usersDefault
-                val sendRedactionEventPowerLevel =
-                    powerLevels.events["m.room.redaction"] ?: powerLevels.eventsDefault
-                val redactPowerLevelNeeded = powerLevels.redact
-                val ownMessages = userPowerLevel >= sendRedactionEventPowerLevel
-                val otherMessages = userPowerLevel >= redactPowerLevelNeeded
-                val content = timelineEvent.content?.getOrNull()
-                content is MessageEventContent && content !is RedactedMessageEventContent &&
-                        (timelineEvent.event.sender == userInfo.userId && ownMessages || otherMessages)
-            }
-    }
-
 }
