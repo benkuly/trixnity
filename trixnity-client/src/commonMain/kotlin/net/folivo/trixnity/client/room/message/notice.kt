@@ -34,7 +34,7 @@ fun MessageBuilder.notice(
                     computeRichReplies(repliedEvent, body, repliedEventContent, formattedBody)
                 NoticeMessageEventContent(
                     body = richReplyBody,
-                    format = format,
+                    format = "org.matrix.custom.html",
                     formattedBody = richReplyFormattedBody,
                     relatesTo = relatesTo
                 )

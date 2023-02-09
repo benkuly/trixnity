@@ -173,8 +173,8 @@ class MessageBuilderTest : ShouldSpec({
                 reply(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent(
-                "> <@sender:server> dino\n> unicorn\nbody",
-                "format",
+                "> <@sender:server> dino\n> unicorn\n\nbody",
+                "org.matrix.custom.html",
                 """
                     <mx-reply>
                     <blockquote>
@@ -194,8 +194,8 @@ class MessageBuilderTest : ShouldSpec({
                 thread(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent(
-                "> <@sender:server> dino\n> unicorn\nbody",
-                "format",
+                "> <@sender:server> dino\n> unicorn\n\nbody",
+                "org.matrix.custom.html",
                 """
                     <mx-reply>
                     <blockquote>
@@ -243,8 +243,8 @@ class MessageBuilderTest : ShouldSpec({
                 reply(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent(
-                "> <@sender:server> image.png\nbody",
-                "format",
+                "> <@sender:server> image.png\n\nbody",
+                "org.matrix.custom.html",
                 """
                     <mx-reply>
                     <blockquote>

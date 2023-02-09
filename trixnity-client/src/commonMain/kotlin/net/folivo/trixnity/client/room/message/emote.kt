@@ -34,7 +34,7 @@ fun MessageBuilder.emote(
                     computeRichReplies(repliedEvent, body, repliedEventContent, formattedBody)
                 EmoteMessageEventContent(
                     body = richReplyBody,
-                    format = format,
+                    format = "org.matrix.custom.html",
                     formattedBody = richReplyFormattedBody,
                     relatesTo = relatesTo
                 )
