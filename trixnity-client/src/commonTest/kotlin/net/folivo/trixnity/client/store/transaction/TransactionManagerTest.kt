@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.store.transaction
 
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
-import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
@@ -40,18 +39,15 @@ class TransactionManagerTest {
     // ############################################
     @Test
     fun shouldCreateNewTransactionAndScheduleIt() = runTest {
-        var onRollbackCalled = false
-        val onRollback: suspend () -> Unit = { onRollbackCalled = true }
         var blockCalled = false
         val block: suspend () -> Unit = { blockCalled = true }
         val result =
-            cut.withAsyncWriteTransaction(onRollback) {
+            cut.withAsyncWriteTransaction {
                 currentCoroutineContext()[AsyncTransactionContext].shouldNotBeNull()
                 cut.writeOperationAsync("key", block)
             }
         result.shouldNotBeNull().first { it }
 
-        onRollbackCalled shouldBe false
         blockCalled shouldBe true
     }
 
@@ -67,23 +63,20 @@ class TransactionManagerTest {
     }
 
     @Test
-    fun shouldRetryAndCallRollbackOnError() = runTest {
-        val onRollbackCalled = MutableStateFlow(false)
-        val onRollback: suspend () -> Unit = { onRollbackCalled.value = true }
-        var blockCalled = 0
+    fun shouldRetryOnError() = runTest {
+        var blockCalled = MutableStateFlow(0)
         val block: suspend () -> Unit = {
-            blockCalled++
+            blockCalled.value++
             throw RuntimeException("unicorn not found")
         }
         val result =
-            cut.withAsyncWriteTransaction(onRollback) {
+            cut.withAsyncWriteTransaction {
                 currentCoroutineContext()[AsyncTransactionContext].shouldNotBeNull()
                 cut.writeOperationAsync("key", block)
             }.shouldNotBeNull()
 
-        onRollbackCalled.first { it }
+        blockCalled.first { it >= 2 }
         result.value shouldBe false
-        blockCalled shouldBeGreaterThan 2
     }
 
     @Test
@@ -129,7 +122,7 @@ class TransactionManagerTest {
             // should overwrite previous operation with same key
             cut.writeOperationAsync("key", block)
         }
-        val transaction = transactionContext.buildTransaction { }
+        val transaction = transactionContext.buildTransaction()
         transaction.operations shouldHaveSize 1
         transaction.operations shouldNotContain block
         transaction.operations[0].invoke()

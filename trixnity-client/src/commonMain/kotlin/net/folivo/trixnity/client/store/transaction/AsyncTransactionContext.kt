@@ -23,11 +23,10 @@ class AsyncTransactionContext : CoroutineContext.Element {
         operations.put(key, operation)
     }
 
-    fun buildTransaction(onRollback: suspend () -> Unit) =
+    fun buildTransaction() =
         AsyncTransaction(
             id = id,
             operations = operations.values.toList(),
             transactionHasBeenApplied = _transactionHasBeenApplied,
-            onRollback = onRollback,
         )
 }
