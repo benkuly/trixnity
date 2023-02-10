@@ -21,7 +21,6 @@ class TwoDimensionsRepositoryStateFlowCacheTest : ShouldSpec({
     val writeOperationWasCalled = MutableStateFlow(false)
     val tm = object : TransactionManager {
         override suspend fun withAsyncWriteTransaction(
-            onRollback: suspend () -> Unit,
             wait: Boolean,
             block: suspend () -> Unit
         ): StateFlow<Boolean> =

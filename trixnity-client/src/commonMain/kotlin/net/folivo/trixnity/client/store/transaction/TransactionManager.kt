@@ -16,7 +16,6 @@ private val log = KotlinLogging.logger { }
 
 interface TransactionManager {
     suspend fun withAsyncWriteTransaction(
-        onRollback: suspend () -> Unit = {},
         wait: Boolean = false,
         block: suspend () -> Unit
     ): StateFlow<Boolean>?
@@ -79,35 +78,26 @@ class TransactionManagerImpl(
     private suspend fun List<AsyncTransaction>.process() {
         if (isNotEmpty()) log.trace { "write transactions into database ids=${map { it.id }}" }
         forEach { transaction ->
-            try {
-                retrySchedule.retry {
-                    // even if the outer scope is cancelled, just finish the current transaction
-                    withContext(NonCancellable) {
-                        // span a large db transaction
-                        rtm.writeTransaction {
-                            coroutineScope {
-                                transaction.operations.forEach { operation ->
-                                    launch { operation() }
-                                }
+            retrySchedule.retry {
+                // even if the outer scope is cancelled, just finish the current transaction
+                withContext(NonCancellable) {
+                    // span a large db transaction
+                    rtm.writeTransaction {
+                        coroutineScope {
+                            transaction.operations.forEach { operation ->
+                                launch { operation() }
                             }
                         }
                     }
                 }
-                transaction.transactionHasBeenApplied.value = true
-                asyncTransactions.update { it - transaction }
-            } catch (throwable: Throwable) {
-                log.info { "try rollback transaction id=${transaction.id}" }
-                withContext(NonCancellable) {
-                    transaction.onRollback()
-                }
-                throw throwable
             }
+            transaction.transactionHasBeenApplied.value = true
+            asyncTransactions.update { it - transaction }
         }
         if (isNotEmpty()) log.trace { "finished write transactions into database ids=${map { it.id }}" }
     }
 
     override suspend fun withAsyncWriteTransaction(
-        onRollback: suspend () -> Unit,
         wait: Boolean,
         block: suspend () -> Unit
     ): StateFlow<Boolean>? =
@@ -119,7 +109,7 @@ class TransactionManagerImpl(
                 withContext(newTransactionContext) {
                     block()
                 }
-                val transaction = newTransactionContext.buildTransaction(onRollback)
+                val transaction = newTransactionContext.buildTransaction()
                 asyncTransactions.update {
                     it + transaction
                 }

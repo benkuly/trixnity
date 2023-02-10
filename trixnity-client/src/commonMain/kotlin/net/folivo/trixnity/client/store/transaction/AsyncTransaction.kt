@@ -6,5 +6,4 @@ data class AsyncTransaction(
     val id: String,
     val operations: List<suspend () -> Unit>,
     val transactionHasBeenApplied: MutableStateFlow<Boolean>,
-    val onRollback: suspend () -> Unit,
 )
