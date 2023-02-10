@@ -29,9 +29,8 @@ fun MessageBuilder.notice(
             is RelatesTo.Reply, is RelatesTo.Thread -> {
                 val repliedEvent = relatesTo.replyTo?.eventId
                     ?.let { roomService.getTimelineEvent(roomId, it).firstWithContent() }
-                val repliedEventContent = repliedEvent?.content?.getOrNull()
                 val (richReplyBody, richReplyFormattedBody) =
-                    computeRichReplies(repliedEvent, body, repliedEventContent, formattedBody)
+                    computeRichReplies(repliedEvent, body, formattedBody)
                 NoticeMessageEventContent(
                     body = richReplyBody,
                     format = "org.matrix.custom.html",
