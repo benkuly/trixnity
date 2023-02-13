@@ -108,7 +108,7 @@ class KeyBackupIT {
                         port = synapseDocker.firstMappedPort
                     ).build(),
                     identifier = IdentifierType.User("user1"),
-                    passwordOrToken = "user$1passw0rd",
+                    password = "user$1passw0rd",
                     repositoriesModule = repositoriesModule,
                     mediaStore = InMemoryMediaStore(),
                     scope = scope,
