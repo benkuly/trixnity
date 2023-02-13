@@ -80,7 +80,7 @@ class CrossSigningIT {
         client2 = MatrixClient.login(
             baseUrl = baseUrl,
             identifier = IdentifierType.User("user1"),
-            passwordOrToken = password,
+            password = password,
             repositoriesModule = repositoriesModule2,
             mediaStore = InMemoryMediaStore(),
             scope = scope2,
