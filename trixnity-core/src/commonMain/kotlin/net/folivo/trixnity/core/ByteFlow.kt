@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.*
 
 typealias ByteArrayFlow = Flow<ByteArray>
 
-const val BYTE_ARRAY_FLOW_CHUNK_SIZE: Long = 2_048 // 2 KB
+const val BYTE_ARRAY_FLOW_CHUNK_SIZE: Long = 1_024 * 1_024 // 1 MiB
 
 fun ByteReadChannel.toByteArrayFlow(): ByteArrayFlow = flow {
     while (isClosedForRead.not()) {
@@ -38,4 +38,15 @@ suspend fun ByteArrayFlow.writeTo(byteWriteChannel: ByteWriteChannel) {
 
 fun ByteArray.toByteArrayFlow(): ByteArrayFlow = flowOf(this)
 
-suspend fun ByteArrayFlow.toByteArray(): ByteArray = toList().reduce { old, new -> old + new }
+suspend fun ByteArrayFlow.toByteArray(): ByteArray {
+    val allByteArrays = toList()
+    val concatByteArray = ByteArray(allByteArrays.sumOf { it.size })
+    var byteArrayPosition = 0
+    allByteArrays.forEach { byteArray ->
+        byteArray.forEach { byte ->
+            concatByteArray[byteArrayPosition] = byte
+            byteArrayPosition++
+        }
+    }
+    return concatByteArray
+}
