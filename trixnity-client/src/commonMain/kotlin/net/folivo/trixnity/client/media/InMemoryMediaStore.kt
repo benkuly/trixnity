@@ -2,18 +2,18 @@ package net.folivo.trixnity.client.media
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteFlow
+import net.folivo.trixnity.core.toByteArrayFlow
 
 class InMemoryMediaStore : MediaStore {
     val media = MutableStateFlow<Map<String, ByteArray>>(mapOf())
-    override suspend fun addMedia(url: String, content: ByteFlow) {
+    override suspend fun addMedia(url: String, content: ByteArrayFlow) {
         media.update { it + (url to content.toByteArray()) }
     }
 
-    override suspend fun getMedia(url: String): ByteFlow? =
-        media.value[url]?.toByteFlow()
+    override suspend fun getMedia(url: String): ByteArrayFlow? =
+        media.value[url]?.toByteArrayFlow()
 
     override suspend fun deleteMedia(url: String) {
         media.update { it - url }

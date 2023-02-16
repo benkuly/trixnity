@@ -1,30 +1,34 @@
 package net.folivo.trixnity.core
 
+import io.ktor.util.*
 import io.ktor.utils.io.*
+import io.ktor.utils.io.bits.*
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 
-typealias ByteFlow = Flow<Byte>
+typealias ByteArrayFlow = Flow<ByteArray>
 
-fun ByteReadChannel.toByteFlow(): ByteFlow = flow {
-    while (isClosedForRead.not()) emit(readByte())
-}.onCompletion { if (it != null) this@toByteFlow.cancel(it) }
+const val BYTE_ARRAY_FLOW_CHUNK_SIZE: Long = 2_048 // 2 KB
+
+fun ByteReadChannel.toByteArrayFlow(): ByteArrayFlow = flow {
+    while (isClosedForRead.not()) {
+        emit(readRemaining(BYTE_ARRAY_FLOW_CHUNK_SIZE).readBytes())
+    }
+}.onCompletion { if (it != null) this@toByteArrayFlow.cancel(it) }
 
 @OptIn(DelicateCoroutinesApi::class)
-suspend fun ByteFlow.toByteReadChannel(): ByteReadChannel {
-    return GlobalScope.writer {
-        writeTo(channel)
-    }.channel
-}
+suspend fun ByteArrayFlow.toByteReadChannel(): ByteReadChannel = GlobalScope.writer {
+    writeTo(channel)
+}.channel
 
-suspend fun ByteFlow.writeTo(byteWriteChannel: ByteWriteChannel) {
+suspend fun ByteArrayFlow.writeTo(byteWriteChannel: ByteWriteChannel) {
     try {
-        collect {
-            byteWriteChannel.writeByte(it)
+        collect { byteArray ->
+            byteWriteChannel.writePacket {
+                writeFully(byteArray)
+            }
         }
         byteWriteChannel.close()
     } catch (exception: Exception) {
@@ -32,8 +36,6 @@ suspend fun ByteFlow.writeTo(byteWriteChannel: ByteWriteChannel) {
     }
 }
 
-fun ByteArray.toByteFlow(): ByteFlow = flow {
-    forEach { emit(it) }
-}
+fun ByteArray.toByteArrayFlow(): ByteArrayFlow = flowOf(this)
 
-suspend fun ByteFlow.toByteArray(): ByteArray = toList().toByteArray()
+suspend fun ByteArrayFlow.toByteArray(): ByteArray = toList().reduce { old, new -> old + new }

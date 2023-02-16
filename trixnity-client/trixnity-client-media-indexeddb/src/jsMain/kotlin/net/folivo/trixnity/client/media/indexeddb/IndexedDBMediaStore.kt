@@ -4,9 +4,9 @@ import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
 import net.folivo.trixnity.client.media.MediaStore
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteFlow
+import net.folivo.trixnity.core.toByteArrayFlow
 import org.khronos.webgl.Uint8Array
 
 class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaStore {
@@ -25,17 +25,17 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
         }
     }
 
-    override suspend fun addMedia(url: String, content: ByteFlow): Unit =
+    override suspend fun addMedia(url: String, content: ByteArrayFlow): Unit =
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store.put(content.toByteArray().unsafeCast<Uint8Array>(), Key(url))
             Unit
         }
 
-    override suspend fun getMedia(url: String): ByteFlow? =
+    override suspend fun getMedia(url: String): ByteArrayFlow? =
         database.transaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.get(Key(url)).unsafeCast<ByteArray?>()?.toByteFlow()
+            store.get(Key(url)).unsafeCast<ByteArray?>()?.toByteArrayFlow()
         }
 
     override suspend fun deleteMedia(url: String): Unit =

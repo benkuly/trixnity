@@ -2,8 +2,8 @@ package net.folivo.trixnity.crypto
 
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.core.ByteFlow
-import net.folivo.trixnity.core.toByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
+import net.folivo.trixnity.core.toByteArrayFlow
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import java.security.Key
 import javax.crypto.Cipher
@@ -11,10 +11,10 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 @OptIn(FlowPreview::class)
-actual fun ByteFlow.encryptAes256Ctr(
+actual fun ByteArrayFlow.encryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteFlow = flow {
+): ByteArrayFlow = flow {
     val cipher = Cipher.getInstance("AES/CTR/NoPadding")
     val keySpec: Key = SecretKeySpec(key, "AES")
     val ivSpec = IvParameterSpec(initialisationVector)
@@ -22,19 +22,19 @@ actual fun ByteFlow.encryptAes256Ctr(
     cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec)
 
     emitAll(
-        flatMapConcat { input ->
-            cipher.update(byteArrayOf(input)).toByteFlow()
-        }.onCompletion {
-            cipher.doFinal()?.also { emitAll(it.toByteFlow()) }
+        mapNotNull { input ->
+            cipher.update(input)?.toByteArrayFlow()
+        }.flattenConcat().onCompletion {
+            cipher.doFinal()?.also { emitAll(it.toByteArrayFlow()) }
         }
     )
 }
 
 @OptIn(FlowPreview::class)
-actual fun ByteFlow.decryptAes256Ctr(
+actual fun ByteArrayFlow.decryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteFlow = flow {
+): ByteArrayFlow = flow {
     val cipher: Cipher = Cipher.getInstance("AES/CTR/NoPadding")
     try {
         val keySpec: Key = SecretKeySpec(key, "AES")
@@ -42,10 +42,10 @@ actual fun ByteFlow.decryptAes256Ctr(
 
         cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec)
         emitAll(
-            flatMapConcat { input ->
-                cipher.update(byteArrayOf(input)).toByteFlow()
-            }.onCompletion {
-                cipher.doFinal()?.also { emitAll(it.toByteFlow()) }
+            mapNotNull { input ->
+                cipher.update(input)?.toByteArrayFlow()
+            }.flattenConcat().onCompletion {
+                cipher.doFinal()?.also { emitAll(it.toByteArrayFlow()) }
             }
         )
     } catch (exception: Exception) {

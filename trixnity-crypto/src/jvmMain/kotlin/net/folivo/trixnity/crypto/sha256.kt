@@ -1,11 +1,11 @@
 package net.folivo.trixnity.crypto
 
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import java.security.MessageDigest
 
-actual fun ByteFlow.sha256(): Sha256ByteFlow {
+actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
     val hash = MutableStateFlow<String?>(null)
     return Sha256ByteFlow(
         flow {

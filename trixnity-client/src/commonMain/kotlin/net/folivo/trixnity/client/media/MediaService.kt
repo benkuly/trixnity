@@ -17,11 +17,11 @@ import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteFlow
+import net.folivo.trixnity.core.toByteArrayFlow
 import net.folivo.trixnity.core.toByteReadChannel
 import net.folivo.trixnity.crypto.decryptAes256Ctr
 import net.folivo.trixnity.crypto.encryptAes256Ctr
@@ -37,13 +37,13 @@ interface MediaService {
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         saveToCache: Boolean = true,
-    ): Result<ByteFlow>
+    ): Result<ByteArrayFlow>
 
     suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         saveToCache: Boolean = true,
-    ): Result<ByteFlow>
+    ): Result<ByteArrayFlow>
 
     suspend fun getThumbnail(
         mxcUri: String,
@@ -52,16 +52,16 @@ interface MediaService {
         method: ThumbnailResizingMethod = CROP,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         saveToCache: Boolean = true,
-    ): Result<ByteFlow>
+    ): Result<ByteArrayFlow>
 
-    suspend fun prepareUploadMedia(content: ByteFlow, contentType: ContentType?): String
+    suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String
 
-    suspend fun prepareUploadThumbnail(content: ByteFlow, contentType: ContentType?): Pair<String, ThumbnailInfo>?
+    suspend fun prepareUploadThumbnail(content: ByteArrayFlow, contentType: ContentType?): Pair<String, ThumbnailInfo>?
 
-    suspend fun prepareUploadEncryptedMedia(content: ByteFlow): EncryptedFile
+    suspend fun prepareUploadEncryptedMedia(content: ByteArrayFlow): EncryptedFile
 
     suspend fun prepareUploadEncryptedThumbnail(
-        content: ByteFlow,
+        content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<EncryptedFile, ThumbnailInfo>?
 
@@ -83,12 +83,12 @@ class MediaServiceImpl(
         const val maxFileSizeForThumbnail = 1024 * 50_000 // = 50MB
     }
 
-    private suspend fun <T : ByteFlow> Result<Media>.saveMedia(
+    private suspend fun <T : ByteArrayFlow> Result<Media>.saveMedia(
         uri: String,
         saveToCache: Boolean,
-        transform: ByteFlow.() -> T
-    ): ByteFlow {
-        val media = getOrThrow().content.toByteFlow().transform()
+        transform: ByteArrayFlow.() -> T
+    ): ByteArrayFlow {
+        val media = getOrThrow().content.toByteArrayFlow().transform()
         return if (saveToCache) {
             mediaStore.addMedia(uri, media)
             requireNotNull(mediaStore.getMedia(uri)) { "media should not be null. because it has just been saved" }
@@ -100,7 +100,7 @@ class MediaServiceImpl(
         saveToCache: Boolean,
         sha256Hash: String?,
         progress: MutableStateFlow<FileTransferProgress?>?,
-    ): Result<ByteFlow> = kotlin.runCatching {
+    ): Result<ByteArrayFlow> = kotlin.runCatching {
         when {
             uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> {
                 mediaStore.getMedia(uri)
@@ -132,14 +132,14 @@ class MediaServiceImpl(
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteFlow> =
+    ): Result<ByteArrayFlow> =
         getMedia(uri, saveToCache, null, progress)
 
     override suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteFlow> = kotlin.runCatching {
+    ): Result<ByteArrayFlow> = kotlin.runCatching {
         val originalHash = encryptedFile.hashes["sha256"]
             ?: throw DecryptionException.ValidationFailed("missing hash for media")
         val media = getMedia(encryptedFile.url, saveToCache, originalHash, progress).getOrThrow()
@@ -158,17 +158,17 @@ class MediaServiceImpl(
         method: ThumbnailResizingMethod,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteFlow> = kotlin.runCatching {
+    ): Result<ByteArrayFlow> = kotlin.runCatching {
         val thumbnailUrl = "$mxcUri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
         mediaStore.getMedia(thumbnailUrl)
             ?: api.media.downloadThumbnail(mxcUri, width, height, method, progress = progress)
                 .saveMedia(thumbnailUrl, saveToCache) { this }
     }
 
-    override suspend fun prepareUploadMedia(content: ByteFlow, contentType: ContentType?): String {
+    override suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String {
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
             var fileSize = 0
-            mediaStore.addMedia(cacheUri, content.onEach { fileSize++ })
+            mediaStore.addMedia(cacheUri, content.onEach { fileSize += it.size })
             mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
                 MediaCacheMapping(cacheUri, size = fileSize, contentType = contentType.toString())
             }
@@ -176,7 +176,7 @@ class MediaServiceImpl(
     }
 
     override suspend fun prepareUploadThumbnail(
-        content: ByteFlow,
+        content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<String, ThumbnailInfo>? {
         val thumbnail = try {
@@ -185,7 +185,7 @@ class MediaServiceImpl(
             log.warn(e) { "could not create thumbnail from file with content type $contentType" }
             return null
         }
-        val cacheUri = prepareUploadMedia(thumbnail.file.toByteFlow(), thumbnail.contentType)
+        val cacheUri = prepareUploadMedia(thumbnail.file.toByteArrayFlow(), thumbnail.contentType)
         return cacheUri to ThumbnailInfo(
             width = thumbnail.width,
             height = thumbnail.height,
@@ -194,7 +194,7 @@ class MediaServiceImpl(
         )
     }
 
-    override suspend fun prepareUploadEncryptedMedia(content: ByteFlow): EncryptedFile {
+    override suspend fun prepareUploadEncryptedMedia(content: ByteArrayFlow): EncryptedFile {
         val key = SecureRandom.nextBytes(32)
         val nonce = SecureRandom.nextBytes(8)
         val initialisationVector = nonce + ByteArray(8)
@@ -216,7 +216,7 @@ class MediaServiceImpl(
     }
 
     override suspend fun prepareUploadEncryptedThumbnail(
-        content: ByteFlow,
+        content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<EncryptedFile, ThumbnailInfo>? {
         val thumbnail = try {
@@ -225,7 +225,7 @@ class MediaServiceImpl(
             log.debug { "could not create thumbnail from file with content type $contentType" }
             return null
         }
-        val encryptedFile = prepareUploadEncryptedMedia(thumbnail.file.toByteFlow())
+        val encryptedFile = prepareUploadEncryptedMedia(thumbnail.file.toByteArrayFlow())
         return encryptedFile to ThumbnailInfo(
             width = thumbnail.width,
             height = thumbnail.height,

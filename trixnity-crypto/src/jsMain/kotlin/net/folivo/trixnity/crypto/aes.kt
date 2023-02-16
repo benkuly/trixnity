@@ -6,17 +6,17 @@ import io.ktor.util.*
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteFlow
+import net.folivo.trixnity.core.toByteArrayFlow
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import kotlin.js.json
 
 @OptIn(FlowPreview::class)
-actual fun ByteFlow.encryptAes256Ctr(
+actual fun ByteArrayFlow.encryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteFlow {
+): ByteArrayFlow {
     return if (PlatformUtils.IS_BROWSER) {
         flow {// TODO should be streaming!
             val crypto = crypto.subtle
@@ -35,7 +35,7 @@ actual fun ByteFlow.encryptAes256Ctr(
                 ),
                 aesKey,
                 toByteArray().toInt8Array().buffer,
-            ).await().toByteArray().toByteFlow()
+            ).await().toByteArray().toByteArrayFlow()
                 .also { emitAll(it) }
         }
     } else {
@@ -44,9 +44,9 @@ actual fun ByteFlow.encryptAes256Ctr(
                 createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
             emitAll(
                 flatMapConcat { input ->
-                    cipher.update(byteArrayOf(input).toInt8Array()).toByteArray().toByteFlow()
+                    cipher.update(input.toInt8Array()).toByteArray().toByteArrayFlow()
                 }.onCompletion {
-                    cipher.final().also { emitAll(it.toByteArray().toByteFlow()) }
+                    cipher.final().also { emitAll(it.toByteArray().toByteArrayFlow()) }
                 }
             )
         }
@@ -54,10 +54,10 @@ actual fun ByteFlow.encryptAes256Ctr(
 }
 
 @OptIn(FlowPreview::class)
-actual fun ByteFlow.decryptAes256Ctr(
+actual fun ByteArrayFlow.decryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
-): ByteFlow {
+): ByteArrayFlow {
     return if (PlatformUtils.IS_BROWSER) {
         flow {// TODO should be streaming!
             try {
@@ -77,7 +77,7 @@ actual fun ByteFlow.decryptAes256Ctr(
                     ),
                     aesKey,
                     toByteArray().toInt8Array().buffer,
-                ).await().toByteArray().toByteFlow()
+                ).await().toByteArray().toByteArrayFlow()
                     .also { emitAll(it) }
             } catch (exception: Throwable) {
                 throw DecryptionException.OtherException(exception)
@@ -90,9 +90,9 @@ actual fun ByteFlow.decryptAes256Ctr(
                     createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
                 emitAll(
                     flatMapConcat { input ->
-                        decipher.update(byteArrayOf(input).toInt8Array()).toByteArray().toByteFlow()
+                        decipher.update(input.toInt8Array()).toByteArray().toByteArrayFlow()
                     }.onCompletion {
-                        decipher.final().also { emitAll(it.toByteArray().toByteFlow()) }
+                        decipher.final().also { emitAll(it.toByteArray().toByteArrayFlow()) }
                     }
                 )
             } catch (exception: Throwable) {
