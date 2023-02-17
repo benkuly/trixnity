@@ -5,9 +5,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
-    }
+    jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     addAppleNativeTargetsWhenEnabled() // see https://github.com/realm/realm-kotlin/issues/617
 

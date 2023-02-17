@@ -68,6 +68,7 @@ val olmNativeTargets = listOf(
 
 if (isAndroidEnabled) {
     configure<LibraryExtension> {
+        namespace = "net.folivo.trixnity.olm"
         compileSdk = Versions.androidTargetSdk
         buildToolsVersion = Versions.androidBuildTools
         defaultConfig {
@@ -79,13 +80,15 @@ if (isAndroidEnabled) {
             manifest.srcFile("src/androidMain/AndroidManifest.xml")
             jniLibs.srcDirs(olmSharedAndroidLibPath)
         }
+        compileOptions {
+            sourceCompatibility = Versions.kotlinJvmTarget
+            targetCompatibility = Versions.kotlinJvmTarget
+        }
     }
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
-    }
+    jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled(withJava = false)
     val androidJvmTarget = addTargetWhenEnabled(KotlinPlatformType.androidJvm) {
         android {

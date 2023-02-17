@@ -9,9 +9,7 @@ mockmp {
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
-    }
+    jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled(useJUnitPlatform = false)
     val linuxX64Target =
         addNativeTargetWhenEnabled(org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64) { linuxX64() }

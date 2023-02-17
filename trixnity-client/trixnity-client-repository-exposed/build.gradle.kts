@@ -4,9 +4,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
-    }
+    jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
 
     sourceSets {
