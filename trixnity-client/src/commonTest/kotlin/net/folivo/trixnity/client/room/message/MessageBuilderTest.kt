@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.toByteFlow
+import net.folivo.trixnity.core.toByteArrayFlow
 
 class MessageBuilderTest : ShouldSpec({
     timeout = 60_000
@@ -280,7 +280,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
             mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(unencryptedRoom, roomService, mediaService).build {
-                image("body", "fake_image".toByteArray().toByteFlow(), PNG, 10, 1024, 1024)
+                image("body", "fake_image".toByteArray().toByteArrayFlow(), PNG, 10, 1024, 1024)
             } shouldBe ImageMessageEventContent(
                 "body", ImageInfo(
                     1024, 1024, "image/png", 10, "thumbnailCacheUrl", null,
@@ -295,7 +295,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
             mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(encryptedRoom, roomService, mediaService).build {
-                image("body", "fake_image".toByteArray().toByteFlow(), PNG, 10, 1024, 1024)
+                image("body", "fake_image".toByteArray().toByteArrayFlow(), PNG, 10, 1024, 1024)
             } shouldBe ImageMessageEventContent(
                 "body", ImageInfo(
                     1024, 1024, "image/png", 10, null, encryptedThumbnail,
@@ -310,7 +310,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
             mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(unencryptedRoom, roomService, mediaService).build {
-                file("body", "fake_file".toByteArray().toByteFlow(), PNG, 9, "filename")
+                file("body", "fake_file".toByteArray().toByteArrayFlow(), PNG, 9, "filename")
             } shouldBe FileMessageEventContent(
                 "body", "filename", FileInfo(
                     "image/png", 9, "thumbnailCacheUrl", null, thumbnailInfo,
@@ -324,7 +324,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
             mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(encryptedRoom, roomService, mediaService).build {
-                file("body", "fake_file".toByteArray().toByteFlow(), PNG, 9, "filename")
+                file("body", "fake_file".toByteArray().toByteArrayFlow(), PNG, 9, "filename")
             } shouldBe FileMessageEventContent(
                 "body", "filename", FileInfo(
                     "image/png", 9, null, encryptedThumbnail, thumbnailInfo,
@@ -338,7 +338,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
             mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(unencryptedRoom, roomService, mediaService).build {
-                video("body", "fake_video".toByteArray().toByteFlow(), MP4, 10, 1024, 1024, 1024)
+                video("body", "fake_video".toByteArray().toByteArrayFlow(), MP4, 10, 1024, 1024, 1024)
             } shouldBe VideoMessageEventContent(
                 "body", VideoInfo(
                     1024, 1024, 1024, "video/mp4", 10, "thumbnailCacheUrl", null,
@@ -353,7 +353,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
             mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(encryptedRoom, roomService, mediaService).build {
-                video("body", "fake_video".toByteArray().toByteFlow(), MP4, 10, 1024, 1024, 1024)
+                video("body", "fake_video".toByteArray().toByteArrayFlow(), MP4, 10, 1024, 1024, 1024)
             } shouldBe VideoMessageEventContent(
                 "body", VideoInfo(
                     1024, 1024, 1024, "video/mp4", 10, null, encryptedThumbnail,
@@ -366,7 +366,7 @@ class MessageBuilderTest : ShouldSpec({
         should("create audio") {
             mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(unencryptedRoom, roomService, mediaService).build {
-                audio("body", "fake_audio".toByteArray().toByteFlow(), OGG, 10, 1024)
+                audio("body", "fake_audio".toByteArray().toByteArrayFlow(), OGG, 10, 1024)
             } shouldBe AudioMessageEventContent(
                 "body", AudioInfo(1024, "audio/ogg", 10), "mediaCacheUrl"
             )
@@ -375,7 +375,7 @@ class MessageBuilderTest : ShouldSpec({
             val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
             mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
             MessageBuilder(encryptedRoom, roomService, mediaService).build {
-                audio("body", "fake_audio".toByteArray().toByteFlow(), OGG, 10, 1024)
+                audio("body", "fake_audio".toByteArray().toByteArrayFlow(), OGG, 10, 1024)
             } shouldBe AudioMessageEventContent(
                 "body", AudioInfo(1024, "audio/ogg", 10), null, encryptedFile
             )

@@ -4,7 +4,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteFlow
+import net.folivo.trixnity.core.toByteArrayFlow
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import kotlin.test.AfterTest
@@ -52,7 +52,7 @@ class OkioMediaStoreTest {
     @Test
     fun shouldAddMedia() = runTest {
         fileSystem.createDirectories(basePath)
-        cut.addMedia("url1", "hi".encodeToByteArray().toByteFlow())
+        cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
         fileSystem.read(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) { readUtf8() } shouldBe "hi"
     }
 

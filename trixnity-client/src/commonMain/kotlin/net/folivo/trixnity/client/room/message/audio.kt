@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.AudioInfo
@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Audi
 @TrixnityDsl
 suspend fun MessageBuilder.audio(
     body: String,
-    audio: ByteFlow,
+    audio: ByteArrayFlow,
     type: ContentType,
     size: Int? = null,
     duration: Int? = null

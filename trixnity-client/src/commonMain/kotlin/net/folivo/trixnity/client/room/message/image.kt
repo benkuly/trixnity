@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Imag
 @TrixnityDsl
 suspend fun MessageBuilder.image(
     body: String,
-    image: ByteFlow,
+    image: ByteArrayFlow,
     type: ContentType,
     size: Int? = null,
     height: Int? = null,

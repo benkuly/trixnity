@@ -1,12 +1,12 @@
 package net.folivo.trixnity.client.media
 
 import net.folivo.trixnity.client.store.Store
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 
 interface MediaStore : Store {
-    suspend fun addMedia(url: String, content: ByteFlow)
+    suspend fun addMedia(url: String, content: ByteArrayFlow)
 
-    suspend fun getMedia(url: String): ByteFlow?
+    suspend fun getMedia(url: String): ByteArrayFlow?
 
     suspend fun deleteMedia(url: String)
 

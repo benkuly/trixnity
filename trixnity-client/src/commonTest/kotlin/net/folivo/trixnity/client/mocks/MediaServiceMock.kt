@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
-import net.folivo.trixnity.core.ByteFlow
+import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 
@@ -14,7 +14,7 @@ class MediaServiceMock : MediaService {
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteFlow> {
+    ): Result<ByteArrayFlow> {
         throw NotImplementedError()
     }
 
@@ -22,7 +22,7 @@ class MediaServiceMock : MediaService {
         encryptedFile: EncryptedFile,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteFlow> {
+    ): Result<ByteArrayFlow> {
         throw NotImplementedError()
     }
 
@@ -33,31 +33,31 @@ class MediaServiceMock : MediaService {
         method: ThumbnailResizingMethod,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteFlow> {
+    ): Result<ByteArrayFlow> {
         throw NotImplementedError()
     }
 
     lateinit var returnPrepareUploadMedia: String
-    override suspend fun prepareUploadMedia(content: ByteFlow, contentType: ContentType?): String {
+    override suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String {
         return returnPrepareUploadMedia
     }
 
     var returnPrepareUploadThumbnail: Pair<String, ThumbnailInfo>? = null
     override suspend fun prepareUploadThumbnail(
-        content: ByteFlow,
+        content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<String, ThumbnailInfo>? {
         return returnPrepareUploadThumbnail
     }
 
     lateinit var returnPrepareUploadEncryptedMedia: EncryptedFile
-    override suspend fun prepareUploadEncryptedMedia(content: ByteFlow): EncryptedFile {
+    override suspend fun prepareUploadEncryptedMedia(content: ByteArrayFlow): EncryptedFile {
         return returnPrepareUploadEncryptedMedia
     }
 
     var returnPrepareUploadEncryptedThumbnail: Pair<EncryptedFile, ThumbnailInfo>? = null
     override suspend fun prepareUploadEncryptedThumbnail(
-        content: ByteFlow,
+        content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<EncryptedFile, ThumbnailInfo>? {
         return returnPrepareUploadEncryptedThumbnail

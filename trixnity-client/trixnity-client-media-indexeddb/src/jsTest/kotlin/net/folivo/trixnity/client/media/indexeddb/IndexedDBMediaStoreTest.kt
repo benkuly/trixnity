@@ -11,7 +11,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.MEDIA_OBJECT_STORE_NAME
 import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteFlow
+import net.folivo.trixnity.core.toByteArrayFlow
 import org.khronos.webgl.Uint8Array
 import kotlin.test.Test
 
@@ -70,7 +70,7 @@ class IndexedDBMediaStoreTest {
 
     @Test
     fun shouldAddMedia() = test {
-        cut.addMedia(file1, "hi".encodeToByteArray().toByteFlow())
+        cut.addMedia(file1, "hi".encodeToByteArray().toByteArrayFlow())
         database.transaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store.getAll().size shouldBe 1
