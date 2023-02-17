@@ -3,16 +3,13 @@ package net.folivo.trixnity.crypto
 import createCipheriv
 import crypto
 import io.ktor.util.*
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.await
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.flow
 import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import kotlin.js.json
 
-@OptIn(FlowPreview::class)
 actual fun ByteArrayFlow.encryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
@@ -27,7 +24,7 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
                 false,
                 arrayOf("encrypt", "decrypt"),
             ).await()
-            crypto.encrypt(
+            val result = crypto.encrypt(
                 json(
                     "name" to "AES-CTR",
                     "counter" to initialisationVector.toInt8Array().buffer,
@@ -35,25 +32,21 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
                 ),
                 aesKey,
                 toByteArray().toInt8Array().buffer,
-            ).await().toByteArray().toByteArrayFlow()
-                .also { emitAll(it) }
+            ).await().toByteArray()
+            emit(result)
         }
     } else {
         flow {
             val cipher =
                 createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
-            emitAll(
-                flatMapConcat { input ->
-                    cipher.update(input.toInt8Array()).toByteArray().toByteArrayFlow()
-                }.onCompletion {
-                    cipher.final().also { emitAll(it.toByteArray().toByteArrayFlow()) }
-                }
-            )
+            collect { input ->
+                emit(cipher.update(input.toInt8Array()).toByteArray())
+            }
+            emit(cipher.final().toByteArray())
         }
     }
 }
 
-@OptIn(FlowPreview::class)
 actual fun ByteArrayFlow.decryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
@@ -69,7 +62,7 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
                     false,
                     arrayOf("encrypt", "decrypt"),
                 ).await()
-                crypto.decrypt(
+                val result = crypto.decrypt(
                     json(
                         "name" to "AES-CTR",
                         "counter" to initialisationVector.toInt8Array().buffer,
@@ -77,8 +70,8 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
                     ),
                     aesKey,
                     toByteArray().toInt8Array().buffer,
-                ).await().toByteArray().toByteArrayFlow()
-                    .also { emitAll(it) }
+                ).await().toByteArray()
+                emit(result)
             } catch (exception: Throwable) {
                 throw DecryptionException.OtherException(exception)
             }
@@ -88,13 +81,10 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
             try {
                 val decipher =
                     createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
-                emitAll(
-                    flatMapConcat { input ->
-                        decipher.update(input.toInt8Array()).toByteArray().toByteArrayFlow()
-                    }.onCompletion {
-                        decipher.final().also { emitAll(it.toByteArray().toByteArrayFlow()) }
-                    }
-                )
+                collect { input ->
+                    emit(decipher.update(input.toInt8Array()).toByteArray())
+                }
+                emit(decipher.final().toByteArray())
             } catch (exception: Throwable) {
                 throw DecryptionException.OtherException(exception)
             }

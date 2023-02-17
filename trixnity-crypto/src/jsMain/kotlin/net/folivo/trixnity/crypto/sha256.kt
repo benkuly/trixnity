@@ -7,7 +7,6 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
 import net.folivo.trixnity.olm.encodeUnpaddedBase64
 
 actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
@@ -20,7 +19,7 @@ actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
                 hash.value = crypto.digest("SHA-256", content.toInt8Array().buffer).await()
                     .toByteArray()
                     .encodeUnpaddedBase64()
-                emitAll(content.toByteArrayFlow())
+                emit(content)
             },
             hash,
         )

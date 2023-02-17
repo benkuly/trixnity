@@ -1,16 +1,13 @@
 package net.folivo.trixnity.crypto
 
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.flow
 import net.folivo.trixnity.core.ByteArrayFlow
-import net.folivo.trixnity.core.toByteArrayFlow
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import java.security.Key
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-@OptIn(FlowPreview::class)
 actual fun ByteArrayFlow.encryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
@@ -21,16 +18,12 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
 
     cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec)
 
-    emitAll(
-        mapNotNull { input ->
-            cipher.update(input)?.toByteArrayFlow()
-        }.flattenConcat().onCompletion {
-            cipher.doFinal()?.also { emitAll(it.toByteArrayFlow()) }
-        }
-    )
+    collect { input ->
+        cipher.update(input)?.also { emit(it) }
+    }
+    cipher.doFinal()?.also { emit(it) }
 }
 
-@OptIn(FlowPreview::class)
 actual fun ByteArrayFlow.decryptAes256Ctr(
     key: ByteArray,
     initialisationVector: ByteArray
@@ -41,13 +34,10 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
         val ivSpec = IvParameterSpec(initialisationVector)
 
         cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec)
-        emitAll(
-            mapNotNull { input ->
-                cipher.update(input)?.toByteArrayFlow()
-            }.flattenConcat().onCompletion {
-                cipher.doFinal()?.also { emitAll(it.toByteArrayFlow()) }
-            }
-        )
+        collect { input ->
+            cipher.update(input)?.also { emit(it) }
+        }
+        cipher.doFinal()?.also { emit(it) }
     } catch (exception: Exception) {
         throw DecryptionException.OtherException(exception)
     }
