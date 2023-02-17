@@ -43,10 +43,8 @@ suspend fun ByteArrayFlow.toByteArray(): ByteArray {
     val concatByteArray = ByteArray(allByteArrays.sumOf { it.size })
     var byteArrayPosition = 0
     allByteArrays.forEach { byteArray ->
-        byteArray.forEach { byte ->
-            concatByteArray[byteArrayPosition] = byte
-            byteArrayPosition++
-        }
+        byteArray.copyInto(concatByteArray, byteArrayPosition)
+        byteArrayPosition++
     }
     return concatByteArray
 }
