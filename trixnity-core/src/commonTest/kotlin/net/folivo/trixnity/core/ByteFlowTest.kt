@@ -5,6 +5,7 @@ import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -12,6 +13,7 @@ import kotlin.test.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ByteFlowTest {
     private val helloBytes = "hello".toByteArray()
+    private val helloBytesFlow = flowOf("he".toByteArray(), "llo".toByteArray())
 
     @Test
     fun shouldConvertByteReadChannelToByteFlow() = runTest {
@@ -25,6 +27,6 @@ class ByteFlowTest {
 
     @Test
     fun shouldConvertByteFlowToAndFromByteArray() = runTest {
-        helloBytes.toByteArrayFlow().toByteArray() shouldBe helloBytes
+        helloBytesFlow.toByteArray() shouldBe helloBytes
     }
 }

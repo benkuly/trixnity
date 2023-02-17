@@ -45,7 +45,7 @@ suspend fun ByteArrayFlow.toByteArray(): ByteArray {
     allByteArrays.forEach { byteArray ->
         if (byteArray.isNotEmpty()) {
             byteArray.copyInto(concatByteArray, byteArrayPosition)
-            byteArrayPosition++
+            byteArrayPosition += byteArray.size
         }
     }
     return concatByteArray
