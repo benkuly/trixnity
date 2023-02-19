@@ -10,29 +10,28 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.crypto.mocks.OlmEncryptionServiceMock
 import net.folivo.trixnity.olm.OlmLibraryException
-import org.kodein.mock.Mocker
-import org.kodein.mock.UsesMocks
 
-@UsesMocks(OlmEncryptionService::class)
 class OlmDecrypterTest : ShouldSpec({
     timeout = 60_000
 
-    val mocker = Mocker()
-    val mockOlmEventService = MockOlmEncryptionService(mocker)
+    lateinit var olmEncryptionServiceMock: OlmEncryptionServiceMock
 
     val subscriberReceived = mutableListOf<DecryptedOlmEventContainer>()
     val subscriber: DecryptedOlmEventSubscriber = {
         subscriberReceived.add(it)
     }
 
-    val cut = OlmDecrypterImpl(mockOlmEventService)
-    cut.subscribe(subscriber)
-
-    afterEach {
+    lateinit var cut: OlmDecrypterImpl
+    beforeTest {
         subscriberReceived.clear()
-        mocker.reset()
+        olmEncryptionServiceMock = OlmEncryptionServiceMock()
+        cut = OlmDecrypterImpl(olmEncryptionServiceMock)
+        cut.subscribe(subscriber)
     }
+
+
 
     should("catch DecryptionException") {
         val event = Event.ToDeviceEvent(
@@ -41,9 +40,9 @@ class OlmDecrypterTest : ShouldSpec({
             ),
             UserId("sender", "server")
         )
-        mocker.everySuspending {
-            mockOlmEventService.decryptOlm(isAny(), isAny())
-        } runs { throw DecryptionException.ValidationFailed("whoops") }
+        olmEncryptionServiceMock.decryptOlm = {
+            throw DecryptionException.ValidationFailed("whoops")
+        }
         cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
@@ -54,9 +53,9 @@ class OlmDecrypterTest : ShouldSpec({
             ),
             UserId("sender", "server")
         )
-        mocker.everySuspending {
-            mockOlmEventService.decryptOlm(isAny(), isAny())
-        } runs { throw KeyException.KeyNotFoundException("not found") }
+        olmEncryptionServiceMock.decryptOlm = {
+            throw KeyException.KeyNotFoundException("not found")
+        }
         cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
@@ -67,9 +66,9 @@ class OlmDecrypterTest : ShouldSpec({
             ),
             UserId("sender", "server")
         )
-        mocker.everySuspending {
-            mockOlmEventService.decryptOlm(isAny(), isAny())
-        } runs { throw OlmLibraryException("something") }
+        olmEncryptionServiceMock.decryptOlm = {
+            throw OlmLibraryException("something")
+        }
         cut.handleOlmEvent(event)
         subscriberReceived shouldHaveSize 0
     }
@@ -85,7 +84,9 @@ class OlmDecrypterTest : ShouldSpec({
             UserId("sender", "server"), keysOf(),
             UserId("receiver", "server"), keysOf()
         )
-        mocker.everySuspending { mockOlmEventService.decryptOlm(isAny(), isAny()) } returns decryptedEvent
+        olmEncryptionServiceMock.decryptOlm = {
+            decryptedEvent
+        }
         cut.handleOlmEvent(event)
         subscriberReceived shouldContainExactly listOf(DecryptedOlmEventContainer(event, decryptedEvent))
     }

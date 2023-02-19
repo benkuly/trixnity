@@ -2,7 +2,6 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
-    id("org.kodein.mock.mockmp")
 }
 
 kotlin {
