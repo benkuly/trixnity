@@ -7,10 +7,10 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
+    id("de.undercouch.download")
     if (isAndroidEnabled) id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("de.undercouch.download") version Versions.downloadGradlePlugin
 }
 
 val jvmProcessedResourcesDir = buildDir.resolve("processedResources").resolve("jvm").resolve("main")
@@ -65,96 +65,6 @@ val olmNativeTargets = listOf(
         createTarget = { iosX64() },
     ),
 )
-
-kotlin {
-    jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled(withJava = false)
-    val androidJvmTarget = addTargetWhenEnabled(KotlinPlatformType.androidJvm) {
-        android {
-            publishLibraryVariants("release")
-            compilations.all {
-                kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-            }
-        }
-    }
-    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
-
-    val nativeTargets = olmNativeTargets.mapNotNull { target ->
-        addNativeTargetWhenEnabled(target.target) {
-            target.createTarget(this).apply {
-                compilations {
-                    "main" {
-                        cinterops {
-                            val libolm by creating {
-                                packageName("org.matrix.olm")
-                                includeDirs(olmIncludeDir)
-                                tasks.named(interopProcessingTaskName) {
-                                    dependsOn(extractOlmSources, extractOlmBinaries)
-                                }
-                            }
-                        }
-                        kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
-                    }
-                }
-            }
-        }
-    }
-
-    sourceSets {
-        all {
-            languageSettings.optIn("kotlin.RequiresOptIn")
-        }
-        val commonMain by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-                implementation("io.ktor:ktor-utils:${Versions.ktor}")
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
-            }
-        }
-        val olmLibraryMain by creating {
-            dependsOn(commonMain)
-        }
-        jvmTarget?.mainSourceSet(this) {
-            dependsOn(olmLibraryMain)
-            dependencies {
-                implementation("net.java.dev.jna:jna:${Versions.jna}")
-            }
-        }
-        androidJvmTarget?.mainSourceSet(this) {
-            dependsOn(olmLibraryMain)
-            kotlin.srcDirs("src/jvmMain/kotlin")
-            dependencies {
-                api("net.java.dev.jna:jna:${Versions.jna}@aar")
-            }
-        }
-        jsTarget?.mainSourceSet(this) {
-            dependencies {
-                implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
-            }
-        }
-        val nativeMain by creating {
-            dependsOn(olmLibraryMain)
-        }
-        nativeTargets.forEach {
-            it.mainSourceSet(this).dependsOn(nativeMain)
-        }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-            }
-        }
-        androidJvmTarget?.testSourceSet(this) {
-            kotlin.srcDirs("src/jvmTest/kotlin")
-            dependencies {
-                implementation("androidx.test:runner:${Versions.androidxTestRunner}")
-            }
-        }
-    }
-}
 
 project.afterEvaluate {
     val testTasks =
@@ -244,10 +154,102 @@ if (isAndroidEnabled) {
             sourceCompatibility = Versions.kotlinJvmTarget
             targetCompatibility = Versions.kotlinJvmTarget
         }
+        buildTypes {
+            release {
+                isDefault = true
+            }
+        }
     }
     tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
         if (name.contains("jni", true)) {
             dependsOn(extractOlmBinaries)
+        }
+    }
+}
+
+kotlin {
+    jvmToolchain()
+    val jvmTarget = addDefaultJvmTargetWhenEnabled(withJava = false)
+    val androidJvmTarget = addTargetWhenEnabled(KotlinPlatformType.androidJvm) {
+        android {
+            publishLibraryVariants("release")
+        }
+    }
+    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
+
+    val nativeTargets = olmNativeTargets.mapNotNull { target ->
+        addNativeTargetWhenEnabled(target.target) {
+            target.createTarget(this).apply {
+                compilations {
+                    "main" {
+                        cinterops {
+                            val libolm by creating {
+                                packageName("org.matrix.olm")
+                                includeDirs(olmIncludeDir)
+                                tasks.named(interopProcessingTaskName) {
+                                    dependsOn(extractOlmSources, extractOlmBinaries)
+                                }
+                            }
+                        }
+                        kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
+                    }
+                }
+            }
+        }
+    }
+
+    sourceSets {
+        all {
+            languageSettings.optIn("kotlin.RequiresOptIn")
+        }
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
+                implementation("io.ktor:ktor-utils:${Versions.ktor}")
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
+                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+            }
+        }
+        val olmLibraryMain by creating {
+            dependsOn(commonMain)
+        }
+        jvmTarget?.mainSourceSet(this) {
+            dependsOn(olmLibraryMain)
+            dependencies {
+                implementation("net.java.dev.jna:jna:${Versions.jna}")
+            }
+        }
+        androidJvmTarget?.mainSourceSet(this) {
+            dependsOn(olmLibraryMain)
+            kotlin.srcDirs("src/jvmMain/kotlin")
+            dependencies {
+                api("net.java.dev.jna:jna:${Versions.jna}@aar")
+            }
+        }
+        jsTarget?.mainSourceSet(this) {
+            dependencies {
+                implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
+            }
+        }
+        val nativeMain by creating {
+            dependsOn(olmLibraryMain)
+        }
+        nativeTargets.forEach {
+            it.mainSourceSet(this).dependsOn(nativeMain)
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
+                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+            }
+        }
+        androidJvmTarget?.testSourceSet(this) {
+            kotlin.srcDirs("src/jvmTest/kotlin")
+            dependencies {
+                implementation("androidx.test:runner:${Versions.androidxTestRunner}")
+            }
         }
     }
 }

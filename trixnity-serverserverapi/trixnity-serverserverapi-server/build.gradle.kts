@@ -1,11 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("org.kodein.mock.mockmp")
-}
-
-mockmp {
-    usesHelper = true
+    id("com.google.devtools.ksp")
 }
 
 kotlin {
@@ -34,6 +30,9 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
 
+                implementation("org.kodein.mock:mockmp-runtime:${Versions.mocKmp}")
+                implementation("org.kodein.mock:mockmp-test-helper:${Versions.mocKmp}")
+
                 implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-resources:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")
@@ -48,4 +47,12 @@ kotlin {
             }
         }
     }
+}
+
+dependencies {
+    configurations
+        .filter { it.name.startsWith("ksp") && it.name.contains("Test") }
+        .forEach {
+            add(it.name, "org.kodein.mock:mockmp-processor:${Versions.mocKmp}")
+        }
 }

@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
@@ -61,6 +62,12 @@ fun KotlinTarget.testSourceSet(
     configure: KotlinSourceSet.() -> Unit
 ): KotlinSourceSet =
     sourceSets.getByName(targetName + "Test").apply(configure)
+
+fun KotlinAndroidTarget.testSourceSet(
+    sourceSets: NamedDomainObjectContainer<KotlinSourceSet>,
+    configure: KotlinSourceSet.() -> Unit
+): KotlinSourceSet =
+    sourceSets.getByName(targetName + "UnitTest").apply(configure)
 
 fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
     useJUnitPlatform: Boolean = true,
