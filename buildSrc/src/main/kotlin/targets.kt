@@ -22,7 +22,7 @@ fun <T : KotlinTarget> KotlinMultiplatformExtension.addTargetWhenEnabled(
     when {
         isMainCIHost -> createTarget().apply {
             compilations.configureEach {
-                compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+                compileTaskProvider.get().enabled = target.isEnabledOnThisPlatform()
             }
         }
 
@@ -40,7 +40,7 @@ fun <T : KotlinNativeTarget> KotlinMultiplatformExtension.addNativeTargetWhenEna
     when {
         isMainCIHost -> createTarget().apply {
             compilations.configureEach {
-                compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+                compileTaskProvider.get().enabled = target.isEnabledOnThisPlatform()
             }
         }
 
