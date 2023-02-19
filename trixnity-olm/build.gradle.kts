@@ -66,27 +66,6 @@ val olmNativeTargets = listOf(
     ),
 )
 
-if (isAndroidEnabled) {
-    configure<LibraryExtension> {
-        namespace = "net.folivo.trixnity.olm"
-        compileSdk = Versions.androidTargetSdk
-        buildToolsVersion = Versions.androidBuildTools
-        defaultConfig {
-            minSdk = Versions.androidMinSdk
-            targetSdk = Versions.androidTargetSdk
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
-        sourceSets.getByName("main") {
-            manifest.srcFile("src/androidMain/AndroidManifest.xml")
-            jniLibs.srcDirs(olmSharedAndroidLibPath)
-        }
-        compileOptions {
-            sourceCompatibility = Versions.kotlinJvmTarget
-            targetCompatibility = Versions.kotlinJvmTarget
-        }
-    }
-}
-
 kotlin {
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled(withJava = false)
@@ -245,4 +224,30 @@ tasks.withType<ExternalNativeCleanTask> {
 
 tasks.withType<ExternalNativeBuildTask> {
     dependsOn(extractOlmBinaries)
+}
+
+if (isAndroidEnabled) {
+    configure<LibraryExtension> {
+        namespace = "net.folivo.trixnity.olm"
+        compileSdk = Versions.androidTargetSdk
+        buildToolsVersion = Versions.androidBuildTools
+        defaultConfig {
+            minSdk = Versions.androidMinSdk
+            targetSdk = Versions.androidTargetSdk
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+        sourceSets.getByName("main") {
+            manifest.srcFile("src/androidMain/AndroidManifest.xml")
+            jniLibs.srcDirs(olmSharedAndroidLibPath)
+        }
+        compileOptions {
+            sourceCompatibility = Versions.kotlinJvmTarget
+            targetCompatibility = Versions.kotlinJvmTarget
+        }
+    }
+    tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
+        if (name.contains("jni", true)) {
+            dependsOn(extractOlmBinaries)
+        }
+    }
 }
