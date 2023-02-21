@@ -169,7 +169,7 @@ if (isAndroidEnabled) {
 
 kotlin {
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled(withJava = false)
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val androidJvmTarget = addTargetWhenEnabled(KotlinPlatformType.androidJvm) {
         android {
             publishLibraryVariants("release")

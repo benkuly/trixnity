@@ -71,7 +71,6 @@ fun KotlinAndroidTarget.testSourceSet(
 
 fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
     useJUnitPlatform: Boolean = true,
-    withJava: Boolean = true,
     testEnabled: Boolean = true
 ): KotlinJvmTarget? =
     addTargetWhenEnabled(KotlinPlatformType.jvm) {
@@ -83,7 +82,6 @@ fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
                 enabled = testEnabled
                 if (useJUnitPlatform) useJUnitPlatform()
             }
-            if (withJava) withJava()
         }
     }
 

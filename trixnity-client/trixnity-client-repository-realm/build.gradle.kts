@@ -43,10 +43,3 @@ kotlin {
         }
     }
 }
-
-// needed since gradle 8.0 and Kotlin 1.8. Reason is unknown. Should be checked if it is still needed from time to time.
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = Versions.kotlinJvmTarget.majorVersion
-    }
-}
