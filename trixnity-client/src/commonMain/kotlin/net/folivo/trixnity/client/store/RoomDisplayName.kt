@@ -9,7 +9,7 @@ data class RoomDisplayName(
     val explicitName: String? = null,
     val isEmpty: Boolean = false,
     val otherUsersCount: Long = 0,
-    internal val summary: RoomSummary?
+    val summary: RoomSummary?
 ) {
     val heroes: List<UserId>
         get() = summary?.heroes ?: listOf()
