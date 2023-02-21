@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.room
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,11 +11,13 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryRoomStateStore
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.room.RoomDisplayNameEventHandler.RoomDisplayNameChange
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomDisplayName
 import net.folivo.trixnity.client.store.RoomStateStore
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -25,6 +28,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomDisplayNameEventHandlerTest : ShouldSpec({
@@ -35,6 +39,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
     lateinit var scope: CoroutineScope
 
     lateinit var cut: RoomDisplayNameEventHandler
+    val ownUserId = UserId("own", "server")
     val user1 = UserId("user1", "server")
     val user2 = UserId("user2", "server")
     val user3 = UserId("user3", "server")
@@ -50,6 +55,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
             mockMatrixClientServerApiClient(json).first,
             roomStore,
             roomStateStore,
+            UserInfo(ownUserId, "ownDevice", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, ""))
         )
         roomStore.update(roomId) { simpleRoom.copy(roomId = roomId) }
     }
@@ -121,8 +127,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                     joinedMemberCount = 1,
                     invitedMemberCount = 1,
                 )
-                cut.setRoomDisplayName(roomId, roomSummary)
-                roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                     explicitName = "#somewhere:localhost",
                     summary = roomSummary
                 )
@@ -151,8 +157,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 1,
                                 invitedMemberCount = 1,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 summary = roomSummary
                             )
                         }
@@ -164,8 +170,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 1,
                                 invitedMemberCount = 1,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 summary = roomSummary
                             )
                         }
@@ -185,8 +191,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 2,
                                 invitedMemberCount = 2,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 otherUsersCount = 3,
                                 summary = roomSummary
                             )
@@ -199,8 +205,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 2,
                                 invitedMemberCount = 2,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 otherUsersCount = 2,
                                 summary = roomSummary
                             )
@@ -213,8 +219,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 2,
                                 invitedMemberCount = 2,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 otherUsersCount = 1,
                                 summary = roomSummary
                             )
@@ -237,8 +243,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                             joinedMemberCount = 1,
                             invitedMemberCount = 0,
                         )
-                        cut.setRoomDisplayName(roomId, roomSummary)
-                        roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                        cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                        roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                             isEmpty = true,
                             summary = roomSummary
                         )
@@ -252,8 +258,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 1,
                                 invitedMemberCount = 0,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 isEmpty = true,
                                 otherUsersCount = 1,
                                 summary = roomSummary
@@ -267,8 +273,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 1,
                                 invitedMemberCount = 0,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 isEmpty = true,
                                 summary = roomSummary
                             )
@@ -289,8 +295,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 1,
                                 invitedMemberCount = 0,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 isEmpty = true,
                                 otherUsersCount = 3,
                                 summary = roomSummary
@@ -304,8 +310,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 1,
                                 invitedMemberCount = 0,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 isEmpty = true,
                                 otherUsersCount = 2,
                                 summary = roomSummary
@@ -328,8 +334,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                             joinedMemberCount = 0,
                             invitedMemberCount = 0,
                         )
-                        cut.setRoomDisplayName(roomId, roomSummary)
-                        roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                        cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                        roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                             isEmpty = true,
                             summary = roomSummary
                         )
@@ -343,8 +349,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 0,
                                 invitedMemberCount = 0,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 isEmpty = true,
                                 summary = roomSummary
                             )
@@ -360,8 +366,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 0,
                                 invitedMemberCount = 0,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 isEmpty = true,
                                 summary = roomSummary
                             )
@@ -383,8 +389,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 0,
                                 invitedMemberCount = 0,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 isEmpty = true,
                                 otherUsersCount = 3,
                                 summary = roomSummary
@@ -398,8 +404,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                                 joinedMemberCount = 0,
                                 invitedMemberCount = 0,
                             )
-                            cut.setRoomDisplayName(roomId, roomSummary)
-                            roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                                 isEmpty = true,
                                 otherUsersCount = 2,
                                 summary = roomSummary
@@ -428,12 +434,19 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
                     joinedMemberCount = 1,
                     invitedMemberCount = 2,
                 )
-                cut.setRoomDisplayName(roomId, roomSummary)
-                roomStore.get(roomId).first()?.name shouldBe RoomDisplayName(
+                cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
+                roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
                     explicitName = "The room name",
                     summary = roomSummary
                 )
             }
+        }
+        should("set room name on invite (no room summary)") {
+            cut.setRoomDisplayName(roomId, RoomDisplayNameChange(nameEventContent = NameEventContent("the room")))
+            roomStore.get(roomId).first().shouldNotBeNull().name shouldBe RoomDisplayName(
+                explicitName = "the room",
+                summary = null
+            )
         }
         context("empty NameEvent") {
             beforeTest {
@@ -453,7 +466,7 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
         )
         val roomBefore = simpleRoom.copy(name = RoomDisplayName(explicitName = "bla", summary = roomSummary))
         roomStore.update(roomId) { roomBefore }
-        cut.setRoomDisplayName(roomId, roomSummary)
+        cut.setRoomDisplayName(roomId, RoomDisplayNameChange(roomSummary = roomSummary))
         roomStore.get(roomId).first() shouldBe roomBefore
     }
 })

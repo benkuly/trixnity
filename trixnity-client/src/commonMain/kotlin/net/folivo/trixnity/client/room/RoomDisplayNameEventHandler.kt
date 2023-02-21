@@ -12,6 +12,7 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
@@ -26,6 +27,7 @@ class RoomDisplayNameEventHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
+    private val userInfo: UserInfo,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -39,12 +41,26 @@ class RoomDisplayNameEventHandler(
         }
     }
 
+    internal data class RoomDisplayNameChange(
+        val nameEventContent: NameEventContent? = null,
+        val canonicalAliasEventContent: CanonicalAliasEventContent? = null,
+        val roomSummary: RoomSummary? = null,
+    ) {
+        fun onlyRoomSummarySet() = nameEventContent == null && canonicalAliasEventContent == null
+    }
+
+    private val setRoomDisplayNamesQueue =
+        MutableStateFlow(mapOf<RoomId, RoomDisplayNameChange>())
+
     internal fun setRoomDisplayNameFromNameEvent(event: Event<NameEventContent>) {
         val roomId = event.getRoomId()
         if (roomId != null) {
             log.debug { "update room displayname of $roomId due to name event" }
             setRoomDisplayNamesQueue.update {
-                if (it.containsKey(roomId)) it else it + (roomId to null)
+                it + (roomId to (
+                        it[roomId]?.copy(nameEventContent = event.content)
+                            ?: RoomDisplayNameChange(nameEventContent = event.content)
+                        ))
             }
         }
     }
@@ -54,43 +70,52 @@ class RoomDisplayNameEventHandler(
         if (roomId != null) {
             log.debug { "update room displayname of $roomId doe to alias event" }
             setRoomDisplayNamesQueue.update {
-                if (it.containsKey(roomId)) it else it + (roomId to null)
+                it + (roomId to (
+                        it[roomId]?.copy(canonicalAliasEventContent = event.content)
+                            ?: RoomDisplayNameChange(canonicalAliasEventContent = event.content)
+                        ))
             }
         }
     }
 
-    private val setRoomDisplayNamesQueue =
-        MutableStateFlow(mapOf<RoomId, RoomSummary?>())
-
     internal suspend fun handleSetRoomDisplayNamesQueue(syncResponse: Sync.Response) {
-        syncResponse.room?.join?.entries?.forEach { room ->
-            room.value.summary?.also { roomSummary ->
-                setRoomDisplayNamesQueue.update { it + (room.key to roomSummary) }
+        syncResponse.room?.join?.entries?.forEach { (roomId, room) ->
+            room.summary?.also { roomSummary ->
+                setRoomDisplayNamesQueue.update {
+                    it + (roomId to (
+                            it[roomId]?.copy(roomSummary = roomSummary)
+                                ?: RoomDisplayNameChange(roomSummary = roomSummary)
+                            ))
+                }
             }
         }
-        setRoomDisplayNamesQueue.value.forEach { (roomId, roomSummary) ->
-            setRoomDisplayName(roomId, roomSummary)
+        setRoomDisplayNamesQueue.value.forEach { (roomId, roomDisplayNameChange) ->
+            setRoomDisplayName(roomId, roomDisplayNameChange)
         }
         setRoomDisplayNamesQueue.value = mapOf()
     }
 
     internal suspend fun setRoomDisplayName(
         roomId: RoomId,
-        roomSummary: RoomSummary?,
+        roomDisplayNameChange: RoomDisplayNameChange,
     ) {
+        val roomSummary = roomDisplayNameChange.roomSummary
         val oldRoomSummary = roomStore.get(roomId).first()?.name?.summary
 
-        if (oldRoomSummary == roomSummary) return
+        if (roomDisplayNameChange.onlyRoomSummarySet() && roomSummary == oldRoomSummary) return
 
-        val mergedRoomSummary = RoomSummary(
-            heroes = roomSummary?.heroes ?: oldRoomSummary?.heroes,
-            joinedMemberCount = roomSummary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,
-            invitedMemberCount = roomSummary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
-        )
+        val mergedRoomSummary =
+            if (roomSummary == null && roomSummary == oldRoomSummary) null
+            else RoomSummary(
+                heroes = roomSummary?.heroes ?: oldRoomSummary?.heroes,
+                joinedMemberCount = roomSummary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,
+                invitedMemberCount = roomSummary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
+            )
 
-        val nameFromNameEvent = roomStateStore.getByStateKey<NameEventContent>(roomId).first()?.content?.name
-        val nameFromAliasEvent =
-            roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content?.alias?.full
+        val nameFromNameEvent = roomDisplayNameChange.nameEventContent?.name
+            ?: roomStateStore.getByStateKey<NameEventContent>(roomId).first()?.content?.name
+        val nameFromAliasEvent = roomDisplayNameChange.canonicalAliasEventContent?.alias?.full
+            ?: roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content?.alias?.full
 
         val roomName = when {
             nameFromNameEvent.isNullOrEmpty().not() ->
@@ -100,11 +125,12 @@ class RoomDisplayNameEventHandler(
                 RoomDisplayName(explicitName = nameFromAliasEvent, summary = mergedRoomSummary)
 
             else -> {
-                val heroes = mergedRoomSummary.heroes
-                val joinedMemberCount =
-                    mergedRoomSummary.joinedMemberCount ?: roomStateStore.membersCount(roomId, Membership.JOIN)
-                val invitedMemberCount =
-                    mergedRoomSummary.invitedMemberCount ?: roomStateStore.membersCount(roomId, Membership.INVITE)
+                val heroes = mergedRoomSummary?.heroes
+                    ?: roomStateStore.members(roomId, setOf(Membership.JOIN)).take(3).minus(userInfo.userId)
+                val joinedMemberCount = mergedRoomSummary?.joinedMemberCount
+                    ?: roomStateStore.membersCount(roomId, Membership.JOIN)
+                val invitedMemberCount = mergedRoomSummary?.invitedMemberCount
+                    ?: roomStateStore.membersCount(roomId, Membership.INVITE)
                 val us = 1
 
                 log.debug { "calculate room display name of $roomId (heroes=$heroes, joinedMemberCount=$joinedMemberCount, invitedMemberCount=$invitedMemberCount)" }
@@ -112,7 +138,7 @@ class RoomDisplayNameEventHandler(
                 if (joinedMemberCount + invitedMemberCount <= 1) {
                     // the room contains us or nobody
                     when {
-                        heroes.isNullOrEmpty() -> RoomDisplayName(isEmpty = true, summary = mergedRoomSummary)
+                        heroes.isEmpty() -> RoomDisplayName(isEmpty = true, summary = mergedRoomSummary)
                         else -> {
                             val isCompletelyEmpty = joinedMemberCount + invitedMemberCount <= 0
                             val leftMembersCount =
