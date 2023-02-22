@@ -211,7 +211,7 @@ class MessageBuilderTest : ShouldSpec({
             )
         }
         should("create fallback text on reply to image") {
-            val roomService = RoomServiceMock().apply {
+            val newRoomService = RoomServiceMock().apply {
                 rooms.value = mapOf(
                     encryptedRoom to MutableStateFlow(
                         Room(
@@ -239,7 +239,7 @@ class MessageBuilderTest : ShouldSpec({
                     )
                 )
             }
-            MessageBuilder(encryptedRoom, roomService, mediaService).build {
+            MessageBuilder(encryptedRoom, newRoomService, mediaService).build {
                 reply(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe TextMessageEventContent(

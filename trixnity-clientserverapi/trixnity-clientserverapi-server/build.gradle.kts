@@ -3,17 +3,11 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("org.kodein.mock.mockmp")
-}
-
-mockmp {
-    usesHelper = true
+    id("com.google.devtools.ksp")
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
-    }
+    jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled(useJUnitPlatform = false)
     val linuxX64Target = addNativeTargetWhenEnabled(KonanTarget.LINUX_X64) { linuxX64() }
 
@@ -40,6 +34,9 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
 
+                implementation("org.kodein.mock:mockmp-runtime:${Versions.mocKmp}")
+                implementation("org.kodein.mock:mockmp-test-helper:${Versions.mocKmp}")
+
                 implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
@@ -54,4 +51,12 @@ kotlin {
             }
         }
     }
+}
+
+dependencies {
+    configurations
+        .filter { it.name.startsWith("ksp") && it.name.contains("Test") }
+        .forEach {
+            add(it.name, "org.kodein.mock:mockmp-processor:${Versions.mocKmp}")
+        }
 }

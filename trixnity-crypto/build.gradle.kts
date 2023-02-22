@@ -2,13 +2,10 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
-    id("org.kodein.mock.mockmp")
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
-    }
+    jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
     val nativeTargets = addDefaultNativeTargetsWhenEnabled()

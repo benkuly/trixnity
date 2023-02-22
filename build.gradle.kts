@@ -11,8 +11,9 @@ plugins {
     signing
     id("org.jetbrains.dokka") version Versions.dokka
     id("io.kotest.multiplatform") version Versions.kotest apply false
-    id("org.kodein.mock.mockmp") version Versions.mocKmp apply false
+    id("com.google.devtools.ksp") version Versions.ksp apply false
     id("io.realm.kotlin") version Versions.realm apply false
+    id("de.undercouch.download") version Versions.downloadGradlePlugin apply false
 }
 
 allprojects {

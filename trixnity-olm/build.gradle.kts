@@ -7,10 +7,10 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
+    id("de.undercouch.download")
     if (isAndroidEnabled) id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("de.undercouch.download") version Versions.downloadGradlePlugin
 }
 
 val jvmProcessedResourcesDir = buildDir.resolve("processedResources").resolve("jvm").resolve("main")
@@ -66,8 +66,79 @@ val olmNativeTargets = listOf(
     ),
 )
 
+project.afterEvaluate {
+    val testTasks =
+        project.getTasksByName("testReleaseUnitTest", false) + project.getTasksByName("testDebugUnitTest", false)
+    testTasks.forEach {
+        it.onlyIf { false }
+    }
+}
+
+val downloadOlmSources by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
+    group = "olm"
+    src("https://gitlab.matrix.org/matrix-org/olm/-/archive/${Versions.olm}/olm-${Versions.olm}.zip")
+    dest(olmSourceZipDir)
+    overwrite(false)
+}
+
+val extractOlmSources by tasks.registering(Copy::class) {
+    group = "olm"
+    from(zipTree(olmSourceZipDir)) {
+        include("olm-${Versions.olm}/**")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+        }
+    }
+    into(olmSourcesDir)
+    outputs.cacheIf { true }
+    inputs.files(olmSourceZipDir)
+    dependsOn(downloadOlmSources)
+}
+
+val downloadOlmBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
+    group = "olm"
+    src("https://gitlab.com/api/v4/projects/39141647/packages/generic/binaries/${Versions.olmBinaries}/binaries.zip")
+    dest(olmBinariesZipDir)
+    overwrite(false)
+}
+
+val extractOlmBinaries by tasks.registering(Copy::class) {
+    group = "olm"
+    from(zipTree(olmBinariesZipDir)) {
+        include("binaries/**")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+        }
+    }
+    into(olmBinariesDir)
+    outputs.cacheIf { true }
+    inputs.files(olmBinariesZipDir)
+    dependsOn(downloadOlmBinaries)
+}
+
+val installOlmToJvmResources by tasks.registering(Copy::class) {
+    group = "olm"
+    from(olmSharedLibPath)
+    include("*/libolm.so", "*/olm.dll", "*/libolm.dylib")
+    into(jvmProcessedResourcesDir)
+    dependsOn(extractOlmBinaries)
+}
+
+tasks.withType<ProcessResources> {
+    dependsOn(installOlmToJvmResources)
+}
+
+tasks.withType<ExternalNativeCleanTask> {
+    enabled = false
+}
+
+tasks.withType<ExternalNativeBuildTask> {
+    dependsOn(extractOlmBinaries)
+}
+
 if (isAndroidEnabled) {
     configure<LibraryExtension> {
+        namespace = "net.folivo.trixnity.olm"
         compileSdk = Versions.androidTargetSdk
         buildToolsVersion = Versions.androidBuildTools
         defaultConfig {
@@ -79,20 +150,29 @@ if (isAndroidEnabled) {
             manifest.srcFile("src/androidMain/AndroidManifest.xml")
             jniLibs.srcDirs(olmSharedAndroidLibPath)
         }
+        compileOptions {
+            sourceCompatibility = Versions.kotlinJvmTarget
+            targetCompatibility = Versions.kotlinJvmTarget
+        }
+        buildTypes {
+            release {
+                isDefault = true
+            }
+        }
+    }
+    tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
+        if (name.contains("jni", true)) {
+            dependsOn(extractOlmBinaries)
+        }
     }
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
-    }
-    val jvmTarget = addDefaultJvmTargetWhenEnabled(withJava = false)
+    jvmToolchain()
+    val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val androidJvmTarget = addTargetWhenEnabled(KotlinPlatformType.androidJvm) {
         android {
             publishLibraryVariants("release")
-            compilations.all {
-                kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
-            }
         }
     }
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
@@ -172,74 +252,4 @@ kotlin {
             }
         }
     }
-}
-
-project.afterEvaluate {
-    val testTasks =
-        project.getTasksByName("testReleaseUnitTest", false) + project.getTasksByName("testDebugUnitTest", false)
-    testTasks.forEach {
-        it.onlyIf { false }
-    }
-}
-
-val downloadOlmSources by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
-    group = "olm"
-    src("https://gitlab.matrix.org/matrix-org/olm/-/archive/${Versions.olm}/olm-${Versions.olm}.zip")
-    dest(olmSourceZipDir)
-    overwrite(false)
-}
-
-val extractOlmSources by tasks.registering(Copy::class) {
-    group = "olm"
-    from(zipTree(olmSourceZipDir)) {
-        include("olm-${Versions.olm}/**")
-        eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
-        }
-    }
-    into(olmSourcesDir)
-    outputs.cacheIf { true }
-    inputs.files(olmSourceZipDir)
-    dependsOn(downloadOlmSources)
-}
-
-val downloadOlmBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
-    group = "olm"
-    src("https://gitlab.com/api/v4/projects/39141647/packages/generic/binaries/${Versions.olmBinaries}/binaries.zip")
-    dest(olmBinariesZipDir)
-    overwrite(false)
-}
-
-val extractOlmBinaries by tasks.registering(Copy::class) {
-    group = "olm"
-    from(zipTree(olmBinariesZipDir)) {
-        include("binaries/**")
-        eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
-        }
-    }
-    into(olmBinariesDir)
-    outputs.cacheIf { true }
-    inputs.files(olmBinariesZipDir)
-    dependsOn(downloadOlmBinaries)
-}
-
-val installOlmToJvmResources by tasks.registering(Copy::class) {
-    group = "olm"
-    from(olmSharedLibPath)
-    include("*/libolm.so", "*/olm.dll", "*/libolm.dylib")
-    into(jvmProcessedResourcesDir)
-    dependsOn(extractOlmBinaries)
-}
-
-tasks.withType<ProcessResources> {
-    dependsOn(installOlmToJvmResources)
-}
-
-tasks.withType<ExternalNativeCleanTask> {
-    enabled = false
-}
-
-tasks.withType<ExternalNativeBuildTask> {
-    dependsOn(extractOlmBinaries)
 }

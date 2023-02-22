@@ -3,7 +3,9 @@ package net.folivo.trixnity.crypto.olm
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -35,23 +37,19 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.mocks.OlmEncryptionServiceRequestHandlerMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
-import org.kodein.mock.Mocker
-import org.kodein.mock.UsesMocks
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
-@UsesMocks(OlmEncryptionServiceRequestHandler::class)
 class OlmEncryptionServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
-
-    val mocker = Mocker()
 
     val json = createMatrixEventJson()
     val alice = UserId("alice", "server")
@@ -64,7 +62,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var scope: CoroutineScope
 
     lateinit var olmStoreMock: OlmStoreMock
-    val mockRequestHandler = MockOlmEncryptionServiceRequestHandler(mocker)
+    lateinit var olmEncryptionServiceRequestHandlerMock: OlmEncryptionServiceRequestHandlerMock
     val mockSignService = SignServiceMock()
 
     lateinit var cut: OlmEncryptionServiceImpl
@@ -107,6 +105,7 @@ private val body: ShouldSpec.() -> Unit = {
 
         scope = CoroutineScope(Dispatchers.Default)
 
+        olmEncryptionServiceRequestHandlerMock = OlmEncryptionServiceRequestHandlerMock()
         olmStoreMock = OlmStoreMock()
         olmStoreMock.ed25519Keys[bob to bobDeviceId] = bobEdKey
         olmStoreMock.curve25519Keys[bob to bobDeviceId] = bobCurveKey
@@ -140,17 +139,15 @@ private val body: ShouldSpec.() -> Unit = {
             UserInfo(alice, aliceDeviceId, aliceEdKey, aliceCurveKey),
             json,
             olmStoreMock,
-            mockRequestHandler,
+            olmEncryptionServiceRequestHandlerMock,
             mockSignService,
         )
     }
 
     afterEach {
         scope.cancel()
-        scope.cancel()
         aliceAccount.free()
         bobAccount.free()
-        mocker.reset()
     }
     fun OlmAccount.getOneTimeKey(store: Boolean = false): String {
         generateOneTimeKeys(1)
@@ -168,7 +165,7 @@ private val body: ShouldSpec.() -> Unit = {
                 bobAccount.getOneTimeKey(),
                 mapOf(),
             )
-        mocker.everySuspending { mockRequestHandler.claimKeys(isAny()) } returns Result.success(
+        olmEncryptionServiceRequestHandlerMock.claimKeys = Result.success(
             ClaimKeys.Response(
                 emptyMap(),
                 mapOf(bob to mapOf(bobDeviceId to keysOf(bobsFakeSignedCurveKey)))
@@ -334,9 +331,6 @@ private val body: ShouldSpec.() -> Unit = {
     }
     should("throw on ordinary message") {
         mockClaimKeys()
-        val sendToDeviceEvents = mutableListOf<Map<UserId, Map<String, ToDeviceEventContent>>>()
-        mocker.everySuspending { mockRequestHandler.sendToDevice(isAny(capture = sendToDeviceEvents)) } returns
-                Result.success(Unit)
         val encryptedMessage = freeAfter(
             OlmSession.createOutbound(
                 bobAccount,
@@ -357,6 +351,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
 
+        val sendToDeviceEvents = olmEncryptionServiceRequestHandlerMock.sendToDeviceParams
         val encryptedEventContent =
             sendToDeviceEvents.first()[bob]?.get(bobDeviceId)?.shouldBeInstanceOf<OlmEncryptedEventContent>()
         val ciphertext = encryptedEventContent?.ciphertext?.get(bobCurveKey.value)?.body
@@ -547,10 +542,6 @@ private val body: ShouldSpec.() -> Unit = {
         expectedMessageCount: Int,
     ) {
         mockClaimKeys()
-        val sendToDeviceEvents = mutableListOf<Map<UserId, Map<String, ToDeviceEventContent>>>()
-        mocker.everySuspending { mockRequestHandler.sendToDevice(isAny(capture = sendToDeviceEvents)) } returns
-                Result.success(Unit)
-
         val result = cut.encryptMegolm(decryptedMegolmEventContent, room, settings)
 
         val storedOutboundSession = olmStoreMock.outboundMegolmSession[room]
@@ -569,6 +560,7 @@ private val body: ShouldSpec.() -> Unit = {
                     this.relatesTo shouldBe relatesTo.copy(newContent = null)
                 }
 
+                val sendToDeviceEvents = olmEncryptionServiceRequestHandlerMock.sendToDeviceParams
                 val ciphertext =
                     sendToDeviceEvents.firstOrNull()?.get(bob)?.get(bobDeviceId)
                         ?.shouldBeInstanceOf<OlmEncryptedEventContent>()
@@ -606,7 +598,7 @@ private val body: ShouldSpec.() -> Unit = {
         shouldEncryptMessage(EncryptionEventContent(), 1)
     }
     should("not send room keys, when not possible to encrypt them due to missing one time keys") {
-        mocker.everySuspending { mockRequestHandler.claimKeys(isAny()) } returns Result.success(
+        olmEncryptionServiceRequestHandlerMock.claimKeys = Result.success(
             ClaimKeys.Response(
                 emptyMap(),
                 mapOf(bob to mapOf(bobDeviceId to keysOf()))
@@ -614,7 +606,8 @@ private val body: ShouldSpec.() -> Unit = {
         )
 
         cut.encryptMegolm(decryptedMegolmEventContent, room, EncryptionEventContent())
-        mocker.verifyWithSuspend { mockRequestHandler.claimKeys(isAny()) } // but not sendToDevice
+        olmEncryptionServiceRequestHandlerMock.sendToDeviceParams.shouldBeEmpty()
+        olmEncryptionServiceRequestHandlerMock.claimKeysParams.shouldNotBeEmpty()
     }
     suspend fun createExistingOutboundSession() {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->

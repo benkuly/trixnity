@@ -46,7 +46,6 @@ class RoomServiceTest : ShouldSpec({
     lateinit var roomEventDecryptionServiceMock: RoomEventDecryptionServiceMock
     val json = createMatrixEventJson()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
-    val thisUser = UserId("thisUser")
 
     lateinit var cut: RoomServiceImpl
 

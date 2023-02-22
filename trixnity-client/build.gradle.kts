@@ -5,9 +5,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(Versions.kotlinJvmTarget.majorVersion))
-    }
+    jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir, testEnabled = false)
     val nativeTargets = addDefaultNativeTargetsWhenEnabled()

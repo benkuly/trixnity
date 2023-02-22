@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
@@ -21,7 +22,7 @@ fun <T : KotlinTarget> KotlinMultiplatformExtension.addTargetWhenEnabled(
     when {
         isMainCIHost -> createTarget().apply {
             compilations.configureEach {
-                compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+                compileTaskProvider.get().enabled = target.isEnabledOnThisPlatform()
             }
         }
 
@@ -39,7 +40,7 @@ fun <T : KotlinNativeTarget> KotlinMultiplatformExtension.addNativeTargetWhenEna
     when {
         isMainCIHost -> createTarget().apply {
             compilations.configureEach {
-                compileKotlinTask.enabled = target.isEnabledOnThisPlatform()
+                compileTaskProvider.get().enabled = target.isEnabledOnThisPlatform()
             }
         }
 
@@ -62,9 +63,14 @@ fun KotlinTarget.testSourceSet(
 ): KotlinSourceSet =
     sourceSets.getByName(targetName + "Test").apply(configure)
 
+fun KotlinAndroidTarget.testSourceSet(
+    sourceSets: NamedDomainObjectContainer<KotlinSourceSet>,
+    configure: KotlinSourceSet.() -> Unit
+): KotlinSourceSet =
+    sourceSets.getByName(targetName + "UnitTest").apply(configure)
+
 fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
     useJUnitPlatform: Boolean = true,
-    withJava: Boolean = true,
     testEnabled: Boolean = true
 ): KotlinJvmTarget? =
     addTargetWhenEnabled(KotlinPlatformType.jvm) {
@@ -76,7 +82,6 @@ fun KotlinMultiplatformExtension.addDefaultJvmTargetWhenEnabled(
                 enabled = testEnabled
                 if (useJUnitPlatform) useJUnitPlatform()
             }
-            if (withJava) withJava()
         }
     }
 
