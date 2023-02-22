@@ -97,7 +97,8 @@ publish-snapshot-mac:
   rules:
     - *if-master
   script:
-    - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
+    # TODO remove --warning-mode=all (dokka has some implicit dependencies in version < 1.8)
+    - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace --warning-mode=all
 
 publish-snapshot-linux:
   stage: publish-snapshot-linux

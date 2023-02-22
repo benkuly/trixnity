@@ -80,9 +80,8 @@ subprojects {
                         scm {
                             url.set("https://gitlab.com/trixnity/trixnity")
                         }
-
-                        artifact(dokkaJar)
                     }
+                    artifact(dokkaJar)
                 }
             }
         }
