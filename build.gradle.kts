@@ -30,9 +30,9 @@ allprojects {
 }
 
 subprojects {
-    val dokkaJar by tasks.creating(Jar::class) {
+    val dokkaJar by tasks.registering(Jar::class) {
         dependsOn(tasks.dokkaHtml)
-        from(tasks.dokkaHtml)
+        from(tasks.dokkaHtml.flatMap { it.outputDirectory })
         archiveClassifier.set("javadoc")
     }
 
