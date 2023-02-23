@@ -126,11 +126,12 @@ class RoomDisplayNameEventHandler(
 
             else -> {
                 val heroes = mergedRoomSummary?.heroes
-                    ?: roomStateStore.members(roomId, setOf(Membership.JOIN)).take(3).minus(userInfo.userId)
                 val joinedMemberCount = mergedRoomSummary?.joinedMemberCount
-                    ?: roomStateStore.membersCount(roomId, Membership.JOIN)
                 val invitedMemberCount = mergedRoomSummary?.invitedMemberCount
-                    ?: roomStateStore.membersCount(roomId, Membership.INVITE)
+                if (heroes == null || joinedMemberCount == null || invitedMemberCount == null) {
+                    log.debug { "calculate room display name cancelled, because there are missing information (e.g. due to an invite)" }
+                    return
+                }
                 val us = 1
 
                 log.debug { "calculate room display name of $roomId (heroes=$heroes, joinedMemberCount=$joinedMemberCount, invitedMemberCount=$invitedMemberCount)" }
@@ -167,7 +168,7 @@ class RoomDisplayNameEventHandler(
                 } else {
                     when {
                         //case ist not specified in the Spec, so this catches server misbehavior
-                        heroes.isNullOrEmpty() ->
+                        heroes.isEmpty() ->
                             RoomDisplayName(
                                 otherUsersCount = joinedMemberCount + invitedMemberCount - us,
                                 summary = mergedRoomSummary
