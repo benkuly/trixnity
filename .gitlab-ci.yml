@@ -71,7 +71,7 @@ build-mac:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew build --info --stacktrace
+    - ./gradlew build --stacktrace
 
 build-linux:
   stage: build
@@ -87,7 +87,7 @@ build-linux:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew build --info --stacktrace
+    - ./gradlew build --stacktrace
 
 publish-snapshot-mac:
   stage: publish-snapshot-mac
