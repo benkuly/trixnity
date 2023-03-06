@@ -13,7 +13,7 @@ sealed interface UserTrustLevel {
     data class NotAllDevicesCrossSigned(val verified: Boolean) : UserTrustLevel
 
     /**
-     * The users master key or a key, that signed this device key is blocked.
+     * The users master key or a key, that signed this key is blocked.
      */
     object Blocked : UserTrustLevel
 

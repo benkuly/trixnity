@@ -9,7 +9,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.key.DeviceTrustLevel.*
+import net.folivo.trixnity.client.key.DeviceTrustLevel
+import net.folivo.trixnity.client.key.DeviceTrustLevel.NotCrossSigned
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
 import net.folivo.trixnity.client.key.UserTrustLevel.NotAllDevicesCrossSigned
@@ -145,28 +146,28 @@ class CrossSigningIT {
             withClue("observe trust level with client1 before self verification") {
                 client1.key.apply {
                     getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(true) }
-                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
                     getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
                     getTrustLevel(client3.userId).first { it == CrossSigned(false) }
-                    getTrustLevel(client3.userId, client3.deviceId).first { it == NotVerified }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == DeviceTrustLevel.CrossSigned(false) }
                 }
             }
             withClue("observe trust level with client2 before self verification") {
                 client2.key.apply {
                     getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(false) }
-                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == DeviceTrustLevel.CrossSigned(false) }
                     getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
                     getTrustLevel(client3.userId).first { it == CrossSigned(false) }
-                    getTrustLevel(client3.userId, client3.deviceId).first { it == NotVerified }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == DeviceTrustLevel.CrossSigned(false) }
                 }
             }
             withClue("observe trust level with client3 before self verification") {
                 client3.key.apply {
                     getTrustLevel(client1.userId).first { it == NotAllDevicesCrossSigned(false) }
-                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == DeviceTrustLevel.CrossSigned(false) }
                     getTrustLevel(client2.userId, client2.deviceId).first { it == NotCrossSigned }
                     getTrustLevel(client3.userId).first { it == CrossSigned(true) }
-                    getTrustLevel(client3.userId, client3.deviceId).first { it == Verified }
+                    getTrustLevel(client3.userId, client3.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
                 }
             }
 
@@ -185,22 +186,22 @@ class CrossSigningIT {
 
             withClue("observe trust level with client1 after self verification") {
                 client1.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
-                    getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
                     getTrustLevel(client1.userId).first { it == CrossSigned(true) }
                 }
             }
             withClue("observe trust level with client2 after self verification") {
                 client2.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
-                    getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
                     getTrustLevel(client1.userId).first { it == CrossSigned(true) }
                 }
             }
             withClue("observe trust level with client3 after self verification") {
                 client3.key.apply {
-                    getTrustLevel(client1.userId, client1.deviceId).first { it == NotVerified }
-                    getTrustLevel(client2.userId, client2.deviceId).first { it == NotVerified }
+                    getTrustLevel(client1.userId, client1.deviceId).first { it == DeviceTrustLevel.CrossSigned(false) }
+                    getTrustLevel(client2.userId, client2.deviceId).first { it == DeviceTrustLevel.CrossSigned(false) }
                     getTrustLevel(client1.userId).first { it == CrossSigned(false) }
                 }
             }
@@ -248,10 +249,10 @@ class CrossSigningIT {
 
             suspend fun KeyService.checkEverythingVerified() {
                 this.getTrustLevel(client1.userId).first { it == CrossSigned(true) }
-                this.getTrustLevel(client1.userId, client1.deviceId).first { it == Verified }
-                this.getTrustLevel(client2.userId, client2.deviceId).first { it == Verified }
+                this.getTrustLevel(client1.userId, client1.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
+                this.getTrustLevel(client2.userId, client2.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
                 this.getTrustLevel(client3.userId).first { it == CrossSigned(true) }
-                this.getTrustLevel(client3.userId, client3.deviceId).first { it == Verified }
+                this.getTrustLevel(client3.userId, client3.deviceId).first { it == DeviceTrustLevel.CrossSigned(true) }
             }
 
             withClue("observe trust level with client1 after user verification") {

@@ -125,9 +125,9 @@ class SasVerificationIT {
                 .shouldBeInstanceOf<Done>()
 
             client1.key.getTrustLevel(client2.userId, client2.deviceId)
-                .first { it == DeviceTrustLevel.Verified }
+                .first { it == DeviceTrustLevel.Valid(true) }
             client2.key.getTrustLevel(client1.userId, client1.deviceId)
-                .first { it == DeviceTrustLevel.Verified }
+                .first { it == DeviceTrustLevel.Valid(true) }
         }
     }
 }
