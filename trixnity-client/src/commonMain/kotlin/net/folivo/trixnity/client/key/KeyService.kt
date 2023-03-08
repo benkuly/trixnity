@@ -5,12 +5,15 @@ import io.ktor.util.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
 import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
@@ -97,8 +100,9 @@ interface KeyService {
      * @return the trust level of a device or null, if the timeline event is not a megolm encrypted event.
      */
     fun getTrustLevel(
-        timelineEvent: TimelineEvent,
-    ): Flow<DeviceTrustLevel>?
+        roomId: RoomId,
+        eventId: EventId,
+    ): Flow<DeviceTrustLevel?>
 
     /**
      * @return the trust level of a user. This will only be present, if the requested user has cross signing enabled.
@@ -121,6 +125,7 @@ class KeyServiceImpl(
     private val keyStore: KeyStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
+    private val roomService: RoomService,
     private val signService: SignService,
     private val keyBackupService: KeyBackupService,
     private val keyTrustService: KeyTrustService,
@@ -274,8 +279,8 @@ class KeyServiceImpl(
     ): Flow<DeviceTrustLevel> {
         return keyStore.getDeviceKey(userId, deviceId).map { deviceKeys ->
             when (val trustLevel = deviceKeys?.trustLevel) {
-                is Valid -> if (trustLevel.verified) DeviceTrustLevel.Verified else DeviceTrustLevel.NotVerified
-                is CrossSigned -> if (trustLevel.verified) DeviceTrustLevel.Verified else DeviceTrustLevel.NotVerified
+                is Valid -> DeviceTrustLevel.Valid(trustLevel.verified)
+                is CrossSigned -> DeviceTrustLevel.CrossSigned(trustLevel.verified)
                 is NotCrossSigned -> DeviceTrustLevel.NotCrossSigned
                 is Blocked -> DeviceTrustLevel.Blocked
                 is Invalid -> DeviceTrustLevel.Invalid(trustLevel.reason)
@@ -286,27 +291,31 @@ class KeyServiceImpl(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTrustLevel(
-        timelineEvent: TimelineEvent,
-    ): Flow<DeviceTrustLevel>? {
-        val event = timelineEvent.event
-        val content = event.content
-        return if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
-            combine(
-                olmCryptoStore.getInboundMegolmSession(content.sessionId, event.roomId),
-                keyStore.getDeviceKeys(event.sender)
-            ) { megolmSession, deviceKeys ->
-                if (megolmSession == null || deviceKeys == null || megolmSession.isTrusted.not())
-                    flowOf(DeviceTrustLevel.NotVerified)
-                else {
-                    val deviceId =
-                        deviceKeys.values.find { it.value.signed.keys.keys.contains(megolmSession.senderKey) }
-                            ?.value?.signed?.deviceId
-                    if (deviceId != null) getTrustLevel(event.sender, deviceId)
-                    else flowOf(DeviceTrustLevel.NotVerified)
-                }
-            }.flatMapLatest { it }
-        } else null
-    }
+        roomId: RoomId,
+        eventId: EventId,
+    ): Flow<DeviceTrustLevel?> =
+        roomService.getTimelineEvent(roomId, eventId).flatMapLatest { timelineEvent ->
+            val event = timelineEvent?.event
+            val content = event?.content
+            if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
+                combine(
+                    olmCryptoStore.getInboundMegolmSession(content.sessionId, event.roomId),
+                    keyStore.getDeviceKeys(event.sender)
+                ) { megolmSession, deviceKeys ->
+                    when {
+                        megolmSession == null || deviceKeys == null -> flowOf(DeviceTrustLevel.Invalid("could not find session or device key"))
+                        megolmSession.isTrusted.not() -> flowOf(DeviceTrustLevel.NotTrusted)
+                        else -> {
+                            val deviceId =
+                                deviceKeys.values.find { it.value.signed.keys.keys.contains(megolmSession.senderKey) }
+                                    ?.value?.signed?.deviceId
+                            if (deviceId != null) getTrustLevel(event.sender, deviceId)
+                            else flowOf(DeviceTrustLevel.Invalid("could not find device id"))
+                        }
+                    }
+                }.flatMapLatest { it }
+            } else flowOf(null)
+        }
 
     override fun getTrustLevel(
         userId: UserId,

@@ -25,6 +25,7 @@ import net.folivo.trixnity.client.getInMemoryOlmStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
+import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
@@ -62,6 +63,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var keyStore: KeyStore
     lateinit var olmCryptoStore: OlmCryptoStore
     lateinit var globalAccountDataStore: GlobalAccountDataStore
+    lateinit var roomServiceMock: RoomServiceMock
     lateinit var signServiceMock: SignServiceMock
     lateinit var keyBackupServiceMock: KeyBackupServiceMock
     lateinit var keyTrustServiceMock: KeyTrustServiceMock
@@ -79,6 +81,7 @@ private val body: ShouldSpec.() -> Unit = {
         olmCryptoStore = getInMemoryOlmStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
         signServiceMock = SignServiceMock()
+        roomServiceMock = RoomServiceMock()
         keyBackupServiceMock = KeyBackupServiceMock()
         keyTrustServiceMock = KeyTrustServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
@@ -88,6 +91,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore,
             olmCryptoStore,
             globalAccountDataStore,
+            roomServiceMock,
             signServiceMock,
             keyBackupServiceMock,
             keyTrustServiceMock,

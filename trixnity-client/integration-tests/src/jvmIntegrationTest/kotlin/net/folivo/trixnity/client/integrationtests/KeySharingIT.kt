@@ -170,9 +170,9 @@ class KeySharingIT {
                         .shouldBeInstanceOf<ActiveVerificationState.Done>()
 
                     startedClient1.client.key.getTrustLevel(client3.userId, client3.deviceId)
-                        .first { it == DeviceTrustLevel.Verified }
+                        .first { it == DeviceTrustLevel.CrossSigned(true) }
                     client3.key.getTrustLevel(startedClient1.client.userId, startedClient1.client.deviceId)
-                        .first { it == DeviceTrustLevel.Verified }
+                        .first { it == DeviceTrustLevel.CrossSigned(true) }
                 }
 
                 val events = client3.room.getLastTimelineEvents(roomId)

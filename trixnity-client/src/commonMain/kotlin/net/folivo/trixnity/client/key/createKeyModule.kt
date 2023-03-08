@@ -56,6 +56,6 @@ fun createKeyModule() = module {
         named<KeyBackupServiceImpl>()
     }
     single<KeyService> {
-        KeyServiceImpl(get(), get(), get(), get(), get(), get(named<KeyBackupServiceImpl>()), get(), get())
+        KeyServiceImpl(get(), get(), get(), get(), get(), get(), get(named<KeyBackupServiceImpl>()), get(), get())
     }
 }

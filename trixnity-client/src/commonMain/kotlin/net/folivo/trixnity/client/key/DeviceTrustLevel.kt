@@ -3,19 +3,24 @@ package net.folivo.trixnity.client.key
 sealed interface DeviceTrustLevel {
 
     /**
-     * The key is verified e.g. via cross signing.
+     * The device key is valid, but not cross signed.
      */
-    object Verified : DeviceTrustLevel
+    data class Valid(val verified: Boolean) : DeviceTrustLevel
 
     /**
-     * The key or the cross signing key is not verified.
+     * The device key is cross signed.
      */
-    object NotVerified : DeviceTrustLevel
+    data class CrossSigned(val verified: Boolean) : DeviceTrustLevel
 
     /**
-     * There is a master key, but the key has not been cross signed yet.
+     * There is a master key, but the device key has not been cross signed yet.
      */
     object NotCrossSigned : DeviceTrustLevel
+
+    /**
+     * The timeline event cannot be trusted.
+     */
+    object NotTrusted : DeviceTrustLevel
 
     /**
      * The device key or a key, that signed this device key is blocked.
