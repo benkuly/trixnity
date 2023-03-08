@@ -7,11 +7,8 @@ stages:
   - prepare-build
   - build
   - test
-  - publish-snapshot-mac
-  - publish-snapshot-linux
-  - prepare-publish
-  - publish-mac
-  - publish-linux
+  - publish-snapshot
+  - publish
 
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
@@ -54,7 +51,6 @@ variables:
 
 .cache-mac: &cache-mac
   - key: global-tixnity-cache-mac
-    policy: push
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
@@ -109,7 +105,7 @@ build-trixnity-build-linux-image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker push $BUILD_LINUX_IMAGE_NAME
 
-build-mac:
+build:mac:
   stage: build
   tags: [ "trixnity-mac-internal" ]
   cache:
@@ -120,7 +116,7 @@ build-mac:
   script:
     - ./gradlew assemble --stacktrace
 
-build-linux:
+build:linux:
   stage: build
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
@@ -132,8 +128,9 @@ build-linux:
   script:
     - ./gradlew assemble --stacktrace
 
-test-mac:
+test:mac:
   stage: test
+  needs: [ "build:mac" ]
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *pull-cache-mac
@@ -144,8 +141,9 @@ test-mac:
   script:
     - ./gradlew check -x jvmIntegrationTest --stacktrace
 
-test-linux:
+test:linux:
   stage: test
+  needs: [ "build:linux" ]
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
@@ -157,9 +155,10 @@ test-linux:
   script:
     - ./gradlew check -x jvmIntegrationTest --stacktrace
 
-integration-test:
+test:integration-test:
   stage: test
-  tags: [ "saas-linux-large-amd64" ]
+  needs: [ "build:linux" ]
+  tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:dind
@@ -174,8 +173,8 @@ integration-test:
   script:
     - ./gradlew jvmIntegrationTest --stacktrace
 
-publish-snapshot-mac:
-  stage: publish-snapshot-mac
+publish-snapshot:mac:
+  stage: publish-snapshot
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *pull-cache-mac
@@ -184,9 +183,10 @@ publish-snapshot-mac:
   script:
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
-publish-snapshot-linux:
-  stage: publish-snapshot-linux
-  tags: [ "saas-linux-large-amd64" ]
+publish-snapshot:linux:
+  stage: publish-snapshot
+  needs: [ "publish-snapshot:mac" ]
+  tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *pull-cache-linux
@@ -195,8 +195,8 @@ publish-snapshot-linux:
   script:
     - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
 
-create-nexus-staging-repo:
-  stage: prepare-publish
+publish:create-nexus-staging-repo:
+  stage: publish
   tags: [ "saas-linux-small-amd64" ]
   image: ubuntu:latest
   rules:
@@ -221,27 +221,25 @@ create-nexus-staging-repo:
       fi
     - echo -n $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
 
-publish-mac:
-  stage: publish-mac
+publish:mac:
+  stage: publish
+  needs: [ "publish:create-nexus-staging-repo" ]
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *pull-cache-mac
-  dependencies:
-    - create-nexus-staging-repo
   rules:
     - *if-release
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
 
-publish-linux:
-  stage: publish-linux
-  tags: [ "saas-linux-large-amd64" ]
+publish:linux:
+  stage: publish
+  needs: [ "publish:create-nexus-staging-repo", "publish:mac" ]
+  tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *pull-cache-linux
-  dependencies:
-    - create-nexus-staging-repo
   rules:
     - *if-release
   script:
