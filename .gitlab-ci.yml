@@ -20,20 +20,24 @@ variables:
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
 
-.build-cache-linux: &build-cache-linux
+.cache-linux: &cache-linux
   - key: global-tixnity-cache-linux
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+
+.build-cache-linux: &build-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
     paths:
       - $BUILD_DIRS
 
-.build-cache-mac: &build-cache-mac
+.cache-mac: &cache-mac
   - key: global-tixnity-cache-mac
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+
+.build-cache-mac: &build-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
     paths:
       - $BUILD_DIRS
@@ -80,6 +84,7 @@ build-mac:
   stage: build
   tags: [ "trixnity-mac-internal" ]
   cache:
+    - *cache-mac
     - *build-cache-mac
   rules:
     - *if-merge-request
@@ -91,6 +96,7 @@ build-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
+    - *cache-linux
     - *build-cache-linux
   rules:
     - *if-merge-request
@@ -101,6 +107,7 @@ test-mac:
   stage: test
   tags: [ "trixnity-mac-internal" ]
   cache:
+    - *cache-mac
     - *build-cache-mac
   artifacts: *artifact-reports
   rules:
@@ -113,6 +120,7 @@ test-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
+    - *cache-linux
     - *build-cache-linux
   artifacts: *artifact-reports
   rules:
@@ -128,6 +136,7 @@ integration-test:
     - name: docker:dind
       command: [ "--tls=false" ]
   cache:
+    - *cache-linux
     - *build-cache-linux
   variables: *docker-variables
   artifacts: *artifact-reports
@@ -140,7 +149,7 @@ publish-snapshot-mac:
   stage: publish-snapshot-mac
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *build-cache-mac
+    - *cache-mac
   rules:
     - *if-master
   script:
@@ -151,7 +160,7 @@ publish-snapshot-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *build-cache-linux
+    - *cache-linux
   rules:
     - *if-master
   script:
@@ -187,7 +196,7 @@ publish-mac:
   stage: publish-mac
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *build-cache-mac
+    - *cache-mac
   dependencies:
     - create-nexus-staging-repo
   rules:
@@ -201,7 +210,7 @@ publish-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *build-cache-linux
+    - *cache-linux
   dependencies:
     - create-nexus-staging-repo
   rules:
