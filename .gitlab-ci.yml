@@ -6,6 +6,7 @@ workflow:
 stages:
   - prepare-build
   - build
+  - test
   - publish-snapshot-mac
   - publish-snapshot-linux
   - prepare-publish
@@ -15,14 +16,27 @@ stages:
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
+  BUILD_DIRS: $CI_PROJECT_DIR/**/build
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
 
-.build-cache: &build-cache
-  - key: global-tixnity-cache
+.build-cache-linux: &build-cache-linux
+  - key: global-tixnity-cache-linux
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+  - key: "$CI_COMMIT_REF_NAME-linux"
+    paths:
+      - $BUILD_DIRS
+
+.build-cache-mac: &build-cache-mac
+  - key: global-tixnity-cache-mac
+    paths:
+      - $GRADLE_USER_HOME
+      - $KONAN_DATA_DIR
+  - key: "$CI_COMMIT_REF_NAME-mac"
+    paths:
+      - $BUILD_DIRS
 
 .docker-variables: &docker-variables
   DOCKER_HOST: tcp://docker:2375
@@ -66,34 +80,67 @@ build-mac:
   stage: build
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *build-cache
+    - *build-cache-mac
+  rules:
+    - *if-merge-request
+  script:
+    - ./gradlew assemble --stacktrace
+
+build-linux:
+  stage: build
+  tags: [ "saas-linux-large-amd64" ]
+  image: $BUILD_LINUX_IMAGE_NAME
+  cache:
+    - *build-cache-linux
+  rules:
+    - *if-merge-request
+  script:
+    - ./gradlew assemble --stacktrace
+
+test-mac:
+  stage: test
+  tags: [ "trixnity-mac-internal" ]
+  cache:
+    - *build-cache-mac
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
   script:
-    - ./gradlew build --stacktrace
+    - ./gradlew check -x jvmIntegrationTest --stacktrace
 
-build-linux:
-  stage: build
+test-linux:
+  stage: test
+  tags: [ "saas-linux-large-amd64" ]
+  image: $BUILD_LINUX_IMAGE_NAME
+  cache:
+    - *build-cache-linux
+  artifacts: *artifact-reports
+  rules:
+    - *if-merge-request
+  script:
+    - ./gradlew check -x jvmIntegrationTest --stacktrace
+
+integration-test:
+  stage: test
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:dind
       command: [ "--tls=false" ]
   cache:
-    - *build-cache
+    - *build-cache-linux
   variables: *docker-variables
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
   script:
-    - ./gradlew build --stacktrace
+    - ./gradlew jvmIntegrationTest --stacktrace
 
 publish-snapshot-mac:
   stage: publish-snapshot-mac
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *build-cache
+    - *build-cache-mac
   rules:
     - *if-master
   script:
@@ -103,11 +150,8 @@ publish-snapshot-linux:
   stage: publish-snapshot-linux
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
-  services:
-    - name: docker:dind
-      command: [ "--tls=false" ]
   cache:
-    - *build-cache
+    - *build-cache-linux
   rules:
     - *if-master
   script:
@@ -143,7 +187,7 @@ publish-mac:
   stage: publish-mac
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *build-cache
+    - *build-cache-mac
   dependencies:
     - create-nexus-staging-repo
   rules:
@@ -156,11 +200,8 @@ publish-linux:
   stage: publish-linux
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
-  services:
-    - name: docker:dind
-      command: [ "--tls=false" ]
   cache:
-    - *build-cache
+    - *build-cache-linux
   dependencies:
     - create-nexus-staging-repo
   rules:
