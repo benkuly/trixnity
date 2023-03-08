@@ -25,18 +25,19 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
         }
     }
 
-    override suspend fun addMedia(url: String, content: ByteArrayFlow): Unit =
+    override suspend fun addMedia(url: String, content: ByteArrayFlow) {
+        val value = content.toByteArray().unsafeCast<Uint8Array>()
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.put(content.toByteArray().unsafeCast<Uint8Array>(), Key(url))
-            Unit
+            store.put(value, Key(url))
         }
+    }
 
     override suspend fun getMedia(url: String): ByteArrayFlow? =
         database.transaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.get(Key(url)).unsafeCast<ByteArray?>()?.toByteArrayFlow()
-        }
+            store.get(Key(url))
+        }.unsafeCast<ByteArray?>()?.toByteArrayFlow()
 
     override suspend fun deleteMedia(url: String): Unit =
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {

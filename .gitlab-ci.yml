@@ -20,25 +20,54 @@ variables:
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
 
+.pull-cache-linux: &pull-cache-linux
+  - key: global-tixnity-cache-linux
+    policy: pull
+    paths:
+      - $GRADLE_USER_HOME
+      - $KONAN_DATA_DIR
+
 .cache-linux: &cache-linux
   - key: global-tixnity-cache-linux
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
 
-.build-cache-linux: &build-cache-linux
+.pull-build-cache-linux: &pull-build-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
+    policy: pull
     paths:
       - $BUILD_DIRS
 
-.cache-mac: &cache-mac
+.push-build-cache-linux: &push-build-cache-linux
+  - key: "$CI_COMMIT_REF_NAME-linux"
+    policy: push
+    paths:
+      - $BUILD_DIRS
+
+.pull-cache-mac: &pull-cache-mac
   - key: global-tixnity-cache-mac
+    policy: pull
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
 
-.build-cache-mac: &build-cache-mac
+.cache-mac: &cache-mac
+  - key: global-tixnity-cache-mac
+    policy: push
+    paths:
+      - $GRADLE_USER_HOME
+      - $KONAN_DATA_DIR
+
+.pull-build-cache-mac: &pull-build-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
+    policy: pull
+    paths:
+      - $BUILD_DIRS
+
+.push-build-cache-mac: &push-build-cache-mac
+  - key: "$CI_COMMIT_REF_NAME-mac"
+    policy: push
     paths:
       - $BUILD_DIRS
 
@@ -85,7 +114,7 @@ build-mac:
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache-mac
-    - *build-cache-mac
+    - *push-build-cache-mac
   rules:
     - *if-merge-request
   script:
@@ -97,7 +126,7 @@ build-linux:
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache-linux
-    - *build-cache-linux
+    - *push-build-cache-linux
   rules:
     - *if-merge-request
   script:
@@ -107,8 +136,8 @@ test-mac:
   stage: test
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *cache-mac
-    - *build-cache-mac
+    - *pull-cache-mac
+    - *pull-build-cache-mac
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
@@ -120,8 +149,8 @@ test-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *cache-linux
-    - *build-cache-linux
+    - *pull-cache-linux
+    - *pull-build-cache-linux
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
@@ -136,8 +165,8 @@ integration-test:
     - name: docker:dind
       command: [ "--tls=false" ]
   cache:
-    - *cache-linux
-    - *build-cache-linux
+    - *pull-cache-linux
+    - *pull-build-cache-linux
   variables: *docker-variables
   artifacts: *artifact-reports
   rules:
@@ -149,7 +178,7 @@ publish-snapshot-mac:
   stage: publish-snapshot-mac
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *cache-mac
+    - *pull-cache-mac
   rules:
     - *if-master
   script:
@@ -160,7 +189,7 @@ publish-snapshot-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *cache-linux
+    - *pull-cache-linux
   rules:
     - *if-master
   script:
@@ -196,7 +225,7 @@ publish-mac:
   stage: publish-mac
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *cache-mac
+    - *pull-cache-mac
   dependencies:
     - create-nexus-staging-repo
   rules:
@@ -210,7 +239,7 @@ publish-linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *cache-linux
+    - *pull-cache-linux
   dependencies:
     - create-nexus-staging-repo
   rules:
