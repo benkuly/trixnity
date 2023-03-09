@@ -29,7 +29,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 
 const val synapseVersion =
-    "v1.75.0" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
+    "v1.78.0" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
 
 fun synapseDocker() =
     GenericContainer<Nothing>(DockerImageName.parse("docker.io/matrixdotorg/synapse:$synapseVersion"))
