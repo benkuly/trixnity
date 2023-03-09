@@ -21,7 +21,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
-import kotlin.js.JsName
 
 private val log = KotlinLogging.logger {}
 
@@ -32,7 +31,7 @@ interface ActiveVerification {
     val transactionId: String?
     val state: StateFlow<ActiveVerificationState>
 
-    fun theirDeviceId(): String?
+    val theirDeviceId: String?
 
     suspend fun cancel(message: String = "user cancelled verification")
 }
@@ -52,8 +51,7 @@ abstract class ActiveVerificationImpl(
     private val keyTrustService: KeyTrustService,
     protected val json: Json,
 ) : ActiveVerification {
-    @JsName("_theirDeviceId")
-    var theirDeviceId: String? = theirInitialDeviceId
+    final override var theirDeviceId: String? = theirInitialDeviceId
         private set
 
     private val mutex = Mutex()

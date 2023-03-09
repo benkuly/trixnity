@@ -58,7 +58,6 @@ class ActiveUserVerification(
     keyTrust,
     api.json,
 ) {
-    override fun theirDeviceId(): String? = theirDeviceId
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
         val sendContent = possiblyEncryptEvent(step, roomId)

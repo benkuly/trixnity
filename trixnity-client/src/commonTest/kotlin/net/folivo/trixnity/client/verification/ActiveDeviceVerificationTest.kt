@@ -107,6 +107,55 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
+    should("handle cancel verification step before theirDeviceId is known") {
+        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                json, mappings,
+                SendToDevice("m.key.verification.cancel", "txn"),
+                skipUrlCheck = true
+            ) {
+                sendToDeviceEvents = it.messages
+            }
+        }
+        cut = ActiveDeviceVerification(
+            request = VerificationRequestEventContent(
+                bobDevice,
+                setOf(Sas),
+                Clock.System.now().toEpochMilliseconds(),
+                "t"
+            ),
+            requestIsOurs = false,
+            ownUserId = alice,
+            ownDeviceId = aliceDevice,
+            theirUserId = bob,
+            theirDeviceId = null, // <-
+            theirDeviceIds = setOf("bob1", "bob2"),
+            supportedMethods = setOf(Sas),
+            api = api,
+            olmDecrypter = olmDecrypterMock,
+            olmEncryptionService = olmEncryptionServiceMock,
+            keyTrust = KeyTrustServiceMock(),
+            keyStore = keyStore,
+        )
+        cut.startLifecycle(this)
+        cut.cancel()
+        val result = cut.state.first { it is ActiveVerificationState.Cancel }
+        result shouldBe ActiveVerificationState.Cancel(
+            VerificationCancelEventContent(User, "user cancelled verification", null, "t"),
+            true
+        )
+        sendToDeviceEvents shouldBe mapOf(
+            bob to mapOf(
+                "bob1" to VerificationCancelEventContent(
+                    User, "user cancelled verification", null, "t"
+                ),
+                "bob2" to VerificationCancelEventContent(
+                    User, "user cancelled verification", null, "t"
+                ),
+            )
+        )
+    }
     should("handle encrypted verification step") {
         createCut()
         cut.startLifecycle(this)

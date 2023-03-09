@@ -47,18 +47,22 @@ class ActiveDeviceVerification(
     keyTrust,
     api.json,
 ) {
-    override fun theirDeviceId(): String? = theirDeviceId
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
         val theirDeviceId = this.theirDeviceId
-        requireNotNull(theirDeviceId) { "their device id should never be null" }
-        val stepToSend = try {
-            olmEncryptionService.encryptOlm(step, theirUserId, theirDeviceId)
-        } catch (exception: Exception) {
-            log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${exception.message}" }
-            step
-        }
-        api.users.sendToDevice(mapOf(theirUserId to mapOf(theirDeviceId to stepToSend))).getOrThrow()
+        val theirDeviceIds =
+            if (theirDeviceId == null && step is VerificationCancelEventContent) theirDeviceIds
+            else setOfNotNull(theirDeviceId)
+
+        if (theirDeviceIds.isNotEmpty())
+            api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.associateWith {
+                try {
+                    olmEncryptionService.encryptOlm(step, theirUserId, it)
+                } catch (error: Exception) {
+                    log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${error.message}" }
+                    step
+                }
+            })).getOrThrow()
     }
 
     override suspend fun lifecycle() {
