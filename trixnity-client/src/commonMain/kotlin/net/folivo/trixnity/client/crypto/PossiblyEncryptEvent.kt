@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
-interface PossiblyEncryptEvent {
+interface PossiblyEncryptEvent {  // TODO should be aware of encryption algorithms like RoomEventDecryptionService
     suspend operator fun invoke(
         content: MessageEventContent,
         roomId: RoomId,

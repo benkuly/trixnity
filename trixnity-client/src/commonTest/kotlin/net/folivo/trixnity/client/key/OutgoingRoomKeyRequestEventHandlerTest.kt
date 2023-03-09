@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.key
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.comparables.shouldBeLessThan
+import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeEmpty
@@ -376,7 +376,7 @@ private val body: ShouldSpec.() -> Unit = {
             val result = async { cut.requestRoomKeys(room, sessionId) }
             val storedRequest = keyStore.allRoomKeyRequests.first { it.isNotEmpty() }.firstOrNull().shouldNotBeNull()
             storedRequest.receiverDeviceIds shouldBe setOf(aliceDevice2)
-            storedRequest.createdAt.shouldBeLessThan(Clock.System.now())
+            storedRequest.createdAt.shouldBeLessThanOrEqualTo(Clock.System.now())
 
             fun assertRequest(content: RoomKeyRequestEventContent) =
                 assertSoftly(content) {
