@@ -35,7 +35,7 @@ class KeyMemberEventHandler(
         if (event is Event.StateEvent && roomStore.get(event.roomId)
                 .first()?.encryptionAlgorithm == EncryptionAlgorithm.Megolm
         ) {
-            log.debug { "handle membership change in an encrypted room" }
+            log.trace { "handle membership change in an encrypted room" }
             val userId = UserId(event.stateKey)
             when (event.content.membership) {
                 Membership.LEAVE, Membership.BAN -> {
