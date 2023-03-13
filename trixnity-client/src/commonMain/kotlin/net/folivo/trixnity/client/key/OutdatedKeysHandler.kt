@@ -160,6 +160,7 @@ class OutdatedKeysHandler(
         }
         val addedDevices = newDevices.keys - oldDevices.keys
         val removedDevices = oldDevices.keys - newDevices.keys
+        // we can do this, because an outbound megolm session does only exist, when loadMembers has been called
         when {
             removedDevices.isNotEmpty() -> {
                 joinedEncryptedRooms.value
