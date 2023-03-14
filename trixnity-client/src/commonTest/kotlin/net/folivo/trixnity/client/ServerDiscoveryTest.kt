@@ -7,6 +7,7 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.model.UserId
 import kotlin.test.fail
 
 class ServerDiscoveryTest : ShouldSpec({
@@ -22,7 +23,61 @@ class ServerDiscoveryTest : ShouldSpec({
     }
 
     context(String::serverDiscovery.name) {
+        should("find server from UserId") {
+            val httpClientFactory = createMockEngineFactory {
+                addHandler {
+                    when (it.url) {
+                        Url("https://someHost.org/.well-known/matrix/client") -> respond(
+                            """
+                            {
+                              "m.homeserver": {
+                                "base_url": "https://matrix.someHost.org"
+                              }
+                            }
+                        """.trimIndent(),
+                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        )
+
+                        Url("https://matrix.someHost.org/_matrix/client/versions") -> respond(
+                            "{}",
+                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        )
+
+                        else -> fail("unchecked request ${it.url}")
+                    }
+                }
+            }
+            UserId("@someUser:someHost.org").serverDiscovery(httpClientFactory)
+                .getOrThrow() shouldBe Url("https://matrix.someHost.org")
+        }
         should("find server") {
+            val httpClientFactory = createMockEngineFactory {
+                addHandler {
+                    when (it.url) {
+                        Url("https://someHost.org/.well-known/matrix/client") -> respond(
+                            """
+                            {
+                              "m.homeserver": {
+                                "base_url": "https://matrix.someHost.org"
+                              }
+                            }
+                        """.trimIndent(),
+                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        )
+
+                        Url("https://matrix.someHost.org/_matrix/client/versions") -> respond(
+                            "{}",
+                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        )
+
+                        else -> fail("unchecked request")
+                    }
+                }
+            }
+            "https://someHost.org".serverDiscovery(httpClientFactory)
+                .getOrThrow() shouldBe Url("https://matrix.someHost.org")
+        }
+        should("find server with port") {
             val httpClientFactory = createMockEngineFactory {
                 addHandler {
                     when (it.url) {
@@ -36,10 +91,12 @@ class ServerDiscoveryTest : ShouldSpec({
                         """.trimIndent(),
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                         )
+
                         Url("https://otherHost:8008/_matrix/client/versions") -> respond(
                             "{}",
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                         )
+
                         else -> fail("unchecked request")
                     }
                 }
@@ -61,10 +118,12 @@ class ServerDiscoveryTest : ShouldSpec({
                         """.trimIndent(),
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                         )
+
                         Url("http://otherHost:8008/_matrix/client/versions") -> respond(
                             "{}",
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                         )
+
                         else -> fail("unchecked request")
                     }
                 }
@@ -101,6 +160,7 @@ class ServerDiscoveryTest : ShouldSpec({
                         """.trimIndent(),
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                         )
+
                         Url("https://otherHost:8008/_matrix/client/versions") -> respondError(HttpStatusCode.NotFound)
                         else -> fail("unchecked request")
                     }

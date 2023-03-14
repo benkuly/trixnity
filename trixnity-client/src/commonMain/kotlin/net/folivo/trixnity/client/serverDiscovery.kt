@@ -14,11 +14,20 @@ suspend fun UserId.serverDiscovery(
 
 suspend fun String.serverDiscovery(
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) }
-): Result<Url> = kotlin.runCatching {
-    val hostWithPort = Url(this).hostWithPort
+): Result<Url> {
     val hostnameBaseUrl =
-        if (this.startsWith("http://")) Url("http://$hostWithPort")
-        else Url("https://$hostWithPort")
+        when {
+            startsWith("http://") || startsWith("https://") -> Url(this)
+            else -> Url("https://$this")
+        }
+    return hostnameBaseUrl.serverDiscovery(httpClientFactory)
+}
+
+suspend fun Url.serverDiscovery(
+    httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) }
+): Result<Url> = kotlin.runCatching {
+    require(protocol == URLProtocol.HTTP || protocol == URLProtocol.HTTPS) { "protocol must be http or https" }
+    val hostnameBaseUrl = Url(URLBuilder(protocol, host, port))
     val discoveryBaseUrl = MatrixApiClient(httpClientFactory = {
         httpClientFactory {
             it()
