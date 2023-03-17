@@ -7,6 +7,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.key.DeviceTrustLevel
@@ -16,6 +17,7 @@ import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
 import net.folivo.trixnity.client.key.UserTrustLevel.NotAllDevicesCrossSigned
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState
 import net.folivo.trixnity.client.verification.ActiveVerificationState
@@ -30,6 +32,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
+import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -264,6 +267,44 @@ class CrossSigningIT {
             withClue("observe trust level with client3 after user verification") {
                 client3.key.checkEverythingVerified()
             }
+        }
+    }
+
+    @Test
+    fun shouldAllowResetCrossSigning(): Unit = runBlocking {
+        client1.verification.getSelfVerificationMethods()
+            .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
+            .first()
+
+        val bootstrap1 = client1.key.bootstrapCrossSigning()
+        withClue("bootstrap client1") {
+            bootstrap1.result.getOrThrow()
+                .shouldBeInstanceOf<UIA.Step<Unit>>()
+                .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password)).getOrThrow()
+                .shouldBeInstanceOf<UIA.Success<Unit>>()
+        }
+        val defaultSecret1 = client2.user.getAccountData<DefaultSecretKeyEventContent>().filterNotNull().first()
+        
+        val bootstrap2 = client1.key.bootstrapCrossSigning()
+        withClue("reset cross signing by bootstrap client1 again") {
+            bootstrap2.result.getOrThrow()
+                .shouldBeInstanceOf<UIA.Step<Unit>>()
+                .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password)).getOrThrow()
+                .shouldBeInstanceOf<UIA.Success<Unit>>()
+        }
+
+        client2.user.getAccountData<DefaultSecretKeyEventContent>().first { it != defaultSecret1 }
+        withClue("self verification of client2") {
+            val client2VerificationMethods =
+                client2.verification.getSelfVerificationMethods()
+                    .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
+                    .first { it.methods.size == 2 }.methods
+            client2VerificationMethods.filterIsInstance<CrossSignedDeviceVerification>().size shouldBe 1
+            client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().size shouldBe 1
+            client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().first()
+                .verify(bootstrap2.recoveryKey).getOrThrow()
+            client2.verification.getSelfVerificationMethods()
+                .first { it == SelfVerificationMethods.AlreadyCrossSigned }
         }
     }
 }

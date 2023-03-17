@@ -39,7 +39,7 @@ interface Timeline<T> {
      * If doing so, it must be ensured, that there is no running call to [loadBefore] or [loadAfter].
      * Otherwise [init] will suspend until [loadBefore] or [loadAfter] are finished.
      *
-     * @param startFrom The event id to try start timeline generation from. Default: last room event id
+     * @param startFrom The event id to try start timeline generation from.
      * @param configBefore The config for getting the [startFrom] [TimelineEvent]. This should be used carefully.
      * @param configBefore The config for getting [TimelineEvent]s. This should be used carefully.
      * @param configAfter The config for getting [TimelineEvent]s. This should be used carefully.

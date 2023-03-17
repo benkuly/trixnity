@@ -38,7 +38,6 @@ import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.sign
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
-import kotlin.random.Random
 import arrow.core.flatMap as flatMapResult
 
 private val log = KotlinLogging.logger {}
@@ -142,7 +141,6 @@ class KeyServiceImpl(
         log.debug { "bootstrap cross signing" }
         _bootstrapRunning.value = true
 
-        Random.Default
         val keyId = generateSequence {
             val alphabet = 'a'..'z'
             generateSequence { alphabet.random() }.take(24).joinToString("")
