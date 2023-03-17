@@ -148,7 +148,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             }
             should("get timeline events with maxSize") {
-                cut.getTimelineEvents(room, event1.id, FORWARDS, maxSize = 2)
+                cut.getTimelineEvents(room, event1.id, FORWARDS) { maxSize = 2 }
                     .toList().map { it.first() } shouldBe listOf(
                     timelineEvent1,
                     timelineEvent2,
@@ -196,7 +196,10 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
             should("fetch missing events by filling gaps when minSize not reached") {
                 val result = async {
-                    cut.getTimelineEvents(room, event3.id, minSize = 3, maxSize = 4).toList().map { it.first() }
+                    cut.getTimelineEvents(room, event3.id) {
+                        minSize = 3
+                        maxSize = 4
+                    }.toList().map { it.first() }
                 }
                 timelineEventHandlerMock.unsafeFillTimelineGaps.first { it }
                 roomTimelineStore.addAll(
@@ -215,7 +218,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             }
             should("not fetch when minSize reached") {
-                cut.getTimelineEvents(room, event3.id, minSize = 2).toList().map { it.first() } shouldBe listOf(
+                cut.getTimelineEvents(room, event3.id) { minSize = 2 }.toList().map { it.first() } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2.copy(gap = TimelineEvent.Gap.GapBefore("before-2")),
                 )
@@ -287,11 +290,11 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 roomStateStore.save(createEvent)
             }
             should("follow room upgrade from old to new room") {
-                cut.getTimelineEvents(room, event1.id, FORWARDS, minSize = 5)
+                cut.getTimelineEvents(room, event1.id, FORWARDS) { minSize = 5 }
                     .take(5).toList().map { it.first() } shouldBe timeline
             }
             should("follow room upgrade from new to old room") {
-                cut.getTimelineEvents(newRoom, event3.id, BACKWARDS, minSize = 5)
+                cut.getTimelineEvents(newRoom, event3.id, BACKWARDS) { minSize = 5 }
                     .take(5).toList().map { it.first() } shouldBe timeline.reversed()
             }
         }
@@ -389,21 +392,33 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             }
 
             should("get the event '2', it's predecessor and successor") {
-                cut.getTimelineEventsAround(room, event2.id, maxSizeBefore = 2, maxSizeAfter = 2)
+                cut.getTimelineEventsAround(
+                    room,
+                    event2.id,
+                    configBefore = { maxSize = 2 },
+                    configAfter = { maxSize = 2 })
                     .map { it.first() } shouldBe listOf(
                     newTimelineEvent1,
                     timelineEvent2,
                     newTimelineEvent3,
                 )
 
-                cut.getTimelineEventsAround(room, event2.id, maxSizeBefore = 3, maxSizeAfter = 2)
+                cut.getTimelineEventsAround(
+                    room,
+                    event2.id,
+                    configBefore = { maxSize = 3 },
+                    configAfter = { maxSize = 2 })
                     .map { it.first() } shouldBe listOf(
                     newTimelineEvent1,
                     timelineEvent2,
                     newTimelineEvent3,
                 )
 
-                cut.getTimelineEventsAround(room, event2.id, maxSizeBefore = 3, maxSizeAfter = 3)
+                cut.getTimelineEventsAround(
+                    room,
+                    event2.id,
+                    configBefore = { maxSize = 3 },
+                    configAfter = { maxSize = 3 })
                     .map { it.first() } shouldBe listOf(
                     newTimelineEvent1,
                     timelineEvent2,

@@ -29,6 +29,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -230,7 +231,7 @@ class RoomServiceTest : ShouldSpec({
                     null
                 }
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = async { cut.getTimelineEvent(room, eventId, 0.seconds).first() }
+                val result = async { cut.getTimelineEvent(room, eventId) { decryptionTimeout = ZERO }.first() }
                 // await would suspend infinite, when there is INFINITE timeout, because the coroutine spawned within async would wait for megolm keys
                 result.await() shouldBe encryptedTimelineEvent
                 result.job.children.count() shouldBe 0
@@ -302,7 +303,7 @@ class RoomServiceTest : ShouldSpec({
             }
             should("not replace content when disabled") {
                 roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
-                cut.getTimelineEvent(room, eventId, allowReplaceContent = false).first() shouldBe timelineEvent.copy(
+                cut.getTimelineEvent(room, eventId) { allowReplaceContent = false }.first() shouldBe timelineEvent.copy(
                     content = Result.success(TextMessageEventContent("hi"))
                 )
             }

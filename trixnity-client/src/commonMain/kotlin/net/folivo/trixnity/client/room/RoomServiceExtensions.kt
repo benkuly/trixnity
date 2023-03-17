@@ -17,25 +17,14 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 
 /**
  * @see RoomService.getTimeline
  */
 fun RoomService.getTimeline(
     roomId: RoomId,
-    decryptionTimeout: Duration = Duration.INFINITE,
-    fetchTimeout: Duration = 1.minutes,
-    limitPerFetch: Long = 20,
-    loadingSize: Long = 20,
 ): SimpleTimeline =
-    getTimeline(
-        roomId = roomId,
-        decryptionTimeout = decryptionTimeout,
-        fetchTimeout = fetchTimeout,
-        limitPerFetch = limitPerFetch,
-        loadingSize = loadingSize,
-    ) { it }
+    getTimeline(roomId = roomId) { it }
 
 inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
     roomId: RoomId,
@@ -142,28 +131,21 @@ fun Flow<Flow<Flow<TimelineEvent>>?>.toFlowList(
 fun RoomService.getTimelineEventsAround(
     roomId: RoomId,
     startFrom: EventId,
-    decryptionTimeout: Duration = Duration.INFINITE,
-    fetchTimeout: Duration = 1.minutes,
-    limitPerFetch: Long = 20,
     maxSizeBefore: StateFlow<Int>,
     maxSizeAfter: StateFlow<Int>,
+    configStart: GetTimelineEventConfig.() -> Unit = {},
+    configBefore: GetTimelineEventsConfig.() -> Unit = {},
+    configAfter: GetTimelineEventsConfig.() -> Unit = {},
 ): Flow<List<Flow<TimelineEvent>>> =
     channelFlow {
-        val startEvent =
-            getTimelineEvent(roomId, startFrom, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
+        val startEvent = getTimelineEvent(roomId, startFrom, configStart).filterNotNull()
         startEvent.first()
         combine(
-            getTimelineEvents(
-                roomId, startFrom,
-                GetEvents.Direction.BACKWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
-            )
+            getTimelineEvents(roomId, startFrom, GetEvents.Direction.BACKWARDS, configBefore)
                 .drop(1)
                 .toFlowList(maxSizeBefore)
                 .map { it.reversed() },
-            getTimelineEvents(
-                roomId, startFrom,
-                GetEvents.Direction.FORWARDS, decryptionTimeout, fetchTimeout, limitPerFetch
-            )
+            getTimelineEvents(roomId, startFrom, GetEvents.Direction.FORWARDS, configAfter)
                 .drop(1)
                 .toFlowList(maxSizeAfter),
         ) { beforeElements, afterElements ->
@@ -180,25 +162,17 @@ fun RoomService.getTimelineEventsAround(
 suspend fun RoomService.getTimelineEventsAround(
     roomId: RoomId,
     startFrom: EventId,
-    decryptionTimeout: Duration = Duration.INFINITE,
-    fetchTimeout: Duration = 1.minutes,
-    limitPerFetch: Long = 20,
-    minSizeBefore: Long? = 2,
-    minSizeAfter: Long? = minSizeBefore,
-    maxSizeBefore: Long = 10,
-    maxSizeAfter: Long = maxSizeBefore,
+    configStart: GetTimelineEventConfig.() -> Unit = {},
+    configBefore: GetTimelineEventsConfig.() -> Unit = {},
+    configAfter: GetTimelineEventsConfig.() -> Unit = {},
 ): List<Flow<TimelineEvent>> = coroutineScope {
-    val startEvent = getTimelineEvent(roomId, startFrom, decryptionTimeout, fetchTimeout, limitPerFetch).filterNotNull()
+    val startEvent = getTimelineEvent(roomId, startFrom, configStart).filterNotNull()
     val eventsBefore = async {
         getTimelineEvents(
             startFrom = startFrom,
             roomId = roomId,
             direction = GetEvents.Direction.BACKWARDS,
-            decryptionTimeout = decryptionTimeout,
-            fetchTimeout = fetchTimeout,
-            limitPerFetch = limitPerFetch,
-            minSize = minSizeBefore,
-            maxSize = maxSizeBefore
+            config = configBefore,
         ).drop(1).toList().reversed()
     }
     val eventsAfter = async {
@@ -206,11 +180,7 @@ suspend fun RoomService.getTimelineEventsAround(
             startFrom = startFrom,
             roomId = roomId,
             direction = GetEvents.Direction.FORWARDS,
-            decryptionTimeout = decryptionTimeout,
-            fetchTimeout = fetchTimeout,
-            limitPerFetch = limitPerFetch,
-            minSize = minSizeAfter,
-            maxSize = maxSizeAfter
+            config = configAfter
         ).drop(1).toList()
     }
     eventsBefore.await() + startEvent + eventsAfter.await()

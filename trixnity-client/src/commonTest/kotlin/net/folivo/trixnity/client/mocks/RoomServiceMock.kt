@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
+import net.folivo.trixnity.client.room.GetTimelineEventConfig
+import net.folivo.trixnity.client.room.GetTimelineEventsConfig
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.Timeline
 import net.folivo.trixnity.client.room.message.MessageBuilder
@@ -32,38 +34,29 @@ class RoomServiceMock : RoomService {
     override fun getTimelineEvent(
         roomId: RoomId,
         eventId: EventId,
-        decryptionTimeout: Duration,
-        fetchTimeout: Duration,
-        limitPerFetch: Long,
-        allowReplaceContent: Boolean
-    ): Flow<TimelineEvent> {
+        config: GetTimelineEventConfig.() -> Unit
+    ): Flow<TimelineEvent?> {
         return returnGetTimelineEvent
     }
 
     override fun getPreviousTimelineEvent(
         event: TimelineEvent,
-        decryptionTimeout: Duration,
-        fetchTimeout: Duration,
-        limitPerFetch: Long,
-        allowReplaceContent: Boolean
-    ): Flow<TimelineEvent>? {
+        config: GetTimelineEventConfig.() -> Unit
+    ): Flow<TimelineEvent?>? {
         throw NotImplementedError()
     }
 
     override fun getNextTimelineEvent(
         event: TimelineEvent,
-        decryptionTimeout: Duration,
-        fetchTimeout: Duration,
-        limitPerFetch: Long,
-        allowReplaceContent: Boolean
-    ): Flow<TimelineEvent>? {
+        config: GetTimelineEventConfig.() -> Unit
+    ): Flow<TimelineEvent?>? {
         throw NotImplementedError()
     }
 
     override fun getLastTimelineEvent(
         roomId: RoomId,
-        decryptionTimeout: Duration
-    ): StateFlow<StateFlow<TimelineEvent>?> {
+        config: GetTimelineEventConfig.() -> Unit
+    ): Flow<Flow<TimelineEvent>?> {
         throw NotImplementedError()
     }
 
@@ -73,20 +66,12 @@ class RoomServiceMock : RoomService {
         roomId: RoomId,
         startFrom: EventId,
         direction: GetEvents.Direction,
-        decryptionTimeout: Duration,
-        fetchTimeout: Duration,
-        limitPerFetch: Long,
-        minSize: Long?,
-        maxSize: Long?
+        config: GetTimelineEventsConfig.() -> Unit
     ): Flow<Flow<TimelineEvent>> = returnGetTimelineEvents
 
     override fun getLastTimelineEvents(
         roomId: RoomId,
-        decryptionTimeout: Duration,
-        fetchTimeout: Duration,
-        limitPerFetch: Long,
-        minSize: Long?,
-        maxSize: Long?
+        config: GetTimelineEventsConfig.() -> Unit
     ): Flow<Flow<Flow<TimelineEvent>>?> {
         throw NotImplementedError()
     }
@@ -99,14 +84,7 @@ class RoomServiceMock : RoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
-    override fun <T> getTimeline(
-        roomId: RoomId,
-        decryptionTimeout: Duration,
-        fetchTimeout: Duration,
-        limitPerFetch: Long,
-        loadingSize: Long,
-        transformer: suspend (Flow<TimelineEvent>) -> T
-    ): Timeline<T> {
+    override fun <T> getTimeline(roomId: RoomId, transformer: suspend (Flow<TimelineEvent>) -> T): Timeline<T> {
         throw NotImplementedError()
     }
 
