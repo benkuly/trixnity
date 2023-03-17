@@ -295,13 +295,14 @@ class TimelineEventIT {
             }.first { it } // wait for sync
 
             val timelineFromOldRoom =
-                client1.room.getTimeline(oldRoom, loadingSize = 40).apply {
-                    init(client1.room.getState<CreateEventContent>(oldRoom).first()?.getEventId().shouldNotBeNull())
+                client1.room.getTimeline(oldRoom).apply {
+                    init(client1.room.getState<CreateEventContent>(oldRoom).first()?.getEventId().shouldNotBeNull(),
+                        configAfter = { maxSize = 20 })
                 }
             val timelineFromNewRoom =
-                client1.room.getTimeline(newRoom, loadingSize = 40).apply {
+                client1.room.getTimeline(newRoom).apply {
                     init(client1.room.getById(newRoom).first()?.lastEventId.shouldNotBeNull())
-                    loadBefore()
+                    loadBefore { maxSize = 20 }
                 }
 
             timelineFromOldRoom.state.first().elements.map { it.first().eventId } shouldBe
