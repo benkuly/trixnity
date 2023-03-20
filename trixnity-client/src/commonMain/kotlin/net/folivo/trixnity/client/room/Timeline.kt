@@ -40,9 +40,9 @@ interface Timeline<T> {
      * Otherwise [init] will suspend until [loadBefore] or [loadAfter] are finished.
      *
      * @param startFrom The event id to try start timeline generation from.
-     * @param configBefore The config for getting the [startFrom] [TimelineEvent]. This should be used carefully.
-     * @param configBefore The config for getting [TimelineEvent]s. This should be used carefully.
-     * @param configAfter The config for getting [TimelineEvent]s. This should be used carefully.
+     * @param configStart The config for getting the [startFrom] [TimelineEvent].
+     * @param configBefore The config for getting [TimelineEvent]s.
+     * @param configAfter The config for getting [TimelineEvent]s.
      */
     suspend fun init(
         startFrom: EventId,
@@ -56,7 +56,7 @@ interface Timeline<T> {
      *
      * This will also suspend until [init] is finished.
      *
-     * @param config The config for getting [TimelineEvent]s. This should be used carefully.
+     * @param config The config for getting [TimelineEvent]s.
      */
     suspend fun loadBefore(config: GetTimelineEventsConfig.() -> Unit = {}): TimelineStateChange<T>
 
@@ -65,7 +65,7 @@ interface Timeline<T> {
      *
      * This will also suspend until [init] is finished.
      *
-     * @param config The config for getting [TimelineEvent]s. This should be used carefully.
+     * @param config The config for getting [TimelineEvent]s.
      */
     suspend fun loadAfter(config: GetTimelineEventsConfig.() -> Unit = {}): TimelineStateChange<T>
 }

@@ -42,8 +42,10 @@ interface RoomService {
     )
 
     /**
-     * Returns the [TimelineEvent] and starts decryption. If it is not found locally, it is tried
-     * to find it by filling the sync-gaps.
+     * Returns the [TimelineEvent] and starts decryption. If it is not found locally, the algorithm will try to find
+     * the event by traversing the events from the end of the timeline (i.e. from the last sent event).
+     * This can include filling sync gaps from the server and thus might take a while.
+     * Please consider wrapping this call in a timeout.
      */
     fun getTimelineEvent(
         roomId: RoomId,

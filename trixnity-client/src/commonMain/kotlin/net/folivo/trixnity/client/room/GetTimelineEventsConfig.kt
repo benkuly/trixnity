@@ -28,7 +28,7 @@ data class GetTimelineEventConfig(
     var allowReplaceContent: Boolean = true
 )
 
-fun GetTimelineEventConfig.apply(    config:GetTimelineEventsConfig) =apply {
+fun GetTimelineEventConfig.apply(config: GetTimelineEventsConfig) = apply {
     decryptionTimeout = config.decryptionTimeout
     fetchTimeout = config.fetchTimeout
     fetchSize = config.fetchSize
@@ -59,14 +59,14 @@ data class GetTimelineEventsConfig(
      */
     var minSize: Long? = null,
     /**
-     * When set, the current [TimelineEvent] retrieving stops, when this varue is reached (including the start event).
+     * When set, the current [TimelineEvent] retrieving stops, when this value is reached (including the start event).
      */
     var maxSize: Long? = null
 )
 
-fun GetTimelineEventsConfig.apply(config:GetTimelineEventConfig) =apply {
+fun GetTimelineEventsConfig.apply(config: GetTimelineEventConfig) = apply {
     decryptionTimeout = config.decryptionTimeout
     fetchTimeout = config.fetchTimeout
     fetchSize = config.fetchSize
-    allowReplaceContent =config. allowReplaceContent
+    allowReplaceContent = config.allowReplaceContent
 }
