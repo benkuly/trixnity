@@ -126,6 +126,9 @@ fun Flow<Flow<Flow<TimelineEvent>>?>.toFlowList(
  * @param startFrom the start event id
  * @param maxSizeBefore how many events to possibly get before the start event
  * @param maxSizeAfter how many events to possibly get after the start event
+ * @param configStart The config for getting the [startFrom].
+ * @param configBefore The config for getting [TimelineEvent]s before [startFrom].
+ * @param configAfter The config for getting [TimelineEvent]s after [startFrom].
  *
  */
 fun RoomService.getTimelineEventsAround(
@@ -155,6 +158,10 @@ fun RoomService.getTimelineEventsAround(
 
 /**
  * Returns all timeline events around a starting event.
+ *
+ * @param configStart The config for getting the [startFrom].
+ * @param configBefore The config for getting [TimelineEvent]s before [startFrom].
+ * @param configAfter The config for getting [TimelineEvent]s after [startFrom].
  *
  * @see [RoomService.getTimelineEvents]
  *
