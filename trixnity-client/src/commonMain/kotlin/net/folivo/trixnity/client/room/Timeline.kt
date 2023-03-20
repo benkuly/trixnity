@@ -14,9 +14,8 @@ import net.folivo.trixnity.client.store.isLast
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.ZERO
 
 private val log = KotlinLogging.logger { }
 
@@ -41,22 +40,34 @@ interface Timeline<T> {
      * Otherwise [init] will suspend until [loadBefore] or [loadAfter] are finished.
      *
      * @param startFrom The event id to try start timeline generation from.
+     * @param configStart The config for getting the [startFrom].
+     * @param configBefore The config for getting [TimelineEvent]s before [startFrom].
+     * @param configAfter The config for getting [TimelineEvent]s after [startFrom].
      */
-    suspend fun init(startFrom: EventId): TimelineStateChange<T>
+    suspend fun init(
+        startFrom: EventId,
+        configStart: GetTimelineEventConfig.() -> Unit = {},
+        configBefore: GetTimelineEventsConfig.() -> Unit = {},
+        configAfter: GetTimelineEventsConfig.() -> Unit = {},
+    ): TimelineStateChange<T>
 
     /**
-     * Load new events before the oldest event. This may suspend until at least one event can be loaded.
+     * Load new events before the oldest event. With default config this may suspend until at least one event can be loaded.
      *
      * This will also suspend until [init] is finished.
+     *
+     * @param config The config for getting [TimelineEvent]s.
      */
-    suspend fun loadBefore(): TimelineStateChange<T>
+    suspend fun loadBefore(config: GetTimelineEventsConfig.() -> Unit = {}): TimelineStateChange<T>
 
     /**
-     * Load new events after the newest event. This may suspend until at least one event can be loaded.
+     * Load new events after the newest event. With default config this may suspend until at least one event can be loaded.
      *
      * This will also suspend until [init] is finished.
+     *
+     * @param config The config for getting [TimelineEvent]s.
      */
-    suspend fun loadAfter(): TimelineStateChange<T>
+    suspend fun loadAfter(config: GetTimelineEventsConfig.() -> Unit = {}): TimelineStateChange<T>
 }
 
 data class TimelineState<T>(
@@ -149,17 +160,50 @@ abstract class TimelineBase<T>(
     private val loadBeforeMutex = Mutex()
     private val loadAfterMutex = Mutex()
 
-    protected abstract suspend fun internalInit(startFrom: EventId): List<Flow<TimelineEvent>>
-    protected abstract suspend fun internalLoadBefore(startFrom: EventId): List<Flow<TimelineEvent>>
-    protected abstract suspend fun internalLoadAfter(startFrom: EventId): List<Flow<TimelineEvent>>
+    protected abstract suspend fun internalInit(
+        startFrom: EventId,
+        configStart: GetTimelineEventConfig.() -> Unit = {},
+        configBefore: GetTimelineEventsConfig.() -> Unit,
+        configAfter: GetTimelineEventsConfig.() -> Unit,
+    ): List<Flow<TimelineEvent>>
+
+    protected abstract suspend fun internalLoadBefore(
+        startFrom: EventId,
+        config: GetTimelineEventsConfig.() -> Unit,
+    ): List<Flow<TimelineEvent>>
+
+    protected abstract suspend fun internalLoadAfter(
+        startFrom: EventId,
+        config: GetTimelineEventsConfig.() -> Unit,
+    ): List<Flow<TimelineEvent>>
 
     private suspend fun List<Flow<TimelineEvent>>.transformToElements() = map { events -> transformer(events) }
 
-    override suspend fun init(startFrom: EventId): TimelineStateChange<T> = coroutineScope {
+    override suspend fun init(
+        startFrom: EventId,
+        configStart: GetTimelineEventConfig.() -> Unit,
+        configBefore: GetTimelineEventsConfig.() -> Unit,
+        configAfter: GetTimelineEventsConfig.() -> Unit,
+    ): TimelineStateChange<T> = coroutineScope {
         loadBeforeMutex.withLock {
             loadAfterMutex.withLock {
                 internalState.update { it.copy(isInitialized = false) }
-                val newEvents = internalInit(startFrom)
+                val newEvents = internalInit(startFrom,
+                    configStart = {
+                        decryptionTimeout = ZERO
+                        fetchTimeout = INFINITE
+                        fetchSize = 100
+                    },
+                    configBefore = {
+                        minSize = 1
+                        maxSize = fetchSize / 2
+                        configBefore()
+                    },
+                    configAfter = {
+                        minSize = 1
+                        maxSize = fetchSize / 2
+                        configAfter()
+                    })
                 val newElements = newEvents.transformToElements()
                 lateinit var elementsBeforeChange: List<T>
                 internalState.update {
@@ -180,84 +224,93 @@ abstract class TimelineBase<T>(
         }
     }
 
-    override suspend fun loadBefore(): TimelineStateChange<T> = coroutineScope {
-        internalState.first { it.isInitialized }
-        loadBeforeMutex.withLock {
-            val startFrom = internalState.value.lastLoadedEventBefore?.first()?.eventId
-                ?: throw IllegalStateException("Timeline not initialized")
-            coroutineContext.job.invokeOnCompletion { error ->
-                if (error != null) internalState.update { it.copy(isLoadingBefore = false) }
-            }
-            internalState.update { it.copy(isLoadingBefore = true) }
-            val newEvents = internalLoadBefore(startFrom)
-            val newElements = newEvents.transformToElements()
-            lateinit var elementsBeforeChange: List<T>
-            lateinit var elementsAfterChange: List<T>
-            internalState.update {
-                elementsBeforeChange = it.elements
-                elementsAfterChange = newElements + it.elements
-                it.copy(
-                    elements = elementsAfterChange,
-                    lastLoadedEventBefore = newEvents.firstOrNull() ?: it.lastLoadedEventBefore,
-                    isLoadingBefore = false
+    override suspend fun loadBefore(config: GetTimelineEventsConfig.() -> Unit): TimelineStateChange<T> =
+        coroutineScope {
+            internalState.first { it.isInitialized }
+            loadBeforeMutex.withLock {
+                val startFrom = internalState.value.lastLoadedEventBefore?.first()?.eventId
+                    ?: throw IllegalStateException("Timeline not initialized")
+                coroutineContext.job.invokeOnCompletion { error ->
+                    if (error != null) internalState.update { it.copy(isLoadingBefore = false) }
+                }
+                internalState.update { it.copy(isLoadingBefore = true) }
+                val newEvents = internalLoadBefore(startFrom) {
+                    minSize = 2
+                    maxSize = fetchSize
+                    config()
+                }
+                val newElements = newEvents.transformToElements()
+                lateinit var elementsBeforeChange: List<T>
+                lateinit var elementsAfterChange: List<T>
+                internalState.update {
+                    elementsBeforeChange = it.elements
+                    elementsAfterChange = newElements + it.elements
+                    it.copy(
+                        elements = elementsAfterChange,
+                        lastLoadedEventBefore = newEvents.firstOrNull() ?: it.lastLoadedEventBefore,
+                        isLoadingBefore = false
+                    )
+                }
+                TimelineStateChange(
+                    elementsBeforeChange = elementsBeforeChange,
+                    elementsAfterChange = elementsAfterChange,
+                    newElements = newElements
                 )
             }
-            TimelineStateChange(
-                elementsBeforeChange = elementsBeforeChange,
-                elementsAfterChange = elementsAfterChange,
-                newElements = newElements
-            )
         }
-    }
 
-    override suspend fun loadAfter(): TimelineStateChange<T> = coroutineScope {
-        internalState.first { it.isInitialized }
-        loadAfterMutex.withLock {
-            val startFrom = internalState.value.lastLoadedEventAfter?.first()?.eventId
-                ?: throw IllegalStateException("Timeline not initialized")
-            coroutineContext.job.invokeOnCompletion { error ->
-                if (error != null) internalState.update { it.copy(isLoadingAfter = false) }
-            }
-            internalState.update { it.copy(isLoadingAfter = true) }
-            val newEvents = internalLoadAfter(startFrom)
-            val newElements = newEvents.transformToElements()
-            lateinit var elementsBeforeChange: List<T>
-            lateinit var elementsAfterChange: List<T>
-            internalState.update {
-                elementsBeforeChange = it.elements
-                elementsAfterChange = it.elements + newElements
-                it.copy(
-                    elements = elementsAfterChange,
-                    lastLoadedEventAfter = newEvents.lastOrNull() ?: it.lastLoadedEventAfter,
-                    isLoadingAfter = false,
+    override suspend fun loadAfter(config: GetTimelineEventsConfig.() -> Unit): TimelineStateChange<T> =
+        coroutineScope {
+            internalState.first { it.isInitialized }
+            loadAfterMutex.withLock {
+                val startFrom = internalState.value.lastLoadedEventAfter?.first()?.eventId
+                    ?: throw IllegalStateException("Timeline not initialized")
+                coroutineContext.job.invokeOnCompletion { error ->
+                    if (error != null) internalState.update { it.copy(isLoadingAfter = false) }
+                }
+                internalState.update { it.copy(isLoadingAfter = true) }
+                val newEvents = internalLoadAfter(startFrom) {
+                    minSize = 2
+                    maxSize = fetchSize
+                    config()
+                }
+                val newElements = newEvents.transformToElements()
+                lateinit var elementsBeforeChange: List<T>
+                lateinit var elementsAfterChange: List<T>
+                internalState.update {
+                    elementsBeforeChange = it.elements
+                    elementsAfterChange = it.elements + newElements
+                    it.copy(
+                        elements = elementsAfterChange,
+                        lastLoadedEventAfter = newEvents.lastOrNull() ?: it.lastLoadedEventAfter,
+                        isLoadingAfter = false,
+                    )
+                }
+                TimelineStateChange(
+                    elementsBeforeChange = elementsBeforeChange,
+                    elementsAfterChange = elementsAfterChange,
+                    newElements = newElements
                 )
             }
-            TimelineStateChange(
-                elementsBeforeChange = elementsBeforeChange,
-                elementsAfterChange = elementsAfterChange,
-                newElements = newElements
-            )
         }
-    }
 }
 
 class TimelineImpl<T>(
     private val roomId: RoomId,
-    private val decryptionTimeout: Duration = INFINITE,
-    private val fetchTimeout: Duration = 1.minutes,
-    private val limitPerFetch: Long = 20,
-    private val loadingSize: Long = limitPerFetch,
     private val roomService: RoomService,
     transformer: suspend (Flow<TimelineEvent>) -> T,
 ) : TimelineBase<T>(transformer) {
-    override suspend fun internalInit(startFrom: EventId): List<Flow<TimelineEvent>> = coroutineScope {
+    override suspend fun internalInit(
+        startFrom: EventId,
+        configStart: GetTimelineEventConfig.() -> Unit,
+        configBefore: GetTimelineEventsConfig.() -> Unit,
+        configAfter: GetTimelineEventsConfig.() -> Unit
+    ): List<Flow<TimelineEvent>> = coroutineScope {
         log.debug { "init timeline" }
         val startFromEvent = roomService.getTimelineEvent(
             eventId = startFrom,
             roomId = roomId,
-            decryptionTimeout = decryptionTimeout,
-            fetchTimeout = INFINITE,
-            limitPerFetch = 100
+            config = configStart
         ).filterNotNull()
             .also { it.first() } // wait until it exists in store
         val eventsBefore = async {
@@ -266,11 +319,7 @@ class TimelineImpl<T>(
                 startFrom = startFrom,
                 roomId = roomId,
                 direction = GetEvents.Direction.BACKWARDS,
-                decryptionTimeout = decryptionTimeout,
-                fetchTimeout = fetchTimeout,
-                limitPerFetch = limitPerFetch,
-                minSize = 1,
-                maxSize = loadingSize / 2,
+                config = configBefore,
             ).drop(1).toList().reversed()
                 .also { log.debug { "finished load before $startFrom" } }
         }
@@ -280,11 +329,7 @@ class TimelineImpl<T>(
                 startFrom = startFrom,
                 roomId = roomId,
                 direction = GetEvents.Direction.FORWARDS,
-                decryptionTimeout = decryptionTimeout,
-                fetchTimeout = fetchTimeout,
-                limitPerFetch = limitPerFetch,
-                minSize = 1,
-                maxSize = loadingSize / 2,
+                config = configAfter,
             ).drop(1).toList()
                 .also { log.debug { "finished load after $startFrom" } }
         }
@@ -293,31 +338,29 @@ class TimelineImpl<T>(
         newEvents
     }
 
-    override suspend fun internalLoadBefore(startFrom: EventId): List<Flow<TimelineEvent>> {
+    override suspend fun internalLoadBefore(
+        startFrom: EventId,
+        config: GetTimelineEventsConfig.() -> Unit
+    ): List<Flow<TimelineEvent>> {
         val newEvents = roomService.getTimelineEvents(
             startFrom = startFrom,
             roomId = roomId,
             direction = GetEvents.Direction.BACKWARDS,
-            decryptionTimeout = decryptionTimeout,
-            fetchTimeout = fetchTimeout,
-            limitPerFetch = limitPerFetch,
-            minSize = 2,
-            maxSize = loadingSize,
+            config = config,
         ).drop(1).toList().reversed().map { it.filterNotNull() }
         log.debug { "finished load before $startFrom" }
         return newEvents
     }
 
-    override suspend fun internalLoadAfter(startFrom: EventId): List<Flow<TimelineEvent>> {
+    override suspend fun internalLoadAfter(
+        startFrom: EventId,
+        config: GetTimelineEventsConfig.() -> Unit
+    ): List<Flow<TimelineEvent>> {
         val newEvents = roomService.getTimelineEvents(
             startFrom = startFrom,
             roomId = roomId,
             direction = GetEvents.Direction.FORWARDS,
-            decryptionTimeout = decryptionTimeout,
-            fetchTimeout = fetchTimeout,
-            limitPerFetch = limitPerFetch,
-            minSize = 2,
-            maxSize = loadingSize,
+            config = config,
         ).drop(1).toList().map { it.filterNotNull() }
         log.debug { "finished load after $startFrom" }
         return newEvents
