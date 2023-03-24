@@ -247,15 +247,18 @@ class OlmEncryptionServiceImpl(
             } catch (decryptError: Throwable) {
                 if (hasCreatedTooManyOlmSessions(storedSessions).not()) {
                     val deviceId = senderDeviceKeys.deviceId
-                    log.info { "try recover corrupted olm session by sending a dummy event due to: ${decryptError.message}" }
                     val dummyEvent = try {
                         encryptOlm(DummyEventContent, senderId, deviceId, true)
                     } catch (e: Exception) {
-                        log.warn(e) { "could not encrypt dummy event for $senderId ($deviceId)" }
+                        if (e is KeyException.KeyNotFoundException) {
+                            log.trace { "do not recover corrupted olm session because device does not exist anymore" }
+                        } else log.warn(e) { "could not encrypt dummy event for $senderId ($deviceId)" }
                         null
                     }
-                    if (dummyEvent != null)
+                    if (dummyEvent != null) {
+                        log.info { "try recover corrupted olm session by sending a dummy event due to: ${decryptError.message}" }
                         requests.sendToDevice(mapOf(senderId to mapOf(deviceId to dummyEvent))).getOrThrow()
+                    }
                 }
                 throw decryptError
             }
