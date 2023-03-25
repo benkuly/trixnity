@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.key
 
 import arrow.core.flatMap
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.decodeFromString
@@ -167,8 +168,15 @@ class KeyBackupServiceImpl(
                     },
                     scheduleBase = 1.seconds,
                     scheduleLimit = 6.hours,
-                    onError = { log.warn(it) { "failed load megolm session from key backup" } },
-                    onCancel = { log.debug { "stop load megolm session from key backup, because job was cancelled" } },
+                    onError = {
+                        if (it is MatrixServerException
+                            && it.statusCode == HttpStatusCode.NotFound
+                            && it.errorResponse is ErrorResponse.NotFound
+                        ) log.trace(it) { "megolm session from key backup not found on server" }
+                        else log.warn(it) { "failed load megolm session from key backup" }
+
+                    },
+                    onCancel = { log.trace { "stop load megolm session from key backup, because job was cancelled" } },
                 ) {
                     val version = version.value?.version
                     if (version != null) {
