@@ -51,7 +51,10 @@ fun Application.installMatrixApiServer(json: Json) {
         status(HttpStatusCode.NotFound) { call, _ ->
             call.respond(
                 HttpStatusCode.NotFound,
-                json.encodeToJsonElement(ErrorResponseSerializer, ErrorResponse.NotFound())
+                json.encodeToJsonElement(
+                    ErrorResponseSerializer,
+                    ErrorResponse.Unrecognized("unsupported (or unknown) endpoint")
+                )
             )
         }
         status(HttpStatusCode.MethodNotAllowed) { call, _ ->
