@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelationType
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv1roomsroomidrelationseventidreltype">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv1roomsroomidrelationseventidreltype">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v1/rooms/{roomId}/relations/{eventId}/{relType}")

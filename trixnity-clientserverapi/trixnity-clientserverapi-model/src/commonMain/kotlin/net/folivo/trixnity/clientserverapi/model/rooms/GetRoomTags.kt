@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.TagEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv3useruseridroomsroomidtags">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3useruseridroomsroomidtags">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/user/{userId}/rooms/{roomId}/tags")

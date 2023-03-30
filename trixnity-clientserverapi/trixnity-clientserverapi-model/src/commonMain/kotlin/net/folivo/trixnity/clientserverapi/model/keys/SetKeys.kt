@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#post_matrixclientv3keysupload">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#post_matrixclientv3keysupload">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/keys/upload")

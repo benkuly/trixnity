@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#get_matrixclientv3roomsroomideventeventid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3roomsroomideventeventid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/event/{eventId}")

@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mroomencryption">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mroomencryption">matrix spec</a>
  */
 @Serializable
 data class EncryptionEventContent(
