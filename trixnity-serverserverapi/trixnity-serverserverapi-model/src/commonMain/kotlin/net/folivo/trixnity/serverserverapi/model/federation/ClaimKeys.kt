@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.Keys
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#post_matrixfederationv1userkeysclaim">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#post_matrixfederationv1userkeysclaim">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/user/keys/claim")

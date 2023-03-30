@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mforwarded_room_key">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mforwarded_room_key">matrix spec</a>
  */
 @Serializable
 data class ForwardedRoomKeyEventContent(

@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#put_matrixclientv3profileuseridavatar_url">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#put_matrixclientv3profileuseridavatar_url">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/profile/{userId}/avatar_url")

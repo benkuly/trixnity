@@ -39,16 +39,16 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
             requestSerializer != null -> json.decodeFromJsonElement(requestSerializer, call.receive())
             else -> call.receive()
         }
+    call.response.status(HttpStatusCode.OK)
     val responseBody: RESPONSE = handler(MatrixEndpointContext(endpoint, requestBody, call))
     val responseSerializer = endpoint.responseSerializerBuilder(mappings, json)
     when {
         responseSerializer != null -> call.respond(
-            HttpStatusCode.OK,
             json.encodeToJsonElement(responseSerializer, responseBody)
         )
 
-        responseBody == null -> call.respond(HttpStatusCode.OK)
-        else -> call.respond(HttpStatusCode.OK, responseBody)
+        responseBody == null -> {}
+        else -> call.respond(responseBody)
     }
 }
 

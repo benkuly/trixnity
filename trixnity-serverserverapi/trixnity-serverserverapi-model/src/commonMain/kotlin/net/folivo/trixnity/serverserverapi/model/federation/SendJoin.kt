@@ -17,7 +17,7 @@ import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentStateDataUnit
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#put_matrixfederationv2send_joinroomideventid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#put_matrixfederationv2send_joinroomideventid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v2/send_join/{roomId}/{eventId}")

@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#typing-notificationse">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#typing-notificationse">matrix spec</a>
  */
 @Serializable
 data class TypingDataUnitContent(

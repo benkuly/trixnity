@@ -48,6 +48,16 @@ interface AuthenticationApiHandler {
     suspend fun register(context: MatrixEndpointContext<Register, RequestWithUIA<Register.Request>, ResponseWithUIA<Register.Response>>): ResponseWithUIA<Register.Response>
 
     /**
+     * @see [SSORedirectTo]
+     */
+    suspend fun ssoRedirect(context: MatrixEndpointContext<SSORedirect, Unit, Unit>): String
+
+    /**
+     * @see [SSORedirectTo]
+     */
+    suspend fun ssoRedirectTo(context: MatrixEndpointContext<SSORedirectTo, Unit, Unit>): String
+
+    /**
      * @see [GetLoginTypes]
      */
     suspend fun getLoginTypes(context: MatrixEndpointContext<GetLoginTypes, Unit, GetLoginTypes.Response>): GetLoginTypes.Response

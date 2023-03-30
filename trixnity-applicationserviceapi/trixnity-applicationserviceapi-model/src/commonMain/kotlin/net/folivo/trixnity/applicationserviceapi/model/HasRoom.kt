@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomAliasId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/application-service-api/#get_matrixappv1roomsroomalias">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/application-service-api/#get_matrixappv1roomsroomalias">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/app/v1/rooms/{roomAlias}")

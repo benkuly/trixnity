@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#post_matrixclientv3accountpassword">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#post_matrixclientv3accountpassword">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/account/password")

@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent.AllowC
 import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent.JoinRule
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mroomjoin_rules">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mroomjoin_rules">matrix spec</a>
  */
 @Serializable
 data class JoinRulesEventContent(

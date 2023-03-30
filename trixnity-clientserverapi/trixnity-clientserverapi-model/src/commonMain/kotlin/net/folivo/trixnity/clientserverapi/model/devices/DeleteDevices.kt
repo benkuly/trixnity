@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#post_matrixclientv3delete_devices">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#post_matrixclientv3delete_devices">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/delete_devices")

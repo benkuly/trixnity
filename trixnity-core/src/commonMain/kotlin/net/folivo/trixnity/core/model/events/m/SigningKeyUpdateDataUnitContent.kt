@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#end-to-end-encryption">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#end-to-end-encryption">matrix spec</a>
  */
 @Serializable
 data class SigningKeyUpdateDataUnitContent(

@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.keys.Key
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/client-server-api/#mroomthird_party_invite">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mroomthird_party_invite">matrix spec</a>
  */
 @Serializable
 data class ThirdPartyInviteEventContent(

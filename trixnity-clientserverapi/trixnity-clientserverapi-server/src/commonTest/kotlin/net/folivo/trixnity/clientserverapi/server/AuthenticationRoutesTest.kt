@@ -3,7 +3,9 @@ package net.folivo.trixnity.clientserverapi.server
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.testing.*
@@ -326,6 +328,47 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                     inhibitLogin = true,
                     initialDeviceDisplayName = "someInitialDeviceDisplayName"
                 )
+            })
+        }
+    }
+
+    @Test
+    fun shouldSSORedirect() = testApplication {
+        initCut()
+        everySuspending { handlerMock.ssoRedirect(isAny()) }
+            .returns("https://somewhere.redirect/sso")
+        val response = client
+            .config { followRedirects = false }
+            .get("/_matrix/client/v3/login/sso/redirect?redirectUrl=trixnity%3A%2F%2Fsso")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.Found
+            this.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
+        }
+
+        verifyWithSuspend {
+            handlerMock.ssoRedirect(assert {
+                it.endpoint.redirectUrl shouldBe "trixnity://sso"
+            })
+        }
+    }
+
+    @Test
+    fun shouldSSORedirectTo() = testApplication {
+        initCut()
+        everySuspending { handlerMock.ssoRedirectTo(isAny()) }
+            .returns("https://somewhere.redirect/sso")
+        val response = client
+            .config { followRedirects = false }
+            .get("/_matrix/client/v3/login/sso/redirect/someId?redirectUrl=trixnity%3A%2F%2Fsso")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.Found
+            this.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
+        }
+
+        verifyWithSuspend {
+            handlerMock.ssoRedirectTo(assert {
+                it.endpoint.redirectUrl shouldBe "trixnity://sso"
+                it.endpoint.idpId shouldBe "someId"
             })
         }
     }

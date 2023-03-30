@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Signed
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#put_matrixfederationv13pidonbind">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#put_matrixfederationv13pidonbind">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/3pid/onbind")

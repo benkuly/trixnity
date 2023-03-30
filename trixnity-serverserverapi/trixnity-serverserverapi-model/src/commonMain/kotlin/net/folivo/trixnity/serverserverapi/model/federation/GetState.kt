@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#get_matrixfederationv1stateroomid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#get_matrixfederationv1stateroomid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/state/{roomId}")

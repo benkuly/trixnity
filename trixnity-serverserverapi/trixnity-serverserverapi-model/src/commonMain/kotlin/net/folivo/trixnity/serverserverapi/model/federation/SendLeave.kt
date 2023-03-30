@@ -18,7 +18,7 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 /**
- * @see <a href="https://spec.matrix.org/v1.3/server-server-api/#put_matrixfederationv2send_leaveroomideventid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#put_matrixfederationv2send_leaveroomideventid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v2/send_leave/{roomId}/{eventId}")

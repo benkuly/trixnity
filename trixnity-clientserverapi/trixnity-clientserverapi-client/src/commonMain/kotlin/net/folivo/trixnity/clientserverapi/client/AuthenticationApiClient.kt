@@ -66,6 +66,21 @@ interface AuthenticationApiClient {
     ): Result<UIA<Register.Response>>
 
     /**
+     * @see [SSORedirect]
+     */
+    suspend fun ssoRedirect(
+        redirectUrl: String,
+    ): Result<Unit>
+
+    /**
+     * @see [SSORedirectTo]
+     */
+    suspend fun ssoRedirect(
+        redirectUrl: String,
+        idpId: String,
+    ): Result<Unit>
+
+    /**
      * @see [GetLoginTypes]
      */
     suspend fun getLoginTypes(): Result<Set<LoginType>>
@@ -237,6 +252,11 @@ class AuthenticationApiClientImpl(
                 type = if (isAppservice) "m.login.application_service" else null
             )
         )
+
+    override suspend fun ssoRedirect(redirectUrl: String) = httpClient.request(SSORedirect(redirectUrl))
+
+    override suspend fun ssoRedirect(redirectUrl: String, idpId: String) =
+        httpClient.request(SSORedirectTo(idpId, redirectUrl))
 
     override suspend fun getLoginTypes(): Result<Set<LoginType>> =
         httpClient.request(GetLoginTypes).mapCatching { it.flows }
