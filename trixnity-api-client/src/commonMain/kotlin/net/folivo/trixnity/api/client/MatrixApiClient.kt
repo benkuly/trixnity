@@ -32,6 +32,7 @@ open class MatrixApiClient(
             requestTimeoutMillis = 30000
         }
         expectSuccess = true
+        followRedirects = false
     }
 
     open suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {
@@ -51,16 +52,21 @@ open class MatrixApiClient(
         try {
             unsafeRequest(endpoint, body, requestBuilder)
         } catch (responseException: ResponseException) {
-            val response = responseException.response
-            val responseText = response.bodyAsText()
-            val errorResponse =
-                try {
-                    json.decodeFromString(ErrorResponseSerializer, responseText)
-                } catch (error: Throwable) {
-                    ErrorResponse.CustomErrorResponse("UNKNOWN", responseText)
+            when (responseException) {
+                is RedirectResponseException -> throw responseException
+                else -> {
+                    val response = responseException.response
+                    val responseText = response.bodyAsText()
+                    val errorResponse =
+                        try {
+                            json.decodeFromString(ErrorResponseSerializer, responseText)
+                        } catch (error: Throwable) {
+                            ErrorResponse.CustomErrorResponse("UNKNOWN", responseText)
+                        }
+                    onErrorResponse(response, errorResponse)
+                    throw MatrixServerException(response.status, errorResponse)
                 }
-            onErrorResponse(response, errorResponse)
-            throw MatrixServerException(response.status, errorResponse)
+            }
         }
     }
 
