@@ -93,7 +93,7 @@ variables:
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-pages:
+website:
   stage: website
   image: node:lts
   rules:
@@ -106,8 +106,6 @@ pages:
   artifacts:
     paths:
       - public
-
-
 
 build-trixnity-build-linux-image:
   stage: prepare-build

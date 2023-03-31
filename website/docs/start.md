@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## Add Trixnity to you project
 
-Select from [modules](/website/modules) the dependency you need and add it to you project:
+Select from [modules](/docs/modules) the dependency you need and add it to you project:
 
 ```kotlin
 // get version from https://gitlab.com/benkuly/trixnity/-/releases
