@@ -93,7 +93,7 @@ variables:
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-website:
+pages:
   stage: website
   image: node:lts
   rules:
