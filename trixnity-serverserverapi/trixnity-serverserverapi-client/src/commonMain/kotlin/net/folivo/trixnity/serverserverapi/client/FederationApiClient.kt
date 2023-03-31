@@ -216,6 +216,15 @@ interface FederationApiClient {
      * @see [GetKeys]
      */
     suspend fun getKeys(baseUrl: Url, request: GetKeys.Request): Result<GetKeys.Response>
+
+    /**
+     * @see [TimestampToEvent]
+     */
+    suspend fun timestampToEvent(
+        roomId: RoomId,
+        timestamp: Long,
+        dir: TimestampToEvent.Direction = TimestampToEvent.Direction.FORWARDS,
+    ): Result<TimestampToEvent.Response>
 }
 
 class FederationApiClientImpl(
@@ -375,4 +384,11 @@ class FederationApiClientImpl(
 
     override suspend fun getKeys(baseUrl: Url, request: GetKeys.Request): Result<GetKeys.Response> =
         httpClient.request(GetKeys, request) { mergeUrl(baseUrl) }
+
+    override suspend fun timestampToEvent(
+        roomId: RoomId,
+        timestamp: Long,
+        dir: TimestampToEvent.Direction
+    ): Result<TimestampToEvent.Response> =
+        httpClient.request(TimestampToEvent(roomId, timestamp, dir))
 }

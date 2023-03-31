@@ -1960,9 +1960,7 @@ class RoomsRoutesTest : TestsWithMocks() {
             )
         val response =
             client.get("/_matrix/client/v3/rooms/%21room%3Aserver/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true") {
-                bearerAuth(
-                    "token"
-                )
+                bearerAuth("token")
             }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
@@ -2008,6 +2006,39 @@ class RoomsRoutesTest : TestsWithMocks() {
                 it.endpoint.limit shouldBe 10
                 it.endpoint.maxDepth shouldBe 4
                 it.endpoint.suggestedOnly shouldBe true
+            })
+        }
+    }
+
+    @Test
+    fun shouldTimestampToEvent() = testApplication {
+        initCut()
+        everySuspending { handlerMock.timestampToEvent(isAny()) }
+            .returns(
+                TimestampToEvent.Response(
+                    eventId = EventId("$143273582443PhrSn:example.org"),
+                    originTimestamp = 1432735824653,
+                )
+            )
+        val response =
+            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/timestamp_to_event?ts=24&dir=f") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+               {
+                  "event_id": "$143273582443PhrSn:example.org",
+                  "origin_server_ts": 1432735824653
+               }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.timestampToEvent(assert {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.timestamp shouldBe 24
+                it.endpoint.dir shouldBe TimestampToEvent.Direction.FORWARDS
             })
         }
     }

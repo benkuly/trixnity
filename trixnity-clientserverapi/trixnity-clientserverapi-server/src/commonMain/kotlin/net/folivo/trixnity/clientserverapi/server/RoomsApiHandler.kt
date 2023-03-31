@@ -223,4 +223,9 @@ interface RoomsApiHandler {
      * @see [GetHierarchy]
      */
     suspend fun getHierarchy(context: MatrixEndpointContext<GetHierarchy, Unit, GetHierarchy.Response>): GetHierarchy.Response
+
+    /**
+     * @see [TimestampToEvent]
+     */
+    suspend fun timestampToEvent(context: MatrixEndpointContext<TimestampToEvent, Unit, TimestampToEvent.Response>): TimestampToEvent.Response
 }

@@ -131,4 +131,9 @@ interface FederationApiHandler {
      * @see [GetKeys]
      */
     suspend fun getKeys(context: MatrixEndpointContext<GetKeys, GetKeys.Request, GetKeys.Response>): GetKeys.Response
+
+    /**
+     * @see [TimestampToEvent]
+     */
+    suspend fun timestampToEvent(context: MatrixEndpointContext<TimestampToEvent, Unit, TimestampToEvent.Response>): TimestampToEvent.Response
 }

@@ -2002,4 +2002,37 @@ class RoomsApiClientTest {
             )
         )
     }
+
+    @Test
+    fun shouldTimestampToEvent() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/rooms/%21room%3Aserver/timestamp_to_event?ts=24&dir=f",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                           {
+                              "event_id": "$143273582443PhrSn:example.org",
+                              "origin_server_ts": 1432735824653
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.timestampToEvent(
+            roomId = RoomId("room", "server"),
+            timestamp = 24,
+            dir = TimestampToEvent.Direction.FORWARDS,
+        ).getOrThrow() shouldBe TimestampToEvent.Response(
+            eventId = EventId("$143273582443PhrSn:example.org"),
+            originTimestamp = 1432735824653,
+        )
+    }
 }

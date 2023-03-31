@@ -480,6 +480,15 @@ interface RoomsApiClient {
         suggestedOnly: Boolean = false,
         asUserId: UserId? = null
     ): Result<GetHierarchy.Response>
+
+    /**
+     * @see [TimestampToEvent]
+     */
+    suspend fun timestampToEvent(
+        roomId: RoomId,
+        timestamp: Long,
+        dir: TimestampToEvent.Direction = TimestampToEvent.Direction.FORWARDS,
+    ): Result<TimestampToEvent.Response>
 }
 
 class RoomsApiClientImpl(
@@ -917,6 +926,13 @@ class RoomsApiClientImpl(
         asUserId: UserId?
     ): Result<GetHierarchy.Response> =
         httpClient.request(GetHierarchy(roomId.e(), from, limit, maxDepth, suggestedOnly, asUserId))
+
+    override suspend fun timestampToEvent(
+        roomId: RoomId,
+        timestamp: Long,
+        dir: TimestampToEvent.Direction
+    ): Result<TimestampToEvent.Response> =
+        httpClient.request(TimestampToEvent(roomId.e(), timestamp, dir))
 }
 
 /**

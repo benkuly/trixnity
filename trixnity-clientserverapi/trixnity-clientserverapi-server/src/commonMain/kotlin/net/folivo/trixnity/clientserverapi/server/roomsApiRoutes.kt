@@ -53,4 +53,5 @@ internal fun Route.roomsApiRoutes(
     matrixEndpoint(json, contentMappings, handler::reportEvent)
     matrixEndpoint(json, contentMappings, handler::upgradeRoom)
     matrixEndpoint(json, contentMappings, handler::getHierarchy)
+    matrixEndpoint(json, contentMappings, handler::timestampToEvent)
 }
