@@ -140,7 +140,17 @@ class ActiveVerificationTest : ShouldSpec({
         }
         context("current state is ${OwnRequest::class.simpleName} or ${TheirRequest::class.simpleName}") {
             checkNotAllowedStateChange(
-                SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"),
+                SasStartEventContent(
+                    bobDevice,
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(
+                        SasMessageAuthenticationCode.HkdfHmacSha256,
+                        SasMessageAuthenticationCode.HkdfHmacSha256V2
+                    ),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                ),
                 VerificationDoneEventContent(null, "t"),
             )
             should("handle ${VerificationReadyEventContent::class.simpleName} when ${OwnRequest::class.simpleName}") {
@@ -185,7 +195,17 @@ class ActiveVerificationTest : ShouldSpec({
                 VerificationDoneEventContent(null, "t"),
             )
             should("handle ${VerificationStartEventContent::class.simpleName}") {
-                val step = SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t")
+                val step = SasStartEventContent(
+                    bobDevice,
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(
+                        SasMessageAuthenticationCode.HkdfHmacSha256,
+                        SasMessageAuthenticationCode.HkdfHmacSha256V2
+                    ),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                )
                 cut.handleStep(step, bob, false)
                 val state = cut.state.value
                 state.shouldBeInstanceOf<Start>()
@@ -205,7 +225,19 @@ class ActiveVerificationTest : ShouldSpec({
                     bob,
                     false
                 )
-                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob, false)
+                cut.handleStep(
+                    SasStartEventContent(
+                        bobDevice,
+                        hashes = setOf(SasHash.Sha256),
+                        keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                        messageAuthenticationCodes = setOf(
+                            SasMessageAuthenticationCode.HkdfHmacSha256,
+                            SasMessageAuthenticationCode.HkdfHmacSha256V2
+                        ),
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    ), bob, false
+                )
                 cut.state.value.shouldBeInstanceOf<Start>()
             }
             checkNotAllowedStateChange(
@@ -213,9 +245,31 @@ class ActiveVerificationTest : ShouldSpec({
             )
             context("handle ${VerificationStartEventContent::class.simpleName}") {
                 should("keep event from lexicographically smaller user ID") {
-                    val step = SasStartEventContent(aliceDevice, relatesTo = null, transactionId = "t")
+                    val step = SasStartEventContent(
+                        aliceDevice,
+                        hashes = setOf(SasHash.Sha256),
+                        keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                        messageAuthenticationCodes = setOf(
+                            SasMessageAuthenticationCode.HkdfHmacSha256,
+                            SasMessageAuthenticationCode.HkdfHmacSha256V2
+                        ),
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    )
                     cut.handleStep(step, alice, true)
-                    cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob, false)
+                    cut.handleStep(
+                        SasStartEventContent(
+                            bobDevice,
+                            hashes = setOf(SasHash.Sha256),
+                            keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                            messageAuthenticationCodes = setOf(
+                                SasMessageAuthenticationCode.HkdfHmacSha256,
+                                SasMessageAuthenticationCode.HkdfHmacSha256V2
+                            ),
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                            relatesTo = null, transactionId = "t"
+                        ), bob, false
+                    )
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Start>()
                     state.senderUserId shouldBe alice
@@ -227,7 +281,19 @@ class ActiveVerificationTest : ShouldSpec({
                     subState.content shouldBe step
                 }
                 should("keep event from lexicographically smaller deviceId") {
-                    cut.handleStep(SasStartEventContent("CCCCCC", relatesTo = null, transactionId = "t"), bob, false)
+                    cut.handleStep(
+                        SasStartEventContent(
+                            "CCCCCC",
+                            hashes = setOf(SasHash.Sha256),
+                            keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                            messageAuthenticationCodes = setOf(
+                                SasMessageAuthenticationCode.HkdfHmacSha256,
+                                SasMessageAuthenticationCode.HkdfHmacSha256V2
+                            ),
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                            relatesTo = null, transactionId = "t"
+                        ), bob, false
+                    )
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Start>()
                     state.senderUserId shouldBe bob
@@ -236,10 +302,30 @@ class ActiveVerificationTest : ShouldSpec({
                     method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
                     val subState = method.state.value
                     subState.shouldBeInstanceOf<TheirSasStart>()
-                    subState.content shouldBe SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t")
+                    subState.content shouldBe SasStartEventContent(
+                        bobDevice,
+                        hashes = setOf(SasHash.Sha256),
+                        keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                        messageAuthenticationCodes = setOf(
+                            SasMessageAuthenticationCode.HkdfHmacSha256,
+                            SasMessageAuthenticationCode.HkdfHmacSha256V2
+                        ),
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    )
                 }
                 should("override event from lexicographically smaller user ID") {
-                    val step = SasStartEventContent(aliceDevice, relatesTo = null, transactionId = "t")
+                    val step = SasStartEventContent(
+                        aliceDevice,
+                        hashes = setOf(SasHash.Sha256),
+                        keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                        messageAuthenticationCodes = setOf(
+                            SasMessageAuthenticationCode.HkdfHmacSha256,
+                            SasMessageAuthenticationCode.HkdfHmacSha256V2
+                        ),
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    )
                     cut.handleStep(step, alice, true)
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Start>()
@@ -252,7 +338,17 @@ class ActiveVerificationTest : ShouldSpec({
                     subState.content shouldBe step
                 }
                 should("override event from lexicographically smaller deviceId") {
-                    val step = SasStartEventContent("AAAAAA", relatesTo = null, transactionId = "t")
+                    val step = SasStartEventContent(
+                        "AAAAAA",
+                        hashes = setOf(SasHash.Sha256),
+                        keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                        messageAuthenticationCodes = setOf(
+                            SasMessageAuthenticationCode.HkdfHmacSha256,
+                            SasMessageAuthenticationCode.HkdfHmacSha256V2
+                        ),
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    )
                     cut.handleStep(step, bob, false)
                     val state = cut.state.value
                     state.shouldBeInstanceOf<Start>()
@@ -280,13 +376,35 @@ class ActiveVerificationTest : ShouldSpec({
                     bob,
                     false
                 )
-                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob, false)
+                cut.handleStep(
+                    SasStartEventContent(
+                        bobDevice,
+                        hashes = setOf(SasHash.Sha256),
+                        keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                        messageAuthenticationCodes = setOf(
+                            SasMessageAuthenticationCode.HkdfHmacSha256,
+                            SasMessageAuthenticationCode.HkdfHmacSha256V2
+                        ),
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    ), bob, false
+                )
                 cut.handleStep(VerificationDoneEventContent(null, "t"), bob, false)
                 cut.state.value.shouldBeInstanceOf<PartlyDone>()
             }
             checkNotAllowedStateChange(
                 VerificationReadyEventContent(bobDevice, setOf(), null, "t"),
-                SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"),
+                SasStartEventContent(
+                    bobDevice,
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(
+                        SasMessageAuthenticationCode.HkdfHmacSha256,
+                        SasMessageAuthenticationCode.HkdfHmacSha256V2
+                    ),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                ),
             )
             should("handle ${VerificationDoneEventContent::class.simpleName}") {
                 val step = VerificationDoneEventContent(null, "t")
@@ -302,14 +420,36 @@ class ActiveVerificationTest : ShouldSpec({
                     bob,
                     false
                 )
-                cut.handleStep(SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"), bob, false)
+                cut.handleStep(
+                    SasStartEventContent(
+                        bobDevice,
+                        hashes = setOf(SasHash.Sha256),
+                        keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                        messageAuthenticationCodes = setOf(
+                            SasMessageAuthenticationCode.HkdfHmacSha256,
+                            SasMessageAuthenticationCode.HkdfHmacSha256V2
+                        ),
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    ), bob, false
+                )
                 cut.handleStep(VerificationDoneEventContent(null, "t"), bob, false)
                 cut.handleStep(VerificationDoneEventContent(null, "t"), alice, true)
                 cut.state.value.shouldBeInstanceOf<Done>()
             }
             checkNotAllowedStateChange(
                 VerificationReadyEventContent(bobDevice, setOf(), null, "t"),
-                SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"),
+                SasStartEventContent(
+                    bobDevice,
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(
+                        SasMessageAuthenticationCode.HkdfHmacSha256,
+                        SasMessageAuthenticationCode.HkdfHmacSha256V2
+                    ),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                ),
                 VerificationDoneEventContent(null, "t")
             )
         }
@@ -320,7 +460,17 @@ class ActiveVerificationTest : ShouldSpec({
             }
             checkNotAllowedStateChange(
                 VerificationReadyEventContent(bobDevice, setOf(), null, "t"),
-                SasStartEventContent(bobDevice, relatesTo = null, transactionId = "t"),
+                SasStartEventContent(
+                    bobDevice,
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(
+                        SasMessageAuthenticationCode.HkdfHmacSha256,
+                        SasMessageAuthenticationCode.HkdfHmacSha256V2
+                    ),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                ),
                 VerificationDoneEventContent(null, "t"),
             )
             should("not send multiple cancel events") {

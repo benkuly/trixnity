@@ -16,12 +16,9 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.ComparisonByUser
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.TheirSasStart
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.key.verification.SasAcceptEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.SasMacEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -48,7 +45,17 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                 freeAfter(OlmSAS.create()) { olmSas ->
                     var step: VerificationStep? = null
                     val cut = TheirSasStart(
-                        content = SasStartEventContent("AAAAAA", transactionId = "t", relatesTo = null),
+                        content = SasStartEventContent(
+                            "AAAAAA",
+                            hashes = setOf(SasHash.Sha256),
+                            keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                            messageAuthenticationCodes = setOf(
+                                SasMessageAuthenticationCode.HkdfHmacSha256,
+                                SasMessageAuthenticationCode.HkdfHmacSha256V2
+                            ),
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                            transactionId = "t", relatesTo = null
+                        ),
                         olmSas = olmSas,
                         json = createMatrixEventJson(),
                         relatesTo = null,
@@ -67,6 +74,12 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                         content = SasStartEventContent(
                             "AAAAAA",
                             hashes = setOf(),
+                            keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                            messageAuthenticationCodes = setOf(
+                                SasMessageAuthenticationCode.HkdfHmacSha256,
+                                SasMessageAuthenticationCode.HkdfHmacSha256V2
+                            ),
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
                             transactionId = "t",
                             relatesTo = null
                         ),
@@ -152,7 +165,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                         ownDeviceId = "AAAAAA",
                         theirUserId = UserId("bob", "server"),
                         theirDeviceId = "BBBBBB",
-                        messageAuthenticationCode = "hkdf-hmac-sha256",
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256V2,
                         relatesTo = null,
                         transactionId = "t",
                         olmSas = olmSas1,
@@ -175,7 +188,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                         ownDeviceId = "AAAAAA",
                         theirUserId = UserId("bob", "server"),
                         theirDeviceId = "BBBBBB",
-                        messageAuthenticationCode = "unsupported",
+                        messageAuthenticationCode = SasMessageAuthenticationCode.Unknown("unsupported"),
                         relatesTo = null,
                         transactionId = "t",
                         olmSas = olmSAS,
@@ -198,7 +211,7 @@ class ActiveSasVerificationStateTest : ShouldSpec({
                     ownDeviceId = "AAAAAA",
                     theirUserId = UserId("bob", "server"),
                     theirDeviceId = "BBBBBB",
-                    messageAuthenticationCode = "hkdf-hmac-sha256",
+                    messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256V2,
                     relatesTo = null,
                     transactionId = "t",
                     olmSas = olmSAS,
