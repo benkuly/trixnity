@@ -20,7 +20,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.*
@@ -315,7 +314,7 @@ private val body: ShouldSpec.() -> Unit = {
             context("without error") {
                 beforeTest {
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId, sessionId, version)) {
                             RoomKeyBackupData(1, 0, false, encryptedRoomKeyBackupV1SessionData)
                         }
                     }
@@ -375,7 +374,7 @@ private val body: ShouldSpec.() -> Unit = {
                 beforeTest {
                     allLoadMegolmSessionsCalled.value = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId, sessionId, version)) {
                             allLoadMegolmSessionsCalled.first { it }
                             getRoomKeyBackupDataCalled = true
                             RoomKeyBackupData(0, 0, false, encryptedRoomKeyBackupV1SessionData)
@@ -399,11 +398,11 @@ private val body: ShouldSpec.() -> Unit = {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
                             json, mappings,
-                            GetRoomKeyBackupData(roomId.e(), sessionId, version)
+                            GetRoomKeyBackupData(roomId, sessionId, version)
                         ) {
                             throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
                         }
-                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId.e(), sessionId, version)) {
+                        matrixJsonEndpoint(json, mappings, GetRoomKeyBackupData(roomId, sessionId, version)) {
                             getRoomKeyBackupDataCalled = true
                             RoomKeyBackupData(0, 0, false, encryptedRoomKeyBackupV1SessionData)
                         }
@@ -456,7 +455,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 matrixJsonEndpoint(
                     json, mappings,
-                    SetGlobalAccountData(ownUserId.e(), "m.megolm_backup.v1")
+                    SetGlobalAccountData(ownUserId, "m.megolm_backup.v1")
                 ) {
                     setGlobalAccountDataCalled = true
                 }

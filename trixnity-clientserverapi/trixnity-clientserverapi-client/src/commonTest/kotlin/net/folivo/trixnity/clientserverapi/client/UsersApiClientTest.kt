@@ -30,7 +30,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/%40user%3Aserver/displayname", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
                     assertEquals(
                         """{"displayname":"someDisplayName"}""",
@@ -52,7 +52,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/%40user%3Aserver/displayname", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """{"displayname":"someDisplayName"}""",
@@ -70,7 +70,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/%40user%3Aserver/avatar_url", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/profile/@user:server/avatar_url", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
                     assertEquals(
                         """{"avatar_url":"mxc://localhost/123456"}""",
@@ -92,7 +92,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/%40user%3Aserver/avatar_url", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/profile/@user:server/avatar_url", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """{"avatar_url":"mxc://localhost/123456"}""",
@@ -113,7 +113,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/%40user%3Aserver", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/profile/@user:server", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """{"avatar_url":"mxc://localhost/123456","displayname":"someDisplayName"}""",
@@ -134,7 +134,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/profile/%40user%3Aserver", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/profile/@user:server", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """{}""",
@@ -155,7 +155,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/presence/%40user%3Aserver/status", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/presence/@user:server/status", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
                     request.body.toByteArray().decodeToString() shouldBe """
                                 {
@@ -181,7 +181,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/presence/%40user%3Aserver/status", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/presence/@user:server/status", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """
@@ -249,7 +249,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/user/%40dino%3Aserver/filter", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/user/@dino:server/filter", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
                     request.body.toByteArray().decodeToString() shouldBe """
                                 {
@@ -280,7 +280,7 @@ class UsersApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/user/%40dino%3Aserver/filter/0", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/user/@dino:server/filter/0", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """
@@ -311,7 +311,7 @@ class UsersApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.direct",
+                        "/_matrix/client/v3/user/@alice:example.com/account_data/m.direct",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -339,7 +339,7 @@ class UsersApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.secret_storage.key.key1",
+                        "/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -362,7 +362,7 @@ class UsersApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.direct",
+                        "/_matrix/client/v3/user/@alice:example.com/account_data/m.direct",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -394,7 +394,7 @@ class UsersApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.secret_storage.key.key1",
+                        "/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)

@@ -847,7 +847,7 @@ class KeysApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1",
+                        "/_matrix/client/v3/room_keys/keys/!room:example.org?version=1",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -902,7 +902,7 @@ class KeysApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1",
+                        "/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1022,7 +1022,7 @@ class KeysApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1",
+                        "/_matrix/client/v3/room_keys/keys/!room:example.org?version=1",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -1087,7 +1087,7 @@ class KeysApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1",
+                        "/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -1176,7 +1176,7 @@ class KeysApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1",
+                        "/_matrix/client/v3/room_keys/keys/!room:example.org?version=1",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Delete, request.method)
@@ -1208,7 +1208,7 @@ class KeysApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1",
+                        "/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Delete, request.method)

@@ -9,7 +9,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
@@ -634,7 +633,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         matrixJsonEndpoint(
                             json, mappings,
                             GetEvents(
-                                room.e(),
+                                room,
                                 "start",
                                 dir = GetEvents.Direction.BACKWARDS,
                                 limit = 20,
@@ -670,7 +669,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         matrixJsonEndpoint(
                             json, mappings,
                             GetEvents(
-                                room.e(),
+                                room,
                                 "start",
                                 dir = GetEvents.Direction.BACKWARDS,
                                 limit = 20,
@@ -705,7 +704,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         matrixJsonEndpoint(
                             json, mappings,
                             GetEvents(
-                                room.e(),
+                                room,
                                 "start",
                                 dir = GetEvents.Direction.BACKWARDS,
                                 limit = 20,
@@ -742,7 +741,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         matrixJsonEndpoint(
                             json, mappings,
                             GetEvents(
-                                room.e(),
+                                room,
                                 "start",
                                 dir = GetEvents.Direction.BACKWARDS,
                                 limit = 20,
@@ -780,7 +779,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "start-3",
                                     "end-1",
                                     dir = GetEvents.Direction.BACKWARDS,
@@ -820,7 +819,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "start-3",
                                     "end-1",
                                     dir = GetEvents.Direction.BACKWARDS,
@@ -860,7 +859,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "start-3",
                                     "end-1",
                                     dir = GetEvents.Direction.BACKWARDS,
@@ -900,7 +899,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "gap",
                                     null,
                                     dir = GetEvents.Direction.BACKWARDS,
@@ -942,7 +941,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "start-3",
                                     "end-1",
                                     dir = GetEvents.Direction.BACKWARDS,
@@ -987,7 +986,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         matrixJsonEndpoint(
                             json, mappings,
                             GetEvents(
-                                room.e(),
+                                room,
                                 "start",
                                 dir = GetEvents.Direction.FORWARDS,
                                 limit = 20,
@@ -1023,7 +1022,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "start",
                                     "end",
                                     dir = GetEvents.Direction.FORWARDS,
@@ -1066,7 +1065,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "start",
                                     "end",
                                     dir = GetEvents.Direction.FORWARDS,
@@ -1109,7 +1108,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "start",
                                     "end",
                                     dir = GetEvents.Direction.FORWARDS,
@@ -1155,7 +1154,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             matrixJsonEndpoint(
                                 json, mappings,
                                 GetEvents(
-                                    room.e(),
+                                    room,
                                     "start",
                                     "next",
                                     dir = GetEvents.Direction.FORWARDS,
@@ -1204,7 +1203,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     matrixJsonEndpoint(
                         json, mappings,
                         GetEvents(
-                            room.e(),
+                            room,
                             "start",
                             dir = GetEvents.Direction.BACKWARDS,
                             limit = 20,
@@ -1243,7 +1242,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     matrixJsonEndpoint(
                         json, mappings,
                         GetEvents(
-                            room.e(),
+                            room,
                             "before-2",
                             "after-1",
                             dir = GetEvents.Direction.BACKWARDS,
@@ -1295,7 +1294,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     matrixJsonEndpoint(
                         json, mappings,
                         GetEvents(
-                            room.e(),
+                            room,
                             "before-3",
                             "after-2",
                             dir = GetEvents.Direction.BACKWARDS,
@@ -1313,7 +1312,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     matrixJsonEndpoint(
                         json, mappings,
                         GetEvents(
-                            room.e(),
+                            room,
                             "after-3",
                             "before-4",
                             dir = GetEvents.Direction.FORWARDS,
@@ -1359,7 +1358,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     matrixJsonEndpoint(
                         json, mappings,
                         GetEvents(
-                            room.e(),
+                            room,
                             "after-2",
                             "after-2",
                             dir = GetEvents.Direction.BACKWARDS,
@@ -1377,7 +1376,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     matrixJsonEndpoint(
                         json, mappings,
                         GetEvents(
-                            room.e(),
+                            room,
                             "before-4",
                             "before-4",
                             dir = GetEvents.Direction.FORWARDS,
@@ -1436,7 +1435,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 matrixJsonEndpoint(
                     json, mappings,
                     GetEvents(
-                        room.e(),
+                        room,
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
@@ -1474,7 +1473,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 matrixJsonEndpoint(
                     json, mappings,
                     GetEvents(
-                        room.e(),
+                        room,
                         "before-3",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
@@ -1493,7 +1492,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 matrixJsonEndpoint(
                     json, mappings,
                     GetEvents(
-                        room.e(),
+                        room,
                         "before-3",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,

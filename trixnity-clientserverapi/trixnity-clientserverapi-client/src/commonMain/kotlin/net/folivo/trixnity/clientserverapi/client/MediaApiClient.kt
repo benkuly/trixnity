@@ -3,7 +3,6 @@ package net.folivo.trixnity.clientserverapi.client
 import io.ktor.client.plugins.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.media.*
 
 interface MediaApiClient {
@@ -131,5 +130,5 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         url: String,
         timestamp: Long?
     ): Result<GetUrlPreview.Response> =
-        httpClient.request(GetUrlPreview(url.e(), timestamp))
+        httpClient.request(GetUrlPreview(url, timestamp))
 }

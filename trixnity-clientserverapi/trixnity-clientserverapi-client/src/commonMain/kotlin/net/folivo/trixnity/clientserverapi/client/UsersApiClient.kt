@@ -3,7 +3,6 @@ package net.folivo.trixnity.clientserverapi.client
 import com.benasher44.uuid.uuid4
 import io.ktor.client.request.*
 import io.ktor.http.*
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.users.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
@@ -150,37 +149,37 @@ class UsersApiClientImpl(
     override suspend fun getDisplayName(
         userId: UserId,
     ): Result<String?> =
-        httpClient.request(GetDisplayName(userId.e())).mapCatching { it.displayName }
+        httpClient.request(GetDisplayName(userId)).mapCatching { it.displayName }
 
     override suspend fun setDisplayName(
         userId: UserId,
         displayName: String?,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(SetDisplayName(userId.e(), asUserId), SetDisplayName.Request(displayName))
+        httpClient.request(SetDisplayName(userId, asUserId), SetDisplayName.Request(displayName))
 
     override suspend fun getAvatarUrl(
         userId: UserId,
     ): Result<String?> =
-        httpClient.request(GetAvatarUrl(userId.e())).mapCatching { it.avatarUrl }
+        httpClient.request(GetAvatarUrl(userId)).mapCatching { it.avatarUrl }
 
     override suspend fun setAvatarUrl(
         userId: UserId,
         avatarUrl: String?,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(SetAvatarUrl(userId.e(), asUserId), SetAvatarUrl.Request(avatarUrl))
+        httpClient.request(SetAvatarUrl(userId, asUserId), SetAvatarUrl.Request(avatarUrl))
 
     override suspend fun getProfile(
         userId: UserId,
     ): Result<GetProfile.Response> =
-        httpClient.request(GetProfile(userId.e()))
+        httpClient.request(GetProfile(userId))
 
     override suspend fun getPresence(
         userId: UserId,
         asUserId: UserId?
     ): Result<PresenceEventContent> =
-        httpClient.request(GetPresence(userId.e(), asUserId))
+        httpClient.request(GetPresence(userId, asUserId))
 
     override suspend fun setPresence(
         userId: UserId,
@@ -188,7 +187,7 @@ class UsersApiClientImpl(
         statusMessage: String?,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(SetPresence(userId.e(), asUserId), SetPresence.Request(presence, statusMessage))
+        httpClient.request(SetPresence(userId, asUserId), SetPresence.Request(presence, statusMessage))
 
 
     override suspend fun <C : ToDeviceEventContent> sendToDevice(
@@ -215,14 +214,14 @@ class UsersApiClientImpl(
         filterId: String,
         asUserId: UserId?
     ): Result<Filters> =
-        httpClient.request(GetFilter(userId.e(), filterId.e(), asUserId))
+        httpClient.request(GetFilter(userId, filterId, asUserId))
 
     override suspend fun setFilter(
         userId: UserId,
         filters: Filters,
         asUserId: UserId?
     ): Result<String> =
-        httpClient.request(SetFilter(userId.e(), asUserId), filters).mapCatching { it.filterId }
+        httpClient.request(SetFilter(userId, asUserId), filters).mapCatching { it.filterId }
 
     override suspend fun getAccountData(
         type: String,
@@ -231,7 +230,7 @@ class UsersApiClientImpl(
         asUserId: UserId?
     ): Result<GlobalAccountDataEventContent> {
         val actualType = if (key.isEmpty()) type else type + key
-        return httpClient.request(GetGlobalAccountData(userId.e(), actualType, asUserId))
+        return httpClient.request(GetGlobalAccountData(userId, actualType, asUserId))
     }
 
     override suspend fun setAccountData(
@@ -243,7 +242,7 @@ class UsersApiClientImpl(
         val mapping = contentMappings.globalAccountData.contentSerializer(content)
         val eventType = mapping.first.let { type -> if (key.isEmpty()) type else type + key }
 
-        return httpClient.request(SetGlobalAccountData(userId.e(), eventType, asUserId), content)
+        return httpClient.request(SetGlobalAccountData(userId, eventType, asUserId), content)
     }
 
     override suspend fun searchUsers(

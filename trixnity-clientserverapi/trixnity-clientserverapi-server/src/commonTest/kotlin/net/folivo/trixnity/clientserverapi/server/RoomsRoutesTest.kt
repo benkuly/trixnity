@@ -66,7 +66,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     stateKey = ""
                 )
             )
-        val response = client.get("/_matrix/client/v3/rooms/%21room%3Aserver/event/%24event") { bearerAuth("token") }
+        val response = client.get("/_matrix/client/v3/rooms/!room:server/event/${'$'}event") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -99,7 +99,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.getStateEvent(isAny()) }
             .returns(NameEventContent("name"))
         val response =
-            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/state/m.room.name/") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/rooms/!room:server/state/m.room.name/") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -145,7 +145,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/state") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/rooms/!room:server/state") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -214,7 +214,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/members?at=someAt&membership=join") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/rooms/!room:server/members?at=someAt&membership=join") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -277,7 +277,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/joined_members") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/rooms/!room:server/joined_members") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -331,7 +331,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/messages?from=from&dir=f&limit=10") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/rooms/!room:server/messages?from=from&dir=f&limit=10") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -400,7 +400,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event?from=from&limit=10") {
+            client.get("/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event?from=from&limit=10") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -458,7 +458,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event/m.reference?from=from&limit=10") {
+            client.get("/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event/m.reference?from=from&limit=10") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -517,7 +517,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event/m.reference/m.room.message?from=from&limit=10") {
+            client.get("/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event/m.reference/m.room.message?from=from&limit=10") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -576,7 +576,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/threads?from=from&include=all&limit=10") {
+            client.get("/_matrix/client/v1/rooms/!room:server/threads?from=from&include=all&limit=10") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -619,7 +619,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.sendStateEvent(isAny()) }
             .returns(SendEventResponse(EventId("event")))
         val response =
-            client.put("/_matrix/client/v3/rooms/%21room%3Aserver/state/m.room.name/") {
+            client.put("/_matrix/client/v3/rooms/!room:server/state/m.room.name/") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"name":"name"}""")
@@ -649,7 +649,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.sendStateEvent(isAny()) }
             .returns(SendEventResponse(EventId("event")))
         val response =
-            client.put("/_matrix/client/v3/rooms/%21room%3Aserver/state/m.unknown/") {
+            client.put("/_matrix/client/v3/rooms/!room:server/state/m.unknown/") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"dino":"unicorn"}""")
@@ -682,7 +682,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.sendMessageEvent(isAny()) }
             .returns(SendEventResponse(EventId("event")))
         val response =
-            client.put("/_matrix/client/v3/rooms/%21room%3Aserver/send/m.room.message/someTxnId") {
+            client.put("/_matrix/client/v3/rooms/!room:server/send/m.room.message/someTxnId") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"body":"someBody","msgtype":"m.text"}""")
@@ -712,7 +712,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.sendMessageEvent(isAny()) }
             .returns(SendEventResponse(EventId("event")))
         val response =
-            client.put("/_matrix/client/v3/rooms/%21room%3Aserver/send/m.unknown/someTxnId") {
+            client.put("/_matrix/client/v3/rooms/!room:server/send/m.unknown/someTxnId") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"dino":"unicorn"}""")
@@ -745,7 +745,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.redactEvent(isAny()) }
             .returns(SendEventResponse(EventId("event")))
         val response =
-            client.put("/_matrix/client/v3/rooms/%21room%3Aserver/redact/%24eventToRedact/someTxnId") {
+            client.put("/_matrix/client/v3/rooms/!room:server/redact/${'$'}eventToRedact/someTxnId") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"reason":"someReason"}""")
@@ -836,7 +836,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setRoomAlias(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/directory/room/%23unicorns%3Aserver") {
+            client.put("/_matrix/client/v3/directory/room/%23unicorns:server") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"room_id":"!room:server"}""")
@@ -865,7 +865,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/directory/room/%23unicorns%3Aserver") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/directory/room/%23unicorns:server") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -897,7 +897,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/aliases") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/rooms/!room:server/aliases") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -924,7 +924,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.deleteRoomAlias(isAny()) }
             .returns(Unit)
         val response =
-            client.delete("/_matrix/client/v3/directory/room/%23unicorns%3Aserver") { bearerAuth("token") }
+            client.delete("/_matrix/client/v3/directory/room/%23unicorns:server") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -968,7 +968,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.inviteUser(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/invite") {
+            client.post("/_matrix/client/v3/rooms/!room:server/invite") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"user_id":"@user:server"}""")
@@ -992,7 +992,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.kickUser(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/kick") {
+            client.post("/_matrix/client/v3/rooms/!room:server/kick") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"user_id":"@user:server"}""")
@@ -1016,7 +1016,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.banUser(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/ban") {
+            client.post("/_matrix/client/v3/rooms/!room:server/ban") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"user_id":"@user:server"}""")
@@ -1040,7 +1040,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.unbanUser(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/unban") {
+            client.post("/_matrix/client/v3/rooms/!room:server/unban") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"user_id":"@user:server"}""")
@@ -1064,7 +1064,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.joinRoom(isAny()) }
             .returns(JoinRoom.Response(RoomId("room", "server")))
         val response =
-            client.post("/_matrix/client/v3/join/%21room%3Aserver?server_name=server1.com&server_name=server2.com") {
+            client.post("/_matrix/client/v3/join/!room:server?server_name=server1.com&server_name=server2.com") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -1117,7 +1117,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.knockRoom(isAny()) }
             .returns(KnockRoom.Response(RoomId("room", "server")))
         val response =
-            client.post("/_matrix/client/v3/knock/%21room%3Aserver?server_name=server1.com&server_name=server2.com") {
+            client.post("/_matrix/client/v3/knock/!room:server?server_name=server1.com&server_name=server2.com") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"reason":"reason"}""")
@@ -1142,7 +1142,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.leaveRoom(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/leave") {
+            client.post("/_matrix/client/v3/rooms/!room:server/leave") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"reason":"reason"}""")
@@ -1166,7 +1166,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.forgetRoom(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/forget") {
+            client.post("/_matrix/client/v3/rooms/!room:server/forget") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -1187,7 +1187,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setReceipt(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/receipt/m.read/%24event") {
+            client.post("/_matrix/client/v3/rooms/!room:server/receipt/m.read/${'$'}event") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("{}")
@@ -1212,7 +1212,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setReadMarkers(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/read_markers") {
+            client.post("/_matrix/client/v3/rooms/!room:server/read_markers") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -1246,7 +1246,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.getAccountData(isAny()) }
             .returns(FullyReadEventContent(EventId("$1event")))
         val response =
-            client.get("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read") {
+            client.get("/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_read") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -1269,7 +1269,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.getAccountData(isAny()) }
             .returns(FullyReadEventContent(EventId("$1event")))
         val response =
-            client.get("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read-readkey") {
+            client.get("/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_read-readkey") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -1292,7 +1292,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setAccountData(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read") {
+            client.put("/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_read") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"event_id":"$1event"}""")
@@ -1318,7 +1318,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setAccountData(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read-readkey") {
+            client.put("/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_read-readkey") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"event_id":"$1event"}""")
@@ -1344,7 +1344,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setTyping(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/rooms/%21room%3Aserver/typing/%40alice%3Aexample%2Ecom") {
+            client.put("/_matrix/client/v3/rooms/!room:server/typing/@alice:example.com") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"typing":true,"timeout":10000}""")
@@ -1369,7 +1369,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.getDirectoryVisibility(isAny()) }
             .returns(GetDirectoryVisibility.Response(DirectoryVisibility.PUBLIC))
         val response =
-            client.get("/_matrix/client/v3/directory/list/room/%21room%3Aserver")
+            client.get("/_matrix/client/v3/directory/list/room/!room:server")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -1392,7 +1392,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setDirectoryVisibility(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/directory/list/room/%21room%3Aserver") {
+            client.put("/_matrix/client/v3/directory/list/room/!room:server") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"visibility":"public"}""")
@@ -1557,7 +1557,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/user/@user:server/rooms/!room:server/tags") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -1589,7 +1589,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setTag(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino") {
+            client.put("/_matrix/client/v3/user/@user:server/rooms/!room:server/tags/m.dino") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"order":0.25}""")
@@ -1615,7 +1615,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.deleteTag(isAny()) }
             .returns(Unit)
         val response =
-            client.delete("/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino") {
+            client.delete("/_matrix/client/v3/user/@user:server/rooms/!room:server/tags/m.dino") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -1756,7 +1756,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/context/event?filter=filter&limit=10") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/rooms/!room:server/context/event?filter=filter&limit=10") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -1884,7 +1884,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.reportEvent(isAny()) }
             .returns(Unit)
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/report/%24eventToRedact") {
+            client.post("/_matrix/client/v3/rooms/!room:server/report/${'$'}eventToRedact") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"reason":"someReason","score":-100}""")
@@ -1909,7 +1909,7 @@ class RoomsRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.upgradeRoom(isAny()) }
             .returns(UpgradeRoom.Response(RoomId("nextRoom", "server")))
         val response =
-            client.post("/_matrix/client/v3/rooms/%21room%3Aserver/upgrade") {
+            client.post("/_matrix/client/v3/rooms/!room:server/upgrade") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"new_version":"2"}""")
@@ -1959,7 +1959,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/rooms/%21room%3Aserver/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true") {
+            client.get("/_matrix/client/v3/rooms/!room:server/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -2021,7 +2021,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v1/rooms/%21room%3Aserver/timestamp_to_event?ts=24&dir=f") {
+            client.get("/_matrix/client/v1/rooms/!room:server/timestamp_to_event?ts=24&dir=f") {
                 bearerAuth("token")
             }
         assertSoftly(response) {

@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.client.mocks.PossiblyEncryptEventMock
@@ -116,14 +115,14 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             apiConfig.endpoints {
                 matrixJsonEndpoint(
                     json, mappings,
-                    SendMessageEvent(room.e(), "m.room.message", "transaction1"),
+                    SendMessageEvent(room, "m.room.message", "transaction1"),
                 ) {
                     it shouldBe RoomMessageEventContent.ImageMessageEventContent("hi.png", url = mxcUrl)
                     SendEventResponse(EventId("event"))
                 }
                 matrixJsonEndpoint(
                     json, mappings,
-                    SendMessageEvent(room.e(), "m.room.message", "transaction2"),
+                    SendMessageEvent(room, "m.room.message", "transaction2"),
                 ) {
                     it shouldBe RoomMessageEventContent.TextMessageEventContent("hi")
                     sendMessageEventCalled = true
@@ -165,7 +164,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             apiConfig.endpoints {
                 matrixJsonEndpoint(
                     json, mappings,
-                    SendMessageEvent(room.e(), "m.room.encrypted", "transaction"),
+                    SendMessageEvent(room, "m.room.encrypted", "transaction"),
                 ) {
                     it shouldBe megolmEventContent
                     sendMessageEventCalled = true
@@ -191,13 +190,13 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             apiConfig.endpoints {
                 matrixJsonEndpoint(
                     json, mappings,
-                    SendMessageEvent(room.e(), "m.room.message", "transaction"),
+                    SendMessageEvent(room, "m.room.message", "transaction"),
                 ) {
                     throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
                 }
                 matrixJsonEndpoint(
                     json, mappings,
-                    SendMessageEvent(room.e(), "m.room.message", "transaction"),
+                    SendMessageEvent(room, "m.room.message", "transaction"),
                 ) {
                     SendEventResponse(EventId("event"))
                 }
@@ -222,7 +221,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 repeat(3) {
                     matrixJsonEndpoint(
                         json, mappings,
-                        SendMessageEvent(room.e(), "m.room.message", "transaction"),
+                        SendMessageEvent(room, "m.room.message", "transaction"),
                     ) {
                         throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
                     }

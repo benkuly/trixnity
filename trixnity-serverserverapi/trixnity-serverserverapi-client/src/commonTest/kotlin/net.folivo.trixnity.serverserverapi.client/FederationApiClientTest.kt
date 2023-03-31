@@ -315,7 +315,10 @@ class FederationApiClientTest {
             getRoomVersion = { "3" },
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/federation/v1/state/!room:server?event_id=%241event", request.url.fullPath)
+                    assertEquals(
+                        "/_matrix/federation/v1/state/!room:server?event_id=%241event",
+                        request.url.fullPath
+                    )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """

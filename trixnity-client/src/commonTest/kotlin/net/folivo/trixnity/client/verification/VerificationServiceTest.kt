@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.getInMemoryKeyStore
@@ -322,7 +321,7 @@ private val body: ShouldSpec.() -> Unit = {
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
                         json, mappings,
-                        SendMessageEvent(roomId.e(), "m.room.message", "transaction1"),
+                        SendMessageEvent(roomId, "m.room.message", "transaction1"),
                     ) {
                         SendEventResponse(EventId("$24event"))
                     }
@@ -408,7 +407,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                     matrixJsonEndpoint(
                         json, mappings,
-                        SendMessageEvent(roomId.e(), "m.room.message", "transaction1"),
+                        SendMessageEvent(roomId, "m.room.message", "transaction1"),
                         skipUrlCheck = true
                     ) {
                         it shouldBe VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas))
@@ -427,7 +426,7 @@ private val body: ShouldSpec.() -> Unit = {
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
                         json, mappings,
-                        SendMessageEvent(roomId.e(), "m.room.message", "transaction1"),
+                        SendMessageEvent(roomId, "m.room.message", "transaction1"),
                         skipUrlCheck = true
                     ) {
                         it shouldBe VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas))

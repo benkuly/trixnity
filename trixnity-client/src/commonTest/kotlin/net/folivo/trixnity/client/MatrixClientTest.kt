@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.store.Account
@@ -98,7 +97,7 @@ class MatrixClientTest : ShouldSpec({
                                             )
                                         }
 
-                                        "/_matrix/client/v3/profile/${userId.e().full}" -> {
+                                        "/_matrix/client/v3/profile/${userId.full}" -> {
                                             respond(
                                                 """{"displayname":"bob","avatar_url":"mxc://localhost/123456"}""",
                                                 HttpStatusCode.OK,
@@ -121,7 +120,7 @@ class MatrixClientTest : ShouldSpec({
                                             )
                                         }
 
-                                        "/_matrix/client/v3/user/${userId.e().full}/filter" -> {
+                                        "/_matrix/client/v3/user/${userId.full}/filter" -> {
                                             assertEquals(HttpMethod.Post, request.method)
                                             respond(
                                                 """{"filter_id":"someFilter"}""",
@@ -267,7 +266,7 @@ class MatrixClientTest : ShouldSpec({
                                             )
                                         }
 
-                                        path == "/_matrix/client/v3/profile/${userId.e().full}" -> {
+                                        path == "/_matrix/client/v3/profile/${userId.full}" -> {
                                             respond(
                                                 """{"displayname":"bobby","avatar_url":"mxc://localhost/abcdef"}""",
                                                 HttpStatusCode.OK,

@@ -2,7 +2,6 @@ package net.folivo.trixnity.clientserverapi.client
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.keys.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -261,7 +260,7 @@ class KeysApiClientImpl(
         roomId: RoomId,
         asUserId: UserId?
     ): Result<RoomKeyBackup> =
-        httpClient.request(GetRoomKeyBackup(roomId.e(), version, asUserId))
+        httpClient.request(GetRoomKeyBackup(roomId, version, asUserId))
 
     override suspend fun getRoomKeys(
         version: String,
@@ -269,7 +268,7 @@ class KeysApiClientImpl(
         sessionId: String,
         asUserId: UserId?
     ): Result<RoomKeyBackupData> =
-        httpClient.request(GetRoomKeyBackupData(roomId.e(), sessionId.e(), version, asUserId))
+        httpClient.request(GetRoomKeyBackupData(roomId, sessionId, version, asUserId))
 
     override suspend fun setRoomKeys(
         version: String,
@@ -284,7 +283,7 @@ class KeysApiClientImpl(
         backup: RoomKeyBackup,
         asUserId: UserId?
     ): Result<SetRoomKeysResponse> =
-        httpClient.request(SetRoomKeyBackup(roomId.e(), version, asUserId), backup)
+        httpClient.request(SetRoomKeyBackup(roomId, version, asUserId), backup)
 
     override suspend fun setRoomKeys(
         version: String,
@@ -293,7 +292,7 @@ class KeysApiClientImpl(
         backup: RoomKeyBackupData,
         asUserId: UserId?
     ): Result<SetRoomKeysResponse> =
-        httpClient.request(SetRoomKeyBackupData(roomId.e(), sessionId.e(), version, asUserId), backup)
+        httpClient.request(SetRoomKeyBackupData(roomId, sessionId, version, asUserId), backup)
 
     override suspend fun deleteRoomKeys(
         version: String,
@@ -306,7 +305,7 @@ class KeysApiClientImpl(
         roomId: RoomId,
         asUserId: UserId?
     ): Result<DeleteRoomKeysResponse> =
-        httpClient.request(DeleteRoomKeyBackup(roomId.e(), version, asUserId))
+        httpClient.request(DeleteRoomKeyBackup(roomId, version, asUserId))
 
     override suspend fun deleteRoomKeys(
         version: String,
@@ -314,7 +313,7 @@ class KeysApiClientImpl(
         sessionId: String,
         asUserId: UserId?
     ): Result<DeleteRoomKeysResponse> =
-        httpClient.request(DeleteRoomKeyBackupData(roomId.e(), sessionId.e(), version, asUserId))
+        httpClient.request(DeleteRoomKeyBackupData(roomId, sessionId, version, asUserId))
 
     override suspend fun getRoomKeysVersion(
         asUserId: UserId?
@@ -325,7 +324,7 @@ class KeysApiClientImpl(
         version: String,
         asUserId: UserId?
     ): Result<GetRoomKeysBackupVersionResponse> =
-        httpClient.request(GetRoomKeyBackupVersionByVersion(version.e(), asUserId))
+        httpClient.request(GetRoomKeyBackupVersionByVersion(version, asUserId))
 
     override suspend fun setRoomKeysVersion(
         request: SetRoomKeyBackupVersionRequest,
@@ -335,7 +334,7 @@ class KeysApiClientImpl(
         return if (version == null) {
             httpClient.request(SetRoomKeyBackupVersion(asUserId), request).map { it.version }
         } else {
-            httpClient.request(SetRoomKeyBackupVersionByVersion(version.e(), asUserId), request).map { version }
+            httpClient.request(SetRoomKeyBackupVersionByVersion(version, asUserId), request).map { version }
         }
     }
 
@@ -343,5 +342,5 @@ class KeysApiClientImpl(
         version: String,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(DeleteRoomKeyBackupVersion(version.e(), asUserId))
+        httpClient.request(DeleteRoomKeyBackupVersion(version, asUserId))
 }

@@ -51,7 +51,7 @@ class UsersRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setDisplayName(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/profile/%40user%3Aserver/displayname") {
+            client.put("/_matrix/client/v3/profile/@user:server/displayname") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"displayname":"someDisplayName"}""")
@@ -74,7 +74,7 @@ class UsersRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.getDisplayName(isAny()) }
             .returns(GetDisplayName.Response("someDisplayName"))
-        val response = client.get("/_matrix/client/v3/profile/%40user%3Aserver/displayname")
+        val response = client.get("/_matrix/client/v3/profile/@user:server/displayname")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -93,7 +93,7 @@ class UsersRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setAvatarUrl(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/profile/%40user%3Aserver/avatar_url") {
+            client.put("/_matrix/client/v3/profile/@user:server/avatar_url") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"avatar_url":"mxc://localhost/123456"}""")
@@ -116,7 +116,7 @@ class UsersRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.getAvatarUrl(isAny()) }
             .returns(GetAvatarUrl.Response("mxc://localhost/123456"))
-        val response = client.get("/_matrix/client/v3/profile/%40user%3Aserver/avatar_url")
+        val response = client.get("/_matrix/client/v3/profile/@user:server/avatar_url")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -134,7 +134,7 @@ class UsersRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.getProfile(isAny()) }
             .returns(GetProfile.Response("someDisplayName", "mxc://localhost/123456"))
-        val response = client.get("/_matrix/client/v3/profile/%40user%3Aserver")
+        val response = client.get("/_matrix/client/v3/profile/@user:server")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -153,7 +153,7 @@ class UsersRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setPresence(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/presence/%40user%3Aserver/status") {
+            client.put("/_matrix/client/v3/presence/@user:server/status") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -183,7 +183,7 @@ class UsersRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.getPresence(isAny()) }
             .returns(PresenceEventContent(UNAVAILABLE, lastActiveAgo = 420845))
-        val response = client.get("/_matrix/client/v3/presence/%40user%3Aserver/status") { bearerAuth("token") }
+        val response = client.get("/_matrix/client/v3/presence/@user:server/status") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -257,7 +257,7 @@ class UsersRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setFilter(isAny()) }
             .returns(SetFilter.Response("0"))
         val response =
-            client.post("/_matrix/client/v3/user/%40user%3Aserver/filter") {
+            client.post("/_matrix/client/v3/user/@user:server/filter") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -304,7 +304,7 @@ class UsersRoutesTest : TestsWithMocks() {
                     )
                 )
             )
-        val response = client.get("/_matrix/client/v3/user/%40user%3Aserver/filter/0") { bearerAuth("token") }
+        val response = client.get("/_matrix/client/v3/user/@user:server/filter/0") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -336,7 +336,7 @@ class UsersRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.direct") {
+            client.get("/_matrix/client/v3/user/@alice:example.com/account_data/m.direct") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -358,7 +358,7 @@ class UsersRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.getAccountData(isAny()) }
             .returns(SecretKeyEventContent.AesHmacSha2Key("name"))
         val response =
-            client.get("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.secret_storage.key.key1") {
+            client.get("/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -380,7 +380,7 @@ class UsersRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setAccountData(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.direct") {
+            client.put("/_matrix/client/v3/user/@alice:example.com/account_data/m.direct") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"@bob:server":["!someRoom:server"]}""")
@@ -409,7 +409,7 @@ class UsersRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setAccountData(isAny()) }
             .returns(Unit)
         val response =
-            client.put("/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/account_data/m.secret_storage.key.key1") {
+            client.put("/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"name":"name","algorithm":"m.secret_storage.v1.aes-hmac-sha2"}""")
