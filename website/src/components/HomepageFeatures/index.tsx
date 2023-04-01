@@ -23,7 +23,7 @@ const FeatureList: FeatureItem[] = [
     img: require('@site/static/img/logo.png').default,
     description: (
       <>
-        Trixnity can be used on JVM, JS and native targets thanks to Kotlin Multiplatform.
+        Trixnity runs on JVM, JS and native targets thanks to Kotlin Multiplatform.
       </>
     ),
   },
@@ -32,7 +32,7 @@ const FeatureList: FeatureItem[] = [
     img: require('@site/static/img/logo.png').default,
     description: (
       <>
-        Trixnity can be extended with custom events and custom storage backends.
+        Trixnity is extensible with custom events and storage backends.
       </>
     ),
   },
