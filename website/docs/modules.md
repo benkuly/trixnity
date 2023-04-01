@@ -4,11 +4,13 @@ sidebar_position: 1
 
 # Modules
 
+![modules](./assets/modules.png)
+
 This project contains the following modules, which can be used independently:
 
 - [trixnity-core](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-core)
-  contains the model and serialization stuff for
-  Matrix.
+  contains all basic data structures of the spec and it’s serialization algorithms. This includes events, identifiers
+  and other things like CrossSigningKeys.
 - [trixnity-olm](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-olm)
   implements the wrappers of the
   E2E-olm-library [libolm](https://gitlab.matrix.org/matrix-org/olm) for Kotlin

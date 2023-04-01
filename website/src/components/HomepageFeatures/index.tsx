@@ -10,11 +10,11 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Fast',
+    title: 'Multipurpose',
     img: require('@site/static/img/logo.png').default,
     description: (
       <>
-        Trixnity is designed be fast.
+        Trixnity can be used to write Matrix clients, bots, appservices and servers.
       </>
     ),
   },
@@ -23,7 +23,7 @@ const FeatureList: FeatureItem[] = [
     img: require('@site/static/img/logo.png').default,
     description: (
       <>
-        Trixnity can be used on JVM, JS and native targets.
+        Trixnity can be used on JVM, JS and native targets thanks to Kotlin Multiplatform.
       </>
     ),
   },
