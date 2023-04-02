@@ -11,7 +11,7 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: 'Multipurpose',
-    img: require('@site/static/img/feature_multipurpose.png').default,
+    img: require('@site/static/img/feature_multipurpose.webp').default,
     description: (
       <>
         Trixnity can be used to write Matrix clients, bots, appservices and servers.
@@ -20,7 +20,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Multiplatform',
-    img: require('@site/static/img/feature_multiplatform.png').default,
+    img: require('@site/static/img/feature_multiplatform.webp').default,
     description: (
       <>
         Trixnity runs on JVM, JS and native targets thanks to Kotlin Multiplatform.
@@ -29,7 +29,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Extensible',
-    img: require('@site/static/img/feature_extensible.png').default,
+    img: require('@site/static/img/feature_extensible.webp').default,
     description: (
       <>
         Trixnity is extensible with custom events and storage backends.

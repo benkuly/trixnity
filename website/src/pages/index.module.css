@@ -21,3 +21,9 @@
   align-items: center;
   justify-content: center;
 }
+
+.heroImg {
+  height: 200px;
+  width: 200px;
+  filter: drop-shadow(0px 0px 5px #000);
+}
