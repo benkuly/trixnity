@@ -1,6 +1,5 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.push.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.push.PushAction
@@ -136,7 +135,7 @@ class PushApiClientImpl(
         ruleId: String,
         asUserId: UserId?,
     ): Result<PushRule> =
-        httpClient.request(GetPushRule(scope.e(), kind, ruleId.e(), asUserId))
+        httpClient.request(GetPushRule(scope, kind, ruleId, asUserId))
 
     override suspend fun setPushRule(
         scope: String,
@@ -147,7 +146,7 @@ class PushApiClientImpl(
         afterRuleId: String?,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(SetPushRule(scope.e(), kind, ruleId.e(), beforeRuleId, afterRuleId, asUserId), pushRule)
+        httpClient.request(SetPushRule(scope, kind, ruleId, beforeRuleId, afterRuleId, asUserId), pushRule)
 
     override suspend fun deletePushRule(
         scope: String,
@@ -155,7 +154,7 @@ class PushApiClientImpl(
         ruleId: String,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(DeletePushRule(scope.e(), kind, ruleId.e(), asUserId))
+        httpClient.request(DeletePushRule(scope, kind, ruleId, asUserId))
 
     override suspend fun getPushRuleActions(
         scope: String,
@@ -163,7 +162,7 @@ class PushApiClientImpl(
         ruleId: String,
         asUserId: UserId?,
     ): Result<Set<PushAction>> =
-        httpClient.request(GetPushRuleActions(scope.e(), kind, ruleId.e(), asUserId)).map { it.actions }
+        httpClient.request(GetPushRuleActions(scope, kind, ruleId, asUserId)).map { it.actions }
 
     override suspend fun setPushRuleActions(
         scope: String,
@@ -173,7 +172,7 @@ class PushApiClientImpl(
         asUserId: UserId?,
     ): Result<Unit> =
         httpClient.request(
-            SetPushRuleActions(scope.e(), kind, ruleId.e(), asUserId),
+            SetPushRuleActions(scope, kind, ruleId, asUserId),
             SetPushRuleActions.Request(actions)
         )
 
@@ -183,7 +182,7 @@ class PushApiClientImpl(
         ruleId: String,
         asUserId: UserId?,
     ): Result<Boolean> =
-        httpClient.request(GetPushRuleEnabled(scope.e(), kind, ruleId.e(), asUserId)).map { it.enabled }
+        httpClient.request(GetPushRuleEnabled(scope, kind, ruleId, asUserId)).map { it.enabled }
 
     override suspend fun setPushRuleEnabled(
         scope: String,
@@ -193,7 +192,7 @@ class PushApiClientImpl(
         asUserId: UserId?,
     ): Result<Unit> =
         httpClient.request(
-            SetPushRuleEnabled(scope.e(), kind, ruleId.e(), asUserId),
+            SetPushRuleEnabled(scope, kind, ruleId, asUserId),
             SetPushRuleEnabled.Request(enabled)
         )
 }

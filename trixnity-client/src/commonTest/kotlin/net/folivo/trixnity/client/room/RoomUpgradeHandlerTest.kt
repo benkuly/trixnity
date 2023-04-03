@@ -57,7 +57,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
         beforeTest {
             joinCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, JoinRoom("%21room2%3Aserver")) {
+                matrixJsonEndpoint(json, mappings, JoinRoom("!room2:server")) {
                     joinCalled = true
                     JoinRoom.Response(roomId2)
                 }

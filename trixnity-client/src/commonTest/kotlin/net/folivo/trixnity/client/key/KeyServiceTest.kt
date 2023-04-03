@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.getInMemoryOlmStore
@@ -125,7 +124,7 @@ private val body: ShouldSpec.() -> Unit = {
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
                         json, mappings,
-                        SetGlobalAccountData(alice.e(), "m.secret_storage.key."),
+                        SetGlobalAccountData(alice, "m.secret_storage.key."),
                         skipUrlCheck = true
                     ) {
                         it.shouldBeInstanceOf<AesHmacSha2Key>()
@@ -136,7 +135,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                     matrixJsonEndpoint(
                         json, mappings,
-                        SetGlobalAccountData(alice.e(), "m.secret_storage.default_key")
+                        SetGlobalAccountData(alice, "m.secret_storage.default_key")
                     ) {
                         it.shouldBeInstanceOf<DefaultSecretKeyEventContent>()
                         it.key.length shouldBeGreaterThan 10
@@ -144,7 +143,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                     matrixJsonEndpoint(
                         json, mappings,
-                        SetGlobalAccountData(alice.e(), "m.cross_signing.master")
+                        SetGlobalAccountData(alice, "m.cross_signing.master")
                     ) {
                         it.shouldBeInstanceOf<MasterKeyEventContent>()
                         val encrypted = it.encrypted.values.first()
@@ -155,7 +154,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                     matrixJsonEndpoint(
                         json, mappings,
-                        SetGlobalAccountData(alice.e(), "m.cross_signing.user_signing")
+                        SetGlobalAccountData(alice, "m.cross_signing.user_signing")
                     ) {
                         it.shouldBeInstanceOf<UserSigningKeyEventContent>()
                         val encrypted = it.encrypted.values.first()
@@ -166,7 +165,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                     matrixJsonEndpoint(
                         json, mappings,
-                        SetGlobalAccountData(alice.e(), "m.cross_signing.self_signing")
+                        SetGlobalAccountData(alice, "m.cross_signing.self_signing")
                     ) {
                         it.shouldBeInstanceOf<SelfSigningKeyEventContent>()
                         val encrypted = it.encrypted.values.first()

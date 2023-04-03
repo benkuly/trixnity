@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState.CAN_BE_CREATED
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
@@ -39,7 +38,7 @@ class ApplicationServiceUserServiceTest {
                 }
                 ResponseWithUIA.Success(Register.Response(userId))
             }
-            matrixJsonEndpoint(json, mappings, SetDisplayName(userId.e(), userId)) { requestBody ->
+            matrixJsonEndpoint(json, mappings, SetDisplayName(userId, userId)) { requestBody ->
                 assertSoftly(requestBody) {
                     it.displayName shouldBe "someDisplayName"
                 }
@@ -89,7 +88,7 @@ class ApplicationServiceUserServiceTest {
                     ErrorResponse.UserInUse("Desired user ID is already taken.")
                 )
             }
-            matrixJsonEndpoint(json, mappings, SetDisplayName(userId.e(), userId)) { requestBody ->
+            matrixJsonEndpoint(json, mappings, SetDisplayName(userId, userId)) { requestBody ->
                 assertSoftly(requestBody) {
                     it.displayName shouldBe "someDisplayName"
                 }
@@ -112,7 +111,7 @@ class ApplicationServiceUserServiceTest {
             matrixJsonEndpoint(json, mappings, Register()) {
                 ResponseWithUIA.Success(Register.Response(userId))
             }
-            matrixJsonEndpoint(json, mappings, SetDisplayName(userId.e(), userId)) { }
+            matrixJsonEndpoint(json, mappings, SetDisplayName(userId, userId)) { }
         })
         val cut = TestApplicationServiceUserService(api)
 
@@ -151,7 +150,7 @@ class ApplicationServiceUserServiceTest {
             matrixJsonEndpoint(json, mappings, Register()) {
                 ResponseWithUIA.Success(Register.Response(userId))
             }
-            matrixJsonEndpoint(json, mappings, SetDisplayName(userId.e(), userId)) {
+            matrixJsonEndpoint(json, mappings, SetDisplayName(userId, userId)) {
                 setDisplayNameCalled = true
                 throw MatrixServerException(
                     HttpStatusCode.BadRequest,

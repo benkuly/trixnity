@@ -3,6 +3,9 @@ package net.folivo.trixnity.client.verification
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*
+import net.folivo.trixnity.core.model.events.m.key.verification.SasKeyAgreementProtocol.Curve25519HkdfSha256
+import net.folivo.trixnity.core.model.events.m.key.verification.SasMessageAuthenticationCode.HkdfHmacSha256
+import net.folivo.trixnity.core.model.events.m.key.verification.SasMessageAuthenticationCode.HkdfHmacSha256V2
 
 sealed interface ActiveVerificationState {
 
@@ -44,8 +47,13 @@ sealed interface ActiveVerificationState {
                 is VerificationMethod.Sas -> VerificationStartEventContent.SasStartEventContent(
                     fromDevice = ownDeviceId,
                     relatesTo = relatesTo,
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(HkdfHmacSha256, HkdfHmacSha256V2),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
                     transactionId = transactionId
                 )
+
                 is VerificationMethod.Unknown -> throw IllegalArgumentException("method should never be unknown")
             }
             send(content)

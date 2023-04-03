@@ -10,7 +10,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
@@ -137,7 +136,7 @@ class UserServiceTest : ShouldSpec({
                 stateKey = bob.full
             )
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, GetMembers(roomId.e(), notMembership = LEAVE)) {
+                matrixJsonEndpoint(json, mappings, GetMembers(roomId, notMembership = LEAVE)) {
                     GetMembers.Response(
                         setOf(aliceEvent, bobEvent)
                     )

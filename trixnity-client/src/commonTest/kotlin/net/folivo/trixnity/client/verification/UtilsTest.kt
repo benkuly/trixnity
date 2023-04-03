@@ -3,9 +3,8 @@ package net.folivo.trixnity.client.verification
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.time.Duration.Companion.minutes
 
@@ -44,6 +43,12 @@ class UtilsTest : ShouldSpec({
                 "publicKey",
                 VerificationStartEventContent.SasStartEventContent(
                     "AAAAAA",
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(
+                        SasMessageAuthenticationCode.HkdfHmacSha256,
+                    ),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
                     transactionId = "transaction",
                     relatesTo = null
                 ),

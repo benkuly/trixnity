@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.Room
@@ -83,7 +82,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 should("add direct room") {
                     var setDirectCalled = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                             it shouldBe DirectEventContent(mapOf(alice to setOf(otherRoom, room)))
                             setDirectCalled = true
                         }
@@ -106,7 +105,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 should("add direct room") {
                     var setDirectCalled = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                             it shouldBe DirectEventContent(
                                 mapOf(
                                     UserId("nobody", "server") to setOf(otherRoom),
@@ -124,7 +123,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     val yetAnotherRoom = RoomId("yar", "server")
                     var setDirectCalled = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                             it shouldBe DirectEventContent(
                                 mapOf(
                                     UserId("nobody", "server") to setOf(otherRoom),
@@ -156,7 +155,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 should("add direct room") {
                     var setDirectCalled = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                             it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
                             setDirectCalled = true
                         }
@@ -178,7 +177,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 should("add the room as a direct room") {
                     var setDirectCalled = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                             it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
                             setDirectCalled = true
                         }
@@ -200,7 +199,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 should("add the room as a direct room") {
                     var setDirectCalled = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                             it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
                             setDirectCalled = true
                         }
@@ -222,7 +221,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 should("ignore this invitation") {
                     var setDirectCalled = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                             it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
                             setDirectCalled = true
                         }
@@ -243,7 +242,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 should("ignore this invitation") {
                     var setDirectCalled = false
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                        matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                             it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
                             setDirectCalled = true
                         }
@@ -277,7 +276,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
                 var setDirectCalled = false
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                         it shouldBe DirectEventContent(
                             mapOf(
                                 UserId("2", "server") to setOf(otherRoom)
@@ -301,7 +300,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
                 var setDirectCalled = false
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                         it shouldBe DirectEventContent(
                             mapOf(
                                 UserId("2", "server") to setOf(otherRoom)
@@ -339,7 +338,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
                 var setDirectCalled = false
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                         it shouldBe DirectEventContent(mapOf(UserId("2", "server") to setOf(room, otherRoom)))
                         setDirectCalled = true
                     }
@@ -359,7 +358,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
                 var setDirectCalled = false
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob.e(), "m.direct")) {
+                    matrixJsonEndpoint(json, mappings, SetGlobalAccountData(bob, "m.direct")) {
                         it shouldBe DirectEventContent(mapOf(UserId("2", "server") to setOf(room, otherRoom)))
                         setDirectCalled = true
                     }

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.devices.*
 import net.folivo.trixnity.core.model.UserId
 
@@ -43,18 +42,18 @@ class DevicesApiClientImpl(
         httpClient.request(GetDevices(asUserId)).map { it.devices }
 
     override suspend fun getDevice(deviceId: String, asUserId: UserId?): Result<Device> =
-        httpClient.request(GetDevice(deviceId.e(), asUserId))
+        httpClient.request(GetDevice(deviceId, asUserId))
 
     override suspend fun updateDevice(
         deviceId: String,
         displayName: String,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(UpdateDevice(deviceId.e(), asUserId), UpdateDevice.Request(displayName))
+        httpClient.request(UpdateDevice(deviceId, asUserId), UpdateDevice.Request(displayName))
 
     override suspend fun deleteDevices(devices: List<String>, asUserId: UserId?): Result<UIA<Unit>> =
         httpClient.uiaRequest(DeleteDevices(asUserId), DeleteDevices.Request(devices))
 
     override suspend fun deleteDevice(deviceId: String, asUserId: UserId?): Result<UIA<Unit>> =
-        httpClient.uiaRequest(DeleteDevice(deviceId.e(), asUserId))
+        httpClient.uiaRequest(DeleteDevice(deviceId, asUserId))
 }

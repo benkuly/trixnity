@@ -25,6 +25,7 @@ import net.folivo.trixnity.serverserverapi.model.SignedPersistentStateDataUnit
 data class SendJoin(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("eventId") val eventId: EventId,
+    @SerialName("omit_members") val omitMembers: Boolean? = null,
 ) : MatrixEndpoint<Signed<PersistentStateDataUnit<MemberEventContent>, String>, SendJoin.Response> {
     @OptIn(ExperimentalSerializationApi::class)
     override fun requestSerializerBuilder(

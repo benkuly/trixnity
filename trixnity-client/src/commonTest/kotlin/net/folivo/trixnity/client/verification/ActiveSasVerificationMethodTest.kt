@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryKeyStore
-import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
@@ -58,7 +58,15 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
         keyStore = getInMemoryKeyStore(scope)
         keyTrustService = KeyTrustServiceMock()
         val method = ActiveSasVerificationMethod.create(
-            startEventContent = SasStartEventContent(aliceDevice, relatesTo = null, transactionId = "t"),
+            startEventContent = SasStartEventContent(
+                aliceDevice,
+                hashes = setOf(SasHash.Sha256),
+                keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                messageAuthenticationCodes = setOf(SasMessageAuthenticationCode.HkdfHmacSha256),
+                shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                relatesTo = null,
+                transactionId = "t"
+            ),
             weStartedVerification = true,
             ownUserId = alice,
             ownDeviceId = aliceDevice,
@@ -85,6 +93,9 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                     aliceDevice,
                     keyAgreementProtocols = setOf(),
                     relatesTo = null,
+                    hashes = setOf(SasHash.Sha256),
+                    messageAuthenticationCodes = setOf(SasMessageAuthenticationCode.HkdfHmacSha256),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
                     transactionId = "t"
                 ),
                 weStartedVerification = true,
@@ -110,7 +121,10 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                     aliceDevice,
                     relatesTo = null,
                     transactionId = "t",
-                    shortAuthenticationString = setOf()
+                    shortAuthenticationString = setOf(),
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(SasMessageAuthenticationCode.HkdfHmacSha256),
                 ),
                 weStartedVerification = true,
                 ownUserId = alice,
@@ -148,14 +162,29 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             )
             should("just set state when message is from us") {
                 cut.handleVerificationStep(
-                    SasAcceptEventContent("c", relatesTo = null, transactionId = "t"), true
+                    SasAcceptEventContent(
+                        "c",
+                        hash = SasHash.Sha256,
+                        keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null,
+                        transactionId = "t"
+                    ), true
                 )
                 cut.state.value shouldBe Accept(true)
                 sendVerificationStepFlow.replayCache.shouldBeEmpty()
             }
             should("send ${SasKeyEventContent::class.simpleName} when sender was not us") {
                 cut.handleVerificationStep(
-                    SasAcceptEventContent("c", relatesTo = null, transactionId = "t"), false
+                    SasAcceptEventContent(
+                        "c",
+                        hash = SasHash.Sha256,
+                        keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    ), false
                 )
                 cut.state.value shouldBe Accept(false)
                 val result = sendVerificationStepFlow.first()
@@ -170,7 +199,10 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 cut.handleVerificationStep(
                     SasAcceptEventContent(
                         "c",
-                        keyAgreementProtocol = "c",
+                        keyAgreementProtocol = SasKeyAgreementProtocol.Unknown("c"),
+                        hash = SasHash.Sha256,
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
                         relatesTo = null,
                         transactionId = "t"
                     ), false
@@ -184,6 +216,9 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                     SasAcceptEventContent(
                         "c",
                         shortAuthenticationString = setOf(),
+                        hash = SasHash.Sha256,
+                        keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
                         relatesTo = null,
                         transactionId = "t"
                     ), false
@@ -196,17 +231,42 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
         context("current state is ${Accept::class.simpleName}") {
             context("handle unexpected") {
                 beforeTest {
-                    cut.handleVerificationStep(SasAcceptEventContent("c", relatesTo = null, transactionId = "t"), true)
+                    cut.handleVerificationStep(
+                        SasAcceptEventContent(
+                            "c",
+                            hash = SasHash.Sha256,
+                            keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                            messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                            relatesTo = null, transactionId = "t"
+                        ), true
+                    )
                     cut.state.value.shouldBeInstanceOf<Accept>()
                 }
                 checkNotAllowedStateChange(
-                    SasAcceptEventContent("c", relatesTo = null, transactionId = "t"),
+                    SasAcceptEventContent(
+                        "c",
+                        hash = SasHash.Sha256,
+                        keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    ),
                     SasMacEventContent("keys", keysOf(), null, "t")
                 )
             }
             context("accept from them") {
                 beforeTest {
-                    cut.handleVerificationStep(SasAcceptEventContent("c", relatesTo = null, transactionId = "t"), false)
+                    cut.handleVerificationStep(
+                        SasAcceptEventContent(
+                            "c",
+                            hash = SasHash.Sha256,
+                            keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                            messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                            relatesTo = null, transactionId = "t"
+                        ), false
+                    )
                     cut.state.value.shouldBeInstanceOf<Accept>()
                 }
                 should("just set state when message is from us") {
@@ -216,7 +276,16 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             }
             context("accept from us") {
                 beforeTest {
-                    cut.handleVerificationStep(SasAcceptEventContent("c", relatesTo = null, transactionId = "t"), true)
+                    cut.handleVerificationStep(
+                        SasAcceptEventContent(
+                            "c",
+                            hash = SasHash.Sha256,
+                            keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                            messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                            relatesTo = null, transactionId = "t"
+                        ), true
+                    )
                     cut.state.value.shouldBeInstanceOf<Accept>()
                 }
                 should("send ${SasKeyEventContent::class.simpleName} when sender was not us") {
@@ -243,6 +312,10 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 cut.handleVerificationStep(
                     SasAcceptEventContent(
                         "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
+                        hash = SasHash.Sha256,
+                        keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
                         relatesTo = null,
                         transactionId = "t"
                     ), false
@@ -251,7 +324,14 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 cut.state.value.shouldBeInstanceOf<WaitForKeys>()
             }
             checkNotAllowedStateChange(
-                SasAcceptEventContent("c", relatesTo = null, transactionId = "t"),
+                SasAcceptEventContent(
+                    "c",
+                    hash = SasHash.Sha256,
+                    keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                    messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                ),
                 SasMacEventContent("keys", keysOf(), null, "t")
             )
             should("create ${ComparisonByUser::class.simpleName}") {
@@ -289,6 +369,10 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 cut.handleVerificationStep(
                     SasAcceptEventContent(
                         "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
+                        hash = SasHash.Sha256,
+                        keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
                         relatesTo = null,
                         transactionId = "t"
                     ), false
@@ -304,7 +388,14 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 cut.state.value.shouldBeInstanceOf<ComparisonByUser>()
             }
             checkNotAllowedStateChange(
-                SasAcceptEventContent("c", relatesTo = null, transactionId = "t"),
+                SasAcceptEventContent(
+                    "c",
+                    hash = SasHash.Sha256,
+                    keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                    messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                ),
                 SasKeyEventContent("key", null, "t")
             )
             should("change state to ${WaitForMacs::class.simpleName} when accepted") {
@@ -355,6 +446,10 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                     cut.handleVerificationStep(
                         SasAcceptEventContent(
                             "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
+                            hash = SasHash.Sha256,
+                            keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                            messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
                             relatesTo = null,
                             transactionId = "t"
                         ), true
@@ -371,14 +466,21 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                     ComparisonByUser(
                         listOf(), listOf(),
                         bob, bobDevice, alice, aliceDevice,
-                        "hkdf-hmac-sha256",
+                        SasMessageAuthenticationCode.HkdfHmacSha256,
                         null, "t",
                         bobOlmSas, keyStore
                     ) { sasMacFromBob = it }.match()
                 }
             }
             checkNotAllowedStateChange(
-                SasAcceptEventContent("c", relatesTo = null, transactionId = "t"),
+                SasAcceptEventContent(
+                    "c",
+                    hash = SasHash.Sha256,
+                    keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                    messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                ),
                 SasKeyEventContent("key", null, "t"),
             )
             should("send ${VerificationDoneEventContent::class.simpleName}") {

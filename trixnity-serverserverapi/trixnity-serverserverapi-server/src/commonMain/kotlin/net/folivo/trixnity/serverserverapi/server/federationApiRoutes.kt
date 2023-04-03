@@ -35,4 +35,5 @@ internal fun Route.federationApiRoutes(
     matrixEndpoint(json, contentMappings, handler::getDevices)
     matrixEndpoint(json, contentMappings, handler::claimKeys)
     matrixEndpoint(json, contentMappings, handler::getKeys)
+    matrixEndpoint(json, contentMappings, handler::timestampToEvent)
 }

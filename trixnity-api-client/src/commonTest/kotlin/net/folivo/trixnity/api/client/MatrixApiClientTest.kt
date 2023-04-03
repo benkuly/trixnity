@@ -1,6 +1,5 @@
 package net.folivo.trixnity.api.client
 
-import io.kotest.assertions.shouldFail
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
@@ -181,35 +180,5 @@ class MatrixApiClientTest {
             error.errorResponse::class
         )
         assertEquals("NO_UNICORN", error.errorResponse.error)
-    }
-
-    /**
-     *  When this test fails, it is likely because https://youtrack.jetbrains.com/issue/KTOR-3953 is fixed.
-     *  -> Remove all .e() calls in the ApiClients.
-     */
-    @Test
-    fun ktor3953Test() = runTest {
-        @Serializable
-        @Resource("/{param}")
-        data class RequestResource(
-            @SerialName("param") val param: String,
-        )
-
-        val httpClient = HttpClient(MockEngine) {
-            install(io.ktor.client.plugins.resources.Resources)
-            engine {
-                addHandler { request ->
-                    assertEquals(
-                        "/%21dino%3A%2B%2Eunicorn%2F",
-                        request.url.fullPath
-                    )
-                    respond("{}", HttpStatusCode.OK)
-                }
-            }
-        }
-        httpClient.get(RequestResource("!dino:+.unicorn/".e())) // works
-        shouldFail {
-            httpClient.get(RequestResource("!dino:+.unicorn/")) // fails
-        }
     }
 }

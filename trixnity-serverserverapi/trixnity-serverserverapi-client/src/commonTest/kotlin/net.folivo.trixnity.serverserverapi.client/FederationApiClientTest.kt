@@ -315,7 +315,10 @@ class FederationApiClientTest {
             getRoomVersion = { "3" },
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/federation/v1/state/!room:server?event_id=%241event", request.url.fullPath)
+                    assertEquals(
+                        "/_matrix/federation/v1/state/!room:server?event_id=%241event",
+                        request.url.fullPath
+                    )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """
@@ -1929,6 +1932,42 @@ class FederationApiClientTest {
                     )
                 )
             )
+        )
+    }
+
+    @Test
+    fun shouldTimestampToEvent() = runTest {
+        val matrixRestClient = MatrixServerServerApiClientImpl(
+            hostname = "hostname",
+            getDelegatedDestination = { host, port -> host to port },
+            sign = { Key.Ed25519Key("key", "value") },
+            getRoomVersion = { "3" },
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/federation/v1/timestamp_to_event/!room:server?ts=24&dir=f",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                           {
+                              "event_id": "${'$'}143273582443PhrSn:example.org",
+                              "origin_server_ts": 1432735824653
+                           }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.federation.timestampToEvent(
+            roomId = RoomId("room", "server"),
+            timestamp = 24,
+            dir = TimestampToEvent.Direction.FORWARDS,
+        ).getOrThrow() shouldBe TimestampToEvent.Response(
+            eventId = EventId("$143273582443PhrSn:example.org"),
+            originTimestamp = 1432735824653,
         )
     }
 }

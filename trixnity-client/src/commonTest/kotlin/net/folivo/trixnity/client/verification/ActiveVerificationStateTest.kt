@@ -4,11 +4,9 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Ready
 import net.folivo.trixnity.client.verification.ActiveVerificationState.TheirRequest
+import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 
 class ActiveVerificationStateTest : ShouldSpec({
     timeout = 30_000
@@ -32,7 +30,17 @@ class ActiveVerificationStateTest : ShouldSpec({
                 var step: VerificationStep? = null
                 val cut = Ready("AAAAAA", setOf(Sas), null, "t") { step = it }
                 cut.start(Sas)
-                step shouldBe SasStartEventContent("AAAAAA", relatesTo = null, transactionId = "t")
+                step shouldBe SasStartEventContent(
+                    "AAAAAA",
+                    hashes = setOf(SasHash.Sha256),
+                    keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
+                    messageAuthenticationCodes = setOf(
+                        SasMessageAuthenticationCode.HkdfHmacSha256,
+                        SasMessageAuthenticationCode.HkdfHmacSha256V2
+                    ),
+                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                    relatesTo = null, transactionId = "t"
+                )
             }
         }
     }

@@ -55,7 +55,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/event/%24event?user_id=%40user%3Aserver",
+                        "/_matrix/client/v3/rooms/!room:server/event/${'$'}event?user_id=%40user%3Aserver",
                         request.url.fullPath
                     )
                     respond(
@@ -92,7 +92,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/event/%24event",
+                        "/_matrix/client/v3/rooms/!room:server/event/${'$'}event",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -119,7 +119,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/state/m.room.name/",
+                        "/_matrix/client/v3/rooms/!room:server/state/m.room.name/",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -165,7 +165,7 @@ class RoomsApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/rooms/%21room%3Aserver/state", request.url.fullPath)
+                    assertEquals("/_matrix/client/v3/rooms/!room:server/state", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         json.encodeToString(
@@ -212,7 +212,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/members?at=someAt&membership=join",
+                        "/_matrix/client/v3/rooms/!room:server/members?at=someAt&membership=join",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -253,7 +253,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/joined_members",
+                        "/_matrix/client/v3/rooms/!room:server/joined_members",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -298,7 +298,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/messages?from=from&dir=f&limit=10",
+                        "/_matrix/client/v3/rooms/!room:server/messages?from=from&dir=f&limit=10",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -325,7 +325,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event?from=from&limit=10",
+                        "/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event?from=from&limit=10",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -381,7 +381,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event/m.reference?from=from&limit=10",
+                        "/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event/m.reference?from=from&limit=10",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -438,7 +438,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v1/rooms/%21room%3Aserver/relations/%241event/m.reference/m.room.message?from=from&limit=10",
+                        "/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event/m.reference/m.room.message?from=from&limit=10",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -495,7 +495,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v1/rooms/%21room%3Aserver/threads?from=from&include=all&limit=10",
+                        "/_matrix/client/v1/rooms/!room:server/threads?from=from&include=all&limit=10",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -550,7 +550,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/state/m.room.name/someStateKey",
+                        "/_matrix/client/v3/rooms/!room:server/state/m.room.name/someStateKey",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -602,7 +602,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/send/m.room.message/someTxnId",
+                        "/_matrix/client/v3/rooms/!room:server/send/m.room.message/someTxnId",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -656,7 +656,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/redact/%24eventToRedact/someTxnId",
+                        "/_matrix/client/v3/rooms/!room:server/redact/${'$'}eventToRedact/someTxnId",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -733,7 +733,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/directory/room/%23unicorns%3Aserver",
+                        "/_matrix/client/v3/directory/room/%23unicorns:server",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -762,7 +762,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/directory/room/%23unicorns%3Aserver",
+                        "/_matrix/client/v3/directory/room/%23unicorns:server",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -784,7 +784,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/aliases",
+                        "/_matrix/client/v3/rooms/!room:server/aliases",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -817,7 +817,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/directory/room/%23unicorns%3Aserver",
+                        "/_matrix/client/v3/directory/room/%23unicorns:server",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Delete, request.method)
@@ -865,7 +865,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/invite",
+                        "/_matrix/client/v3/rooms/!room:server/invite",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -887,7 +887,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/kick",
+                        "/_matrix/client/v3/rooms/!room:server/kick",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -909,7 +909,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/ban",
+                        "/_matrix/client/v3/rooms/!room:server/ban",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -931,7 +931,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/unban",
+                        "/_matrix/client/v3/rooms/!room:server/unban",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -954,7 +954,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/join/%21room%3Aserver?server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/join/!room:server?server_name=server1.com&server_name=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1007,7 +1007,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/join/%23alias%3Aserver?server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/join/%23alias:server?server_name=server1.com&server_name=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1060,7 +1060,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/knock/%21room%3Aserver?server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/knock/!room:server?server_name=server1.com&server_name=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1094,7 +1094,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/knock/%23alias%3Aserver?server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/knock/%23alias:server?server_name=server1.com&server_name=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1127,7 +1127,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/leave",
+                        "/_matrix/client/v3/rooms/!room:server/leave",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1148,7 +1148,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/forget",
+                        "/_matrix/client/v3/rooms/!room:server/forget",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1169,7 +1169,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/receipt/m.read/%24event",
+                        "/_matrix/client/v3/rooms/!room:server/receipt/m.read/${'$'}event",
                         request.url.fullPath
                     )
                     request.body.toByteArray().decodeToString() shouldBe "{}"
@@ -1191,7 +1191,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/read_markers",
+                        "/_matrix/client/v3/rooms/!room:server/read_markers",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1221,7 +1221,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read",
+                        "/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_read",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1247,7 +1247,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_readkey",
+                        "/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_readkey",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1274,7 +1274,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_read",
+                        "/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_read",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -1303,7 +1303,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40alice%3Aexample%2Ecom/rooms/%21room%3Aserver/account_data/m.fully_readkey",
+                        "/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_readkey",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -1333,7 +1333,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/typing/%40alice%3Aexample%2Ecom",
+                        "/_matrix/client/v3/rooms/!room:server/typing/@alice:example.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -1363,7 +1363,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/directory/list/room/%21room%3Aserver",
+                        "/_matrix/client/v3/directory/list/room/!room:server",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1389,7 +1389,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/directory/list/room/%21room%3Aserver",
+                        "/_matrix/client/v3/directory/list/room/!room:server",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -1542,7 +1542,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags",
+                        "/_matrix/client/v3/user/@user:server/rooms/!room:server/tags",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1582,7 +1582,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino",
+                        "/_matrix/client/v3/user/@user:server/rooms/!room:server/tags/m.dino",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Put, request.method)
@@ -1607,7 +1607,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/user/%40user%3Aserver/rooms/%21room%3Aserver/tags/m%2Edino",
+                        "/_matrix/client/v3/user/@user:server/rooms/!room:server/tags/m.dino",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Delete, request.method)
@@ -1628,7 +1628,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/context/event?filter=filter&limit=10",
+                        "/_matrix/client/v3/rooms/!room:server/context/event?filter=filter&limit=10",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -1875,7 +1875,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/report/%24eventToRedact",
+                        "/_matrix/client/v3/rooms/!room:server/report/${'$'}eventToRedact",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1905,7 +1905,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/upgrade",
+                        "/_matrix/client/v3/rooms/!room:server/upgrade",
                         request.url.fullPath
                     )
                     request.body.toByteArray().decodeToString() shouldBe """{"new_version":"2"}"""
@@ -1928,7 +1928,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/%21room%3Aserver/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true",
+                        "/_matrix/client/v3/rooms/!room:server/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -2000,6 +2000,39 @@ class RoomsApiClientTest {
                     worldReadable = true
                 )
             )
+        )
+    }
+
+    @Test
+    fun shouldTimestampToEvent() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/rooms/!room:server/timestamp_to_event?ts=24&dir=f",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                           {
+                              "event_id": "$143273582443PhrSn:example.org",
+                              "origin_server_ts": 1432735824653
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.rooms.timestampToEvent(
+            roomId = RoomId("room", "server"),
+            timestamp = 24,
+            dir = TimestampToEvent.Direction.FORWARDS,
+        ).getOrThrow() shouldBe TimestampToEvent.Response(
+            eventId = EventId("$143273582443PhrSn:example.org"),
+            originTimestamp = 1432735824653,
         )
     }
 }

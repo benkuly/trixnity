@@ -11,6 +11,9 @@ import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*
+import net.folivo.trixnity.core.model.events.m.key.verification.SasKeyAgreementProtocol.Curve25519HkdfSha256
+import net.folivo.trixnity.core.model.events.m.key.verification.SasMessageAuthenticationCode.HkdfHmacSha256
+import net.folivo.trixnity.core.model.events.m.key.verification.SasMessageAuthenticationCode.HkdfHmacSha256V2
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
@@ -55,7 +58,7 @@ class ActiveSasVerificationMethod private constructor(
     private var theirCommitment: String? = null
     private var theirPublicKey: String? = null
     private var theirMac: SasMacEventContent? = null
-    private var messageAuthenticationCode: String? = null
+    private var messageAuthenticationCode: SasMessageAuthenticationCode? = null
 
     companion object {
         val numberToEmojiMapping = mapOf(
@@ -84,7 +87,7 @@ class ActiveSasVerificationMethod private constructor(
             json: Json,
         ): ActiveSasVerificationMethod? {
             return when {
-                startEventContent.keyAgreementProtocols.none { it == "curve25519-hkdf-sha256" } -> {
+                startEventContent.keyAgreementProtocols.none { it == Curve25519HkdfSha256 } -> {
                     sendVerificationStep(
                         VerificationCancelEventContent(
                             UnknownMethod,
@@ -96,7 +99,7 @@ class ActiveSasVerificationMethod private constructor(
                     null
                 }
 
-                startEventContent.shortAuthenticationString.none { it == SasMethod.EMOJI || it == SasMethod.DECIMAL } -> {
+                startEventContent.shortAuthenticationString.none { it == SasMethod.Emoji || it == SasMethod.Decimal } -> {
                     sendVerificationStep(
                         VerificationCancelEventContent(
                             UnknownMethod,
@@ -170,21 +173,43 @@ class ActiveSasVerificationMethod private constructor(
         messageAuthenticationCode = stepContent.messageAuthenticationCode
         if (!isOurOwn) {
             when {
-                stepContent.keyAgreementProtocol != "curve25519-hkdf-sha256" ->
+                stepContent.hash != SasHash.Sha256 ->
                     sendVerificationStep(
                         VerificationCancelEventContent(
                             UnknownMethod,
-                            "key agreement protocol not supported",
+                            "only hashes [${SasHash.Sha256.name}] are supported",
                             relatesTo,
                             transactionId
                         )
                     )
 
-                stepContent.shortAuthenticationString.none { it == SasMethod.EMOJI || it == SasMethod.DECIMAL } ->
+                stepContent.keyAgreementProtocol != Curve25519HkdfSha256 ->
                     sendVerificationStep(
                         VerificationCancelEventContent(
                             UnknownMethod,
-                            "short authentication string not supported",
+                            "only key agreement protocols [${Curve25519HkdfSha256.name}] are supported",
+                            relatesTo,
+                            transactionId
+                        )
+                    )
+
+                stepContent.messageAuthenticationCode != HkdfHmacSha256
+                        && stepContent.messageAuthenticationCode != HkdfHmacSha256V2 ->
+                    sendVerificationStep(
+                        VerificationCancelEventContent(
+                            UnknownMethod,
+                            "only message authentication codes [${HkdfHmacSha256.name} ${HkdfHmacSha256V2.name}] are supported",
+                            relatesTo,
+                            transactionId
+                        )
+                    )
+
+                stepContent.shortAuthenticationString.contains(SasMethod.Decimal).not()
+                        && stepContent.shortAuthenticationString.contains(SasMethod.Emoji).not() ->
+                    sendVerificationStep(
+                        VerificationCancelEventContent(
+                            UnknownMethod,
+                            "only short authentication strings [${SasMethod.Decimal.name} ${SasMethod.Emoji.name}] are supported",
                             relatesTo,
                             transactionId
                         )
@@ -284,45 +309,55 @@ class ActiveSasVerificationMethod private constructor(
         when {
             theirMac == null && state.value is ComparisonByUser -> _state.value = WaitForMacs
             theirMac != null && (state.value == WaitForMacs || isOurOwn) -> {
-                val baseInfo = "MATRIX_KEY_VERIFICATION_MAC" +
-                        theirUserId.full + theirDeviceId +
-                        ownUserId.full + ownDeviceId +
-                        actualTransactionId
-                val theirMacs = theirMac.mac.keys.filterIsInstance<Ed25519Key>()
-                val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
-                val allKeysOfDevice = keyStore.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
-                val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullKeyId) }
-                val input = theirMacIds.sortedBy { it }.joinToString(",")
-                val info = baseInfo + "KEY_IDS"
-                log.trace { "create keys mac from input $input and info $info" }
-                val keys = olmSas.calculateMac(input, info)
-                if (keys == theirMac.keys) {
-                    val containsMismatchedMac = keysToMac.asSequence()
-                        .map { keyToMac ->
-                            log.trace { "create key mac from input ${keyToMac.value} and info ${baseInfo + keyToMac.fullKeyId}" }
-                            val calculatedMac =
-                                olmSas.calculateMac(keyToMac.value, baseInfo + keyToMac.fullKeyId)
-                            (calculatedMac == theirMac.mac.find { it.fullKeyId == keyToMac.fullKeyId }?.value).also {
-                                if (!it) log.warn { "macs from them (${keyToMac}) did not match our calculated ($calculatedMac)" }
-                            }
-                        }.contains(false)
-                    if (!containsMismatchedMac) {
-                        keyTrustService.trustAndSignKeys(keysToMac.toSet(), theirUserId)
-                        sendVerificationStep(VerificationDoneEventContent(relatesTo, transactionId))
-                    } else {
-                        sendVerificationStep(
-                            VerificationCancelEventContent(KeyMismatch, "macs did not match", relatesTo, transactionId)
-                        )
-                    }
-                } else {
-                    log.warn { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
-                    sendVerificationStep(
-                        VerificationCancelEventContent(KeyMismatch, "keys mac did not match", relatesTo, transactionId)
-                    )
+                when (messageAuthenticationCode) {
+                    HkdfHmacSha256 ->
+                        checkHkdfHmacSha256Mac(stepContent, olmSas::calculateMac)
+
+                    HkdfHmacSha256V2 ->
+                        checkHkdfHmacSha256Mac(stepContent, olmSas::calculateMacFixedBase64)
                 }
             }
 
             else -> {}
+        }
+    }
+
+    private suspend fun checkHkdfHmacSha256Mac(theirMac: SasMacEventContent, calculateMac: (String, String) -> String) {
+        val baseInfo = "MATRIX_KEY_VERIFICATION_MAC" +
+                theirUserId.full + theirDeviceId +
+                ownUserId.full + ownDeviceId +
+                actualTransactionId
+        val theirMacs = theirMac.mac.keys.filterIsInstance<Ed25519Key>()
+        val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
+        val allKeysOfDevice = keyStore.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
+        val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullKeyId) }
+        val input = theirMacIds.sortedBy { it }.joinToString(",")
+        val info = baseInfo + "KEY_IDS"
+        log.trace { "create keys mac from input $input and info $info" }
+        val keys = calculateMac(input, info)
+        if (keys == theirMac.keys) {
+            val containsMismatchedMac = keysToMac.asSequence()
+                .map { keyToMac ->
+                    log.trace { "create key mac from input ${keyToMac.value} and info ${baseInfo + keyToMac.fullKeyId}" }
+                    val calculatedMac =
+                        calculateMac(keyToMac.value, baseInfo + keyToMac.fullKeyId)
+                    (calculatedMac == theirMac.mac.find { it.fullKeyId == keyToMac.fullKeyId }?.value).also {
+                        if (!it) log.warn { "macs from them (${keyToMac}) did not match our calculated ($calculatedMac)" }
+                    }
+                }.contains(false)
+            if (!containsMismatchedMac) {
+                keyTrustService.trustAndSignKeys(keysToMac.toSet(), theirUserId)
+                sendVerificationStep(VerificationDoneEventContent(relatesTo, transactionId))
+            } else {
+                sendVerificationStep(
+                    VerificationCancelEventContent(KeyMismatch, "macs did not match", relatesTo, transactionId)
+                )
+            }
+        } else {
+            log.warn { "keys from them (${theirMac.keys}) did not match our calculated ($keys)" }
+            sendVerificationStep(
+                VerificationCancelEventContent(KeyMismatch, "keys mac did not match", relatesTo, transactionId)
+            )
         }
     }
 

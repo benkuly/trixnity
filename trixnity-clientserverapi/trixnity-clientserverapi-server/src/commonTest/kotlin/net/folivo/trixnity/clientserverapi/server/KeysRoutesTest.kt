@@ -836,7 +836,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/room_keys/keys/!room:example.org?version=1") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -882,7 +882,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1") {
+            client.get("/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -981,7 +981,7 @@ class KeysRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.setRoomKeyBackup(isAny()) }
             .returns(SetRoomKeysResponse(count = 10, etag = "abcdefg"))
-        val response = client.put("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1") {
+        val response = client.put("/_matrix/client/v3/room_keys/keys/!room:example.org?version=1") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
             setBody(
@@ -1041,7 +1041,7 @@ class KeysRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.setRoomKeyBackupData(isAny()) }
             .returns(SetRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response =
-            client.put("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1") {
+            client.put("/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -1118,7 +1118,7 @@ class KeysRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.deleteRoomKeyBackup(isAny()) }
             .returns(DeleteRoomKeysResponse(count = 10, etag = "abcdefg"))
-        val response = client.delete("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg?version=1") {
+        val response = client.delete("/_matrix/client/v3/room_keys/keys/!room:example.org?version=1") {
             bearerAuth("token")
         }
         assertSoftly(response) {
@@ -1145,7 +1145,7 @@ class KeysRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.deleteRoomKeyBackupData(isAny()) }
             .returns(DeleteRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response =
-            client.delete("/_matrix/client/v3/room_keys/keys/%21room%3Aexample%2Eorg/%2Bess%2FionId1?version=1") {
+            client.delete("/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1") {
                 bearerAuth("token")
             }
         assertSoftly(response) {

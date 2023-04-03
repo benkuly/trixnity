@@ -339,7 +339,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             .returns("https://somewhere.redirect/sso")
         val response = client
             .config { followRedirects = false }
-            .get("/_matrix/client/v3/login/sso/redirect?redirectUrl=trixnity%3A%2F%2Fsso")
+            .get("/_matrix/client/v3/login/sso/redirect?redirectUrl=trixnity:%2F%2Fsso")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.Found
             this.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
@@ -359,7 +359,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             .returns("https://somewhere.redirect/sso")
         val response = client
             .config { followRedirects = false }
-            .get("/_matrix/client/v3/login/sso/redirect/someId?redirectUrl=trixnity%3A%2F%2Fsso")
+            .get("/_matrix/client/v3/login/sso/redirect/someId?redirectUrl=trixnity:%2F%2Fsso")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.Found
             this.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
@@ -755,7 +755,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/user/%40user%3Aserver/openid/request_token") { bearerAuth("token") }
+            client.get("/_matrix/client/v3/user/@user:server/openid/request_token") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)

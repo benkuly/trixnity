@@ -1,6 +1,5 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import net.folivo.trixnity.api.client.e
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.core.model.UserId
 
@@ -380,7 +379,7 @@ class AuthenticationApiClientImpl(
         )
 
     override suspend fun getOIDCRequestToken(userId: UserId, asUserId: UserId?): Result<GetOIDCRequestToken.Response> =
-        httpClient.request(GetOIDCRequestToken(userId.e(), asUserId))
+        httpClient.request(GetOIDCRequestToken(userId, asUserId))
 
     override suspend fun refresh(refreshToken: String?): Result<Refresh.Response> =
         httpClient.request(Refresh, Refresh.Request(refreshToken))

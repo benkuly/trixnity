@@ -5,8 +5,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.core.model.events.RelatesTo
-import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.DECIMAL
-import net.folivo.trixnity.core.model.events.m.key.verification.SasMethod.EMOJI
 
 /**
  * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationstart">matrix spec</a>
@@ -27,13 +25,13 @@ sealed interface VerificationStartEventContent : VerificationStep {
         @SerialName("from_device")
         override val fromDevice: String,
         @SerialName("hashes")
-        val hashes: Set<String> = setOf("sha256"),
+        val hashes: Set<SasHash>,
         @SerialName("key_agreement_protocols")
-        val keyAgreementProtocols: Set<String> = setOf("curve25519-hkdf-sha256"),
+        val keyAgreementProtocols: Set<SasKeyAgreementProtocol>,
         @SerialName("message_authentication_codes")
-        val messageAuthenticationCodes: Set<String> = setOf("hkdf-hmac-sha256"),
+        val messageAuthenticationCodes: Set<SasMessageAuthenticationCode>,
         @SerialName("short_authentication_string")
-        val shortAuthenticationString: Set<SasMethod> = setOf(DECIMAL, EMOJI),
+        val shortAuthenticationString: Set<SasMethod>,
         @SerialName("m.relates_to")
         override val relatesTo: RelatesTo.Reference?,
         @SerialName("transaction_id")
