@@ -19,8 +19,8 @@ fun trixnity(module: String, version: String = trixnityVersion) =
 implementation(trixnity("client"))
 ```
 
-Modules containing `client` in the name (for example `trixnity-client` or `trixnity-clientserverapi-client`) also need a
-Ktor client engine, that can be found [here](https://ktor.io/docs/http-client-engines.html).
+Modules containing `-client` in the name (for example `trixnity-client` or `trixnity-clientserverapi-client`) also need
+a Ktor client engine, that can be found [here](https://ktor.io/docs/http-client-engines.html).
 
 ## Examples
 
