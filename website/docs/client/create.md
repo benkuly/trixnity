@@ -7,7 +7,7 @@ sidebar_position: 13
 With `MatrixClient` you have access to the whole library. It can be instantiated
 by various static functions,
 e.g. `MatrixClient.login(...)`. You always need to pass a `repositoriesModule`
-for a Database and a `CouroutineScope`,
+for a Database, `mediaStore` for media and a `CouroutineScope`,
 which will be used for the lifecycle of the client.
 
 Secrets are also stored in the store. Therefore, you should encrypt the store!

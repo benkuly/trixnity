@@ -34,5 +34,5 @@ matrixRestClient.sync.subscribeAllEvents { println(it) }
 
 matrixRestClient.sync.start() // you need to start the sync to receive messages
 delay(30.seconds) // wait some time
-matrixRestClient.sync.stop() // stop the client
+matrixRestClient.sync.stop() // stop the sync
 ```

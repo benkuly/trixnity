@@ -21,7 +21,7 @@ information on how to create a Ktor server.
 
 ```kotlin
 val engine: ApplicationEngine = embeddedServer(CIO, port = 443) {
-    matrixAppserviceModule("asToken", handler)
+    matrixApplicationServiceApiServer("asToken", handler)
 }
 engine.start(wait = true)
 ```

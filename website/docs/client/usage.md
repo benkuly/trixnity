@@ -43,7 +43,7 @@ merged and the flow just gives you the next timeline event.
 
 ![Timeline](../assets/timeline.png)
 
-You can always get the last known `TimelineEvent` of a room with `matrixClient.room.getLastTimelineEvents(...)`.
+You can always get the last known `TimelineEvent` of a room with `matrixClient.room.getLastTimelineEvent(...)`.
 
 The following example will always print the last 20 events of a room. Note, that
 this doesn't have to be the best way to compose a timeline. It is just a nice

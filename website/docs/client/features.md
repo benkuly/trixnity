@@ -64,7 +64,7 @@ sidebar_position: 12
 
 Because reactive UIs are really common, Trixnity wants to give the UI access to data in a reactive way.
 There are only a few databases, that support listeners and this would limit support for multiple supported
-databases. That's way an intermediate layer based on Kotlin Flows has been introduced. This intermediate layer reads
+databases. That's why an intermediate layer based on Kotlin Flows has been introduced. This intermediate layer reads
 values directly from
 a generic database layer and also writes changes to it. The values are kept in this layer as long as they are
 subscribed. This means, that if someone else subscribes a value, he will immediately get the value without an additional
@@ -77,7 +77,7 @@ Before async transactions has been added to Trixnity, most time of a sync proces
 database.
 
 Async transactions means, that all changes to the database are collected and processed in the background.
-So database operations are decoubled from the cache and the cache does not need to wait for each write.
+So database operations are decoupled from the cache and the cache does not need to wait for each write.
 This means that even if a sync has not been saved completely to the database, the UI can already render the processed
 sync.
 
