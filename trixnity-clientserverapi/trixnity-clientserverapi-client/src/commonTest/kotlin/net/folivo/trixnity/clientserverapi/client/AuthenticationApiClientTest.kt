@@ -698,7 +698,7 @@ class AuthenticationApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/user/@user:server/openid/request_token", request.url.fullPath)
-                    assertEquals(HttpMethod.Get, request.method)
+                    assertEquals(HttpMethod.Post, request.method)
                     respond(
                         """
                            {

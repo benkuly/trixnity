@@ -755,7 +755,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/user/@user:server/openid/request_token") { bearerAuth("token") }
+            client.post("/_matrix/client/v3/user/@user:server/openid/request_token") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
