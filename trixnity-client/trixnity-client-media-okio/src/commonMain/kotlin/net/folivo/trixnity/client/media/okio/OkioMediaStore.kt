@@ -20,10 +20,12 @@ class OkioMediaStore(
     private val writeLock = MutableStateFlow(setOf<String>())
 
     private suspend fun <T> withLock(vararg keys: String, block: suspend () -> T): T = waitLock(*keys) {
-        writeLock.update { it + keys }
-        val result = block()
-        writeLock.update { it - keys.toSet() }
-        result
+        try {
+            writeLock.update { it + keys }
+            block()
+        } finally {
+            writeLock.update { it - keys.toSet() }
+        }
     }
 
     private suspend fun <T> waitLock(vararg keys: String, block: suspend () -> T): T {
