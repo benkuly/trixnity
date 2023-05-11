@@ -1,7 +1,12 @@
 package net.folivo.trixnity.client.media.okio
 
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.core.toByteArray
 import net.folivo.trixnity.core.toByteArrayFlow
@@ -10,8 +15,9 @@ import okio.fakefilesystem.FakeFileSystem
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class OkioMediaStoreTest {
 
     lateinit var cut: OkioMediaStore
@@ -71,6 +77,32 @@ class OkioMediaStoreTest {
     fun shouldGetMediaWhenFileNotExists() = runTest {
         fileSystem.createDirectories(basePath)
         cut.getMedia("url1")?.toByteArray()?.decodeToString() shouldBe null
+    }
+
+
+    @Test
+    fun shouldGetMediaAsSoonAsAddedAndNotBefore() = runTest {
+        cut = OkioMediaStore(basePath, fileSystem, testScheduler)
+        fileSystem.createDirectories(basePath)
+        val emittedH = MutableStateFlow(false)
+        val mediaFlow = flow {
+            emit("h".encodeToByteArray())
+            emittedH.value = true
+            delay(1.seconds)
+            emit("i".encodeToByteArray())
+        }
+        launch {
+            cut.addMedia("url1", mediaFlow)
+        }
+        emittedH.first { it }
+        val getMediaResult = async {
+            cut.getMedia("url1")?.toByteArray()?.decodeToString()
+        }
+        testScheduler.advanceTimeBy(500.milliseconds)
+        getMediaResult.isCompleted shouldBe false
+        testScheduler.advanceTimeBy(501.milliseconds)
+        getMediaResult.isCompleted shouldBe true
+        getMediaResult.await() shouldBe "hi"
     }
 
     @Test
