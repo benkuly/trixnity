@@ -18,7 +18,7 @@ object Versions {
     const val mocKmp = "1.13.0" // https://github.com/Kodein-Framework/MocKMP/releases
     const val okio = "3.3.0" // https://square.github.io/okio/changelog/
     const val uuid = "0.7.0" // https://github.com/benasher44/uuid/releases
-    const val kotest = "5.5.5" // https://github.com/kotest/kotest/releases
+    const val kotest = "5.6.2" // https://github.com/kotest/kotest/releases
     const val testContainers = "1.17.6" // https://github.com/testcontainers/testcontainers-java/releases
     const val androidxTestRunner = "1.4.0" // https://developer.android.com/jetpack/androidx/releases/test
     const val arrow = "1.1.5" // https://github.com/arrow-kt/arrow/releases
