@@ -29,7 +29,7 @@ class OkioMediaStore(
     }
 
     private suspend fun <T> waitLock(vararg keys: String, block: suspend () -> T): T {
-        writeLock.first { lock -> keys.map { lock.contains(it) }.none { it } }
+        writeLock.first { lock -> keys.none { lock.contains(it) } }
         return block()
     }
 
