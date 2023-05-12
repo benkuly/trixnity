@@ -36,8 +36,9 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalCoroutinesApi::class)
+// TODO use virtual time via TestDispatcher
 class SyncApiClientTest {
     private val json = createMatrixEventJson()
 
@@ -61,7 +62,7 @@ class SyncApiClientTest {
     )
 
     @Test
-    fun shouldSyncOnce() = runTest {
+    fun shouldSyncOnce() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
@@ -286,7 +287,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncOnceAndHandleLongTimeout() = runTest {
+    fun shouldSyncOnceAndHandleLongTimeout() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
@@ -318,7 +319,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncLoop() = runTest {
+    fun shouldSyncLoop() = runTest(timeout = 30.seconds) {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -388,7 +389,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldIntialSyncLoop() = runTest {
+    fun shouldInitialSyncLoop() = runTest(timeout = 30.seconds) {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -458,7 +459,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncLoopWithTimeoutStateAndInitialSyncState() = runTest {
+    fun shouldSyncLoopWithTimeoutStateAndInitialSyncState() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
@@ -520,7 +521,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncLoopWithoutInitialSyncState() = runTest {
+    fun shouldSyncLoopWithoutInitialSyncState() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
@@ -586,7 +587,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncLoopWithErrorState() = runTest {
+    fun shouldSyncLoopWithErrorState() = runTest(timeout = 30.seconds) {
         val requestCount = MutableStateFlow(1)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -642,7 +643,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldSyncLoopAndHandleTimeout() = runTest {
+    fun shouldSyncLoopAndHandleTimeout() = runTest(timeout = 30.seconds) {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -685,7 +686,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldRetrySyncLoopOnError() = runTest {
+    fun shouldRetrySyncLoopOnError() = runTest(timeout = 30.seconds) {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -768,7 +769,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldRetrySyncLoopOnSubscriberError() = runTest {
+    fun shouldRetrySyncLoopOnSubscriberError() = runTest(timeout = 30.seconds) {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -830,7 +831,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldEmitEvents() = runTest {
+    fun shouldEmitEvents() = runTest(timeout = 30.seconds) {
         val response = Response(
             nextBatch = "nextBatch1",
             accountData = Response.GlobalAccountData(
@@ -1009,7 +1010,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldDealWithMultipleStartsAndStops() = runTest {
+    fun shouldDealWithMultipleStartsAndStops() = runTest(timeout = 30.seconds) {
         val response = Response(
             nextBatch = "nextBatch1",
             accountData = Response.GlobalAccountData(emptyList()),
@@ -1070,7 +1071,7 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun shouldAllowOnlyOneSyncAtATime() = runTest(dispatchTimeoutMs = 4_000) {
+    fun shouldAllowOnlyOneSyncAtATime() = runTest(timeout = 30.seconds) {
         val response = Response(
             nextBatch = "nextBatch1",
             accountData = Response.GlobalAccountData(emptyList()),
