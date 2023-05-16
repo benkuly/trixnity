@@ -17,12 +17,9 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-core"))
-                implementation(project(":trixnity-crypto-core"))
-                api(project(":trixnity-olm"))
-                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}") // FIXME remove!
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
@@ -31,6 +28,18 @@ kotlin {
         }
         nativeTargets.forEach {
             getByName(it.targetName + "Main").dependsOn(nativeMain)
+        }
+        nativeTargets.filter { it.targetName.contains("linux") }.forEach { target ->
+            target.compilations {
+                "main" {
+                    cinterops {
+                        val libRandom by creating {
+                            defFile("src/${target.targetName}Main/cinterop/librandom.def")
+                            packageName("net.folivo.trixnity.crypto.core.cinterop")
+                        }
+                    }
+                }
+            }
         }
         val commonTest by getting {
             dependencies {
