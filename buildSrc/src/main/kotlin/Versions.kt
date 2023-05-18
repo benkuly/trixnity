@@ -26,6 +26,9 @@ object Versions {
     const val juulLabsIndexeddb = "0.6.0" // https://github.com/JuulLabs/indexeddb/releases
     const val h2 = "2.1.214" // https://github.com/h2database/h2database/releases
     const val realm = "1.7.0" // https://github.com/realm/realm-kotlin/tags
+    const val androidxRoom = "2.5.1" // https://developer.android.com/jetpack/androidx/releases/room
+    const val androidxTextKtx = "1.5.0" // https://developer.android.com/jetpack/androidx/releases/test
+    const val robolectric = "4.9.2" // https://github.com/robolectric/robolectric
     const val downloadGradlePlugin = "5.4.0" // https://github.com/michel-kraemer/gradle-download-task/releases
 
     // upgrade only, as soon as https://github.com/tony19/logback-android/issues/249 is resolved

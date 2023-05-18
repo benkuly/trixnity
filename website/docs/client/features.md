@@ -22,6 +22,11 @@ sidebar_position: 12
       database for trixnity-client
       with [indexeddb](https://github.com/JuulLabs/indexeddb). This supports
       JS (browser).
+    - [trixnity-client-repository-room](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-repository-room)
+      implements a
+      database for trixnity-client
+      with [room](https://developer.android.com/jetpack/androidx/releases/room). This supports
+      Android.
 - [x] extremely fast reactive cache on top of the database using async
   transactions
 - [x] exchangeable media store
