@@ -2,9 +2,9 @@ package net.folivo.trixnity.client.media
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import net.folivo.trixnity.core.ByteArrayFlow
-import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
+import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.toByteArray
+import net.folivo.trixnity.utils.toByteArrayFlow
 
 class InMemoryMediaStore : MediaStore {
     val media = MutableStateFlow<Map<String, ByteArray>>(mapOf())

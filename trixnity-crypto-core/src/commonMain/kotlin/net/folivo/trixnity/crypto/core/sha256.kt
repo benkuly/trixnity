@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.core
 
 import kotlinx.coroutines.flow.StateFlow
-import net.folivo.trixnity.core.ByteArrayFlow
+import net.folivo.trixnity.utils.ByteArrayFlow
 
 class Sha256ByteFlow(
     content: ByteArrayFlow,

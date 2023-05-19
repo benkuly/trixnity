@@ -5,7 +5,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
-import net.folivo.trixnity.crypto.generatePbkdf2Sha512
+import net.folivo.trixnity.crypto.core.generatePbkdf2Sha512
 import kotlin.random.Random
 
 class RecoveryKeyUtilsTest : ShouldSpec({

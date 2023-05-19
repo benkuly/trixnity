@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.key
 
-import com.soywiz.krypto.SecureRandom
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -9,7 +8,6 @@ import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -45,8 +43,6 @@ import net.folivo.trixnity.core.serialization.createEventContentSerializerMappin
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
-import net.folivo.trixnity.crypto.createAesHmacSha2MacFromKey
-import net.folivo.trixnity.crypto.key.recoveryKeyFromPassphrase
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -103,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    context(KeyServiceImpl::bootstrapCrossSigning.name) {
+    context("bootstrapCrossSigning") {
         context("successfull") {
             var secretKeyEventContentCalled = false
             var capturedPassphrase: AesHmacSha2Key.SecretStorageKeyPassphrase? = null
@@ -270,20 +266,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.") {
-                    val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
-                        salt = SecureRandom.nextBytes(32).encodeBase64(),
-                        iterations = 1_000,  // just a test, not secure
-                        bits = 32 * 8
-                    )
-                    val iv = SecureRandom.nextBytes(16)
-                    val key = recoveryKeyFromPassphrase("super secret. not.", passphraseInfo)
-                    key to AesHmacSha2Key(
-                        passphrase = passphraseInfo,
-                        iv = iv.encodeBase64(),
-                        mac = createAesHmacSha2MacFromKey(key = key, iv = iv)
-                    )
-                }
+                val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.")
                 assertSoftly(result) {
                     this.recoveryKey shouldNot beEmpty()
                     this.result shouldBe Result.success(UIA.Success(Unit))

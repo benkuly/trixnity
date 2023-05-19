@@ -1,10 +1,10 @@
 package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.utils.TrixnityDsl
 
 @TrixnityDsl
 fun MessageBuilder.replace(

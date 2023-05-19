@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.media
 
-import com.soywiz.korim.bitmap.resizedUpTo
-import com.soywiz.korim.format.PNG
-import com.soywiz.korim.format.encode
-import com.soywiz.korim.format.readBitmap
-import com.soywiz.korio.file.std.asMemoryVfsFile
 import io.ktor.http.*
+import korlibs.image.bitmap.resizedUpTo
+import korlibs.image.format.PNG
+import korlibs.image.format.encode
+import korlibs.image.format.readBitmap
+import korlibs.io.file.std.asMemoryVfsFile
 
 class Thumbnail(
     val file: ByteArray,

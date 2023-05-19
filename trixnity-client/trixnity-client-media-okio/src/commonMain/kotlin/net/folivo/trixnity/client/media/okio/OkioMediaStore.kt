@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.media.MediaStore
-import net.folivo.trixnity.core.ByteArrayFlow
+import net.folivo.trixnity.utils.ByteArrayFlow
 import okio.ByteString.Companion.toByteString
 import okio.FileSystem
 import okio.Path

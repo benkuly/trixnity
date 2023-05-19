@@ -5,8 +5,8 @@ import crypto
 import io.ktor.util.*
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.flow
-import net.folivo.trixnity.core.ByteArrayFlow
-import net.folivo.trixnity.core.toByteArray
+import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.toByteArray
 import kotlin.js.json
 
 actual fun ByteArrayFlow.encryptAes256Ctr(

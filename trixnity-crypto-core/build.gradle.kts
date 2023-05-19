@@ -1,10 +1,15 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
+    id("com.louiscad.complete-kotlin") version Versions.completeKotlinPlugin
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    targetHierarchy.default()
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
@@ -16,25 +21,19 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
-                api(project(":trixnity-core"))
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}") // FIXME remove!
+                api(project(":trixnity-utils"))
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}") // TODO into test only
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
-        }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        nativeTargets.forEach {
-            getByName(it.targetName + "Main").dependsOn(nativeMain)
         }
         nativeTargets.filter { it.targetName.contains("linux") }.forEach { target ->
             target.compilations {
                 "main" {
                     cinterops {
                         val libRandom by creating {
-                            defFile("src/${target.targetName}Main/cinterop/librandom.def")
+                            defFile("src/linuxMain/cinterop/librandom.def")
                             packageName("net.folivo.trixnity.crypto.core.cinterop")
                         }
                     }

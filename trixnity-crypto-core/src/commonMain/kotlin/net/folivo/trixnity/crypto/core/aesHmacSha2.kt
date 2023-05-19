@@ -1,10 +1,8 @@
 package net.folivo.trixnity.crypto.core
 
-import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
-import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
-import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
+import net.folivo.trixnity.utils.toByteArray
+import net.folivo.trixnity.utils.toByteArrayFlow
 import kotlin.experimental.and
 
 class DerivedKeys(val aesKey: ByteArray, val hmacKey: ByteArray)
@@ -16,6 +14,12 @@ suspend fun deriveKeys(key: ByteArray, name: String): DerivedKeys {
     val hmacKey = hmacSha256(hashedKey, aesKey + name.encodeToByteArray() + ByteArray(1) { 0x02 })
     return DerivedKeys(aesKey = aesKey, hmacKey = hmacKey)
 }
+
+data class AesHmacSha2EncryptedData(
+    val iv: String,
+    val ciphertext: String,
+    val mac: String
+)
 
 suspend fun encryptAesHmacSha2(
     content: ByteArray,

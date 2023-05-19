@@ -1,10 +1,14 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    targetHierarchy.default()
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
@@ -17,7 +21,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-core"))
-                implementation(project(":trixnity-crypto-core"))
+                api(project(":trixnity-crypto-core"))
                 api(project(":trixnity-olm"))
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
 
@@ -25,12 +29,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
-        }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        nativeTargets.forEach {
-            getByName(it.targetName + "Main").dependsOn(nativeMain)
         }
         val commonTest by getting {
             dependencies {

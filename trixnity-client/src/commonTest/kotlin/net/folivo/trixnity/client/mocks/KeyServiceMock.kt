@@ -18,15 +18,16 @@ class KeyServiceMock(
 ) : KeyService {
     override suspend fun bootstrapCrossSigning(
         recoveryKey: ByteArray,
-        secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent
+        secretKeyEventContent: SecretKeyEventContent,
     ): KeyService.BootstrapCrossSigning {
         throw NotImplementedError()
     }
 
-    override suspend fun bootstrapCrossSigningFromPassphrase(
-        passphrase: String,
-        secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent>
-    ): KeyService.BootstrapCrossSigning {
+    override suspend fun bootstrapCrossSigning(): KeyService.BootstrapCrossSigning {
+        throw NotImplementedError()
+    }
+
+    override suspend fun bootstrapCrossSigningFromPassphrase(passphrase: String): KeyService.BootstrapCrossSigning {
         throw NotImplementedError()
     }
 

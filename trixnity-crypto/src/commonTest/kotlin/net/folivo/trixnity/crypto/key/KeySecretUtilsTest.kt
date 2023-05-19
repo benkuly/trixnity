@@ -8,7 +8,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.crypto.encryptAesHmacSha2
+import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
 import kotlin.random.Random
 
 class KeySecretUtilsTest : ShouldSpec(body)
@@ -31,7 +31,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyId = "KEY",
             keyInfo = SecretKeyEventContent.AesHmacSha2Key(),
             secretName = "m.cross_signing.user_signing",
-            secret = UserSigningKeyEventContent(mapOf("KEY" to json.encodeToJsonElement(encryptedData))),
+            secret = UserSigningKeyEventContent(mapOf("KEY" to json.encodeToJsonElement(encryptedData.convert()))),
             json = json
         ) shouldBe secret
     }

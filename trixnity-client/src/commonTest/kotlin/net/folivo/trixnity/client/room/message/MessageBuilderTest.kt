@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.toByteArrayFlow
+import net.folivo.trixnity.utils.toByteArrayFlow
 
 class MessageBuilderTest : ShouldSpec({
     timeout = 60_000

@@ -1,13 +1,13 @@
 package net.folivo.trixnity.crypto.core
 
-import com.soywiz.krypto.encoding.hex
-import com.soywiz.krypto.encoding.unhex
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import korlibs.crypto.encoding.hex
+import korlibs.crypto.encoding.unhex
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.test.runTest
-import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
+import net.folivo.trixnity.utils.toByteArray
+import net.folivo.trixnity.utils.toByteArrayFlow
 import kotlin.random.Random
 import kotlin.test.Test
 

@@ -1,10 +1,10 @@
 package net.folivo.trixnity.crypto.core
 
-import com.soywiz.krypto.AES
-import com.soywiz.krypto.Padding
+import korlibs.crypto.AES
+import korlibs.crypto.Padding
 import kotlinx.coroutines.flow.flow
-import net.folivo.trixnity.core.ByteArrayFlow
-import net.folivo.trixnity.core.toByteArray
+import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.toByteArray
 
 actual fun ByteArrayFlow.encryptAes256Ctr(
     key: ByteArray,

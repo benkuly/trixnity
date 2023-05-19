@@ -1,6 +1,6 @@
 package net.folivo.trixnity.crypto.core
 
-import net.folivo.trixnity.core.ByteArrayFlow
+import net.folivo.trixnity.utils.ByteArrayFlow
 
 
 class AesDecryptionException(reason: Throwable) : Exception(reason)

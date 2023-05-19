@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.flow.collect
-import net.folivo.trixnity.core.toByteArrayFlow
+import net.folivo.trixnity.utils.toByteArrayFlow
 
 class Sha256Test : ShouldSpec({
     timeout = 2_000

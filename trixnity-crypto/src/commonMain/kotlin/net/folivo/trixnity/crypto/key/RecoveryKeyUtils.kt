@@ -2,10 +2,10 @@ package net.folivo.trixnity.crypto.key
 
 import io.ktor.util.*
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.crypto.createAesHmacSha2MacFromKey
-import net.folivo.trixnity.crypto.decodeBase58
-import net.folivo.trixnity.crypto.encodeBase58
-import net.folivo.trixnity.crypto.generatePbkdf2Sha512
+import net.folivo.trixnity.crypto.core.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.crypto.core.decodeBase58
+import net.folivo.trixnity.crypto.core.encodeBase58
+import net.folivo.trixnity.crypto.core.generatePbkdf2Sha512
 
 private val recoveryKeyPrefix = listOf(0x8B.toByte(), 0x01.toByte())
 

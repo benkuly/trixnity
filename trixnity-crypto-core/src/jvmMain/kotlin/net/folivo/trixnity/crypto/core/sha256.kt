@@ -1,7 +1,8 @@
 package net.folivo.trixnity.crypto.core
 
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.core.ByteArrayFlow
+import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import java.security.MessageDigest
 
 actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {

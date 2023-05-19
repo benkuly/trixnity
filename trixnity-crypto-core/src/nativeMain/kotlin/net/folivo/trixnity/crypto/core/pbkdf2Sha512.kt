@@ -1,6 +1,7 @@
 package net.folivo.trixnity.crypto.core
 
-import com.soywiz.krypto.PBKDF2
+import korlibs.crypto.PBKDF2
+
 
 actual suspend fun generatePbkdf2Sha512(
     password: String,

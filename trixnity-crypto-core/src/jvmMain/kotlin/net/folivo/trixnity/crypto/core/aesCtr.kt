@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.core
 
 import kotlinx.coroutines.flow.flow
-import net.folivo.trixnity.core.ByteArrayFlow
+import net.folivo.trixnity.utils.ByteArrayFlow
 import java.security.Key
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec

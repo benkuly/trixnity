@@ -1,4 +1,4 @@
-package net.folivo.trixnity.core
+package net.folivo.trixnity.utils
 
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
@@ -11,7 +11,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ByteFlowTest {
+class ByteArrayFlowTest {
     private val helloBytes = "hello".toByteArray()
     private val helloBytesFlow = flowOf("he".toByteArray(), "llo".toByteArray())
 

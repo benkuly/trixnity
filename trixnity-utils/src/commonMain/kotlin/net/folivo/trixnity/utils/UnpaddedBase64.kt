@@ -1,4 +1,4 @@
-package net.folivo.trixnity.crypto.core
+package net.folivo.trixnity.utils
 
 import io.ktor.util.*
 

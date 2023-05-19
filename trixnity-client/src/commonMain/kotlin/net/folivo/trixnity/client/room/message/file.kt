@@ -2,12 +2,12 @@ package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.ByteArrayFlow
-import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.FileInfo
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.FileMessageEventContent
+import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.TrixnityDsl
 
 @TrixnityDsl
 suspend fun MessageBuilder.file(

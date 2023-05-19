@@ -1,6 +1,5 @@
 package net.folivo.trixnity.crypto.core
 
-import com.soywiz.krypto.fillRandomBytes
 import kotlin.random.Random
 
 object SecureRandom : Random() {

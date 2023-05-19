@@ -5,8 +5,9 @@ import crypto
 import io.ktor.util.*
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.core.ByteArrayFlow
-import net.folivo.trixnity.core.toByteArray
+import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
+import net.folivo.trixnity.utils.toByteArray
 
 actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
     return if (PlatformUtils.IS_BROWSER) {

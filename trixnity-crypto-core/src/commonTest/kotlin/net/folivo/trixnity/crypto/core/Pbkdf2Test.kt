@@ -1,8 +1,8 @@
 package net.folivo.trixnity.crypto.core
 
-import com.soywiz.krypto.encoding.hex
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import korlibs.crypto.encoding.hex
 
 class Pbkdf2Test : ShouldSpec({
     timeout = 120_000

@@ -1,4 +1,4 @@
-package net.folivo.trixnity.olm
+package net.folivo.trixnity.utils
 
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test

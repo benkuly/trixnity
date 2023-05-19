@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.media
 
 import com.benasher44.uuid.uuid4
-import com.soywiz.krypto.SecureRandom
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onCompletion
@@ -17,18 +16,14 @@ import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
-import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
-import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
-import net.folivo.trixnity.core.toByteReadChannel
-import net.folivo.trixnity.crypto.decryptAes256Ctr
-import net.folivo.trixnity.crypto.encryptAes256Ctr
+import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.core.decryptAes256Ctr
+import net.folivo.trixnity.crypto.core.encryptAes256Ctr
+import net.folivo.trixnity.crypto.core.sha256
 import net.folivo.trixnity.crypto.olm.DecryptionException
-import net.folivo.trixnity.crypto.sha256
-import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
-import net.folivo.trixnity.olm.encodeUnpaddedBase64
+import net.folivo.trixnity.utils.*
 
 private val log = KotlinLogging.logger {}
 

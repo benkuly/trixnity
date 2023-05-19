@@ -1,8 +1,6 @@
-package net.folivo.trixnity.core
+package net.folivo.trixnity.utils
 
-import io.ktor.util.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope

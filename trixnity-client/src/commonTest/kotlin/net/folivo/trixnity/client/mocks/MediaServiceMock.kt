@@ -5,9 +5,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
-import net.folivo.trixnity.core.ByteArrayFlow
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
+import net.folivo.trixnity.utils.ByteArrayFlow
 
 class MediaServiceMock : MediaService {
     override suspend fun getMedia(
