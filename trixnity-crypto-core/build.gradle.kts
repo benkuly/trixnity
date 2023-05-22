@@ -4,7 +4,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
-    id("com.louiscad.complete-kotlin") version Versions.completeKotlinPlugin
+    // id("com.louiscad.complete-kotlin") version Versions.completeKotlinPlugin // only enable locally for code completion
 }
 
 @OptIn(ExperimentalKotlinGradlePluginApi::class)

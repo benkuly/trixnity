@@ -6,7 +6,7 @@ object Versions {
     val kotlinJvmTarget = JavaVersion.VERSION_11
     const val ksp = "1.8.21-1.0.11" // https://github.com/google/ksp/releases
     const val kotlinxCoroutines = "1.7.1" // https://github.com/Kotlin/kotlinx.coroutines/releases
-    const val kotlinxSerialization = "1.5.1" // https://github.com/Kotlin/kotlinx.serialization/releases
+    const val kotlinxSerialization = "1.5.0" // https://github.com/Kotlin/kotlinx.serialization/releases
     const val kotlinxDatetime = "0.4.0" // https://github.com/Kotlin/kotlinx-datetime/releases
     const val dokka = "1.8.10" // https://github.com/Kotlin/dokka/releases
     const val olm = "3.2.13" // https://gitlab.matrix.org/matrix-org/olm/-/releases
