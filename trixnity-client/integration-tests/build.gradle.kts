@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
@@ -5,7 +6,9 @@ plugins {
     kotlin("plugin.serialization")
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    targetHierarchy.default()
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled(testEnabled = (isCI && HostManager.hostIsMac).not())
 

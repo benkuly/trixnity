@@ -1,6 +1,6 @@
 package net.folivo.trixnity.olm
 
-import com.soywiz.krypto.SecureRandom
+import net.folivo.trixnity.crypto.core.SecureRandom
 import kotlin.random.Random
 
 internal inline fun <T : Any> checkError(

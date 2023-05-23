@@ -284,7 +284,7 @@ class CrossSigningIT {
                 .shouldBeInstanceOf<UIA.Success<Unit>>()
         }
         val defaultSecret1 = client2.user.getAccountData<DefaultSecretKeyEventContent>().filterNotNull().first()
-        
+
         val bootstrap2 = client1.key.bootstrapCrossSigning()
         withClue("reset cross signing by bootstrap client1 again") {
             bootstrap2.result.getOrThrow()

@@ -8,6 +8,8 @@ import net.folivo.trixnity.olm.OlmLibrary.pk_signing_key_from_seed
 import net.folivo.trixnity.olm.OlmLibrary.pk_signing_last_error
 import net.folivo.trixnity.olm.OlmLibrary.pk_signing_public_key_length
 import net.folivo.trixnity.olm.OlmLibrary.pk_signing_seed_length
+import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
 
 actual class OlmPkSigning private constructor(
     internal actual val ptr: OlmPkSigningPointer,

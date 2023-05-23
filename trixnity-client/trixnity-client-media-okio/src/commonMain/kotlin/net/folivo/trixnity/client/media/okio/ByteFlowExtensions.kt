@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
-import net.folivo.trixnity.core.BYTE_ARRAY_FLOW_CHUNK_SIZE
-import net.folivo.trixnity.core.ByteArrayFlow
+import net.folivo.trixnity.utils.BYTE_ARRAY_FLOW_CHUNK_SIZE
+import net.folivo.trixnity.utils.ByteArrayFlow
 import okio.*
 import kotlin.coroutines.CoroutineContext
 

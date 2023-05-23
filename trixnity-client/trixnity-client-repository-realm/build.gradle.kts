@@ -1,10 +1,14 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.realm.kotlin")
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    targetHierarchy.default()
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     addAppleNativeTargetsWhenEnabled() // see https://github.com/realm/realm-kotlin/issues/617

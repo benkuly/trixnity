@@ -1,9 +1,13 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    targetHierarchy.default()
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir, browserEnabled = false)
@@ -26,12 +30,6 @@ kotlin {
             dependencies {
                 implementation("com.squareup.okio:okio-nodefilesystem:${Versions.okio}")
             }
-        }
-        val nativeMain by creating {
-            dependsOn(commonMain)
-        }
-        nativeTargets.forEach {
-            getByName(it.targetName + "Main").dependsOn(nativeMain)
         }
         val commonTest by getting {
             dependencies {

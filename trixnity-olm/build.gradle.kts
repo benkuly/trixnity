@@ -1,6 +1,7 @@
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
@@ -167,7 +168,9 @@ if (isAndroidEnabled) {
     }
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    targetHierarchy.default()
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val androidJvmTarget = addTargetWhenEnabled(KotlinPlatformType.androidJvm) {
@@ -178,7 +181,7 @@ kotlin {
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
 
     val nativeTargets = olmNativeTargets.mapNotNull { target ->
-        addNativeTargetWhenEnabled(target.target) {
+        addNativeTargetWhenEnabled(target.target, true) {
             target.createTarget(this).apply {
                 compilations {
                     "main" {
@@ -204,6 +207,7 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
+                implementation(project(":trixnity-crypto-core"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("io.ktor:ktor-utils:${Versions.ktor}")
@@ -232,11 +236,8 @@ kotlin {
                 implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
             }
         }
-        val nativeMain by creating {
+        val nativeMain by getting {
             dependsOn(olmLibraryMain)
-        }
-        nativeTargets.forEach {
-            it.mainSourceSet(this).dependsOn(nativeMain)
         }
         val commonTest by getting {
             dependencies {

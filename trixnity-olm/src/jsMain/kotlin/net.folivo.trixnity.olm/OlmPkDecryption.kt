@@ -1,5 +1,7 @@
 package net.folivo.trixnity.olm
 
+import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import org.khronos.webgl.Uint8Array
 
 actual class OlmPkDecryption private constructor(

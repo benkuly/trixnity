@@ -4,9 +4,9 @@ import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
 import net.folivo.trixnity.client.media.MediaStore
-import net.folivo.trixnity.core.ByteArrayFlow
-import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
+import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.toByteArray
+import net.folivo.trixnity.utils.toByteArrayFlow
 import org.khronos.webgl.Uint8Array
 
 class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaStore {

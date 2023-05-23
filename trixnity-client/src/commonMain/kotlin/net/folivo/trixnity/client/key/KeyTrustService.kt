@@ -18,8 +18,8 @@ import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.crypto.key.decryptSecret
 import net.folivo.trixnity.crypto.sign.*
 import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.jvm.JvmName

@@ -10,8 +10,8 @@ import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKeyWithPbkdf2Passphrase
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
-import net.folivo.trixnity.crypto.encryptAesHmacSha2
-import net.folivo.trixnity.crypto.generatePbkdf2Sha512
+import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
+import net.folivo.trixnity.crypto.core.generatePbkdf2Sha512
 import net.folivo.trixnity.crypto.key.encodeRecoveryKey
 import kotlin.random.Random
 import kotlin.test.assertNotNull

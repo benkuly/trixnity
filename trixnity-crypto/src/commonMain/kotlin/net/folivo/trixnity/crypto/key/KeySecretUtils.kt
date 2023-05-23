@@ -8,8 +8,8 @@ import mu.KotlinLogging
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.AesHmacSha2EncryptedData
-import net.folivo.trixnity.crypto.decryptAesHmacSha2
-import net.folivo.trixnity.crypto.encryptAesHmacSha2
+import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
+import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
 
 private val log = KotlinLogging.logger {}
 
@@ -27,11 +27,12 @@ suspend fun decryptSecret(
         is SecretKeyEventContent.AesHmacSha2Key -> {
             val encryptedData = json.decodeFromJsonElement<AesHmacSha2EncryptedData>(encryptedSecret)
             decryptAesHmacSha2(
-                content = encryptedData,
+                content = encryptedData.convert(),
                 key = key,
                 name = secretName
             ).decodeToString().also { log.debug { "decrypted secret $secretName" } }
         }
+
         is SecretKeyEventContent.Unknown -> throw IllegalArgumentException("unknown secret not supported")
     }
 }
@@ -49,7 +50,15 @@ suspend fun encryptSecret(
                 content = secret.encodeToByteArray(),
                 key = key,
                 name = secretName
-            )
+            ).convert()
         )
     )
 }
+
+// TODO internal as soon as all crypto stuff is moved to trixnity-crypto
+fun AesHmacSha2EncryptedData.convert() =
+    net.folivo.trixnity.crypto.core.AesHmacSha2EncryptedData(iv = iv, ciphertext = ciphertext, mac = mac)
+
+// TODO internal as soon as all crypto stuff is moved to trixnity-crypto
+fun net.folivo.trixnity.crypto.core.AesHmacSha2EncryptedData.convert() =
+    AesHmacSha2EncryptedData(iv = iv, ciphertext = ciphertext, mac = mac)

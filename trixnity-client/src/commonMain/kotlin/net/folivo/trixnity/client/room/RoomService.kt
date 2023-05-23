@@ -1,15 +1,16 @@
 package net.folivo.trixnity.client.room
 
 import com.benasher44.uuid.uuid4
-import com.soywiz.korio.async.async
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
-import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.CurrentSyncState
+import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber

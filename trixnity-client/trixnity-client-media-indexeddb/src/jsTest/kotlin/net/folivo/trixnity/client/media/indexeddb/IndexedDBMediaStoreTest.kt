@@ -5,13 +5,13 @@ import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.MEDIA_OBJECT_STORE_NAME
-import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
+import net.folivo.trixnity.utils.toByteArray
+import net.folivo.trixnity.utils.toByteArrayFlow
 import org.khronos.webgl.Uint8Array
 import kotlin.test.Test
 

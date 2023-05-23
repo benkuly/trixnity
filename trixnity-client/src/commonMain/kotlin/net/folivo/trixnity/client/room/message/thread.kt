@@ -2,10 +2,10 @@ package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.relatesTo
-import net.folivo.trixnity.core.TrixnityDsl
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.utils.TrixnityDsl
 
 /**
  * [event] must be the last known event of a thread.

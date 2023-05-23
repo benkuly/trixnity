@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.key
 
-import com.soywiz.krypto.SecureRandom
 import io.ktor.util.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -29,7 +28,8 @@ import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.SecretType
-import net.folivo.trixnity.crypto.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.core.createAesHmacSha2MacFromKey
 import net.folivo.trixnity.crypto.key.encodeRecoveryKey
 import net.folivo.trixnity.crypto.key.encryptSecret
 import net.folivo.trixnity.crypto.key.recoveryKeyFromPassphrase
@@ -55,37 +55,21 @@ interface KeyService {
      * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
      */
     suspend fun bootstrapCrossSigning(
-        recoveryKey: ByteArray = SecureRandom.nextBytes(32),
-        secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent = {
-            val iv = SecureRandom.nextBytes(16)
-            AesHmacSha2Key(
-                iv = iv.encodeBase64(),
-                mac = createAesHmacSha2MacFromKey(recoveryKey, iv)
-            )
-        }
+        recoveryKey: ByteArray,
+        secretKeyEventContent: SecretKeyEventContent,
     ): BootstrapCrossSigning
 
     /**
      * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
      * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
      */
-    suspend fun bootstrapCrossSigningFromPassphrase(
-        passphrase: String,
-        secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent> = {
-            val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
-                salt = SecureRandom.nextBytes(32).encodeBase64(),
-                iterations = 120_000,
-                bits = 32 * 8
-            )
-            val iv = SecureRandom.nextBytes(16)
-            val key = recoveryKeyFromPassphrase(passphrase, passphraseInfo)
-            key to AesHmacSha2Key(
-                passphrase = passphraseInfo,
-                iv = iv.encodeBase64(),
-                mac = createAesHmacSha2MacFromKey(key = key, iv = iv)
-            )
-        }
-    ): BootstrapCrossSigning
+    suspend fun bootstrapCrossSigning(): BootstrapCrossSigning
+
+    /**
+     * This allows you to bootstrap cross signing. Be aware, that this could override an existing cross signing setup of
+     * the account. Be aware, that this also creates a new key backup, which could replace an existing key backup.
+     */
+    suspend fun bootstrapCrossSigningFromPassphrase(passphrase: String): BootstrapCrossSigning
 
     /**
      * @return the trust level of a device.
@@ -136,7 +120,7 @@ class KeyServiceImpl(
 
     override suspend fun bootstrapCrossSigning(
         recoveryKey: ByteArray,
-        secretKeyEventContentGenerator: suspend () -> SecretKeyEventContent
+        secretKeyEventContent: SecretKeyEventContent,
     ): KeyService.BootstrapCrossSigning {
         log.debug { "bootstrap cross signing" }
         _bootstrapRunning.value = true
@@ -145,7 +129,6 @@ class KeyServiceImpl(
             val alphabet = 'a'..'z'
             generateSequence { alphabet.random() }.take(24).joinToString("")
         }.first { globalAccountDataStore.get<SecretKeyEventContent>(key = it).first() == null }
-        val secretKeyEventContent = secretKeyEventContentGenerator()
         return KeyService.BootstrapCrossSigning(
             recoveryKey = encodeRecoveryKey(recoveryKey),
             result = api.users.setAccountData(secretKeyEventContent, userInfo.userId, keyId)
@@ -263,12 +246,33 @@ class KeyServiceImpl(
         )
     }
 
+    override suspend fun bootstrapCrossSigning(): KeyService.BootstrapCrossSigning {
+        val recoveryKey = SecureRandom.nextBytes(32)
+        val iv = SecureRandom.nextBytes(16)
+        val secretKeyEventContent = AesHmacSha2Key(
+            iv = iv.encodeBase64(),
+            mac = createAesHmacSha2MacFromKey(recoveryKey, iv)
+        )
+
+        return bootstrapCrossSigning(recoveryKey, secretKeyEventContent)
+    }
+
     override suspend fun bootstrapCrossSigningFromPassphrase(
         passphrase: String,
-        secretKeyEventContentGenerator: suspend () -> Pair<ByteArray, SecretKeyEventContent>
     ): KeyService.BootstrapCrossSigning {
-        val secretKeyEventContent = secretKeyEventContentGenerator()
-        return bootstrapCrossSigning(secretKeyEventContent.first) { secretKeyEventContent.second }
+        val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
+            salt = SecureRandom.nextBytes(32).encodeBase64(),
+            iterations = 120_000,
+            bits = 32 * 8
+        )
+        val iv = SecureRandom.nextBytes(16)
+        val recoveryKey = recoveryKeyFromPassphrase(passphrase, passphraseInfo)
+        val secretKeyEventContent = AesHmacSha2Key(
+            passphrase = passphraseInfo,
+            iv = iv.encodeBase64(),
+            mac = createAesHmacSha2MacFromKey(key = recoveryKey, iv = iv)
+        )
+        return bootstrapCrossSigning(recoveryKey, secretKeyEventContent)
     }
 
     override fun getTrustLevel(

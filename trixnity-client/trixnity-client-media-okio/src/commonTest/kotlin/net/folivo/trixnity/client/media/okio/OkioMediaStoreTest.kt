@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import net.folivo.trixnity.core.toByteArray
-import net.folivo.trixnity.core.toByteArrayFlow
+import net.folivo.trixnity.utils.toByteArray
+import net.folivo.trixnity.utils.toByteArrayFlow
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import kotlin.test.AfterTest

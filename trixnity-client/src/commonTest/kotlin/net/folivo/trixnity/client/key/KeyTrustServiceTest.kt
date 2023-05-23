@@ -32,14 +32,14 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
-import net.folivo.trixnity.crypto.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.crypto.core.createAesHmacSha2MacFromKey
 import net.folivo.trixnity.crypto.key.encryptSecret
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.encodeUnpaddedBase64
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import kotlin.random.Random
 
 class KeyTrustServiceTest : ShouldSpec(body)

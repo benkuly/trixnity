@@ -12,6 +12,8 @@ import net.folivo.trixnity.olm.OlmLibrary.pk_key_length
 import net.folivo.trixnity.olm.OlmLibrary.pk_max_plaintext_length
 import net.folivo.trixnity.olm.OlmLibrary.pk_private_key_length
 import net.folivo.trixnity.olm.OlmLibrary.unpickle_pk_decryption
+import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
 
 actual class OlmPkDecryption private constructor(
     internal actual val ptr: OlmPkDecryptionPointer,

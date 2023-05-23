@@ -6,7 +6,7 @@ sidebar_position: 1
 
 ![modules](./assets/modules.png)
 
-This project contains the following modules, which can be used independently:
+This project contains among others the following modules, which can be used independently:
 
 - [trixnity-core](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-core)
   contains all basic data structures of the spec and it’s serialization algorithms. This includes events, identifiers

@@ -1,9 +1,13 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    targetHierarchy.default()
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
@@ -15,6 +19,7 @@ kotlin {
         }
         val commonMain by getting {
             dependencies {
+                api(project(":trixnity-utils"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 api("io.ktor:ktor-http:${Versions.ktor}")
