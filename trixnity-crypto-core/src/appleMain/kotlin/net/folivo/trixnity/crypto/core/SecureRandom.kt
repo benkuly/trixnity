@@ -6,6 +6,8 @@ import kotlinx.cinterop.usePinned
 import platform.CoreCrypto.*
 
 actual fun fillRandomBytes(array: ByteArray) {
+    if (array.isEmpty()) return
+    
     val size = array.size
     val status = array.usePinned { pinned ->
         CCRandomGenerateBytes(pinned.addressOf(0), size.convert())

@@ -22,7 +22,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-utils"))
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}") // TODO into test only
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}") // TODO hash module into test only
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
