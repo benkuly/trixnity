@@ -14,7 +14,7 @@ suspend fun UserId.serverDiscovery(
 
 suspend fun String.serverDiscovery(
     httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) }
-): Result<Url> {
+): Result<Url> = runCatching {
     val hostnameBaseUrl =
         when {
             startsWith("http://") || startsWith("https://") -> Url(this)
