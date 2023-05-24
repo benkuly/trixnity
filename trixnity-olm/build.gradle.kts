@@ -181,7 +181,7 @@ kotlin {
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
 
     val nativeTargets = olmNativeTargets.mapNotNull { target ->
-        addNativeTargetWhenEnabled(target.target, true) {
+        addNativeTargetWhenEnabled(target.target) {
             target.createTarget(this).apply {
                 compilations {
                     "main" {

@@ -33,10 +33,8 @@ fun <T : KotlinTarget> KotlinMultiplatformExtension.addTargetWhenEnabled(
 
 fun <T : KotlinNativeTarget> KotlinMultiplatformExtension.addNativeTargetWhenEnabled(
     target: KonanTarget,
-    ignoreCIState: Boolean = false,
     createTarget: KotlinTargetContainerWithNativeShortcuts.() -> T,
 ): T? {
-    val isCI = ignoreCIState || isCI
     return when {
         isMainCIHost -> createTarget().apply {
             compilations.configureEach {
