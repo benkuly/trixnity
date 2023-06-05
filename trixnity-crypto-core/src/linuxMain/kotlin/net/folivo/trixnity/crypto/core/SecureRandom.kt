@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.core
 
 import kotlinx.cinterop.*
-import net.folivo.trixnity.crypto.core.cinterop.GRND_NONBLOCK
+import net.folivo.trixnity.crypto.core.cinterop.random.GRND_NONBLOCK
 import platform.linux.SYS_getrandom
 import platform.posix.*
 

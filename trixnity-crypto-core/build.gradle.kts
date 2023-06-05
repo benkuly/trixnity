@@ -1,19 +1,78 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("io.kotest.multiplatform")
-    // id("com.louiscad.complete-kotlin") version Versions.completeKotlinPlugin // only enable locally for code completion
 }
+
+val trixnityBinariesDirs = TrixnityBinariesDirs(project)
+
+class OpensslNativeTarget(
+    val target: KonanTarget,
+    val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> KotlinNativeTarget,
+) {
+    val libPath: File = trixnityBinariesDirs.opensslBinStaticDir.resolve(target.name).resolve("libcrypto.a")
+    val enabledOnThisPlatform: Boolean = target.isEnabledOnThisPlatform()
+}
+
+val opensslNativeTargetList = listOf(
+    OpensslNativeTarget(
+        target = KonanTarget.LINUX_X64,
+        createTarget = { linuxX64() },
+    ),
+    OpensslNativeTarget(
+        target = KonanTarget.MINGW_X64,
+        createTarget = { mingwX64() },
+    ),
+)
 
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
+    targetHierarchy.default {
+        group("native") {
+            group("openssl") {
+                withLinux()
+                withMingw()
+            }
+        }
+    }
     jvmToolchain()
     val jvmTarget = addDefaultJvmTargetWhenEnabled()
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
-    val nativeTargets = addDefaultNativeTargetsWhenEnabled()
+    val appleTargets = addAppleNativeTargetsWhenEnabled()
+
+    val opensslNativeTargets = opensslNativeTargetList.mapNotNull { target ->
+        addNativeTargetWhenEnabled(target.target) {
+            target.createTarget(this).apply {
+                compilations {
+                    "main" {
+                        cinterops {
+                            val libcrypto by creating {
+                                defFile("src/opensslMain/cinterop/libcrypto.def")
+                                packageName("org.openssl")
+                                includeDirs(trixnityBinariesDirs.trixnityBinariesHeadersDir)
+                                tasks.named(interopProcessingTaskName) {
+                                    dependsOn(trixnityBinariesTask)
+                                }
+                            }
+                            if (target.target.family == Family.LINUX) {
+                                val libRandom by creating {
+                                    defFile("src/linuxMain/cinterop/librandom.def")
+                                    packageName("org.linux.random")
+                                }
+                            }
+                        }
+                        kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
+                    }
+                }
+            }
+        }
+    }
 
     sourceSets {
         all {
@@ -28,18 +87,7 @@ kotlin {
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
-        nativeTargets.filter { it.targetName.contains("linux") }.forEach { target ->
-            target.compilations {
-                "main" {
-                    cinterops {
-                        val libRandom by creating {
-                            defFile("src/linuxMain/cinterop/librandom.def")
-                            packageName("net.folivo.trixnity.crypto.core.cinterop")
-                        }
-                    }
-                }
-            }
-        }
+
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))

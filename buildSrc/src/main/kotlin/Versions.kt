@@ -9,8 +9,8 @@ object Versions {
     const val kotlinxSerialization = "1.5.0" // https://github.com/Kotlin/kotlinx.serialization/releases
     const val kotlinxDatetime = "0.4.0" // https://github.com/Kotlin/kotlinx-datetime/releases
     const val dokka = "1.8.10" // https://github.com/Kotlin/dokka/releases
-    const val olm = "3.2.13" // https://gitlab.matrix.org/matrix-org/olm/-/releases
-    const val olmBinaries = "3.2.13-1" // https://gitlab.com/trixnity/olm-binaries/-/releases
+    const val olm = "3.2.15" // https://gitlab.matrix.org/matrix-org/olm/-/releases
+    const val trixnityBinaries = "1.0.0" // https://gitlab.com/trixnity/trixnity-binaries/-/releases
     const val jna = "5.13.0" // https://github.com/java-native-access/jna/tags
     const val ktor = "2.3.0" // https://github.com/ktorio/ktor/releases
     const val koin = "3.4.0" // https://github.com/InsertKoinIO/koin/tags
