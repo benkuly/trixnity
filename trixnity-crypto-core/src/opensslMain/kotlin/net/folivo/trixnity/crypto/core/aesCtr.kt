@@ -2,7 +2,6 @@ package net.folivo.trixnity.crypto.core
 
 import checkError
 import kotlinx.cinterop.*
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import net.folivo.trixnity.utils.ByteArrayFlow
 import org.openssl.*
@@ -29,7 +28,7 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
             }
         }
         val blockSize = checkError(EVP_CIPHER_CTX_get_block_size(context))
-        filter { it.isNotEmpty() }.collect { input ->
+        filterNotEmpty().collect { input ->
             input.asUByteArray().usePinned { pinnedInput ->
                 memScoped {
                     val output = ByteArray(input.size + blockSize)
@@ -67,7 +66,7 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
         EVP_CIPHER_CTX_free(context)
         EVP_CIPHER_free(cipher)
     }
-}
+}.filterNotEmpty()
 
 @OptIn(ExperimentalUnsignedTypes::class)
 actual fun ByteArrayFlow.decryptAes256Ctr(
@@ -78,7 +77,7 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
     val cipher = EVP_aes_256_ctr()
     try {
         check(key.isNotEmpty()) { "key must not be empty" }
-        check(initialisationVector.isNotEmpty()) { "key must not be empty" }
+        check(initialisationVector.isNotEmpty()) { "initialisationVector must not be empty" }
         key.asUByteArray().usePinned { pinnedKey ->
             initialisationVector.asUByteArray().usePinned { pinnedInitialisationVector ->
                 checkError(
@@ -93,7 +92,7 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
             }
         }
         val blockSize = checkError(EVP_CIPHER_CTX_get_block_size(context))
-        filter { it.isNotEmpty() }.collect { input ->
+        filterNotEmpty().collect { input ->
             input.asUByteArray().usePinned { pinnedInput ->
                 memScoped {
                     val output = ByteArray(input.size + blockSize)
@@ -133,4 +132,4 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
         EVP_CIPHER_CTX_free(context)
         EVP_CIPHER_free(cipher)
     }
-}
+}.filterNotEmpty()
