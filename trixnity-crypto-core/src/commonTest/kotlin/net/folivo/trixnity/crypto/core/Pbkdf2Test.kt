@@ -3,8 +3,6 @@ package net.folivo.trixnity.crypto.core
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import korlibs.crypto.encoding.hex
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 
 class Pbkdf2Test : ShouldSpec({
     timeout = 30_000
@@ -16,8 +14,5 @@ class Pbkdf2Test : ShouldSpec({
         val keyLength = 256
         generatePbkdf2Sha512(password, salt, iterationCount, keyLength).hex shouldBe
                 "456e181b5be566aa7afc51e208024a4c8401c5dbbc7d6b4e9ad1c7a21329fb75"
-        println("ready")
-        delay(5.seconds)
-        println("after 5")
     }
 })
