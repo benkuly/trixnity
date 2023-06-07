@@ -137,7 +137,7 @@ kotlin {
                         cinterops {
                             val libolm by creating {
                                 packageName("org.matrix.olm")
-                                includeDirs(trixnityBinariesDirs.trixnityBinariesHeadersDir)
+                                includeDirs(trixnityBinariesDirs.olmHeadersDir)
                                 tasks.named(interopProcessingTaskName) {
                                     dependsOn(trixnityBinariesTask)
                                 }

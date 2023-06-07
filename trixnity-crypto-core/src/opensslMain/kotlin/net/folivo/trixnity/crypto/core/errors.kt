@@ -1,24 +1,25 @@
 import kotlinx.cinterop.*
-import net.folivo.trixnity.crypto.core.cinterop.openssl.*
-import platform.posix.*
+import org.openssl.ERR_error_string
+import org.openssl.ERR_get_error
+import platform.posix.size_t
 
 internal fun <T : Any> checkError(result: T?): T {
     if (result != null) return result
-    fail(0)
+    error(errorMessage(0))
 }
 
 internal fun checkError(result: size_t): size_t {
     if (result > 0u) return result
-    fail(result.convert())
+    error(errorMessage(result.convert()))
 }
 
 internal fun checkError(result: Int): Int {
     if (result > 0) return result
-    fail(result)
+    error(errorMessage(result))
 }
 
 @OptIn(UnsafeNumber::class)
-private fun fail(result: Int): Nothing {
+private fun errorMessage(result: Int): String {
     val message = buildString {
         var code = ERR_get_error()
         if (code.toInt() != 0) do {
@@ -31,5 +32,5 @@ private fun fail(result: Int): Nothing {
             if (code.toInt() != 0) append(", ")
         } while (code.toInt() != 0)
     }
-    error("OPENSSL failure: $message (result: $result)")
+    return "OPENSSL failure: $message (result: $result)"
 }

@@ -52,16 +52,16 @@ kotlin {
                 compilations {
                     "main" {
                         cinterops {
-                            val libcrypto by creating {
-                                defFile("src/opensslMain/cinterop/libcrypto.def")
+                            val libopenssl by creating {
+                                defFile("src/opensslMain/cinterop/libopenssl.def")
                                 packageName("org.openssl")
-                                includeDirs(trixnityBinariesDirs.trixnityBinariesHeadersDir)
+                                includeDirs(trixnityBinariesDirs.opensslHeadersDir)
                                 tasks.named(interopProcessingTaskName) {
                                     dependsOn(trixnityBinariesTask)
                                 }
                             }
                             if (target.target.family == Family.LINUX) {
-                                val libRandom by creating {
+                                val librandom by creating {
                                     defFile("src/linuxMain/cinterop/librandom.def")
                                     packageName("org.linux.random")
                                 }
@@ -81,7 +81,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(project(":trixnity-utils"))
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}") // TODO hash module into test only
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
@@ -96,6 +95,8 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
                 implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+
+                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
         jvmTarget?.testSourceSet(this) {

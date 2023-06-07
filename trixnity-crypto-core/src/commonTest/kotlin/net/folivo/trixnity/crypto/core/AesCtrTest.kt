@@ -45,20 +45,18 @@ class AesCtrTest {
     @Test
     fun shouldDecryptAndHandleWrongInfos1() = runTest {
         shouldThrow<AesDecryptionException> {
-            ByteArray(0).toByteArrayFlow().decryptAes256Ctr(
-                ByteArray(0),
-                ByteArray(0)
-            ).collect()
+            ByteArray(0).toByteArrayFlow()
+                .decryptAes256Ctr(ByteArray(0), ByteArray(0))
+                .collect()
         }
     }
 
     @Test
     fun shouldDecryptAndHandleWrongInfos2() = runTest {
         shouldThrow<AesDecryptionException> {
-            Random.Default.nextBytes(ByteArray(1)).toByteArrayFlow().decryptAes256Ctr(
-                ByteArray(0),
-                Random.Default.nextBytes(ByteArray(256 / 8))
-            ).collect()
+            Random.Default.nextBytes(ByteArray(1)).toByteArrayFlow()
+                .decryptAes256Ctr(ByteArray(0), Random.Default.nextBytes(ByteArray(256 / 8)))
+                .collect()
         }
     }
 

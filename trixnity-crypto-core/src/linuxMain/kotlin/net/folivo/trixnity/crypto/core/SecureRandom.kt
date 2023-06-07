@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.core
 
 import kotlinx.cinterop.*
-import net.folivo.trixnity.crypto.core.cinterop.random.GRND_NONBLOCK
+import org.linux.random.GRND_NONBLOCK
 import platform.linux.SYS_getrandom
 import platform.posix.*
 
@@ -23,7 +23,7 @@ private fun fillBytes(array: ByteArray, fillBytes: (pointer: CPointer<ByteVar>, 
         var filled = 0
         while (filled < size) {
             val chunkSize = fillBytes(it.addressOf(filled), size - filled)
-            if (chunkSize < 0) errnoCheck()
+            if (chunkSize < 0) error(errorMessage())
             filled += chunkSize
         }
     }
@@ -60,7 +60,7 @@ private val urandom by lazy {
 
                 when (errno) {
                     EINTR, EAGAIN -> continue
-                    else -> errnoCheck()
+                    else -> error(errorMessage())
                 }
             }
         }
@@ -72,16 +72,14 @@ private val urandom by lazy {
 
 private fun open(path: String): Int {
     val fd = open(path, O_RDONLY, null)
-    if (fd <= 0) errnoCheck()
+    if (fd <= 0) error(errorMessage())
     return fd
 }
 
-private fun errnoCheck(): Nothing {
-    val message = when (val value = errno) {
+private fun errorMessage(): String =
+    when (val value = errno) {
         EFAULT -> "The address referred to by buf is outside the accessible address space."
         EINTR -> "The call was interrupted by a signal handler; see the description of how interrupted read(2) calls on 'slow' devices are handled with and without the SA_RESTART flag in the signal(7) man page."
         EINVAL -> "An invalid flag was specified in flags."
         else -> "POSIX error: $value"
     }
-    error(message)
-}
