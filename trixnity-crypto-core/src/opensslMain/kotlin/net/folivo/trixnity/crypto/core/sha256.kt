@@ -1,7 +1,9 @@
 package net.folivo.trixnity.crypto.core
 
 import checkError
+import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
@@ -21,9 +23,13 @@ actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
                 checkError(EVP_DigestInit(context, md))
                 emitAll(
                     filter { it.isNotEmpty() }.onEach { input ->
-                        checkError(EVP_DigestUpdate(context, input.refToOrEmpty(), input.size.convert()))
+                        input.asUByteArray().usePinned { pinnedInput ->
+                            checkError(EVP_DigestUpdate(context, pinnedInput.addressOf(0), input.size.convert()))
+                        }
                     }.onCompletion {
-                        checkError(EVP_DigestFinal(context, digest.asUByteArray().refToOrEmpty(), null))
+                        digest.asUByteArray().usePinned { pinnedDigest ->
+                            checkError(EVP_DigestFinal(context, pinnedDigest.addressOf(0), null))
+                        }
                         hash.value = digest.encodeUnpaddedBase64()
                     }
                 )
