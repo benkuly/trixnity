@@ -29,7 +29,7 @@ actual suspend fun generatePbkdf2Sha512(
                 derivedKey = pinnedOutput.addressOf(0),
                 derivedKeyLen = output.size.convert(),
             )
-            if (result <= 0) error("unknown error with generatePbkdf2Sha512")
+            if (result < 0) error("unknown error with generatePbkdf2Sha512")
         }
     }
     return output
