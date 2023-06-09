@@ -25,7 +25,7 @@ object Versions {
     const val exposed = "0.41.1" // https://github.com/JetBrains/Exposed/releases
     const val juulLabsIndexeddb = "0.6.0" // https://github.com/JuulLabs/indexeddb/releases
     const val h2 = "2.1.214" // https://github.com/h2database/h2database/releases
-    const val realm = "1.9.0" // https://github.com/realm/realm-kotlin/tags
+    const val realm = "1.9.1" // https://github.com/realm/realm-kotlin/tags
     const val androidxRoom = "2.5.1" // https://developer.android.com/jetpack/androidx/releases/room
     const val androidxTextKtx = "1.5.0" // https://developer.android.com/jetpack/androidx/releases/test
     const val robolectric = "4.10.3" // https://github.com/robolectric/robolectric/releases
