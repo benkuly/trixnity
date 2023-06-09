@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 import korlibs.crypto.encoding.hex
 
 class Pbkdf2Test : ShouldSpec({
-    timeout = 120_000
+    timeout = 30_000
 
     should(::generatePbkdf2Sha512.name) {
         val password = "super secret. not"

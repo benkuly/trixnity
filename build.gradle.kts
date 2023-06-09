@@ -101,3 +101,30 @@ subprojects {
         }
     }
 }
+
+val tmpDir = buildDir.resolve("tmp")
+val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${Versions.trixnityBinaries}.zip")
+val trixnityBinariesDirs = TrixnityBinariesDirs(project)
+
+val downloadTrixnityBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
+    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${Versions.trixnityBinaries}/build.zip")
+    dest(trixnityBinariesZipDir)
+    overwrite(false)
+}
+
+val extractTrixnityBinaries by tasks.registering(Copy::class) {
+    from(zipTree(trixnityBinariesZipDir)) {
+        include("build/**")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+        }
+    }
+    into(trixnityBinariesDirs.root)
+    outputs.cacheIf { true }
+    inputs.files(downloadTrixnityBinaries)
+    dependsOn(downloadTrixnityBinaries)
+}
+
+val trixnityBinaries by tasks.registering {
+    dependsOn(extractTrixnityBinaries)
+}

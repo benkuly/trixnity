@@ -5,6 +5,9 @@ import io.kotest.matchers.shouldBe
 import korlibs.crypto.encoding.hex
 import korlibs.crypto.encoding.unhex
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
@@ -18,8 +21,12 @@ class AesCtrTest {
 
     @Test
     fun shouldEncrypt() = runTest {
-        val result = "hello".encodeToByteArray().toByteArrayFlow().encryptAes256Ctr(key, initialisationVector)
-        result.toByteArray().hex shouldBe "14e2d5701d"
+        val result =
+            flowOf("he".encodeToByteArray(), "llo".encodeToByteArray(), ByteArray(0)).encryptAes256Ctr(
+                key,
+                initialisationVector
+            )
+        result.map { it.hex }.toList() shouldBe listOf("14e2", "d5701d")
     }
 
     @Test
@@ -30,8 +37,9 @@ class AesCtrTest {
 
     @Test
     fun shouldDecrypt() = runTest {
-        "14e2d5701d".unhex.toByteArrayFlow()
-            .decryptAes256Ctr(key, initialisationVector).toByteArray().decodeToString() shouldBe "hello"
+        flowOf("14e2".unhex, "d5701d".unhex, ByteArray(0))
+            .decryptAes256Ctr(key, initialisationVector)
+            .map { it.decodeToString() }.toList() shouldBe listOf("he", "llo")
     }
 
     @Test
@@ -45,20 +53,18 @@ class AesCtrTest {
     @Test
     fun shouldDecryptAndHandleWrongInfos1() = runTest {
         shouldThrow<AesDecryptionException> {
-            ByteArray(0).toByteArrayFlow().decryptAes256Ctr(
-                ByteArray(0),
-                ByteArray(0)
-            ).collect()
+            ByteArray(0).toByteArrayFlow()
+                .decryptAes256Ctr(ByteArray(0), ByteArray(0))
+                .collect()
         }
     }
 
     @Test
     fun shouldDecryptAndHandleWrongInfos2() = runTest {
         shouldThrow<AesDecryptionException> {
-            Random.Default.nextBytes(ByteArray(1)).toByteArrayFlow().decryptAes256Ctr(
-                ByteArray(0),
-                Random.Default.nextBytes(ByteArray(256 / 8))
-            ).collect()
+            Random.Default.nextBytes(ByteArray(1)).toByteArrayFlow()
+                .decryptAes256Ctr(ByteArray(0), Random.Default.nextBytes(ByteArray(256 / 8)))
+                .collect()
         }
     }
 

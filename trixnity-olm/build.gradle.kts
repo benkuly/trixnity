@@ -16,27 +16,17 @@ plugins {
 
 val jvmProcessedResourcesDir = buildDir.resolve("processedResources").resolve("jvm").resolve("main")
 
-val olmSourcesDir = buildDir.resolve("olm-sources").resolve(Versions.olm)
-val olmBinariesDir = buildDir.resolve("olm-binaries").resolve(Versions.olmBinaries)
-val olmTmpDir = buildDir.resolve("tmp")
-val olmSourceZipDir = olmTmpDir.resolve("olm-${Versions.olm}.zip")
-val olmBinariesZipDir = olmTmpDir.resolve("olm-${Versions.olmBinaries}-binaries.zip")
+val trixnityBinariesDirs = TrixnityBinariesDirs(project)
 
-val olmIncludeDir = olmSourcesDir.resolve("include")
-val olmSharedLibPath = olmBinariesDir.resolve("shared")
-val olmSharedAndroidLibPath = olmBinariesDir.resolve("shared-android")
-val olmStaticLibPath = olmBinariesDir.resolve("static")
-
-data class OlmNativeTarget(
+class OlmNativeTarget(
     val target: KonanTarget,
     val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> KotlinNativeTarget,
 ) {
-    val libDir = olmStaticLibPath.resolve(target.name)
-    val libPath = libDir.resolve("libolm.a")
-    val enabledOnThisPlatform = target.isEnabledOnThisPlatform()
+    val libPath: File = trixnityBinariesDirs.olmBinStaticDir.resolve(target.name).resolve("libolm.a")
+    val enabledOnThisPlatform: Boolean = target.isEnabledOnThisPlatform()
 }
 
-val olmNativeTargets = listOf(
+val olmNativeTargetList = listOf(
     OlmNativeTarget(
         target = KonanTarget.LINUX_X64,
         createTarget = { linuxX64() },
@@ -69,60 +59,19 @@ val olmNativeTargets = listOf(
 
 project.afterEvaluate {
     val testTasks =
-        project.getTasksByName("testReleaseUnitTest", false) + project.getTasksByName("testDebugUnitTest", false)
+        project.getTasksByName("testReleaseUnitTest", false) +
+                project.getTasksByName("testDebugUnitTest", false)
     testTasks.forEach {
         it.onlyIf { false }
     }
 }
 
-val downloadOlmSources by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
-    group = "olm"
-    src("https://gitlab.matrix.org/matrix-org/olm/-/archive/${Versions.olm}/olm-${Versions.olm}.zip")
-    dest(olmSourceZipDir)
-    overwrite(false)
-}
-
-val extractOlmSources by tasks.registering(Copy::class) {
-    group = "olm"
-    from(zipTree(olmSourceZipDir)) {
-        include("olm-${Versions.olm}/**")
-        eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
-        }
-    }
-    into(olmSourcesDir)
-    outputs.cacheIf { true }
-    inputs.files(olmSourceZipDir)
-    dependsOn(downloadOlmSources)
-}
-
-val downloadOlmBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
-    group = "olm"
-    src("https://gitlab.com/api/v4/projects/39141647/packages/generic/binaries/${Versions.olmBinaries}/binaries.zip")
-    dest(olmBinariesZipDir)
-    overwrite(false)
-}
-
-val extractOlmBinaries by tasks.registering(Copy::class) {
-    group = "olm"
-    from(zipTree(olmBinariesZipDir)) {
-        include("binaries/**")
-        eachFile {
-            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
-        }
-    }
-    into(olmBinariesDir)
-    outputs.cacheIf { true }
-    inputs.files(olmBinariesZipDir)
-    dependsOn(downloadOlmBinaries)
-}
-
 val installOlmToJvmResources by tasks.registering(Copy::class) {
     group = "olm"
-    from(olmSharedLibPath)
+    from(trixnityBinariesDirs.olmBinSharedDir)
     include("*/libolm.so", "*/olm.dll", "*/libolm.dylib")
     into(jvmProcessedResourcesDir)
-    dependsOn(extractOlmBinaries)
+    dependsOn(trixnityBinariesTask)
 }
 
 tasks.withType<ProcessResources> {
@@ -134,7 +83,7 @@ tasks.withType<ExternalNativeCleanTask> {
 }
 
 tasks.withType<ExternalNativeBuildTask> {
-    dependsOn(extractOlmBinaries)
+    dependsOn(trixnityBinariesTask)
 }
 
 if (isAndroidEnabled) {
@@ -149,7 +98,7 @@ if (isAndroidEnabled) {
         }
         sourceSets.getByName("main") {
             manifest.srcFile("src/androidMain/AndroidManifest.xml")
-            jniLibs.srcDirs(olmSharedAndroidLibPath)
+            jniLibs.srcDirs(trixnityBinariesDirs.olmBinSharedAndroidDir)
         }
         compileOptions {
             sourceCompatibility = Versions.kotlinJvmTarget
@@ -163,7 +112,7 @@ if (isAndroidEnabled) {
     }
     tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
         if (name.contains("jni", true)) {
-            dependsOn(extractOlmBinaries)
+            dependsOn(trixnityBinariesTask)
         }
     }
 }
@@ -180,7 +129,7 @@ kotlin {
     }
     val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
 
-    val nativeTargets = olmNativeTargets.mapNotNull { target ->
+    val nativeTargets = olmNativeTargetList.mapNotNull { target ->
         addNativeTargetWhenEnabled(target.target) {
             target.createTarget(this).apply {
                 compilations {
@@ -188,9 +137,9 @@ kotlin {
                         cinterops {
                             val libolm by creating {
                                 packageName("org.matrix.olm")
-                                includeDirs(olmIncludeDir)
+                                includeDirs(trixnityBinariesDirs.olmHeadersDir)
                                 tasks.named(interopProcessingTaskName) {
-                                    dependsOn(extractOlmSources, extractOlmBinaries)
+                                    dependsOn(trixnityBinariesTask)
                                 }
                             }
                         }

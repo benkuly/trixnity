@@ -30,19 +30,19 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
                     "length" to 64,
                 ),
                 aesKey,
-                toByteArray().toInt8Array().buffer,
+                filterNotEmpty().toByteArray().toInt8Array().buffer,
             ).await().toByteArray()
             emit(result)
-        }
+        }.filterNotEmpty()
     } else {
         flow {
             val cipher =
                 createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
-            collect { input ->
+            filterNotEmpty().collect { input ->
                 emit(cipher.update(input.toInt8Array()).toByteArray())
             }
             emit(cipher.final().toByteArray())
-        }
+        }.filterNotEmpty()
     }
 }
 
@@ -68,25 +68,25 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
                         "length" to 64,
                     ),
                     aesKey,
-                    toByteArray().toInt8Array().buffer,
+                    filterNotEmpty().toByteArray().toInt8Array().buffer,
                 ).await().toByteArray()
                 emit(result)
             } catch (exception: Throwable) {
                 throw AesDecryptionException(exception)
             }
-        }
+        }.filterNotEmpty()
     } else {
         flow {
             try {
                 val decipher =
                     createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
-                collect { input ->
+                filterNotEmpty().collect { input ->
                     emit(decipher.update(input.toInt8Array()).toByteArray())
                 }
                 emit(decipher.final().toByteArray())
             } catch (exception: Throwable) {
                 throw AesDecryptionException(exception)
             }
-        }
+        }.filterNotEmpty()
     }
 }

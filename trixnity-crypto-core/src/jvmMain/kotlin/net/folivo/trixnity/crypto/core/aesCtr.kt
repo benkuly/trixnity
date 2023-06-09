@@ -17,11 +17,11 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
 
     cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec)
 
-    collect { input ->
+    filterNotEmpty().collect { input ->
         cipher.update(input)?.also { emit(it) }
     }
     cipher.doFinal()?.also { emit(it) }
-}
+}.filterNotEmpty()
 
 actual fun ByteArrayFlow.decryptAes256Ctr(
     key: ByteArray,
@@ -33,11 +33,11 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
         val ivSpec = IvParameterSpec(initialisationVector)
 
         cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec)
-        collect { input ->
+        filterNotEmpty().collect { input ->
             cipher.update(input)?.also { emit(it) }
         }
         cipher.doFinal()?.also { emit(it) }
     } catch (exception: Exception) {
         throw AesDecryptionException(exception)
     }
-}
+}.filterNotEmpty()
