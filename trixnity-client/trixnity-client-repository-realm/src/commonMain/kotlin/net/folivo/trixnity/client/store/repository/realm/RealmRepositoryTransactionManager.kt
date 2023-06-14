@@ -26,11 +26,11 @@ class RealmWriteTransaction(
 }
 
 suspend fun <T> withRealmRead(block: TypedRealm.() -> T) = coroutineScope {
-    block(checkNotNull(coroutineContext[RealmReadTransaction]?.realm))
+    block(checkNotNull(coroutineContext[RealmReadTransaction]?.realm) { "read transaction is missing" })
 }
 
 suspend fun <T> withRealmWrite(block: MutableRealm.() -> T) = coroutineScope {
-    block(checkNotNull(coroutineContext[RealmWriteTransaction]?.realm))
+    block(checkNotNull(coroutineContext[RealmWriteTransaction]?.realm) { "write transaction is missing" })
 }
 
 class RealmRepositoryTransactionManager(private val realm: Realm) : RepositoryTransactionManager {

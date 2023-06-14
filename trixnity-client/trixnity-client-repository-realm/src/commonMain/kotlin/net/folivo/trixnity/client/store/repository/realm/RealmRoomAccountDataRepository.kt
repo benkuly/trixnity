@@ -1,7 +1,5 @@
 package net.folivo.trixnity.client.store.repository.realm
 
-import io.realm.kotlin.MutableRealm
-import io.realm.kotlin.Realm
 import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
@@ -9,6 +7,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 
 internal class RealmRoomAccountData : RealmObject {
@@ -31,6 +30,11 @@ internal class RealmRoomAccountDataRepository(
                 it.key to json.decodeFromString(serializer, it.event)
             }
         }
+
+    override suspend fun deleteByRoomId(roomId: RoomId) = withRealmWrite {
+        val existing = query<RealmRoomAccountData>("roomId == $0", roomId.full).find()
+        delete(existing)
+    }
 
     override suspend fun getBySecondKey(
         firstKey: RoomAccountDataRepositoryKey,

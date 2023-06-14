@@ -18,7 +18,11 @@ internal class IndexedDBSecretKeyRequestRepository(
     ) {
     companion object {
         const val objectStoreName = "secret_key_request"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) =
-            migrateIndexedDBMinimalStoreRepository(database, oldVersion, objectStoreName)
+        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+            when {
+                oldVersion < 1 ->
+                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
+            }
+        }
     }
 }

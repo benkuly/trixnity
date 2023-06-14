@@ -70,4 +70,56 @@ class ExposedTimelineEventRepositoryTest : ShouldSpec({
             cut.get(key1) shouldBe null
         }
     }
+    should("deleteByRoomId") {
+        val key1 = TimelineEventKey(EventId("\$event1"), RoomId("room1", "server"))
+        val key2 = TimelineEventKey(EventId("\$event2"), RoomId("room2", "server"))
+        val key3 = TimelineEventKey(EventId("\$event3"), RoomId("room1", "server"))
+        val event1 = TimelineEvent(
+            Event.MessageEvent(
+                RoomMessageEventContent.TextMessageEventContent("message"),
+                EventId("\$event1"),
+                UserId("sender", "server"),
+                RoomId("room1", "server"),
+                1234
+            ),
+            previousEventId = null,
+            nextEventId = null,
+            gap = TimelineEvent.Gap.GapBefore("batch")
+        )
+        val event2 = TimelineEvent(
+            Event.MessageEvent(
+                RoomMessageEventContent.TextMessageEventContent("message"),
+                EventId("\$event2"),
+                UserId("sender", "server"),
+                RoomId("room2", "server"),
+                1234
+            ),
+            previousEventId = null,
+            nextEventId = null,
+            gap = null
+        )
+        val event3 = TimelineEvent(
+            Event.MessageEvent(
+                RoomMessageEventContent.TextMessageEventContent("message"),
+                EventId("\$event2"),
+                UserId("sender", "server"),
+                RoomId("room1", "server"),
+                1234
+            ),
+            previousEventId = null,
+            nextEventId = null,
+            gap = null
+        )
+
+        rtm.writeTransaction {
+            cut.save(key1, event1)
+            cut.save(key2, event2)
+            cut.save(key3, event3)
+
+            cut.deleteByRoomId(RoomId("room1", "server"))
+            cut.get(key1) shouldBe null
+            cut.get(key2) shouldBe event2
+            cut.get(key3) shouldBe null
+        }
+    }
 })

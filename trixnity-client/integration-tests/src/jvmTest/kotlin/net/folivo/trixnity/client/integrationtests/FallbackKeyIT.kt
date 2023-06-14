@@ -47,6 +47,7 @@ class FallbackKeyIT {
     @AfterTest
     fun afterEach() {
         startedClient1.scope.cancel()
+        startedClient2.scope.cancel()
     }
 
     @Test

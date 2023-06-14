@@ -1,10 +1,9 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import io.kotest.matchers.shouldBe
-import io.ktor.http.ContentType
+import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.store.MediaCacheMapping
-import net.folivo.trixnity.client.store.repository.test.buildTestDatabase
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

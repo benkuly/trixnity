@@ -1,11 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -32,6 +27,9 @@ internal interface TimelineEventDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: RoomTimelineEvent)
 
+    @Query("DELETE FROM TimelineEvent WHERE roomId = :roomId")
+    suspend fun delete(roomId: RoomId)
+
     @Query("DELETE FROM TimelineEvent WHERE roomId = :roomId AND eventId = :eventId")
     suspend fun delete(roomId: RoomId, eventId: EventId)
 
@@ -45,6 +43,9 @@ internal class RoomTimelineEventRepository(
 ) : TimelineEventRepository {
 
     private val dao = db.timelineEvent()
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        dao.delete(roomId)
+    }
 
     override suspend fun get(key: TimelineEventKey): TimelineEvent? =
         dao.get(key.roomId, key.eventId)

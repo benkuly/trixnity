@@ -23,7 +23,7 @@ class UserServiceMock : UserService {
         loadMembersCalled.value = roomId
     }
 
-    override fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> {
+    override fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>?> {
         throw NotImplementedError()
     }
 

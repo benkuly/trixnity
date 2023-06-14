@@ -1,6 +1,9 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
@@ -27,14 +30,16 @@ class ExposedWriteTransaction(
 }
 
 suspend fun <T> withExposedRead(block: () -> T) = coroutineScope {
-    val exposedReadTransaction = checkNotNull(coroutineContext[ExposedReadTransaction])
+    val exposedReadTransaction =
+        checkNotNull(coroutineContext[ExposedReadTransaction]) { "read transaction is missing" }
     withContext(exposedReadTransaction.transactionCoroutineContext) {
         exposedReadTransaction.transaction.suspendedTransaction { block() }
     }
 }
 
 suspend fun <T> withExposedWrite(block: () -> T) = coroutineScope {
-    val exposedWriteTransaction = checkNotNull(coroutineContext[ExposedWriteTransaction])
+    val exposedWriteTransaction =
+        checkNotNull(coroutineContext[ExposedWriteTransaction]) { "write transaction is missing" }
     withContext(exposedWriteTransaction.transactionCoroutineContext) {
         exposedWriteTransaction.transaction.suspendedTransaction { block() }
     }

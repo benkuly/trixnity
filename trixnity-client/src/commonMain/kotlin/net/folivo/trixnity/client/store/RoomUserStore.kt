@@ -3,9 +3,9 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.TwoDimensionsRepositoryStateFlowCache
+import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
@@ -13,33 +13,41 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
 class RoomUserStore(
-    private val roomUserRepository: RoomUserRepository,
-    private val tm: TransactionManager,
+    roomUserRepository: RoomUserRepository,
+    tm: TransactionManager,
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope
 ) : Store {
     private val roomUserCache =
-        TwoDimensionsRepositoryStateFlowCache(storeScope, roomUserRepository, tm, config.cacheExpireDurations.roomUser)
+        MapDeleteByRoomIdRepositoryCoroutineCache(
+            roomUserRepository,
+            tm,
+            storeScope,
+            config.cacheExpireDurations.roomUser
+        ) { it.firstKey }
 
     override suspend fun init() {}
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
-        tm.writeOperation { roomUserRepository.deleteAll() }
-        roomUserCache.reset()
+        roomUserCache.deleteAll()
     }
 
-    fun getAll(roomId: RoomId): Flow<Set<RoomUser>?> =
-        roomUserCache.get(roomId).map { it?.values?.toSet() }
+    suspend fun deleteByRoomId(roomId: RoomId) {
+        roomUserCache.deleteByRoomId(roomId)
+    }
+
+    fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>?> =
+        roomUserCache.readByFirstKey(roomId)
 
     fun get(userId: UserId, roomId: RoomId): Flow<RoomUser?> =
-        roomUserCache.getBySecondKey(roomId, userId)
+        roomUserCache.read(MapRepositoryCoroutinesCacheKey(roomId, userId))
 
     suspend fun update(
         userId: UserId,
         roomId: RoomId,
         updater: suspend (oldRoomUser: RoomUser?) -> RoomUser?
-    ) = roomUserCache.updateBySecondKey(roomId, userId, updater)
+    ) = roomUserCache.write(MapRepositoryCoroutinesCacheKey(roomId, userId), updater = updater)
 
     suspend fun getByOriginalNameAndMembership(
         originalName: String,
@@ -47,8 +55,11 @@ class RoomUserStore(
         roomId: RoomId
     ): Set<UserId> {
         // TODO loading all users into memory could could make performance issues -> make db query
-        return roomUserCache.get(roomId).first()
-            ?.filter { it.value.originalName == originalName && membership.contains(it.value.membership) }?.keys
+        return roomUserCache.readByFirstKey(roomId).first()
+            ?.filter {
+                val user = it.value.first()
+                user?.originalName == originalName && membership.contains(user.membership)
+            }?.keys
             ?: setOf()
     }
 }

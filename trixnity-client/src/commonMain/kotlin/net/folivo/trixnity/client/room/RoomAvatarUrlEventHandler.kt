@@ -55,6 +55,7 @@ class RoomAvatarUrlEventHandler(
             val room = roomStore.get(roomId).first()
             if (room?.isDirect?.not() == true || avatarUrl.isNullOrEmpty().not()) {
                 roomStore.update(roomId) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl?.ifEmpty { null }) }
+                Unit
             } else if (avatarUrl.isNullOrEmpty()) {
                 globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.let { mappings ->
                     mappings.entries.forEach { (userId, rooms) ->

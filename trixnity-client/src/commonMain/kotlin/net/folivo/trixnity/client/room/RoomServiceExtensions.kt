@@ -1,9 +1,9 @@
 package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -37,12 +37,12 @@ inline fun <reified C : StateEventContent> RoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
 ): Flow<Event<C>?> {
-    return getState(roomId, stateKey, C::class)
+    return getState(roomId, C::class, stateKey)
 }
 
 inline fun <reified C : StateEventContent> RoomService.getAllState(
     roomId: RoomId,
-): Flow<Map<String, Event<C>?>?> {
+): Flow<Map<String, Flow<Event<C>?>>?> {
     return getAllState(roomId, C::class)
 }
 
@@ -51,23 +51,25 @@ inline fun <reified C : StateEventContent> RoomService.getAllState(
  * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
  * the outer flow is debounced by default.
  */
-@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(
     debounceTimeout: Duration = 200.milliseconds,
     filterUpgradedRooms: Boolean = true,
 ): Flow<Set<Room>> =
-    debounce(debounceTimeout)
+    transform {
+        emit(it)
+        delay(debounceTimeout)
+    }
         .flatMapLatest {
-            if (it.isEmpty()) flowOf(arrayOf())
-            else combine(it.values) { transform -> transform }
+            if (it.isEmpty()) flowOf(listOf())
+            else combine(it.values) { transform -> transform.filterNotNull() }
         }
-        .mapLatest { rooms ->
-            val notNullRooms = rooms.filterNotNull()
-            notNullRooms.filter { room ->
+        .map { rooms ->
+            rooms.filter { room ->
                 if (filterUpgradedRooms) {
                     val foundReplacementRoom =
                         room.nextRoomId?.let { nextRoomId ->
-                            notNullRooms.any {
+                            rooms.any {
                                 it.roomId == nextRoomId
                                         && it.previousRoomId == room.roomId
                                         && it.membership == Membership.JOIN

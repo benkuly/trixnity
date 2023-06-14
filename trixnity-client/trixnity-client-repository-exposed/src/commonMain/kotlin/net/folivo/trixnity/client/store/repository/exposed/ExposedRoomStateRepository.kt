@@ -4,6 +4,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -32,6 +33,11 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
                 json.decodeFromString(serializer, it[ExposedRoomState.event])
             }
         }
+
+    override suspend fun deleteByRoomId(roomId: RoomId): Unit = withExposedWrite {
+        ExposedRoomState.deleteWhere { ExposedRoomState.roomId.eq(roomId.full) }
+    }
+
 
     override suspend fun saveBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String, value: Event<*>): Unit =
         withExposedWrite {

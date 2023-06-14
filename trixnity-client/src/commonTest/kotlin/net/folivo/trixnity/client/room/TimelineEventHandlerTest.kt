@@ -1547,7 +1547,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     1234,
                 )
             )
-            roomTimelineStore.getRelations(EventId("$1other"), RoomId("room", "server")).first() shouldBe
+            roomTimelineStore.getRelations(EventId("$1other"), RoomId("room", "server")).flatten().first() shouldBe
                     mapOf(
                         RelationType.Reference to setOf(
                             TimelineEventRelation(
@@ -1686,7 +1686,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     1234,
                 )
             )
-            roomTimelineStore.getRelations(EventId("$1other"), room).first().shouldNotBeNull().shouldBeEmpty()
+            roomTimelineStore.getRelations(EventId("$1other"), room).flatten().first().shouldNotBeNull().shouldBeEmpty()
         }
         context("redact replace relation") {
             val relatedEvent = textEvent(1).copy(

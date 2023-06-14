@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.store.repository.room
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.store.repository.test.buildTestDatabase
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

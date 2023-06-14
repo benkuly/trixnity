@@ -4,7 +4,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 
 interface RoomAccountDataRepository :
-    TwoDimensionsRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>> {
+    MapDeleteByRoomIdRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>> {
 
     override fun serializeKey(key: RoomAccountDataRepositoryKey): String =
         this::class.simpleName + key.roomId.full + key.type

@@ -42,23 +42,17 @@ class IndexedDBKeyChainLinkRepositoryTest : ShouldSpec({
         )
 
         rtm.writeTransaction {
-            println(1)
             cut.save(link1)
-            println(2)
             cut.save(link2)
-            println(3)
             cut.save(link3)
-            println(4)
             cut.getBySigningKey(
                 UserId("bob", "server"),
                 Key.Ed25519Key("BOB_DEVICE", "keyValueB")
             ) shouldBe setOf(link1, link3)
-            println(5)
             cut.deleteBySignedKey(
                 UserId("alice", "server"),
                 Key.Ed25519Key("ALICE_DEVICE", "keyValueA")
             )
-            println(6)
             cut.getBySigningKey(
                 UserId("bob", "server"),
                 Key.Ed25519Key("BOB_DEVICE", "keyValueB")

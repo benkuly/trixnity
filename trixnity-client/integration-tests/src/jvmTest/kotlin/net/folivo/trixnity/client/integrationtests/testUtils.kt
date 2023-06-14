@@ -8,10 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.plus
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.login
-import net.folivo.trixnity.client.loginWith
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -120,6 +117,25 @@ suspend fun startClient(
         scope = scope,
         configuration = configuration,
     ).getOrThrow()
+    client.startSync()
+    client.syncState.first { it == SyncState.RUNNING }
+    return StartedClient(scope, client, password)
+}
+
+suspend fun startClientFromStore(
+    name: String,
+    repositoriesModule: Module,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): StartedClient {
+    val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
+
+    val client = MatrixClient.fromStore(
+        repositoriesModule = repositoriesModule,
+        mediaStore = InMemoryMediaStore(),
+        scope = scope,
+        configuration = configuration,
+    ).getOrThrow()
+    checkNotNull(client)
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
     return StartedClient(scope, client, password)

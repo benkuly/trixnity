@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.MinimalRepositoryStateFlowCache
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryCoroutineCache
 import net.folivo.trixnity.client.store.repository.MediaCacheMappingRepository
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 
@@ -17,24 +17,21 @@ class MediaCacheMappingStore(
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
-        tm.writeOperation {
-            mediaCacheMappingRepository.deleteAll()
-        }
-        uploadMediaCache.reset()
+        uploadMediaCache.deleteAll()
     }
 
-    private val uploadMediaCache = MinimalRepositoryStateFlowCache(
-        storeScope,
+    private val uploadMediaCache = MinimalRepositoryCoroutineCache(
         mediaCacheMappingRepository,
         tm,
+        storeScope,
         config.cacheExpireDurations.mediaCacheMapping
     )
 
     suspend fun getMediaCacheMapping(cacheUri: String): MediaCacheMapping? =
-        uploadMediaCache.get(cacheUri).first()
+        uploadMediaCache.read(cacheUri).first()
 
     suspend fun updateMediaCacheMapping(
         cacheUri: String,
         updater: suspend (oldMediaCacheMapping: MediaCacheMapping?) -> MediaCacheMapping?
-    ) = uploadMediaCache.update(cacheUri, updater = updater)
+    ) = uploadMediaCache.write(cacheUri, updater = updater)
 }

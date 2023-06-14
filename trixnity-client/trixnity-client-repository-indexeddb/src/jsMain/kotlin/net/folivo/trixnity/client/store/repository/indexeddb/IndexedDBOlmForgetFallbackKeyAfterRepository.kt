@@ -18,7 +18,11 @@ internal class IndexedDBOlmForgetFallbackKeyAfterRepository(
     ) {
     companion object {
         const val objectStoreName = "olm_forget_fallback_key_after"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) =
-            migrateIndexedDBMinimalStoreRepository(database, oldVersion, objectStoreName)
+        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+            when {
+                oldVersion < 1 ->
+                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
+            }
+        }
     }
 }

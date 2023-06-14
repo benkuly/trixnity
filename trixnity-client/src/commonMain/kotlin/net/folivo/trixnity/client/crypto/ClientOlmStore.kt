@@ -62,18 +62,24 @@ class ClientOlmStore(
     override suspend fun updateOlmSessions(
         senderKey: Key.Curve25519Key,
         updater: suspend (Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
-    ) = olmCryptoStore.updateOlmSessions(senderKey, updater)
+    ) {
+        olmCryptoStore.updateOlmSessions(senderKey, updater)
+    }
 
     override suspend fun updateOutboundMegolmSession(
         roomId: RoomId,
         updater: suspend (StoredOutboundMegolmSession?) -> StoredOutboundMegolmSession?
-    ) = olmCryptoStore.updateOutboundMegolmSession(roomId, updater)
+    ) {
+        olmCryptoStore.updateOutboundMegolmSession(roomId, updater)
+    }
 
     override suspend fun updateInboundMegolmSession(
         sessionId: String,
         roomId: RoomId,
         updater: suspend (StoredInboundMegolmSession?) -> StoredInboundMegolmSession?
-    ) = olmCryptoStore.updateInboundMegolmSession(sessionId, roomId, updater)
+    ) {
+        olmCryptoStore.updateInboundMegolmSession(sessionId, roomId, updater)
+    }
 
 
     override suspend fun getInboundMegolmSession(sessionId: String, roomId: RoomId): StoredInboundMegolmSession? =
@@ -84,7 +90,9 @@ class ClientOlmStore(
         roomId: RoomId,
         messageIndex: Long,
         updater: suspend (StoredInboundMegolmMessageIndex?) -> StoredInboundMegolmMessageIndex?
-    ) = olmCryptoStore.updateInboundMegolmMessageIndex(sessionId, roomId, messageIndex, updater)
+    ) {
+        olmCryptoStore.updateInboundMegolmMessageIndex(sessionId, roomId, messageIndex, updater)
+    }
 
     override val olmAccount = olmCryptoStore.account
     override val olmPickleKey = requireNotNull(accountStore.olmPickleKey.value)
@@ -105,3 +113,4 @@ class ClientOlmStore(
     override suspend fun getRoomEncryptionAlgorithm(roomId: RoomId): EncryptionAlgorithm? =
         roomStore.get(roomId).first()?.encryptionAlgorithm
 }
+

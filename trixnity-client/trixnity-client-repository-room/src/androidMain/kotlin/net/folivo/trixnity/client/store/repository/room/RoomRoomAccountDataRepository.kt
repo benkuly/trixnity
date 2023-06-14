@@ -1,10 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
@@ -37,6 +33,9 @@ internal interface RoomAccountDataDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(entity: List<RoomRoomAccountData>)
 
+    @Query("DELETE FROM RoomAccountData WHERE roomId = :roomId")
+    suspend fun delete(roomId: RoomId)
+
     @Query("DELETE FROM RoomAccountData WHERE roomId = :roomId AND type = :type")
     suspend fun delete(roomId: RoomId, type: String)
 
@@ -61,6 +60,10 @@ internal class RoomRoomAccountDataRepository(
     override suspend fun get(key: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> =
         dao.getByTwoKeys(key.roomId, key.type)
             .associate { entity -> entity.key to json.decodeFromString(serializer, entity.event) }
+
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        dao.delete(roomId)
+    }
 
     override suspend fun getBySecondKey(
         firstKey: RoomAccountDataRepositoryKey,

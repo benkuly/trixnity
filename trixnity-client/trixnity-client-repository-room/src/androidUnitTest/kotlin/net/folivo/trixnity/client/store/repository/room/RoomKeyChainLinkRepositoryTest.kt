@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.store.repository.room
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.store.KeyChainLink
-import net.folivo.trixnity.client.store.repository.test.buildTestDatabase
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import org.junit.Before

@@ -36,6 +36,11 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
                 }.toMap().ifEmpty { null }
         }
 
+    override suspend fun deleteByRoomId(roomId: RoomId) = withRealmWrite {
+        val existing = query<RealmTimelineEventRelation>("roomId == $0", roomId.full).find()
+        delete(existing)
+    }
+
     override suspend fun getBySecondKey(
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType

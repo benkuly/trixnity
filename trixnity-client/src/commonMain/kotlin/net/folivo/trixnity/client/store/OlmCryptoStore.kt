@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.MinimalRepositoryStateFlowCache
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryCoroutineCache
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
@@ -68,32 +68,33 @@ class OlmCryptoStore(
         tm.writeOperation {
             olmAccountRepository.deleteAll()
             olmForgetFallbackKeyAfterRepository.deleteAll()
-            olmSessionRepository.deleteAll()
-            inboundMegolmSessionRepository.deleteAll()
-            inboundMegolmMessageIndexRepository.deleteAll()
-            outboundMegolmSessionRepository.deleteAll()
         }
         account.value = null
         _notBackedUpInboundMegolmSessions.value = mapOf()
-        olmSessionsCache.reset()
-        inboundMegolmSessionCache.reset()
-        inboundMegolmSessionIndexCache.reset()
-        outboundMegolmSessionCache.reset()
+        olmSessionsCache.deleteAll()
+        inboundMegolmSessionCache.deleteAll()
+        inboundMegolmSessionIndexCache.deleteAll()
+        outboundMegolmSessionCache.deleteAll()
     }
 
     private val olmSessionsCache =
-        MinimalRepositoryStateFlowCache(storeScope, olmSessionRepository, tm, config.cacheExpireDurations.olmSession)
+        MinimalRepositoryCoroutineCache(
+            olmSessionRepository,
+            tm,
+            storeScope,
+            config.cacheExpireDurations.olmSession
+        )
 
     suspend fun updateOlmSessions(
         senderKey: Curve25519Key,
         updater: suspend (oldSessions: Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
-    ) = olmSessionsCache.update(senderKey, updater = updater)
+    ) = olmSessionsCache.write(senderKey, updater = updater)
 
     private val inboundMegolmSessionCache =
-        MinimalRepositoryStateFlowCache(
-            storeScope,
+        MinimalRepositoryCoroutineCache(
             inboundMegolmSessionRepository,
             tm,
+            storeScope,
             config.cacheExpireDurations.inboundMegolmSession
         )
 
@@ -101,13 +102,13 @@ class OlmCryptoStore(
         sessionId: String,
         roomId: RoomId,
     ): Flow<StoredInboundMegolmSession?> =
-        inboundMegolmSessionCache.get(InboundMegolmSessionRepositoryKey(sessionId, roomId))
+        inboundMegolmSessionCache.read(InboundMegolmSessionRepositoryKey(sessionId, roomId))
 
     suspend fun updateInboundMegolmSession(
         sessionId: String,
         roomId: RoomId,
         updater: suspend (oldInboundMegolmSession: StoredInboundMegolmSession?) -> StoredInboundMegolmSession?
-    ) = inboundMegolmSessionCache.update(
+    ) = inboundMegolmSessionCache.write(
         InboundMegolmSessionRepositoryKey(sessionId, roomId),
         updater = updater,
         onPersist = { newValue ->
@@ -120,10 +121,10 @@ class OlmCryptoStore(
     )
 
     private val inboundMegolmSessionIndexCache =
-        MinimalRepositoryStateFlowCache(
-            storeScope,
+        MinimalRepositoryCoroutineCache(
             inboundMegolmMessageIndexRepository,
             tm,
+            storeScope,
             config.cacheExpireDurations.inboundMegolmMessageIndex
         )
 
@@ -132,23 +133,23 @@ class OlmCryptoStore(
         roomId: RoomId,
         messageIndex: Long,
         updater: suspend (oldMegolmSessionIndex: StoredInboundMegolmMessageIndex?) -> StoredInboundMegolmMessageIndex?
-    ) = inboundMegolmSessionIndexCache.update(
+    ) = inboundMegolmSessionIndexCache.write(
         InboundMegolmMessageIndexRepositoryKey(sessionId, roomId, messageIndex), updater = updater
     )
 
     private val outboundMegolmSessionCache =
-        MinimalRepositoryStateFlowCache(
-            storeScope,
+        MinimalRepositoryCoroutineCache(
             outboundMegolmSessionRepository,
             tm,
+            storeScope,
             config.cacheExpireDurations.outboundMegolmSession
         )
 
-    suspend fun getOutboundMegolmSession(roomId: RoomId): StoredOutboundMegolmSession? =
-        outboundMegolmSessionCache.get(roomId).first()
+    internal suspend fun getOutboundMegolmSession(roomId: RoomId): StoredOutboundMegolmSession? =
+        outboundMegolmSessionCache.read(roomId).first()
 
     suspend fun updateOutboundMegolmSession(
         roomId: RoomId,
         updater: suspend (oldOutboundMegolmSession: StoredOutboundMegolmSession?) -> StoredOutboundMegolmSession?
-    ) = outboundMegolmSessionCache.update(roomId, updater = updater)
+    ) = outboundMegolmSessionCache.write(roomId, updater = updater)
 }

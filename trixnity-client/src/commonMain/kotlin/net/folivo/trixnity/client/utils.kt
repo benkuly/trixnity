@@ -157,3 +157,32 @@ suspend fun <T> StateFlow<SyncState>.retryWhenSyncIs(
         block = block
     )
 }
+
+/**
+ * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
+ * the outer flow is debounced by default.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+fun <K, V> Flow<Map<K, Flow<V?>>?>.flatten(
+    filterNullValues: Boolean = true,
+    debounceTimeout: Duration = 200.milliseconds,
+): Flow<Map<K, V?>?> =
+    conflate()
+        .transform {
+            emit(it)
+            delay(debounceTimeout)
+        }
+        .flatMapLatest { map ->
+            if (map == null) flowOf(null)
+            else if (map.isEmpty()) flowOf(emptyMap())
+            else {
+                val innerFlowsWithKey = map.map { entry -> entry.value.map { entry.key to it } }
+                combine(innerFlowsWithKey) { innerFlowsWithKeyArray ->
+                    innerFlowsWithKeyArray.toMap()
+                        .let {
+                            if (filterNullValues) it.filterValues { value -> value != null }
+                            else it
+                        }
+                }
+            }
+        }

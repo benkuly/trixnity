@@ -4,7 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
-import net.folivo.trixnity.client.store.cache.MinimalRepositoryStateFlowCache
+import net.folivo.trixnity.client.store.cache.FullRepositoryCoroutineCache
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 import kotlin.time.Duration
@@ -14,13 +14,16 @@ class RoomOutboxMessageStore(
     private val tm: TransactionManager,
     storeScope: CoroutineScope
 ) : Store {
-    private val roomOutboxMessageCache = MinimalRepositoryStateFlowCache(
-        storeScope, roomOutboxMessageRepository, tm = tm, Duration.INFINITE
-    )
+    private val roomOutboxMessageCache = FullRepositoryCoroutineCache(
+        roomOutboxMessageRepository,
+        tm,
+        storeScope,
+        Duration.INFINITE
+    ) { it.transactionId }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val allRoomOutboxMessages =
-        roomOutboxMessageCache.cache
+        roomOutboxMessageCache.values
             .flatMapLatest {
                 if (it.isEmpty()) flowOf(arrayOf())
                 else combine(it.values) { transform -> transform }
@@ -29,24 +32,20 @@ class RoomOutboxMessageStore(
             .stateIn(storeScope, Eagerly, listOf())
 
     override suspend fun init() {
-        roomOutboxMessageCache.init(tm.readOperation { roomOutboxMessageRepository.getAll() }
-            .associateBy { it.transactionId })
+        roomOutboxMessageCache.fill()
     }
 
     override suspend fun clearCache() = deleteAll()
 
     override suspend fun deleteAll() {
-        tm.writeOperation {
-            roomOutboxMessageRepository.deleteAll()
-        }
-        roomOutboxMessageCache.reset()
+        roomOutboxMessageCache.deleteAll()
     }
 
     fun getAll(): StateFlow<List<RoomOutboxMessage<*>>> = allRoomOutboxMessages
 
     suspend fun update(transactionId: String, updater: suspend (RoomOutboxMessage<*>?) -> RoomOutboxMessage<*>?) =
-        roomOutboxMessageCache.update(transactionId, updater = updater)
+        roomOutboxMessageCache.write(transactionId, updater = updater)
 
     suspend fun get(transactionId: String): RoomOutboxMessage<*>? =
-        roomOutboxMessageCache.get(transactionId).first()
+        roomOutboxMessageCache.read(transactionId).first()
 }
