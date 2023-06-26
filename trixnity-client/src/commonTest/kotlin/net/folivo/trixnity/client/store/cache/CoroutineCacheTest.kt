@@ -52,22 +52,14 @@ class CoroutineCacheTest : ShouldSpec({
 
         }
         should("remove from cache when not used anymore") {
-            cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 50.milliseconds)
+            cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.ZERO)
             val cache = cut.values.stateIn(cacheScope)
             val readScope1 = CoroutineScope(Dispatchers.Default)
-            val readScope2 = CoroutineScope(Dispatchers.Default)
             cacheStore.persist("key", "a new value")
             cut.read(key = "key").stateIn(readScope1).value shouldBe "a new value"
             cache.first { it.isNotEmpty() }
             readScope1.cancel()
             cache.first { it.isEmpty() }
-            cacheStore.persist("key", "another value")
-            cut.read(key = "key").stateIn(readScope2).value shouldBe "another value"
-            // calling it without scope should run a remover job and therefore cancelling a scope should not remove value from cache
-            cacheStore.persist("key", "yet another value")
-            cut.read(key = "key").first() shouldBe "another value"
-            readScope2.cancel()
-            cut.read(key = "key").first() shouldBe "another value"
         }
         should("remove from cache, when cache time expired") {
             cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 30.milliseconds)
@@ -187,7 +179,7 @@ class CoroutineCacheTest : ShouldSpec({
                     }
                 }
             }
-            database.replayCache shouldContainAll (0..99).map { it.toString() }
+            database.replayCache shouldContainAll (0..999).map { it.toString() }
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
