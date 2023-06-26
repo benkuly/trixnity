@@ -19,6 +19,7 @@ fun createDataUnitSerializersModule(
         PersistentStateDataUnitSerializer(mappings.state, stateEventContentSerializer, getRoomVersion)
     val persistentDataUnitSerializer =
         PersistentDataUnitSerializer(persistentMessageDataUnitSerializer, persistentStateDataUnitSerializer)
+    val eventTypeSerializer = EventTypeSerializer(mappings)
     return SerializersModule {
         contextual(ephemeralDataUnitSerializer)
         contextual(messageEventContentSerializer)
@@ -26,5 +27,6 @@ fun createDataUnitSerializersModule(
         contextual(stateEventContentSerializer)
         contextual(persistentStateDataUnitSerializer)
         contextual(persistentDataUnitSerializer)
+        contextual(eventTypeSerializer)
     }
 }

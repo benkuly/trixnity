@@ -18,10 +18,8 @@ import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
-import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
-import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger {}
@@ -205,7 +203,7 @@ class UserServiceImpl(
         ) { powerLevels, timelineEvent ->
             val userPowerLevel = powerLevels.users[ownUserId] ?: powerLevels.usersDefault
             val sendRedactionEventPowerLevel =
-                powerLevels.events["m.room.redaction"] ?: powerLevels.eventsDefault
+                powerLevels.events.get<RedactionEventContent>() ?: powerLevels.eventsDefault
             val redactPowerLevelNeeded = powerLevels.redact
             val isOwnMessage by lazy { timelineEvent.event.sender == ownUserId }
             val allowRedactOwnMessages by lazy { userPowerLevel >= sendRedactionEventPowerLevel }
@@ -237,7 +235,7 @@ class UserServiceImpl(
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
         ) { ownPowerLevel, oldOtherUserPowerLevel, powerLevels ->
             when {
-                (powerLevels.events["m.room.power_levels"] ?: powerLevels.stateDefault) > ownPowerLevel -> null
+                (powerLevels.events.get<PowerLevelsEventContent>() ?: powerLevels.stateDefault) > ownPowerLevel -> null
                 oldOtherUserPowerLevel >= ownPowerLevel && userId != ownUserId -> null
                 else -> ownPowerLevel
 
