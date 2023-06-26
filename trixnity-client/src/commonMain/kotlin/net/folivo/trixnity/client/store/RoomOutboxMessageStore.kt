@@ -32,7 +32,7 @@ class RoomOutboxMessageStore(
             .stateIn(storeScope, Eagerly, listOf())
 
     override suspend fun init() {
-        roomOutboxMessageCache.fill()
+        roomOutboxMessageCache.fillWithValuesFromRepository()
     }
 
     override suspend fun clearCache() = deleteAll()

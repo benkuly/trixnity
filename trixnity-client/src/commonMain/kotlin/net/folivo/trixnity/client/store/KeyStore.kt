@@ -73,8 +73,8 @@ class KeyStore(
                 }
             }
         }
-        secretKeyRequestCache.fill()
-        roomKeyRequestCache.fill()
+        secretKeyRequestCache.fillWithValuesFromRepository()
+        roomKeyRequestCache.fillWithValuesFromRepository()
     }
 
     override suspend fun clearCache() {

@@ -20,7 +20,7 @@ class RoomStore(
         FullRepositoryCoroutineCache(roomRepository, tm, storeScope, Duration.INFINITE) { it.roomId }
 
     override suspend fun init() {
-        roomCache.fill()
+        roomCache.fillWithValuesFromRepository()
     }
 
     override suspend fun clearCache() = deleteAll()

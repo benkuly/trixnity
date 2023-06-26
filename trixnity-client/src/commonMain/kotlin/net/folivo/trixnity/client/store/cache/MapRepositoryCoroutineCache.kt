@@ -113,32 +113,33 @@ open class MapRepositoryCoroutineCache<K1, K2, V>(
 
     fun readByFirstKey(key: K1): Flow<Map<K2, Flow<V?>>?> = flow {
         emitAll(
-            mapRepositoryIndex.getMapping(key).distinctUntilChanged().transform { firstKeyMapping ->
-                if (firstKeyMapping.fullyLoadedFromRepository) {
-                    emit(
-                        firstKeyMapping.keys.associate { key ->
-                            key.secondKey to
-                                    updateAndGet(
-                                        key = key,
-                                        updater = null,
-                                        get = { store.get(key) },
-                                        persist = { null },
-                                    )
-                        }
-                    )
-                } else {
-                    store.getByFirstKey(key).orEmpty().forEach { value ->
-                        updateAndGet(
-                            key = MapRepositoryCoroutinesCacheKey(key, value.key),
-                            updater = null,
-                            get = { value.value },
-                            persist = { null },
+            mapRepositoryIndex.getMapping(key)
+                .distinctUntilChanged()
+                .transform { firstKeyMapping ->
+                    if (firstKeyMapping.fullyLoadedFromRepository) {
+                        emit(
+                            firstKeyMapping.keys.associate { key ->
+                                key.secondKey to
+                                        updateAndGet(
+                                            key = key,
+                                            updater = null,
+                                            get = { store.get(key) },
+                                            persist = { null },
+                                        )
+                            }
                         )
+                    } else {
+                        store.getByFirstKey(key).orEmpty().forEach { value ->
+                            updateAndGet(
+                                key = MapRepositoryCoroutinesCacheKey(key, value.key),
+                                updater = null,
+                                get = { value.value },
+                                persist = { null },
+                            )
+                        }
+                        mapRepositoryIndex.markFullyLoadedFromRepository(key)
                     }
-                    mapRepositoryIndex.markFullyLoadedFromRepository(key)
                 }
-
-            }
         )
     }
 }
