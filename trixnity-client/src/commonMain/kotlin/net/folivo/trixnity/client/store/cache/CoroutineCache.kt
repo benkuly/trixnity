@@ -18,6 +18,55 @@ private data class CoroutineCacheValue<T>(
     val removerJob: Lazy<Job>
 )
 
+/**
+ * The actual source and sink of the data to be cached. This could be any database.
+ */
+interface CoroutineCacheStore<K, V> {
+    /**
+     * Retrieve value from store.
+     */
+    suspend fun get(key: K): V?
+
+    /**
+     * Save value to store.
+     *
+     * @return A [StateFlow] which indicates, when the value has been persisted (keyword asynchronous cache)
+     */
+    suspend fun persist(key: K, value: V?): StateFlow<Boolean>?
+
+    /**
+     * Delete all values from store.
+     */
+    suspend fun deleteAll()
+}
+
+/**
+ * An index to track which entries have been added to or removed from the cache.
+ */
+interface CoroutineCacheValuesIndex<K> {
+    /**
+     * Called, when an entry is added to the cache.
+     */
+    suspend fun onPut(key: K)
+
+    /**
+     * Called, when an entry is removed from the cache.
+     */
+    suspend fun onRemove(key: K)
+
+    /**
+     * Get the subscription count on an index entry, which uses an entry of the cache.
+     */
+    suspend fun getSubscriptionCount(key: K): StateFlow<Int>
+}
+
+/**
+ * Base class to create a coroutine and [StateFlow] based cache.
+ *
+ * @param name The name is just used for logging.
+ * @param cacheScope A long living [CoroutineScope] to spawn coroutines, which remove entries from cache when not used anymore.
+ * @param expireDuration Duration to wait until entries from cache are when not used anymore.
+ */
 open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
     protected val name: String,
     protected val store: S,

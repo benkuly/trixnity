@@ -15,12 +15,12 @@ data class MapRepositoryCoroutinesCacheKey<K1, K2>(
     val secondKey: K2,
 )
 
-data class MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(
+private data class MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(
     val keys: Set<MapRepositoryCoroutinesCacheKey<K1, K2>>,
     val fullyLoadedFromRepository: Boolean,
 )
 
-class MapRepositoryCoroutineCacheValuesIndex<K1, K2>(
+private class MapRepositoryCoroutineCacheValuesIndex<K1, K2>(
     private val cacheScope: CoroutineScope,
 ) : CoroutineCacheValuesIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
 
@@ -104,7 +104,7 @@ open class MapRepositoryCoroutineCache<K1, K2, V>(
     cacheScope = cacheScope,
     expireDuration = expireDuration
 ) {
-    protected val mapRepositoryIndex: MapRepositoryCoroutineCacheValuesIndex<K1, K2> =
+    private val mapRepositoryIndex: MapRepositoryCoroutineCacheValuesIndex<K1, K2> =
         MapRepositoryCoroutineCacheValuesIndex(cacheScope)
 
     init {

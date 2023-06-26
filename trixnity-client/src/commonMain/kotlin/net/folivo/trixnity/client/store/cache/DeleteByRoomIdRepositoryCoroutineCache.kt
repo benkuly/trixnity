@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-class DeleteByRoomIdRepositoryCoroutineCacheValuesIndex<K>(
+private class DeleteByRoomIdRepositoryCoroutineCacheValuesIndex<K>(
     private val keyMapper: (K) -> RoomId,
 ) : CoroutineCacheValuesIndex<K> {
 
@@ -92,7 +92,7 @@ class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
     cacheScope = cacheScope,
     expireDuration = expireDuration,
 ) {
-    protected val roomIdIndex: DeleteByRoomIdRepositoryCoroutineCacheValuesIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> =
+    private val roomIdIndex: DeleteByRoomIdRepositoryCoroutineCacheValuesIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> =
         DeleteByRoomIdRepositoryCoroutineCacheValuesIndex(keyMapper)
 
     init {

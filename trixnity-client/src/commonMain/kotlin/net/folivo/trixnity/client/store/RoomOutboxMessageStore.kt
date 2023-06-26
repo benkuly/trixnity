@@ -10,8 +10,8 @@ import net.folivo.trixnity.client.store.transaction.TransactionManager
 import kotlin.time.Duration
 
 class RoomOutboxMessageStore(
-    private val roomOutboxMessageRepository: RoomOutboxMessageRepository,
-    private val tm: TransactionManager,
+    roomOutboxMessageRepository: RoomOutboxMessageRepository,
+    tm: TransactionManager,
     storeScope: CoroutineScope
 ) : Store {
     private val roomOutboxMessageCache = FullRepositoryCoroutineCache(

@@ -18,6 +18,9 @@ class FullRepositoryCoroutineCache<K, V>(
     cacheScope = cacheScope,
     expireDuration = expireDuration
 ) {
+    /**
+     * Fill the cache with all values stored in the repository.
+     */
     suspend fun fill() {
         store.getAll().forEach { value ->
             val key = valueToKeyMapper(value)
