@@ -16,6 +16,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.RelationType
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
@@ -150,6 +151,13 @@ class RoomListHandlerTest : ShouldSpec({
                 )
             )
 
+            fun timelineEventRelation(roomId: RoomId, i: Int) =
+                TimelineEventRelation(roomId, EventId("r$i"), RelationType.Replace, EventId("$i"))
+            roomTimelineStore.addRelation(timelineEventRelation(room, 1))
+            roomTimelineStore.addRelation(timelineEventRelation(room, 2))
+            roomTimelineStore.addRelation(timelineEventRelation(room2, 3))
+            roomTimelineStore.addRelation(timelineEventRelation(room2, 4))
+
             fun stateEvent(roomId: RoomId, i: Int) =
                 Event.StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
@@ -198,6 +206,11 @@ class RoomListHandlerTest : ShouldSpec({
             roomTimelineStore.get(EventId("2"), room).first() shouldNotBe null
             roomTimelineStore.get(EventId("3"), room2).first() shouldBe null
             roomTimelineStore.get(EventId("4"), room2).first() shouldBe null
+
+            roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace).first() shouldNotBe null
+            roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace).first() shouldNotBe null
+            roomTimelineStore.getRelations(EventId("3"), room2, RelationType.Replace).first() shouldBe null
+            roomTimelineStore.getRelations(EventId("4"), room2, RelationType.Replace).first() shouldBe null
 
             roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldNotBe null
             roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldNotBe null
