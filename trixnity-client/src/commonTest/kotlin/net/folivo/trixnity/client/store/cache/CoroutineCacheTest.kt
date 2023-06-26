@@ -62,10 +62,10 @@ class CoroutineCacheTest : ShouldSpec({
             cache.first { it.isEmpty() }
         }
         should("remove from cache, when cache time expired") {
-            cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 30.milliseconds)
+            cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 20.milliseconds)
             cacheStore.persist("key", "a new value")
             cut.read(key = "key").first() shouldBe "a new value"
-            delay(40)
+            delay(50)
             cacheStore.persist("key", "another value")
             cut.read(key = "key").first() shouldBe "another value"
             // we check, that the value is not removed before the time expires
@@ -73,7 +73,7 @@ class CoroutineCacheTest : ShouldSpec({
             cacheStore.persist("key", "yet another value")
             cut.read(key = "key").stateIn(readScope).value shouldBe "another value"
             // and that the value is not removed from cache, when there is a scope, that uses it
-            delay(40)
+            delay(50)
             cut.read(key = "key").stateIn(readScope).value shouldBe "another value"
             readScope.cancel()
         }
@@ -84,12 +84,12 @@ class CoroutineCacheTest : ShouldSpec({
             cacheStore.persist("key", "value")
             cut.write(key = "key", updater = { "value" })
             cut.read(key = "key").first() shouldBe "value"
-            delay(10)
+            delay(30)
             cacheStore.persist("key", "a new value")
             cut.read(key = "key").first() shouldBe "value"
 
             persisted.value = true
-            delay(10)
+            delay(30)
             cut.read(key = "key").first() shouldBe "a new value"
         }
         context("infinite cache enabled") {
@@ -183,7 +183,7 @@ class CoroutineCacheTest : ShouldSpec({
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
-                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 30.milliseconds)
+                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 20.milliseconds)
                 cut.write(
                     key = "key",
                     updater = { "updated value" },
@@ -212,16 +212,16 @@ class CoroutineCacheTest : ShouldSpec({
                     key = "key",
                     updater = { "value" },
                 )
-                delay(10)
+                delay(30)
                 cacheStore.persist("key", "a new value")
                 cut.read(key = "key").first() shouldBe "value"
 
                 persisted1.value = true
-                delay(10)
+                delay(30)
                 cut.read(key = "key").first() shouldBe "value"
 
                 persisted2.value = true
-                delay(10)
+                delay(30)
                 cut.read(key = "key").first() shouldBe "a new value"
             }
         }
@@ -300,7 +300,7 @@ class CoroutineCacheTest : ShouldSpec({
             indexedCut = IndexedCoroutineCache("", cacheStore, cacheScope, Duration.ZERO)
             indexedCut.index.getSubscriptionCount.value = 1
             indexedCut.write("key", "value")
-            delay(20)
+            delay(30)
             indexedCut.index.onRemove.value shouldBe null
             indexedCut.index.getSubscriptionCount.value = 0
             indexedCut.index.onRemove.first { it == "key" } shouldBe "key"
