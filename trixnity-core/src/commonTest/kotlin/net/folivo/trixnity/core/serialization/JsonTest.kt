@@ -9,6 +9,7 @@ import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.EventType
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
@@ -356,5 +357,17 @@ class JsonTest {
     @Test
     fun shouldDeserializeRoomId() {
         json.decodeFromString<RoomId>(""""!room:server"""") shouldBe RoomId("!room:server")
+    }
+
+    @Test
+    fun shouldSerializeEventType() {
+        json.encodeToString(EventType(RedactionEventContent::class, "m.room.redaction")) shouldBe
+                """"m.room.redaction""""
+    }
+
+    @Test
+    fun shouldDerializeEventType() {
+        json.decodeFromString<EventType>(""""m.room.redaction"""") shouldBe
+                EventType(RedactionEventContent::class, "m.room.redaction")
     }
 }

@@ -21,6 +21,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.EventType
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -986,7 +987,7 @@ class UserServiceTest : ShouldSpec({
                             me to 55,
                             alice to 50
                         ),
-                        events = mapOf("m.room.power_levels" to 56),
+                        events = mapOf(EventType(PowerLevelsEventContent::class, "m.room.power_levels") to 56),
                         stateDefault = 60
                     )
                 )
@@ -1001,7 +1002,7 @@ class UserServiceTest : ShouldSpec({
                             me to 55,
                             alice to 50
                         ),
-                        events = mapOf("m.room.power_levels" to 55),
+                        events = mapOf(EventType(PowerLevelsEventContent::class, "m.room.power_levels") to 55),
                         stateDefault = 60
                     )
                 )
@@ -1048,7 +1049,7 @@ class UserServiceTest : ShouldSpec({
                             me to 55,
                             alice to 56
                         ),
-                        events = mapOf("m.room.power_levels" to 55),
+                        events = mapOf(EventType(PowerLevelsEventContent::class, "m.room.power_levels") to 55),
                         stateDefault = 55
                     )
                 )
@@ -1064,7 +1065,7 @@ class UserServiceTest : ShouldSpec({
                         me to 55,
                         alice to 55
                     ),
-                    events = mapOf("m.room.power_levels" to 54),
+                    events = mapOf(EventType(PowerLevelsEventContent::class, "m.room.power_levels") to 54),
                     stateDefault = 54
                 )
             )
@@ -1084,7 +1085,7 @@ class UserServiceTest : ShouldSpec({
                         me to 55,
                         alice to 54
                     ),
-                    events = mapOf("m.room.power_levels" to 52),
+                    events = mapOf(EventType(PowerLevelsEventContent::class, "m.room.power_levels") to 52),
                     stateDefault = 52
                 )
             )
@@ -1127,7 +1128,7 @@ class UserServiceTest : ShouldSpec({
                             me to 40,
                         ),
                         events = mapOf(
-                            "m.room.redaction" to 30,
+                            EventType(RedactionEventContent::class, "m.room.redaction") to 30,
                         )
                     ),
                     id = EventId("eventId"),
@@ -1168,7 +1169,7 @@ class UserServiceTest : ShouldSpec({
                             me to 20,
                         ),
                         events = mapOf(
-                            "m.room.redaction" to 30,
+                            EventType(RedactionEventContent::class, "m.room.redaction") to 30,
                         )
                     ),
                     id = EventId("eventId"),

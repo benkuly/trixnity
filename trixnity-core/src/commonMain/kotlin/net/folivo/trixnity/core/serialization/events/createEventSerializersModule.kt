@@ -29,6 +29,7 @@ fun createEventSerializersModule(
         globalAccountDataEventSerializer,
         roomAccountDataEventSerializer
     )
+    val eventTypeSerializer = EventTypeSerializer(mappings)
     return SerializersModule {
         contextual(eventSerializer)
         contextual(roomEventSerializer)
@@ -44,5 +45,6 @@ fun createEventSerializersModule(
         contextual(decryptedMegolmEventSerializer)
         contextual(globalAccountDataEventSerializer)
         contextual(roomAccountDataEventSerializer)
+        contextual(eventTypeSerializer)
     }
 }
