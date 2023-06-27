@@ -26,7 +26,7 @@ kotlin {
                 implementation("io.ktor:ktor-http:${Versions.ktor}")
                 implementation("io.ktor:ktor-resources:${Versions.ktor}")
 
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val commonTest by getting {

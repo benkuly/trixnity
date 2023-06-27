@@ -1,17 +1,20 @@
 package net.folivo.trixnity.testutils
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.resources.*
-import kotlinx.serialization.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
-import mu.KotlinLogging
+import kotlinx.serialization.serializer
 import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIASerializer
@@ -87,6 +90,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
                         headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                     )
                 }
+
                 else -> {
                     matrixEndpointLog.error(exception) { "unexpected error while handling request $request on expected endpoint $endpoint" }
                     throw UnsupportedOperationException("only MatrixServerExceptions are allowed")
@@ -140,6 +144,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                             HttpStatusCode.OK,
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                         )
+
                         else -> {
                             val responseSerializer: KSerializer<RESPONSE> =
                                 endpoint.plainResponseSerializerBuilder(contentMappings, json) ?: serializer()
@@ -152,6 +157,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                         }
                     }
                 }
+
                 is ResponseWithUIA.Step -> respond(json.encodeToString(responseBody.state), HttpStatusCode.Unauthorized)
                 is ResponseWithUIA.Error ->
                     respond(
@@ -175,6 +181,7 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                         headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                     )
                 }
+
                 else -> {
                     matrixEndpointLog.error(exception) { "unexpected error while handling request $request on expected endpoint $endpoint" }
                     throw UnsupportedOperationException("only MatrixServerExceptions are allowed")

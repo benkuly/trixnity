@@ -1,10 +1,10 @@
 package net.folivo.trixnity.client.room
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import mu.KotlinLogging
 import net.folivo.trixnity.core.model.RoomId
 
 private val log = KotlinLogging.logger {}

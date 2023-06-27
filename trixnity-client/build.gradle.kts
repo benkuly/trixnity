@@ -35,7 +35,7 @@ kotlin {
 
                 implementation("com.benasher44:uuid:${Versions.uuid}")
 
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
 
                 implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")

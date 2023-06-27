@@ -161,7 +161,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("io.ktor:ktor-utils:${Versions.ktor}")
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val olmLibraryMain by creating {

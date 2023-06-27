@@ -1,9 +1,9 @@
 package net.folivo.trixnity.client.key
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import mu.KotlinLogging
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*

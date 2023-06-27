@@ -30,7 +30,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-resources:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-status-pages:${Versions.ktor}")
 
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val commonTest by getting {

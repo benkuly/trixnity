@@ -29,7 +29,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-auth:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-cors:${Versions.ktor}")
 
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val commonTest by getting {

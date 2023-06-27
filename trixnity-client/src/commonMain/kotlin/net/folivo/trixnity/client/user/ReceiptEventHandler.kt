@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.user
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
-import mu.KotlinLogging
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore

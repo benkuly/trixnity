@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.key
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.*
-import mu.KotlinLogging
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
