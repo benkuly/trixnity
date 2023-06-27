@@ -19,7 +19,11 @@ internal class IndexedDBCrossSigningKeysRepository(
     ) {
     companion object {
         const val objectStoreName = "cross_signing_keys"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) =
-            migrateIndexedDBMinimalStoreRepository(database, oldVersion, objectStoreName)
+        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+            when {
+                oldVersion < 1 ->
+                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
+            }
+        }
     }
 }

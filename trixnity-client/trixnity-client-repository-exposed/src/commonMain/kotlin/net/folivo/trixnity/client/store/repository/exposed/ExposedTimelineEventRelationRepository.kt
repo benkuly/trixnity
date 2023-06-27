@@ -37,6 +37,10 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
                 }.toMap().ifEmpty { null }
         }
 
+    override suspend fun deleteByRoomId(roomId: RoomId): Unit = withExposedWrite {
+        ExposedTimelineEventRelation.deleteWhere { ExposedTimelineEventRelation.roomId.eq(roomId.full) }
+    }
+
     override suspend fun save(
         key: TimelineEventRelationKey,
         value: Map<RelationType, Set<TimelineEventRelation>>

@@ -91,7 +91,7 @@ class RoomServiceMock : RoomService {
     override fun getTimelineEventRelations(
         roomId: RoomId,
         eventId: EventId,
-    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> {
+    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?> {
         throw NotImplementedError()
     }
 
@@ -142,16 +142,16 @@ class RoomServiceMock : RoomService {
 
     override fun <C : StateEventContent> getState(
         roomId: RoomId,
-        stateKey: String,
         eventContentClass: KClass<C>,
-    ): StateFlow<Event<C>?> {
+        stateKey: String
+    ): Flow<Event<C>?> {
         throw NotImplementedError()
     }
 
     override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Event<C>?>?> {
+    ): Flow<Map<String, Flow<Event<C>?>>?> {
         throw NotImplementedError()
     }
 }

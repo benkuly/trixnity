@@ -8,12 +8,12 @@ internal class RoomRepositoryTransactionManager(
 ) : RepositoryTransactionManager {
     override suspend fun <T> readTransaction(block: suspend () -> T): T =
         db.withTransaction {
-            block.invoke()
+            block()
         }
 
     override suspend fun writeTransaction(block: suspend () -> Unit) {
         db.withTransaction {
-            block.invoke()
+            block()
         }
     }
 }

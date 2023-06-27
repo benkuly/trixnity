@@ -4,13 +4,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
-import net.folivo.trixnity.client.store.repository.test.buildTestDatabase
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.keys.CrossSigningKeys
-import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage
-import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.model.keys.Signed
-import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.junit.Before
 import org.junit.Test

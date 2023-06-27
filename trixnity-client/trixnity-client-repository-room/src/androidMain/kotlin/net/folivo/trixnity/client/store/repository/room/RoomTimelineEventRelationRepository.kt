@@ -1,10 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
@@ -60,6 +56,14 @@ internal interface TimelineEventRelationDao {
     @Query(
         """
         DELETE FROM TimelineEventRelation
+        WHERE roomId = :roomId
+        """
+    )
+    suspend fun delete(roomId: RoomId)
+
+    @Query(
+        """
+        DELETE FROM TimelineEventRelation
         WHERE relatedEventId = :relatedEventId
         AND roomId = :roomId
         """
@@ -99,6 +103,10 @@ internal class RoomTimelineEventRelationRepository(
                     )
                 }.toSet()
             }.toMap().ifEmpty { null }
+
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        dao.delete(roomId)
+    }
 
     override suspend fun getBySecondKey(
         firstKey: TimelineEventRelationKey,

@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.beNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
@@ -530,9 +531,11 @@ private val body: ShouldSpec.() -> Unit = {
                     alice to setOf(aliceDevice2),
                 )
                 olmCryptoStore.getOutboundMegolmSession(room2) should beNull() // there is no session
-                olmCryptoStore.getOutboundMegolmSession(room3)?.newDevices shouldBe mapOf(
-                    alice to setOf(aliceDevice1, aliceDevice2),
-                    cedric to setOf(cedricDevice), // was already present
+                olmCryptoStore.getOutboundMegolmSession(room3)?.newDevices.shouldNotBeNull().shouldContainExactly(
+                    mapOf(
+                        alice to setOf(aliceDevice1, aliceDevice2),
+                        cedric to setOf(cedricDevice), // was already present
+                    )
                 )
             }
             should("look for encrypted room, where the user participates and reset megolm sessions when removed devices") {

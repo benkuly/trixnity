@@ -4,7 +4,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
-import net.folivo.trixnity.client.store.repository.test.buildTestDatabase
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.RelationType
@@ -84,5 +83,59 @@ class RoomTimelineEventRelationRepositoryTest {
         )
         repo.delete(key2)
         repo.get(key2) shouldBe null
+    }
+
+    @Test
+    fun deleteByRoomId() = runTest {
+        val key1 = TimelineEventRelationKey(EventId("\$relatedEvent1"), RoomId("room1", "server"))
+        val key2 = TimelineEventRelationKey(EventId("\$relatedEvent2"), RoomId("room2", "server"))
+        val key3 = TimelineEventRelationKey(EventId("\$relatedEvent3"), RoomId("room1", "server"))
+        val relation1: Map<RelationType, Set<TimelineEventRelation>> =
+            mapOf(
+                RelationType.Reference to setOf(
+                    TimelineEventRelation(
+                        RoomId("room1", "server"),
+                        EventId("$1event"),
+                        RelationType.Reference,
+                        EventId("\$relatedEvent1")
+                    ), TimelineEventRelation(
+                        RoomId("room1", "server"),
+                        EventId("$1event"),
+                        RelationType.Reference,
+                        EventId("\$relatedEvent24")
+                    )
+                )
+            )
+        val relation2: Map<RelationType, Set<TimelineEventRelation>> =
+            mapOf(
+                RelationType.Reference to setOf(
+                    TimelineEventRelation(
+                        RoomId("room2", "server"),
+                        EventId("$1event"),
+                        RelationType.Reference,
+                        EventId("\$relatedEvent2")
+                    )
+                )
+            )
+        val relation3: Map<RelationType, Set<TimelineEventRelation>> =
+            mapOf(
+                RelationType.Reference to setOf(
+                    TimelineEventRelation(
+                        RoomId("room1", "server"),
+                        EventId("$1event"),
+                        RelationType.Reference,
+                        EventId("\$relatedEvent3")
+                    )
+                )
+            )
+
+        repo.save(key1, relation1)
+        repo.save(key2, relation2)
+        repo.save(key3, relation3)
+
+        repo.deleteByRoomId(RoomId("room1", "server"))
+        repo.get(key1) shouldBe null
+        repo.get(key2) shouldBe relation2
+        repo.get(key3) shouldBe null
     }
 }

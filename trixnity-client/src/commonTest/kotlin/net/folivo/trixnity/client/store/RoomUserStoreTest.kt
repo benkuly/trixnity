@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomUserRepository
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
@@ -75,7 +76,7 @@ class RoomUserStoreTest : ShouldSpec({
                 )
             )
 
-            cut.getAll(roomId).first() shouldContainExactly listOf(aliceUser, bobUser)
+            cut.getAll(roomId).flatten().first()?.values shouldContainExactly listOf(aliceUser, bobUser)
 
             scope.cancel()
         }

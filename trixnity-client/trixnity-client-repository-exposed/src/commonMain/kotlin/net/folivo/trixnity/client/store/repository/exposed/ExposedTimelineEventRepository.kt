@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.repository.TimelineEventKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRepository
+import net.folivo.trixnity.core.model.RoomId
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
@@ -23,6 +23,10 @@ internal class ExposedTimelineEventRepository(private val json: Json) : Timeline
         }.firstOrNull()?.let {
             json.decodeFromString(it[ExposedTimelineEvent.value])
         }
+    }
+
+    override suspend fun deleteByRoomId(roomId: RoomId): Unit = withExposedWrite {
+        ExposedTimelineEvent.deleteWhere { ExposedTimelineEvent.roomId.eq(roomId.full) }
     }
 
     override suspend fun save(key: TimelineEventKey, value: TimelineEvent): Unit = withExposedWrite {

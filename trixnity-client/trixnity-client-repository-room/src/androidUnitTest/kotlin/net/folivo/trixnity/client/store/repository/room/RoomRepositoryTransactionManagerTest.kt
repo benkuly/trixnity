@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import net.folivo.trixnity.client.store.repository.test.buildTestDatabase
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -79,8 +78,7 @@ class RoomRepositoryTransactionManagerTest {
     }
 
     private suspend fun testRead() {
-        val result = dao.getAllByType(type = "foo")
-        println("testRead = $result")
+        dao.getAllByType(type = "foo")
     }
 
     private suspend fun testWrite(key: String) {

@@ -66,8 +66,12 @@ internal class IndexedDBRoomOutboxMessageRepository(
 
     companion object {
         const val objectStoreName = "room_outbox_message"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) =
-            migrateIndexedDBMinimalStoreRepository(database, oldVersion, objectStoreName)
+        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+            when {
+                oldVersion < 1 ->
+                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
+            }
+        }
     }
 
 

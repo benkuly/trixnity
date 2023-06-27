@@ -66,4 +66,23 @@ class IndexedDBRoomAccountDataRepositoryTest : ShouldSpec({
             cut.getBySecondKey(key, "") shouldBe accountDataEvent
         }
     }
+    should("deleteByRoomId") {
+        val roomId1 = RoomId("room1", "server")
+        val roomId2 = RoomId("room2", "server")
+        val key1 = RoomAccountDataRepositoryKey(roomId1, "m.fully_read")
+        val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
+        val key3 = RoomAccountDataRepositoryKey(roomId1, "org.example.mynamespace")
+        val accountDataEvent1 = mapOf("" to RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, ""))
+        val accountDataEvent2 = mapOf("" to RoomAccountDataEvent(FullyReadEventContent(EventId("event2")), roomId2, ""))
+        val accountDataEvent3 = mapOf("" to RoomAccountDataEvent(FullyReadEventContent(EventId("event3")), roomId1, ""))
+        rtm.writeTransaction {
+            cut.save(key1, accountDataEvent1)
+            cut.save(key2, accountDataEvent2)
+            cut.save(key3, accountDataEvent3)
+            cut.deleteByRoomId(roomId1)
+            cut.get(key1) shouldHaveSize 0
+            cut.get(key2) shouldBe accountDataEvent2
+            cut.get(key3) shouldHaveSize 0
+        }
+    }
 })

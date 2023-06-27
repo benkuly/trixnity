@@ -5,7 +5,6 @@ import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.store.KeyVerificationState.Blocked
 import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.client.store.repository.KeyVerificationStateKey
-import net.folivo.trixnity.client.store.repository.test.buildTestDatabase
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.junit.Before

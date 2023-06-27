@@ -129,7 +129,7 @@ interface RoomService {
     fun getTimelineEventRelations(
         roomId: RoomId,
         eventId: EventId,
-    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?>
+    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?>
 
     fun getTimelineEventRelations(
         roomId: RoomId,
@@ -171,14 +171,14 @@ interface RoomService {
 
     fun <C : StateEventContent> getState(
         roomId: RoomId,
-        stateKey: String = "",
         eventContentClass: KClass<C>,
+        stateKey: String = "",
     ): Flow<Event<C>?>
 
     fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Event<C>?>?>
+    ): Flow<Map<String, Flow<Event<C>?>>?>
 }
 
 class RoomServiceImpl(
@@ -496,7 +496,7 @@ class RoomServiceImpl(
                 else null
             }
 
-    @OptIn(FlowPreview::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTimelineEventsFromNowOn(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
@@ -540,7 +540,7 @@ class RoomServiceImpl(
     override fun getTimelineEventRelations(
         roomId: RoomId,
         eventId: EventId,
-    ): Flow<Map<RelationType, Set<TimelineEventRelation>?>?> = roomTimelineStore.getRelations(eventId, roomId)
+    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?> = roomTimelineStore.getRelations(eventId, roomId)
 
     override fun getTimelineEventRelations(
         roomId: RoomId,
@@ -597,16 +597,16 @@ class RoomServiceImpl(
 
     override fun <C : StateEventContent> getState(
         roomId: RoomId,
-        stateKey: String,
         eventContentClass: KClass<C>,
+        stateKey: String,
     ): Flow<Event<C>?> {
-        return roomStateStore.getByStateKey(roomId, stateKey, eventContentClass)
+        return roomStateStore.getByStateKey(roomId, eventContentClass, stateKey)
     }
 
     override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Event<C>?>?> {
+    ): Flow<Map<String, Flow<Event<C>?>>?> {
         return roomStateStore.get(roomId, eventContentClass)
     }
 }

@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.repository.indexeddb
 
 import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
+import com.juul.indexeddb.ObjectStore
 import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
@@ -11,15 +12,13 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToDynamic
 import net.folivo.trixnity.client.store.repository.FullRepository
 
-fun VersionChangeTransaction.migrateIndexedDBMinimalStoreRepository(
+fun VersionChangeTransaction.createIndexedDBMinimalStoreRepository(
     database: Database,
-    oldVersion: Int,
-    objectStoreName: String
+    objectStoreName: String,
+    block: ObjectStore.() -> Unit = {},
 ) {
-    when {
-        oldVersion < 1 -> {
-            database.createObjectStore(objectStoreName)
-        }
+    database.createObjectStore(objectStoreName).apply {
+        block()
     }
 }
 

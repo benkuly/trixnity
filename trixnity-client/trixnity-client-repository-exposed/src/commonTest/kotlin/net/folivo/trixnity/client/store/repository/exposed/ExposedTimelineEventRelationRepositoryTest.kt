@@ -79,4 +79,58 @@ class ExposedTimelineEventRelationRepositoryTest : ShouldSpec({
             cut.get(key2) shouldBe null
         }
     }
+    should("deleteByRoomId") {
+        val key1 = TimelineEventRelationKey(EventId("\$relatedEvent1"), RoomId("room1", "server"))
+        val key2 = TimelineEventRelationKey(EventId("\$relatedEvent2"), RoomId("room2", "server"))
+        val key3 = TimelineEventRelationKey(EventId("\$relatedEvent3"), RoomId("room1", "server"))
+        val relation1: Map<RelationType, Set<TimelineEventRelation>> =
+            mapOf(
+                RelationType.Reference to setOf(
+                    TimelineEventRelation(
+                        RoomId("room1", "server"),
+                        EventId("$1event"),
+                        RelationType.Reference,
+                        EventId("\$relatedEvent1")
+                    ), TimelineEventRelation(
+                        RoomId("room1", "server"),
+                        EventId("$1event"),
+                        RelationType.Reference,
+                        EventId("\$relatedEvent24")
+                    )
+                )
+            )
+        val relation2: Map<RelationType, Set<TimelineEventRelation>> =
+            mapOf(
+                RelationType.Reference to setOf(
+                    TimelineEventRelation(
+                        RoomId("room2", "server"),
+                        EventId("$1event"),
+                        RelationType.Reference,
+                        EventId("\$relatedEvent2")
+                    )
+                )
+            )
+        val relation3: Map<RelationType, Set<TimelineEventRelation>> =
+            mapOf(
+                RelationType.Reference to setOf(
+                    TimelineEventRelation(
+                        RoomId("room1", "server"),
+                        EventId("$1event"),
+                        RelationType.Reference,
+                        EventId("\$relatedEvent3")
+                    )
+                )
+            )
+
+        rtm.writeTransaction {
+            cut.save(key1, relation1)
+            cut.save(key2, relation2)
+            cut.save(key3, relation3)
+
+            cut.deleteByRoomId(RoomId("room1", "server"))
+            cut.get(key1) shouldBe null
+            cut.get(key2) shouldBe relation2
+            cut.get(key3) shouldBe null
+        }
+    }
 })

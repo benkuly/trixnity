@@ -36,7 +36,7 @@ abstract class InMemoryFullRepository<K, V> : FullRepository<K, V>, InMemoryMini
     override suspend fun getAll(): List<V> = content.value.values.toList()
 }
 
-abstract class InMemoryTwoDimensionsRepository<K1, K2, V> : TwoDimensionsRepository<K1, K2, V>,
+abstract class InMemoryMapRepository<K1, K2, V> : MapRepository<K1, K2, V>,
     InMemoryMinimalRepository<K1, Map<K2, V>>() {
     override suspend fun getBySecondKey(firstKey: K1, secondKey: K2): V? =
         get(firstKey)?.get(secondKey)
@@ -77,24 +77,41 @@ class InMemoryInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRep
 class InMemoryOutboundMegolmSessionRepository : OutboundMegolmSessionRepository,
     InMemoryMinimalRepository<RoomId, StoredOutboundMegolmSession>()
 
-class InMemoryRoomUserRepository : RoomUserRepository, InMemoryTwoDimensionsRepository<RoomId, UserId, RoomUser>()
+class InMemoryRoomUserRepository : RoomUserRepository, InMemoryMapRepository<RoomId, UserId, RoomUser>()
 class InMemoryRoomStateRepository : RoomStateRepository,
-    InMemoryTwoDimensionsRepository<RoomStateRepositoryKey, String, Event<*>>()
+    InMemoryMapRepository<RoomStateRepositoryKey, String, Event<*>>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterKeys { it.roomId != roomId } }
+    }
+}
 
 class InMemoryTimelineEventRepository : TimelineEventRepository,
-    InMemoryMinimalRepository<TimelineEventKey, TimelineEvent>()
+    InMemoryMinimalRepository<TimelineEventKey, TimelineEvent>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterKeys { it.roomId != roomId } }
+    }
+}
 
 class InMemoryTimelineEventRelationRepository : TimelineEventRelationRepository,
-    InMemoryTwoDimensionsRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>>()
+    InMemoryMapRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterKeys { it.roomId != roomId } }
+    }
+
+}
 
 class InMemoryMediaCacheMappingRepository : MediaCacheMappingRepository,
     InMemoryMinimalRepository<String, MediaCacheMapping>()
 
 class InMemoryGlobalAccountDataRepository : GlobalAccountDataRepository,
-    InMemoryTwoDimensionsRepository<String, String, Event.GlobalAccountDataEvent<*>>()
+    InMemoryMapRepository<String, String, Event.GlobalAccountDataEvent<*>>()
 
 class InMemoryRoomAccountDataRepository : RoomAccountDataRepository,
-    InMemoryTwoDimensionsRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>>()
+    InMemoryMapRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterKeys { it.roomId != roomId } }
+    }
+}
 
 class InMemorySecretKeyRequestRepository : SecretKeyRequestRepository,
     InMemoryFullRepository<String, StoredSecretKeyRequest>()

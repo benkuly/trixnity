@@ -19,7 +19,11 @@ internal class IndexedDBDeviceKeysRepository(
     ) {
     companion object {
         const val objectStoreName = "device_keys"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) =
-            migrateIndexedDBMinimalStoreRepository(database, oldVersion, objectStoreName)
+        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+            when {
+                oldVersion < 1 ->
+                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
+            }
+        }
     }
 }

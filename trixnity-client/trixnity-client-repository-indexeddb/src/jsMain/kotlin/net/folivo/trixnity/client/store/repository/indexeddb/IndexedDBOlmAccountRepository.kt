@@ -17,7 +17,11 @@ internal class IndexedDBOlmAccountRepository(
     ) {
     companion object {
         const val objectStoreName = "olm_account"
-        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) =
-            migrateIndexedDBMinimalStoreRepository(database, oldVersion, objectStoreName)
+        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+            when {
+                oldVersion < 1 ->
+                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
+            }
+        }
     }
 }

@@ -11,11 +11,11 @@ import net.folivo.trixnity.client.store.repository.InMemoryMinimalRepository
 import net.folivo.trixnity.client.store.repository.MinimalRepository
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 
-class MinimalRepositoryStateFlowCacheTest : ShouldSpec({
+class MinimalRepositoryCoroutineCacheTest : ShouldSpec({
     timeout = 5_000
     lateinit var repository: MinimalRepository<String, String>
     lateinit var cacheScope: CoroutineScope
-    lateinit var cut: MinimalRepositoryStateFlowCache<String, String, MinimalRepository<String, String>>
+    lateinit var cut: MinimalRepositoryCoroutineCache<String, String>
     val readOperationWasCalled = MutableStateFlow(false)
     val writeOperationWasCalled = MutableStateFlow(false)
     val tm = object : TransactionManager {
@@ -46,7 +46,7 @@ class MinimalRepositoryStateFlowCacheTest : ShouldSpec({
         repository = object : InMemoryMinimalRepository<String, String>() {
             override fun serializeKey(key: String): String = key
         }
-        cut = MinimalRepositoryStateFlowCache(cacheScope, repository, tm)
+        cut = MinimalRepositoryCoroutineCache(repository, tm, cacheScope)
     }
     afterTest {
         cacheScope.cancel()
@@ -55,29 +55,29 @@ class MinimalRepositoryStateFlowCacheTest : ShouldSpec({
     context("get") {
         should("read from database") {
             repository.save("key", "value")
-            cut.get("key").first() shouldBe "value"
+            cut.read("key").first() shouldBe "value"
             readOperationWasCalled.value shouldBe true
         }
         should("prefer cache") {
             repository.save("key", "value")
-            cut.get("key").first() shouldBe "value"
+            cut.read("key").first() shouldBe "value"
             repository.save("key", "value2")
-            cut.get("key").first() shouldBe "value"
+            cut.read("key").first() shouldBe "value"
             readOperationWasCalled.value shouldBe true
         }
     }
     context("save") {
         should("save into database without reading old null value") {
-            cut.save("key", "value1")
-            cut.save("key", "value2")
+            cut.write("key", "value1")
+            cut.write("key", "value2")
             readOperationWasCalled.value shouldBe false
             writeOperationWasCalled.value shouldBe true
             repository.get("key") shouldBe "value2"
         }
         should("save into database without reading old value") {
             repository.save("key", "value1")
-            cut.save("key", "value2")
-            cut.save("key", "value3")
+            cut.write("key", "value2")
+            cut.write("key", "value3")
             readOperationWasCalled.value shouldBe false
             writeOperationWasCalled.value shouldBe true
             repository.get("key") shouldBe "value3"
@@ -86,7 +86,7 @@ class MinimalRepositoryStateFlowCacheTest : ShouldSpec({
     context("update") {
         should("read from database") {
             repository.save("key", "old")
-            cut.update("key") {
+            cut.write("key") {
                 it shouldBe "old"
                 "value"
             }
@@ -95,12 +95,12 @@ class MinimalRepositoryStateFlowCacheTest : ShouldSpec({
         }
         should("prefer cache") {
             repository.save("key", "old")
-            cut.update("key") {
+            cut.write("key") {
                 it shouldBe "old"
                 "value"
             }
             repository.save("key", "dino")
-            cut.update("key") {
+            cut.write("key") {
                 it shouldBe "value"
                 "new value"
             }
@@ -108,20 +108,20 @@ class MinimalRepositoryStateFlowCacheTest : ShouldSpec({
         }
         should("save to database") {
             repository.save("key", "old")
-            cut.update("key") { "value" }
+            cut.write("key") { "value" }
             repository.get("key") shouldBe "value"
             writeOperationWasCalled.value shouldBe true
         }
         should("allow multiple writes") {
             repository.save("key", "old")
             val job1 = launch {
-                cut.update("key") {
+                cut.write("key") {
                     delay(200) // this ensures, that all updates are in here
                     "value1"
                 }
             }
             val job2 = launch {
-                cut.update("key") {
+                cut.write("key") {
                     delay(200) // this ensures, that all updates are in here
                     "value2"
                 }
@@ -133,13 +133,13 @@ class MinimalRepositoryStateFlowCacheTest : ShouldSpec({
         }
         should("remove from database") {
             repository.save("key", "old")
-            cut.update("key") { null }
+            cut.write("key") { null }
             repository.get("key") shouldBe null
             writeOperationWasCalled.value shouldBe true
         }
         should("not save to repository when flag is set") {
             repository.save("key", "old")
-            cut.update("key", persistIntoRepository = false) { "value" }
+            cut.write("key", persistEnabled = false) { "value" }
             repository.get("key") shouldBe "old"
         }
     }

@@ -3,12 +3,12 @@ package net.folivo.trixnity.client.store.repository.realm
 import io.realm.kotlin.TypedRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.repository.TimelineEventKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRepository
+import net.folivo.trixnity.core.model.RoomId
 
 internal class RealmTimelineEvent : RealmObject {
     var roomId: String = ""
@@ -23,6 +23,11 @@ internal class RealmTimelineEventRepository(
         findByKey(key).find()?.let {
             json.decodeFromString<TimelineEvent>(it.value)
         }
+    }
+
+    override suspend fun deleteByRoomId(roomId: RoomId) = withRealmWrite {
+        val existing = query<RealmTimelineEvent>("roomId == $0", roomId.full).find()
+        delete(existing)
     }
 
     override suspend fun save(key: TimelineEventKey, value: TimelineEvent) = withRealmWrite {

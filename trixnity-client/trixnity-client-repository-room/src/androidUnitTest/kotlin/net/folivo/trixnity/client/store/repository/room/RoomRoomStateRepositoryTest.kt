@@ -4,7 +4,6 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
-import net.folivo.trixnity.client.store.repository.test.buildTestDatabase
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -88,5 +87,51 @@ class RoomRoomStateRepositoryTest {
 
         repo.saveBySecondKey(key, "@cedric:server", event)
         repo.getBySecondKey(key, "@cedric:server") shouldBe event
+    }
+
+    @Test
+    fun deleteByRoomId() = runTest {
+        val key1 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.member")
+        val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")
+        val key3 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.name")
+
+        val state1 = mapOf(
+            "@alice:server" to Event.StateEvent(
+                MemberEventContent(membership = Membership.JOIN),
+                EventId("$1event"),
+                UserId("alice", "server"),
+                RoomId("room1", "server"),
+                1234,
+                stateKey = "@alice:server"
+            )
+        )
+        val state2 = mapOf(
+            "" to Event.StateEvent(
+                NameEventContent("room name"),
+                EventId("$2eventId"),
+                UserId("bob", "server"),
+                RoomId("room2", "server"),
+                originTimestamp = 24,
+                stateKey = ""
+            )
+        )
+        val state3 = mapOf(
+            "" to Event.StateEvent(
+                NameEventContent("room name"),
+                EventId("$2eventId"),
+                UserId("bob", "server"),
+                RoomId("room1", "server"),
+                originTimestamp = 24,
+                stateKey = ""
+            )
+        )
+
+        repo.save(key1, state1)
+        repo.save(key2, state2)
+        repo.save(key3, state3)
+        repo.deleteByRoomId(RoomId("room1", "server"))
+        repo.get(key1) shouldHaveSize 0
+        repo.get(key2) shouldBe state2
+        repo.get(key3) shouldHaveSize 0
     }
 }

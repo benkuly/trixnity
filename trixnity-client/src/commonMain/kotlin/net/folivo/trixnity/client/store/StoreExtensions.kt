@@ -22,17 +22,17 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
-): Flow<Map<String, Event<C>?>?> = get(roomId, C::class)
+): Flow<Map<String, Flow<Event<C>?>>?> = get(roomId, C::class)
 
 inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<Event<C>?> = getByStateKey(roomId, stateKey, C::class)
+): Flow<Event<C>?> = getByStateKey(roomId, C::class, stateKey)
 
 inline fun <reified C : StateEventContent> RoomStateStore.getContentByStateKey(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<C> = getByStateKey(roomId, stateKey, C::class).filterNotNull().map { it.content }
+): Flow<C> = getByStateKey(roomId, C::class, stateKey).filterNotNull().map { it.content }
 
 inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,
@@ -48,7 +48,7 @@ suspend inline fun RoomStateStore.members(
     memberships: Set<Membership>,
 ): Set<UserId> =
     get<MemberEventContent>(roomId).first()
-        ?.filter { memberships.contains(it.value?.content?.membership) }
+        ?.filter { memberships.contains(it.value.first()?.content?.membership) }
         ?.map { UserId(it.key) }?.toSet() ?: setOf()
 
 suspend inline fun RoomStateStore.membersCount(
@@ -58,7 +58,7 @@ suspend inline fun RoomStateStore.membersCount(
 ): Long {
     val allMemberships = moreMemberships.toList() + membership
     return get<MemberEventContent>(roomId).first()
-        ?.count { allMemberships.contains(it.value?.content?.membership) }?.toLong() ?: 0
+        ?.count { allMemberships.contains(it.value.first()?.content?.membership) }?.toLong() ?: 0
 }
 
 fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
