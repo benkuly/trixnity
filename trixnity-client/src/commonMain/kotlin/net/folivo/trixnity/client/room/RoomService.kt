@@ -1,12 +1,12 @@
 package net.folivo.trixnity.client.room
 
 import com.benasher44.uuid.uuid4
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.media.MediaService

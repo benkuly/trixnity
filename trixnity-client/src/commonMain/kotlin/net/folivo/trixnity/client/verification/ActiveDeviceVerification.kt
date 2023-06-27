@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.verification
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
-import mu.KotlinLogging
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient

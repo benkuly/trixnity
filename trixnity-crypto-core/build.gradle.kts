@@ -83,7 +83,7 @@ kotlin {
                 api(project(":trixnity-utils"))
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
 

@@ -23,7 +23,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 api("io.ktor:ktor-http:${Versions.ktor}")
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val commonTest by getting {

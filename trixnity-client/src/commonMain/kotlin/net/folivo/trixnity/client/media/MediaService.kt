@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.media
 
 import com.benasher44.uuid.uuid4
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onCompletion
@@ -8,7 +9,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
-import mu.KotlinLogging
 import net.folivo.trixnity.client.store.MediaCacheMapping
 import net.folivo.trixnity.client.store.MediaCacheMappingStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient

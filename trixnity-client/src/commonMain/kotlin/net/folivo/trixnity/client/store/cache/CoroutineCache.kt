@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.store.cache
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 

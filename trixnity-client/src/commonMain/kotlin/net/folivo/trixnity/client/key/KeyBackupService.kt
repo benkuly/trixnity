@@ -1,12 +1,11 @@
 package net.folivo.trixnity.client.key
 
 import arrow.core.flatMap
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.retryWhen

@@ -1,8 +1,8 @@
 package net.folivo.trixnity.testutils
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
-import mu.KotlinLogging
 
 private val log = KotlinLogging.logger {}
 

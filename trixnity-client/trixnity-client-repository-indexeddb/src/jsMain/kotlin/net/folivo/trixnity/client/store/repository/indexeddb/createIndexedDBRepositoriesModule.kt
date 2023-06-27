@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store.repository.indexeddb
 
 import com.juul.indexeddb.openDatabase
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.koin.core.module.Module

@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.room
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
-import mu.KotlinLogging
 import net.folivo.trixnity.client.key.KeyBackupService
 import net.folivo.trixnity.client.key.OutgoingRoomKeyRequestEventHandler
 import net.folivo.trixnity.client.store.OlmCryptoStore

@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.store.repository.realm
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
-import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.koin.core.module.Module

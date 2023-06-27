@@ -2,12 +2,12 @@ package net.folivo.trixnity.client.store.transaction
 
 import arrow.fx.coroutines.Schedule
 import arrow.fx.coroutines.retry
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import mu.KotlinLogging
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime

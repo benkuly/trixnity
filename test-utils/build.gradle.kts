@@ -22,7 +22,7 @@ kotlin {
                 api(project(":trixnity-core"))
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
 
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
 
                 api("io.ktor:ktor-client-mock:${Versions.ktor}")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")

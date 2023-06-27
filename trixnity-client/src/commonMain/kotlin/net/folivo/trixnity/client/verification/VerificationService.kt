@@ -1,13 +1,13 @@
 package net.folivo.trixnity.client.verification
 
 import com.benasher44.uuid.uuid4
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
-import mu.KotlinLogging
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
 import net.folivo.trixnity.client.key.KeySecretService

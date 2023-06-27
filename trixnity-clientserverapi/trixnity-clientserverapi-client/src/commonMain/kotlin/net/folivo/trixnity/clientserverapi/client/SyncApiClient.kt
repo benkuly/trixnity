@@ -1,5 +1,6 @@
 package net.folivo.trixnity.clientserverapi.client
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.*
@@ -10,7 +11,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
-import mu.KotlinLogging
 import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.OneTimeKeysCount
 import net.folivo.trixnity.clientserverapi.model.sync.Sync

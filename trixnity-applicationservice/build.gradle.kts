@@ -33,7 +33,7 @@ kotlin {
 
                 implementation("com.benasher44:uuid:${Versions.uuid}")
 
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
         val commonTest by getting {

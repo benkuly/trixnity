@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.room
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.first
-import mu.KotlinLogging
 import net.folivo.trixnity.client.store.RoomTimelineStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId

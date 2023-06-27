@@ -24,7 +24,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 
-                implementation("io.github.microutils:kotlin-logging:${Versions.kotlinLogging}")
+                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
 
                 api("io.realm.kotlin:library-base:${Versions.realm}")
             }

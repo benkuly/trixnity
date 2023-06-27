@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
-import mu.KotlinLogging
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.jetbrains.exposed.sql.Database

@@ -1,12 +1,12 @@
 package net.folivo.trixnity.crypto.olm
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import mu.KotlinLogging
 import net.folivo.trixnity.clientserverapi.client.OlmKeysChange
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventHandler
