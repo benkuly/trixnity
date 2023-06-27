@@ -145,6 +145,7 @@ build:linux:
 
 test:mac:
   stage: test
+  timeout: 1h
   needs: [ "build:mac" ]
   tags: [ "trixnity-mac-internal" ]
   cache:
@@ -158,6 +159,7 @@ test:mac:
 
 test:linux:
   stage: test
+  timeout: 1h
   needs: [ "build:linux" ]
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
@@ -172,6 +174,7 @@ test:linux:
 
 test:integration-test:
   stage: test
+  timeout: 30m
   needs: [ "build:linux" ]
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
