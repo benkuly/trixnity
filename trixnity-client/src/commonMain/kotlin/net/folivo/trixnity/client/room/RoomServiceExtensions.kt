@@ -49,16 +49,16 @@ inline fun <reified C : StateEventContent> RoomService.getAllState(
 /**
  * This collects all rooms, so when one room changes, a new room set gets emitted.
  * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
- * the outer flow is debounced by default.
+ * the outer flow is throttled by default.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(
-    debounceTimeout: Duration = 200.milliseconds,
+    throttle: Duration = 200.milliseconds,
     filterUpgradedRooms: Boolean = true,
 ): Flow<Set<Room>> =
     transform {
         emit(it)
-        delay(debounceTimeout)
+        delay(throttle)
     }
         .flatMapLatest {
             if (it.isEmpty()) flowOf(listOf())

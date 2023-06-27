@@ -160,17 +160,17 @@ suspend fun <T> StateFlow<SyncState>.retryWhenSyncIs(
 
 /**
  * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
- * the outer flow is debounced by default.
+ * the outer flow is throttled by default.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 fun <K, V> Flow<Map<K, Flow<V?>>?>.flatten(
     filterNullValues: Boolean = true,
-    debounceTimeout: Duration = 200.milliseconds,
+    throttle: Duration = 200.milliseconds,
 ): Flow<Map<K, V?>?> =
     conflate()
         .transform {
             emit(it)
-            delay(debounceTimeout)
+            delay(throttle)
         }
         .flatMapLatest { map ->
             if (map == null) flowOf(null)
