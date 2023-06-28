@@ -16,13 +16,13 @@ There are some important data, which are described below:
 
 ### Rooms
 
-To get the room list, call `matrixClient.room.getAll()`.
+To get the room list, call `matrixClient.room.getAll()`. Use `.flatten()` to flatten the Flow of Flows.
 With `matrixClient.room.getById(...)` you can get one room.
 
 ### Users
 
-To get all members of a room, call `matrixClient.user.getAll(...)`. Because room
-members are loaded lazily, you should
+To get all members of a room, call `matrixClient.user.getAll(...)`. Use `.flatten()` to flatten the Flow of Flows.
+Because room members are loaded lazily, you should
 also call `matrixClient.user.loadMembers(...)` as soon as you open a room.
 With `matrixClient.user.getById(...)` you can
 get one user.
