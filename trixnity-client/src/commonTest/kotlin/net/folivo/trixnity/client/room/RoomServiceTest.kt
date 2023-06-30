@@ -8,6 +8,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.*
@@ -18,11 +19,15 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
@@ -38,6 +43,7 @@ class RoomServiceTest : ShouldSpec({
 
     val room = simpleRoom.roomId
     lateinit var roomStore: RoomStore
+    lateinit var roomUserStore: RoomUserStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomAccountDataStore: RoomAccountDataStore
     lateinit var roomTimelineStore: RoomTimelineStore
@@ -53,6 +59,7 @@ class RoomServiceTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         roomStore = getInMemoryRoomStore(scope)
+        roomUserStore = getInMemoryRoomUserStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
         roomTimelineStore = getInMemoryRoomTimelineStore(scope)
@@ -63,7 +70,7 @@ class RoomServiceTest : ShouldSpec({
         val (api, _) = mockMatrixClientServerApiClient(json)
         cut = RoomServiceImpl(
             api,
-            roomStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
+            roomStore, roomUserStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
             listOf(roomEventDecryptionServiceMock),
             mediaServiceMock,
             TimelineEventHandlerMock(),
@@ -353,6 +360,92 @@ class RoomServiceTest : ShouldSpec({
                     transactionId.length shouldBeGreaterThan 12
                 }
             }
+        }
+    }
+    context(RoomServiceImpl::forgetRoom.name) {
+        should("forget rooms when membershipt is leave") {
+            roomStore.update(room) { simpleRoom.copy(room, membership = Membership.LEAVE) }
+
+            fun timelineEvent(roomId: RoomId, i: Int) =
+                TimelineEvent(
+                    MessageEvent(
+                        TextMessageEventContent("$i"),
+                        EventId("$i"),
+                        UserId("sender", "server"),
+                        roomId,
+                        1234L,
+                    ),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null,
+                )
+            roomTimelineStore.addAll(
+                listOf(
+                    timelineEvent(room, 1),
+                    timelineEvent(room, 2),
+                )
+            )
+
+            fun timelineEventRelation(roomId: RoomId, i: Int) =
+                TimelineEventRelation(roomId, EventId("r$i"), RelationType.Replace, EventId("$i"))
+            roomTimelineStore.addRelation(timelineEventRelation(room, 1))
+            roomTimelineStore.addRelation(timelineEventRelation(room, 2))
+
+            fun stateEvent(roomId: RoomId, i: Int) =
+                Event.StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("$i"),
+                    UserId("sender", "server"),
+                    roomId,
+                    1234L,
+                    stateKey = "$i",
+                )
+            roomStateStore.save(stateEvent(room, 1))
+            roomStateStore.save(stateEvent(room, 2))
+
+            fun roomAccountDataEvent(roomId: RoomId, i: Int) =
+                Event.RoomAccountDataEvent(
+                    FullyReadEventContent(EventId("$i")),
+                    roomId,
+                    key = "$i",
+                )
+            roomAccountDataStore.save(roomAccountDataEvent(room, 1))
+            roomAccountDataStore.save(roomAccountDataEvent(room, 2))
+
+            fun roomUser(roomId: RoomId, i: Int) =
+                RoomUser(roomId, UserId("user$i", "server"), "$i", stateEvent(roomId, i))
+            roomUserStore.update(UserId("1"), room) { roomUser(room, 1) }
+            roomUserStore.update(UserId("2"), room) { roomUser(room, 2) }
+
+            roomStore.getAll().first { it.size == 1 }
+
+            cut.forgetRoom(room)
+
+            roomStore.get(room).first() shouldBe null
+
+            roomTimelineStore.get(EventId("1"), room).first() shouldBe null
+            roomTimelineStore.get(EventId("2"), room).first() shouldBe null
+
+            roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace).first() shouldBe null
+            roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace).first() shouldBe null
+
+            roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldBe null
+            roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldBe null
+
+            roomAccountDataStore.get<FullyReadEventContent>(room, "1").first() shouldBe null
+            roomAccountDataStore.get<FullyReadEventContent>(room, "2").first() shouldBe null
+
+            roomUserStore.get(UserId("1"), room).first() shouldBe null
+            roomUserStore.get(UserId("2"), room).first() shouldBe null
+        }
+        should("not forget rooms when membershipt is not leave") {
+            roomStore.update(room) { simpleRoom.copy(room) }
+
+            roomStore.getAll().first { it.size == 1 }
+
+            cut.forgetRoom(room)
+
+            roomStore.get(room).first() shouldNotBe null
         }
     }
 })

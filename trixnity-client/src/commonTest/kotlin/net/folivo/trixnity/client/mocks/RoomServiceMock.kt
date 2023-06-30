@@ -1,9 +1,6 @@
 package net.folivo.trixnity.client.mocks
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.room.GetTimelineEventConfig
 import net.folivo.trixnity.client.room.GetTimelineEventsConfig
 import net.folivo.trixnity.client.room.RoomService
@@ -126,6 +123,11 @@ class RoomServiceMock : RoomService {
     val rooms = MutableStateFlow(mapOf<RoomId, StateFlow<Room?>>())
     override fun getById(roomId: RoomId): StateFlow<Room?> {
         return checkNotNull(rooms.value[roomId])
+    }
+
+    val forgetRooms = MutableStateFlow(listOf<RoomId>())
+    override suspend fun forgetRoom(roomId: RoomId) {
+        forgetRooms.update { it + roomId }
     }
 
     override fun <C : RoomAccountDataEventContent> getAccountData(

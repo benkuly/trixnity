@@ -4,7 +4,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.Room
+import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -15,10 +16,7 @@ private val log = KotlinLogging.logger {}
 class RoomListHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
-    private val roomTimelineStore: RoomTimelineStore,
-    private val roomStateStore: RoomStateStore,
-    private val roomAccountDataStore: RoomAccountDataStore,
-    private val roomUserStore: RoomUserStore,
+    private val roomService: RoomService,
     private val config: MatrixClientConfiguration,
 ) : EventHandler {
 
@@ -97,11 +95,7 @@ class RoomListHandler(
                 log.debug { "forget rooms: $forgetRooms" }
             }
             forgetRooms.forEach { roomId ->
-                roomStore.delete(roomId)
-                roomTimelineStore.deleteByRoomId(roomId)
-                roomStateStore.deleteByRoomId(roomId)
-                roomAccountDataStore.deleteByRoomId(roomId)
-                roomUserStore.deleteByRoomId(roomId)
+                roomService.forgetRoom(roomId)
             }
         }
     }

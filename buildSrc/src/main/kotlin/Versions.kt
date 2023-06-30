@@ -31,7 +31,7 @@ object Versions {
     const val robolectric = "4.10.3" // https://github.com/robolectric/robolectric/releases
     const val downloadGradlePlugin = "5.4.0" // https://github.com/michel-kraemer/gradle-download-task/releases
 
-    const val kotlinLogging = "4.0.0" // https://github.com/MicroUtils/kotlin-logging/releases
+    const val kotlinLogging = "4.0.1" // https://github.com/MicroUtils/kotlin-logging/releases
     const val logback = "1.4.8" // https://github.com/qos-ch/logback/tags
 
     // make sure to update the build images, when you change a version here!
