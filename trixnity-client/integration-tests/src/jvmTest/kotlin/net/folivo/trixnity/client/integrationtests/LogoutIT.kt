@@ -32,33 +32,35 @@ class LogoutIT {
 
     @Test
     fun shouldLogoutOnDeviceDeletion(): Unit = runBlocking {
-        val startedClient1 = registerAndStartClient(
-            "client1", "user1", getBaseUrl(),
-            createExposedRepositoriesModule(newDatabase())
-        )
-        val startedClient2 =
-            startClient("client2", "user1", getBaseUrl(), createExposedRepositoriesModule(newDatabase()))
+        withTimeout(30_000) {
+            val startedClient1 = registerAndStartClient(
+                "client1", "user1", getBaseUrl(),
+                createExposedRepositoriesModule(newDatabase())
+            )
+            val startedClient2 =
+                startClient("client2", "user1", getBaseUrl(), createExposedRepositoriesModule(newDatabase()))
 
-        withClue("check client2 is logged in and sync is running") {
-            withTimeout(30_000) {
-                startedClient2.client.syncState.first { it == SyncState.RUNNING }
-                startedClient2.client.loginState.first { it == LOGGED_IN }
+            withClue("check client2 is logged in and sync is running") {
+                withTimeout(30_000) {
+                    startedClient2.client.syncState.first { it == SyncState.RUNNING }
+                    startedClient2.client.loginState.first { it == LOGGED_IN }
+                }
             }
-        }
 
-        val deleteStep = startedClient1.client.api.devices.deleteDevice("client2").getOrThrow()
-        deleteStep.shouldBeInstanceOf<UIA.Step<Unit>>()
-            .authenticate(Password(User("user1"), startedClient1.password)).getOrThrow()
-            .shouldBeInstanceOf<UIA.Success<Unit>>()
+            val deleteStep = startedClient1.client.api.devices.deleteDevice("client2").getOrThrow()
+            deleteStep.shouldBeInstanceOf<UIA.Step<Unit>>()
+                .authenticate(Password(User("user1"), startedClient1.password)).getOrThrow()
+                .shouldBeInstanceOf<UIA.Success<Unit>>()
 
-        withClue("check client2 is logged out and sync is stopped") {
-            withTimeout(30_000) {
-                startedClient2.client.syncState.first { it == SyncState.STOPPED }
-                startedClient2.client.loginState.first { it == LoginState.LOGGED_OUT }
+            withClue("check client2 is logged out and sync is stopped") {
+                withTimeout(30_000) {
+                    startedClient2.client.syncState.first { it == SyncState.STOPPED }
+                    startedClient2.client.loginState.first { it == LoginState.LOGGED_OUT }
+                }
             }
-        }
 
-        startedClient1.scope.cancel()
-        startedClient2.scope.cancel()
+            startedClient1.scope.cancel()
+            startedClient2.scope.cancel()
+        }
     }
 }
