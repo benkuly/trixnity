@@ -80,18 +80,19 @@ class RoomListHandler(
     }
 
     internal suspend fun handleAfterSyncResponse(syncResponse: Sync.Response) {
-        val rooms = syncResponse.room
-        if (rooms != null) {
-            val allRooms =
-                rooms.join?.keys.orEmpty() +
-                        rooms.leave?.keys.orEmpty() +
-                        rooms.knock?.keys.orEmpty() +
-                        rooms.invite?.keys.orEmpty()
-            val allExistingRooms = roomStore.getAll().value.keys
+        val syncLeaveRooms = syncResponse.room?.leave?.keys
+        if (syncLeaveRooms != null && config.deleteRoomsOnLeave) {
+            val existingLeaveRooms = roomStore.getAll().value
+                .filter { it.value.value?.membership == Membership.LEAVE }
+                .keys
 
-            val forgetRooms = allExistingRooms - allRooms
+            if ((existingLeaveRooms - syncLeaveRooms).isNotEmpty()) {
+                log.warn { "there were LEAVE rooms which should have already been deleted (existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms)" }
+            }
 
-            log.trace { "allRooms=$allRooms allExistingRooms=$allExistingRooms" }
+            val forgetRooms = existingLeaveRooms + syncLeaveRooms
+
+            log.trace { "existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms" }
             if (forgetRooms.isNotEmpty()) {
                 log.debug { "forget rooms: $forgetRooms" }
             }

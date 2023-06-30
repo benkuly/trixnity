@@ -31,12 +31,13 @@ data class Filters(
 
     @Serializable
     data class RoomFilter(
+        @SerialName("account_data") val accountData: RoomEventFilter? = null,
+        @SerialName("ephemeral") val ephemeral: RoomEventFilter? = null,
+        @SerialName("include_leave") val includeLeave: Boolean? = null,
         @SerialName("not_rooms") val notRooms: Set<String>? = null,
         @SerialName("rooms") val rooms: Set<String>? = null,
-        @SerialName("ephemeral") val ephemeral: RoomEventFilter? = null,
         @SerialName("state") val state: StateFilter? = null,
-        @SerialName("timeline") val timeline: RoomEventFilter? = null,
-        @SerialName("account_data") val accountData: RoomEventFilter? = null
+        @SerialName("timeline") val timeline: RoomEventFilter? = null
     ) {
         @Serializable
         data class RoomEventFilter(

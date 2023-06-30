@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.LeftRoom
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -33,6 +34,7 @@ class RoomListHandlerTest : ShouldSpec({
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomAccountDataStore: RoomAccountDataStore
     lateinit var roomUserStore: RoomUserStore
+    lateinit var config: MatrixClientConfiguration
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
 
@@ -45,6 +47,7 @@ class RoomListHandlerTest : ShouldSpec({
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
         roomUserStore = getInMemoryRoomUserStore(scope)
+        config = MatrixClientConfiguration()
         val (api, _) = mockMatrixClientServerApiClient(json)
         cut = RoomListHandler(
             api,
@@ -53,7 +56,7 @@ class RoomListHandlerTest : ShouldSpec({
             roomStateStore,
             roomAccountDataStore,
             roomUserStore,
-            MatrixClientConfiguration(),
+            config,
         )
     }
 
@@ -123,11 +126,8 @@ class RoomListHandlerTest : ShouldSpec({
         }
     }
     context(RoomListHandler::handleAfterSyncResponse.name) {
-        should("forget rooms") {
-            val room2 = RoomId("room2", "server")
-
-            roomStore.update(room) { simpleRoom }
-            roomStore.update(room2) { simpleRoom.copy(room2) }
+        should("forget rooms on leave when activated") {
+            roomStore.update(room) { simpleRoom.copy(room, membership = Membership.LEAVE) }
 
             fun timelineEvent(roomId: RoomId, i: Int) =
                 TimelineEvent(
@@ -146,8 +146,6 @@ class RoomListHandlerTest : ShouldSpec({
                 listOf(
                     timelineEvent(room, 1),
                     timelineEvent(room, 2),
-                    timelineEvent(room2, 3),
-                    timelineEvent(room2, 4),
                 )
             )
 
@@ -155,8 +153,6 @@ class RoomListHandlerTest : ShouldSpec({
                 TimelineEventRelation(roomId, EventId("r$i"), RelationType.Replace, EventId("$i"))
             roomTimelineStore.addRelation(timelineEventRelation(room, 1))
             roomTimelineStore.addRelation(timelineEventRelation(room, 2))
-            roomTimelineStore.addRelation(timelineEventRelation(room2, 3))
-            roomTimelineStore.addRelation(timelineEventRelation(room2, 4))
 
             fun stateEvent(roomId: RoomId, i: Int) =
                 Event.StateEvent(
@@ -169,8 +165,6 @@ class RoomListHandlerTest : ShouldSpec({
                 )
             roomStateStore.save(stateEvent(room, 1))
             roomStateStore.save(stateEvent(room, 2))
-            roomStateStore.save(stateEvent(room2, 3))
-            roomStateStore.save(stateEvent(room2, 4))
 
             fun roomAccountDataEvent(roomId: RoomId, i: Int) =
                 Event.RoomAccountDataEvent(
@@ -180,52 +174,56 @@ class RoomListHandlerTest : ShouldSpec({
                 )
             roomAccountDataStore.save(roomAccountDataEvent(room, 1))
             roomAccountDataStore.save(roomAccountDataEvent(room, 2))
-            roomAccountDataStore.save(roomAccountDataEvent(room2, 3))
-            roomAccountDataStore.save(roomAccountDataEvent(room2, 4))
 
             fun roomUser(roomId: RoomId, i: Int) =
                 RoomUser(roomId, UserId("user$i", "server"), "$i", stateEvent(roomId, i))
             roomUserStore.update(UserId("1"), room) { roomUser(room, 1) }
             roomUserStore.update(UserId("2"), room) { roomUser(room, 2) }
-            roomUserStore.update(UserId("3"), room2) { roomUser(room2, 3) }
-            roomUserStore.update(UserId("4"), room2) { roomUser(room2, 4) }
+
+            roomStore.getAll().first { it.size == 1 }
 
             cut.handleAfterSyncResponse(
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        join = mapOf(room to JoinedRoom())
+                        leave = mapOf(room to LeftRoom())
+                    )
+                )
+            )
+
+            roomStore.get(room).first() shouldBe null
+
+            roomTimelineStore.get(EventId("1"), room).first() shouldBe null
+            roomTimelineStore.get(EventId("2"), room).first() shouldBe null
+
+            roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace).first() shouldBe null
+            roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace).first() shouldBe null
+
+            roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldBe null
+            roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldBe null
+
+            roomAccountDataStore.get<FullyReadEventContent>(room, "1").first() shouldBe null
+            roomAccountDataStore.get<FullyReadEventContent>(room, "2").first() shouldBe null
+
+            roomUserStore.get(UserId("1"), room).first() shouldBe null
+            roomUserStore.get(UserId("2"), room).first() shouldBe null
+        }
+        should("not forget rooms on leave when disabled") {
+            config.deleteRoomsOnLeave = false
+            roomStore.update(room) { simpleRoom.copy(membership = Membership.LEAVE) }
+
+            roomStore.getAll().first { it.size == 1 }
+
+            cut.handleAfterSyncResponse(
+                Sync.Response(
+                    nextBatch = "",
+                    room = Sync.Response.Rooms(
+                        leave = mapOf(room to LeftRoom())
                     )
                 )
             )
 
             roomStore.get(room).first() shouldNotBe null
-            roomStore.get(room2).first() shouldBe null
-
-            roomTimelineStore.get(EventId("1"), room).first() shouldNotBe null
-            roomTimelineStore.get(EventId("2"), room).first() shouldNotBe null
-            roomTimelineStore.get(EventId("3"), room2).first() shouldBe null
-            roomTimelineStore.get(EventId("4"), room2).first() shouldBe null
-
-            roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace).first() shouldNotBe null
-            roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace).first() shouldNotBe null
-            roomTimelineStore.getRelations(EventId("3"), room2, RelationType.Replace).first() shouldBe null
-            roomTimelineStore.getRelations(EventId("4"), room2, RelationType.Replace).first() shouldBe null
-
-            roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldNotBe null
-            roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldNotBe null
-            roomStateStore.getByStateKey<MemberEventContent>(room2, "3").first() shouldBe null
-            roomStateStore.getByStateKey<MemberEventContent>(room2, "4").first() shouldBe null
-
-            roomAccountDataStore.get<FullyReadEventContent>(room, "1").first() shouldNotBe null
-            roomAccountDataStore.get<FullyReadEventContent>(room, "2").first() shouldNotBe null
-            roomAccountDataStore.get<FullyReadEventContent>(room2, "3").first() shouldBe null
-            roomAccountDataStore.get<FullyReadEventContent>(room2, "4").first() shouldBe null
-
-            roomUserStore.get(UserId("1"), room).first() shouldNotBe null
-            roomUserStore.get(UserId("2"), room).first() shouldNotBe null
-            roomUserStore.get(UserId("3"), room2).first() shouldBe null
-            roomUserStore.get(UserId("4"), room2).first() shouldBe null
         }
     }
 })
