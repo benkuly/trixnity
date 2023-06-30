@@ -109,7 +109,7 @@ pages:
 
 build-trixnity-build-linux-image:
   stage: prepare-build
-  tags: [ "saas-linux-large-amd64" ]
+  tags: [ "saas-linux-small-amd64" ]
   image: docker:20
   services:
     - name: docker:dind
