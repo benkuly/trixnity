@@ -3,6 +3,7 @@ package net.folivo.trixnity.client
 import io.ktor.client.*
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -22,6 +23,11 @@ class MatrixClientConfiguration {
      * Enables async database transactions. It adds a huge performance boost on processing syncs.
      */
     var asyncTransactions: Boolean = true
+
+    /**
+     * Delete a room, when it's membership is [Membership.LEAVE].
+     */
+    var deleteRoomsOnLeave: Boolean = true
 
     /**
      * Specifies how long values are kept in the cache when not used by anyone.

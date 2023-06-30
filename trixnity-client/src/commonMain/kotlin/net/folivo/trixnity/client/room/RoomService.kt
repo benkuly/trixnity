@@ -25,6 +25,7 @@ import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -161,6 +162,11 @@ interface RoomService {
 
     fun getById(roomId: RoomId): Flow<Room?>
 
+    /**
+     * If the room has [Membership.LEAVE], you can delete it locally.
+     */
+    suspend fun forgetRoom(roomId: RoomId)
+
     fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
         eventContentClass: KClass<C>,
@@ -184,6 +190,7 @@ interface RoomService {
 class RoomServiceImpl(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
+    private val roomUserStore: RoomUserStore,
     private val roomStateStore: RoomStateStore,
     private val roomAccountDataStore: RoomAccountDataStore,
     private val roomTimelineStore: RoomTimelineStore,
@@ -582,6 +589,16 @@ class RoomServiceImpl(
 
     override fun getById(roomId: RoomId): Flow<Room?> {
         return roomStore.get(roomId)
+    }
+
+    override suspend fun forgetRoom(roomId: RoomId) {
+        if (roomStore.get(roomId).first()?.membership == Membership.LEAVE) {
+            roomStore.delete(roomId)
+            roomTimelineStore.deleteByRoomId(roomId)
+            roomStateStore.deleteByRoomId(roomId)
+            roomAccountDataStore.deleteByRoomId(roomId)
+            roomUserStore.deleteByRoomId(roomId)
+        }
     }
 
     override fun <C : RoomAccountDataEventContent> getAccountData(

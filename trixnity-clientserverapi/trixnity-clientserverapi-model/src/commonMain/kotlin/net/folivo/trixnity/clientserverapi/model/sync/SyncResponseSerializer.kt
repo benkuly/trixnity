@@ -8,15 +8,16 @@ object SyncResponseSerializer : JsonTransformingSerializer<Sync.Response>(Sync.R
         require(element is JsonObject)
         val rooms = element["rooms"] ?: return element
         require(rooms is JsonObject)
-        val newRooms = JsonObject(buildMap {
+        val roomsWithEventIds = JsonObject(buildMap {
             putAll(rooms)
             putAndConvertEventMap("join", rooms["join"], setOf("timeline", "state", "ephemeral", "account_data"))
             putAndConvertEventMap("leave", rooms["leave"], setOf("timeline", "state", "account_data"))
+            putAndConvertEventMap("knock", rooms["knock"], setOf("knock_state"))
             putAndConvertEventMap("invite", rooms["invite"], setOf("invite_state"))
         })
         return JsonObject(buildMap {
             putAll(element)
-            put("rooms", newRooms)
+            put("rooms", roomsWithEventIds)
         })
     }
 

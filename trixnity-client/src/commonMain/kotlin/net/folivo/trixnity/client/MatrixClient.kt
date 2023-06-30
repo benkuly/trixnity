@@ -418,6 +418,12 @@ class MatrixClientImpl internal constructor(
 
     private val initializationMutex = Mutex()
     private var initializationJob: Job? = null
+    private val baseFilters =
+        Filters(
+            room = Filters.RoomFilter(
+                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+            )
+        )
 
     @OptIn(FlowPreview::class)
     private suspend fun startMatrixClient() = initializationMutex.withLock {
@@ -466,10 +472,8 @@ class MatrixClientImpl internal constructor(
                         flowOf(true),
                         onError = { log.warn(it) { "could not set filter" } }
                     ) {
-                        api.users.setFilter(
-                            userId,
-                            Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true)))
-                        ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
+                        api.users.setFilter(userId, baseFilters)
+                            .getOrThrow().also { log.debug { "set new filter for sync: $it" } }
                     }
                 }
                 val backgroundFilterId = accountStore.backgroundFilterId.value
@@ -480,13 +484,7 @@ class MatrixClientImpl internal constructor(
                     ) {
                         api.users.setFilter(
                             userId,
-                            Filters(
-                                room = Filters.RoomFilter(
-                                    state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
-                                    ephemeral = Filters.RoomFilter.RoomEventFilter(limit = 0)
-                                ),
-                                presence = Filters.EventFilter(limit = 0)
-                            )
+                            baseFilters.copy(presence = Filters.EventFilter(limit = 0))
                         ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
                     }
                 }
