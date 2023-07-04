@@ -129,9 +129,9 @@ class IndexedDBTimelineEventRelationRepositoryTest : ShouldSpec({
             cut.save(key3, relation3)
 
             cut.deleteByRoomId(RoomId("room1", "server"))
-            cut.get(key1) shouldBe null
+            cut.get(key1) shouldBe emptyMap()
             cut.get(key2) shouldBe relation2
-            cut.get(key3) shouldBe null
+            cut.get(key3) shouldBe emptyMap()
         }
     }
 })

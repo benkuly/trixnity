@@ -5,7 +5,6 @@ import com.juul.indexeddb.Key
 import com.juul.indexeddb.KeyPath
 import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.Contextual
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
@@ -22,13 +21,12 @@ internal class IndexedDBRoomAccountData(
     val value: Event.RoomAccountDataEvent<*>,
 )
 
-@OptIn(ExperimentalSerializationApi::class)
 internal class IndexedDBRoomAccountDataRepository(
     json: Json
 ) : RoomAccountDataRepository,
     IndexedDBMapRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>, IndexedDBRoomAccountData>(
         objectStoreName = objectStoreName,
-        firstKeyIndexName = "roomId",
+        firstKeyIndexName = "roomId|type",
         firstKeySerializer = { arrayOf(it.roomId.full, it.type) },
         secondKeySerializer = { arrayOf(it) },
         secondKeyDestructor = { it.key },
@@ -46,8 +44,8 @@ internal class IndexedDBRoomAccountDataRepository(
                         database = database,
                         objectStoreName = objectStoreName,
                         keyPath = KeyPath("roomId", "type", "key"),
-                        firstKeyIndexName = "roomId",
-                        firstKeyIndexKeyPath = KeyPath("roomId"),
+                        firstKeyIndexName = "roomId|type",
+                        firstKeyIndexKeyPath = KeyPath("roomId", "type"),
                     ) {
                         createIndex("roomId", KeyPath("roomId"), unique = false)
                     }
@@ -58,7 +56,7 @@ internal class IndexedDBRoomAccountDataRepository(
     override suspend fun deleteByRoomId(roomId: RoomId) = withIndexedDBWrite { store ->
         store.index("roomId").openCursor(Key(roomId.full), autoContinue = true)
             .collect {
-                store.delete(it.key as Key)
+                store.delete(Key(it.primaryKey))
             }
     }
 }

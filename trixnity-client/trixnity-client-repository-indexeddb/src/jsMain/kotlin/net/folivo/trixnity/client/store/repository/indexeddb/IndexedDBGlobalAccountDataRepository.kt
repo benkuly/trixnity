@@ -21,7 +21,7 @@ internal class IndexedDBGlobalAccountDataRepository(
     json: Json
 ) : GlobalAccountDataRepository,
     IndexedDBMapRepository<String, String, Event.GlobalAccountDataEvent<*>, IndexedDBGlobalAccountData>(
-        objectStoreName = IndexedDBRoomAccountDataRepository.objectStoreName,
+        objectStoreName = objectStoreName,
         firstKeyIndexName = "type",
         firstKeySerializer = { arrayOf(it) },
         secondKeySerializer = { arrayOf(it) },

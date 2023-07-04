@@ -24,8 +24,8 @@ internal class IndexedDBTimelineEventRelationRepository(
     json: Json
 ) : TimelineEventRelationRepository,
     IndexedDBMapRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>, IndexedDBTimelineEventRelation>(
-        objectStoreName = IndexedDBRoomAccountDataRepository.objectStoreName,
-        firstKeyIndexName = "roomId",
+        objectStoreName = objectStoreName,
+        firstKeyIndexName = "roomId|relatedEventId",
         firstKeySerializer = { arrayOf(it.roomId.full, it.relatedEventId.full) },
         secondKeySerializer = { arrayOf(it.name) },
         secondKeyDestructor = { RelationType.of(it.relationType) },
@@ -48,10 +48,10 @@ internal class IndexedDBTimelineEventRelationRepository(
                 oldVersion < 1 ->
                     createIndexedDBTwoDimensionsStoreRepository(
                         database = database,
-                        objectStoreName = IndexedDBRoomAccountDataRepository.objectStoreName,
+                        objectStoreName = objectStoreName,
                         keyPath = KeyPath("roomId", "relatedEventId", "relationType"),
-                        firstKeyIndexName = "roomId",
-                        firstKeyIndexKeyPath = KeyPath("roomId"),
+                        firstKeyIndexName = "roomId|relatedEventId",
+                        firstKeyIndexKeyPath = KeyPath("roomId", "relatedEventId"),
                     ) {
                         createIndex("roomId", KeyPath("roomId"), unique = false)
                     }
@@ -62,7 +62,7 @@ internal class IndexedDBTimelineEventRelationRepository(
     override suspend fun deleteByRoomId(roomId: RoomId) = withIndexedDBWrite { store ->
         store.index("roomId").openCursor(Key(roomId.full), autoContinue = true)
             .collect {
-                store.delete(it.key as Key)
+                store.delete(Key(it.primaryKey))
             }
     }
 }
