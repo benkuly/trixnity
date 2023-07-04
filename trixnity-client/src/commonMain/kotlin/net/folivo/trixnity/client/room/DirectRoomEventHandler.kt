@@ -52,7 +52,7 @@ class DirectRoomEventHandler(
         val stateKey = event.getStateKey()
         val sender = event.getSender()
         if (roomId != null && stateKey != null && sender != null) {
-            log.debug { "set direct room $roomId" }
+            log.trace { "set direct room $roomId for $stateKey" }
             val userWithMembershipChange = UserId(stateKey)
             val directUser =
                 when {
