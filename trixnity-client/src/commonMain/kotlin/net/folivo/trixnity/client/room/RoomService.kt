@@ -465,7 +465,7 @@ class RoomServiceImpl(
                             if (continueWith != null) {
                                 emit(FollowTimelineResult.Continue(continueWith))
                             } else {
-                                log.warn { "getTimelineEvents: did not found any event to continue with at $currentEventId" }
+                                log.debug { "getTimelineEvents: did not found any event to continue with at $currentEventId" }
                             }
                         }
                     }
