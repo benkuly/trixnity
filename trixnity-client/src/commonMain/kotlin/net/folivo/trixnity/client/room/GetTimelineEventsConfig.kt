@@ -4,7 +4,6 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.events.RelationType
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
-import kotlin.time.Duration.Companion.minutes
 
 
 data class GetTimelineEventConfig(
@@ -16,7 +15,7 @@ data class GetTimelineEventConfig(
      * When the event does not exist locally, it is searched by fetching [TimelineEvent]s:
      * Timeout how long the [TimelineEvent] is searched.
      */
-    var fetchTimeout: Duration = 1.minutes,
+    var fetchTimeout: Duration = INFINITE,
     /**
      * When the event does not exist locally, it is searched by fetching [TimelineEvent]s:
      * Maximum number of events fetched from the server at once.
@@ -44,7 +43,7 @@ data class GetTimelineEventsConfig(
      * When the next event does not exist locally, it is fetched:
      * Timeout for this fetch.
      */
-    var fetchTimeout: Duration = 1.minutes,
+    var fetchTimeout: Duration = INFINITE,
     /**
      * When the next event does not exist locally, it is fetched:
      * Maximum number of events fetched from the server at once.

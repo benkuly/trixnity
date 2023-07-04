@@ -342,6 +342,7 @@ class TimelineImpl<T>(
         startFrom: EventId,
         config: GetTimelineEventsConfig.() -> Unit
     ): List<Flow<TimelineEvent>> {
+        log.debug { "load before $startFrom" }
         val newEvents = roomService.getTimelineEvents(
             startFrom = startFrom,
             roomId = roomId,
@@ -356,6 +357,7 @@ class TimelineImpl<T>(
         startFrom: EventId,
         config: GetTimelineEventsConfig.() -> Unit
     ): List<Flow<TimelineEvent>> {
+        log.debug { "load after $startFrom" }
         val newEvents = roomService.getTimelineEvents(
             startFrom = startFrom,
             roomId = roomId,

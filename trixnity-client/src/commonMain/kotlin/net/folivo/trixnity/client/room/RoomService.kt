@@ -253,7 +253,7 @@ class RoomServiceImpl(
                                         }
                                         ?.mapCatching {
                                             if (it == null) {
-                                                log.warn { "could not find replacing event content for $eventId in $roomId" }
+                                                log.warn { "getTimelineEvent: could not find replacing event content for $eventId in $roomId" }
                                                 throw IllegalStateException("replacing event did not contain replace")
                                             } else it
                                         } ?: timelineEvent.content
@@ -273,7 +273,7 @@ class RoomServiceImpl(
                         val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(cfg.fetchTimeout) {
                             val lastEventId = roomStore.get(roomId).first()?.lastEventId
                             if (lastEventId != null) {
-                                log.debug { "cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
+                                log.debug { "getTimelineEvent: cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
                                 getTimelineEvents(
                                     startFrom = lastEventId,
                                     roomId = roomId,
@@ -283,9 +283,11 @@ class RoomServiceImpl(
                                         decryptionTimeout = ZERO
                                     }
                                 ).map { it.first() }.firstOrNull { it.eventId == eventId }
-                                    .also { log.trace { "found TimelineEvent $eventId" } }
+                                    .also { log.trace { "getTimelineEvent: found TimelineEvent $eventId" } }
                             } else null
                         }
+                        if (timelineEvent == null)
+                            log.warn { "getTimelineEvent: could not find TimelineEvent $eventId in store or by fetching (timeout=${cfg.fetchTimeout})" }
                         if (timelineEvent?.canBeDecrypted() == true) {
                             val decryptedEventContent = withTimeoutOrNull(cfg.decryptionTimeout) {
                                 roomEventDecryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
@@ -382,13 +384,14 @@ class RoomServiceImpl(
                 val followTimelineResult: FollowTimelineResult = currentTimelineEventFlow
                     .transform { currentTimelineEvent ->
                         val currentRoomId = currentTimelineEvent.roomId
+                        val currentEventId = currentTimelineEvent.eventId
 
                         // check for room upgrades
                         data class RoomEventIdPair(val eventId: EventId, val roomId: RoomId)
 
                         val predecessor: RoomEventIdPair? =
                             if (direction == BACKWARDS && currentTimelineEvent.isFirst) {
-                                getState<CreateEventContent>(currentTimelineEvent.roomId).first()?.content?.predecessor
+                                getState<CreateEventContent>(currentRoomId).first()?.content?.predecessor
                                     ?.let { RoomEventIdPair(it.eventId, it.roomId) }
                             } else null
                         val timelineEventSnapshotContent = currentTimelineEvent.content?.getOrNull()
@@ -417,16 +420,13 @@ class RoomServiceImpl(
                         }
 
                         if (currentTimelineEvent.needsFetchGap()) {
-                            log.debug { "found ${currentTimelineEvent.gap} at ${currentTimelineEvent.eventId}" }
-                            fillTimelineGaps(
-                                currentTimelineEvent.roomId,
-                                currentTimelineEvent.eventId,
-                                cfg.fetchSize
-                            )
+                            log.debug { "getTimelineEvents: found ${currentTimelineEvent.gap} at $currentEventId" }
+                            fillTimelineGaps(currentRoomId, currentEventId, cfg.fetchSize)
                         } else {
                             val continueWith = when (direction) {
                                 BACKWARDS ->
-                                    if (predecessor == null)
+                                    if (predecessor == null) {
+                                        log.trace { "getTimelineEvents: continue with previous event of $currentEventId" }
                                         getPreviousTimelineEvent(
                                             event = currentTimelineEvent,
                                             config = {
@@ -434,14 +434,18 @@ class RoomServiceImpl(
                                                 fetchTimeout = ZERO
                                             }
                                         )
-                                    else getTimelineEvent(
-                                        eventId = predecessor.eventId,
-                                        roomId = predecessor.roomId,
-                                        config = { apply(cfg) },
-                                    )
+                                    } else {
+                                        log.trace { "getTimelineEvents: continue with predecessor ($predecessor) of $currentEventId" }
+                                        getTimelineEvent(
+                                            eventId = predecessor.eventId,
+                                            roomId = predecessor.roomId,
+                                            config = { apply(cfg) },
+                                        )
+                                    }
 
                                 FORWARDS ->
-                                    if (successor == null)
+                                    if (successor == null) {
+                                        log.trace { "getTimelineEvents: continue with next event of $currentEventId" }
                                         getNextTimelineEvent(
                                             event = currentTimelineEvent,
                                             config = {
@@ -449,37 +453,44 @@ class RoomServiceImpl(
                                                 fetchTimeout = ZERO
                                             }
                                         )
-                                    else getTimelineEvent(
-                                        eventId = successor.eventId,
-                                        roomId = successor.roomId,
-                                        config = { apply(cfg) },
-                                    )
+                                    } else {
+                                        log.trace { "getTimelineEvents: continue with successor ($successor) of $currentEventId" }
+                                        getTimelineEvent(
+                                            eventId = successor.eventId,
+                                            roomId = successor.roomId,
+                                            config = { apply(cfg) },
+                                        )
+                                    }
                             }
-                            if (continueWith != null) emit(
-                                FollowTimelineResult.Continue(continueWith)
-                            )
+                            if (continueWith != null) {
+                                emit(FollowTimelineResult.Continue(continueWith))
+                            } else {
+                                log.warn { "getTimelineEvents: did not found any event to continue with at $currentEventId" }
+                            }
                         }
                     }
                     .first()
 
                 when (followTimelineResult) {
-                    is FollowTimelineResult.Continue ->
+                    is FollowTimelineResult.Continue -> {
                         currentTimelineEventFlow = followTimelineResult.timelineEventFlow.filterNotNull()
+                    }
 
                     is FollowTimelineResult.Stop -> break
                 }
 
                 // check for loop
-                val newTimelineEventSnapshot = currentTimelineEventFlow.first()
-                if (loopDetectionEventIds.contains(newTimelineEventSnapshot.eventId)) {
+                val continueTimelineEventId = currentTimelineEventFlow.first().eventId
+                if (loopDetectionEventIds.contains(continueTimelineEventId)) {
                     val message =
                         "Detected a loop in timeline generation. " +
-                                "Event with id ${newTimelineEventSnapshot.eventId} has already be emitted in this flow. " +
-                                "This is a severe misbehavior and must be fixed in Trixnity!!!"
+                                "This is a severe misbehavior and must be fixed in Trixnity!!! " +
+                                "Event $continueTimelineEventId has already been emitted in this flow (history=$loopDetectionEventIds)."
                     log.error { message } // log even when a consumer don't catch the exception
                     throw IllegalStateException(message)
-                } else loopDetectionEventIds.add(newTimelineEventSnapshot.eventId)
+                } else loopDetectionEventIds.add(continueTimelineEventId)
 
+                log.trace { "getTimelineEvents: continue loop with $continueTimelineEventId" }
                 emit(currentTimelineEventFlow)
                 size++
             }
