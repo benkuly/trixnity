@@ -12,8 +12,8 @@ import net.folivo.trixnity.core.model.UserId
 
 @Serializable
 internal class IndexedDBRoomUser(
-    val userId: String,
     val roomId: String,
+    val userId: String,
     val value: RoomUser,
 )
 
@@ -21,8 +21,8 @@ internal class IndexedDBRoomUserRepository(
     json: Json
 ) : RoomUserRepository,
     IndexedDBMapRepository<RoomId, UserId, RoomUser, IndexedDBRoomUser>(
-        objectStoreName = IndexedDBRoomAccountDataRepository.objectStoreName,
-        firstKeyIndexName = "type",
+        objectStoreName = objectStoreName,
+        firstKeyIndexName = "roomId",
         firstKeySerializer = { arrayOf(it.full) },
         secondKeySerializer = { arrayOf(it.full) },
         secondKeyDestructor = { UserId(it.userId) },
@@ -39,9 +39,9 @@ internal class IndexedDBRoomUserRepository(
                     createIndexedDBTwoDimensionsStoreRepository(
                         database = database,
                         objectStoreName = objectStoreName,
-                        keyPath = KeyPath("userId", "roomId"),
-                        firstKeyIndexName = "userId",
-                        firstKeyIndexKeyPath = KeyPath("userId"),
+                        keyPath = KeyPath("roomId", "userId"),
+                        firstKeyIndexName = "roomId",
+                        firstKeyIndexKeyPath = KeyPath("roomId"),
                     )
             }
         }

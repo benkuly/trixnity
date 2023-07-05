@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.repository.realm
 
 import com.benasher44.uuid.uuid4
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import io.realm.kotlin.ext.query
@@ -94,6 +95,24 @@ class RealmRepositoryTransactionManagerTest : ShouldSpec({
                     testRead()
                 }
             }
+        }
+    }
+
+    context("rollback") {
+        should("rollback on exception") {
+            try {
+                tm.writeTransaction {
+                    testWrite(1)
+                    throw RuntimeException("dino")
+                }
+            } catch (_: Exception) {
+            }
+            tm.writeTransaction {
+                testWrite(2)
+            }
+            tm.readTransaction {
+                testRead()
+            } shouldBe 1
         }
     }
 })

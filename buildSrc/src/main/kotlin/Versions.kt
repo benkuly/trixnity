@@ -12,7 +12,7 @@ object Versions {
     const val olm = "3.2.15" // https://gitlab.matrix.org/matrix-org/olm/-/releases
     const val trixnityBinaries = "1.0.0" // https://gitlab.com/trixnity/trixnity-binaries/-/releases
     const val jna = "5.13.0" // https://github.com/java-native-access/jna/tags
-    const val ktor = "2.3.1" // https://github.com/ktorio/ktor/releases
+    const val ktor = "2.3.2" // https://github.com/ktorio/ktor/releases
     const val koin = "3.4.2" // https://github.com/InsertKoinIO/koin/tags
     const val korlibs = "4.0.6" // https://github.com/korlibs/korge/releases
     const val mocKmp = "1.14.0" // https://github.com/Kodein-Framework/MocKMP/releases

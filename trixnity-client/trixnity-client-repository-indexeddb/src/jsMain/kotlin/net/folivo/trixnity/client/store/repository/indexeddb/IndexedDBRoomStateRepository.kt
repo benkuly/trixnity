@@ -25,8 +25,8 @@ internal class IndexedDBRoomStateRepository(
     json: Json
 ) : RoomStateRepository,
     IndexedDBMapRepository<RoomStateRepositoryKey, String, Event<*>, IndexedDBRoomState>(
-        objectStoreName = IndexedDBRoomAccountDataRepository.objectStoreName,
-        firstKeyIndexName = "roomId",
+        objectStoreName = objectStoreName,
+        firstKeyIndexName = "roomId|type",
         firstKeySerializer = { arrayOf(it.roomId.full, it.type) },
         secondKeySerializer = { arrayOf(it) },
         secondKeyDestructor = { it.stateKey },
@@ -44,8 +44,8 @@ internal class IndexedDBRoomStateRepository(
                         database = database,
                         objectStoreName = objectStoreName,
                         keyPath = KeyPath("roomId", "type", "stateKey"),
-                        firstKeyIndexName = "roomId",
-                        firstKeyIndexKeyPath = KeyPath("roomId"),
+                        firstKeyIndexName = "roomId|type",
+                        firstKeyIndexKeyPath = KeyPath("roomId", "type"),
                     ) {
                         createIndex("roomId", KeyPath("roomId"), unique = false)
                     }
@@ -56,7 +56,7 @@ internal class IndexedDBRoomStateRepository(
     override suspend fun deleteByRoomId(roomId: RoomId) = withIndexedDBWrite { store ->
         store.index("roomId").openCursor(Key(roomId.full), autoContinue = true)
             .collect {
-                store.delete(it.key as Key)
+                store.delete(Key(it.primaryKey))
             }
     }
 }

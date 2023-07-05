@@ -37,8 +37,12 @@ internal abstract class IndexedDBMapRepository<K1, K2, V, R : Any>(
     val json: Json
 ) : MapRepository<K1, K2, V>, IndexedDBRepository(objectStoreName) {
 
+    private fun keyOf(keys: Array<String>) =
+        Key(keys.first(), *keys.drop(1).toTypedArray())
+
     override suspend fun get(key: K1): Map<K2, V> = withIndexedDBRead { store ->
-        store.index(firstKeyIndexName).openCursor(Key(firstKeySerializer(key)), autoContinue = true)
+        store.index(firstKeyIndexName)
+            .openCursor(keyOf(firstKeySerializer(key)), autoContinue = true)
             .mapNotNull { json.decodeFromDynamicNullable(representationSerializer, it.value) }
             .map { secondKeyDestructor(it) to mapFromRepresentation(it) }
             .toList()
@@ -48,7 +52,7 @@ internal abstract class IndexedDBMapRepository<K1, K2, V, R : Any>(
     override suspend fun getBySecondKey(firstKey: K1, secondKey: K2): V? = withIndexedDBRead { store ->
         json.decodeFromDynamicNullable(
             representationSerializer,
-            store.get(Key(arrayOf(*firstKeySerializer(firstKey), *secondKeySerializer(secondKey))))
+            store.get(keyOf(firstKeySerializer(firstKey) + secondKeySerializer(secondKey)))
         )?.let(mapFromRepresentation)
     }
 
@@ -59,7 +63,8 @@ internal abstract class IndexedDBMapRepository<K1, K2, V, R : Any>(
                     representationSerializer,
                     mapToRepresentation(key, entry.key, entry.value)
                 )
-            ) as Unit
+            )
+            Unit
         }
     }
 
@@ -70,7 +75,8 @@ internal abstract class IndexedDBMapRepository<K1, K2, V, R : Any>(
                     representationSerializer,
                     mapToRepresentation(firstKey, secondKey, value)
                 )
-            ) as Unit
+            )
+            Unit
         }
 
     override suspend fun delete(key: K1): Unit = withIndexedDBWrite { store ->
@@ -79,7 +85,7 @@ internal abstract class IndexedDBMapRepository<K1, K2, V, R : Any>(
     }
 
     override suspend fun deleteBySecondKey(firstKey: K1, secondKey: K2): Unit = withIndexedDBWrite { store ->
-        store.delete(Key(arrayOf(*firstKeySerializer(firstKey), *secondKeySerializer(secondKey))))
+        store.delete(keyOf(firstKeySerializer(firstKey) + secondKeySerializer(secondKey)))
     }
 
     override suspend fun deleteAll(): Unit = withIndexedDBWrite { store ->

@@ -27,18 +27,18 @@ class IndexedDBWriteTransaction(
 
 suspend fun <T> IndexedDBRepository.withIndexedDBRead(block: suspend Transaction.(ObjectStore) -> T) =
     coroutineScope {
-        val exposedReadTransaction =
+        val readTransaction =
             checkNotNull(coroutineContext[IndexedDBReadTransaction]) { "read transaction is missing" }
-        exposedReadTransaction.transaction.run {
+        readTransaction.transaction.run {
             block(objectStore(objectStoreName))
         }
     }
 
 suspend fun <T> IndexedDBRepository.withIndexedDBWrite(block: suspend WriteTransaction.(ObjectStore) -> T) =
     coroutineScope {
-        val exposedWriteTransaction =
+        val writeTransaction =
             checkNotNull(coroutineContext[IndexedDBWriteTransaction]) { "write transaction is missing" }
-        exposedWriteTransaction.transaction.run {
+        writeTransaction.transaction.run {
             block(objectStore(objectStoreName))
         }
     }

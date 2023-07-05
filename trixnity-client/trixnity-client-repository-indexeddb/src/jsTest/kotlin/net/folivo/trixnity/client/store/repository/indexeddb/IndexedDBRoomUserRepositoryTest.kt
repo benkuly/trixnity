@@ -61,13 +61,21 @@ class IndexedDBRoomUserRepositoryTest : ShouldSpec({
         )
 
         rtm.writeTransaction {
+            println(1)
             cut.save(key1, mapOf(user1.userId to user1))
+            println(2)
             cut.save(key2, mapOf(user2.userId to user2))
+            println(3)
             cut.get(key1) shouldBe mapOf(user1.userId to user1)
+            println(4)
             cut.get(key2) shouldBe mapOf(user2.userId to user2)
+            println(5)
             cut.save(key2, mapOf(user2.userId to user2, user3.userId to user3))
+            println(6)
             cut.get(key2) shouldBe mapOf(user2.userId to user2, user3.userId to user3)
+            println(7)
             cut.delete(key1)
+            println(8)
             cut.get(key1) shouldHaveSize 0
         }
     }

@@ -34,7 +34,7 @@ internal class IndexedDBTimelineEventRepository(
     override suspend fun deleteByRoomId(roomId: RoomId) = withIndexedDBWrite { store ->
         store.index("roomId").openCursor(Key(roomId.full), autoContinue = true)
             .collect {
-                store.delete(it.key as Key)
+                store.delete(Key(it.primaryKey))
             }
     }
 }

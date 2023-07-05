@@ -47,8 +47,12 @@ class RealmRepositoryTransactionManager(private val realm: Realm) : RepositoryTr
             //      Right now it is not possible to solve it like in ExposedRepositoryTransactionManager. runBlocking
             //      blocks the realm write dispatcher and because of this there is no chance to switch back to this dispatcher once we have left it.
             // we can do both within write transactions: read and write
-            runBlocking(RealmWriteTransaction(this) + RealmReadTransaction(this)) {
-                block()
+            try {
+                runBlocking(RealmWriteTransaction(this) + RealmReadTransaction(this)) {
+                    block()
+                }
+            } catch (_: Exception) {
+                cancelWrite()
             }
         }
     }

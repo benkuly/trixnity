@@ -73,4 +73,21 @@ class IndexedDBRepositoryTransactionManagerTest : ShouldSpec({
             }
         }
     }
+
+    // TODO uncomment when fixed: https://github.com/JuulLabs/indexeddb/issues/115
+//    should("rollback on exception") {
+//        try {
+//            tm.writeTransaction {
+//                testRepo.testWrite()
+//                throw RuntimeException("dino")
+//            }
+//        } catch (_: Exception) {
+//        }
+//        tm.writeTransaction {
+//            testRepo.testWrite()
+//        }
+//        tm.readTransaction {
+//            testRepo.testRead()
+//        }.size shouldBe 1
+//    }
 })

@@ -1,11 +1,13 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -32,6 +34,7 @@ class ExposedRepositoryTransactionManagerTest : ShouldSpec({
         val db = createDatabase()
         newSuspendedTransaction(Dispatchers.IO, db) {
             SchemaUtils.create(TestEntity)
+            TestEntity.deleteAll()
         }
         tm = ExposedRepositoryTransactionManager(db)
     }
@@ -71,6 +74,24 @@ class ExposedRepositoryTransactionManagerTest : ShouldSpec({
                     }
                 }
             }
+        }
+    }
+
+    context("rollback") {
+        should("rollback on exception") {
+            try {
+                tm.writeTransaction {
+                    testWrite()
+                    throw RuntimeException("dino")
+                }
+            } catch (_: Exception) {
+            }
+            tm.writeTransaction {
+                testWrite()
+            }
+            tm.readTransaction {
+                testRead()
+            }.size shouldBe 1
         }
     }
 })

@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -77,9 +78,28 @@ class RoomRepositoryTransactionManagerTest {
         }
     }
 
-    private suspend fun testRead() {
-        dao.getAllByType(type = "foo")
+    @Test
+    fun `Should rollback on exception`() = runTest {
+        try {
+            tm.writeTransaction {
+                testWrite("1")
+                throw RuntimeException("dino")
+            }
+        } catch (_: Exception) {
+        }
+        tm.writeTransaction {
+            testWrite("2")
+        }
+        tm.readTransaction {
+            testRead("1")
+        }.size shouldBe 0
+        tm.readTransaction {
+            testRead("2")
+        }.size shouldBe 1
     }
+
+    private suspend fun testRead(key: String = "foo") =
+        dao.getAllByType(type = key)
 
     private suspend fun testWrite(key: String) {
         val entity = RoomGlobalAccountData(type = key, key = "789xyz", event = "hello world")
