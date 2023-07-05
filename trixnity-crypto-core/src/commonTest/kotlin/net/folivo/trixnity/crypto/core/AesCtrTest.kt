@@ -2,6 +2,7 @@ package net.folivo.trixnity.crypto.core
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.ktor.util.*
 import korlibs.crypto.encoding.hex
 import korlibs.crypto.encoding.unhex
 import kotlinx.coroutines.flow.collect
@@ -21,12 +22,13 @@ class AesCtrTest {
 
     @Test
     fun shouldEncrypt() = runTest {
+        val expectedResult = if (PlatformUtils.IS_BROWSER) listOf("14e2d5701d") else listOf("14e2", "d5701d")
         val result =
             flowOf("he".encodeToByteArray(), "llo".encodeToByteArray(), ByteArray(0)).encryptAes256Ctr(
                 key,
                 initialisationVector
             )
-        result.map { it.hex }.toList() shouldBe listOf("14e2", "d5701d")
+        result.map { it.hex }.toList() shouldBe expectedResult
     }
 
     @Test
@@ -37,9 +39,10 @@ class AesCtrTest {
 
     @Test
     fun shouldDecrypt() = runTest {
+        val expectedResult = if (PlatformUtils.IS_BROWSER) listOf("hello") else listOf("he", "llo")
         flowOf("14e2".unhex, "d5701d".unhex, ByteArray(0))
             .decryptAes256Ctr(key, initialisationVector)
-            .map { it.decodeToString() }.toList() shouldBe listOf("he", "llo")
+            .map { it.decodeToString() }.toList() shouldBe expectedResult
     }
 
     @Test
