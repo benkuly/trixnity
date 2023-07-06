@@ -62,13 +62,14 @@ class RoomRoomUserRepositoryTest {
             )
         )
 
-        repo.save(key1, mapOf(user1.userId to user1))
-        repo.save(key2, mapOf(user2.userId to user2))
+        repo.save(key1, user1.userId, user1)
+        repo.save(key2, user2.userId, user2)
         repo.get(key1) shouldBe mapOf(user1.userId to user1)
         repo.get(key2) shouldBe mapOf(user2.userId to user2)
-        repo.save(key2, mapOf(user2.userId to user2, user3.userId to user3))
+        repo.save(key2, user2.userId, user2)
+        repo.save(key2, user3.userId, user3)
         repo.get(key2) shouldBe mapOf(user2.userId to user2, user3.userId to user3)
-        repo.delete(key1)
+        repo.delete(key1, user1.userId)
         repo.get(key1) shouldHaveSize 0
     }
 
@@ -86,7 +87,7 @@ class RoomRoomUserRepositoryTest {
             )
         )
 
-        repo.saveBySecondKey(key, user.userId, user)
-        repo.getBySecondKey(key, user.userId) shouldBe user
+        repo.save(key, user.userId, user)
+        repo.get(key, user.userId) shouldBe user
     }
 }

@@ -1,8 +1,11 @@
 package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.TypedRealm
+import io.realm.kotlin.UpdatePolicy
+import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
@@ -11,6 +14,9 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 
 internal class RealmRoomAccountData : RealmObject {
+    @PrimaryKey
+    var id: String = ""
+
     var roomId: String = ""
     var type: String = ""
     var key: String = ""
@@ -24,9 +30,9 @@ internal class RealmRoomAccountDataRepository(
     private val serializer = json.serializersModule.getContextual(Event.RoomAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> =
+    override suspend fun get(firstKey: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> =
         withRealmRead {
-            findByKey(key).associate {
+            findByKey(firstKey).copyFromRealm().associate {
                 it.key to json.decodeFromString(serializer, it.event)
             }
         }
@@ -36,54 +42,33 @@ internal class RealmRoomAccountDataRepository(
         delete(existing)
     }
 
-    override suspend fun getBySecondKey(
+    override suspend fun get(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String
     ): Event.RoomAccountDataEvent<*>? = withRealmRead {
-        findByKeys(firstKey, secondKey).find()?.let {
+        findByKeys(firstKey, secondKey).find()?.copyFromRealm()?.let {
             json.decodeFromString(serializer, it.event)
         }
     }
 
-    override suspend fun save(key: RoomAccountDataRepositoryKey, value: Map<String, Event.RoomAccountDataEvent<*>>) =
-        withRealmWrite {
-            value.entries.forEach { (secondKey, event) ->
-                val existing = findByKeys(key, secondKey).find()
-                val upsert = (existing ?: RealmRoomAccountData()).apply {
-                    this.roomId = key.roomId.full
-                    this.type = key.type
-                    this.key = secondKey
-                    this.event = json.encodeToString(serializer, event)
-                }
-                if (existing == null) {
-                    copyToRealm(upsert)
-                }
-            }
-        }
-
-    override suspend fun saveBySecondKey(
+    override suspend fun save(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String,
         value: Event.RoomAccountDataEvent<*>
-    ) = withRealmWrite {
-        val existing = findByKeys(firstKey, secondKey).find()
-        val upsert = (existing ?: RealmRoomAccountData()).apply {
-            this.roomId = firstKey.roomId.full
-            this.type = firstKey.type
-            this.key = secondKey
-            this.event = json.encodeToString(serializer, value)
-        }
-        if (existing == null) {
-            copyToRealm(upsert)
-        }
+    ): Unit = withRealmWrite {
+        copyToRealm(
+            RealmRoomAccountData().apply {
+                this.id = serializeKey(firstKey, secondKey)
+                this.roomId = firstKey.roomId.full
+                this.type = firstKey.type
+                this.key = secondKey
+                this.event = json.encodeToString(serializer, value)
+            },
+            UpdatePolicy.ALL
+        )
     }
 
-    override suspend fun delete(key: RoomAccountDataRepositoryKey) = withRealmWrite {
-        val existing = findByKey(key)
-        delete(existing)
-    }
-
-    override suspend fun deleteBySecondKey(firstKey: RoomAccountDataRepositoryKey, secondKey: String) = withRealmWrite {
+    override suspend fun delete(firstKey: RoomAccountDataRepositoryKey, secondKey: String) = withRealmWrite {
         val existing = findByKeys(firstKey, secondKey)
         delete(existing)
     }

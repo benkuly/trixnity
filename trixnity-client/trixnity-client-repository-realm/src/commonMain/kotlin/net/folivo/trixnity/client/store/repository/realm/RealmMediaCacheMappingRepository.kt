@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.TypedRealm
+import io.realm.kotlin.UpdatePolicy
+import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
@@ -17,7 +19,7 @@ internal class RealmMediaCacheMapping : RealmObject {
 
 internal class RealmMediaCacheMappingRepository : MediaCacheMappingRepository {
     override suspend fun get(key: String): MediaCacheMapping? = withRealmRead {
-        findByKey(key).find()?.let {
+        findByKey(key).find()?.copyFromRealm()?.let {
             MediaCacheMapping(
                 cacheUri = it.cacheUri,
                 mxcUri = it.mxcUri,
@@ -27,16 +29,16 @@ internal class RealmMediaCacheMappingRepository : MediaCacheMappingRepository {
         }
     }
 
-    override suspend fun save(key: String, value: MediaCacheMapping) = withRealmWrite {
-        val existing = findByKey(key).find()
-        val upsert = (existing ?: RealmMediaCacheMapping().apply { cacheUri = key }).apply {
-            mxcUri = value.mxcUri
-            size = value.size
-            contentType = value.contentType
-        }
-        if (existing == null) {
-            copyToRealm(upsert)
-        }
+    override suspend fun save(key: String, value: MediaCacheMapping): Unit = withRealmWrite {
+        copyToRealm(
+            RealmMediaCacheMapping().apply {
+                cacheUri = key
+                mxcUri = value.mxcUri
+                size = value.size
+                contentType = value.contentType
+            },
+            UpdatePolicy.ALL
+        )
     }
 
     override suspend fun delete(key: String) = withRealmWrite {

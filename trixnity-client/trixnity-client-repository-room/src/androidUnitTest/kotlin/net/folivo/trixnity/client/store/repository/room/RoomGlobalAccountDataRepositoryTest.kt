@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import io.kotest.matchers.maps.shouldHaveSize
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
@@ -33,48 +32,54 @@ class RoomGlobalAccountDataRepositoryTest {
     fun `Save, get and delete`() = runTest {
         val key1 = "m.direct"
         val key2 = "org.example.mynamespace"
-        val accountDataEvent1 = mapOf(
-            "" to Event.GlobalAccountDataEvent(
-                DirectEventContent(
-                    mapOf(
-                        UserId(
-                            "alice",
-                            "server.org"
-                        ) to setOf(RoomId("!room", "server"))
-                    )
-                ), ""
-            )
+        val accountDataEvent1 = Event.GlobalAccountDataEvent(
+            DirectEventContent(
+                mapOf(
+                    UserId(
+                        "alice",
+                        "server.org"
+                    ) to setOf(RoomId("!room", "server"))
+                )
+            ), ""
         )
-        val accountDataEvent2 = mapOf(
-            "" to Event.GlobalAccountDataEvent(
-                UnknownGlobalAccountDataEventContent(
-                    JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
-                    "org.example.mynamespace"
-                ),
-                ""
-            )
+        val accountDataEvent2 = Event.GlobalAccountDataEvent(
+            UnknownGlobalAccountDataEventContent(
+                JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                "org.example.mynamespace"
+            ),
+            ""
         )
-        val accountDataEvent1Copy = mapOf(
-            "" to accountDataEvent1[""].shouldNotBeNull().copy(
-                content = DirectEventContent(
-                    mapOf(
-                        UserId(
-                            "alice",
-                            "server.org"
-                        ) to null
-                    )
+        val accountDataEvent3 = Event.GlobalAccountDataEvent(
+            UnknownGlobalAccountDataEventContent(
+                JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                "org.example.mynamespace.2"
+            ),
+            ""
+        )
+        val accountDataEvent1Copy = accountDataEvent1.copy(
+            content = DirectEventContent(
+                mapOf(
+                    UserId(
+                        "alice",
+                        "server.org"
+                    ) to null
                 )
             )
         )
 
-        repo.save(key1, accountDataEvent1)
-        repo.save(key2, accountDataEvent2)
-        repo.get(key1) shouldBe accountDataEvent1
-        repo.get(key2) shouldBe accountDataEvent2
-        repo.save(key1, accountDataEvent1Copy)
-        repo.get(key1) shouldBe accountDataEvent1Copy
-        repo.delete(key1)
+        repo.save(key1, "", accountDataEvent1)
+        repo.save(key2, "", accountDataEvent2)
+        repo.save(key2, "3", accountDataEvent3)
+        repo.get(key1, "") shouldBe accountDataEvent1
+        repo.get(key2, "") shouldBe accountDataEvent2
+        repo.save(key1, "", accountDataEvent1Copy)
+        repo.get(key1, "") shouldBe accountDataEvent1Copy
+        repo.delete(key1, "")
         repo.get(key1) shouldHaveSize 0
+        repo.get(key2) shouldBe mapOf(
+            "" to accountDataEvent2,
+            "3" to accountDataEvent3
+        )
     }
 
     @Test
@@ -83,7 +88,7 @@ class RoomGlobalAccountDataRepositoryTest {
         val accountDataEvent = Event.GlobalAccountDataEvent(
             SecretKeyEventContent.AesHmacSha2Key("name"), "key"
         )
-        repo.saveBySecondKey(key, secondKey = "key", accountDataEvent)
-        repo.getBySecondKey(key, "key") shouldBe accountDataEvent
+        repo.save(key, "key", accountDataEvent)
+        repo.get(key, "key") shouldBe accountDataEvent
     }
 }

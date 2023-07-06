@@ -1,8 +1,11 @@
 package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.TypedRealm
+import io.realm.kotlin.UpdatePolicy
+import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
@@ -11,6 +14,9 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 
 internal class RealmRoomState : RealmObject {
+    @PrimaryKey
+    var id: String = ""
+
     var roomId: String = ""
     var type: String = ""
     var stateKey: String = ""
@@ -24,8 +30,8 @@ internal class RealmRoomStateRepository(
     private val serializer = json.serializersModule.getContextual(Event::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: RoomStateRepositoryKey): Map<String, Event<*>> = withRealmRead {
-        findByKey(key).associate {
+    override suspend fun get(firstKey: RoomStateRepositoryKey): Map<String, Event<*>> = withRealmRead {
+        findByKey(firstKey).copyFromRealm().associate {
             it.stateKey to json.decodeFromString(serializer, it.event)
         }
     }
@@ -35,48 +41,28 @@ internal class RealmRoomStateRepository(
         delete(existing)
     }
 
-    override suspend fun getBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String): Event<*>? =
+    override suspend fun get(firstKey: RoomStateRepositoryKey, secondKey: String): Event<*>? =
         withRealmRead {
-            findByKeys(firstKey, secondKey).find()?.let {
+            findByKeys(firstKey, secondKey).find()?.copyFromRealm()?.let {
                 json.decodeFromString(serializer, it.event)
             }
         }
 
-    override suspend fun save(key: RoomStateRepositoryKey, value: Map<String, Event<*>>) = withRealmWrite {
-        value.entries.forEach { (secondKey, event) ->
-            val existing = findByKeys(key, secondKey).find()
-            val upsert = (existing ?: RealmRoomState()).apply {
-                this.roomId = key.roomId.full
-                this.type = key.type
-                this.stateKey = secondKey
-                this.event = json.encodeToString(serializer, event)
-            }
-            if (existing == null) {
-                copyToRealm(upsert)
-            }
-        }
-    }
-
-    override suspend fun saveBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String, value: Event<*>) =
+    override suspend fun save(firstKey: RoomStateRepositoryKey, secondKey: String, value: Event<*>): Unit =
         withRealmWrite {
-            val existing = findByKeys(firstKey, secondKey).find()
-            val upsert = (existing ?: RealmRoomState()).apply {
-                this.roomId = firstKey.roomId.full
-                this.type = firstKey.type
-                this.stateKey = secondKey
-                this.event = json.encodeToString(serializer, value)
-            }
-            if (existing == null) {
-                copyToRealm(upsert)
-            }
+            copyToRealm(
+                RealmRoomState().apply {
+                    this.id = serializeKey(firstKey, secondKey)
+                    this.roomId = firstKey.roomId.full
+                    this.type = firstKey.type
+                    this.stateKey = secondKey
+                    this.event = json.encodeToString(serializer, value)
+                },
+                UpdatePolicy.ALL
+            )
         }
 
-    override suspend fun delete(key: RoomStateRepositoryKey) = withRealmWrite {
-        val existing = findByKey(key)
-        delete(existing)
-    }
-
-    override suspend fun deleteBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String) = withRealmWrite {
+    override suspend fun delete(firstKey: RoomStateRepositoryKey, secondKey: String) = withRealmWrite {
         val existing = findByKeys(firstKey, secondKey)
         delete(existing)
     }

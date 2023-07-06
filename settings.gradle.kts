@@ -25,6 +25,7 @@ include(
     "trixnity-client:integration-tests",
     "trixnity-client:trixnity-client-media-indexeddb",
     "trixnity-client:trixnity-client-media-okio",
+    "trixnity-client:client-repository-test",
     "trixnity-client:trixnity-client-repository-exposed",
     "trixnity-client:trixnity-client-repository-indexeddb",
     "trixnity-client:trixnity-client-repository-realm",

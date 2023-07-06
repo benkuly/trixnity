@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.TypedRealm
+import io.realm.kotlin.UpdatePolicy
+import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
@@ -15,19 +17,17 @@ internal class RealmOlmForgetFallbackKeyAfter : RealmObject {
 
 internal class RealmOlmForgetFallbackKeyAfterRepository : OlmForgetFallbackKeyAfterRepository {
     override suspend fun get(key: Long): Instant? = withRealmRead {
-        findByKey(key).find()?.value?.let { Instant.fromEpochMilliseconds(it) }
+        findByKey(key).find()?.copyFromRealm()?.value?.let { Instant.fromEpochMilliseconds(it) }
     }
 
-    override suspend fun save(key: Long, value: Instant) = withRealmWrite {
-        val existing = findByKey(key).find()
-        val upsert = (existing ?: RealmOlmForgetFallbackKeyAfter().apply {
-            id = key
-        }).apply {
-            this.value = value.toEpochMilliseconds()
-        }
-        if (existing == null) {
-            copyToRealm(upsert)
-        }
+    override suspend fun save(key: Long, value: Instant): Unit = withRealmWrite {
+        copyToRealm(
+            RealmOlmForgetFallbackKeyAfter().apply {
+                id = key
+                this.value = value.toEpochMilliseconds()
+            },
+            UpdatePolicy.ALL
+        )
     }
 
     override suspend fun delete(key: Long) = withRealmWrite {

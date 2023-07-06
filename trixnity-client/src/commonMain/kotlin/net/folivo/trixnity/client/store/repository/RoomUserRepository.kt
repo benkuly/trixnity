@@ -5,9 +5,8 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 interface RoomUserRepository : MapDeleteByRoomIdRepository<RoomId, UserId, RoomUser> {
-    override fun serializeKey(key: RoomId): String = this::class.simpleName + key.full
     override fun serializeKey(firstKey: RoomId, secondKey: UserId): String =
-        serializeKey(firstKey) + secondKey.full
+        firstKey.full + secondKey.full
 
-    override suspend fun deleteByRoomId(roomId: RoomId) = delete(roomId)
+    override suspend fun deleteByRoomId(roomId: RoomId)
 }

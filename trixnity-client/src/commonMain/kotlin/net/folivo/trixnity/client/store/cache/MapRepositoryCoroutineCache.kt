@@ -129,7 +129,7 @@ open class MapRepositoryCoroutineCache<K1, K2, V>(
                             }
                         )
                     } else {
-                        store.getByFirstKey(key).orEmpty().forEach { value ->
+                        store.getByFirstKey(key).forEach { value ->
                             updateAndGet(
                                 key = MapRepositoryCoroutinesCacheKey(key, value.key),
                                 updater = null,

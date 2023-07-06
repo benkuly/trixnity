@@ -2,8 +2,11 @@ package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.TypedRealm
+import io.realm.kotlin.UpdatePolicy
+import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
@@ -12,6 +15,8 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.RelationType
 
 internal class RealmTimelineEventRelation : RealmObject {
+    @PrimaryKey
+    var id: String = ""
     var roomId: String = ""
     var eventId: String = ""
     var relationType: String = ""
@@ -19,9 +24,9 @@ internal class RealmTimelineEventRelation : RealmObject {
 }
 
 internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepository {
-    override suspend fun get(key: TimelineEventRelationKey): Map<RelationType, Set<TimelineEventRelation>>? =
+    override suspend fun get(firstKey: TimelineEventRelationKey): Map<RelationType, Set<TimelineEventRelation>> =
         withRealmRead {
-            findByKey(key).find()
+            findByKey(firstKey).find().copyFromRealm()
                 .groupBy { it.relationType }
                 .map { (key, value) ->
                     val relationType = RelationType.of(key)
@@ -33,7 +38,7 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
                             relatedEventId = EventId(it.relatedEventId)
                         )
                     }.toSet()
-                }.toMap().ifEmpty { null }
+                }.toMap()
         }
 
     override suspend fun deleteByRoomId(roomId: RoomId) = withRealmWrite {
@@ -41,11 +46,11 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
         delete(existing)
     }
 
-    override suspend fun getBySecondKey(
+    override suspend fun get(
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType
     ): Set<TimelineEventRelation>? = withRealmRead {
-        findByKeys(firstKey, secondKey).find().map {
+        findByKeys(firstKey, secondKey).find().copyFromRealm().map {
             TimelineEventRelation(
                 roomId = RoomId(it.roomId),
                 eventId = EventId(it.eventId),
@@ -55,14 +60,7 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
         }.toSet().ifEmpty { null }
     }
 
-    override suspend fun save(key: TimelineEventRelationKey, value: Map<RelationType, Set<TimelineEventRelation>>) =
-        withRealmWrite {
-            value.entries.flatMap { it.value }.forEach { timelineEventRelation ->
-                saveToRealm(key, timelineEventRelation)
-            }
-        }
-
-    override suspend fun saveBySecondKey(
+    override suspend fun save(
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType,
         value: Set<TimelineEventRelation>
@@ -72,12 +70,7 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
         }
     }
 
-    override suspend fun delete(key: TimelineEventRelationKey) = withRealmWrite {
-        val existing = findByKey(key)
-        delete(existing)
-    }
-
-    override suspend fun deleteBySecondKey(firstKey: TimelineEventRelationKey, secondKey: RelationType) =
+    override suspend fun delete(firstKey: TimelineEventRelationKey, secondKey: RelationType) =
         withRealmWrite {
             val existing = findByKeys(firstKey, secondKey)
             delete(existing)
@@ -92,16 +85,16 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
         key: TimelineEventRelationKey,
         timelineEventRelation: TimelineEventRelation
     ) {
-        val existing = findByKeys(key, timelineEventRelation).find()
-        val upsert = (existing ?: RealmTimelineEventRelation()).apply {
-            roomId = key.roomId.full
-            relatedEventId = key.relatedEventId.full
-            relationType = timelineEventRelation.relationType.name
-            eventId = timelineEventRelation.eventId.full
-        }
-        if (existing == null) {
-            copyToRealm(upsert)
-        }
+        copyToRealm(
+            RealmTimelineEventRelation().apply {
+                id = serializeKey(key, timelineEventRelation.relationType)
+                roomId = key.roomId.full
+                relatedEventId = key.relatedEventId.full
+                relationType = timelineEventRelation.relationType.name
+                eventId = timelineEventRelation.eventId.full
+            },
+            UpdatePolicy.ALL
+        )
     }
 
     private fun TypedRealm.findByKey(key: TimelineEventRelationKey) =
@@ -120,15 +113,4 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
         firstKey.relatedEventId.full,
         secondKey.name
     )
-
-    private fun TypedRealm.findByKeys(
-        key: TimelineEventRelationKey,
-        timelineEventRelation: TimelineEventRelation
-    ) = query<RealmTimelineEventRelation>(
-        "roomId == $0 && relatedEventId == $1 && relationType == $2 && relatedEventId == $3",
-        key.roomId.full,
-        key.relatedEventId.full,
-        timelineEventRelation.relationType.name,
-        timelineEventRelation.relatedEventId.full,
-    ).first()
 }

@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.TypedRealm
+import io.realm.kotlin.UpdatePolicy
+import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
@@ -23,31 +25,28 @@ internal class RealmRoomOutboxMessageRepository(
     private val mappings: EventContentSerializerMappings,
 ) : RoomOutboxMessageRepository {
     override suspend fun getAll(): List<RoomOutboxMessage<*>> = withRealmRead {
-        query<RealmRoomOutboxMessage>().find().map { it.mapToRoomOutboxMessage() }
+        query<RealmRoomOutboxMessage>().find().copyFromRealm().map { it.mapToRoomOutboxMessage() }
     }
 
     override suspend fun get(key: String): RoomOutboxMessage<*>? = withRealmRead {
-        findByKey(key).find()?.mapToRoomOutboxMessage()
+        findByKey(key).find()?.copyFromRealm()?.mapToRoomOutboxMessage()
     }
 
-    override suspend fun save(key: String, value: RoomOutboxMessage<*>) = withRealmWrite {
+    override suspend fun save(key: String, value: RoomOutboxMessage<*>): Unit = withRealmWrite {
         val mapping = mappings.message.find { it.kClass.isInstance(value.content) }
         requireNotNull(mapping)
-
-        val existing = findByKey(key).find()
-        val upsert = (existing ?: RealmRoomOutboxMessage().apply {
-            transactionId = key
-        }).apply {
-            @Suppress("UNCHECKED_CAST")
-            this.value = json.encodeToString(
-                RoomOutboxMessage.serializer(mapping.serializer as KSerializer<MessageEventContent>),
-                value as RoomOutboxMessage<MessageEventContent>,
-            )
-            contentType = mapping.type
-        }
-        if (existing == null) {
-            copyToRealm(upsert)
-        }
+        copyToRealm(
+            RealmRoomOutboxMessage().apply {
+                transactionId = key
+                @Suppress("UNCHECKED_CAST")
+                this.value = json.encodeToString(
+                    RoomOutboxMessage.serializer(mapping.serializer as KSerializer<MessageEventContent>),
+                    value as RoomOutboxMessage<MessageEventContent>,
+                )
+                contentType = mapping.type
+            },
+            UpdatePolicy.ALL
+        )
     }
 
     override suspend fun delete(key: String) = withRealmWrite {

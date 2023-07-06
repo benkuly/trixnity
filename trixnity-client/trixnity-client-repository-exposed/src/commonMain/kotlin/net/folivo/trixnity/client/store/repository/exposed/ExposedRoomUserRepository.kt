@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomUser
@@ -18,14 +17,14 @@ internal object ExposedRoomUser : Table("room_user") {
 }
 
 internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepository {
-    override suspend fun getBySecondKey(firstKey: RoomId, secondKey: UserId): RoomUser? = withExposedRead {
+    override suspend fun get(firstKey: RoomId, secondKey: UserId): RoomUser? = withExposedRead {
         ExposedRoomUser.select { ExposedRoomUser.roomId.eq(firstKey.full) and ExposedRoomUser.userId.eq(secondKey.full) }
             .firstOrNull()?.let {
                 json.decodeFromString(it[ExposedRoomUser.value])
             }
     }
 
-    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, value: RoomUser): Unit =
+    override suspend fun save(firstKey: RoomId, secondKey: UserId, value: RoomUser): Unit =
         withExposedWrite {
             ExposedRoomUser.replace {
                 it[roomId] = firstKey.full
@@ -34,26 +33,18 @@ internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepos
             }
         }
 
-    override suspend fun deleteBySecondKey(firstKey: RoomId, secondKey: UserId): Unit = withExposedWrite {
+    override suspend fun delete(firstKey: RoomId, secondKey: UserId): Unit = withExposedWrite {
         ExposedRoomUser.deleteWhere { roomId.eq(firstKey.full) and userId.eq(secondKey.full) }
     }
 
-    override suspend fun get(key: RoomId): Map<UserId, RoomUser> = withExposedRead {
-        ExposedRoomUser.select { ExposedRoomUser.roomId eq key.full }
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        ExposedRoomUser.deleteWhere { this.roomId.eq(roomId.full) }
+    }
+
+    override suspend fun get(firstKey: RoomId): Map<UserId, RoomUser> = withExposedRead {
+        ExposedRoomUser.select { ExposedRoomUser.roomId eq firstKey.full }
             .map { json.decodeFromString<RoomUser>(it[ExposedRoomUser.value]) }
             .associateBy { it.userId }
-    }
-
-    override suspend fun save(key: RoomId, value: Map<UserId, RoomUser>): Unit = withExposedWrite {
-        ExposedRoomUser.batchReplace(value.values) { replaceValue ->
-            this[ExposedRoomUser.userId] = replaceValue.userId.full
-            this[ExposedRoomUser.roomId] = key.full
-            this[ExposedRoomUser.value] = json.encodeToString(replaceValue)
-        }
-    }
-
-    override suspend fun delete(key: RoomId): Unit = withExposedWrite {
-        ExposedRoomUser.deleteWhere { roomId eq key.full }
     }
 
     override suspend fun deleteAll(): Unit = withExposedWrite {

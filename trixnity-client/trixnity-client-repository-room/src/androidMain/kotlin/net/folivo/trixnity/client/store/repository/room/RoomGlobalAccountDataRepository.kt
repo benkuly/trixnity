@@ -1,10 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
@@ -55,30 +51,18 @@ internal class RoomGlobalAccountDataRepository(
         .getContextual(Event.GlobalAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: String): Map<String, Event.GlobalAccountDataEvent<*>> =
-        dao.getAllByType(key)
+    override suspend fun get(firstKey: String): Map<String, Event.GlobalAccountDataEvent<*>> =
+        dao.getAllByType(firstKey)
             .associate { entity -> entity.key to json.decodeFromString(serializer, entity.event) }
 
-    override suspend fun getBySecondKey(
+    override suspend fun get(
         firstKey: String,
         secondKey: String
     ): Event.GlobalAccountDataEvent<*>? =
         dao.getByKeys(firstKey, secondKey)
             ?.let { entity -> json.decodeFromString(serializer, entity.event) }
 
-    override suspend fun save(key: String, value: Map<String, Event.GlobalAccountDataEvent<*>>) {
-        dao.insertAll(
-            value.map { (entityKey, eventJson) ->
-                RoomGlobalAccountData(
-                    type = key,
-                    key = entityKey,
-                    event = json.encodeToString(serializer, eventJson),
-                )
-            }
-        )
-    }
-
-    override suspend fun saveBySecondKey(
+    override suspend fun save(
         firstKey: String,
         secondKey: String,
         value: Event.GlobalAccountDataEvent<*>
@@ -92,11 +76,7 @@ internal class RoomGlobalAccountDataRepository(
         )
     }
 
-    override suspend fun delete(key: String) {
-        dao.delete(key)
-    }
-
-    override suspend fun deleteBySecondKey(firstKey: String, secondKey: String) {
+    override suspend fun delete(firstKey: String, secondKey: String) {
         dao.delete(firstKey, secondKey)
     }
 

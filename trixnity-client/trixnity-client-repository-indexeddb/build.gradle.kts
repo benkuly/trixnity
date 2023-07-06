@@ -32,10 +32,8 @@ kotlin {
         jsTarget?.testSourceSet(this) {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
+                implementation(project(":trixnity-client:client-repository-test"))
+                implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
     }

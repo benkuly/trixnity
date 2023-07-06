@@ -90,8 +90,8 @@ internal class RoomTimelineEventRelationRepository(
 
     private val dao = db.timelineEventRelation()
 
-    override suspend fun get(key: TimelineEventRelationKey): Map<RelationType, Set<TimelineEventRelation>>? =
-        dao.get(key.relatedEventId, key.roomId)
+    override suspend fun get(firstKey: TimelineEventRelationKey): Map<RelationType, Set<TimelineEventRelation>> =
+        dao.get(firstKey.relatedEventId, firstKey.roomId)
             .groupBy { it.relationType }
             .map { (relationType, entities) ->
                 relationType to entities.map { entity ->
@@ -102,13 +102,13 @@ internal class RoomTimelineEventRelationRepository(
                         relatedEventId = entity.relatedEventId,
                     )
                 }.toSet()
-            }.toMap().ifEmpty { null }
+            }.toMap()
 
     override suspend fun deleteByRoomId(roomId: RoomId) {
         dao.delete(roomId)
     }
 
-    override suspend fun getBySecondKey(
+    override suspend fun get(
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType,
     ): Set<TimelineEventRelation>? =
@@ -122,22 +122,6 @@ internal class RoomTimelineEventRelationRepository(
         }.toSet().ifEmpty { null }
 
     override suspend fun save(
-        key: TimelineEventRelationKey,
-        value: Map<RelationType, Set<TimelineEventRelation>>
-    ) {
-        dao.insertAll(
-            value.flatMap { (_, relations) -> relations }.map { relation ->
-                RoomTimelineEventRelation(
-                    roomId = key.roomId,
-                    eventId = relation.eventId,
-                    relationType = relation.relationType,
-                    relatedEventId = key.relatedEventId,
-                )
-            }
-        )
-    }
-
-    override suspend fun saveBySecondKey(
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType,
         value: Set<TimelineEventRelation>,
@@ -154,11 +138,7 @@ internal class RoomTimelineEventRelationRepository(
         )
     }
 
-    override suspend fun delete(key: TimelineEventRelationKey) {
-        dao.delete(key.relatedEventId, key.roomId)
-    }
-
-    override suspend fun deleteBySecondKey(
+    override suspend fun delete(
         firstKey: TimelineEventRelationKey,
         secondKey: RelationType
     ) {
