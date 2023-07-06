@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.store.repository.realm
 
-import io.realm.kotlin.MutableRealm
 import io.realm.kotlin.TypedRealm
+import io.realm.kotlin.UpdatePolicy
+import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
@@ -22,19 +22,19 @@ internal class RealmCrossSigningKeysRepository(
     private val json: Json
 ) : CrossSigningKeysRepository {
     override suspend fun get(key: UserId): Set<StoredCrossSigningKeys>? = withRealmRead {
-        findByKey(key).find()?.let { crossSigningKeys ->
+        findByKey(key).find()?.copyFromRealm()?.let { crossSigningKeys ->
             json.decodeFromString<Set<StoredCrossSigningKeys>>(crossSigningKeys.value)
         }
     }
 
-    override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>) = withRealmWrite {
-        val existing = findByKey(key).find()
-        val upsert = (existing ?: RealmCrossSigningKeys().apply { userId = key.full }).apply {
-            this.value = json.encodeToString(value)
-        }
-        if (existing == null) {
-            copyToRealm(upsert)
-        }
+    override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>): Unit = withRealmWrite {
+        copyToRealm(
+            RealmCrossSigningKeys().apply {
+                userId = key.full
+                this.value = json.encodeToString(value)
+            },
+            UpdatePolicy.ALL
+        )
     }
 
     override suspend fun delete(key: UserId) = withRealmWrite {

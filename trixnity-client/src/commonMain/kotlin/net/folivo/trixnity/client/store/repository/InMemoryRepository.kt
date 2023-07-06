@@ -28,7 +28,7 @@ abstract class InMemoryMinimalRepository<K, V> : MinimalRepository<K, V> {
     }
 
     override suspend fun deleteAll() {
-        content.value = mapOf()
+        content.value = emptyMap()
     }
 }
 
@@ -36,17 +36,24 @@ abstract class InMemoryFullRepository<K, V> : FullRepository<K, V>, InMemoryMini
     override suspend fun getAll(): List<V> = content.value.values.toList()
 }
 
-abstract class InMemoryMapRepository<K1, K2, V> : MapRepository<K1, K2, V>,
-    InMemoryMinimalRepository<K1, Map<K2, V>>() {
-    override suspend fun getBySecondKey(firstKey: K1, secondKey: K2): V? =
-        get(firstKey)?.get(secondKey)
+abstract class InMemoryMapRepository<K1, K2, V> : MapRepository<K1, K2, V> {
+    val content = MutableStateFlow<Map<K1, Map<K2, V>>>(mapOf())
+    override suspend fun get(firstKey: K1): Map<K2, V> =
+        content.value[firstKey].orEmpty()
 
-    override suspend fun saveBySecondKey(firstKey: K1, secondKey: K2, value: V) {
+    override suspend fun get(firstKey: K1, secondKey: K2): V? =
+        content.value[firstKey]?.get(secondKey)
+
+    override suspend fun save(firstKey: K1, secondKey: K2, value: V) {
         content.update { it + (firstKey to ((it[firstKey] ?: mapOf()) + (secondKey to value))) }
     }
 
-    override suspend fun deleteBySecondKey(firstKey: K1, secondKey: K2) {
+    override suspend fun delete(firstKey: K1, secondKey: K2) {
         content.update { it + (firstKey to ((it[firstKey] ?: mapOf()) - secondKey)) }
+    }
+
+    override suspend fun deleteAll() {
+        content.value = emptyMap()
     }
 }
 
@@ -77,7 +84,12 @@ class InMemoryInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRep
 class InMemoryOutboundMegolmSessionRepository : OutboundMegolmSessionRepository,
     InMemoryMinimalRepository<RoomId, StoredOutboundMegolmSession>()
 
-class InMemoryRoomUserRepository : RoomUserRepository, InMemoryMapRepository<RoomId, UserId, RoomUser>()
+class InMemoryRoomUserRepository : RoomUserRepository, InMemoryMapRepository<RoomId, UserId, RoomUser>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { it - roomId }
+    }
+}
+
 class InMemoryRoomStateRepository : RoomStateRepository,
     InMemoryMapRepository<RoomStateRepositoryKey, String, Event<*>>() {
     override suspend fun deleteByRoomId(roomId: RoomId) {

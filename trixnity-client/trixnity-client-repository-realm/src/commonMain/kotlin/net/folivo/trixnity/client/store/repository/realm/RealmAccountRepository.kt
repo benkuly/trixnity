@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.store.repository.realm
 
 import io.realm.kotlin.TypedRealm
+import io.realm.kotlin.UpdatePolicy
+import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
@@ -25,7 +27,7 @@ internal class RealmAccount : RealmObject {
 
 internal class RealmAccountRepository : AccountRepository {
     override suspend fun get(key: Long): Account? = withRealmRead {
-        findByKey(key).find()?.let { realmAccount ->
+        findByKey(key).find()?.copyFromRealm()?.let { realmAccount ->
             Account(
                 olmPickleKey = realmAccount.olmPickleKey,
                 baseUrl = realmAccount.baseUrl,
@@ -41,23 +43,23 @@ internal class RealmAccountRepository : AccountRepository {
         }
     }
 
-    override suspend fun save(key: Long, value: Account) = withRealmWrite {
-        val existing = findByKey(key).find()
-        val upsert = (existing ?: RealmAccount().apply { id = key }).apply {
-            olmPickleKey = value.olmPickleKey
-            baseUrl = value.baseUrl
-            userId = value.userId?.full
-            deviceId = value.deviceId
-            accessToken = value.accessToken
-            syncBatchToken = value.syncBatchToken
-            filterId = value.filterId
-            backgroundFilterId = value.backgroundFilterId
-            displayName = value.displayName
-            avatarUrl = value.avatarUrl
-        }
-        if (existing == null) {
-            copyToRealm(upsert)
-        }
+    override suspend fun save(key: Long, value: Account): Unit = withRealmWrite {
+        copyToRealm(
+            RealmAccount().apply {
+                id = key
+                olmPickleKey = value.olmPickleKey
+                baseUrl = value.baseUrl
+                userId = value.userId?.full
+                deviceId = value.deviceId
+                accessToken = value.accessToken
+                syncBatchToken = value.syncBatchToken
+                filterId = value.filterId
+                backgroundFilterId = value.backgroundFilterId
+                displayName = value.displayName
+                avatarUrl = value.avatarUrl
+            },
+            UpdatePolicy.ALL
+        )
     }
 
     override suspend fun delete(key: Long) = withRealmWrite {

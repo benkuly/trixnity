@@ -57,8 +57,8 @@ internal class RoomRoomStateRepository(
 
     private val dao = db.roomState()
 
-    override suspend fun get(key: RoomStateRepositoryKey): Map<String, Event<*>> =
-        dao.get(key.roomId, key.type)
+    override suspend fun get(firstKey: RoomStateRepositoryKey): Map<String, Event<*>> =
+        dao.get(firstKey.roomId, firstKey.type)
             .associate { entity ->
                 entity.stateKey to json.decodeFromString(
                     serializer,
@@ -70,27 +70,14 @@ internal class RoomRoomStateRepository(
         dao.delete(roomId)
     }
 
-    override suspend fun getBySecondKey(
+    override suspend fun get(
         firstKey: RoomStateRepositoryKey,
         secondKey: String
     ): Event<*>? =
         dao.get(firstKey.roomId, firstKey.type, stateKey = secondKey)
             ?.let { entity -> json.decodeFromString(serializer, entity.event) }
 
-    override suspend fun save(key: RoomStateRepositoryKey, value: Map<String, Event<*>>) {
-        dao.insertAll(
-            value.map { (stateKey, event) ->
-                RoomRoomState(
-                    roomId = key.roomId,
-                    type = key.type,
-                    stateKey = stateKey,
-                    event = json.encodeToString(serializer, event),
-                )
-            }
-        )
-    }
-
-    override suspend fun saveBySecondKey(
+    override suspend fun save(
         firstKey: RoomStateRepositoryKey,
         secondKey: String,
         value: Event<*>
@@ -105,11 +92,7 @@ internal class RoomRoomStateRepository(
         )
     }
 
-    override suspend fun delete(key: RoomStateRepositoryKey) {
-        dao.delete(key.roomId, key.type)
-    }
-
-    override suspend fun deleteBySecondKey(firstKey: RoomStateRepositoryKey, secondKey: String) {
+    override suspend fun delete(firstKey: RoomStateRepositoryKey, secondKey: String) {
         dao.delete(firstKey.roomId, firstKey.type, secondKey)
     }
 

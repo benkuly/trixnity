@@ -69,12 +69,8 @@ class RoomUserStoreTest : ShouldSpec({
         should("get all users of a room") {
             val scope = CoroutineScope(Dispatchers.Default)
 
-            roomUserRepository.save(
-                roomId, mapOf(
-                    aliceId to aliceUser,
-                    bobId to bobUser
-                )
-            )
+            roomUserRepository.save(roomId, aliceId, aliceUser)
+            roomUserRepository.save(roomId, bobId, bobUser)
 
             cut.getAll(roomId).flatten().first()?.values shouldContainExactly listOf(aliceUser, bobUser)
 
@@ -85,35 +81,35 @@ class RoomUserStoreTest : ShouldSpec({
         should("return matching userIds") {
             val user3 = UserId("user3", "server")
             val user4 = UserId("user4", "server")
+            roomUserRepository.save(roomId, aliceId, aliceUser)
+            roomUserRepository.save(roomId, bobId, bobUser)
             roomUserRepository.save(
-                roomId, mapOf(
-                    aliceId to aliceUser,
-                    bobId to bobUser,
-                    user3 to RoomUser(
+                roomId, user3, RoomUser(
+                    roomId = roomId,
+                    userId = user3,
+                    name = "A",
+                    event = StateEvent(
+                        content = MemberEventContent(displayName = "A", membership = LEAVE),
+                        id = EventId("event3"),
+                        sender = user3,
                         roomId = roomId,
-                        userId = user3,
-                        name = "A",
-                        event = StateEvent(
-                            content = MemberEventContent(displayName = "A", membership = LEAVE),
-                            id = EventId("event3"),
-                            sender = user3,
-                            roomId = roomId,
-                            originTimestamp = 1,
-                            stateKey = user3.full
-                        )
-                    ),
-                    user4 to RoomUser(
+                        originTimestamp = 1,
+                        stateKey = user3.full
+                    )
+                )
+            )
+            roomUserRepository.save(
+                roomId, user4, RoomUser(
+                    roomId = roomId,
+                    userId = user4,
+                    name = "AB",
+                    event = StateEvent(
+                        content = MemberEventContent(displayName = "AB", membership = JOIN),
+                        id = EventId("event3"),
+                        sender = user4,
                         roomId = roomId,
-                        userId = user4,
-                        name = "AB",
-                        event = StateEvent(
-                            content = MemberEventContent(displayName = "AB", membership = JOIN),
-                            id = EventId("event3"),
-                            sender = user4,
-                            roomId = roomId,
-                            originTimestamp = 1,
-                            stateKey = user4.full
-                        )
+                        originTimestamp = 1,
+                        stateKey = user4.full
                     )
                 )
             )

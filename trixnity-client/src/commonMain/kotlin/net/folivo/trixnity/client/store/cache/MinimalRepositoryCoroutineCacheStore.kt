@@ -10,7 +10,7 @@ open class MinimalRepositoryCoroutineCacheStore<K, V>(
 ) : CoroutineCacheStore<K, V> {
     override suspend fun get(key: K): V? = tm.readOperation { repository.get(key) }
     override suspend fun persist(key: K, value: V?): StateFlow<Boolean>? =
-        tm.writeOperationAsync(repository.serializeKey(key)) {
+        tm.writeOperationAsync(repository::class.simpleName + repository.serializeKey(key)) {
             if (value == null) repository.delete(key)
             else repository.save(key, value)
         }

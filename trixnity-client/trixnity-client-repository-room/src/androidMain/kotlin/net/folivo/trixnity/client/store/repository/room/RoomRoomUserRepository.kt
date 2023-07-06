@@ -1,11 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomUser
@@ -53,27 +48,15 @@ internal class RoomRoomUserRepository(
 ) : RoomUserRepository {
     private val dao = db.roomUser()
 
-    override suspend fun get(key: RoomId): Map<UserId, RoomUser> =
-        dao.get(key)
+    override suspend fun get(firstKey: RoomId): Map<UserId, RoomUser> =
+        dao.get(firstKey)
             .associate { entity -> entity.userId to json.decodeFromString(entity.value) }
 
-    override suspend fun getBySecondKey(firstKey: RoomId, secondKey: UserId): RoomUser? =
+    override suspend fun get(firstKey: RoomId, secondKey: UserId): RoomUser? =
         dao.get(secondKey, firstKey)
             ?.let { entity -> json.decodeFromString(entity.value) }
 
-    override suspend fun save(key: RoomId, value: Map<UserId, RoomUser>) {
-        dao.insertAll(
-            value.map { (userId, roomUser) ->
-                RoomRoomUser(
-                    userId = userId,
-                    roomId = key,
-                    value = json.encodeToString(roomUser),
-                )
-            }
-        )
-    }
-
-    override suspend fun saveBySecondKey(firstKey: RoomId, secondKey: UserId, value: RoomUser) {
+    override suspend fun save(firstKey: RoomId, secondKey: UserId, value: RoomUser) {
         dao.insert(
             RoomRoomUser(
                 userId = secondKey,
@@ -83,11 +66,11 @@ internal class RoomRoomUserRepository(
         )
     }
 
-    override suspend fun delete(key: RoomId) {
+    override suspend fun deleteByRoomId(key: RoomId) {
         dao.delete(key)
     }
 
-    override suspend fun deleteBySecondKey(firstKey: RoomId, secondKey: UserId) {
+    override suspend fun delete(firstKey: RoomId, secondKey: UserId) {
         dao.delete(firstKey, secondKey)
     }
 

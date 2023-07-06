@@ -9,15 +9,15 @@ class MapRepositoryCoroutineCacheStore<K1, K2, V>(
     private val tm: TransactionManager,
 ) : CoroutineCacheStore<MapRepositoryCoroutinesCacheKey<K1, K2>, V> {
     override suspend fun get(key: MapRepositoryCoroutinesCacheKey<K1, K2>): V? =
-        tm.readOperation { repository.getBySecondKey(key.firstKey, key.secondKey) }
+        tm.readOperation { repository.get(key.firstKey, key.secondKey) }
 
-    suspend fun getByFirstKey(key: K1): Map<K2, V>? =
+    suspend fun getByFirstKey(key: K1): Map<K2, V> =
         tm.readOperation { repository.get(key) }
 
     override suspend fun persist(key: MapRepositoryCoroutinesCacheKey<K1, K2>, value: V?): StateFlow<Boolean>? =
-        tm.writeOperationAsync(repository.serializeKey(key.firstKey, key.secondKey)) {
-            if (value == null) repository.deleteBySecondKey(key.firstKey, key.secondKey)
-            else repository.saveBySecondKey(key.firstKey, key.secondKey, value)
+        tm.writeOperationAsync(repository::class.simpleName + repository.serializeKey(key.firstKey, key.secondKey)) {
+            if (value == null) repository.delete(key.firstKey, key.secondKey)
+            else repository.save(key.firstKey, key.secondKey, value)
         }
 
     override suspend fun deleteAll() {

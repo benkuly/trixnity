@@ -6,11 +6,8 @@ import net.folivo.trixnity.core.model.events.Event
 interface RoomAccountDataRepository :
     MapDeleteByRoomIdRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>> {
 
-    override fun serializeKey(key: RoomAccountDataRepositoryKey): String =
-        this::class.simpleName + key.roomId.full + key.type
-
     override fun serializeKey(firstKey: RoomAccountDataRepositoryKey, secondKey: String): String =
-        serializeKey(firstKey) + secondKey
+        firstKey.roomId.full + firstKey.type + secondKey
 }
 
 data class RoomAccountDataRepositoryKey(

@@ -5,7 +5,7 @@ import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 
 interface KeyVerificationStateRepository : MinimalRepository<KeyVerificationStateKey, KeyVerificationState> {
     override fun serializeKey(key: KeyVerificationStateKey): String =
-        this::class.simpleName + key.keyId + key.keyAlgorithm
+        key.keyId + key.keyAlgorithm
 }
 
 data class KeyVerificationStateKey(

@@ -19,26 +19,13 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
     private val serializer = json.serializersModule.getContextual(Event.GlobalAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(key: String): Map<String, Event.GlobalAccountDataEvent<*>> = withExposedRead {
-        ExposedGlobalAccountData.select { ExposedGlobalAccountData.type.eq(key) }.associate {
+    override suspend fun get(firstKey: String): Map<String, Event.GlobalAccountDataEvent<*>> = withExposedRead {
+        ExposedGlobalAccountData.select { ExposedGlobalAccountData.type.eq(firstKey) }.associate {
             it[ExposedGlobalAccountData.key] to json.decodeFromString(serializer, it[ExposedGlobalAccountData.event])
         }
     }
 
-    override suspend fun save(key: String, value: Map<String, Event.GlobalAccountDataEvent<*>>): Unit =
-        withExposedWrite {
-            ExposedGlobalAccountData.batchReplace(value.entries) { (secondKey, event) ->
-                this[ExposedGlobalAccountData.type] = key
-                this[ExposedGlobalAccountData.key] = secondKey
-                this[ExposedGlobalAccountData.event] = json.encodeToString(serializer, event)
-            }
-        }
-
-    override suspend fun delete(key: String): Unit = withExposedWrite {
-        ExposedGlobalAccountData.deleteWhere { type eq key }
-    }
-
-    override suspend fun getBySecondKey(firstKey: String, secondKey: String): Event.GlobalAccountDataEvent<*>? =
+    override suspend fun get(firstKey: String, secondKey: String): Event.GlobalAccountDataEvent<*>? =
         withExposedRead {
             ExposedGlobalAccountData.select {
                 ExposedGlobalAccountData.type.eq(firstKey) and
@@ -48,7 +35,7 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
             }
         }
 
-    override suspend fun saveBySecondKey(
+    override suspend fun save(
         firstKey: String,
         secondKey: String,
         value: Event.GlobalAccountDataEvent<*>
@@ -60,7 +47,7 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
         }
     }
 
-    override suspend fun deleteBySecondKey(firstKey: String, secondKey: String): Unit = withExposedWrite {
+    override suspend fun delete(firstKey: String, secondKey: String): Unit = withExposedWrite {
         ExposedGlobalAccountData.deleteWhere {
             type.eq(firstKey) and
                     key.eq(secondKey)

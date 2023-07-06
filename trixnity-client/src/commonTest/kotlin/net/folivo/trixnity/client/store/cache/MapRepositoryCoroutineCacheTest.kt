@@ -46,8 +46,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
         readOperationWasCalled.value = false
         writeOperationWasCalled.value = false
         repository = object : InMemoryMapRepository<String, String, String>() {
-            override fun serializeKey(key: String): String = key
-            override fun serializeKey(firstKey: String, secondKey: String): String = serializeKey(firstKey) + secondKey
+            override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
         }
         cut = MapRepositoryCoroutineCache(repository, tm, cacheScope)
     }
@@ -55,29 +54,17 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
         cacheScope.cancel()
     }
 
-    should("handle get after getBySecondKey") {
-        repository.save("firstKey", mapOf("secondKey1" to "value1", "secondKey2" to "value2"))
-        cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")).first() shouldBe "value1"
-        cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
-            "secondKey1" to "value1",
-            "secondKey2" to "value2"
-        )
-        repository.save("firstKey", mapOf())
-        cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
-            "secondKey1" to "value1",
-            "secondKey2" to "value2"
-        )
-    }
     context("write") {
         should("save into database without reading old value") {
-            repository.save("firstKey", mapOf("secondKey1" to "old", "secondKey2" to "old"))
+            repository.save("firstKey", "secondKey1", "old")
+            repository.save("firstKey", "secondKey2", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1"), "value1")
             readOperationWasCalled.value shouldBe false
             writeOperationWasCalled.value shouldBe true
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "old")
         }
         should("save existing cache value without reading old value") {
-            repository.save("firstKey", mapOf("secondKey1" to "old"))
+            repository.save("firstKey", "secondKey1", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1"), "value1")
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value1")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey2"), "value2")
@@ -92,13 +79,14 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
     }
     context("write with update") {
         should("always save") {
-            repository.save("firstKey", mapOf("secondKey1" to "old"))
+            repository.save("firstKey", "secondKey1", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
                 it shouldBe "old"
                 "value1"
             }
             // we overwrite the repository to check, that only secondKey1 is updated
-            repository.save("firstKey", mapOf("secondKey1" to "old", "secondKey2" to "old"))
+            repository.save("firstKey", "secondKey1", "old")
+            repository.save("firstKey", "secondKey2", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
                 it shouldBe "value1"
                 "value2"
@@ -110,12 +98,13 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value2", "secondKey2" to "old")
         }
         should("always delete") {
-            repository.save("firstKey", mapOf())
+            repository.save("firstKey", "secondKey1", "old")
+            repository.delete("firstKey", "secondKey1")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
                 it shouldBe null
                 null
             }
-            repository.save("firstKey", mapOf("secondKey1" to "old"))
+            repository.save("firstKey", "secondKey1", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
                 it shouldBe null
                 null
@@ -124,7 +113,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             cut.readByFirstKey("firstKey").flatten().first().shouldNotBeNull() shouldHaveSize 0
         }
         should("update existing cache value") {
-            repository.save("firstKey", mapOf("secondKey1" to "old"))
+            repository.save("firstKey", "secondKey1", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
                 it shouldBe "old"
                 "value1"
@@ -140,21 +129,24 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
     }
     context("read") {
         should("load from database, when not exists in cache") {
-            repository.save("firstKey", mapOf("secondKey1" to "old1", "secondKey2" to "old2"))
+            repository.save("firstKey", "secondKey1", "old1")
+            repository.save("firstKey", "secondKey2", "old2")
             cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")).first() shouldBe "old1"
-            repository.save("firstKey", mapOf("secondKey1" to "new1", "secondKey2" to "new2"))
+            repository.save("firstKey", "secondKey1", "new1")
+            repository.save("firstKey", "secondKey2", "new2")
             cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")).first() shouldBe "old1"
             cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey2")).first() shouldBe "new2"
         }
         should("prefer cache") {
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1"), "value1")
-            repository.save("firstKey", mapOf())
+            repository.delete("firstKey", "secondKey1")
             cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")).first() shouldBe "value1"
         }
     }
     context("readByFirstKey") {
         should("load from database, when not exists in cache") {
-            repository.save("firstKey", mapOf("secondKey1" to "old1", "secondKey2" to "old2"))
+            repository.save("firstKey", "secondKey1", "old1")
+            repository.save("firstKey", "secondKey2", "old2")
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
                 "secondKey2" to "old2"
@@ -162,7 +154,8 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
         }
         should("load from database, when cache values removed") {
             cut = MapRepositoryCoroutineCache(repository, tm, cacheScope, expireDuration = Duration.ZERO)
-            repository.save("firstKey", mapOf("secondKey1" to "old1", "secondKey2" to "old2"))
+            repository.save("firstKey", "secondKey1", "old1")
+            repository.save("firstKey", "secondKey2", "old2")
             val stopCollectReadByFirstKey = MutableStateFlow(false)
             val collectRead = launch(start = CoroutineStart.LAZY) {
                 cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1"))
@@ -177,7 +170,8 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             stopCollectReadByFirstKey.first { it }
             collectReadByFirstKey.cancel()
             delay(1.seconds)
-            repository.save("firstKey", mapOf("secondKey1" to "new1", "secondKey2" to "new2"))
+            repository.save("firstKey", "secondKey1", "new1")
+            repository.save("firstKey", "secondKey2", "new2")
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
                 "secondKey2" to "new2"
@@ -185,7 +179,8 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             collectRead.cancel()
         }
         should("load from database, when partially exists in cache") {
-            repository.save("firstKey", mapOf("secondKey1" to "old1", "secondKey2" to "old2"))
+            repository.save("firstKey", "secondKey1", "old1")
+            repository.save("firstKey", "secondKey2", "old2")
             cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")).first() shouldBe "old1"
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
@@ -193,25 +188,28 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             )
         }
         should("prefer cache") {
-            repository.save("firstKey", mapOf("secondKey1" to "old1", "secondKey2" to "old2"))
+            repository.save("firstKey", "secondKey1", "old1")
+            repository.save("firstKey", "secondKey2", "old2")
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
                 "secondKey2" to "old2"
             )
-            repository.save("firstKey", mapOf("secondKey1" to "new1", "secondKey2" to "new2"))
+            repository.save("firstKey", "secondKey1", "new1")
+            repository.save("firstKey", "secondKey2", "new2")
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
                 "secondKey2" to "old2"
             )
         }
         should("prefer cache, even when values are added") {
-            repository.save("firstKey", mapOf("secondKey1" to "old1", "secondKey2" to "old2"))
+            repository.save("firstKey", "secondKey1", "old1")
+            repository.save("firstKey", "secondKey2", "old2")
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
                 "secondKey2" to "old2"
             )
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey3"), "new3")
-            repository.save("firstKey", mapOf())
+            repository.deleteAll()
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
                 "secondKey2" to "old2",

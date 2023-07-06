@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store.repository.indexeddb
 
 import com.juul.indexeddb.Database
+import com.juul.indexeddb.Key
 import com.juul.indexeddb.KeyPath
 import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.Serializable
@@ -45,5 +46,12 @@ internal class IndexedDBRoomUserRepository(
                     )
             }
         }
+    }
+
+    override suspend fun deleteByRoomId(roomId: RoomId): Unit = withIndexedDBWrite { store ->
+        store.index(firstKeyIndexName).openCursor(Key(roomId.full), autoContinue = true)
+            .collect {
+                store.delete(Key(it.primaryKey))
+            }
     }
 }

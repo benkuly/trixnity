@@ -69,11 +69,11 @@ class RoomStateStoreTest : ShouldSpec({
             cut.save(event1)
             cut.save(event2)
 
-            roomStateRepository.getBySecondKey(
+            roomStateRepository.get(
                 RoomStateRepositoryKey(roomId, "m.room.member"),
                 "@user:server"
             ) shouldBe event1
-            roomStateRepository.getBySecondKey(
+            roomStateRepository.get(
                 RoomStateRepositoryKey(roomId, "m.room.member"),
                 "@alice:server"
             ) shouldBe event2
@@ -82,7 +82,7 @@ class RoomStateStoreTest : ShouldSpec({
             should("only change, when already present") {
                 cut.save(event1, true)
                 cut.save(event1.copy(originTimestamp = 0), true)
-                roomStateRepository.getBySecondKey(
+                roomStateRepository.get(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     "@user:server"
                 ) shouldBe event1
@@ -95,34 +95,41 @@ class RoomStateStoreTest : ShouldSpec({
             should("return matching event") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
-                    mapOf("@user:server" to event1)
+                    "@user:server",
+                    event1
                 )
                 cut.get<MemberEventContent>(roomId).flatten().first() shouldBe mapOf("@user:server" to event1)
             }
             should("prefer cache") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
-                    mapOf("@user:server" to event1)
+                    "@user:server",
+                    event1
                 )
                 cut.get<MemberEventContent>(roomId).flatten().first() shouldBe mapOf("@user:server" to event1)
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
-                    mapOf("@user:server" to event1.copy(originTimestamp = 0))
+                    "@user:server",
+                    event1.copy(originTimestamp = 0)
                 )
                 cut.get<MemberEventContent>(roomId).flatten().first() shouldBe mapOf("@user:server" to event1)
             }
             should("ignore unknown state event") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
-                    mapOf(
-                        "@user:server" to event1, "@bob:server" to Event.StateEvent(
-                            UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
-                            EventId("\$event"),
-                            UserId("alice", "server"),
-                            roomId,
-                            1234,
-                            stateKey = "@bob:server"
-                        )
+                    "@user:server",
+                    event1,
+                )
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    "@bob:server",
+                    Event.StateEvent(
+                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                        EventId("\$event"),
+                        UserId("alice", "server"),
+                        roomId,
+                        1234,
+                        stateKey = "@bob:server"
                     )
                 )
                 cut.get<MemberEventContent>(roomId).flatten().first() shouldBe mapOf(
@@ -134,7 +141,8 @@ class RoomStateStoreTest : ShouldSpec({
             should("ignore unknown state event") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
-                    mapOf("@user:server" to event1)
+                    "@user:server",
+                    event1
                 )
                 val scope = CoroutineScope(Dispatchers.Default)
                 val result = cut.get<MemberEventContent>(roomId).flatten(filterNullValues = false)
@@ -164,19 +172,22 @@ class RoomStateStoreTest : ShouldSpec({
             should("return matching event") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
-                    mapOf("@user:server" to event1)
+                    "@user:server",
+                    event1
                 )
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
             }
             should("prefer cache") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
-                    mapOf("@user:server" to event1)
+                    "@user:server",
+                    event1
                 )
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
-                    mapOf("@user:server" to event1.copy(originTimestamp = 0))
+                    "@user:server",
+                    event1.copy(originTimestamp = 0)
                 )
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
             }

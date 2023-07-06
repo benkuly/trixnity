@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import io.kotest.matchers.maps.shouldHaveSize
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
@@ -35,29 +34,31 @@ class RoomRoomAccountDataRepositoryTest {
         val roomId2 = RoomId("room2", "server")
         val key1 = RoomAccountDataRepositoryKey(roomId1, "m.fully_read")
         val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
-        val accountDataEvent1 =
-            mapOf("" to RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, ""))
-        val accountDataEvent2 = mapOf(
-            "" to RoomAccountDataEvent(
-                UnknownRoomAccountDataEventContent(
-                    JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
-                    "org.example.mynamespace"
-                ),
-                roomId2,
-                ""
-            )
+        val accountDataEvent1 = RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, "")
+        val accountDataEvent2 = RoomAccountDataEvent(
+            UnknownRoomAccountDataEventContent(
+                JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
+                "org.example.mynamespace"
+            ),
+            roomId2,
+            ""
         )
-        val accountDataEvent3 =
-            mapOf("" to accountDataEvent2[""].shouldNotBeNull().copy(roomId = roomId1))
+        val accountDataEvent3 = RoomAccountDataEvent(FullyReadEventContent(EventId("event2")), roomId1, "bla")
+        val accountDataEvent2Copy = accountDataEvent2.copy(roomId = roomId1)
 
-        repo.save(key1, accountDataEvent1)
-        repo.save(key2, accountDataEvent2)
-        repo.get(key1) shouldBe accountDataEvent1
-        repo.get(key2) shouldBe accountDataEvent2
-        repo.save(key2, accountDataEvent3)
-        repo.get(key2) shouldBe accountDataEvent3
-        repo.delete(key1)
+        repo.save(key1, "", accountDataEvent1)
+        repo.save(key2, "", accountDataEvent2)
+        repo.save(key2, "bla", accountDataEvent3)
+        repo.get(key1, "") shouldBe accountDataEvent1
+        repo.get(key2, "") shouldBe accountDataEvent2
+        repo.save(key2, "", accountDataEvent2Copy)
+        repo.get(key2, "") shouldBe accountDataEvent2Copy
+        repo.delete(key1, "")
         repo.get(key1) shouldHaveSize 0
+        repo.get(key2) shouldBe mapOf(
+            "" to accountDataEvent2Copy,
+            "bla" to accountDataEvent3
+        )
     }
 
     @Test
@@ -66,8 +67,8 @@ class RoomRoomAccountDataRepositoryTest {
         val key = RoomAccountDataRepositoryKey(roomId, "m.fully_read")
         val accountDataEvent =
             RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId, "")
-        repo.saveBySecondKey(key, "", accountDataEvent)
-        repo.getBySecondKey(key, "") shouldBe accountDataEvent
+        repo.save(key, "", accountDataEvent)
+        repo.get(key, "") shouldBe accountDataEvent
     }
 
     @Test
@@ -77,15 +78,15 @@ class RoomRoomAccountDataRepositoryTest {
         val key1 = RoomAccountDataRepositoryKey(roomId1, "m.fully_read")
         val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
         val key3 = RoomAccountDataRepositoryKey(roomId1, "org.example.mynamespace")
-        val accountDataEvent1 = mapOf("" to RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, ""))
-        val accountDataEvent2 = mapOf("" to RoomAccountDataEvent(FullyReadEventContent(EventId("event2")), roomId2, ""))
-        val accountDataEvent3 = mapOf("" to RoomAccountDataEvent(FullyReadEventContent(EventId("event3")), roomId1, ""))
-        repo.save(key1, accountDataEvent1)
-        repo.save(key2, accountDataEvent2)
-        repo.save(key3, accountDataEvent3)
+        val accountDataEvent1 = RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, "")
+        val accountDataEvent2 = RoomAccountDataEvent(FullyReadEventContent(EventId("event2")), roomId2, "")
+        val accountDataEvent3 = RoomAccountDataEvent(FullyReadEventContent(EventId("event3")), roomId1, "")
+        repo.save(key1, "", accountDataEvent1)
+        repo.save(key2, "", accountDataEvent2)
+        repo.save(key3, "", accountDataEvent3)
         repo.deleteByRoomId(roomId1)
         repo.get(key1) shouldHaveSize 0
-        repo.get(key2) shouldBe accountDataEvent2
+        repo.get(key2) shouldBe mapOf("" to accountDataEvent2)
         repo.get(key3) shouldHaveSize 0
     }
 }

@@ -109,6 +109,11 @@ if (isAndroidEnabled) {
                 isDefault = true
             }
         }
+        testOptions {
+            unitTests.all {
+                it.useJUnitPlatform()
+            }
+        }
     }
     tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
         if (name.contains("jni", true)) {
@@ -195,8 +200,7 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        androidJvmTarget?.testSourceSet(this) {
-            kotlin.srcDirs("src/jvmTest/kotlin")
+        androidJvmTarget?.testSourceSet(this) { // TODO does not work
             dependencies {
                 implementation("androidx.test:runner:${Versions.androidxTestRunner}")
             }
