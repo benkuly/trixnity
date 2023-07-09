@@ -1,6 +1,6 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
@@ -14,11 +14,11 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import org.koin.dsl.module
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import kotlin.math.roundToInt
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 
@@ -106,18 +106,17 @@ class AsyncTransactionPerformanceIT {
 
             val asyncTransactionsTime = startedClientAsyncTransactions.measureSyncProcessing()
             val referenceTime = startedClientReference.measureSyncProcessing()
-            val diff = referenceTime - asyncTransactionsTime
+            val diff = (asyncTransactionsTime / referenceTime) * 100
 
             println("################################")
             println("reference transaction: $referenceTime")
             println("################################")
             println("async transaction: $asyncTransactionsTime")
             println("################################")
-            println("diff: $diff")
+            println("diff: ${diff.roundToInt()}%")
             println("################################")
 
-            referenceTime shouldBeGreaterThan 10.seconds
-            diff shouldBeGreaterThan 10.seconds
+            diff shouldBeLessThan 50.0
         }
     }
 }
