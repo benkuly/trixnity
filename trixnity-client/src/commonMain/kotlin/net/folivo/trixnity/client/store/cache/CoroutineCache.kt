@@ -43,7 +43,7 @@ interface CoroutineCacheStore<K, V> {
 /**
  * An index to track which entries have been added to or removed from the cache.
  */
-interface CoroutineCacheValuesIndex<K> {
+interface ObservableMapIndex<K> {
     /**
      * Called, when an entry is added to the cache.
      */
@@ -53,6 +53,11 @@ interface CoroutineCacheValuesIndex<K> {
      * Called, when an entry is removed from the cache.
      */
     suspend fun onRemove(key: K)
+
+    /**
+     * Called, when all entries are removed from the cache.
+     */
+    suspend fun onRemoveAll()
 
     /**
      * Get the subscription count on an index entry, which uses an entry of the cache.
@@ -73,24 +78,22 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
     protected val cacheScope: CoroutineScope,
     protected val expireDuration: Duration = 1.minutes,
 ) {
-    private val _values = MutableStateFlow<Map<K, CoroutineCacheValue<V?>>>(emptyMap())
-    val values: SharedFlow<Map<K, StateFlow<V?>>> =
-        _values.map { value -> value.mapValues { it.value.value.asStateFlow() } }
-            .shareIn(cacheScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0))
+    private val _values = ObservableMap<K, CoroutineCacheValue<V?>>(cacheScope)
+    val values: SharedFlow<Map<K, StateFlow<V?>>> = _values.values
+        .map { value -> value.mapValues { it.value.value.asStateFlow() } }
+        .shareIn(cacheScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
 
-    private val indexes = MutableStateFlow(listOf<CoroutineCacheValuesIndex<K>>())
-
-    fun addIndex(index: CoroutineCacheValuesIndex<K>) {
-        indexes.update { it + index }
+    fun addIndex(index: ObservableMapIndex<K>) {
+        _values.indexes.update { it + index }
     }
 
-    fun clear() {
-        _values.updateAndGet { emptyMap() }
+    suspend fun clear() {
+        _values.removeAll()
     }
 
     suspend fun deleteAll() {
         store.deleteAll()
-        _values.updateAndGet { emptyMap() }
+        _values.removeAll()
     }
 
     fun read(key: K): Flow<V?> = flow {
@@ -144,8 +147,7 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
         get: suspend () -> V?,
         persist: suspend (newValue: V?) -> StateFlow<Boolean>?,
     ): StateFlow<V?> {
-        val result = _values.updateAndGet { oldValues ->
-            val existingCacheValue = oldValues[key]
+        val result = _values.update(key) { existingCacheValue ->
             if (existingCacheValue == null) {
                 log.trace { "$name: no cache hit for key $key" }
                 val retrievedValue = get()
@@ -166,8 +168,7 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
                         persistedFlows = persistedFlows
                     )
                 )
-                (oldValues + (key to newCacheValue))
-                    .also { indexes.value.forEach { index -> index.onPut(key) } }
+                newCacheValue
             } else {
                 if (updater != null) {
                     val newValue = existingCacheValue.value.updateAndGet { updater(it) }
@@ -175,9 +176,9 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
                         existingCacheValue.persisted.update { it + persisted }
                     }
                 }
-                oldValues
+                existingCacheValue
             }
-        }[key]
+        }
         checkNotNull(result)
         result.removerJob.value // starts the job
         return result.value
@@ -206,22 +207,11 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
                         persistedFlow.first { it }
                     }
                     if (subscriptionCount == 0) {
-                        getSubscriptionCount(key).first { it == 0 }
+                        _values.getIndexSubscriptionCount(key).first { it == 0 }
                         log.trace { "$name: remove value from cache with key $key" }
-                        _values.updateAndGet {
-                            (it - key)
-                                .also { indexes.value.forEach { index -> index.onRemove(key) } }
-                        }
+                        _values.update(key) { null }
                     }
                 }
-        }
-    }
-
-    private suspend fun getSubscriptionCount(key: K): Flow<Int> {
-        val indexesValue = indexes.value
-        return if (indexesValue.isEmpty()) flowOf(0)
-        else combine(indexesValue.map { it.getSubscriptionCount(key) }) { subscriptionCounts ->
-            subscriptionCounts.sum()
         }
     }
 }
