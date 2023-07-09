@@ -22,7 +22,6 @@ internal class ObservableMap<K, V>(
 
     val values = changeSignal
         .map { valuesMutex.withLock { _values.toMap() } }
-        .onEach { println("ObservableMap: $it") }
         .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
 
     private suspend fun compareAndSet(key: K, expectedOldValue: V?, newValue: V?): Boolean = valuesMutex.withLock {
