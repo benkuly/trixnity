@@ -43,7 +43,7 @@ class KeyMemberEventHandler(
                             roomStateStore.getByStateKey<MemberEventContent>(roomId, event.stateKey).first()
                                 ?.content?.membership.let { it == Membership.JOIN || it == Membership.INVITE }
                         } == null)
-                        keyStore.updateDeviceKeys(userId) { null }
+                        keyStore.deleteDeviceKeys(userId)
                 }
 
                 Membership.JOIN, Membership.INVITE -> {

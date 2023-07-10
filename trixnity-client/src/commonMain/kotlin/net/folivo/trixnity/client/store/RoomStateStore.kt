@@ -53,7 +53,7 @@ class RoomStateStore(
             ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
     }
 
-    suspend fun save(event: Event<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
+    suspend fun save(event: Event<out StateEventContent>) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
@@ -63,23 +63,12 @@ class RoomStateStore(
                 else -> contentMappings.state.find { it.kClass.isInstance(event.content) }?.type
             }
                 ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
-            if (skipWhenAlreadyPresent) {
-                roomStateCache.write(
-                    MapRepositoryCoroutinesCacheKey(
-                        RoomStateRepositoryKey(roomId, eventType),
-                        stateKey
-                    )
-                ) {
-                    it ?: event
-                }
-            } else {
-                roomStateCache.write(
-                    MapRepositoryCoroutinesCacheKey(
-                        RoomStateRepositoryKey(roomId, eventType),
-                        stateKey
-                    ), event
-                )
-            }
+            roomStateCache.write(
+                MapRepositoryCoroutinesCacheKey(
+                    RoomStateRepositoryKey(roomId, eventType),
+                    stateKey
+                ), event
+            )
         }
     }
 

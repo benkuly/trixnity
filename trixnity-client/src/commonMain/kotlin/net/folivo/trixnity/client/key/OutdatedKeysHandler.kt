@@ -55,7 +55,7 @@ class OutdatedKeysHandler(
                 keyStore.outdatedKeys.collect { originalUserIds ->
                     if (originalUserIds.isNotEmpty()) {
                         originalUserIds.chunked(50).forEach { userIds ->
-                            tm.withAsyncWriteTransaction(wait = true) {
+                            tm.withAsyncWriteTransaction {
                                 log.debug { "try update outdated keys of $userIds" }
                                 val keysResponse = api.keys.getKeys(
                                     deviceKeys = userIds.associateWith { emptySet() },
@@ -214,7 +214,7 @@ class OutdatedKeysHandler(
                 } else oldKeys
             } else oldKeys
         }
-        keyStore.updateDeviceKeys(userId) { newDevices }
+        keyStore.saveDeviceKeys(userId, newDevices)
     }
 
     /**

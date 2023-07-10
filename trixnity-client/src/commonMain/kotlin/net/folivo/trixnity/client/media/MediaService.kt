@@ -164,9 +164,10 @@ class MediaServiceImpl(
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
             var fileSize = 0
             mediaStore.addMedia(cacheUri, content.onEach { fileSize += it.size })
-            mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
+            mediaCacheMappingStore.saveMediaCacheMapping(
+                cacheUri,
                 MediaCacheMapping(cacheUri, size = fileSize, contentType = contentType.toString())
-            }
+            )
         }
     }
 
@@ -259,7 +260,7 @@ class MediaServiceImpl(
                         mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) { it?.copy(mxcUri = mxcUri) }
                     } else {
                         mediaStore.deleteMedia(cacheUri)
-                        mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) { null }
+                        mediaCacheMappingStore.deleteMediaCacheMapping(cacheUri)
                     }
                 }
             }

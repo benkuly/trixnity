@@ -33,8 +33,8 @@ class DeviceListsHandler(
         }
         deviceList.left?.forEach { userId ->
             keyStore.updateOutdatedKeys { it - userId }
-            keyStore.updateDeviceKeys(userId) { null }
-            keyStore.updateCrossSigningKeys(userId) { null }
+            keyStore.deleteDeviceKeys(userId)
+            keyStore.deleteCrossSigningKeys(userId)
         }
     }
 }
