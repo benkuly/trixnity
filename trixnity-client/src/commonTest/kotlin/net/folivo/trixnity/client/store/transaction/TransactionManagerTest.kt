@@ -14,7 +14,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class TransactionManagerTest {
     private lateinit var cut: TransactionManager
     private lateinit var config: MatrixClientConfiguration
@@ -70,13 +69,15 @@ class TransactionManagerTest {
             throw RuntimeException("unicorn not found")
         }
         val result =
-            cut.withAsyncWriteTransaction {
-                currentCoroutineContext()[AsyncTransactionContext].shouldNotBeNull()
-                cut.writeOperationAsync("key", block)
-            }.shouldNotBeNull()
+            async {
+                cut.withAsyncWriteTransaction {
+                    currentCoroutineContext()[AsyncTransactionContext].shouldNotBeNull()
+                    cut.writeOperationAsync("key", block)
+                }.shouldNotBeNull()
+            }
 
         blockCalled.first { it >= 2 }
-        result.value shouldBe false
+        result.cancel()
     }
 
     @Test

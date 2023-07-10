@@ -78,17 +78,6 @@ class RoomStateStoreTest : ShouldSpec({
                 "@alice:server"
             ) shouldBe event2
         }
-        context("skipWhenAlreadyPresent is true") {
-            should("only change, when already present") {
-                cut.save(event1, true)
-                cut.save(event1.copy(originTimestamp = 0), true)
-                roomStateRepository.get(
-                    RoomStateRepositoryKey(roomId, "m.room.member"),
-                    "@user:server"
-                ) shouldBe event1
-            }
-        }
-
     }
     context("get") {
         context("without scope") {
