@@ -50,6 +50,7 @@ internal class ObservableMap<K, V>(
         key: K,
         updater: suspend (V?) -> V?
     ): V? {
+        // inspired by [MutableStateFlow::update]
         while (true) {
             val oldValue = get(key)
             val newValue = updater(oldValue)
