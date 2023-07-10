@@ -34,4 +34,11 @@ class MediaCacheMappingStore(
         cacheUri: String,
         updater: suspend (oldMediaCacheMapping: MediaCacheMapping?) -> MediaCacheMapping?
     ) = uploadMediaCache.write(cacheUri, updater = updater)
+
+    suspend fun saveMediaCacheMapping(
+        cacheUri: String,
+        mediaCacheMapping: MediaCacheMapping
+    ) = uploadMediaCache.write(cacheUri, mediaCacheMapping)
+
+    suspend fun deleteMediaCacheMapping(cacheUri: String) = uploadMediaCache.write(cacheUri, null)
 }

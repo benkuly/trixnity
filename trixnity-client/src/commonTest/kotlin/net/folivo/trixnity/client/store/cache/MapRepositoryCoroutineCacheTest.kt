@@ -21,10 +21,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
     val readOperationWasCalled = MutableStateFlow(false)
     val writeOperationWasCalled = MutableStateFlow(false)
     val tm = object : TransactionManager {
-        override suspend fun withAsyncWriteTransaction(
-            wait: Boolean,
-            block: suspend () -> Unit
-        ): StateFlow<Boolean> =
+        override suspend fun withAsyncWriteTransaction(block: suspend () -> Unit): StateFlow<Boolean>? =
             throw AssertionError("should not call withWriteTransaction")
 
         override suspend fun <T> readOperation(block: suspend () -> T): T {

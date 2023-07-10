@@ -387,8 +387,7 @@ class MatrixClientImpl internal constructor(
     }
 
     private val syncTransaction: suspend (block: suspend () -> Unit) -> Unit =
-        if (config.asyncTransactions) { b -> tm.withAsyncWriteTransaction(wait = true, block = b) }
-        else { b -> b() }
+        { b -> tm.withAsyncWriteTransaction(block = b) }
 
 
     override suspend fun startSync() {

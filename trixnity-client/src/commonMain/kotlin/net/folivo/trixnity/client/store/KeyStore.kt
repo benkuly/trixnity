@@ -110,6 +110,13 @@ class KeyStore(
         updater: suspend (Map<String, StoredDeviceKeys>?) -> Map<String, StoredDeviceKeys>?
     ) = deviceKeysCache.write(userId, updater = updater)
 
+    suspend fun saveDeviceKeys(
+        userId: UserId,
+        deviceKeys: Map<String, StoredDeviceKeys>
+    ) = deviceKeysCache.write(userId, deviceKeys)
+
+    suspend fun deleteDeviceKeys(userId: UserId) = deviceKeysCache.write(userId, null)
+
     fun getCrossSigningKeys(
         userId: UserId,
     ): Flow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.read(userId)
@@ -118,6 +125,8 @@ class KeyStore(
         userId: UserId,
         updater: suspend (Set<StoredCrossSigningKeys>?) -> Set<StoredCrossSigningKeys>?
     ) = crossSigningKeysCache.write(userId, updater = updater)
+
+    suspend fun deleteCrossSigningKeys(userId: UserId) = crossSigningKeysCache.write(userId, null)
 
     suspend fun getKeyVerificationState(
         key: Key,

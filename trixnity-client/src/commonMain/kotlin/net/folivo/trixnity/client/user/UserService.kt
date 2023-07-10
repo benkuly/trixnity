@@ -87,12 +87,12 @@ class UserServiceImpl(
                             notMembership = LEAVE
                         ).getOrThrow()
                         memberEvents.chunked(500).forEach { chunk ->
-                            tm.withAsyncWriteTransaction(wait = true) {
+                            tm.withAsyncWriteTransaction {
+                                // TODO We should synchronize this with the sync. Otherwise this could overwrite a newer event.
                                 chunk.forEach { api.sync.emitEvent(it) }
                             }
                         }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }
-
                     }
                 }
                 currentlyLoadingMembers.update { it - roomId }

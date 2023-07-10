@@ -16,7 +16,6 @@ private val log = KotlinLogging.logger { }
 
 interface TransactionManager {
     suspend fun withAsyncWriteTransaction(
-        wait: Boolean = false,
         block: suspend () -> Unit
     ): StateFlow<Boolean>?
 
@@ -98,7 +97,6 @@ class TransactionManagerImpl(
     }
 
     override suspend fun withAsyncWriteTransaction(
-        wait: Boolean,
         block: suspend () -> Unit
     ): StateFlow<Boolean>? =
         if (config.asyncTransactions) {
@@ -114,13 +112,11 @@ class TransactionManagerImpl(
                     it + transaction
                 }
                 log.trace { "finished async transaction (scheduled for actual processing) id=${newTransactionContext.id}" }
-                transaction.transactionHasBeenApplied
+                transaction.transactionHasBeenApplied.also { applied -> applied.first { it } }
             } else {
                 log.trace { "use existing async transaction id=${existingTransactionContext.id}" }
                 block()
                 existingTransactionContext.transactionHasBeenApplied
-            }.also { transactionHasBeenApplied ->
-                if (wait) transactionHasBeenApplied.first { it }
             }
         } else {
             rtm.writeTransaction(block)
