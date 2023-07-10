@@ -253,7 +253,7 @@ class CoroutineCacheTest : ShouldSpec({
         ) : CoroutineCache<String, String, InMemoryCoroutineCacheStore<String, String>>(
             name, store, cacheScope, expireDuration
         ) {
-            val index = object : CoroutineCacheValuesIndex<String> {
+            val index = object : ObservableMapIndex<String> {
                 var onPut = MutableStateFlow<String?>(null)
                 override suspend fun onPut(key: String) {
                     onPut.value = key
@@ -262,6 +262,11 @@ class CoroutineCacheTest : ShouldSpec({
                 var onRemove = MutableStateFlow<String?>(null)
                 override suspend fun onRemove(key: String) {
                     onRemove.value = key
+                }
+
+                var onRemoveAllCalled = MutableStateFlow(false)
+                override suspend fun onRemoveAll() {
+                    onRemoveAllCalled.value = true
                 }
 
                 val getSubscriptionCount = MutableStateFlow(0)
@@ -295,6 +300,12 @@ class CoroutineCacheTest : ShouldSpec({
             indexedCut.write("key", "value")
             indexedCut.index.onPut.value shouldBe "key"
             indexedCut.index.onRemove.first { it == "key" } shouldBe "key"
+        }
+        should("call onRemoveALl on clear") {
+            indexedCut = IndexedCoroutineCache("", cacheStore, cacheScope, Duration.ZERO)
+            indexedCut.write("key", "value")
+            indexedCut.clear()
+            indexedCut.index.onRemoveAllCalled.value shouldBe true
         }
         should("wait for index subsciptions before remove from cache") {
             indexedCut = IndexedCoroutineCache("", cacheStore, cacheScope, Duration.ZERO)

@@ -20,30 +20,29 @@ private data class MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(
     val fullyLoadedFromRepository: Boolean,
 )
 
-private class MapRepositoryCoroutineCacheValuesIndex<K1, K2>(
+private class MapRepositoryObservableMapIndex<K1, K2>(
     private val cacheScope: CoroutineScope,
-) : CoroutineCacheValuesIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
+) : ObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
 
     private val firstKeyMapping =
-        MutableStateFlow<Map<K1, MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>>>>(emptyMap())
+        ObservableMap<K1, MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>>>(cacheScope)
 
-    override suspend fun onPut(key: MapRepositoryCoroutinesCacheKey<K1, K2>): Unit =
-        firstKeyMapping.update { mappings ->
-            val mapping = mappings[key.firstKey]
+    override suspend fun onPut(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
+        firstKeyMapping.update(key.firstKey) { mapping ->
             if (mapping == null) {
-                mappings + (
-                        key.firstKey to MutableStateFlow(
-                            MapRepositoryCoroutineCacheValuesIndexValue(setOf(key), false)
-                        ).launchRemoveOnEmptySubscriptionCount(key.firstKey)
-                        )
+                MutableStateFlow(
+                    MapRepositoryCoroutineCacheValuesIndexValue(setOf(key), false)
+                ).launchRemoveOnEmptySubscriptionCount(key.firstKey)
+
             } else {
                 mapping.update { it.copy(keys = it.keys + key) }
-                mappings
+                mapping
             }
         }
+    }
 
     override suspend fun onRemove(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
-        firstKeyMapping.value[key.firstKey]?.update {
+        firstKeyMapping.get(key.firstKey)?.update {
             it.copy(
                 keys = it.keys - key,
                 fullyLoadedFromRepository = false
@@ -51,8 +50,19 @@ private class MapRepositoryCoroutineCacheValuesIndex<K1, K2>(
         }
     }
 
+    override suspend fun onRemoveAll() {
+        firstKeyMapping.getAll().forEach { entry ->
+            entry.value.update {
+                it.copy(
+                    keys = emptySet(),
+                    fullyLoadedFromRepository = false
+                )
+            }
+        }
+    }
+
     override suspend fun getSubscriptionCount(key: MapRepositoryCoroutinesCacheKey<K1, K2>): StateFlow<Int> =
-        checkNotNull(firstKeyMapping.value[key.firstKey]?.subscriptionCount)
+        checkNotNull(firstKeyMapping.get(key.firstKey)?.subscriptionCount)
 
     private fun MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>>.launchRemoveOnEmptySubscriptionCount(
         key: K1
@@ -62,7 +72,7 @@ private class MapRepositoryCoroutineCacheValuesIndex<K1, K2>(
                 delay(1.seconds) // prevent, that empty values are removed immediately
                 combine(this@launchRemoveOnEmptySubscriptionCount, subscriptionCount) { mapping, subscriptionCount ->
                     if (mapping.keys.isEmpty() && subscriptionCount == 0) {
-                        firstKeyMapping.update { it - key }
+                        firstKeyMapping.update(key) { null }
                     }
                 }.collect()
             }
@@ -71,25 +81,18 @@ private class MapRepositoryCoroutineCacheValuesIndex<K1, K2>(
     fun getMapping(key: K1): Flow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>> = flow {
         emitAll(
             checkNotNull(
-                firstKeyMapping.updateAndGet { mappings ->
-                    val mapping = mappings[key]
-                    if (mapping == null) {
-                        mappings + (
-                                key to
-                                        MutableStateFlow(
-                                            MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(setOf(), false)
-                                        ).launchRemoveOnEmptySubscriptionCount(key)
-                                )
-                    } else {
-                        mappings
-                    }
-                }[key]
+                firstKeyMapping.update(key) { mapping ->
+                    mapping
+                        ?: MutableStateFlow(
+                            MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(setOf(), false)
+                        ).launchRemoveOnEmptySubscriptionCount(key)
+                }
             )
         )
     }
 
-    fun markFullyLoadedFromRepository(key: K1) {
-        firstKeyMapping.value[key]?.update { it.copy(fullyLoadedFromRepository = true) }
+    suspend fun markFullyLoadedFromRepository(key: K1) {
+        firstKeyMapping.get(key)?.update { it.copy(fullyLoadedFromRepository = true) }
     }
 }
 
@@ -104,8 +107,8 @@ open class MapRepositoryCoroutineCache<K1, K2, V>(
     cacheScope = cacheScope,
     expireDuration = expireDuration
 ) {
-    private val mapRepositoryIndex: MapRepositoryCoroutineCacheValuesIndex<K1, K2> =
-        MapRepositoryCoroutineCacheValuesIndex(cacheScope)
+    private val mapRepositoryIndex: MapRepositoryObservableMapIndex<K1, K2> =
+        MapRepositoryObservableMapIndex(cacheScope)
 
     init {
         addIndex(mapRepositoryIndex)

@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.repository.MapDeleteByRoomIdRepository
 import net.folivo.trixnity.client.store.repository.MinimalDeleteByRoomIdRepository
@@ -13,32 +12,37 @@ import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-private class DeleteByRoomIdRepositoryCoroutineCacheValuesIndex<K>(
+private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
+    cacheScope: CoroutineScope,
     private val keyMapper: (K) -> RoomId,
-) : CoroutineCacheValuesIndex<K> {
+) : ObservableMapIndex<K> {
 
-    private val roomIdMapping = MutableStateFlow<Map<RoomId, Set<K>>>(emptyMap())
+    private val roomIdMapping = ObservableMap<RoomId, Set<K>>(cacheScope)
 
-    override suspend fun onPut(key: K): Unit =
-        roomIdMapping.update { mappings ->
-            val roomId = keyMapper(key)
-            mappings + (roomId to (mappings[roomId].orEmpty() + key))
+    override suspend fun onPut(key: K) {
+        val roomId = keyMapper(key)
+        roomIdMapping.update(roomId) { mapping ->
+            mapping.orEmpty() + key
         }
+    }
 
     override suspend fun onRemove(key: K) {
-        roomIdMapping.update { mappings ->
-            val roomId = keyMapper(key)
-            val newMapping = mappings[roomId].orEmpty() - key
-            if (newMapping.isEmpty()) mappings - roomId
-            else mappings + (roomId to newMapping)
+        val roomId = keyMapper(key)
+        roomIdMapping.update(roomId) { mapping ->
+            val newMapping = mapping.orEmpty() - key
+            newMapping.ifEmpty { null }
         }
+    }
+
+    override suspend fun onRemoveAll() {
+        roomIdMapping.removeAll()
     }
 
     private val zeroStateFlow = MutableStateFlow(0)
     override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = zeroStateFlow
 
-    fun getMapping(roomId: RoomId): Set<K> =
-        roomIdMapping.value[roomId].orEmpty()
+    suspend fun getMapping(roomId: RoomId): Set<K> =
+        roomIdMapping.get(roomId).orEmpty()
 }
 
 class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
@@ -54,8 +58,8 @@ class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
     expireDuration = expireDuration,
 ) {
 
-    private val roomIdIndex: DeleteByRoomIdRepositoryCoroutineCacheValuesIndex<K> =
-        DeleteByRoomIdRepositoryCoroutineCacheValuesIndex(keyMapper)
+    private val roomIdIndex: DeleteByRoomIdRepositoryObservableMapIndex<K> =
+        DeleteByRoomIdRepositoryObservableMapIndex(cacheScope, keyMapper)
 
     init {
         addIndex(roomIdIndex)
@@ -92,8 +96,8 @@ class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
     cacheScope = cacheScope,
     expireDuration = expireDuration,
 ) {
-    private val roomIdIndex: DeleteByRoomIdRepositoryCoroutineCacheValuesIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> =
-        DeleteByRoomIdRepositoryCoroutineCacheValuesIndex(keyMapper)
+    private val roomIdIndex: DeleteByRoomIdRepositoryObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> =
+        DeleteByRoomIdRepositoryObservableMapIndex(cacheScope, keyMapper)
 
     init {
         addIndex(roomIdIndex)
