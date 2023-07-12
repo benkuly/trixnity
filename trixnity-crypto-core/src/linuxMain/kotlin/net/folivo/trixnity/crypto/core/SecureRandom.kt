@@ -56,7 +56,7 @@ private val urandom by lazy {
             }
 
             while (true) {
-                if (poll(pollFd.ptr, 1, -1) >= 0) break
+                if (poll(pollFd.ptr, 1u, -1) >= 0) break
 
                 when (errno) {
                     EINTR, EAGAIN -> continue
