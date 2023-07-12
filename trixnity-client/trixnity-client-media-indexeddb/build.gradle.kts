@@ -16,20 +16,16 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        jsTarget?.mainSourceSet(this) {
             dependencies {
                 implementation(project(":trixnity-client"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
 
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
-            }
-        }
-        jsTarget?.mainSourceSet(this) {
-            dependencies {
                 api("com.juul.indexeddb:core:${Versions.juulLabsIndexeddb}")
             }
         }
-        val commonTest by getting {
+        jsTarget?.testSourceSet(this) {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
