@@ -46,7 +46,7 @@ fun ByteArrayFlow.withCCCryptor(
                             tweak = null,
                             tweakLength = 0.convert(),
                             numRounds = 0,
-                            padding = 0,
+                            padding = 0u,
                             cryptorRef = context.ptr,
                         )
                     )
