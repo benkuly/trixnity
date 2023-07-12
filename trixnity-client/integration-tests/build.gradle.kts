@@ -10,7 +10,7 @@ plugins {
 kotlin {
     targetHierarchy.default()
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled(testEnabled = (isCI && HostManager.hostIsMac).not())
+    addJvmTarget(testEnabled = (isCI && HostManager.hostIsMac).not())
 
     sourceSets {
         all {
@@ -29,7 +29,7 @@ kotlin {
                 implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
-        jvmTarget?.testSourceSet(this) {
+        val jvmTest by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-java:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-logging:${Versions.ktor}")

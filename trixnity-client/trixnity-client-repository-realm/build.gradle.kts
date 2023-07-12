@@ -10,8 +10,8 @@ plugins {
 kotlin {
     targetHierarchy.default()
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled()
-    addAppleNativeTargetsWhenEnabled() // see https://github.com/realm/realm-kotlin/issues/617
+    addJvmTarget()
+    addNativeAppleTargets() // see https://github.com/realm/realm-kotlin/issues/617
 
     sourceSets {
         all {
@@ -36,7 +36,7 @@ kotlin {
                 implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
-        jvmTarget?.testSourceSet(this) {
+        val jvmTest by getting {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")

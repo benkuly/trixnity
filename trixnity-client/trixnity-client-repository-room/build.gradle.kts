@@ -1,27 +1,39 @@
-import com.android.build.gradle.LibraryExtension
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-
 plugins {
-    if (isAndroidEnabled) id("com.android.library")
+    id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
 }
 
-kotlin {
-    ciDummyTarget()
-    val androidJvmTarget = addTargetWhenEnabled(KotlinPlatformType.androidJvm) {
-        android {
-            publishLibraryVariants("release")
+android {
+    namespace = "net.folivo.trixnity.client.store.repository.room"
+    compileSdk = Versions.androidTargetSdk
+    buildToolsVersion = Versions.androidBuildTools
+    defaultConfig {
+        minSdk = Versions.androidMinSdk
+        targetSdk = Versions.androidTargetSdk
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    compileOptions {
+        sourceCompatibility = Versions.kotlinJvmTarget
+        targetCompatibility = Versions.kotlinJvmTarget
+    }
+    buildTypes {
+        release {
+            isDefault = true
         }
     }
+}
+
+kotlin {
+    addAndroidTarget()
 
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
 
-        androidJvmTarget?.mainSourceSet(this) {
+        val androidMain by getting {
             dependencies {
                 implementation(project(":trixnity-client"))
 
@@ -34,7 +46,7 @@ kotlin {
                 implementation("androidx.room:room-runtime:${Versions.androidxRoom}")
             }
         }
-        androidJvmTarget?.testSourceSet(this) {
+        val androidUnitTest by getting {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("androidx.room:room-testing:${Versions.androidxRoom}")
@@ -57,26 +69,4 @@ dependencies {
         .forEach {
             add(it.name, "androidx.room:room-compiler:${Versions.androidxRoom}")
         }
-}
-
-if (isAndroidEnabled) {
-    configure<LibraryExtension> {
-        namespace = "net.folivo.trixnity.client.store.repository.room"
-        compileSdk = Versions.androidTargetSdk
-        buildToolsVersion = Versions.androidBuildTools
-        defaultConfig {
-            minSdk = Versions.androidMinSdk
-            targetSdk = Versions.androidTargetSdk
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
-        compileOptions {
-            sourceCompatibility = Versions.kotlinJvmTarget
-            targetCompatibility = Versions.kotlinJvmTarget
-        }
-        buildTypes {
-            release {
-                isDefault = true
-            }
-        }
-    }
 }

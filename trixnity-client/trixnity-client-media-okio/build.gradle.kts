@@ -9,9 +9,9 @@ plugins {
 kotlin {
     targetHierarchy.default()
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled()
-    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir, browserEnabled = false)
-    val nativeTargets = addDefaultNativeTargetsWhenEnabled()
+    addJvmTarget()
+    addJsTarget(rootDir, browserEnabled = false)
+    addNativeTargets()
 
     sourceSets {
         all {
@@ -26,7 +26,7 @@ kotlin {
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
-        jsTarget?.mainSourceSet(this) {
+        val jsMain by getting {
             dependencies {
                 implementation("com.squareup.okio:okio-nodefilesystem:${Versions.okio}")
             }
@@ -39,7 +39,7 @@ kotlin {
                 implementation("com.squareup.okio:okio-fakefilesystem:${Versions.okio}")
             }
         }
-        jvmTarget?.testSourceSet(this) {
+        val jvmMain by getting {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")

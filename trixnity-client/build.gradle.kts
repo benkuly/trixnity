@@ -10,9 +10,9 @@ plugins {
 kotlin {
     targetHierarchy.default()
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled()
-    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir, testEnabled = false)
-    val nativeTargets = addDefaultNativeTargetsWhenEnabled()
+    addJvmTarget()
+    addJsTarget(rootDir, testEnabled = false)
+    addNativeTargets()
 
     sourceSets {
         all {
@@ -55,7 +55,7 @@ kotlin {
                 implementation("io.kotest:kotest-framework-datatest:${Versions.kotest}")
             }
         }
-        jvmTarget?.testSourceSet(this) {
+        val jvmTest by getting {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
