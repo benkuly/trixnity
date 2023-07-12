@@ -34,6 +34,7 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
     }

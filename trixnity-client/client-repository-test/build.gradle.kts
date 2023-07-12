@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("io.kotest.multiplatform")
 }
 
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -27,7 +28,7 @@ kotlin {
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
 
                 api("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
+                api("io.kotest:kotest-framework-engine:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }

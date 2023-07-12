@@ -1,12 +1,11 @@
 import com.android.build.gradle.LibraryExtension
-import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     if (isAndroidEnabled) id("com.android.library")
-    kotlin("kapt")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("com.google.devtools.ksp")
 }
 
 kotlin {
@@ -34,15 +33,6 @@ kotlin {
                 implementation("androidx.room:room-ktx:${Versions.androidxRoom}")
                 implementation("androidx.room:room-runtime:${Versions.androidxRoom}")
             }
-
-            /* Need to add this in a weird way because KMP doesn't work nicely with KAPT */
-            configurations["kapt"].dependencies.add(
-                DefaultExternalModuleDependency(
-                    "androidx.room",
-                    "room-compiler",
-                    Versions.androidxRoom,
-                )
-            )
         }
         androidJvmTarget?.testSourceSet(this) {
             dependencies {
@@ -59,6 +49,14 @@ kotlin {
             }
         }
     }
+}
+
+dependencies {
+    configurations
+        .filter { it.name.startsWith("ksp") }
+        .forEach {
+            add(it.name, "androidx.room:room-compiler:${Versions.androidxRoom}")
+        }
 }
 
 if (isAndroidEnabled) {
