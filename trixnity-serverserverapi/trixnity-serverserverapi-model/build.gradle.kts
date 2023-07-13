@@ -9,9 +9,9 @@ plugins {
 kotlin {
     targetHierarchy.default()
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled()
-    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
-    val nativeTargets = addDefaultNativeTargetsWhenEnabled()
+    addJvmTarget()
+    addJsTarget(rootDir)
+    addNativeTargets()
 
     sourceSets {
         all {

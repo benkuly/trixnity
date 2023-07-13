@@ -155,7 +155,12 @@ test:mac:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew check -x :trixnity-client:integration-tests:check --stacktrace
+    - ./gradlew
+      iosSimulatorArm64Test
+      iosX64Test
+      macosArm64Test
+      macosX64Test
+      --stacktrace
 
 test:linux:
   stage: test
@@ -170,7 +175,13 @@ test:linux:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew check -x :trixnity-client:integration-tests:check --stacktrace
+    - ./gradlew
+      jvmTest -x :trixnity-client:integration-tests:jvmTest
+      testReleaseUnitTest
+      jsTest
+      linuxX64Test
+      mingwX64Test
+      --stacktrace
 
 test:integration-test:
   stage: test
@@ -189,7 +200,7 @@ test:integration-test:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew :trixnity-client:integration-tests:check --stacktrace
+    - ./gradlew :trixnity-client:integration-tests:jvmTest --stacktrace
 
 publish-snapshot:mac:
   stage: publish-snapshot
@@ -199,11 +210,16 @@ publish-snapshot:mac:
   rules:
     - *if-master
   script:
-    - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
+    - ./gradlew
+      publishIosArm64PublicationToSnapshotRepository
+      publishIosSimulatorArm64PublicationToSnapshotRepository
+      publishIosX64PublicationToSnapshotRepository
+      publishMacosArm64PublicationToSnapshotRepository
+      publishMacosX64PublicationToSnapshotRepository
+      --stacktrace
 
 publish-snapshot:linux:
   stage: publish-snapshot
-  needs: [ "publish-snapshot:mac" ]
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
@@ -211,7 +227,14 @@ publish-snapshot:linux:
   rules:
     - *if-master
   script:
-    - ./gradlew publishAllPublicationsToSnapshotRepository --stacktrace
+    - ./gradlew
+      publishKotlinMultiplatformPublicationToSnapshotRepository
+      publishJvmPublicationToSnapshotRepository
+      publishAndroidReleasePublicationToSnapshotRepository
+      publishJsPublicationToSnapshotRepository
+      publishLinuxX64PublicationToSnapshotRepository
+      publishMingwX64PublicationToSnapshotRepository
+      --stacktrace
 
 publish:create-nexus-staging-repo:
   stage: publish
@@ -249,11 +272,17 @@ publish:mac:
     - *if-release
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-    - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
+    - ./gradlew
+      publishIosArm64PublicationToReleaseRepository
+      publishIosSimulatorArm64PublicationToReleaseRepository
+      publishIosX64PublicationToReleaseRepository
+      publishMacosArm64PublicationToReleaseRepository
+      publishMacosX64PublicationToReleaseRepository
+      --stacktrace
 
 publish:linux:
   stage: publish
-  needs: [ "publish:create-nexus-staging-repo", "publish:mac" ]
+  needs: [ "publish:create-nexus-staging-repo" ]
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
@@ -262,4 +291,11 @@ publish:linux:
     - *if-release
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-    - ./gradlew publishAllPublicationsToReleaseRepository --stacktrace
+    - ./gradlew
+      publishKotlinMultiplatformPublicationToReleaseRepository
+      publishJvmPublicationToReleaseRepository
+      publishAndroidReleasePublicationToReleaseRepository
+      publishJsPublicationToReleaseRepository
+      publishLinuxX64PublicationToReleaseRepository
+      publishMingwX64PublicationToReleaseRepository
+      --stacktrace

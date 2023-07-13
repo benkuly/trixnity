@@ -10,14 +10,13 @@ plugins {
 kotlin {
     targetHierarchy.default()
     jvmToolchain()
-    ciDummyTarget()
-    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir, nodeJsEnabled = false)
+    addJsTarget(rootDir, nodeJsEnabled = false)
 
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        jsTarget?.mainSourceSet(this) {
+        val jsMain by getting {
             dependencies {
                 implementation(project(":trixnity-client"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
@@ -29,7 +28,7 @@ kotlin {
                 api("com.juul.indexeddb:core:${Versions.juulLabsIndexeddb}")
             }
         }
-        jsTarget?.testSourceSet(this) {
+        val jsTest by getting {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":trixnity-client:client-repository-test"))

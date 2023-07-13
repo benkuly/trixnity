@@ -9,7 +9,7 @@ plugins {
 kotlin {
     targetHierarchy.default()
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled()
+    addJvmTarget()
 
     sourceSets {
         all {
@@ -32,7 +32,7 @@ kotlin {
                 implementation("com.benasher44:uuid:${Versions.uuid}")
             }
         }
-        jvmTarget?.mainSourceSet(this) {
+        val jvmMain by getting {
             dependencies {
                 api("org.jetbrains.exposed:exposed-core:${Versions.exposed}")
 
@@ -40,7 +40,7 @@ kotlin {
                 implementation("org.jetbrains.exposed:exposed-jdbc:${Versions.exposed}")
             }
         }
-        jvmTarget?.testSourceSet(this) {
+        val jvmTest by getting {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("com.h2database:h2:${Versions.h2}")

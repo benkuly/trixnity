@@ -17,7 +17,6 @@ class OpensslNativeTarget(
     val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> KotlinNativeTarget,
 ) {
     val libPath: File = trixnityBinariesDirs.opensslBinStaticDir.resolve(target.name).resolve("libcrypto.a")
-    val enabledOnThisPlatform: Boolean = target.isEnabledOnThisPlatform()
 }
 
 val opensslNativeTargetList = listOf(
@@ -42,33 +41,31 @@ kotlin {
         }
     }
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled()
-    val jsTarget = addDefaultJsTargetWhenEnabled(rootDir)
-    val appleTargets = addAppleNativeTargetsWhenEnabled()
+    addJvmTarget()
+    addJsTarget(rootDir)
+    addNativeAppleTargets()
 
     val opensslNativeTargets = opensslNativeTargetList.mapNotNull { target ->
-        addNativeTargetWhenEnabled(target.target) {
-            target.createTarget(this).apply {
-                compilations {
-                    "main" {
-                        cinterops {
-                            val libopenssl by creating {
-                                defFile("src/opensslMain/cinterop/libopenssl.def")
-                                packageName("org.openssl")
-                                includeDirs(trixnityBinariesDirs.opensslHeadersDir)
-                                tasks.named(interopProcessingTaskName) {
-                                    dependsOn(trixnityBinariesTask)
-                                }
-                            }
-                            if (target.target.family == Family.LINUX) {
-                                val librandom by creating {
-                                    defFile("src/linuxMain/cinterop/librandom.def")
-                                    packageName("org.linux.random")
-                                }
+        target.createTarget(this).apply {
+            compilations {
+                "main" {
+                    cinterops {
+                        val libopenssl by creating {
+                            defFile("src/opensslMain/cinterop/libopenssl.def")
+                            packageName("org.openssl")
+                            includeDirs(trixnityBinariesDirs.opensslHeadersDir)
+                            tasks.named(interopProcessingTaskName) {
+                                dependsOn(trixnityBinariesTask)
                             }
                         }
-                        kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
+                        if (target.target.family == Family.LINUX) {
+                            val librandom by creating {
+                                defFile("src/linuxMain/cinterop/librandom.def")
+                                packageName("org.linux.random")
+                            }
+                        }
                     }
+                    kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
                 }
             }
         }
@@ -77,6 +74,7 @@ kotlin {
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
         val commonMain by getting {
             dependencies {
@@ -99,7 +97,7 @@ kotlin {
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
-        jvmTarget?.testSourceSet(this) {
+        val jvmTest by getting {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")

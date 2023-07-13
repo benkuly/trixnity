@@ -10,9 +10,8 @@ plugins {
 kotlin {
     targetHierarchy.default()
     jvmToolchain()
-    val jvmTarget = addDefaultJvmTargetWhenEnabled(useJUnitPlatform = false)
-    val linuxX64Target =
-        addNativeTargetWhenEnabled(org.jetbrains.kotlin.konan.target.KonanTarget.LINUX_X64) { linuxX64() }
+    addJvmTarget(useJUnitPlatform = false)
+    linuxX64()
 
     sourceSets {
         all {
@@ -45,7 +44,7 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        jvmTarget?.testSourceSet(this) {
+        val jvmTest by getting {
             dependencies {
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
             }

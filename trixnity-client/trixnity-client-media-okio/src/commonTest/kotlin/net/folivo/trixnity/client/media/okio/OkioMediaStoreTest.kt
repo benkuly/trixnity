@@ -2,11 +2,7 @@ package net.folivo.trixnity.client.media.okio
 
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
@@ -15,8 +11,6 @@ import okio.fakefilesystem.FakeFileSystem
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 class OkioMediaStoreTest {
 
@@ -47,90 +41,70 @@ class OkioMediaStoreTest {
 
     @Test
     fun shouldDeleteAll() = runTest {
-        fileSystem.createDirectories(basePath)
+        cut.init()
         fileSystem.write(file1) {}
         fileSystem.write(file2) {}
-        fileSystem.listOrNull(basePath)?.size shouldBe 2
+        fileSystem.listOrNull(basePath)?.size shouldBe 3
         cut.deleteAll()
-        fileSystem.listOrNull(basePath)?.size shouldBe 0
+        fileSystem.listOrNull(basePath)?.size shouldBe 1
     }
 
     @Test
     fun shouldAddMedia() = runTest {
-        fileSystem.createDirectories(basePath)
+        cut.init()
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
         fileSystem.read(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) { readUtf8() } shouldBe "hi"
     }
 
     @Test
+    fun shouldNotAddMediaOnException() = runTest {
+        cut.init()
+        val file = MutableSharedFlow<ByteArray>()
+        val job = async {
+            cut.addMedia("url1", file)
+        }
+        file.emit("h".encodeToByteArray())
+        job.cancel()
+        fileSystem.exists(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) shouldBe false
+    }
+
+    @Test
     fun shouldGetMedia() = runTest {
-        fileSystem.createDirectories(basePath)
+        cut.init()
         fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
-            writeUtf8(
-                "hi"
-            )
+            writeUtf8("hi")
         }
         cut.getMedia("url1")?.toByteArray()?.decodeToString() shouldBe "hi"
     }
 
     @Test
     fun shouldGetMediaWhenFileNotExists() = runTest {
-        fileSystem.createDirectories(basePath)
+        cut.init()
         cut.getMedia("url1")?.toByteArray()?.decodeToString() shouldBe null
-    }
-
-
-    @Test
-    fun shouldGetMediaAsSoonAsAddedAndNotBefore() = runTest {
-        cut = OkioMediaStore(basePath, fileSystem, testScheduler)
-        fileSystem.createDirectories(basePath)
-        val emittedH = MutableStateFlow(false)
-        val mediaFlow = flow {
-            emit("h".encodeToByteArray())
-            emittedH.value = true
-            delay(1.seconds)
-            emit("i".encodeToByteArray())
-        }
-        launch {
-            cut.addMedia("url1", mediaFlow)
-        }
-        emittedH.first { it }
-        val getMediaResult = async {
-            cut.getMedia("url1")?.toByteArray()?.decodeToString()
-        }
-        testScheduler.advanceTimeBy(500.milliseconds)
-        getMediaResult.isCompleted shouldBe false
-        testScheduler.advanceTimeBy(501.milliseconds)
-        getMediaResult.isCompleted shouldBe true
-        getMediaResult.await() shouldBe "hi"
     }
 
     @Test
     fun shouldDeleteMedia() = runTest {
-        fileSystem.createDirectories(basePath)
+        cut.init()
         fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
-            writeUtf8(
-                "hi"
-            )
+            writeUtf8("hi")
         }
         cut.deleteMedia("url1")
-        fileSystem.listOrNull(basePath)?.size shouldBe 0
+        fileSystem.listOrNull(basePath)?.size shouldBe 1
     }
 
     @Test
     fun shouldDeleteMediaWhenFileNotExists() = runTest {
-        fileSystem.createDirectories(basePath)
+        cut.init()
         cut.deleteMedia("url1")
-        fileSystem.listOrNull(basePath)?.size shouldBe 0
+        fileSystem.listOrNull(basePath)?.size shouldBe 1
     }
 
     @Test
     fun shouldChangeMediaUrl() = runTest {
-        fileSystem.createDirectories(basePath)
+        cut.init()
         fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
-            writeUtf8(
-                "hi"
-            )
+            writeUtf8("hi")
         }
         cut.changeMediaUrl("url1", "url2")
         fileSystem.read(basePath.resolve("86729d96320481bc7f78a334b8c81f216631fec96b0ef19040537c4144384068")) { readUtf8() } shouldBe "hi"
