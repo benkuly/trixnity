@@ -5,11 +5,13 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.key.DeviceTrustLevel
 import net.folivo.trixnity.client.media.InMemoryMediaStore
@@ -60,8 +62,10 @@ class KeySharingIT {
 
     @AfterTest
     fun afterEach() {
-        startedClient1.scope.cancel()
-        startedClient2.scope.cancel()
+        runBlocking {
+            startedClient1.client.stop()
+            startedClient2.client.stop()
+        }
     }
 
     @Test
@@ -101,7 +105,6 @@ class KeySharingIT {
                 startedClient2.client.room.sendMessage(roomId) { text("hi from client2") }
             }
             withClue("login with another client and look if keybackup works") {
-                val scope = CoroutineScope(Dispatchers.Default) + CoroutineName("client3")
                 val database = newDatabase()
                 val repositoriesModule = createExposedRepositoriesModule(database)
 
@@ -115,7 +118,6 @@ class KeySharingIT {
                     password = "user$1passw0rd",
                     repositoriesModule = repositoriesModule,
                     mediaStore = InMemoryMediaStore(),
-                    scope = scope,
                 ).getOrThrow()
                 client3.startSync()
                 client3.syncState.first { it == SyncState.RUNNING }
@@ -185,7 +187,8 @@ class KeySharingIT {
                 events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
-                scope.cancel()
+
+                client3.stop()
             }
         }
     }

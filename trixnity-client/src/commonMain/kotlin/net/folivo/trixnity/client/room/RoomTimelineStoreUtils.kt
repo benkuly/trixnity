@@ -27,7 +27,7 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
     nextHasGap: Boolean,
     nextEvent: EventId?,
     nextEventChunk: List<Event.RoomEvent<*>>?,
-    processTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
+    processTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent>
 ) {
     log.trace {
         "addEventsToTimeline with parameters:\n" +

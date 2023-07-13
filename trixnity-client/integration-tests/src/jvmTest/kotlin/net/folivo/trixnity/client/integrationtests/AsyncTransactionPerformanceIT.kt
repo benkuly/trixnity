@@ -75,7 +75,9 @@ class AsyncTransactionPerformanceIT {
 
     @AfterTest
     fun afterEach() {
-        startedClient1.scope.cancel()
+        runBlocking {
+            startedClient1.client.stop()
+        }
     }
 
     @Test
