@@ -103,7 +103,7 @@ interface SyncApiClient : EventEmitter {
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 30000,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId? = null,
         wait: Boolean = false,
         scope: CoroutineScope,
@@ -114,7 +114,7 @@ interface SyncApiClient : EventEmitter {
         setPresence: Presence? = null,
         currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
         timeout: Long = 0,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId? = null,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T>
@@ -122,6 +122,25 @@ interface SyncApiClient : EventEmitter {
     suspend fun stop(wait: Boolean = false)
     suspend fun cancel(wait: Boolean = false)
 }
+
+suspend fun SyncApiClient.start(
+    filter: String? = null,
+    setPresence: Presence? = null,
+    currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+    timeout: Long = 30000,
+    asUserId: UserId? = null,
+    wait: Boolean = false,
+    scope: CoroutineScope,
+) = start(filter, setPresence, currentBatchToken, timeout, { it() }, asUserId, wait, scope)
+
+suspend fun <T> SyncApiClient.startOnce(
+    filter: String? = null,
+    setPresence: Presence? = null,
+    currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+    timeout: Long = 0,
+    asUserId: UserId? = null,
+    runOnce: suspend (Sync.Response) -> T,
+): Result<T> = startOnce(filter, setPresence, currentBatchToken, timeout, { it() }, asUserId, runOnce)
 
 suspend fun SyncApiClient.startOnce(
     filter: String? = null,
