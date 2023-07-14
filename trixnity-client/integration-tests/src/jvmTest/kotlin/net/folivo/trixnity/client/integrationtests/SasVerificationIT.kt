@@ -4,8 +4,9 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.key
 import net.folivo.trixnity.client.key.DeviceTrustLevel
@@ -30,8 +31,6 @@ class SasVerificationIT {
 
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
-    private lateinit var scope1: CoroutineScope
-    private lateinit var scope2: CoroutineScope
     private lateinit var database1: Database
     private lateinit var database2: Database
 
@@ -40,8 +39,6 @@ class SasVerificationIT {
 
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
-        scope1 = CoroutineScope(Dispatchers.Default) + CoroutineName("client1")
-        scope2 = CoroutineScope(Dispatchers.Default) + CoroutineName("client2")
         val password = "user$1passw0rd"
         val baseUrl = URLBuilder(
             protocol = URLProtocol.HTTP,
@@ -57,14 +54,12 @@ class SasVerificationIT {
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStore = InMemoryMediaStore(),
-            scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStore = InMemoryMediaStore(),
-            scope = scope2,
             getLoginInfo = { it.register("user2", password) }
         ).getOrThrow()
         client1.startSync()
@@ -75,8 +70,10 @@ class SasVerificationIT {
 
     @AfterTest
     fun afterEach() {
-        scope1.cancel()
-        scope2.cancel()
+        runBlocking {
+            client1.stop()
+            client2.stop()
+        }
     }
 
     @Test

@@ -5,10 +5,12 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.key.DeviceTrustLevel
 import net.folivo.trixnity.client.key.DeviceTrustLevel.NotCrossSigned
@@ -46,9 +48,6 @@ class CrossSigningIT {
     private lateinit var client1: MatrixClient
     private lateinit var client2: MatrixClient
     private lateinit var client3: MatrixClient
-    private lateinit var scope1: CoroutineScope
-    private lateinit var scope2: CoroutineScope
-    private lateinit var scope3: CoroutineScope
     private lateinit var database1: Database
     private lateinit var database2: Database
     private lateinit var database3: Database
@@ -59,9 +58,6 @@ class CrossSigningIT {
 
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
-        scope1 = CoroutineScope(Dispatchers.Default) + CoroutineName("client1")
-        scope2 = CoroutineScope(Dispatchers.Default) + CoroutineName("client2")
-        scope3 = CoroutineScope(Dispatchers.Default) + CoroutineName("client3")
         val baseUrl = URLBuilder(
             protocol = URLProtocol.HTTP,
             host = synapseDocker.host,
@@ -78,7 +74,6 @@ class CrossSigningIT {
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStore = InMemoryMediaStore(),
-            scope = scope1,
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client2 = MatrixClient.login(
@@ -87,13 +82,11 @@ class CrossSigningIT {
             password = password,
             repositoriesModule = repositoriesModule2,
             mediaStore = InMemoryMediaStore(),
-            scope = scope2,
         ).getOrThrow()
         client3 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule3,
             mediaStore = InMemoryMediaStore(),
-            scope = scope3,
             getLoginInfo = { it.register("user3", password) }
         ).getOrThrow()
         client1.startSync()
@@ -106,9 +99,11 @@ class CrossSigningIT {
 
     @AfterTest
     fun afterEach() {
-        scope1.cancel()
-        scope2.cancel()
-        scope3.cancel()
+        runBlocking {
+            client1.stop()
+            client2.stop()
+            client3.stop()
+        }
     }
 
     @Test
@@ -216,7 +211,7 @@ class CrossSigningIT {
                 client2Verification.shouldNotBeNull()
                 client3Verification.shouldNotBeNull()
 
-                val user1Comparison = scope2.async {
+                val user1Comparison = async {
                     client2Verification.state.first { it is ActiveVerificationState.Ready }
                         .shouldBeInstanceOf<ActiveVerificationState.Ready>().start(VerificationMethod.Sas)
                     client2Verification.state.first { it is ActiveVerificationState.Start }
@@ -226,7 +221,7 @@ class CrossSigningIT {
                         .shouldBeInstanceOf<ActiveSasVerificationState.ComparisonByUser>()
                 }
 
-                val user3Comparison = scope3.async {
+                val user3Comparison = async {
                     client3Verification.state.first { it is ActiveVerificationState.TheirRequest }
                         .shouldBeInstanceOf<ActiveVerificationState.TheirRequest>()
                         .ready()

@@ -3,11 +3,7 @@ package net.folivo.trixnity.client.integrationtests
 import com.benasher44.uuid.uuid4
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.plus
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -72,7 +68,6 @@ suspend fun MatrixClientServerApiClient.register(
 fun newDatabase() = Database.connect("jdbc:h2:mem:${uuid4()};DB_CLOSE_DELAY=-1;")
 
 data class StartedClient(
-    val scope: CoroutineScope,
     val client: MatrixClient,
     val password: String
 )
@@ -84,18 +79,16 @@ suspend fun registerAndStartClient(
     repositoriesModule: Module,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
-    val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
     val client = MatrixClient.loginWith(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
-        scope = scope,
         getLoginInfo = { it.register(username, password, name) },
         configuration = configuration,
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
-    return StartedClient(scope, client, password)
+    return StartedClient(client, password)
 }
 
 suspend fun startClient(
@@ -105,8 +98,6 @@ suspend fun startClient(
     repositoriesModule: Module,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
-    val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
-
     val client = MatrixClient.login(
         baseUrl = baseUrl,
         identifier = IdentifierType.User(username),
@@ -114,12 +105,11 @@ suspend fun startClient(
         deviceId = name,
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
-        scope = scope,
         configuration = configuration,
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
-    return StartedClient(scope, client, password)
+    return StartedClient(client, password)
 }
 
 suspend fun startClientFromStore(
@@ -127,16 +117,13 @@ suspend fun startClientFromStore(
     repositoriesModule: Module,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
-    val scope = CoroutineScope(Dispatchers.Default) + CoroutineName(name)
-
     val client = MatrixClient.fromStore(
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
-        scope = scope,
         configuration = configuration,
     ).getOrThrow()
     checkNotNull(client)
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
-    return StartedClient(scope, client, password)
+    return StartedClient(client, password)
 }

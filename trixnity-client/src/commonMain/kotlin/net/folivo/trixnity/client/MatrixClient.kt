@@ -6,8 +6,6 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.MediaStore
@@ -81,9 +79,6 @@ interface MatrixClient {
 
     suspend fun logout(): Result<Unit>
 
-    /**
-     * Be aware, that most StateFlows you got before will not be updated after calling this method.
-     */
     suspend fun clearCache(): Result<Unit>
 
     suspend fun clearMediaCache(): Result<Unit>
@@ -97,6 +92,14 @@ interface MatrixClient {
     suspend fun stopSync(wait: Boolean = false)
 
     suspend fun cancelSync(wait: Boolean = false)
+
+    /**
+     * Stop the MatrixClient and its [CoroutineScope].
+     * It should be called to clean up all resources used by [MatrixClient].
+     *
+     * After calling this, this instance should not be used anymore!
+     */
+    suspend fun stop()
 
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
@@ -113,14 +116,12 @@ suspend fun MatrixClient.Companion.login(
     initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    scope: CoroutineScope,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient> =
     loginWith(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStore = mediaStore,
-        scope = scope,
         getLoginInfo = { api ->
             api.authentication.login(
                 identifier = identifier,
@@ -149,14 +150,17 @@ suspend fun MatrixClient.Companion.loginWith(
     baseUrl: Url,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    scope: CoroutineScope,
     getLoginInfo: suspend (MatrixClientServerApiClientImpl) -> Result<LoginInfo>,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
+    val handler = CoroutineExceptionHandler { _, exception ->
+        log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
+    }
+    val coroutineScope = CoroutineScope(Dispatchers.Default + handler)
     val koinApplication = koinApplication {
         modules(module {
-            single { scope }
+            single { coroutineScope }
             single { config }
             single { mediaStore }
         })
@@ -222,8 +226,7 @@ suspend fun MatrixClient.Companion.loginWith(
         mediaCacheMappingStore = di.get(),
         eventHandlers = di.getAll(),
         tm = di.get(),
-        config = config,
-        scope = scope,
+        coroutineScope = coroutineScope,
     )
     api.keys.setKeys(deviceKeys = selfSignedDeviceKeys)
         .onFailure { matrixClient.deleteAll() }
@@ -236,13 +239,16 @@ suspend fun MatrixClient.Companion.fromStore(
     repositoriesModule: Module,
     mediaStore: MediaStore,
     onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
-    scope: CoroutineScope,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient?> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
+    val handler = CoroutineExceptionHandler { _, exception ->
+        log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
+    }
+    val coroutineScope = CoroutineScope(Dispatchers.Default + handler)
     val koinApplication = koinApplication {
         modules(module {
-            single { scope }
+            single { coroutineScope }
             single { config }
             single { mediaStore }
         })
@@ -301,8 +307,7 @@ suspend fun MatrixClient.Companion.fromStore(
                 mediaCacheMappingStore = di.get(),
                 eventHandlers = di.getAll(),
                 tm = di.get(),
-                config = config,
-                scope = scope,
+                coroutineScope = coroutineScope,
             )
         } else null
     } else null
@@ -332,9 +337,68 @@ class MatrixClientImpl internal constructor(
     private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
     private val tm: TransactionManager,
-    config: MatrixClientConfiguration,
-    private val scope: CoroutineScope,
+    private val coroutineScope: CoroutineScope,
 ) : MatrixClient {
+    private val started = MutableStateFlow(false)
+
+    init {
+        coroutineScope.launch {
+            val allHandlersStarted = MutableStateFlow(false)
+            launch {
+                eventHandlers.forEach {
+                    log.debug { "start EventHandler: ${it::class.simpleName}" }
+                    it.startInCoroutineScope(this)
+                }
+                allHandlersStarted.value = true
+            }
+            allHandlersStarted.first { it }
+            log.debug { "all EventHandler started" }
+            launch {
+                loginState.debounce(100.milliseconds).collect {
+                    log.info { "login state: $it" }
+                    when (it) {
+                        LOGGED_OUT_SOFT -> {
+                            log.info { "stop sync" }
+                            stopSync(true)
+                        }
+
+                        LOGGED_OUT -> {
+                            log.info { "stop sync and delete all" }
+                            stopSync(true)
+                            rootStore.deleteAll()
+                        }
+
+                        else -> {}
+                    }
+                }
+            }
+
+            val filterId = accountStore.filterId.value
+            if (filterId == null) {
+                accountStore.filterId.value = retryWhen(
+                    flowOf(true),
+                    onError = { log.warn(it) { "could not set filter" } }
+                ) {
+                    api.users.setFilter(userId, baseFilters)
+                        .getOrThrow().also { log.debug { "set new filter for sync: $it" } }
+                }
+            }
+            val backgroundFilterId = accountStore.backgroundFilterId.value
+            if (backgroundFilterId == null) {
+                accountStore.backgroundFilterId.value = retryWhen(
+                    flowOf(true),
+                    onError = { log.warn(it) { "could not set filter" } }
+                ) {
+                    api.users.setFilter(
+                        userId,
+                        baseFilters.copy(presence = Filters.EventFilter(limit = 0))
+                    ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
+                }
+            }
+            started.value = true
+        }
+    }
+
     override val displayName: StateFlow<String?> = accountStore.displayName
     override val avatarUrl: StateFlow<String?> = accountStore.avatarUrl
     override val syncState = api.sync.currentSyncState
@@ -342,7 +406,7 @@ class MatrixClientImpl internal constructor(
     override val initialSyncDone: StateFlow<Boolean> =
         accountStore.syncBatchToken
             .map { token -> token != null }
-            .stateIn(scope, Eagerly, accountStore.syncBatchToken.value != null)
+            .stateIn(coroutineScope, Eagerly, accountStore.syncBatchToken.value != null)
 
     override val loginState: StateFlow<LoginState?> =
         combine(accountStore.accessToken, accountStore.syncBatchToken) { accessToken, syncBatchToken ->
@@ -351,7 +415,7 @@ class MatrixClientImpl internal constructor(
                 syncBatchToken != null -> LOGGED_OUT_SOFT
                 else -> LOGGED_OUT
             }
-        }.stateIn(scope, Eagerly, null)
+        }.stateIn(coroutineScope, Eagerly, null)
 
     override suspend fun logout(): Result<Unit> {
         stopSync(true)
@@ -391,20 +455,20 @@ class MatrixClientImpl internal constructor(
 
 
     override suspend fun startSync() {
-        startMatrixClient()
+        started.first { it }
         api.sync.start(
             filter = requireNotNull(accountStore.filterId.value),
             setPresence = Presence.ONLINE,
             currentBatchToken = accountStore.syncBatchToken,
             withTransaction = syncTransaction,
-            scope = scope,
+            scope = coroutineScope,
         )
     }
 
     override suspend fun syncOnce(timeout: Long): Result<Unit> = syncOnce(timeout = timeout) { }
 
     override suspend fun <T> syncOnce(timeout: Long, runOnce: suspend (Sync.Response) -> T): Result<T> {
-        startMatrixClient()
+        started.first { it }
         return api.sync.startOnce(
             filter = requireNotNull(accountStore.backgroundFilterId.value),
             setPresence = Presence.OFFLINE,
@@ -415,8 +479,6 @@ class MatrixClientImpl internal constructor(
         )
     }
 
-    private val initializationMutex = Mutex()
-    private var initializationJob: Job? = null
     private val baseFilters =
         Filters(
             room = Filters.RoomFilter(
@@ -424,82 +486,18 @@ class MatrixClientImpl internal constructor(
             )
         )
 
-    @OptIn(FlowPreview::class)
-    private suspend fun startMatrixClient() = initializationMutex.withLock {
-        if (initializationJob == null) {
-            // even if the caller is cancelled, the initialization should be done -> scope.launch()
-            initializationJob = scope.launch {
-                val handler = CoroutineExceptionHandler { _, exception ->
-                    log.error(exception) { "There was an unexpected exception. Will cancel sync now. This should never happen!!!" }
-                    scope.launch {
-                        stopSync(true)
-                    }
-                }
-                val allHandlersStarted = MutableStateFlow(false)
-                scope.launch(handler, CoroutineStart.UNDISPATCHED) {
-                    eventHandlers.forEach {
-                        log.debug { "start EventHandler: ${it::class.simpleName}" }
-                        it.startInCoroutineScope(this)
-                    }
-                    allHandlersStarted.value = true
-                }
-                allHandlersStarted.first { it }
-                log.debug { "all EventHandler started" }
-                scope.launch(handler) {
-                    loginState.debounce(100.milliseconds).collect {
-                        log.info { "login state: $it" }
-                        when (it) {
-                            LOGGED_OUT_SOFT -> {
-                                log.info { "stop sync" }
-                                stopSync(true)
-                            }
-
-                            LOGGED_OUT -> {
-                                log.info { "stop sync and delete all" }
-                                stopSync(true)
-                                rootStore.deleteAll()
-                            }
-
-                            else -> {}
-                        }
-                    }
-                }
-
-                val filterId = accountStore.filterId.value
-                if (filterId == null) {
-                    accountStore.filterId.value = retryWhen(
-                        flowOf(true),
-                        onError = { log.warn(it) { "could not set filter" } }
-                    ) {
-                        api.users.setFilter(userId, baseFilters)
-                            .getOrThrow().also { log.debug { "set new filter for sync: $it" } }
-                    }
-                }
-                val backgroundFilterId = accountStore.backgroundFilterId.value
-                if (backgroundFilterId == null) {
-                    accountStore.backgroundFilterId.value = retryWhen(
-                        flowOf(true),
-                        onError = { log.warn(it) { "could not set filter" } }
-                    ) {
-                        api.users.setFilter(
-                            userId,
-                            baseFilters.copy(presence = Filters.EventFilter(limit = 0))
-                        ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
-                    }
-                }
-            }
-        }
-
-        // everyone has to wait for the initialization to finish
-        initializationJob?.join()
-    }
-
     override suspend fun stopSync(wait: Boolean) {
         api.sync.stop(wait)
     }
 
     override suspend fun cancelSync(wait: Boolean) {
         api.sync.cancel(wait)
+    }
+
+    override suspend fun stop() {
+        started.value = false
+        cancelSync(true)
+        coroutineScope.cancel("stopped MatrixClient")
     }
 
     override suspend fun setDisplayName(displayName: String?): Result<Unit> {

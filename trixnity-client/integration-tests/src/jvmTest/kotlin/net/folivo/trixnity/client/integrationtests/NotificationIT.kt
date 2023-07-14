@@ -10,8 +10,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
-import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.notification
+import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
@@ -54,8 +54,10 @@ class NotificationIT {
 
     @AfterTest
     fun afterEach() {
-        startedClient1.scope.cancel()
-        startedClient2.scope.cancel()
+        runBlocking {
+            startedClient1.client.stop()
+            startedClient2.client.stop()
+        }
         scope.cancel()
     }
 

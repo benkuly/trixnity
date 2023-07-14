@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.integrationtests
 import io.kotest.assertions.withClue
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -59,8 +58,8 @@ class LogoutIT {
                 }
             }
 
-            startedClient1.scope.cancel()
-            startedClient2.scope.cancel()
+            startedClient1.client.stop()
+            startedClient2.client.stop()
         }
     }
 }

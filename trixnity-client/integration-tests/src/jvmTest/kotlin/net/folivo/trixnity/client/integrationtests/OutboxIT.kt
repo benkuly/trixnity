@@ -2,8 +2,11 @@ package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
@@ -26,7 +29,6 @@ import kotlin.test.Test
 class OutboxIT {
 
     private lateinit var client: MatrixClient
-    private lateinit var scope: CoroutineScope
     private lateinit var database: Database
 
     @Container
@@ -35,7 +37,6 @@ class OutboxIT {
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
         deleteDbFiles()
-        scope = CoroutineScope(Dispatchers.Default)
         val password = "user$1passw0rd"
         val baseUrl = URLBuilder(
             protocol = URLProtocol.HTTP,
@@ -49,7 +50,6 @@ class OutboxIT {
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule,
             mediaStore = InMemoryMediaStore(),
-            scope = scope,
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()
         client.startSync()
@@ -58,7 +58,9 @@ class OutboxIT {
 
     @AfterTest
     fun afterEach() {
-        scope.cancel()
+        runBlocking {
+            client.stop()
+        }
         deleteDbFiles()
     }
 
@@ -83,7 +85,7 @@ class OutboxIT {
             delay(1_000)
             client.room.getOutbox().first { it.isEmpty() }
             delay(1_000)
-            scope.cancel()
+            client.stop()
             delay(1_000) // let everything stop
 
             val exposedRoomOutbox = object : Table("room_outbox") {

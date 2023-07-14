@@ -73,7 +73,7 @@ class MatrixClientTest : ShouldSpec({
                         single<OlmAccountRepository> { olmAccountRepository }
                     })
             }
-            MatrixClient.login(
+            val cut = MatrixClient.login(
                 baseUrl = Url("http://matrix.home"),
                 identifier = IdentifierType.User(userId.full),
                 password = "p4ssw0rd!",
@@ -144,16 +144,15 @@ class MatrixClientTest : ShouldSpec({
                         }
                     }
                 },
-                scope = scope,
-            ).fold(
-                onSuccess = { matrixClient ->
-                    matrixClient.displayName.value shouldBe "bob"
-                    matrixClient.avatarUrl.value shouldBe "mxc://localhost/123456"
-                },
-                onFailure = {
+            ).onSuccess { matrixClient ->
+                matrixClient.displayName.value shouldBe "bob"
+                matrixClient.avatarUrl.value shouldBe "mxc://localhost/123456"
+            }
+                .onFailure {
                     fail(it.message)
                 }
-            )
+
+            cut.getOrNull()?.stop()
         }
         should("use the display name and avatar URL from the store when matrixClient is retrieved from the store and update when room user updates") {
             val accountRepository = InMemoryAccountRepository().apply {
@@ -298,7 +297,6 @@ class MatrixClientTest : ShouldSpec({
                         }
                     }
                 },
-                scope = scope,
             ).getOrThrow().shouldNotBeNull()
 
             cut.displayName.first { it != null } shouldBe "bob"
@@ -308,6 +306,7 @@ class MatrixClientTest : ShouldSpec({
 
             cut.displayName.first { it == "bobby" } shouldBe "bobby"
             cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"
+            cut.stop()
         }
     }
     context(MatrixClientImpl::loginState.name) {
@@ -349,8 +348,10 @@ class MatrixClientTest : ShouldSpec({
                         }
                     }
                 },
-                scope = scope
             ).getOrThrow().shouldNotBeNull()
+        }
+        afterTest {
+            cut.stop()
         }
         should("$LOGGED_IN when access token is not null") {
             cut.loginState.first { it == LOGGED_IN }
@@ -409,7 +410,6 @@ class MatrixClientTest : ShouldSpec({
                         }
                     }
                 },
-                scope = scope
             ).getOrThrow().shouldNotBeNull()
             val accountStore = cut.di.get<AccountStore>()
             accountStore.accessToken.value = null
@@ -420,6 +420,7 @@ class MatrixClientTest : ShouldSpec({
             logoutCalled shouldBe false
             cut.userId
             accountStore.userId.value shouldBe null
+            cut.stop()
         }
         should("call api and delete all") {
             var logoutCalled = false
@@ -433,7 +434,6 @@ class MatrixClientTest : ShouldSpec({
                         }
                     }
                 },
-                scope = scope
             ).getOrThrow().shouldNotBeNull()
 
             cut.loginState.first { it == LOGGED_IN }
@@ -442,6 +442,8 @@ class MatrixClientTest : ShouldSpec({
             logoutCalled shouldBe true
             val accountStore = cut.di.get<AccountStore>()
             accountStore.userId.value shouldBe null
+
+            cut.stop()
         }
     }
 })
