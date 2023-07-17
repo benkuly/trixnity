@@ -88,7 +88,7 @@ variables:
 .if-release: &if-release
   - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
 
-.if-master: &if-master
+.if-main: &if-main
   - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -97,7 +97,7 @@ pages:
   stage: website
   image: node:lts
   rules:
-    - *if-master
+    - *if-main
   script:
     - cd website
     - yarn install
@@ -156,6 +156,7 @@ test:mac:
     - *if-merge-request
   script:
     - ./gradlew
+      iosArm64Test
       iosSimulatorArm64Test
       iosX64Test
       macosArm64Test
@@ -208,7 +209,7 @@ publish-snapshot:mac:
   cache:
     - *pull-cache-mac
   rules:
-    - *if-master
+    - *if-main
   script:
     - ./gradlew
       publishIosArm64PublicationToSnapshotRepository
@@ -225,7 +226,7 @@ publish-snapshot:linux:
   cache:
     - *pull-cache-linux
   rules:
-    - *if-master
+    - *if-main
   script:
     - ./gradlew
       publishKotlinMultiplatformPublicationToSnapshotRepository
