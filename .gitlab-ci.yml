@@ -18,7 +18,7 @@ variables:
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
 
 .cache-linux: &cache-linux
-  - key: global-tixnity-cache-linux
+  - key: global-trixnity-cache-linux
     policy: pull-push
     paths:
       - $GRADLE_USER_HOME
@@ -31,14 +31,14 @@ variables:
 
 .pull-cache-linux: &pull-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
-    fallback_keys: [ "global-tixnity-cache-linux" ]
+    fallback_keys: [ "global-trixnity-cache-linux" ]
     policy: pull
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
 
 .cache-mac: &cache-mac
-  - key: global-tixnity-cache-mac
+  - key: global-trixnity-cache-mac
     policy: pull-push
     paths:
       - $GRADLE_USER_HOME
@@ -51,7 +51,7 @@ variables:
 
 .pull-cache-mac: &pull-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
-    fallback_keys: [ "global-tixnity-cache-mac" ]
+    fallback_keys: [ "global-trixnity-cache-mac" ]
     policy: pull
     paths:
       - $GRADLE_USER_HOME
@@ -140,9 +140,9 @@ test:mac:
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
+  # TODO iosArm64Test not created by gradle
   script:
     - ./gradlew
-      iosArm64Test
       iosSimulatorArm64Test
       iosX64Test
       macosArm64Test

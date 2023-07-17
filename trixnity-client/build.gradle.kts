@@ -13,6 +13,7 @@ kotlin {
     addJvmTarget()
     addJsTarget(rootDir, testEnabled = false)
     addNativeTargets()
+    ios()
 
     sourceSets {
         all {
