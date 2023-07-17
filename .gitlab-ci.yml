@@ -14,37 +14,24 @@ stages:
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
-  BUILD_DIRS: $CI_PROJECT_DIR/**/build
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
 
-.pull-cache-linux: &pull-cache-linux
-  - key: global-tixnity-cache-linux
-    policy: pull
-    paths:
-      - $GRADLE_USER_HOME
-      - $KONAN_DATA_DIR
-
 .cache-linux: &cache-linux
   - key: global-tixnity-cache-linux
+    policy: pull-push
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
-
-.pull-build-cache-linux: &pull-build-cache-linux
-  - key: "$CI_COMMIT_REF_NAME-linux"
-    policy: pull
-    paths:
-      - $BUILD_DIRS
-
-.push-build-cache-linux: &push-build-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
     policy: push
     paths:
-      - $BUILD_DIRS
+      - $GRADLE_USER_HOME
+      - $KONAN_DATA_DIR
 
-.pull-cache-mac: &pull-cache-mac
-  - key: global-tixnity-cache-mac
+.pull-cache-linux: &pull-cache-linux
+  - key: "$CI_COMMIT_REF_NAME-linux"
+    fallback_keys: [ "global-tixnity-cache-linux" ]
     policy: pull
     paths:
       - $GRADLE_USER_HOME
@@ -52,21 +39,23 @@ variables:
 
 .cache-mac: &cache-mac
   - key: global-tixnity-cache-mac
+    policy: pull-push
+    paths:
+      - $GRADLE_USER_HOME
+      - $KONAN_DATA_DIR
+  - key: "$CI_COMMIT_REF_NAME-mac"
+    policy: push
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
 
-.pull-build-cache-mac: &pull-build-cache-mac
+.pull-cache-mac: &pull-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
+    fallback_keys: [ "global-tixnity-cache-mac" ]
     policy: pull
     paths:
-      - $BUILD_DIRS
-
-.push-build-cache-mac: &push-build-cache-mac
-  - key: "$CI_COMMIT_REF_NAME-mac"
-    policy: push
-    paths:
-      - $BUILD_DIRS
+      - $GRADLE_USER_HOME
+      - $KONAN_DATA_DIR
 
 .docker-variables: &docker-variables
   DOCKER_HOST: tcp://docker:2375
@@ -125,7 +114,6 @@ build:mac:
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache-mac
-    - *push-build-cache-mac
   rules:
     - *if-merge-request
   script:
@@ -137,7 +125,6 @@ build:linux:
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache-linux
-    - *push-build-cache-linux
   rules:
     - *if-merge-request
   script:
@@ -150,7 +137,6 @@ test:mac:
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *pull-cache-mac
-    - *pull-build-cache-mac
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
@@ -171,7 +157,6 @@ test:linux:
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *pull-cache-linux
-    - *pull-build-cache-linux
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
@@ -195,7 +180,6 @@ test:integration-test:
       command: [ "--tls=false" ]
   cache:
     - *pull-cache-linux
-    - *pull-build-cache-linux
   variables: *docker-variables
   artifacts: *artifact-reports
   rules:
