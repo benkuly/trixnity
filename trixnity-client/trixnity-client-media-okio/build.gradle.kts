@@ -39,7 +39,7 @@ kotlin {
                 implementation("com.squareup.okio:okio-fakefilesystem:${Versions.okio}")
             }
         }
-        val jvmMain by getting {
+        val jvmTest by getting {
             dependencies {
                 implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
                 implementation("ch.qos.logback:logback-classic:${Versions.logback}")
