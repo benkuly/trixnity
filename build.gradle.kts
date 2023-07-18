@@ -18,7 +18,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix("3.7.0")
+    version = withVersionSuffix("3.7.1")
 
     repositories {
         mavenCentral()
