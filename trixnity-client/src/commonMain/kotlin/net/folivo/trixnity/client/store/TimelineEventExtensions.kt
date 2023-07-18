@@ -1,9 +1,7 @@
 package net.folivo.trixnity.client.store
 
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RelatesTo
-import net.folivo.trixnity.core.model.events.replace
+import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.*
 
 val TimelineEvent.isEncrypted: Boolean
     get() = event.isEncrypted
@@ -30,3 +28,12 @@ val TimelineEvent.relatesTo: RelatesTo?
                 content.relatesTo
             } else null
         } else null
+
+val TimelineEvent.sender: UserId
+    get() = event.sender
+
+val TimelineEvent.originTimestamp: Long
+    get() = event.originTimestamp
+
+val TimelineEvent.unsigned: UnsignedRoomEventData?
+    get() = event.unsigned
