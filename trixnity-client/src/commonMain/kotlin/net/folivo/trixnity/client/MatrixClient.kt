@@ -99,7 +99,7 @@ interface MatrixClient {
      *
      * After calling this, this instance should not be used anymore!
      */
-    suspend fun stop()
+    fun stop()
 
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
@@ -324,6 +324,7 @@ private fun onLogout(
     }
 }
 
+@OptIn(FlowPreview::class)
 class MatrixClientImpl internal constructor(
     override val userId: UserId,
     override val deviceId: String,
@@ -494,9 +495,8 @@ class MatrixClientImpl internal constructor(
         api.sync.cancel(wait)
     }
 
-    override suspend fun stop() {
+    override fun stop() {
         started.value = false
-        cancelSync(true)
         coroutineScope.cancel("stopped MatrixClient")
     }
 
