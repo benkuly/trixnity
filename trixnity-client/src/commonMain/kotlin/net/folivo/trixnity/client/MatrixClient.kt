@@ -341,6 +341,24 @@ class MatrixClientImpl internal constructor(
 ) : MatrixClient {
     private val started = MutableStateFlow(false)
 
+    override val displayName: StateFlow<String?> = accountStore.displayName
+    override val avatarUrl: StateFlow<String?> = accountStore.avatarUrl
+    override val syncState = api.sync.currentSyncState
+
+    override val initialSyncDone: StateFlow<Boolean> =
+        accountStore.syncBatchToken
+            .map { token -> token != null }
+            .stateIn(coroutineScope, Eagerly, accountStore.syncBatchToken.value != null)
+
+    override val loginState: StateFlow<LoginState?> =
+        combine(accountStore.accessToken, accountStore.syncBatchToken) { accessToken, syncBatchToken ->
+            when {
+                accessToken != null -> LOGGED_IN
+                syncBatchToken != null -> LOGGED_OUT_SOFT
+                else -> LOGGED_OUT
+            }
+        }.stateIn(coroutineScope, Eagerly, null)
+
     init {
         coroutineScope.launch {
             val allHandlersStarted = MutableStateFlow(false)
@@ -398,24 +416,6 @@ class MatrixClientImpl internal constructor(
             started.value = true
         }
     }
-
-    override val displayName: StateFlow<String?> = accountStore.displayName
-    override val avatarUrl: StateFlow<String?> = accountStore.avatarUrl
-    override val syncState = api.sync.currentSyncState
-
-    override val initialSyncDone: StateFlow<Boolean> =
-        accountStore.syncBatchToken
-            .map { token -> token != null }
-            .stateIn(coroutineScope, Eagerly, accountStore.syncBatchToken.value != null)
-
-    override val loginState: StateFlow<LoginState?> =
-        combine(accountStore.accessToken, accountStore.syncBatchToken) { accessToken, syncBatchToken ->
-            when {
-                accessToken != null -> LOGGED_IN
-                syncBatchToken != null -> LOGGED_OUT_SOFT
-                else -> LOGGED_OUT
-            }
-        }.stateIn(coroutineScope, Eagerly, null)
 
     override suspend fun logout(): Result<Unit> {
         stopSync(true)
