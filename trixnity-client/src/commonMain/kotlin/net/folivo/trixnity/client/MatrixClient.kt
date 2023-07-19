@@ -30,7 +30,6 @@ import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
-import kotlin.time.Duration.Companion.milliseconds
 
 private val log = KotlinLogging.logger {}
 
@@ -355,7 +354,7 @@ class MatrixClientImpl internal constructor(
             allHandlersStarted.first { it }
             log.debug { "all EventHandler started" }
             launch {
-                loginState.debounce(100.milliseconds).collect {
+                loginState.collect {
                     log.info { "login state: $it" }
                     when (it) {
                         LOGGED_OUT_SOFT -> {
