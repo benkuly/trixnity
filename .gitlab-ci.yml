@@ -178,7 +178,6 @@ test:integration-test:
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:dind
-      command: [ "--tls=false" ]
   cache:
     - *pull-cache-linux
   variables: *docker-variables
