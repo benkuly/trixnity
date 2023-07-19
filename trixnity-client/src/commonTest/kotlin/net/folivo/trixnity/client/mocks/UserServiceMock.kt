@@ -8,6 +8,7 @@ import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
@@ -68,7 +69,12 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
+    @Deprecated("use canSendEvent instead", ReplaceWith("canSendEvent(roomId, RoomMessageEventContent::class)"))
     override fun canSendMessages(roomId: RoomId): Flow<Boolean> {
+        TODO("Not yet implemented")
+    }
+
+    override fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean> {
         TODO("Not yet implemented")
     }
 
