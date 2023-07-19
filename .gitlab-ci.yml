@@ -58,10 +58,9 @@ variables:
       - $KONAN_DATA_DIR
 
 .docker-variables: &docker-variables
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_TLS_VERIFY: 1
-  DOCKER_CERT_PATH: "${DOCKER_TLS_CERTDIR}/client"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
 
 .artifact-reports: &artifact-reports
   name: reports
@@ -178,6 +177,7 @@ test:integration-test:
   image: $BUILD_LINUX_IMAGE_NAME
   services:
     - name: docker:dind
+      command: [ "--tls=false" ]
   cache:
     - *pull-cache-linux
   variables: *docker-variables
