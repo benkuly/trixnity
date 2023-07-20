@@ -29,6 +29,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -96,6 +97,7 @@ class UserServiceTest : ShouldSpec({
                 me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(value = ""),
                 Key.Curve25519Key(value = "")
             ),
+            DefaultEventContentSerializerMappings,
             TransactionManagerMock(),
             scope = scope
         )
@@ -977,7 +979,56 @@ class UserServiceTest : ShouldSpec({
             }
         }
     }
-
+    context("canSendEvent") {
+        should("be true when allowed to send") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 55,
+                        alice to 50
+                    ),
+                    events = mapOf(EventType(RoomMessageEventContent::class, "m.room.message") to 55),
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canSendEvent<RoomMessageEventContent>(roomId).first() shouldBe true
+        }
+        should("be false when not allowed to send") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 55,
+                        alice to 50
+                    ),
+                    events = mapOf(EventType(RoomMessageEventContent::class, "m.room.message") to 56),
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canSendEvent<RoomMessageEventContent>(roomId).first() shouldBe false
+        }
+        should("use stateDefault") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(me to 50),
+                    events = mapOf(),
+                    stateDefault = 55
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canSendEvent<NameEventContent>(roomId).first() shouldBe false
+        }
+        should("use eventDefaults") {
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(me to 50),
+                    events = mapOf(),
+                    eventsDefault = 55
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canSendEvent<RoomMessageEventContent>(roomId).first() shouldBe false
+        }
+    }
     context("canSetPowerLevelToMax") {
         context("events-map is not null") {
             should("not allow to change the power level when (events power_levels value > own power level") {

@@ -400,8 +400,8 @@ class SyncApiClientImpl(
     }
 
     override suspend fun cancel(wait: Boolean) {
-        syncJob?.cancel()
-        if (wait) syncJob?.join()
+        if (wait) syncJob?.cancelAndJoin()
+        else syncJob?.cancel()
     }
 
     private fun updateSyncState(newSyncState: SyncState) {

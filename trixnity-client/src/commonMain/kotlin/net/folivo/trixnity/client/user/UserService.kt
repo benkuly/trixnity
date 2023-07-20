@@ -14,12 +14,14 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger {}
@@ -32,15 +34,6 @@ interface UserService {
 
     fun getById(roomId: RoomId, userId: UserId): Flow<RoomUser?>
 
-    fun canKickUser(roomId: RoomId, userId: UserId): Flow<Boolean>
-    fun canBanUser(roomId: RoomId, userId: UserId): Flow<Boolean>
-    fun canUnbanUser(roomId: RoomId, userId: UserId): Flow<Boolean>
-    fun canInviteUser(roomId: RoomId, userId: UserId): Flow<Boolean>
-    fun canInvite(roomId: RoomId): Flow<Boolean>
-    fun canRedactEvent(roomId: RoomId, eventId: EventId): Flow<Boolean>
-    fun canSendMessages(roomId: RoomId): Flow<Boolean>
-    fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<Int?>
-
     fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Int>
     fun getPowerLevel(
         userId: UserId,
@@ -48,11 +41,24 @@ interface UserService {
         createEventContent: CreateEventContent?
     ): Int
 
+    fun canKickUser(roomId: RoomId, userId: UserId): Flow<Boolean>
+    fun canBanUser(roomId: RoomId, userId: UserId): Flow<Boolean>
+    fun canUnbanUser(roomId: RoomId, userId: UserId): Flow<Boolean>
+    fun canInviteUser(roomId: RoomId, userId: UserId): Flow<Boolean>
+    fun canInvite(roomId: RoomId): Flow<Boolean>
+    fun canRedactEvent(roomId: RoomId, eventId: EventId): Flow<Boolean>
+
+    fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<Int?>
+
+    @Deprecated("use canSendEvent instead", ReplaceWith("canSendEvent(roomId, RoomMessageEventContent::class)"))
+    fun canSendMessages(roomId: RoomId): Flow<Boolean>
+    fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean>
+
+
     fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
         key: String = "",
     ): Flow<C?>
-
 }
 
 class UserServiceImpl(
@@ -65,6 +71,7 @@ class UserServiceImpl(
     presenceEventHandler: PresenceEventHandler,
     private val currentSyncState: CurrentSyncState,
     userInfo: UserInfo,
+    private val mappings: EventContentSerializerMappings,
     private val tm: TransactionManager,
     private val scope: CoroutineScope,
 ) : UserService {
@@ -214,6 +221,22 @@ class UserServiceImpl(
         }
     }
 
+    override fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean> =
+        combine(
+            roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
+            roomStateStore.getContentByStateKey<CreateEventContent>(roomId),
+        ) { powerLevels, createEvent ->
+            val userPowerLevel = getPowerLevel(ownUserId, powerLevels, createEvent)
+            val sendEventPowerLevel = powerLevels.events[eventClass]
+                ?: when {
+                    mappings.state.any { it.kClass == eventClass } -> powerLevels.stateDefault
+                    mappings.message.any { it.kClass == eventClass } -> powerLevels.eventsDefault
+                    else -> throw IllegalArgumentException("eventClass $eventClass does not match any event in mappings")
+                }
+            userPowerLevel >= sendEventPowerLevel
+        }
+
+    @Deprecated("use canSendEvent instead", ReplaceWith("canSendEvent(roomId, RoomMessageEventContent::class)"))
     override fun canSendMessages(
         roomId: RoomId,
     ): Flow<Boolean> {

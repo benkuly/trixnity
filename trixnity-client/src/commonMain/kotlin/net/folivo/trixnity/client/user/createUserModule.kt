@@ -37,6 +37,7 @@ fun createUserModule() = module {
             get(),
             get(),
             get(),
+            get(),
         )
     }
 }
