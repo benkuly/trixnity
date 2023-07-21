@@ -46,14 +46,14 @@ class MatrixClientConfiguration {
     var httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) }
 
     /**
-     * Inject and override modules into Trixnity.
-     */
-    var modules: List<Module> = createDefaultModules()
-
-    /**
      * Set custom delays for the sync loop.
      */
     var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default()
+
+    /**
+     * Inject and override modules into Trixnity.
+     */
+    var modules: List<Module> = createDefaultModules()
 
 
     data class SyncLoopDelays(

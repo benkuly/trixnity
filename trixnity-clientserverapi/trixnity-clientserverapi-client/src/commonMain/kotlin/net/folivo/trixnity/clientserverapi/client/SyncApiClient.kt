@@ -264,7 +264,7 @@ class SyncApiClientImpl(
                                         updateSyncState(ERROR)
                                     }
                                 }
-                                delay(syncLoopErrorDelay)
+                                delay(syncLoopErrorDelay) // TODO better retry policy!
                                 if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC)
                                 else updateSyncState(STARTED)
                             }
