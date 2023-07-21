@@ -7,6 +7,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class MatrixClientConfiguration {
     /**
@@ -45,9 +46,27 @@ class MatrixClientConfiguration {
     var httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) }
 
     /**
+     * Set custom delays for the sync loop.
+     */
+    var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default()
+
+    /**
      * Inject and override modules into Trixnity.
      */
     var modules: List<Module> = createDefaultModules()
+
+
+    data class SyncLoopDelays(
+        val syncLoopDelay: Duration,
+        val syncLoopErrorDelay: Duration
+    ) {
+        companion object {
+            fun default() = SyncLoopDelays(
+                syncLoopDelay = 2.seconds,
+                syncLoopErrorDelay = 5.seconds
+            )
+        }
+    }
 
     data class CacheExpireDurations(
         val globalAccountDate: Duration,

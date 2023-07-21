@@ -162,6 +162,8 @@ suspend fun SyncApiClient.startOnce(
 
 class SyncApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
+    private val syncLoopDelay: Duration,
+    private val syncLoopErrorDelay: Duration,
 ) : EventEmitterImpl(), SyncApiClient {
 
     override suspend fun sync(
@@ -248,7 +250,7 @@ class SyncApiClientImpl(
                                     withTransaction = withTransaction,
                                     asUserId = asUserId
                                 )
-                                delay(2.seconds) // the server may respond immediately very often // TODO make configurable
+                                delay(syncLoopDelay)
                             } catch (error: Throwable) {
                                 when (error) {
                                     is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
@@ -262,7 +264,7 @@ class SyncApiClientImpl(
                                         updateSyncState(ERROR)
                                     }
                                 }
-                                delay(5000)// TODO better retry policy!
+                                delay(syncLoopErrorDelay) // TODO better retry policy!
                                 if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC)
                                 else updateSyncState(STARTED)
                             }
