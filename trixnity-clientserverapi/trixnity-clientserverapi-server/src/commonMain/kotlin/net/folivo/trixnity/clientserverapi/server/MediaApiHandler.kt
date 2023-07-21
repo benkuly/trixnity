@@ -10,9 +10,19 @@ interface MediaApiHandler {
     suspend fun getMediaConfig(context: MatrixEndpointContext<GetMediaConfig, Unit, GetMediaConfig.Response>): GetMediaConfig.Response
 
     /**
+     * @see [CreateMedia]
+     */
+    suspend fun createMedia(context: MatrixEndpointContext<CreateMedia, Unit, CreateMedia.Response>): CreateMedia.Response
+
+    /**
      * @see [UploadMedia]
      */
     suspend fun uploadMedia(context: MatrixEndpointContext<UploadMedia, Media, UploadMedia.Response>): UploadMedia.Response
+
+    /**
+     * @see [UploadMediaByContentUri]
+     */
+    suspend fun uploadMediaByContentUri(context: MatrixEndpointContext<UploadMediaByContentUri, Media, Unit>)
 
     /**
      * @see [DownloadMedia]

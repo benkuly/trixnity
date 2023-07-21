@@ -62,6 +62,32 @@ class MediaRoutesTest : TestsWithMocks() {
     }
 
     @Test
+    fun shouldCreateMedia() = testApplication {
+        initCut()
+        everySuspending { handlerMock.createMedia(isAny()) }
+            .returns(
+                CreateMedia.Response(
+                    contentUri = "mxc://example.com/AQwafuaFswefuhsfAFAgsw",
+                    unusedExpiresAt = 1647257217083
+                )
+            )
+        val response = client.post("/_matrix/media/v1/create") { bearerAuth("token") }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                    "content_uri": "mxc://example.com/AQwafuaFswefuhsfAFAgsw",
+                    "unused_expires_at": 1647257217083
+                }
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.createMedia(isAny())
+        }
+    }
+
+    @Test
     fun shouldUploadMedia() = testApplication {
         initCut()
         everySuspending { handlerMock.uploadMedia(isAny()) }
@@ -85,6 +111,39 @@ class MediaRoutesTest : TestsWithMocks() {
         }
         verifyWithSuspend {
             handlerMock.uploadMedia(assert {
+                it.endpoint.filename shouldBe "testFile.txt"
+                it.requestBody.contentType shouldBe ContentType.Text.Plain
+                it.requestBody.contentLength shouldBe 4
+                runBlocking { it.requestBody.content.readUTF8Line() shouldBe "test" }
+            })
+        }
+    }
+
+    @Test
+    fun shouldUploadMediaByContentUri() = testApplication {
+        initCut()
+        everySuspending { handlerMock.uploadMediaByContentUri(isAny()) }
+            .returns(Unit)
+        val response =
+            client.post("/_matrix/media/v3/upload/example.com/AQwafuaFswefuhsfAFAgsw?filename=testFile.txt") {
+                bearerAuth("token")
+                setBody(object : OutgoingContent.ReadChannelContent() {
+                    override fun readFrom() = ByteReadChannel("test")
+                    override val contentLength = 4L
+                    override val contentType = ContentType.Text.Plain
+                })
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {}
+            """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.uploadMediaByContentUri(assert {
+                it.endpoint.serverName shouldBe "example.com"
+                it.endpoint.mediaId shouldBe "AQwafuaFswefuhsfAFAgsw"
                 it.endpoint.filename shouldBe "testFile.txt"
                 it.requestBody.contentType shouldBe ContentType.Text.Plain
                 it.requestBody.contentLength shouldBe 4

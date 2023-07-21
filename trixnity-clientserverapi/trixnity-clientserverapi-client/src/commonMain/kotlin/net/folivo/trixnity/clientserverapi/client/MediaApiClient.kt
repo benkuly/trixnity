@@ -12,6 +12,11 @@ interface MediaApiClient {
     suspend fun getConfig(): Result<GetMediaConfig.Response>
 
     /**
+     * @see [CreateMedia]
+     */
+    suspend fun createMedia(): Result<CreateMedia.Response>
+
+    /**
      * @see [UploadMedia]
      */
     suspend fun upload(
@@ -19,6 +24,17 @@ interface MediaApiClient {
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         timeout: Long = 600_000
     ): Result<UploadMedia.Response>
+
+    /**
+     * @see [UploadMediaByContentUri]
+     */
+    suspend fun upload(
+        serverName: String,
+        mediaId: String,
+        media: Media,
+        progress: MutableStateFlow<FileTransferProgress?>? = null,
+        timeout: Long = 600_000
+    ): Result<Unit>
 
     /**
      * @see [DownloadMedia]
@@ -56,12 +72,32 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
     override suspend fun getConfig(): Result<GetMediaConfig.Response> =
         httpClient.request(GetMediaConfig)
 
+    override suspend fun createMedia(): Result<CreateMedia.Response> =
+        httpClient.request(CreateMedia)
+
     override suspend fun upload(
         media: Media,
         progress: MutableStateFlow<FileTransferProgress?>?,
         timeout: Long
     ): Result<UploadMedia.Response> =
         httpClient.request(UploadMedia(media.filename), media) {
+            timeout {
+                requestTimeoutMillis = timeout
+            }
+            if (progress != null)
+                onUpload { transferred, total ->
+                    progress.value = FileTransferProgress(transferred, total)
+                }
+        }
+
+    override suspend fun upload(
+        serverName: String,
+        mediaId: String,
+        media: Media,
+        progress: MutableStateFlow<FileTransferProgress?>?,
+        timeout: Long
+    ): Result<Unit> =
+        httpClient.request(UploadMediaByContentUri(serverName, mediaId, media.filename), media) {
             timeout {
                 requestTimeoutMillis = timeout
             }

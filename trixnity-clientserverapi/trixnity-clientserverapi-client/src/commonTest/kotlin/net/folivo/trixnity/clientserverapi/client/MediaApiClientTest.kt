@@ -39,6 +39,35 @@ class MediaApiClientTest {
     }
 
     @Test
+    fun shouldCreateMedia() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/media/v1/create", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    respond(
+                        """
+                                {
+                                    "content_uri": "mxc://example.com/AQwafuaFswefuhsfAFAgsw",
+                                    "unused_expires_at": 1647257217083
+                                }
+                            """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.media.createMedia().getOrThrow()
+        assertEquals(
+            CreateMedia.Response(
+                contentUri = "mxc://example.com/AQwafuaFswefuhsfAFAgsw",
+                unusedExpiresAt = 1647257217083
+            ), result
+        )
+    }
+
+    @Test
     fun shouldUploadFile() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -71,6 +100,42 @@ class MediaApiClientTest {
             progress = progress
         ).getOrThrow()
         result.contentUri shouldBe "mxc://example.com/AQwafuaFswefuhsfAFAgsw"
+        progress.value shouldBe FileTransferProgress(4, 4)
+    }
+
+    @Test
+    fun shouldUploadFileByContentUri() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/media/v3/upload/example.com/AQwafuaFswefuhsfAFAgsw?filename=testFile.txt",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(ContentType.Text.Plain, request.body.contentType)
+                    assertEquals(4, request.body.contentLength)
+                    assertEquals("test", request.body.toByteArray().decodeToString())
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        val progress = MutableStateFlow<FileTransferProgress?>(null)
+        matrixRestClient.media.upload(
+            serverName = "example.com",
+            mediaId = "AQwafuaFswefuhsfAFAgsw",
+            media = Media(
+                content = ByteReadChannel("test"),
+                contentLength = 4,
+                contentType = ContentType.Text.Plain,
+                filename = "testFile.txt"
+            ),
+            progress = progress
+        ).getOrThrow()
         progress.value shouldBe FileTransferProgress(4, 4)
     }
 
