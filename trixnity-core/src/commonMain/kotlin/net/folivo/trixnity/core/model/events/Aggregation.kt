@@ -38,6 +38,7 @@ operator fun Map<RelationType, Aggregation>.minus(other: Aggregation?): Aggregat
 sealed interface Aggregation {
     val relationType: RelationType
 
+    // TODO since matrix 1.7 this is a full RoomEvent. We keep this unchanged for now to be backwards compatible.
     @Serializable
     data class Replace(
         @SerialName("event_id") val eventId: EventId,
