@@ -30,7 +30,6 @@ import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
-import kotlin.time.Duration.Companion.milliseconds
 
 private val log = KotlinLogging.logger {}
 
@@ -99,7 +98,7 @@ interface MatrixClient {
      *
      * After calling this, this instance should not be used anymore!
      */
-    suspend fun stop()
+    fun stop()
 
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
@@ -328,6 +327,7 @@ private fun onLogout(
     }
 }
 
+@OptIn(FlowPreview::class)
 class MatrixClientImpl internal constructor(
     override val userId: UserId,
     override val deviceId: String,
@@ -345,6 +345,24 @@ class MatrixClientImpl internal constructor(
 ) : MatrixClient {
     private val started = MutableStateFlow(false)
 
+    override val displayName: StateFlow<String?> = accountStore.displayName
+    override val avatarUrl: StateFlow<String?> = accountStore.avatarUrl
+    override val syncState = api.sync.currentSyncState
+
+    override val initialSyncDone: StateFlow<Boolean> =
+        accountStore.syncBatchToken
+            .map { token -> token != null }
+            .stateIn(coroutineScope, Eagerly, accountStore.syncBatchToken.value != null)
+
+    override val loginState: StateFlow<LoginState?> =
+        combine(accountStore.accessToken, accountStore.syncBatchToken) { accessToken, syncBatchToken ->
+            when {
+                accessToken != null -> LOGGED_IN
+                syncBatchToken != null -> LOGGED_OUT_SOFT
+                else -> LOGGED_OUT
+            }
+        }.stateIn(coroutineScope, Eagerly, null)
+
     init {
         coroutineScope.launch {
             val allHandlersStarted = MutableStateFlow(false)
@@ -358,7 +376,7 @@ class MatrixClientImpl internal constructor(
             allHandlersStarted.first { it }
             log.debug { "all EventHandler started" }
             launch {
-                loginState.debounce(100.milliseconds).collect {
+                loginState.collect {
                     log.info { "login state: $it" }
                     when (it) {
                         LOGGED_OUT_SOFT -> {
@@ -402,24 +420,6 @@ class MatrixClientImpl internal constructor(
             started.value = true
         }
     }
-
-    override val displayName: StateFlow<String?> = accountStore.displayName
-    override val avatarUrl: StateFlow<String?> = accountStore.avatarUrl
-    override val syncState = api.sync.currentSyncState
-
-    override val initialSyncDone: StateFlow<Boolean> =
-        accountStore.syncBatchToken
-            .map { token -> token != null }
-            .stateIn(coroutineScope, Eagerly, accountStore.syncBatchToken.value != null)
-
-    override val loginState: StateFlow<LoginState?> =
-        combine(accountStore.accessToken, accountStore.syncBatchToken) { accessToken, syncBatchToken ->
-            when {
-                accessToken != null -> LOGGED_IN
-                syncBatchToken != null -> LOGGED_OUT_SOFT
-                else -> LOGGED_OUT
-            }
-        }.stateIn(coroutineScope, Eagerly, null)
 
     override suspend fun logout(): Result<Unit> {
         stopSync(true)
@@ -498,9 +498,8 @@ class MatrixClientImpl internal constructor(
         api.sync.cancel(wait)
     }
 
-    override suspend fun stop() {
+    override fun stop() {
         started.value = false
-        cancelSync(true)
         coroutineScope.cancel("stopped MatrixClient")
     }
 

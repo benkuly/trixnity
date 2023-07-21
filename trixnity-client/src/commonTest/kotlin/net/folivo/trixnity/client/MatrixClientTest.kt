@@ -6,9 +6,6 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
@@ -53,14 +50,6 @@ class MatrixClientTest : ShouldSpec({
         toDevice = Sync.Response.ToDevice(emptyList())
     )
     val userId = UserId("user", "localhost")
-
-    lateinit var scope: CoroutineScope
-    beforeTest {
-        scope = CoroutineScope(Dispatchers.Default)
-    }
-    afterTest {
-        scope.cancel()
-    }
 
     context(MatrixClientImpl::displayName.name) {
         should("get the display name and avatar URL from the profile API when initially logging in") {
