@@ -817,4 +817,34 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             })
         }
     }
+
+    @Test
+    fun shouldGetToken() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getToken(isAny()) }
+            .returns(
+                ResponseWithUIA.Success(
+                    GetToken.Response(
+                        loginToken = "<opaque string>",
+                        expiresInMs = 120000
+                    )
+                )
+            )
+        val response = client.post("/_matrix/client/v1/login/get_token") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody("{}")
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """{"login_token":"<opaque string>","expires_in_ms":120000}"""
+        }
+
+        verifyWithSuspend {
+            handlerMock.getToken(assert {
+                it.requestBody shouldBe RequestWithUIA(Unit, null)
+            })
+        }
+    }
 }

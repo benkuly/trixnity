@@ -756,4 +756,35 @@ class AuthenticationApiClientTest {
             ), result
         )
     }
+
+    @Test
+    fun shouldGetToken() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v1/login/get_token", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """{}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        """{
+                                  "expires_in_ms": 120000,
+                                  "login_token": "<opaque string>"
+                                }
+                                """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        val result = matrixRestClient.authentication.getToken().getOrThrow()
+            .shouldBeInstanceOf<UIA.Success<GetToken.Response>>()
+        result.value shouldBe GetToken.Response(
+            loginToken = "<opaque string>",
+            expiresInMs = 120000
+        )
+    }
 }
