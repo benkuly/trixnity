@@ -179,6 +179,8 @@ suspend fun MatrixClient.Companion.loginWith(
         onLogout = { onLogout(it, accountStore) },
         json = di.get(),
         eventContentSerializerMappings = di.get(),
+        syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
+        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
     )
     val (userId, deviceId, accessToken, displayName, avatarUrl) = getLoginInfo(api).getOrThrow()
     val olmPickleKey = ""
@@ -276,6 +278,8 @@ suspend fun MatrixClient.Companion.fromStore(
             onLogout = { onLogout(it, accountStore) },
             json = di.get(),
             eventContentSerializerMappings = di.get(),
+            syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
+            syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
         )
         val accessToken = accountStore.accessToken.value ?: onSoftLogin?.let {
             val (identifier, password, token, loginType) = onSoftLogin()
