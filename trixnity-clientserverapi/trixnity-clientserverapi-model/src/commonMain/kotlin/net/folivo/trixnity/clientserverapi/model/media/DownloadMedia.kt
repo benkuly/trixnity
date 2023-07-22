@@ -18,7 +18,9 @@ import net.folivo.trixnity.core.MatrixEndpoint
 data class DownloadMedia(
     @SerialName("serverName") val serverName: String,
     @SerialName("mediaId") val mediaId: String,
-    @SerialName("allow_remote") val allowRemote: Boolean? = null
+    @SerialName("allow_remote") val allowRemote: Boolean? = null,
+    @SerialName("allow_redirect") val allowRedirect: Boolean? = null,
+    @SerialName("timeout_ms") val timeoutMs: Long? = null,
 ) : MatrixEndpoint<Unit, Media> {
 
     @Transient
