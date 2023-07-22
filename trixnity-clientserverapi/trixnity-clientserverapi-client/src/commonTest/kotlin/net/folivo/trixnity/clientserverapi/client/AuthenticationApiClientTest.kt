@@ -399,7 +399,7 @@ class AuthenticationApiClientTest {
                         )
                     )
                 ),
-                LoginType.Token,
+                LoginType.Token(),
                 LoginType.Password,
             ), result
         )

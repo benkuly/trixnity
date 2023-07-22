@@ -200,12 +200,33 @@ class NotificationServiceImpl(
             }
 
             is PushCondition.EventMatch -> {
-                val eventValue = getEventValue(event, eventJson, pushCondition)
-                if (eventValue == null) {
+                val propertyValue =
+                    getEventProperty(event, eventJson, pushCondition.key)?.jsonPrimitiveOrNull?.contentOrNull
+                if (propertyValue == null) {
                     log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
                     false
                 } else {
-                    pushCondition.pattern.globToRegExp().containsMatchIn(eventValue)
+                    pushCondition.pattern.matrixGlobToRegExp().containsMatchIn(propertyValue)
+                }
+            }
+
+            is PushCondition.EventPropertyIs -> {
+                val propertyValue = getEventProperty(event, eventJson, pushCondition.key)?.jsonPrimitiveOrNull
+                if (propertyValue == null) {
+                    log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
+                    false
+                } else {
+                    propertyValue == pushCondition.value
+                }
+            }
+
+            is PushCondition.EventPropertyContains -> {
+                val propertyValue = getEventProperty(event, eventJson, pushCondition.key)?.jsonArrayOrNull
+                if (propertyValue == null) {
+                    log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
+                    false
+                } else {
+                    propertyValue.contains(pushCondition.value)
                 }
             }
 
@@ -216,26 +237,40 @@ class NotificationServiceImpl(
     private fun bodyContainsPattern(event: Event<*>, pattern: String): Boolean {
         val content = event.content
         return if (content is TextMessageEventContent) {
-            pattern.globToRegExp().containsMatchIn(content.body)
+            pattern.matrixGlobToRegExp().containsMatchIn(content.body)
         } else false
     }
 
-    private fun getEventValue(
+    private fun getEventProperty(
         event: Event<*>,
         initialEventJson: Lazy<JsonObject?>,
-        pushCondition: PushCondition.EventMatch
-    ): String? {
+        key: String
+    ): JsonElement? {
         return try {
             var eventJson: JsonElement? = initialEventJson.value
-            pushCondition.key.split('.').forEach { segment ->
+            key.split('.').forEach { segment ->
                 eventJson = eventJson?.jsonObject?.get(segment)
             }
-            eventJson?.jsonPrimitive?.contentOrNull
+            eventJson
         } catch (exc: Exception) {
-            log.warn(exc) { "could not evaluate event match push condition $pushCondition of event $event" }
+            log.warn(exc) { "could not find event property for key $key in event $event" }
             null
         }
     }
+
+    private val JsonElement?.jsonPrimitiveOrNull: JsonPrimitive?
+        get() = try {
+            this?.jsonPrimitive
+        } catch (_: Exception) {
+            null
+        }
+
+    private val JsonElement?.jsonArrayOrNull: JsonArray?
+        get() = try {
+            this?.jsonArray
+        } catch (_: Exception) {
+            null
+        }
 
     private fun String.checkIsCount(size: Long): Boolean {
         this.toLongOrNull()?.let { count ->
@@ -255,9 +290,9 @@ class NotificationServiceImpl(
         }
     }
 
-    private fun String.globToRegExp(): Regex {
+    private fun String.matrixGlobToRegExp(): Regex {
         return buildString {
-            this@globToRegExp.forEach { char ->
+            this@matrixGlobToRegExp.forEach { char ->
                 when (char) {
                     '*' -> append(".*")
                     '?' -> append(".")

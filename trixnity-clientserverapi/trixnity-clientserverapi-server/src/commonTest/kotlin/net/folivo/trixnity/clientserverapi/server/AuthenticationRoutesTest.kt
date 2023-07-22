@@ -388,7 +388,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                                 )
                             )
                         ),
-                        LoginType.Token,
+                        LoginType.Token(),
                         LoginType.Password,
                     )
                 )
