@@ -232,7 +232,6 @@ class PushApiClientTest {
                 "override": [
                   {
                     "actions": [
-                      "dont_notify"
                     ],
                     "conditions": [],
                     "default": true,
@@ -241,7 +240,6 @@ class PushApiClientTest {
                   },
                   {
                     "actions": [
-                      "dont_notify"
                     ],
                     "conditions": [
                       {
@@ -434,14 +432,14 @@ class PushApiClientTest {
                     ),
                     PushRuleKind.OVERRIDE to listOf(
                         PushRule(
-                            actions = setOf(DontNotify),
+                            actions = setOf(),
                             conditions = setOf(),
                             default = true,
                             enabled = false,
                             ruleId = ".m.rule.master"
                         ),
                         PushRule(
-                            actions = setOf(DontNotify),
+                            actions = setOf(),
                             conditions = setOf(EventMatch("content.msgtype", "m.notice")),
                             default = true,
                             enabled = true,
@@ -509,7 +507,7 @@ class PushApiClientTest {
         val response = """
             {
               "actions": [
-                "dont_notify"
+                "notify"
               ],
               "default": false,
               "enabled": true,
@@ -536,7 +534,7 @@ class PushApiClientTest {
         val result = matrixRestClient.push.getPushRule("scope", PushRuleKind.CONTENT, "ruleId").getOrThrow()
         assertEquals(
             PushRule(
-                actions = setOf(DontNotify),
+                actions = setOf(Notify),
                 default = false,
                 enabled = true,
                 pattern = "cake*lie",
@@ -628,7 +626,7 @@ class PushApiClientTest {
         val response = """
             {
               "actions": [
-                "dont_notify"
+                "notify"
               ]
             }
         """.trimIndent()
@@ -649,7 +647,7 @@ class PushApiClientTest {
                 }
             })
         val result = matrixRestClient.push.getPushRuleActions("scope", PushRuleKind.CONTENT, "ruleId").getOrThrow()
-        assertEquals(setOf(DontNotify), result)
+        assertEquals(setOf(Notify), result)
     }
 
     @Test

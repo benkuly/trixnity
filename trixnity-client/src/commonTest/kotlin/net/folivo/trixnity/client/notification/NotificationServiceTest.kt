@@ -26,7 +26,6 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.model.push.PushAction.DontNotify
 import net.folivo.trixnity.core.model.push.PushAction.Notify
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
@@ -126,7 +125,7 @@ private val body: ShouldSpec.() -> Unit = {
         enabled = true,
         default = false,
         conditions = setOf(PushCondition.EventMatch(key = "content.body", "*User*")),
-        actions = setOf(DontNotify),
+        actions = setOf(),
     )
 
     fun pushRuleEventMatchTriggeredNotEnabled() = PushRule(
@@ -506,7 +505,7 @@ private val body: ShouldSpec.() -> Unit = {
                                         enabled = true,
                                         default = false,
                                         conditions = setOf(PushCondition.EventMatch("content.body", "*User*")),
-                                        actions = setOf(DontNotify)
+                                        actions = setOf()
                                     )
                                 ),
                                 PushRuleKind.CONTENT to listOf(
