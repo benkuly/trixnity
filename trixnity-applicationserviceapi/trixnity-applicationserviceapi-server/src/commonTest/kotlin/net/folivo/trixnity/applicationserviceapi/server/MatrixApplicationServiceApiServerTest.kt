@@ -37,6 +37,7 @@ class TestApplicationServiceApiServerHandler : ApplicationServiceApiServerHandle
     var requestedUser: UserId? = null
     var hasRoom: Boolean = false
     var requestedRoom: RoomAliasId? = null
+    var ping: String? = null
 
     override suspend fun addTransaction(txnId: String, events: List<Event<*>>) {
         addTransaction = txnId to events
@@ -50,6 +51,10 @@ class TestApplicationServiceApiServerHandler : ApplicationServiceApiServerHandle
     override suspend fun hasRoomAlias(roomAlias: RoomAliasId) {
         requestedRoom = roomAlias
         if (!hasRoom) throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound())
+    }
+
+    override suspend fun ping(txnId: String?) {
+        ping = txnId
     }
 
 }
@@ -175,5 +180,25 @@ class MatrixApplicationServiceApiServerTest {
         Json.decodeFromString(ErrorResponseSerializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.NotFound>()
         handler.requestedRoom shouldBe RoomAliasId("#alias:server")
+    }
+
+    @Test
+    fun ping() = testApplication {
+        val handler = TestApplicationServiceApiServerHandler()
+        application { matrixApplicationServiceApiServerTestApplication(handler) }
+
+        val response = client.post("/_matrix/app/v1/ping?access_token=validToken") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                    {
+                      "transaction_id": "1"
+                    }
+                """.trimIndent()
+            )
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("{}", response.body())
+        handler.ping shouldBe "1"
     }
 }

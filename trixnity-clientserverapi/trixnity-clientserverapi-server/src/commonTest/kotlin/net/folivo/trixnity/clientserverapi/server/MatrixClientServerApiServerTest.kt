@@ -19,6 +19,9 @@ class MatrixClientServerApiServerTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
     @Mock
+    lateinit var appserviceApiHandlerMock: AppserviceApiHandler
+
+    @Mock
     lateinit var authenticationApiHandlerMock: AuthenticationApiHandler
 
     @Mock
@@ -59,9 +62,10 @@ class MatrixClientServerApiServerTest : TestsWithMocks() {
                 },
             ) {
                 matrixClientServerApiServerRoutes(
+                    appserviceApiHandler = appserviceApiHandlerMock,
                     authenticationApiHandler = authenticationApiHandlerMock,
-                    discoveryApiHandler = discoveryApiHandlerMock,
                     devicesApiHandler = devicesApiHandlerMock,
+                    discoveryApiHandler = discoveryApiHandlerMock,
                     keysApiHandler = keysApiHandlerMock,
                     mediaApiHandler = mediaApiHandlerMock,
                     pushApiHandler = pushApiHandlerMock,

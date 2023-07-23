@@ -12,6 +12,7 @@ interface MatrixClientServerApiClient {
     val accessToken: MutableStateFlow<String?>
     val httpClient: MatrixClientServerApiHttpClient
 
+    val appservice: AppserviceApiClient
     val authentication: AuthenticationApiClient
     val discovery: DiscoveryApiClient
     val server: ServerApiClient
@@ -45,6 +46,7 @@ class MatrixClientServerApiClientImpl(
         httpClientFactory
     )
 
+    override val appservice: AppserviceApiClient = AppserviceApiClientImpl(httpClient)
     override val authentication = AuthenticationApiClientImpl(httpClient)
     override val discovery = DiscoveryApiClientImpl(httpClient)
     override val server = ServerApiClientImpl(httpClient)

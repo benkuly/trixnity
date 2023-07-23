@@ -8,4 +8,5 @@ interface ApplicationServiceApiServerHandler {
     suspend fun addTransaction(txnId: String, events: List<Event<*>>)
     suspend fun hasUser(userId: UserId)
     suspend fun hasRoomAlias(roomAlias: RoomAliasId)
+    suspend fun ping(txnId: String?)
 }
