@@ -21,10 +21,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
-import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
-import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.RelationType
-import net.folivo.trixnity.core.model.events.m.TagEventContent
+import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
@@ -639,6 +636,7 @@ class RoomsApiClientTest {
         val eventContent = object : MessageEventContent {
             val banana: String = "yeah"
             override val relatesTo = RelatesTo.Reference(EventId("$1event"))
+            override val mentions: Mentions? = null
         }
 
         try {

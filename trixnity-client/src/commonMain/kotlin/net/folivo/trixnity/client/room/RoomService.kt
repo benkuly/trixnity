@@ -299,7 +299,8 @@ class RoomServiceImpl(
                         if (timelineEvent?.canBeDecrypted() == true) {
                             val decryptedEventContent = withTimeoutOrNull(cfg.decryptionTimeout) {
                                 roomEventDecryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
-                            } ?: Result.failure(TimelineEventDecryptionTimeoutException)
+                                    ?: Result.failure(TimelineEventDecryptionFailed.AlgorithmNotSupported)
+                            } ?: Result.failure(TimelineEventDecryptionFailed.Timeout)
                             roomTimelineStore.update(
                                 eventId,
                                 roomId,
