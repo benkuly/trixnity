@@ -6,14 +6,19 @@ import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.configurePortableMockEngine
 import net.folivo.trixnity.testutils.mockEngineFactory
 
 val simpleRoom = Room(RoomId("room", "server"), lastEventId = EventId("\$event"))
+val simpleUserInfo =
+    UserInfo(UserId("me", "server"), "myDevice", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = ""))
 
 fun mockMatrixClientServerApiClient(json: Json): Pair<MatrixClientServerApiClientImpl, PortableMockEngineConfig> {
     val config = PortableMockEngineConfig()

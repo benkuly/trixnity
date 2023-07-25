@@ -5,7 +5,7 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.RelationType
+import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 
 internal object EventIdConverter {

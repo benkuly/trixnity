@@ -18,7 +18,7 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWA
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent

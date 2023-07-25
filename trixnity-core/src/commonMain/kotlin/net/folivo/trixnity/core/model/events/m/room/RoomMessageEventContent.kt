@@ -11,7 +11,8 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
@@ -32,6 +33,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.notice"
@@ -50,6 +52,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.text"
@@ -68,6 +71,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("format") val format: String? = null,
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.emote"
@@ -87,6 +91,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.image"
@@ -107,6 +112,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.file"
@@ -126,6 +132,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.audio"
@@ -145,6 +152,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("url") val url: String? = null,
         @SerialName("file") val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.video"
@@ -161,6 +169,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("methods") override val methods: Set<VerificationMethod>,
         @SerialName("body") override val body: String = "Attempting verification request (m.key.verification.request). Apparently your client doesn't support this.",
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
     ) : RoomMessageEventContent, VerificationRequest {
         @SerialName("msgtype")
         val type = "m.key.verification.request"
@@ -175,6 +184,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         override val body: String,
         val raw: JsonObject,
         override val relatesTo: RelatesTo? = null,
+        override val mentions: Mentions? = null,
     ) : RoomMessageEventContent
 }
 
@@ -200,9 +210,11 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 val body = jsonObj["body"]?.jsonPrimitive?.content
                 val relatesTo: RelatesTo? =
                     jsonObj["m.relates_to"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
+                val mentions: Mentions? =
+                    jsonObj["m.mentions"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
                 if (type == null) throw SerializationException("msgtype must not be null")
                 if (body == null) throw SerializationException("body must not be null")
-                UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo)
+                UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo, mentions)
             }
         }
     }

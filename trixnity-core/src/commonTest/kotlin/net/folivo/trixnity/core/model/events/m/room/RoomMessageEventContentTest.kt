@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.model.events.m.room
 
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import kotlin.test.Test
 
 class RoomMessageEventContentTest {

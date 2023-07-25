@@ -2,18 +2,21 @@ package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.relatesTo
+import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.utils.TrixnityDsl
 
 @TrixnityDsl
-fun MessageBuilder.reply(
+suspend fun MessageBuilder.reply(
     event: TimelineEvent,
 ) = reply(event.eventId, event.relatesTo)
 
 @TrixnityDsl
-fun MessageBuilder.reply(
+suspend fun MessageBuilder.reply(
     event: Event.MessageEvent<*>,
 ) = reply(event.id, event.content.relatesTo)
 
@@ -21,11 +24,16 @@ fun MessageBuilder.reply(
  * Important: [eventRelatesTo] should be set from the event, that is replied. Otherwise, thread support is dropped.
  */
 @TrixnityDsl
-fun MessageBuilder.reply(
+suspend fun MessageBuilder.reply(
     eventId: EventId,
     eventRelatesTo: RelatesTo?,
 ) {
     val replyTo = RelatesTo.ReplyTo(eventId)
+    val repliedTimelineEvent = roomService.getTimelineEventWithTimedOutContent(roomId, replyTo.eventId)
+    val repliedMentions = repliedTimelineEvent.content?.getOrNull()?.let {
+        if (it is MessageEventContent) it.mentions else null
+    }
+    mentions = Mentions(setOf(repliedTimelineEvent.sender)) + repliedMentions + mentions // FIXME test
     relatesTo =
         if (eventRelatesTo is RelatesTo.Thread) {
             RelatesTo.Thread(eventRelatesTo.eventId, replyTo, true)

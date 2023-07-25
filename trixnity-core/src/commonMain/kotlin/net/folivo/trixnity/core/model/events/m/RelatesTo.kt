@@ -1,4 +1,4 @@
-package net.folivo.trixnity.core.model.events
+package net.folivo.trixnity.core.model.events.m
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
@@ -10,6 +10,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.events.MessageEventContent
 
 @Serializable(with = RelatesToSerializer::class)
 sealed interface RelatesTo {
@@ -35,7 +36,7 @@ sealed interface RelatesTo {
         override val eventId: EventId,
         /**
          * The content used to replace the referenced event.
-         * This can be null, because it is must not be present in encrypted events.
+         * This can be null, because it must not be present in encrypted events.
          */
         @SerialName("m.new_content")
         val newContent: @Contextual MessageEventContent? = null,

@@ -21,10 +21,11 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
-import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -73,6 +74,7 @@ class RoomServiceTest : ShouldSpec({
             roomStore, roomUserStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
             listOf(roomEventDecryptionServiceMock),
             mediaServiceMock,
+            simpleUserInfo,
             TimelineEventHandlerMock(),
             TypingEventHandler(api),
             CurrentSyncState(currentSyncState),
@@ -286,9 +288,9 @@ class RoomServiceTest : ShouldSpec({
                     room,
                     1,
                     UnsignedRoomEventData.UnsignedMessageEventData(
-                        aggregations = Aggregations(
+                        relations = Relations(
                             mapOf(
-                                RelationType.Replace to Aggregation.Replace(
+                                RelationType.Replace to ServerAggregation.Replace(
                                     replaceTimelineEvent.eventId,
                                     replaceTimelineEvent.event.sender,
                                     replaceTimelineEvent.event.originTimestamp
@@ -349,7 +351,7 @@ class RoomServiceTest : ShouldSpec({
         should("just save message in store for later use") {
             val content = TextMessageEventContent("hi")
             cut.sendMessage(room) {
-                contentBuilder = { content }
+                contentBuilder = { _, _, _ -> content }
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboundMessages = roomOutboxMessageStore.getAll().value

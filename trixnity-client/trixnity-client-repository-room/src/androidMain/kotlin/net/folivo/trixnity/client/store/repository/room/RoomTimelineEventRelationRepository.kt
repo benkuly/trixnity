@@ -6,7 +6,7 @@ import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.RelationType
+import net.folivo.trixnity.core.model.events.m.RelationType
 
 @Entity(
     tableName = "TimelineEventRelation",

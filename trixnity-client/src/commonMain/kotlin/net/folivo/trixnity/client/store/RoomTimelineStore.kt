@@ -13,7 +13,7 @@ import net.folivo.trixnity.client.store.repository.TimelineEventRepository
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.RelationType
+import net.folivo.trixnity.core.model.events.m.RelationType
 
 class RoomTimelineStore(
     private val timelineEventRepository: TimelineEventRepository,

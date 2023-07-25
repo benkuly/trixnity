@@ -21,9 +21,12 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -280,7 +283,7 @@ class SyncApiClientTest {
             .shouldBeInstanceOf<Event.MessageEvent<*>>()
             .unsigned.also {
                 it?.redactedBecause.shouldNotBeNull().shouldBeInstanceOf<Event.MessageEvent<*>>()
-                it?.aggregations?.thread?.latestEvent.shouldNotBeNull().shouldBeInstanceOf<Event.MessageEvent<*>>()
+                it?.relations?.thread?.latestEvent.shouldNotBeNull().shouldBeInstanceOf<Event.MessageEvent<*>>()
             }
         assertEquals(1, result.room?.invite?.size)
         assertEquals(0, result.room?.leave?.size)

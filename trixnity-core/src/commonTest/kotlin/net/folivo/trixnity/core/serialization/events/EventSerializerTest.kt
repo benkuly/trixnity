@@ -11,9 +11,8 @@ import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
-import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
+import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
-import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
@@ -108,10 +107,10 @@ class EventSerializerTest {
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
             UnsignedMessageEventData(
-                1234, aggregations = Aggregations(
+                1234, relations = Relations(
                     mapOf(
                         RelationType.Unknown("org.example.possible_annotations") to
-                                Aggregation.Unknown(
+                                ServerAggregation.Unknown(
                                     RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
                                         add(buildJsonObject {
                                             put("key", JsonPrimitive("👍"))
@@ -303,10 +302,10 @@ class EventSerializerTest {
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
                 UnsignedMessageEventData(
-                    1234, aggregations = Aggregations(
+                    1234, relations = Relations(
                         mapOf(
                             RelationType.Unknown("org.example.possible_annotations") to
-                                    Aggregation.Unknown(
+                                    ServerAggregation.Unknown(
                                         RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
                                             add(buildJsonObject {
                                                 put("key", JsonPrimitive("👍"))

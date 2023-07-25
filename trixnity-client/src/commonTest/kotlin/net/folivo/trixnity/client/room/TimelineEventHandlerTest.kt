@@ -17,8 +17,15 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedStateEventContent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.m.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelationType
+import net.folivo.trixnity.core.model.events.m.Relations
+import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -1562,9 +1569,9 @@ class TimelineEventHandlerTest : ShouldSpec({
         context("add replace relation") {
             val relatedEvent = textEvent(1).copy(
                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                    aggregations = Aggregations(
+                    relations = Relations(
                         mapOf(
-                            RelationType.Replace to Aggregation.Replace(
+                            RelationType.Replace to ServerAggregation.Replace(
                                 EventId("$2event"),
                                 UserId("sender", "server"),
                                 24
@@ -1603,9 +1610,9 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = relatedEvent.copy(
                                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                                    aggregations = Aggregations(
+                                    relations = Relations(
                                         mapOf(
-                                            RelationType.Replace to Aggregation.Replace(
+                                            RelationType.Replace to ServerAggregation.Replace(
                                                 EventId("$1event"),
                                                 UserId("sender", "server"),
                                                 1234
@@ -1691,9 +1698,9 @@ class TimelineEventHandlerTest : ShouldSpec({
         context("redact replace relation") {
             val relatedEvent = textEvent(1).copy(
                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                    aggregations = Aggregations(
+                    relations = Relations(
                         mapOf(
-                            RelationType.Replace to Aggregation.Replace(
+                            RelationType.Replace to ServerAggregation.Replace(
                                 EventId("$4event"),
                                 UserId("sender", "server"),
                                 24
@@ -1793,9 +1800,9 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = relatedEvent.copy(
                                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                                    aggregations = Aggregations(
+                                    relations = Relations(
                                         mapOf(
-                                            RelationType.Replace to Aggregation.Replace(
+                                            RelationType.Replace to ServerAggregation.Replace(
                                                 EventId("$3event"),
                                                 UserId("sender", "server"),
                                                 3
@@ -1896,9 +1903,9 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = relatedEvent.copy(
                                 unsigned = UnsignedRoomEventData.UnsignedMessageEventData(
-                                    aggregations = Aggregations(
+                                    relations = Relations(
                                         mapOf(
-                                            RelationType.Replace to Aggregation.Replace(
+                                            RelationType.Replace to ServerAggregation.Replace(
                                                 EventId("$3event"),
                                                 UserId("sender", "server"),
                                                 3
@@ -1929,7 +1936,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 cut.redactRelation(redactedEvent)
                 roomTimelineStore.get(relatedEvent.id, relatedEvent.roomId).first() shouldBe TimelineEvent(
                     event = relatedEvent.copy(
-                        unsigned = UnsignedRoomEventData.UnsignedMessageEventData(aggregations = Aggregations(mapOf()))
+                        unsigned = UnsignedRoomEventData.UnsignedMessageEventData(relations = Relations(mapOf()))
                     ),
                     content = null,
                     previousEventId = null,

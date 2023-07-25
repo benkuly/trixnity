@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.RelationType
+import net.folivo.trixnity.core.model.events.m.RelationType
 
 /**
  * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv1roomsroomidrelationseventidreltype">matrix spec</a>

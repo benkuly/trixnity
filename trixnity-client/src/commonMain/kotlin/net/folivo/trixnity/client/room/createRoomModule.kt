@@ -79,6 +79,7 @@ fun createRoomModule() = module {
             get(),
             getAll(),
             get(),
+            get(),
             get(named<TimelineEventHandlerImpl>()),
             get(named<TypingEventHandler>()),
             get(),

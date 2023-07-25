@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VideoMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.VideoInfo
@@ -54,7 +54,7 @@ suspend fun MessageBuilder.video(
         )
         encryptedFile = null
     }
-    contentBuilder = { relatesTo ->
+    contentBuilder = { relatesTo, mentions, newContentMentions ->
         when (relatesTo) {
             is RelatesTo.Replace -> VideoMessageEventContent(
                 body = "* $body",
@@ -67,8 +67,10 @@ suspend fun MessageBuilder.video(
                         info = format,
                         url = url,
                         file = encryptedFile,
+                        mentions = newContentMentions,
                     )
-                )
+                ),
+                mentions = mentions,
             )
 
             else -> VideoMessageEventContent(
@@ -76,7 +78,8 @@ suspend fun MessageBuilder.video(
                 info = format,
                 url = url,
                 file = encryptedFile,
-                relatesTo = relatesTo
+                relatesTo = relatesTo,
+                mentions = mentions,
             )
         }
     }
