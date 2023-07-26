@@ -33,7 +33,7 @@ suspend fun MessageBuilder.reply(
     val repliedMentions = repliedTimelineEvent.content?.getOrNull()?.let {
         if (it is MessageEventContent) it.mentions else null
     }
-    mentions = Mentions(setOf(repliedTimelineEvent.sender)) + repliedMentions + mentions // FIXME test
+    mentions = Mentions(setOf(repliedTimelineEvent.sender)) + repliedMentions + mentions
     relatesTo =
         if (eventRelatesTo is RelatesTo.Thread) {
             RelatesTo.Thread(eventRelatesTo.eventId, replyTo, true)
