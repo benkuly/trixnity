@@ -246,28 +246,42 @@ class RoomServiceImpl(
             .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent) {
-                    val replacedBy = event.unsigned?.relations?.replace
-                    if (replacedBy != null) {
-                        emitAll(getTimelineEvent(roomId, replacedBy.eventId)
-                            .map { replacedByTimelineEvent ->
-                                val newContent =
-                                    replacedByTimelineEvent?.content
-                                        ?.map { content ->
-                                            if (content is MessageEventContent) {
-                                                val relatesTo = content.relatesTo
-                                                if (relatesTo is RelatesTo.Replace) relatesTo.newContent
-                                                else null
-                                            } else null
-                                        }
-                                        ?.mapCatching {
-                                            if (it == null) {
-                                                log.warn { "getTimelineEvent: could not find replacing event content for $eventId in $roomId" }
-                                                throw IllegalStateException("replacing event did not contain replace")
-                                            } else it
-                                        } ?: timelineEvent.content
-                                timelineEvent.copy(content = newContent)
-                            })
-                    } else emit(timelineEvent)
+                    val replacedByFlow = roomTimelineStore.getRelations(eventId, roomId, RelationType.Replace)
+                        .map { relations -> relations?.map { it.relatedEventId } }
+                        .transform {
+                            if (it == null) emit(setOfNotNull(event.unsigned?.relations?.replace?.eventId)) else emit(
+                                it
+                            )
+                        }
+                        .map { relations ->
+                            relations.mapNotNull { roomTimelineStore.get(it, roomId).first() }
+                                .filter { it.event.sender == timelineEvent.sender }
+                                .maxByOrNull { it.event.originTimestamp }
+                                ?.eventId
+                        }
+                    emitAll(replacedByFlow.flatMapLatest { replacedBy ->
+                        if (replacedBy != null) {
+                            getTimelineEvent(roomId, replacedBy)
+                                .map { replacedByTimelineEvent ->
+                                    val newContent =
+                                        replacedByTimelineEvent?.content
+                                            ?.map { content ->
+                                                if (content is MessageEventContent) {
+                                                    val relatesTo = content.relatesTo
+                                                    if (relatesTo is RelatesTo.Replace) relatesTo.newContent
+                                                    else null
+                                                } else null
+                                            }
+                                            ?.mapCatching {
+                                                if (it == null) {
+                                                    log.warn { "getTimelineEvent: could not find replacing event content for $eventId in $roomId" }
+                                                    throw IllegalStateException("replacing event did not contain replace")
+                                                } else it
+                                            } ?: timelineEvent.content
+                                    timelineEvent.copy(content = newContent)
+                                }
+                        } else flowOf(timelineEvent)
+                    })
                 } else emit(timelineEvent)
             }
             .also { timelineEventFlow ->

@@ -107,17 +107,16 @@ class EventSerializerTest {
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
             1432735824653,
             UnsignedMessageEventData(
-                1234, relations = Relations(
-                    mapOf(
-                        RelationType.Unknown("org.example.possible_annotations") to
-                                ServerAggregation.Unknown(
-                                    RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
-                                        add(buildJsonObject {
-                                            put("key", JsonPrimitive("👍"))
-                                            put("count", JsonPrimitive(3))
-                                        })
+                1234, relations =
+                mapOf(
+                    RelationType.Unknown("org.example.possible_annotations") to
+                            ServerAggregation.Unknown(
+                                RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                    add(buildJsonObject {
+                                        put("key", JsonPrimitive("👍"))
+                                        put("count", JsonPrimitive(3))
                                     })
-                    )
+                                })
                 )
             ),
         )
@@ -302,17 +301,16 @@ class EventSerializerTest {
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
                 1432735824653,
                 UnsignedMessageEventData(
-                    1234, relations = Relations(
-                        mapOf(
-                            RelationType.Unknown("org.example.possible_annotations") to
-                                    ServerAggregation.Unknown(
-                                        RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
-                                            add(buildJsonObject {
-                                                put("key", JsonPrimitive("👍"))
-                                                put("count", JsonPrimitive(3))
-                                            })
+                    1234, relations =
+                    mapOf(
+                        RelationType.Unknown("org.example.possible_annotations") to
+                                ServerAggregation.Unknown(
+                                    RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                        add(buildJsonObject {
+                                            put("key", JsonPrimitive("👍"))
+                                            put("count", JsonPrimitive(3))
                                         })
-                        )
+                                    })
                     )
                 ),
             ), result

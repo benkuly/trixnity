@@ -4,8 +4,8 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.RoomEventContent
 
 @Serializable
 data class TimelineEvent(
@@ -17,8 +17,7 @@ data class TimelineEvent(
      *     - successfully decrypted -> Result.Success
      *     - failure in decryption -> Result.Failure
      *
-     *  The content may be replaced by another event. You must ignore the [MessageEventContent.relatesTo] of content. Use
-     *  [MessageEventContent.relatesTo] of the original content in [TimelineEvent.event] instead.
+     *  The content may be replaced by another event.
      */
     @Transient
     val content: Result<RoomEventContent>? = if (event.isEncrypted) null else Result.success(event.content),

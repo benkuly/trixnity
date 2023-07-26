@@ -10,12 +10,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 
-@Serializable(with = AggregationsSerializer::class) // this is no typealias because it fails on native targets
-class Relations(private val delegate: Map<RelationType, ServerAggregation>) :
-    Map<RelationType, ServerAggregation> by delegate {
-    override fun hashCode(): Int = delegate.hashCode()
-    override fun equals(other: Any?): Boolean = delegate == other
-}
+typealias Relations = @Serializable(with = RelationsSerializer::class) Map<RelationType, ServerAggregation>
 
 val Map<RelationType, ServerAggregation>.replace: ServerAggregation.Replace?
     get() {
@@ -30,12 +25,6 @@ val Map<RelationType, ServerAggregation>.thread: ServerAggregation.Thread?
         return if (aggregation is ServerAggregation.Thread) aggregation
         else null
     }
-
-operator fun Map<RelationType, ServerAggregation>.plus(other: ServerAggregation?): Relations =
-    if (other == null) Relations(this) else Relations(plus(other.relationType to other))
-
-operator fun Map<RelationType, ServerAggregation>.minus(other: ServerAggregation?): Relations =
-    if (other == null) Relations(this) else Relations(minus(other.relationType))
 
 sealed interface ServerAggregation {
     val relationType: RelationType
@@ -62,27 +51,27 @@ sealed interface ServerAggregation {
     }
 
     data class Unknown(
-        override val relationType: RelationType.Unknown,
+        override val relationType: RelationType,
         val raw: JsonElement,
     ) : ServerAggregation
 }
 
-object AggregationsSerializer : KSerializer<Relations> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("AggregationsSerializer")
+object RelationsSerializer : KSerializer<Relations> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RelationsSerializer")
 
     override fun deserialize(decoder: Decoder): Relations {
         require(decoder is JsonDecoder)
         val aggregationsJson = decoder.decodeJsonElement().jsonObject
-        return Relations(aggregationsJson
+        return aggregationsJson
             .mapKeys { (key, _) -> RelationType.of(key) }
             .mapValues { (relationType, json) ->
                 when (relationType) {
                     is RelationType.Replace -> decoder.json.decodeFromJsonElement<ServerAggregation.Replace>(json)
                     is RelationType.Thread -> decoder.json.decodeFromJsonElement<ServerAggregation.Thread>(json)
                     is RelationType.Unknown -> ServerAggregation.Unknown(relationType, json)
-                    else -> ServerAggregation.Unknown(RelationType.Unknown(relationType.name), json)
+                    else -> ServerAggregation.Unknown(relationType, json)
                 }
-            })
+            }
     }
 
     override fun serialize(encoder: Encoder, value: Relations) {
@@ -100,5 +89,4 @@ object AggregationsSerializer : KSerializer<Relations> {
         )
         encoder.encodeJsonElement(aggregationsJson)
     }
-
 }
