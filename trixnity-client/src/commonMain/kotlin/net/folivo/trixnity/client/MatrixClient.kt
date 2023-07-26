@@ -82,11 +82,15 @@ interface MatrixClient {
 
     suspend fun clearMediaCache(): Result<Unit>
 
-    suspend fun startSync()
+    suspend fun startSync(presence: Presence? = Presence.ONLINE)
 
-    suspend fun syncOnce(timeout: Long = 0L): Result<Unit>
+    suspend fun syncOnce(presence: Presence? = Presence.OFFLINE, timeout: Long = 0L): Result<Unit>
 
-    suspend fun <T> syncOnce(timeout: Long = 0L, runOnce: suspend (Sync.Response) -> T): Result<T>
+    suspend fun <T> syncOnce(
+        presence: Presence? = Presence.OFFLINE,
+        timeout: Long = 0L,
+        runOnce: suspend (Sync.Response) -> T
+    ): Result<T>
 
     suspend fun stopSync(wait: Boolean = false)
 
@@ -454,24 +458,29 @@ class MatrixClientImpl internal constructor(
         { b -> tm.withAsyncWriteTransaction(block = b) }
 
 
-    override suspend fun startSync() {
+    override suspend fun startSync(presence: Presence?) {
         started.first { it }
         api.sync.start(
             filter = requireNotNull(accountStore.filterId.value),
-            setPresence = Presence.ONLINE,
+            setPresence = presence,
             currentBatchToken = accountStore.syncBatchToken,
             withTransaction = syncTransaction,
             scope = coroutineScope,
         )
     }
 
-    override suspend fun syncOnce(timeout: Long): Result<Unit> = syncOnce(timeout = timeout) { }
+    override suspend fun syncOnce(presence: Presence?, timeout: Long): Result<Unit> =
+        syncOnce(presence = presence, timeout = timeout) { }
 
-    override suspend fun <T> syncOnce(timeout: Long, runOnce: suspend (Sync.Response) -> T): Result<T> {
+    override suspend fun <T> syncOnce(
+        presence: Presence?,
+        timeout: Long,
+        runOnce: suspend (Sync.Response) -> T,
+    ): Result<T> {
         started.first { it }
         return api.sync.startOnce(
             filter = requireNotNull(accountStore.backgroundFilterId.value),
-            setPresence = Presence.OFFLINE,
+            setPresence = presence,
             currentBatchToken = accountStore.syncBatchToken,
             timeout = timeout,
             withTransaction = syncTransaction,
