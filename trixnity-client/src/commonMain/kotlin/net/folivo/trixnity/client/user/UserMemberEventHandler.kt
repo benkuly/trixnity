@@ -32,10 +32,10 @@ class UserMemberEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setRoomUser)
-        api.sync.subscribeAfterSyncResponse(::reloadProfile)
+        api.sync.subscribeAfterSyncProcessing(::reloadProfile)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setRoomUser)
-            api.sync.unsubscribeAfterSyncResponse(::reloadProfile)
+            api.sync.unsubscribeAfterSyncProcessing(::reloadProfile)
         }
     }
 

@@ -93,8 +93,8 @@ interface SyncApiClient : EventEmitter {
     fun unsubscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber)
     fun subscribeSyncResponse(subscriber: SyncResponseSubscriber)
     fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber)
-    fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber)
-    fun unsubscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber)
+    fun subscribeAfterSyncProcessing(subscriber: AfterSyncResponseSubscriber)
+    fun unsubscribeAfterSyncProcessing(subscriber: AfterSyncResponseSubscriber)
 
     val currentSyncState: StateFlow<SyncState>
 
@@ -210,14 +210,14 @@ class SyncApiClientImpl(
     override fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber) =
         syncResponseSubscribers.update { it - subscriber }
 
-    private val afterSyncResponseSubscribers: MutableStateFlow<Set<AfterSyncResponseSubscriber>> =
+    private val afterSyncProcessingSubscribers: MutableStateFlow<Set<AfterSyncResponseSubscriber>> =
         MutableStateFlow(setOf())
 
-    override fun subscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) =
-        afterSyncResponseSubscribers.update { it + subscriber }
+    override fun subscribeAfterSyncProcessing(subscriber: AfterSyncResponseSubscriber) =
+        afterSyncProcessingSubscribers.update { it + subscriber }
 
-    override fun unsubscribeAfterSyncResponse(subscriber: AfterSyncResponseSubscriber) =
-        afterSyncResponseSubscribers.update { it - subscriber }
+    override fun unsubscribeAfterSyncProcessing(subscriber: AfterSyncResponseSubscriber) =
+        afterSyncProcessingSubscribers.update { it - subscriber }
 
     override suspend fun start(
         filter: String?,
@@ -386,7 +386,7 @@ class SyncApiClientImpl(
             }
         }
         coroutineScope {
-            afterSyncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
+            afterSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
         }
     }
 

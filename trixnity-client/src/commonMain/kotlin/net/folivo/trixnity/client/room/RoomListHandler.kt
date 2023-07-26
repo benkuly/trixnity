@@ -22,10 +22,10 @@ class RoomListHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeSyncResponse(::handleSyncResponse)
-        api.sync.subscribeAfterSyncResponse(::handleAfterSyncResponse)
+        api.sync.subscribeAfterSyncProcessing(::handleAfterSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribeSyncResponse(::handleSyncResponse)
-            api.sync.unsubscribeAfterSyncResponse(::handleAfterSyncResponse)
+            api.sync.unsubscribeAfterSyncProcessing(::handleAfterSyncResponse)
         }
     }
 

@@ -528,8 +528,8 @@ class RoomServiceImpl(
     ): Flow<TimelineEvent> =
         callbackFlow {
             val subscriber: AfterSyncResponseSubscriber = { send(it) }
-            api.sync.subscribeAfterSyncResponse(subscriber)
-            awaitClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+            api.sync.subscribeAfterSyncProcessing(subscriber)
+            awaitClose { api.sync.unsubscribeAfterSyncProcessing(subscriber) }
         }.buffer(syncResponseBufferSize).flatMapConcat { syncResponse ->
             coroutineScope {
                 val timelineEvents =

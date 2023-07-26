@@ -36,11 +36,11 @@ class IncomingSecretKeyRequestEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests)
-        api.sync.subscribeAfterSyncResponse(::processIncomingKeyRequests)
+        api.sync.subscribeAfterSyncProcessing(::processIncomingKeyRequests)
         api.sync.subscribe(::handleIncomingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleEncryptedIncomingKeyRequests)
-            api.sync.unsubscribeAfterSyncResponse(::processIncomingKeyRequests)
+            api.sync.unsubscribeAfterSyncProcessing(::processIncomingKeyRequests)
             api.sync.unsubscribe(::handleIncomingKeyRequests)
         }
     }

@@ -68,8 +68,8 @@ class NotificationServiceImpl(
         currentSyncState.first { it == SyncState.STARTED || it == SyncState.RUNNING }
         val syncResponseFlow = callbackFlow {
             val subscriber: AfterSyncResponseSubscriber = { send(it) }
-            api.sync.subscribeAfterSyncResponse(subscriber)
-            awaitClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+            api.sync.subscribeAfterSyncProcessing(subscriber)
+            awaitClose { api.sync.unsubscribeAfterSyncProcessing(subscriber) }
         }
 
         val pushRules =

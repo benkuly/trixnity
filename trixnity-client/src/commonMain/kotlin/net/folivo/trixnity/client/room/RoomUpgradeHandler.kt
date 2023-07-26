@@ -26,11 +26,11 @@ class RoomUpgradeHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setRoomReplacedBy)
         api.sync.subscribe(::setRoomReplaces)
-        api.sync.subscribeAfterSyncResponse(::joinUpgradedRooms)
+        api.sync.subscribeAfterSyncProcessing(::joinUpgradedRooms)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setRoomReplacedBy)
             api.sync.unsubscribe(::setRoomReplaces)
-            api.sync.unsubscribeAfterSyncResponse(::joinUpgradedRooms)
+            api.sync.unsubscribeAfterSyncProcessing(::joinUpgradedRooms)
         }
     }
 

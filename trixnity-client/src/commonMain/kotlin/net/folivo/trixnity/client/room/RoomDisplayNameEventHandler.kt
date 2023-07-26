@@ -33,11 +33,11 @@ class RoomDisplayNameEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
         api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
-        api.sync.subscribeAfterSyncResponse(::handleSetRoomDisplayNamesQueue)
+        api.sync.subscribeAfterSyncProcessing(::handleSetRoomDisplayNamesQueue)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setRoomDisplayNameFromNameEvent)
             api.sync.unsubscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
-            api.sync.unsubscribeAfterSyncResponse(::handleSetRoomDisplayNamesQueue)
+            api.sync.unsubscribeAfterSyncProcessing(::handleSetRoomDisplayNamesQueue)
         }
     }
 
