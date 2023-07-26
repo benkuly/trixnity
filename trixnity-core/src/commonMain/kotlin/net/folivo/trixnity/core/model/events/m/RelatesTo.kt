@@ -1,9 +1,6 @@
 package net.folivo.trixnity.core.model.events.m
 
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -14,8 +11,8 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 
 @Serializable(with = RelatesToSerializer::class)
 sealed interface RelatesTo {
-    val relationType: RelationType?
-    val eventId: EventId?
+    val relationType: RelationType
+    val eventId: EventId
     val replyTo: ReplyTo?
 
     @Serializable
@@ -53,11 +50,11 @@ sealed interface RelatesTo {
         @SerialName("m.in_reply_to")
         override val replyTo: ReplyTo
     ) : RelatesTo {
-        @SerialName("event_id")
-        override val eventId: EventId? = null
+        @Transient
+        override val eventId: EventId = replyTo.eventId
 
-        @SerialName("rel_type")
-        override val relationType: RelationType? = null
+        @Transient
+        override val relationType: RelationType = RelationType.Reply
     }
 
     @Serializable
@@ -75,8 +72,8 @@ sealed interface RelatesTo {
 
     data class Unknown(
         val raw: JsonObject,
-        override val eventId: EventId?,
-        override val relationType: RelationType.Unknown?,
+        override val eventId: EventId,
+        override val relationType: RelationType.Unknown,
         override val replyTo: ReplyTo?,
     ) : RelatesTo
 
@@ -106,8 +103,8 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
                 else -> {
                     RelatesTo.Unknown(
                         jsonObject,
-                        jsonObject["event_id"]?.jsonPrimitive?.content?.let { EventId(it) },
-                        relationType?.name?.let { RelationType.Unknown(it) },
+                        jsonObject["event_id"]?.jsonPrimitive?.content.let { EventId(it ?: "") },
+                        relationType?.name.let { RelationType.Unknown(it ?: "") },
                         replyTo,
                     )
                 }
@@ -115,8 +112,8 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         } catch (e: Exception) {
             RelatesTo.Unknown(
                 jsonObject,
-                jsonObject["event_id"]?.jsonPrimitive?.content?.let { EventId(it) },
-                relationType?.name?.let { RelationType.Unknown(it) },
+                jsonObject["event_id"]?.jsonPrimitive?.content.let { EventId(it ?: "") },
+                relationType?.name.let { RelationType.Unknown(it ?: "") },
                 replyTo,
             )
         }
@@ -129,7 +126,12 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
             is RelatesTo.Replace -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Reply -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Thread -> encoder.json.encodeToJsonElement(value)
-            is RelatesTo.Unknown -> value.raw
+            is RelatesTo.Unknown -> JsonObject(buildMap {
+                putAll(value.raw)
+                put("event_id", JsonPrimitive(value.eventId.full))
+                put("rel_type", JsonPrimitive(value.relationType.name))
+                value.replyTo?.also { put(RelationType.Reply.name, encoder.json.encodeToJsonElement(it)) }
+            })
         }
         encoder.encodeJsonElement(jsonObject)
     }

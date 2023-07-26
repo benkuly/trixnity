@@ -77,13 +77,13 @@ class RoomTimelineStore(
         timelineEventRelationCache.readByFirstKey(TimelineEventRelationKey(eventId, roomId))
 
     fun getRelations(
-        eventId: EventId,
+        relatedEventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
     ): Flow<Set<TimelineEventRelation>?> =
         timelineEventRelationCache.read(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(eventId, roomId),
+                TimelineEventRelationKey(relatedEventId, roomId),
                 relationType,
             )
         )
@@ -91,8 +91,8 @@ class RoomTimelineStore(
     suspend fun addRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.write(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relation.relatedEventId, relation.roomId),
-                relation.relationType
+                TimelineEventRelationKey(relation.relatesTo.eventId, relation.roomId),
+                relation.relatesTo.relationType
             )
         ) {
             it.orEmpty() + relation
@@ -102,8 +102,8 @@ class RoomTimelineStore(
     suspend fun deleteRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.write(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relation.relatedEventId, relation.roomId),
-                relation.relationType
+                TimelineEventRelationKey(relation.relatesTo.eventId, relation.roomId),
+                relation.relatesTo.relationType
             )
         ) {
             it?.minus(relation)?.ifEmpty { null }

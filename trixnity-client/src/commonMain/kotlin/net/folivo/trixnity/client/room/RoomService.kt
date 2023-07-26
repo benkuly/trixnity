@@ -247,11 +247,10 @@ class RoomServiceImpl(
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent) {
                     val replacedByFlow = roomTimelineStore.getRelations(eventId, roomId, RelationType.Replace)
-                        .map { relations -> relations?.map { it.relatedEventId } }
+                        .map { relations -> relations?.map { it.eventId } }
                         .transform {
-                            if (it == null) emit(setOfNotNull(event.unsigned?.relations?.replace?.eventId)) else emit(
-                                it
-                            )
+                            if (it == null) emit(setOfNotNull(event.unsigned?.relations?.replace?.eventId))
+                            else emit(it)
                         }
                         .map { relations ->
                             relations.mapNotNull { roomTimelineStore.get(it, roomId).first() }

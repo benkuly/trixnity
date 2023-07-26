@@ -7,6 +7,8 @@ import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
@@ -21,9 +23,10 @@ internal class RealmTimelineEventRelation : RealmObject {
     var eventId: String = ""
     var relationType: String = ""
     var relatedEventId: String = ""
+    var relatesTo: String = ""
 }
 
-internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepository {
+internal class RealmTimelineEventRelationRepository(private val json: Json) : TimelineEventRelationRepository {
     override suspend fun get(firstKey: TimelineEventRelationKey): Map<RelationType, Set<TimelineEventRelation>> =
         withRealmRead {
             findByKey(firstKey).find().copyFromRealm()
@@ -34,8 +37,7 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
                         TimelineEventRelation(
                             roomId = RoomId(it.roomId),
                             eventId = EventId(it.eventId),
-                            relationType = relationType,
-                            relatedEventId = EventId(it.relatedEventId)
+                            relatesTo = json.decodeFromString(it.relatesTo)
                         )
                     }.toSet()
                 }.toMap()
@@ -54,8 +56,7 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
             TimelineEventRelation(
                 roomId = RoomId(it.roomId),
                 eventId = EventId(it.eventId),
-                relationType = RelationType.of(it.relationType),
-                relatedEventId = EventId(it.relatedEventId),
+                relatesTo = json.decodeFromString(it.relatesTo),
             )
         }.toSet().ifEmpty { null }
     }
@@ -87,11 +88,12 @@ internal class RealmTimelineEventRelationRepository : TimelineEventRelationRepos
     ) {
         copyToRealm(
             RealmTimelineEventRelation().apply {
-                id = serializeKey(key, timelineEventRelation.relationType)
+                id = serializeKey(key, timelineEventRelation.relatesTo.relationType)
                 roomId = key.roomId.full
                 relatedEventId = key.relatedEventId.full
-                relationType = timelineEventRelation.relationType.name
+                relationType = timelineEventRelation.relatesTo.relationType.name
                 eventId = timelineEventRelation.eventId.full
+                relatesTo = json.encodeToString(timelineEventRelation.relatesTo)
             },
             UpdatePolicy.ALL
         )

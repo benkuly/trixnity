@@ -3,12 +3,15 @@ package net.folivo.trixnity.client.store.repository.test
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.shouldBe
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
 import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import org.koin.core.Koin
 
@@ -27,26 +30,32 @@ fun ShouldSpec.timelineEventRelationRepositoryTest(diReceiver: () -> Koin) {
         val relation1 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$1event"),
-            RelationType.Reference,
-            EventId("\$relatedEvent1")
+            RelatesTo.Reference(EventId("\$relatedEvent1"))
         )
         val relation2 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$2event"),
-            RelationType.Unknown("bla"),
-            EventId("\$relatedEvent1")
+            RelatesTo.Unknown(
+                JsonObject(mapOf("event_id" to JsonPrimitive("\$relatedEvent1"), "rel_type" to JsonPrimitive("bla"))),
+                EventId("\$relatedEvent1"),
+                RelationType.Unknown("bla"),
+                null
+            )
         )
         val relation3 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$3event"),
-            RelationType.Unknown("bli"),
-            EventId("\$relatedEvent1")
+            RelatesTo.Unknown(
+                JsonObject(mapOf("event_id" to JsonPrimitive("\$relatedEvent1"), "rel_type" to JsonPrimitive("bli"))),
+                EventId("\$relatedEvent1"),
+                RelationType.Unknown("bli"),
+                null
+            )
         )
         val relation4 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$4event"),
-            RelationType.Reference,
-            EventId("\$relatedEvent2")
+            RelatesTo.Reference(EventId("\$relatedEvent2"))
         )
 
         rtm.writeTransaction {
@@ -92,29 +101,25 @@ fun ShouldSpec.timelineEventRelationRepositoryTest(diReceiver: () -> Koin) {
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
-                RelationType.Reference,
-                EventId("\$relatedEvent1")
+                RelatesTo.Reference(EventId("\$relatedEvent1"))
             ), TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
-                RelationType.Reference,
-                EventId("\$relatedEvent24")
+                RelatesTo.Reference(EventId("\$relatedEvent24"))
             )
         )
         val relations2 = setOf(
             TimelineEventRelation(
                 RoomId("room2", "server"),
                 EventId("$1event"),
-                RelationType.Reference,
-                EventId("\$relatedEvent2")
+                RelatesTo.Reference(EventId("\$relatedEvent2"))
             )
         )
         val relations3 = setOf(
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
-                RelationType.Reference,
-                EventId("\$relatedEvent3")
+                RelatesTo.Reference(EventId("\$relatedEvent3"))
             )
         )
 

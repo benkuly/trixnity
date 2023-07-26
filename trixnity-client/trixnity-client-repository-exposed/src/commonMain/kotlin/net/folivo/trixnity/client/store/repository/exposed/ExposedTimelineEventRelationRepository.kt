@@ -1,5 +1,7 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
@@ -14,10 +16,11 @@ internal object ExposedTimelineEventRelation : Table("room_timeline_event_relati
     val eventId = varchar("event_id", length = 128)
     val relationType = varchar("relation_type", length = 128)
     val relatedEventId = varchar("related_event_id", length = 128)
+    val relatesTo = text("relates_to")
     override val primaryKey = PrimaryKey(roomId, eventId, relationType, relatedEventId)
 }
 
-internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRepository {
+internal class ExposedTimelineEventRelationRepository(private val json: Json) : TimelineEventRelationRepository {
     override suspend fun get(firstKey: TimelineEventRelationKey): Map<RelationType, Set<TimelineEventRelation>> =
         withExposedRead {
             ExposedTimelineEventRelation.select {
@@ -30,8 +33,7 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
                         TimelineEventRelation(
                             roomId = RoomId(it[ExposedTimelineEventRelation.roomId]),
                             eventId = EventId(it[ExposedTimelineEventRelation.eventId]),
-                            relationType = relationType,
-                            relatedEventId = EventId(it[ExposedTimelineEventRelation.relatedEventId]),
+                            relatesTo = json.decodeFromString(it[ExposedTimelineEventRelation.relatesTo]),
                         )
                     }.toSet()
                 }.toMap()
@@ -53,8 +55,7 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
             TimelineEventRelation(
                 roomId = RoomId(it[ExposedTimelineEventRelation.roomId]),
                 eventId = EventId(it[ExposedTimelineEventRelation.eventId]),
-                relationType = RelationType.of(it[ExposedTimelineEventRelation.relationType]),
-                relatedEventId = EventId(it[ExposedTimelineEventRelation.relatedEventId]),
+                relatesTo = json.decodeFromString(it[ExposedTimelineEventRelation.relatesTo]),
             )
         }.toSet().ifEmpty { null }
     }
@@ -67,8 +68,9 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
         ExposedTimelineEventRelation.batchReplace(value) {
             this[ExposedTimelineEventRelation.eventId] = it.eventId.full
             this[ExposedTimelineEventRelation.roomId] = it.roomId.full
-            this[ExposedTimelineEventRelation.relationType] = it.relationType.name
-            this[ExposedTimelineEventRelation.relatedEventId] = it.relatedEventId.full
+            this[ExposedTimelineEventRelation.relationType] = it.relatesTo.relationType.name
+            this[ExposedTimelineEventRelation.relatedEventId] = it.relatesTo.eventId.full
+            this[ExposedTimelineEventRelation.relatesTo] = json.encodeToString(it.relatesTo)
         }
     }
 

@@ -329,16 +329,13 @@ class TimelineEventHandlerImpl(
     internal suspend fun addRelation(event: Event<MessageEventContent>) {
         if (event is Event.MessageEvent) {
             val relatesTo = event.content.relatesTo
-            val relationType = relatesTo?.relationType
-            val relatedEventId = relatesTo?.eventId
-            if (relatesTo != null && relationType != null && relatedEventId != null) {
+            if (relatesTo != null) {
                 log.debug { "add relation to ${relatesTo.eventId}" }
                 roomTimelineStore.addRelation(
                     TimelineEventRelation(
                         roomId = event.roomId,
                         eventId = event.id,
-                        relationType = relationType,
-                        relatedEventId = relatedEventId
+                        relatesTo = relatesTo
                     )
                 )
             }
@@ -347,16 +344,13 @@ class TimelineEventHandlerImpl(
 
     internal suspend fun redactRelation(redactedEvent: Event.MessageEvent<*>) {
         val relatesTo = redactedEvent.content.relatesTo
-        val relationType = relatesTo?.relationType
-        val relatedEventId = relatesTo?.eventId
-        if (relatesTo != null && relationType != null && relatedEventId != null) {
+        if (relatesTo != null) {
             log.debug { "delete relation from ${redactedEvent.id}" }
             roomTimelineStore.deleteRelation(
                 TimelineEventRelation(
                     roomId = redactedEvent.roomId,
                     eventId = redactedEvent.id,
-                    relationType = relationType,
-                    relatedEventId = relatedEventId
+                    relatesTo = relatesTo,
                 )
             )
         }
