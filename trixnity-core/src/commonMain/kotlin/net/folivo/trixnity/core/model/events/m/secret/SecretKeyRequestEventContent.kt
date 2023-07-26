@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#msecretrequest">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#msecretrequest">matrix spec</a>
  */
 @Serializable
 data class SecretKeyRequestEventContent(

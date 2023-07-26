@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mroomredaction">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroomredaction">matrix spec</a>
  */
 @Serializable
 data class RedactionEventContent(

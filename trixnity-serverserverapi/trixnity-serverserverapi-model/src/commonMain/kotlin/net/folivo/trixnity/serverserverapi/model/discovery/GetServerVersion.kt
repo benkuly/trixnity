@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.WithoutAuth
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#get_matrixfederationv1version">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#get_matrixfederationv1version">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/version")

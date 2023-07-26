@@ -7,13 +7,16 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#receipts">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#receipts">matrix spec</a>
  */
 @Serializable(with = ReceiptEventContentSerializer::class)
 data class ReceiptEventContent(

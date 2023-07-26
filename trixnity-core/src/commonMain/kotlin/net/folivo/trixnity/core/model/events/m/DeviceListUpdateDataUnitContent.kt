@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.events.EphemeralDataUnitContent
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#device-management">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#device-management">matrix spec</a>
  */
 @Serializable
 data class DeviceListUpdateDataUnitContent(

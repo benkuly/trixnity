@@ -18,14 +18,14 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequ
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mroommessage">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroommessage">matrix spec</a>
  */
 @Serializable(with = RoomMessageEventContentSerializer::class)
 sealed interface RoomMessageEventContent : MessageEventContent {
     val body: String
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mnotice">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mnotice">matrix spec</a>
      */
     @Serializable
     data class NoticeMessageEventContent(
@@ -44,7 +44,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mtext">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mtext">matrix spec</a>
      */
     @Serializable
     data class TextMessageEventContent(
@@ -63,7 +63,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#memote">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#memote">matrix spec</a>
      */
     @Serializable
     data class EmoteMessageEventContent(
@@ -82,7 +82,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mimage">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mimage">matrix spec</a>
      */
     @Serializable
     data class ImageMessageEventContent(
@@ -102,7 +102,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mfile">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mfile">matrix spec</a>
      */
     @Serializable
     data class FileMessageEventContent(
@@ -123,7 +123,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#maudio">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#maudio">matrix spec</a>
      */
     @Serializable
     data class AudioMessageEventContent(
@@ -143,7 +143,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mvideo">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mvideo">matrix spec</a>
      */
     @Serializable
     data class VideoMessageEventContent(

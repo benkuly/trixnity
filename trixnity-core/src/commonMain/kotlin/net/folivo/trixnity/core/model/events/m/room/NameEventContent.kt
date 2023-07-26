@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.events.StateEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mroomname">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroomname">matrix spec</a>
  */
 @Serializable
 data class NameEventContent(

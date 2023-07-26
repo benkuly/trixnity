@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#get_matrixfederationv1querydirectory">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#get_matrixfederationv1querydirectory">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/query/directory")
