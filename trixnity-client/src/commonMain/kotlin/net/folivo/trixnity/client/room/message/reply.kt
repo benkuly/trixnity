@@ -29,7 +29,7 @@ suspend fun MessageBuilder.reply(
     eventRelatesTo: RelatesTo?,
 ) {
     val replyTo = RelatesTo.ReplyTo(eventId)
-    val repliedTimelineEvent = roomService.getTimelineEventWithTimedOutContent(roomId, replyTo.eventId)
+    val repliedTimelineEvent = roomService.getTimelineEventWithContentAndTimeout(roomId, replyTo.eventId)
     val repliedMentions = repliedTimelineEvent.content?.getOrNull()?.let {
         if (it is MessageEventContent) it.mentions else null
     }

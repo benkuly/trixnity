@@ -29,7 +29,7 @@ fun MessageBuilder.emote(
 
             is RelatesTo.Reply, is RelatesTo.Thread -> {
                 val repliedEvent = relatesTo.replyTo?.eventId
-                    ?.let { roomService.getTimelineEventWithTimedOutContent(roomId, it) }
+                    ?.let { roomService.getTimelineEventWithContentAndTimeout(roomId, it) }
                 val (richReplyBody, richReplyFormattedBody) =
                     computeRichReplies(repliedEvent, body, formattedBody)
                 EmoteMessageEventContent(

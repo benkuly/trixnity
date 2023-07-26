@@ -30,7 +30,7 @@ class MessageBuilder(
 
         when (relatesTo) {
             is RelatesTo.Replace -> {
-                val oldMentions = roomService.getTimelineEventWithTimedOutContent(roomId, relatesTo.eventId)
+                val oldMentions = roomService.getTimelineEventWithContentAndTimeout(roomId, relatesTo.eventId)
                     .content?.getOrNull()?.let {
                         if (it is MessageEventContent) it.mentions else null
                     }

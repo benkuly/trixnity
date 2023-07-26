@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.Mentions
 import kotlin.time.Duration.Companion.seconds
 
-internal suspend fun RoomService.getTimelineEventWithTimedOutContent(roomId: RoomId, eventId: EventId) =
+internal suspend fun RoomService.getTimelineEventWithContentAndTimeout(roomId: RoomId, eventId: EventId) =
     getTimelineEvent(roomId, eventId) {
         decryptionTimeout = 5.seconds
         allowReplaceContent = false
