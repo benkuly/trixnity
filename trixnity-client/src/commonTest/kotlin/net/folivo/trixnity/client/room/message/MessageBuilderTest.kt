@@ -17,6 +17,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
@@ -159,6 +160,13 @@ class MessageBuilderTest : ShouldSpec({
                     eventContent
                 }
             } shouldBe eventContent
+        }
+    }
+    context("react") {
+        should("react") {
+            MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
+                react(EventId("bla"), "👍")
+            } shouldBe ReactionEventContent(RelatesTo.Annotation(EventId("bla"), "👍"))
         }
     }
     context(MessageBuilder::mentions.name) {
