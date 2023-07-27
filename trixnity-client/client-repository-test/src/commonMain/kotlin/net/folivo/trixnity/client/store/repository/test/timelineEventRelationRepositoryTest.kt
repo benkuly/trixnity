@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.repository.test
 
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -24,9 +23,8 @@ fun ShouldSpec.timelineEventRelationRepositoryTest(diReceiver: () -> Koin) {
         cut = di.get()
         rtm = di.get()
     }
+    fun TimelineEventRelation.key() = TimelineEventRelationKey(relatesTo.eventId, roomId, relatesTo.relationType)
     should("timelineEventRelationRepositoryTest: save, get and delete") {
-        val key1 = TimelineEventRelationKey(EventId("\$relatedEvent1"), RoomId("room1", "server"))
-        val key2 = TimelineEventRelationKey(EventId("\$relatedEvent2"), RoomId("room1", "server"))
         val relation1 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$1event"),
@@ -46,92 +44,114 @@ fun ShouldSpec.timelineEventRelationRepositoryTest(diReceiver: () -> Koin) {
             RoomId("room1", "server"),
             EventId("$3event"),
             RelatesTo.Unknown(
-                JsonObject(mapOf("event_id" to JsonPrimitive("\$relatedEvent1"), "rel_type" to JsonPrimitive("bli"))),
+                JsonObject(mapOf("event_id" to JsonPrimitive("\$relatedEvent1"), "rel_type" to JsonPrimitive("bla"))),
                 EventId("\$relatedEvent1"),
-                RelationType.Unknown("bli"),
+                RelationType.Unknown("bla"),
                 null
             )
-        )
-        val relation4 = TimelineEventRelation(
-            RoomId("room1", "server"),
-            EventId("$4event"),
-            RelatesTo.Reference(EventId("\$relatedEvent2"))
         )
 
         rtm.writeTransaction {
             cut.save(
-                key1,
-                RelationType.Reference,
-                setOf(relation1),
+                relation1.key(),
+                relation1.eventId,
+                relation1
             )
             cut.save(
-                key1,
-                RelationType.Unknown("bla"),
-                setOf(relation2)
+                relation2.key(),
+                relation2.eventId,
+                relation2
             )
             cut.save(
-                key1,
-                RelationType.Unknown("bli"),
-                setOf(relation3)
+                relation3.key(),
+                relation3.eventId,
+                relation3
             )
-            cut.save(key2, RelationType.Reference, setOf(relation4))
 
-            cut.get(key1) shouldBe mapOf(
-                RelationType.Reference to setOf(relation1),
-                RelationType.Unknown("bla") to setOf(relation2),
-                RelationType.Unknown("bli") to setOf(relation3)
+            cut.get(relation1.key()) shouldBe mapOf(
+                relation1.eventId to relation1
             )
-            cut.get(key1, RelationType.Unknown("bla")) shouldBe setOf(relation2)
-            cut.get(key2, RelationType.Reference) shouldBe setOf(relation4)
+            cut.get(relation2.key()) shouldBe mapOf(
+                relation2.eventId to relation2,
+                relation3.eventId to relation3,
+            )
+            cut.get(relation1.key(), relation1.eventId) shouldBe relation1
 
-            cut.delete(key1, RelationType.Unknown("bla"))
-            cut.get(key1) shouldBe mapOf(
-                RelationType.Reference to setOf(relation1),
-                RelationType.Unknown("bli") to setOf(relation3)
+            cut.delete(relation2.key(), relation2.eventId)
+            cut.get(relation2.key()) shouldBe mapOf(
+                relation3.eventId to relation3,
             )
-            cut.delete(key2, RelationType.Reference)
-            cut.get(key2, RelationType.Reference) shouldBe null
+
+            cut.delete(relation1.key(), relation1.eventId)
+            cut.get(relation1.key(), relation1.eventId) shouldBe null
         }
     }
     should("timelineEventRelationRepositoryTest: deleteByRoomId") {
-        val key1 = TimelineEventRelationKey(EventId("\$relatedEvent1"), RoomId("room1", "server"))
-        val key2 = TimelineEventRelationKey(EventId("\$relatedEvent2"), RoomId("room2", "server"))
-        val key3 = TimelineEventRelationKey(EventId("\$relatedEvent3"), RoomId("room1", "server"))
-        val relations1 = setOf(
+        val relation1 =
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
                 RelatesTo.Reference(EventId("\$relatedEvent1"))
-            ), TimelineEventRelation(
-                RoomId("room1", "server"),
-                EventId("$1event"),
-                RelatesTo.Reference(EventId("\$relatedEvent24"))
             )
-        )
-        val relations2 = setOf(
+        val relation2 =
             TimelineEventRelation(
                 RoomId("room2", "server"),
                 EventId("$1event"),
                 RelatesTo.Reference(EventId("\$relatedEvent2"))
             )
-        )
-        val relations3 = setOf(
+        val relation3 =
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
                 RelatesTo.Reference(EventId("\$relatedEvent3"))
             )
-        )
+        val relation4 =
+            TimelineEventRelation(
+                RoomId("room1", "server"),
+                EventId("$1event"),
+                RelatesTo.Reference(EventId("\$relatedEvent24"))
+            )
 
         rtm.writeTransaction {
-            cut.save(key1, RelationType.Reference, relations1)
-            cut.save(key2, RelationType.Reference, relations2)
-            cut.save(key3, RelationType.Reference, relations3)
+            cut.save(
+                relation1.key(),
+                relation1.eventId,
+                relation1
+            )
+            cut.save(
+                relation2.key(),
+                relation2.eventId,
+                relation2
+            )
+            cut.save(
+                relation3.key(),
+                relation3.eventId,
+                relation3
+            )
+            cut.save(
+                relation4.key(),
+                relation4.eventId,
+                relation4
+            )
 
             cut.deleteByRoomId(RoomId("room1", "server"))
-            cut.get(key1).shouldBeEmpty()
-            cut.get(key2) shouldBe mapOf(RelationType.Reference to relations2)
-            cut.get(key3).shouldBeEmpty()
+            cut.get(
+                relation1.key(),
+                relation1.eventId,
+            ) shouldBe null
+            cut.get(
+                relation3.key(),
+                relation3.eventId,
+            ) shouldBe null
+            cut.get(
+                relation4.key(),
+                relation4.eventId,
+            ) shouldBe null
+
+            cut.get(
+                relation2.key(),
+                relation2.eventId,
+            ) shouldBe relation2
         }
     }
 }

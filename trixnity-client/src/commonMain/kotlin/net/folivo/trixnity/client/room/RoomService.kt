@@ -137,13 +137,8 @@ interface RoomService {
     fun getTimelineEventRelations(
         roomId: RoomId,
         eventId: EventId,
-    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?>
-
-    fun getTimelineEventRelations(
-        roomId: RoomId,
-        eventId: EventId,
         relationType: RelationType,
-    ): Flow<Set<TimelineEventRelation>?>
+    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?>
 
     /**
      * Puts a message to the outbox.
@@ -247,7 +242,7 @@ class RoomServiceImpl(
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent) {
                     val replacedByFlow = roomTimelineStore.getRelations(eventId, roomId, RelationType.Replace)
-                        .map { relations -> relations?.map { it.eventId } }
+                        .map { relations -> relations?.keys }
                         .transform {
                             if (it == null) emit(setOfNotNull(event.unsigned?.relations?.replace?.eventId))
                             else emit(it)
@@ -578,13 +573,8 @@ class RoomServiceImpl(
     override fun getTimelineEventRelations(
         roomId: RoomId,
         eventId: EventId,
-    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?> = roomTimelineStore.getRelations(eventId, roomId)
-
-    override fun getTimelineEventRelations(
-        roomId: RoomId,
-        eventId: EventId,
         relationType: RelationType,
-    ): Flow<Set<TimelineEventRelation>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
+    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
 
 
     override suspend fun sendMessage(

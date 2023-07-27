@@ -6,13 +6,14 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.RelationType
 
 interface TimelineEventRelationRepository :
-    MapDeleteByRoomIdRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>> {
+    MapDeleteByRoomIdRepository<TimelineEventRelationKey, EventId, TimelineEventRelation> {
 
-    override fun serializeKey(firstKey: TimelineEventRelationKey, secondKey: RelationType): String =
-        firstKey.roomId.full + firstKey.relatedEventId.full + secondKey.name
+    override fun serializeKey(firstKey: TimelineEventRelationKey, secondKey: EventId): String =
+        firstKey.roomId.full + firstKey.relatedEventId.full + firstKey.relationType.name + secondKey.full
 }
 
 data class TimelineEventRelationKey(
     val relatedEventId: EventId,
     val roomId: RoomId,
+    val relationType: RelationType,
 )

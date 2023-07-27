@@ -71,42 +71,33 @@ class RoomTimelineStore(
     }
 
     fun getRelations(
-        eventId: EventId,
-        roomId: RoomId,
-    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?> =
-        timelineEventRelationCache.readByFirstKey(TimelineEventRelationKey(eventId, roomId))
-
-    fun getRelations(
         relatedEventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-    ): Flow<Set<TimelineEventRelation>?> =
-        timelineEventRelationCache.read(
-            MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relatedEventId, roomId),
-                relationType,
-            )
+    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> =
+        timelineEventRelationCache.readByFirstKey(
+            TimelineEventRelationKey(relatedEventId, roomId, relationType)
         )
 
     suspend fun addRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.write(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relation.relatesTo.eventId, relation.roomId),
-                relation.relatesTo.relationType
+                TimelineEventRelationKey(relation.relatesTo.eventId, relation.roomId, relation.relatesTo.relationType),
+                relation.eventId
             )
         ) {
-            it.orEmpty() + relation
+            relation
         }
     }
 
     suspend fun deleteRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.write(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relation.relatesTo.eventId, relation.roomId),
-                relation.relatesTo.relationType
+                TimelineEventRelationKey(relation.relatesTo.eventId, relation.roomId, relation.relatesTo.relationType),
+                relation.eventId
             )
         ) {
-            it?.minus(relation)?.ifEmpty { null }
+            null
         }
     }
 }
