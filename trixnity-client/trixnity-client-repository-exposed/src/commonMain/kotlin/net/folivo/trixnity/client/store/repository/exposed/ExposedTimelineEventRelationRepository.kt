@@ -29,7 +29,7 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
                 eventId to TimelineEventRelation(
                     roomId = RoomId(it[ExposedTimelineEventRelation.roomId]),
                     eventId = eventId,
-                    relationType = RelationType.of(it[ExposedTimelineEventRelation.roomId]),
+                    relationType = RelationType.of(it[ExposedTimelineEventRelation.relationType]),
                     relatedEventId = EventId(it[ExposedTimelineEventRelation.relatedEventId]),
                 )
             }
@@ -52,7 +52,7 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
             TimelineEventRelation(
                 roomId = RoomId(it[ExposedTimelineEventRelation.roomId]),
                 eventId = EventId(it[ExposedTimelineEventRelation.eventId]),
-                relationType = RelationType.of(it[ExposedTimelineEventRelation.roomId]),
+                relationType = RelationType.of(it[ExposedTimelineEventRelation.relationType]),
                 relatedEventId = EventId(it[ExposedTimelineEventRelation.relatedEventId]),
             )
         }
