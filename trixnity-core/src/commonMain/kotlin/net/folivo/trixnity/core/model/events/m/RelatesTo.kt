@@ -70,6 +70,20 @@ sealed interface RelatesTo {
         override val relationType: RelationType = RelationType.Thread
     }
 
+    @Serializable
+    data class Annotation(
+        @SerialName("event_id")
+        override val eventId: EventId,
+        @SerialName("key")
+        val key: String? = null,
+    ) : RelatesTo {
+        @SerialName("rel_type")
+        override val relationType: RelationType = RelationType.Annotation
+
+        @Transient
+        override val replyTo: ReplyTo? = null
+    }
+
     data class Unknown(
         val raw: JsonObject,
         override val eventId: EventId,
@@ -100,6 +114,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
                 is RelationType.Replace -> decoder.json.decodeFromJsonElement<RelatesTo.Replace>(jsonObject)
                 is RelationType.Reply -> decoder.json.decodeFromJsonElement<RelatesTo.Reply>(jsonObject)
                 is RelationType.Thread -> decoder.json.decodeFromJsonElement<RelatesTo.Thread>(jsonObject)
+                is RelationType.Annotation -> decoder.json.decodeFromJsonElement<RelatesTo.Annotation>(jsonObject)
                 else -> {
                     RelatesTo.Unknown(
                         jsonObject,
@@ -126,6 +141,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
             is RelatesTo.Replace -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Reply -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Thread -> encoder.json.encodeToJsonElement(value)
+            is RelatesTo.Annotation -> encoder.json.encodeToJsonElement(value)
             is RelatesTo.Unknown -> JsonObject(buildMap {
                 putAll(value.raw)
                 put("event_id", JsonPrimitive(value.eventId.full))

@@ -24,6 +24,10 @@ sealed interface RelationType {
         override val name = "m.thread"
     }
 
+    object Annotation : RelationType {
+        override val name: String = "m.annotation"
+    }
+
     /**
      * This is an abstraction, it does not exist on this level in the matrix spec. Therefore, don't use it in Matrix Endpoints.
      */
