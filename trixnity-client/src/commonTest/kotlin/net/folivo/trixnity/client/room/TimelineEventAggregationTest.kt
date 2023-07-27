@@ -16,7 +16,10 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.m.ReactionEventContent
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -73,11 +76,12 @@ class TimelineEventAggregationTest : ShouldSpec({
         id: String,
         originTimestamp: Long = 1234,
         sender: UserId = UserId("sender", "server"),
-        replacedBy: ServerAggregation.Replace? = null
+        replacedBy: ServerAggregation.Replace? = null,
+        eventContent: MessageEventContent = RoomMessageEventContent.TextMessageEventContent(id)
     ): TimelineEvent =
         TimelineEvent(
             event = Event.MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent(id),
+                eventContent,
                 EventId(id),
                 sender,
                 room,
@@ -123,6 +127,73 @@ class TimelineEventAggregationTest : ShouldSpec({
 
             cut.getTimelineEventReplaceAggregation(room, EventId("1")).first() shouldBe
                     TimelineEventAggregation.Replace(EventId("3"), listOf(EventId("2"), EventId("3")))
+        }
+    }
+    context(RoomService::getTimelineEventReactionAggregation.name) {
+        beforeTest {
+            roomTimelineStore.addAll(
+                listOf(
+                    timelineEvent("1", 1),
+                    timelineEvent(
+                        "2", 2, UserId("2", "server"),
+                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+                    ),
+                    timelineEvent(
+                        "3", 3, UserId("2", "server"),
+                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+                    ),
+                    timelineEvent(
+                        "4", 4, UserId("2", "server"),
+                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🦄"))
+                    ),
+                    timelineEvent(
+                        "5", 5,
+                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+                    )
+                )
+            )
+        }
+        should("load reactions") {
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("2"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("3"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("4"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("5"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+
+            cut.getTimelineEventReactionAggregation(room, EventId("1")).first() shouldBe
+                    TimelineEventAggregation.Reaction(
+                        mapOf(
+                            "👍" to setOf(UserId("sender", "server"), UserId("2", "server")),
+                            "🦄" to setOf(UserId("2", "server"))
+                        )
+                    )
         }
     }
 })
