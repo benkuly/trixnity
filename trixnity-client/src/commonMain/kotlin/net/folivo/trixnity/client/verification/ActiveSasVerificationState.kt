@@ -4,7 +4,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.SasHash.Sha256
 import net.folivo.trixnity.core.model.events.m.key.verification.SasKeyAgreementProtocol.Curve25519HkdfSha256

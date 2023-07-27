@@ -246,14 +246,14 @@ class PushRoutesTest : TestsWithMocks() {
                         ),
                         PushRuleKind.OVERRIDE to listOf(
                             PushRule(
-                                actions = setOf(PushAction.DontNotify),
+                                actions = setOf(),
                                 conditions = setOf(),
                                 default = true,
                                 enabled = false,
                                 ruleId = ".m.rule.master"
                             ),
                             PushRule(
-                                actions = setOf(PushAction.DontNotify),
+                                actions = setOf(),
                                 conditions = setOf(PushCondition.EventMatch("content.msgtype", "m.notice")),
                                 default = true,
                                 enabled = true,
@@ -361,7 +361,6 @@ class PushRoutesTest : TestsWithMocks() {
                     "override": [
                       {
                         "actions": [
-                          "dont_notify"
                         ],
                         "conditions": [],
                         "default": true,
@@ -370,7 +369,6 @@ class PushRoutesTest : TestsWithMocks() {
                       },
                       {
                         "actions": [
-                          "dont_notify"
                         ],
                         "conditions": [
                           {
@@ -544,7 +542,7 @@ class PushRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.getPushRule(isAny()) }
             .returns(
                 PushRule(
-                    actions = setOf(PushAction.DontNotify),
+                    actions = setOf(PushAction.Notify),
                     default = false,
                     enabled = true,
                     pattern = "cake*lie",
@@ -559,7 +557,7 @@ class PushRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """
                {
                   "actions":[
-                    "dont_notify"
+                    "notify"
                   ],
                   "default":false,
                   "enabled":true,
@@ -654,7 +652,7 @@ class PushRoutesTest : TestsWithMocks() {
     fun shouldGetPushRuleActions() = testApplication {
         initCut()
         everySuspending { handlerMock.getPushRuleActions(isAny()) }
-            .returns(GetPushRuleActions.Response(setOf(PushAction.DontNotify)))
+            .returns(GetPushRuleActions.Response(setOf(PushAction.Notify)))
         val response =
             client.get("/_matrix/client/v3/pushrules/scope/content/ruleId/actions") { bearerAuth("token") }
         assertSoftly(response) {
@@ -663,7 +661,7 @@ class PushRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """
                {
                   "actions":[
-                    "dont_notify"
+                    "notify"
                   ]
                 }
             """.trimToFlatJson()

@@ -19,11 +19,18 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
+import net.folivo.trixnity.core.model.events.m.replace
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
@@ -197,6 +204,7 @@ class RoomServiceImpl(
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val roomEventDecryptionServices: List<RoomEventDecryptionService>,
     private val mediaService: MediaService,
+    private val userInfo: UserInfo,
     private val timelineEventHandler: TimelineEventHandler,
     typingEventHandler: TypingEventHandler,
     private val currentSyncState: CurrentSyncState,
@@ -238,7 +246,7 @@ class RoomServiceImpl(
             .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent) {
-                    val replacedBy = event.unsigned?.aggregations?.replace
+                    val replacedBy = event.unsigned?.relations?.replace
                     if (replacedBy != null) {
                         emitAll(getTimelineEvent(roomId, replacedBy.eventId)
                             .map { replacedByTimelineEvent ->
@@ -291,17 +299,16 @@ class RoomServiceImpl(
                         if (timelineEvent?.canBeDecrypted() == true) {
                             val decryptedEventContent = withTimeoutOrNull(cfg.decryptionTimeout) {
                                 roomEventDecryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
-                            }
-                            if (decryptedEventContent != null) {
-                                roomTimelineStore.update(
-                                    eventId,
-                                    roomId,
-                                    persistIntoRepository = false
-                                ) { oldEvent ->
-                                    // we check here again, because an event could be redacted at the same time
-                                    if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
-                                    else oldEvent
-                                }
+                                    ?: Result.failure(TimelineEventDecryptionFailed.AlgorithmNotSupported)
+                            } ?: Result.failure(TimelineEventDecryptionFailed.Timeout)
+                            roomTimelineStore.update(
+                                eventId,
+                                roomId,
+                                persistIntoRepository = false
+                            ) { oldEvent ->
+                                // we check here again, because an event could be redacted at the same time
+                                if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
+                                else oldEvent
                             }
                         }
                         getTimelineEventMutex.update { it - key }
@@ -521,8 +528,8 @@ class RoomServiceImpl(
     ): Flow<TimelineEvent> =
         callbackFlow {
             val subscriber: AfterSyncResponseSubscriber = { send(it) }
-            api.sync.subscribeAfterSyncResponse(subscriber)
-            awaitClose { api.sync.unsubscribeAfterSyncResponse(subscriber) }
+            api.sync.subscribeAfterSyncProcessing(subscriber)
+            awaitClose { api.sync.unsubscribeAfterSyncProcessing(subscriber) }
         }.buffer(syncResponseBufferSize).flatMapConcat { syncResponse ->
             coroutineScope {
                 val timelineEvents =
@@ -572,7 +579,7 @@ class RoomServiceImpl(
         keepMediaInCache: Boolean,
         builder: suspend MessageBuilder.() -> Unit
     ): String {
-        val content = MessageBuilder(roomId, this, mediaService).build(builder)
+        val content = MessageBuilder(roomId, this, mediaService, userInfo.userId).build(builder)
         requireNotNull(content)
         val transactionId = uuid4().toString()
         roomOutboxMessageStore.update(transactionId) {

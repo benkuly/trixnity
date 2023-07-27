@@ -43,4 +43,5 @@ internal fun Route.authenticationApiRoutes(
     matrixEndpoint(json, contentMappings, handler::unbindThirdPartyIdentifiers)
     matrixEndpoint(json, contentMappings, handler::getOIDCRequestToken)
     matrixEndpoint(json, contentMappings, handler::refresh)
+    matrixUIAEndpoint(json, contentMappings, handler::getToken)
 }

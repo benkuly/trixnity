@@ -4,7 +4,8 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 
 /**
  * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationstart">matrix spec</a>
@@ -39,5 +40,6 @@ sealed interface VerificationStartEventContent : VerificationStep {
     ) : VerificationStartEventContent {
         @SerialName("next_method")
         override val nextMethod: VerificationMethod? = null
+        override val mentions: Mentions? = null
     }
 }

@@ -121,4 +121,9 @@ interface AuthenticationApiHandler {
      * @see [Refresh]
      */
     suspend fun refresh(context: MatrixEndpointContext<Refresh, Refresh.Request, Refresh.Response>): Refresh.Response
+
+    /**
+     * @see [DeactivateAccount]
+     */
+    suspend fun getToken(context: MatrixEndpointContext<GetToken, RequestWithUIA<Unit>, ResponseWithUIA<GetToken.Response>>): ResponseWithUIA<GetToken.Response>
 }

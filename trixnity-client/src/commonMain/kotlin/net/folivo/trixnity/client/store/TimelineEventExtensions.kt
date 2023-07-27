@@ -1,7 +1,11 @@
 package net.folivo.trixnity.client.store
 
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.m.RelatesTo
+import net.folivo.trixnity.core.model.events.m.replace
 
 val TimelineEvent.isEncrypted: Boolean
     get() = event.isEncrypted
@@ -14,7 +18,7 @@ val TimelineEvent.isLast: Boolean
 
 val TimelineEvent.isReplaced: Boolean
     get() =
-        if (event is Event.MessageEvent) event.unsigned?.aggregations?.replace != null
+        if (event is Event.MessageEvent) event.unsigned?.relations?.replace != null
         else false
 
 val TimelineEvent.isReplacing: Boolean

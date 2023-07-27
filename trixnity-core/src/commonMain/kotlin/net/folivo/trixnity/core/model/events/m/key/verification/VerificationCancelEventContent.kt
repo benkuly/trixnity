@@ -8,7 +8,8 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 
 /**
  * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationcancel">matrix spec</a>
@@ -24,6 +25,8 @@ data class VerificationCancelEventContent(
     @SerialName("transaction_id")
     override val transactionId: String?,
 ) : VerificationStep {
+    override val mentions: Mentions? = null
+
     @Serializable(with = CodeSerializer::class)
     sealed interface Code {
         val value: String

@@ -181,7 +181,6 @@ class KeysApiClientTest {
                                   "device_keys":{
                                     "@alice:example.com":[]
                                   },
-                                  "token":"string",
                                   "timeout":10000
                                 }
                     """.trimToFlatJson()
@@ -266,7 +265,6 @@ class KeysApiClientTest {
         matrixRestClient.keys.getKeys(
             timeout = 10_000,
             deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
-            token = "string"
         ).getOrThrow() shouldBe GetKeys.Response(
             failures = null,
             deviceKeys = mapOf(
@@ -344,7 +342,6 @@ class KeysApiClientTest {
                                   "device_keys":{
                                     "@alice:example.com":[]
                                   },
-                                  "token":"string",
                                   "timeout":10000
                                 }
                     """.trimToFlatJson()
@@ -421,7 +418,6 @@ class KeysApiClientTest {
         matrixRestClient.keys.getKeys(
             timeout = 10_000,
             deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
-            token = "string"
         ).getOrThrow() shouldBe GetKeys.Response(
             failures = null,
             deviceKeys = mapOf(

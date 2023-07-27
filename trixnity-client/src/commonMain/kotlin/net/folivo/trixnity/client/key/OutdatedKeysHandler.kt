@@ -59,7 +59,6 @@ class OutdatedKeysHandler(
                                 log.debug { "try update outdated keys of $userIds" }
                                 val keysResponse = api.keys.getKeys(
                                     deviceKeys = userIds.associateWith { emptySet() },
-                                    token = accountStore.syncBatchToken.value
                                 ).getOrThrow()
 
                                 val joinedEncryptedRooms = lazy { roomStore.encryptedJoinedRooms() }

@@ -43,11 +43,11 @@ class IncomingRoomKeyRequestEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests)
         api.sync.subscribe(::handleIncomingKeyRequests)
-        api.sync.subscribeAfterSyncResponse(::processIncomingKeyRequests)
+        api.sync.subscribeAfterSyncProcessing(::processIncomingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleEncryptedIncomingKeyRequests)
             api.sync.unsubscribe(::handleIncomingKeyRequests)
-            api.sync.unsubscribeAfterSyncResponse(::processIncomingKeyRequests)
+            api.sync.unsubscribeAfterSyncProcessing(::processIncomingKeyRequests)
         }
     }
 

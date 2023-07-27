@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.repository.TimelineEventRelationReposito
 import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.RelationType
+import net.folivo.trixnity.core.model.events.m.RelationType
 import org.koin.core.Koin
 
 

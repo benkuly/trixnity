@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#get_matrixmediav3downloadservernamemediaid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/media/v3/download/{serverName}/{mediaId}")
@@ -18,7 +18,9 @@ import net.folivo.trixnity.core.MatrixEndpoint
 data class DownloadMedia(
     @SerialName("serverName") val serverName: String,
     @SerialName("mediaId") val mediaId: String,
-    @SerialName("allow_remote") val allowRemote: Boolean? = null
+    @SerialName("allow_remote") val allowRemote: Boolean? = null,
+    @SerialName("allow_redirect") val allowRedirect: Boolean? = null,
+    @SerialName("timeout_ms") val timeoutMs: Long? = null,
 ) : MatrixEndpoint<Unit, Media> {
 
     @Transient

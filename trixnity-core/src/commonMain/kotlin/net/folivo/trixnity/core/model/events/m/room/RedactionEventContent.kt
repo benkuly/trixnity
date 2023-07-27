@@ -4,10 +4,11 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mroomredaction">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroomredaction">matrix spec</a>
  */
 @Serializable
 data class RedactionEventContent(
@@ -18,4 +19,5 @@ data class RedactionEventContent(
 ) : MessageEventContent {
     @SerialName("m.relates_to")
     override val relatesTo: RelatesTo? = null
+    override val mentions: Mentions? = null
 }

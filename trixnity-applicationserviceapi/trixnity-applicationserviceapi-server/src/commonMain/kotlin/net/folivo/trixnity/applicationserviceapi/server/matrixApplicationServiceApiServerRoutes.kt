@@ -31,4 +31,7 @@ fun Route.matrixApplicationServiceApiServerRoutes(
     matrixEndpoint<HasRoomLegacy, Unit, Unit>(json, eventContentSerializerMappings) {
         applicationServiceApiServerHandler.hasRoomAlias(endpoint.roomAlias)
     }
+    matrixEndpoint<Ping, Ping.Request, Unit>(json, eventContentSerializerMappings) {
+        applicationServiceApiServerHandler.ping(requestBody.txnId)
+    }
 }

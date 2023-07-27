@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.keys.Signed
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#put_matrixfederationv2inviteroomideventid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#put_matrixfederationv2inviteroomideventid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v2/invite/{roomId}/{eventId}")

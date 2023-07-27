@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.room
 
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.core.model.events.RelationType
+import net.folivo.trixnity.core.model.events.m.RelationType
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
 

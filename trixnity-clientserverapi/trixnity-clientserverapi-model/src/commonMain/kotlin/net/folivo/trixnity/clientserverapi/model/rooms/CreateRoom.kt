@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#post_matrixclientv3createroom">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#post_matrixclientv3createroom">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/createRoom")

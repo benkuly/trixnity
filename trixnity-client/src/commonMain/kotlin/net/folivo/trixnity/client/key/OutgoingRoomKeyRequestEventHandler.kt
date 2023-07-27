@@ -50,10 +50,10 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer)
-        api.sync.subscribeAfterSyncResponse(::cancelOldOutgoingKeyRequests)
+        api.sync.subscribeAfterSyncProcessing(::cancelOldOutgoingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleOutgoingKeyRequestAnswer)
-            api.sync.unsubscribeAfterSyncResponse(::cancelOldOutgoingKeyRequests)
+            api.sync.unsubscribeAfterSyncProcessing(::cancelOldOutgoingKeyRequests)
         }
     }
 

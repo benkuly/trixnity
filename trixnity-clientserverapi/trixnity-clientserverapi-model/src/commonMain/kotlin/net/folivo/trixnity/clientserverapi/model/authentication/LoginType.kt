@@ -20,7 +20,9 @@ sealed interface LoginType {
     }
 
     @Serializable
-    object Token : LoginType {
+    data class Token(
+        @SerialName("get_login_token") val getLoginToken: Boolean? = null,
+    ) : LoginType {
         @SerialName("type")
         override val name = "m.login.token"
     }
@@ -66,7 +68,7 @@ object LoginTypeSerializer : KSerializer<LoginType> {
         requireNotNull(type)
         return when (type) {
             LoginType.Password.name -> decoder.json.decodeFromJsonElement<LoginType.Password>(jsonObj)
-            LoginType.Token.name -> decoder.json.decodeFromJsonElement<LoginType.Token>(jsonObj)
+            "m.login.token" -> decoder.json.decodeFromJsonElement<LoginType.Token>(jsonObj)
             LoginType.AppService.name -> decoder.json.decodeFromJsonElement<LoginType.AppService>(jsonObj)
             "m.login.sso" -> decoder.json.decodeFromJsonElement<LoginType.SSO>(jsonObj)
             else -> LoginType.Unknown(type, jsonObj)

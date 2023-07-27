@@ -12,7 +12,7 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#conditions-1">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#conditions-1">matrix spec</a>
  */
 @Serializable(with = PushConditionSerializer::class)
 sealed interface PushCondition {
@@ -22,6 +22,22 @@ sealed interface PushCondition {
         val key: String,
         @SerialName("pattern")
         val pattern: String
+    ) : PushCondition
+
+    @Serializable
+    data class EventPropertyIs(
+        @SerialName("key")
+        val key: String,
+        @SerialName("value")
+        val value: JsonPrimitive
+    ) : PushCondition
+
+    @Serializable
+    data class EventPropertyContains(
+        @SerialName("key")
+        val key: String,
+        @SerialName("value")
+        val value: JsonPrimitive
     ) : PushCondition
 
     object ContainsDisplayName : PushCondition
@@ -52,6 +68,10 @@ object PushConditionSerializer : KSerializer<PushCondition> {
         return try {
             when (jsonObject["kind"]?.jsonPrimitive?.content) {
                 "event_match" -> decoder.json.decodeFromJsonElement<PushCondition.EventMatch>(jsonObject)
+                "event_property_is" -> decoder.json.decodeFromJsonElement<PushCondition.EventPropertyIs>(jsonObject)
+                "event_property_contains" ->
+                    decoder.json.decodeFromJsonElement<PushCondition.EventPropertyContains>(jsonObject)
+
                 "room_member_count" -> decoder.json.decodeFromJsonElement<PushCondition.RoomMemberCount>(jsonObject)
                 "sender_notification_permission" ->
                     decoder.json.decodeFromJsonElement<PushCondition.SenderNotificationPermission>(jsonObject)
@@ -69,6 +89,19 @@ object PushConditionSerializer : KSerializer<PushCondition> {
         val jsonObject = when (value) {
             is PushCondition.EventMatch -> encoder.json.encodeToJsonElement(
                 AddFieldsSerializer(PushCondition.EventMatch.serializer(), "kind" to "event_match"),
+                value
+            )
+
+            is PushCondition.EventPropertyIs -> encoder.json.encodeToJsonElement(
+                AddFieldsSerializer(PushCondition.EventPropertyIs.serializer(), "kind" to "event_property_is"),
+                value
+            )
+
+            is PushCondition.EventPropertyContains -> encoder.json.encodeToJsonElement(
+                AddFieldsSerializer(
+                    PushCondition.EventPropertyContains.serializer(),
+                    "kind" to "event_property_contains"
+                ),
                 value
             )
 

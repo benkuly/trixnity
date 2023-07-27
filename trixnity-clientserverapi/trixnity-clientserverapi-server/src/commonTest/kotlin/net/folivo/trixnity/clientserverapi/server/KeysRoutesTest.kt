@@ -362,7 +362,6 @@ class KeysRoutesTest : TestsWithMocks() {
                 it.requestBody shouldBe GetKeys.Request(
                     timeout = 10_000,
                     keysFrom = mapOf(UserId("alice", "example.com") to setOf()),
-                    token = "string"
                 )
             })
         }

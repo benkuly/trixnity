@@ -23,7 +23,6 @@ interface KeysApiClient {
      */
     suspend fun getKeys(
         deviceKeys: Map<UserId, Set<String>>,
-        token: String? = null,
         timeout: Long? = 10000,
         asUserId: UserId? = null
     ): Result<GetKeys.Response>
@@ -197,11 +196,10 @@ class KeysApiClientImpl(
 
     override suspend fun getKeys(
         deviceKeys: Map<UserId, Set<String>>,
-        token: String?,
         timeout: Long?,
         asUserId: UserId?
     ): Result<GetKeys.Response> =
-        httpClient.request(GetKeys(asUserId), GetKeys.Request(deviceKeys, token, timeout))
+        httpClient.request(GetKeys(asUserId), GetKeys.Request(deviceKeys, timeout))
 
     override suspend fun claimKeys(
         oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>,

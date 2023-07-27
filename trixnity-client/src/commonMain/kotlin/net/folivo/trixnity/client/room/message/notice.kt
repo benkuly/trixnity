@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.room.message
 
-import net.folivo.trixnity.client.room.firstWithContent
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.NoticeMessageEventContent
 import net.folivo.trixnity.utils.TrixnityDsl
 
@@ -11,7 +10,7 @@ fun MessageBuilder.notice(
     format: String? = null,
     formattedBody: String? = null
 ) {
-    contentBuilder = { relatesTo ->
+    contentBuilder = { relatesTo, mentions, newContentMentions ->
         when (relatesTo) {
             is RelatesTo.Replace -> NoticeMessageEventContent(
                 body = "* $body",
@@ -19,23 +18,26 @@ fun MessageBuilder.notice(
                 formattedBody = formattedBody?.let { "* $it" },
                 relatesTo = relatesTo.copy(
                     newContent = NoticeMessageEventContent(
-                        body,
-                        format,
-                        formattedBody
+                        body = body,
+                        format = format,
+                        formattedBody = formattedBody,
+                        mentions = newContentMentions,
                     )
-                )
+                ),
+                mentions = mentions,
             )
 
             is RelatesTo.Reply, is RelatesTo.Thread -> {
                 val repliedEvent = relatesTo.replyTo?.eventId
-                    ?.let { roomService.getTimelineEvent(roomId, it).firstWithContent() }
+                    ?.let { roomService.getTimelineEventWithContentAndTimeout(roomId, it) }
                 val (richReplyBody, richReplyFormattedBody) =
                     computeRichReplies(repliedEvent, body, formattedBody)
                 NoticeMessageEventContent(
                     body = richReplyBody,
                     format = "org.matrix.custom.html",
                     formattedBody = richReplyFormattedBody,
-                    relatesTo = relatesTo
+                    relatesTo = relatesTo,
+                    mentions = mentions,
                 )
             }
 
@@ -43,7 +45,8 @@ fun MessageBuilder.notice(
                 body = body,
                 format = format,
                 formattedBody = formattedBody,
-                relatesTo = relatesTo
+                relatesTo = relatesTo,
+                mentions = mentions,
             )
         }
     }

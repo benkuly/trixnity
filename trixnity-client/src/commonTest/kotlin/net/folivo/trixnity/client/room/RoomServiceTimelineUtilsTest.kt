@@ -65,7 +65,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
 
         mediaServiceMock = MediaServiceMock()
-        roomEventDecryptionServiceMock = RoomEventDecryptionServiceMock()
+        roomEventDecryptionServiceMock = RoomEventDecryptionServiceMock(true)
         timelineEventHandlerMock = TimelineEventHandlerMock()
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
@@ -75,6 +75,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             roomStore, roomUserStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
             listOf(roomEventDecryptionServiceMock),
             mediaServiceMock,
+            simpleUserInfo,
             timelineEventHandlerMock,
             TypingEventHandler(api),
             CurrentSyncState(currentSyncState),
@@ -310,7 +311,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 val job = scope.launch {
                     cut.getTimelineEvents(room, event3.id)
                         .toFlowList(size)
-                        .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.first() } }
+                        .collectLatest { it1 -> resultList.value = it1.map { it.first() } }
                 }
                 resultList.first { it?.size == 2 } shouldBe listOf(
                     timelineEvent3,
@@ -485,7 +486,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val job = localTestScope.launch {
                 cut.getLastTimelineEvents(room)
                     .toFlowList(size)
-                    .collectLatest { it1 -> resultList.value = it1.mapNotNull { it.first() } }
+                    .collectLatest { it1 -> resultList.value = it1.map { it.first() } }
             }
 
             resultList.first { it?.size == 2 } shouldBe listOf(

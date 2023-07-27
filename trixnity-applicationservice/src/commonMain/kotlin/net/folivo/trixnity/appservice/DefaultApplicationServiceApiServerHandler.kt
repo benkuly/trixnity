@@ -45,4 +45,8 @@ class DefaultApplicationServiceApiServerHandler(
             }
         }
     }
+
+    override suspend fun ping(txnId: String?) {
+        // TODO
+    }
 }

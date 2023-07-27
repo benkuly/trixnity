@@ -2,7 +2,8 @@ package net.folivo.trixnity.core.model.events.m.key.verification
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.keys.Keys
 
 /**
@@ -18,4 +19,6 @@ data class SasMacEventContent(
     override val relatesTo: RelatesTo.Reference?,
     @SerialName("transaction_id")
     override val transactionId: String?,
-) : VerificationStep
+) : VerificationStep {
+    override val mentions: Mentions? = null
+}

@@ -4,7 +4,7 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.relatesTo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.utils.TrixnityDsl
 
 /**

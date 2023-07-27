@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.model.events.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.AudioInfo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.AudioMessageEventContent
@@ -22,7 +22,6 @@ suspend fun MessageBuilder.audio(
     val encryptedFile: EncryptedFile?
     val isEncryptedRoom = roomService.getById(roomId).first()?.encryptionAlgorithm != null
     if (isEncryptedRoom) {
-
         encryptedFile = mediaService.prepareUploadEncryptedMedia(audio)
         format = AudioInfo(
             duration = duration,
@@ -39,7 +38,7 @@ suspend fun MessageBuilder.audio(
         )
         encryptedFile = null
     }
-    contentBuilder = { relatesTo ->
+    contentBuilder = { relatesTo, mentions, newContentMentions ->
         when (relatesTo) {
             is RelatesTo.Replace -> AudioMessageEventContent(
                 body = "* $body",
@@ -52,8 +51,10 @@ suspend fun MessageBuilder.audio(
                         info = format,
                         url = url,
                         file = encryptedFile,
+                        mentions = newContentMentions,
                     )
-                )
+                ),
+                mentions = mentions,
             )
 
             else -> AudioMessageEventContent(
@@ -61,7 +62,8 @@ suspend fun MessageBuilder.audio(
                 info = format,
                 url = url,
                 file = encryptedFile,
-                relatesTo = relatesTo
+                relatesTo = relatesTo,
+                mentions = mentions,
             )
         }
     }

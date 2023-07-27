@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#actions">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#actions">matrix spec</a>
  */
 @Serializable(with = PushActionSerializer::class)
 sealed interface PushAction {
@@ -17,14 +17,6 @@ sealed interface PushAction {
 
     object Notify : PushAction {
         override val name = "notify"
-    }
-
-    object DontNotify : PushAction {
-        override val name = "dont_notify"
-    }
-
-    object Coalesce : PushAction {
-        override val name = "coalesce"
     }
 
     data class SetSoundTweak(
@@ -50,8 +42,6 @@ object PushActionSerializer : KSerializer<PushAction> {
         return when (val json = decoder.decodeJsonElement()) {
             is JsonPrimitive -> when (val name = json.content) {
                 PushAction.Notify.name -> PushAction.Notify
-                PushAction.DontNotify.name -> PushAction.DontNotify
-                PushAction.Coalesce.name -> PushAction.Coalesce
                 else -> PushAction.Unknown(name, json)
             }
 
@@ -69,8 +59,6 @@ object PushActionSerializer : KSerializer<PushAction> {
         require(encoder is JsonEncoder)
         val json = when (value) {
             is PushAction.Notify -> JsonPrimitive(PushAction.Notify.name)
-            is PushAction.DontNotify -> JsonPrimitive(PushAction.DontNotify.name)
-            is PushAction.Coalesce -> JsonPrimitive(PushAction.Coalesce.name)
             is PushAction.SetSoundTweak -> JsonObject(
                 buildMap {
                     put("set_tweak", JsonPrimitive(value.name))

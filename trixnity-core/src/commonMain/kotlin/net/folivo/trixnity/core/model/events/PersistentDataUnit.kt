@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/rooms/">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/rooms/">matrix spec</a>
  */
 sealed interface PersistentDataUnit<C : EventContent> {
     val content: C

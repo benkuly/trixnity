@@ -192,6 +192,13 @@ interface AuthenticationApiClient {
     suspend fun refresh(
         refreshToken: String? = null,
     ): Result<Refresh.Response>
+
+    /**
+     * @see [GetToken]
+     */
+    suspend fun getToken(
+        asUserId: UserId? = null
+    ): Result<UIA<GetToken.Response>>
 }
 
 class AuthenticationApiClientImpl(
@@ -383,4 +390,7 @@ class AuthenticationApiClientImpl(
 
     override suspend fun refresh(refreshToken: String?): Result<Refresh.Response> =
         httpClient.request(Refresh, Refresh.Request(refreshToken))
+
+    override suspend fun getToken(asUserId: UserId?): Result<UIA<GetToken.Response>> =
+        httpClient.uiaRequest(GetToken(asUserId))
 }

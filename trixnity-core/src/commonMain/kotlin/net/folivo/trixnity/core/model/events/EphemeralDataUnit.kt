@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/server-server-api/#edus">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#edus">matrix spec</a>
  */
 @Serializable
 data class EphemeralDataUnit<C : EphemeralDataUnitContent>(

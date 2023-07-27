@@ -16,6 +16,7 @@ import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.subscribe
@@ -46,11 +47,11 @@ class TimelineEventHandlerImpl(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::redactTimelineEvent)
         api.sync.subscribe(::addRelation)
-        api.sync.subscribeAfterSyncResponse(::handleSyncResponse)
+        api.sync.subscribeSyncResponse(::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::redactTimelineEvent)
             api.sync.unsubscribe(::addRelation)
-            api.sync.unsubscribeAfterSyncResponse(::handleSyncResponse)
+            api.sync.unsubscribeSyncResponse(::handleSyncResponse)
         }
     }
 
@@ -301,7 +302,7 @@ class TimelineEventHandlerImpl(
                             val newContent = RedactedStateEventContent(eventType)
                             oldTimelineEvent.copy(
                                 event = Event.StateEvent(
-                                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.6/rooms/v9/#redactions
+                                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.7/rooms/v9/#redactions
                                     newContent,
                                     oldEvent.id,
                                     oldEvent.sender,
@@ -348,18 +349,18 @@ class TimelineEventHandlerImpl(
                         roomTimelineStore.update(relatedEventId, event.roomId) { oldTimelineEvent ->
                             val oldEvent = oldTimelineEvent?.event
                             if (oldEvent is Event.MessageEvent && oldEvent.sender == event.sender) {
-                                val oldAggregations = oldEvent.unsigned?.aggregations.orEmpty()
+                                val oldAggregations = oldEvent.unsigned?.relations.orEmpty()
                                 if ((oldAggregations.replace?.originTimestamp ?: 0) < event.originTimestamp) {
                                     val newAggregations = oldAggregations +
-                                            Aggregation.Replace(
+                                            ServerAggregation.Replace(
                                                 event.id,
                                                 event.sender,
                                                 event.originTimestamp
                                             )
                                     oldTimelineEvent.copy(
                                         event = oldEvent.copy(
-                                            unsigned = oldEvent.unsigned?.copy(aggregations = newAggregations)
-                                                ?: UnsignedRoomEventData.UnsignedMessageEventData(aggregations = newAggregations)
+                                            unsigned = oldEvent.unsigned?.copy(relations = newAggregations)
+                                                ?: UnsignedRoomEventData.UnsignedMessageEventData(relations = newAggregations)
                                         )
                                     )
                                 } else oldTimelineEvent
@@ -396,7 +397,7 @@ class TimelineEventHandlerImpl(
                     roomTimelineStore.update(relatedEventId, redactedEvent.roomId) { relatedEvent ->
                         val oldEvent = relatedEvent?.event
                         if (oldEvent is Event.MessageEvent) {
-                            val oldAggregations = oldEvent.unsigned?.aggregations.orEmpty()
+                            val oldAggregations = oldEvent.unsigned?.relations.orEmpty()
                             val oldReplaceAggregation = oldAggregations.replace
                             if (oldReplaceAggregation != null && oldReplaceAggregation.eventId == redactedEvent.id) {
                                 log.debug { "a replace aggregation for $relatedEventId must be recalculated due to a redaction" }
@@ -409,7 +410,7 @@ class TimelineEventHandlerImpl(
                                     ?.filter { it.event.sender == relatedEvent.event.sender }
                                     ?.maxByOrNull { it.event.originTimestamp }
                                     ?.let {
-                                        Aggregation.Replace(
+                                        ServerAggregation.Replace(
                                             it.eventId,
                                             it.event.sender,
                                             it.event.originTimestamp
@@ -419,8 +420,8 @@ class TimelineEventHandlerImpl(
                                 val newAggregations = (oldAggregations - oldReplaceAggregation) + newReplaceAggregation
                                 relatedEvent.copy(
                                     event = oldEvent.copy(
-                                        unsigned = oldEvent.unsigned?.copy(aggregations = newAggregations)
-                                            ?: UnsignedRoomEventData.UnsignedMessageEventData(aggregations = newAggregations)
+                                        unsigned = oldEvent.unsigned?.copy(relations = newAggregations)
+                                            ?: UnsignedRoomEventData.UnsignedMessageEventData(relations = newAggregations)
                                     )
                                 )
                             } else relatedEvent

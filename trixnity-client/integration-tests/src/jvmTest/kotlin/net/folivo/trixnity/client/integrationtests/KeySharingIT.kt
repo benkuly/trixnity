@@ -28,6 +28,7 @@ import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -183,10 +184,10 @@ class KeySharingIT {
                     .first { it.size == 2 }
                 events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
                     .first { it?.content != null }?.content?.getOrThrow()
-                    .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2"))
+                    .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2", mentions = Mentions()))
                 events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
                     .first { it?.content != null }?.content?.getOrThrow()
-                    .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1"))
+                    .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1", mentions = Mentions()))
 
                 client3.stop()
             }

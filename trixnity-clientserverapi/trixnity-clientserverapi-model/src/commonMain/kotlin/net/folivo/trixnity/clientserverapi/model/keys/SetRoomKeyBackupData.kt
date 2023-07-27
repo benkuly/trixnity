@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupData
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#put_matrixclientv3room_keyskeysroomidsessionid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/room_keys/keys/{roomId}/{sessionId}")

@@ -1,4 +1,4 @@
-package net.folivo.trixnity.core.model.events
+package net.folivo.trixnity.core.model.events.m
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

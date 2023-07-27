@@ -11,15 +11,16 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RelatesTo
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 
 /**
- * @see <a href="https://spec.matrix.org/v1.6/client-server-api/#mroomencrypted">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroomencrypted">matrix spec</a>
  */
 @Serializable(with = EncryptedEventContentSerializer::class)
 sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
@@ -39,6 +40,8 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         val sessionId: String,
         @SerialName("m.relates_to")
         override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions")
+        override val mentions: Mentions? = null,
     ) : EncryptedEventContent {
         @SerialName("algorithm")
         override val algorithm: Megolm = Megolm
@@ -51,7 +54,9 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         @SerialName("sender_key")
         val senderKey: Curve25519Key,
         @SerialName("m.relates_to")
-        override val relatesTo: RelatesTo? = null
+        override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions")
+        override val mentions: Mentions? = null,
     ) : EncryptedEventContent {
         @SerialName("algorithm")
         override val algorithm: Olm = Olm
@@ -85,6 +90,7 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         val raw: JsonObject
     ) : EncryptedEventContent {
         override val relatesTo: RelatesTo? = null
+        override val mentions: Mentions? = null
     }
 }
 

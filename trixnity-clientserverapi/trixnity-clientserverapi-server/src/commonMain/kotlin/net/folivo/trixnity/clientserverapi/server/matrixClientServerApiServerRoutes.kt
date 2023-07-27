@@ -7,9 +7,10 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 fun Route.matrixClientServerApiServerRoutes(
-    discoveryApiHandler: DiscoveryApiHandler,
+    appserviceApiHandler: AppserviceApiHandler,
     authenticationApiHandler: AuthenticationApiHandler,
     devicesApiHandler: DevicesApiHandler,
+    discoveryApiHandler: DiscoveryApiHandler,
     keysApiHandler: KeysApiHandler,
     mediaApiHandler: MediaApiHandler,
     pushApiHandler: PushApiHandler,
@@ -20,9 +21,10 @@ fun Route.matrixClientServerApiServerRoutes(
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
 ) {
-    discoveryApiRoutes(discoveryApiHandler, json, eventContentSerializerMappings)
+    appserviceApiRoutes(appserviceApiHandler, json, eventContentSerializerMappings)
     authenticationApiRoutes(authenticationApiHandler, json, eventContentSerializerMappings)
     devicesApiRoutes(devicesApiHandler, json, eventContentSerializerMappings)
+    discoveryApiRoutes(discoveryApiHandler, json, eventContentSerializerMappings)
     keysApiRoutes(keysApiHandler, json, eventContentSerializerMappings)
     mediaApiRoutes(mediaApiHandler, json, eventContentSerializerMappings)
     pushApiRoutes(pushApiHandler, json, eventContentSerializerMappings)
