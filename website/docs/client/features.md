@@ -46,6 +46,7 @@ sidebar_position: 12
 - [x] relations:
     - [x] reply (without fallback)
     - [x] replace
+    - [x] reactions via annotations
     - [ ] thread (basic support, no separate timelines or client aggregations yet)
 - [x] notifications
 - [x] server discovery
