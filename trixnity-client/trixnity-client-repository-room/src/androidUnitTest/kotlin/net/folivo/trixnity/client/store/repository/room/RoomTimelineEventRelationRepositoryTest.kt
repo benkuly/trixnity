@@ -2,15 +2,11 @@ package net.folivo.trixnity.client.store.repository.room
 
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,38 +20,30 @@ class RoomTimelineEventRelationRepositoryTest {
     @Before
     fun before() {
         db = buildTestDatabase()
-        repo = RoomTimelineEventRelationRepository(db, createMatrixEventJson())
+        repo = RoomTimelineEventRelationRepository(db)
     }
 
-    private fun TimelineEventRelation.key() =
-        TimelineEventRelationKey(relatesTo.eventId, roomId, relatesTo.relationType)
+    fun TimelineEventRelation.key() = TimelineEventRelationKey(relatedEventId, roomId, relationType)
 
     @Test
     fun `Save, get and delete`() = runTest {
         val relation1 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$1event"),
-            RelatesTo.Reference(EventId("\$relatedEvent1"))
+            RelationType.Reference,
+            EventId("\$relatedEvent1")
         )
         val relation2 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$2event"),
-            RelatesTo.Unknown(
-                JsonObject(mapOf("event_id" to JsonPrimitive("\$relatedEvent1"), "rel_type" to JsonPrimitive("bla"))),
-                EventId("\$relatedEvent1"),
-                RelationType.Unknown("bla"),
-                null
-            )
+            RelationType.Unknown("bla"),
+            EventId("\$relatedEvent1"),
         )
         val relation3 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$3event"),
-            RelatesTo.Unknown(
-                JsonObject(mapOf("event_id" to JsonPrimitive("\$relatedEvent1"), "rel_type" to JsonPrimitive("bla"))),
-                EventId("\$relatedEvent1"),
-                RelationType.Unknown("bla"),
-                null
-            )
+            RelationType.Unknown("bla"),
+            EventId("\$relatedEvent1"),
         )
 
         repo.save(
@@ -98,25 +86,29 @@ class RoomTimelineEventRelationRepositoryTest {
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
-                RelatesTo.Reference(EventId("\$relatedEvent1"))
+                RelationType.Reference,
+                EventId("\$relatedEvent1")
             )
         val relation2 =
             TimelineEventRelation(
                 RoomId("room2", "server"),
                 EventId("$1event"),
-                RelatesTo.Reference(EventId("\$relatedEvent2"))
+                RelationType.Reference,
+                EventId("\$relatedEvent2")
             )
         val relation3 =
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
-                RelatesTo.Reference(EventId("\$relatedEvent3"))
+                RelationType.Reference,
+                EventId("\$relatedEvent3")
             )
         val relation4 =
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
-                RelatesTo.Reference(EventId("\$relatedEvent24"))
+                RelationType.Reference,
+                EventId("\$relatedEvent24")
             )
 
         repo.save(

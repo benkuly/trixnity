@@ -16,9 +16,9 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.RelationType
 
 class RoomTimelineStore(
-    private val timelineEventRepository: TimelineEventRepository,
-    private val timelineEventRelationRepository: TimelineEventRelationRepository,
-    private val tm: TransactionManager,
+    timelineEventRepository: TimelineEventRepository,
+    timelineEventRelationRepository: TimelineEventRelationRepository,
+    tm: TransactionManager,
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
 ) : Store {
@@ -82,7 +82,7 @@ class RoomTimelineStore(
     suspend fun addRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.write(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relation.relatesTo.eventId, relation.roomId, relation.relatesTo.relationType),
+                TimelineEventRelationKey(relation.relatedEventId, relation.roomId, relation.relationType),
                 relation.eventId
             )
         ) {
@@ -93,7 +93,7 @@ class RoomTimelineStore(
     suspend fun deleteRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.write(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relation.relatesTo.eventId, relation.roomId, relation.relatesTo.relationType),
+                TimelineEventRelationKey(relation.relatedEventId, relation.roomId, relation.relationType),
                 relation.eventId
             )
         ) {

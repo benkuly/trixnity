@@ -11,14 +11,14 @@ import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.m.RelationType
 
 @Serializable
 internal class IndexedDBTimelineEventRelation(
     val eventId: String,
     val roomId: String,
-    val relatedEventId: String,
     val relationType: String,
-    val value: TimelineEventRelation,
+    val relatedEventId: String,
 )
 
 internal class IndexedDBTimelineEventRelationRepository(
@@ -30,16 +30,22 @@ internal class IndexedDBTimelineEventRelationRepository(
         firstKeySerializer = { arrayOf(it.roomId.full, it.relatedEventId.full, it.relationType.name) },
         secondKeySerializer = { arrayOf(it.full) },
         secondKeyDestructor = { EventId(it.eventId) },
-        mapToRepresentation = { k1, k2, v ->
+        mapToRepresentation = { k1, k2, _ ->
             IndexedDBTimelineEventRelation(
                 eventId = k2.full,
                 roomId = k1.roomId.full,
                 relatedEventId = k1.relatedEventId.full,
                 relationType = k1.relationType.name,
-                v
             )
         },
-        mapFromRepresentation = { it.value },
+        mapFromRepresentation = {
+            TimelineEventRelation(
+                eventId = EventId(it.eventId),
+                roomId = RoomId(it.roomId),
+                relationType = RelationType.of(it.relationType),
+                relatedEventId = EventId(it.relatedEventId)
+            )
+        },
         representationSerializer = IndexedDBTimelineEventRelation.serializer(),
         json = json,
     ) {

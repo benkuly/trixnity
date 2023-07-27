@@ -1,8 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
@@ -19,7 +17,6 @@ internal data class RoomTimelineEventRelation(
     val eventId: EventId,
     val relationType: RelationType,
     val relatedEventId: EventId,
-    val relatesTo: String,
 )
 
 @Dao
@@ -92,10 +89,7 @@ internal interface TimelineEventRelationDao {
     suspend fun deleteAll()
 }
 
-internal class RoomTimelineEventRelationRepository(
-    db: TrixnityRoomDatabase,
-    private val json: Json,
-) : TimelineEventRelationRepository {
+internal class RoomTimelineEventRelationRepository(db: TrixnityRoomDatabase) : TimelineEventRelationRepository {
 
     private val dao = db.timelineEventRelation()
 
@@ -104,7 +98,8 @@ internal class RoomTimelineEventRelationRepository(
             it.eventId to TimelineEventRelation(
                 roomId = it.roomId,
                 eventId = it.eventId,
-                relatesTo = json.decodeFromString(it.relatesTo),
+                relationType = it.relationType,
+                relatedEventId = it.relatedEventId,
             )
         }
 
@@ -120,7 +115,8 @@ internal class RoomTimelineEventRelationRepository(
             TimelineEventRelation(
                 roomId = firstKey.roomId,
                 eventId = it.eventId,
-                relatesTo = json.decodeFromString(it.relatesTo),
+                relationType = it.relationType,
+                relatedEventId = it.relatedEventId,
             )
         }
 
@@ -133,9 +129,8 @@ internal class RoomTimelineEventRelationRepository(
             RoomTimelineEventRelation(
                 roomId = value.roomId,
                 eventId = value.eventId,
-                relationType = value.relatesTo.relationType,
-                relatedEventId = value.relatesTo.eventId,
-                relatesTo = json.encodeToString(value.relatesTo),
+                relationType = value.relationType,
+                relatedEventId = value.relatedEventId,
             )
         )
     }

@@ -1559,7 +1559,8 @@ class TimelineEventHandlerTest : ShouldSpec({
                                 TimelineEventRelation(
                                     RoomId("room", "server"),
                                     EventId("$1event"),
-                                    RelatesTo.Reference(EventId("$1other"))
+                                    RelationType.Reference,
+                                    EventId("$1other")
                                 )
                     )
         }
@@ -1570,7 +1571,8 @@ class TimelineEventHandlerTest : ShouldSpec({
                 TimelineEventRelation(
                     room,
                     EventId("$1event"),
-                    RelatesTo.Reference(EventId("$1other"))
+                    RelationType.Reference,
+                    EventId("$1other")
                 )
             )
             cut.redactRelation(

@@ -17,7 +17,6 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
-import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -104,9 +103,9 @@ class TimelineEventAggregationTest : ShouldSpec({
             )
         }
         should("use latest replacement from same sender") {
-            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("2"), RelatesTo.Replace(EventId("1"))))
-            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("3"), RelatesTo.Replace(EventId("1"))))
-            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("4"), RelatesTo.Replace(EventId("1"))))
+            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("2"), RelationType.Replace, EventId("1")))
+            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("3"), RelationType.Replace, EventId("1")))
+            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("4"), RelationType.Replace, EventId("1")))
 
             cut.getTimelineEventReplaceAggregation(room, EventId("1")).first() shouldBe
                     TimelineEventAggregation.Replace(EventId("3"), listOf(EventId("2"), EventId("3")))
@@ -120,7 +119,7 @@ class TimelineEventAggregationTest : ShouldSpec({
                     ),
                 )
             )
-            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("2"), RelatesTo.Replace(EventId("1"))))
+            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("2"), RelationType.Replace, EventId("1")))
 
             cut.getTimelineEventReplaceAggregation(room, EventId("1")).first() shouldBe
                     TimelineEventAggregation.Replace(EventId("3"), listOf(EventId("2"), EventId("3")))

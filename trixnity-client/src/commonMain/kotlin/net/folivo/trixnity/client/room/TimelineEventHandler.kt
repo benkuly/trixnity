@@ -335,7 +335,8 @@ class TimelineEventHandlerImpl(
                     TimelineEventRelation(
                         roomId = event.roomId,
                         eventId = event.id,
-                        relatesTo = relatesTo
+                        relationType = relatesTo.relationType,
+                        relatedEventId = relatesTo.eventId,
                     )
                 )
             }
@@ -350,7 +351,8 @@ class TimelineEventHandlerImpl(
                 TimelineEventRelation(
                     roomId = redactedEvent.roomId,
                     eventId = redactedEvent.id,
-                    relatesTo = relatesTo,
+                    relationType = relatesTo.relationType,
+                    relatedEventId = relatesTo.eventId,
                 )
             )
         }

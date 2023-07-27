@@ -390,7 +390,7 @@ class RoomServiceTest : ShouldSpec({
             )
 
             fun timelineEventRelation(roomId: RoomId, i: Int) =
-                TimelineEventRelation(roomId, EventId("r$i"), RelatesTo.Replace(EventId("$i")))
+                TimelineEventRelation(roomId, EventId("r$i"), RelationType.Replace, EventId("$i"))
             roomTimelineStore.addRelation(timelineEventRelation(room, 1))
             roomTimelineStore.addRelation(timelineEventRelation(room, 2))
 
