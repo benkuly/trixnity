@@ -30,7 +30,6 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
-import net.folivo.trixnity.core.model.events.m.replace
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
@@ -241,18 +240,7 @@ class RoomServiceImpl(
             .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent) {
-                    val replacedByFlow = roomTimelineStore.getRelations(eventId, roomId, RelationType.Replace)
-                        .map { relations -> relations?.keys }
-                        .transform {
-                            if (it == null) emit(setOfNotNull(event.unsigned?.relations?.replace?.eventId))
-                            else emit(it)
-                        }
-                        .map { relations ->
-                            relations.mapNotNull { roomTimelineStore.get(it, roomId).first() }
-                                .filter { it.event.sender == timelineEvent.sender }
-                                .maxByOrNull { it.event.originTimestamp }
-                                ?.eventId
-                        }
+                    val replacedByFlow = getTimelineEventReplaceAggregation(roomId, eventId).map { it.replacedBy }
                     emitAll(replacedByFlow.flatMapLatest { replacedBy ->
                         if (replacedBy != null) {
                             getTimelineEvent(roomId, replacedBy)
@@ -575,7 +563,6 @@ class RoomServiceImpl(
         eventId: EventId,
         relationType: RelationType,
     ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
-
 
     override suspend fun sendMessage(
         roomId: RoomId,

@@ -23,28 +23,21 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 fun RoomService.getTimeline(
     roomId: RoomId,
-): SimpleTimeline =
-    getTimeline(roomId = roomId) { it }
+): SimpleTimeline = getTimeline(roomId = roomId) { it }
 
 inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
     roomId: RoomId,
     key: String = "",
-): Flow<C?> {
-    return getAccountData(roomId, C::class, key)
-}
+): Flow<C?> = getAccountData(roomId, C::class, key)
 
 inline fun <reified C : StateEventContent> RoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<Event<C>?> {
-    return getState(roomId, C::class, stateKey)
-}
+): Flow<Event<C>?> = getState(roomId, C::class, stateKey)
 
 inline fun <reified C : StateEventContent> RoomService.getAllState(
     roomId: RoomId,
-): Flow<Map<String, Flow<Event<C>?>>?> {
-    return getAllState(roomId, C::class)
-}
+): Flow<Map<String, Flow<Event<C>?>>?> = getAllState(roomId, C::class)
 
 /**
  * This collects all rooms, so when one room changes, a new room set gets emitted.
