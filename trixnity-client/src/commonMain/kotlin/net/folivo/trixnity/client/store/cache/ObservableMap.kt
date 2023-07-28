@@ -5,6 +5,9 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 internal class ObservableMap<K, V>(
     coroutineScope: CoroutineScope
@@ -24,37 +27,61 @@ internal class ObservableMap<K, V>(
         .map { valuesMutex.withLock { _values.toMap() } }
         .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
 
-    private suspend fun compareAndSet(key: K, expectedOldValue: V?, newValue: V?): Boolean = valuesMutex.withLock {
-        val oldValue = _values[key]
-        when {
-            expectedOldValue != oldValue -> false
-            newValue == null -> {
-                _values.remove(key)
-                changeSignal.emit(Unit)
-                indexes.value.forEach { index -> index.onRemove(key) }
-                true
-            }
-
-            expectedOldValue != newValue -> {
-                _values[key] = newValue
-                changeSignal.emit(Unit)
-                indexes.value.forEach { index -> index.onPut(key) }
-                true
-            }
-
-            else -> true
-        }
+    sealed interface CompareAndSetResult {
+        object TryAgain : CompareAndSetResult
+        object OnPut : CompareAndSetResult
+        object OnRemove : CompareAndSetResult
+        object NothingChanged : CompareAndSetResult
     }
 
+    private suspend fun compareAndSet(key: K, expectedOldValue: V?, newValue: V?): CompareAndSetResult =
+        valuesMutex.withLock {
+            val oldValue = _values[key]
+            when {
+                expectedOldValue != oldValue -> CompareAndSetResult.TryAgain
+                newValue == null -> {
+                    _values.remove(key)
+                    CompareAndSetResult.OnRemove
+                }
+
+                expectedOldValue != newValue -> {
+                    _values[key] = newValue
+                    CompareAndSetResult.OnPut
+                }
+
+                else -> CompareAndSetResult.NothingChanged
+            }
+        }
+
+    @OptIn(ExperimentalContracts::class)
     suspend fun update(
         key: K,
         updater: suspend (V?) -> V?
     ): V? {
+        contract {
+            callsInPlace(updater, InvocationKind.AT_LEAST_ONCE)
+        }
         // inspired by [MutableStateFlow::update]
         while (true) {
             val oldValue = get(key)
             val newValue = updater(oldValue)
-            if (compareAndSet(key, oldValue, newValue)) {
+            val compareAndSetResult = compareAndSet(key, oldValue, newValue)
+            when (compareAndSetResult) {
+                is CompareAndSetResult.TryAgain,
+                is CompareAndSetResult.NothingChanged -> {
+                }
+
+                is CompareAndSetResult.OnPut -> {
+                    changeSignal.emit(Unit)
+                    indexes.value.forEach { index -> index.onPut(key) }
+                }
+
+                is CompareAndSetResult.OnRemove -> {
+                    changeSignal.emit(Unit)
+                    indexes.value.forEach { index -> index.onRemove(key) }
+                }
+            }
+            if (compareAndSetResult !is CompareAndSetResult.TryAgain) {
                 return newValue
             }
         }
