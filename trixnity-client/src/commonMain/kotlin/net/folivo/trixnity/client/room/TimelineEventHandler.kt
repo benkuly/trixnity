@@ -116,8 +116,7 @@ class TimelineEventHandlerImpl(
         val events = roomTimelineStore.filterDuplicateEvents(newEvents)
         if (!events.isNullOrEmpty()) {
             log.debug { "add events to timeline at end of $roomId" }
-            val room = roomStore.get(roomId).first()
-            requireNotNull(room) { "cannot update timeline of a room, that we don't know yet ($roomId)" }
+            val lastEventId = roomStore.get(roomId).first()?.lastEventId
             suspend fun useDecryptedOutboxMessagesForOwnTimelineEvents(timelineEvents: List<TimelineEvent>) =
                 timelineEvents.map {
                     if (it.event.isEncrypted) {
@@ -138,7 +137,7 @@ class TimelineEventHandlerImpl(
                 roomId = roomId,
                 previousToken = previousBatch,
                 previousHasGap = hasGapBefore,
-                previousEvent = room.lastEventId,
+                previousEvent = lastEventId,
                 previousEventChunk = null,
                 nextToken = nextBatch,
                 nextHasGap = true,
