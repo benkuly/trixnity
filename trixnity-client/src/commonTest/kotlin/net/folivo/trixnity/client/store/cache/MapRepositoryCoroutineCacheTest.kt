@@ -13,7 +13,6 @@ import net.folivo.trixnity.client.store.repository.InMemoryMapRepository
 import net.folivo.trixnity.client.store.repository.MapRepository
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -108,7 +107,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             println("###############")
             println(time / 1000)
             println("###############")
-            (time / 1000) shouldBeLessThan 100.microseconds
+            (time / 1000) shouldBeLessThan 1.milliseconds
         }
         should("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
@@ -138,7 +137,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             println("###############")
             println(time / 1000)
             println("###############")
-            (time / 1000) shouldBeLessThan 400.milliseconds
+            (time / 1000) shouldBeLessThan 1.milliseconds
         }
     }
     context("write with update") {

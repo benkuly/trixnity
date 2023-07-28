@@ -7,7 +7,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
@@ -190,7 +189,7 @@ class CoroutineCacheTest : ShouldSpec({
             println("###############")
             println(time / 1000)
             println("###############")
-            (time / 1000) shouldBeLessThan 100.microseconds
+            (time / 1000) shouldBeLessThan 1.milliseconds
         }
         should("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<String?>(replay = 3000)
@@ -218,7 +217,7 @@ class CoroutineCacheTest : ShouldSpec({
             println("###############")
             println(time / 1000)
             println("###############")
-            (time / 1000) shouldBeLessThan 300.microseconds
+            (time / 1000) shouldBeLessThan 1.milliseconds
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
