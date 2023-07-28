@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.store.TimelineEventRelation
@@ -24,10 +23,10 @@ class RoomTimelineEventRelationRepositoryTest {
         repo = RoomTimelineEventRelationRepository(db)
     }
 
+    fun TimelineEventRelation.key() = TimelineEventRelationKey(relatedEventId, roomId, relationType)
+
     @Test
     fun `Save, get and delete`() = runTest {
-        val key1 = TimelineEventRelationKey(EventId("\$relatedEvent1"), RoomId("room1", "server"))
-        val key2 = TimelineEventRelationKey(EventId("\$relatedEvent2"), RoomId("room1", "server"))
         val relation1 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$1event"),
@@ -38,97 +37,118 @@ class RoomTimelineEventRelationRepositoryTest {
             RoomId("room1", "server"),
             EventId("$2event"),
             RelationType.Unknown("bla"),
-            EventId("\$relatedEvent1")
+            EventId("\$relatedEvent1"),
         )
         val relation3 = TimelineEventRelation(
             RoomId("room1", "server"),
             EventId("$3event"),
-            RelationType.Unknown("bli"),
-            EventId("\$relatedEvent1")
-        )
-        val relation4 = TimelineEventRelation(
-            RoomId("room1", "server"),
-            EventId("$4event"),
-            RelationType.Reference,
-            EventId("\$relatedEvent2")
-        )
-
-        repo.save(
-            key1,
-            RelationType.Reference,
-            setOf(relation1),
-        )
-        repo.save(
-            key1,
             RelationType.Unknown("bla"),
-            setOf(relation2)
+            EventId("\$relatedEvent1"),
+        )
+
+        repo.save(
+            relation1.key(),
+            relation1.eventId,
+            relation1
         )
         repo.save(
-            key1,
-            RelationType.Unknown("bli"),
-            setOf(relation3)
+            relation2.key(),
+            relation2.eventId,
+            relation2
         )
-        repo.save(key2, RelationType.Reference, setOf(relation4))
+        repo.save(
+            relation3.key(),
+            relation3.eventId,
+            relation3
+        )
 
-        repo.get(key1) shouldBe mapOf(
-            RelationType.Reference to setOf(relation1),
-            RelationType.Unknown("bla") to setOf(relation2),
-            RelationType.Unknown("bli") to setOf(relation3)
+        repo.get(relation1.key()) shouldBe mapOf(
+            relation1.eventId to relation1
         )
-        repo.get(key1, RelationType.Unknown("bla")) shouldBe setOf(relation2)
-        repo.get(key2, RelationType.Reference) shouldBe setOf(relation4)
+        repo.get(relation2.key()) shouldBe mapOf(
+            relation2.eventId to relation2,
+            relation3.eventId to relation3,
+        )
+        repo.get(relation1.key(), relation1.eventId) shouldBe relation1
 
-        repo.delete(key1, RelationType.Unknown("bla"))
-        repo.get(key1) shouldBe mapOf(
-            RelationType.Reference to setOf(relation1),
-            RelationType.Unknown("bli") to setOf(relation3)
+        repo.delete(relation2.key(), relation2.eventId)
+        repo.get(relation2.key()) shouldBe mapOf(
+            relation3.eventId to relation3,
         )
-        repo.delete(key2, RelationType.Reference)
-        repo.get(key2, RelationType.Reference) shouldBe null
+
+        repo.delete(relation1.key(), relation1.eventId)
+        repo.get(relation1.key(), relation1.eventId) shouldBe null
     }
 
     @Test
     fun deleteByRoomId() = runTest {
-        val key1 = TimelineEventRelationKey(EventId("\$relatedEvent1"), RoomId("room1", "server"))
-        val key2 = TimelineEventRelationKey(EventId("\$relatedEvent2"), RoomId("room2", "server"))
-        val key3 = TimelineEventRelationKey(EventId("\$relatedEvent3"), RoomId("room1", "server"))
-        val relations1 = setOf(
+        val relation1 =
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
                 RelationType.Reference,
                 EventId("\$relatedEvent1")
-            ), TimelineEventRelation(
-                RoomId("room1", "server"),
-                EventId("$1event"),
-                RelationType.Reference,
-                EventId("\$relatedEvent24")
             )
-        )
-        val relations2 = setOf(
+        val relation2 =
             TimelineEventRelation(
                 RoomId("room2", "server"),
                 EventId("$1event"),
                 RelationType.Reference,
                 EventId("\$relatedEvent2")
             )
-        )
-        val relations3 = setOf(
+        val relation3 =
             TimelineEventRelation(
                 RoomId("room1", "server"),
                 EventId("$1event"),
                 RelationType.Reference,
                 EventId("\$relatedEvent3")
             )
+        val relation4 =
+            TimelineEventRelation(
+                RoomId("room1", "server"),
+                EventId("$1event"),
+                RelationType.Reference,
+                EventId("\$relatedEvent24")
+            )
+
+        repo.save(
+            relation1.key(),
+            relation1.eventId,
+            relation1
+        )
+        repo.save(
+            relation2.key(),
+            relation2.eventId,
+            relation2
+        )
+        repo.save(
+            relation3.key(),
+            relation3.eventId,
+            relation3
+        )
+        repo.save(
+            relation4.key(),
+            relation4.eventId,
+            relation4
         )
 
-        repo.save(key1, RelationType.Reference, relations1)
-        repo.save(key2, RelationType.Reference, relations2)
-        repo.save(key3, RelationType.Reference, relations3)
-
         repo.deleteByRoomId(RoomId("room1", "server"))
-        repo.get(key1).shouldBeEmpty()
-        repo.get(key2) shouldBe mapOf(RelationType.Reference to relations2)
-        repo.get(key3).shouldBeEmpty()
+        repo.get(
+            relation1.key(),
+            relation1.eventId,
+        ) shouldBe null
+        repo.get(
+            relation3.key(),
+            relation3.eventId,
+        ) shouldBe null
+        repo.get(
+            relation4.key(),
+            relation4.eventId,
+        ) shouldBe null
+
+        repo.get(
+            relation2.key(),
+            relation2.eventId,
+        ) shouldBe relation2
     }
 }

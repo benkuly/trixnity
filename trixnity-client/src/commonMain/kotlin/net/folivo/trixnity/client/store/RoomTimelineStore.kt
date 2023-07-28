@@ -16,9 +16,9 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.RelationType
 
 class RoomTimelineStore(
-    private val timelineEventRepository: TimelineEventRepository,
-    private val timelineEventRelationRepository: TimelineEventRelationRepository,
-    private val tm: TransactionManager,
+    timelineEventRepository: TimelineEventRepository,
+    timelineEventRelationRepository: TimelineEventRelationRepository,
+    tm: TransactionManager,
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
 ) : Store {
@@ -71,42 +71,33 @@ class RoomTimelineStore(
     }
 
     fun getRelations(
-        eventId: EventId,
-        roomId: RoomId,
-    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?> =
-        timelineEventRelationCache.readByFirstKey(TimelineEventRelationKey(eventId, roomId))
-
-    fun getRelations(
-        eventId: EventId,
+        relatedEventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-    ): Flow<Set<TimelineEventRelation>?> =
-        timelineEventRelationCache.read(
-            MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(eventId, roomId),
-                relationType,
-            )
+    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> =
+        timelineEventRelationCache.readByFirstKey(
+            TimelineEventRelationKey(relatedEventId, roomId, relationType)
         )
 
     suspend fun addRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.write(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relation.relatedEventId, relation.roomId),
-                relation.relationType
+                TimelineEventRelationKey(relation.relatedEventId, relation.roomId, relation.relationType),
+                relation.eventId
             )
         ) {
-            it.orEmpty() + relation
+            relation
         }
     }
 
     suspend fun deleteRelation(relation: TimelineEventRelation) {
         timelineEventRelationCache.write(
             MapRepositoryCoroutinesCacheKey(
-                TimelineEventRelationKey(relation.relatedEventId, relation.roomId),
-                relation.relationType
+                TimelineEventRelationKey(relation.relatedEventId, relation.roomId, relation.relationType),
+                relation.eventId
             )
         ) {
-            it?.minus(relation)?.ifEmpty { null }
+            null
         }
     }
 }

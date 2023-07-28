@@ -25,7 +25,10 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
-import net.folivo.trixnity.core.model.events.m.*
+import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
+import net.folivo.trixnity.core.model.events.m.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelationType
+import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -288,13 +291,11 @@ class RoomServiceTest : ShouldSpec({
                     room,
                     1,
                     UnsignedRoomEventData.UnsignedMessageEventData(
-                        relations = Relations(
-                            mapOf(
-                                RelationType.Replace to ServerAggregation.Replace(
-                                    replaceTimelineEvent.eventId,
-                                    replaceTimelineEvent.event.sender,
-                                    replaceTimelineEvent.event.originTimestamp
-                                )
+                        relations = mapOf(
+                            RelationType.Replace to ServerAggregation.Replace(
+                                replaceTimelineEvent.eventId,
+                                replaceTimelineEvent.event.sender,
+                                replaceTimelineEvent.event.originTimestamp
                             )
                         )
                     )
@@ -428,8 +429,10 @@ class RoomServiceTest : ShouldSpec({
             roomTimelineStore.get(EventId("1"), room).first() shouldBe null
             roomTimelineStore.get(EventId("2"), room).first() shouldBe null
 
-            roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace).first() shouldBe null
-            roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace).first() shouldBe null
+            roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace)
+                .first()?.values?.first()?.first() shouldBe null
+            roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace)
+                .first()?.values?.first()?.first() shouldBe null
 
             roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldBe null
             roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldBe null

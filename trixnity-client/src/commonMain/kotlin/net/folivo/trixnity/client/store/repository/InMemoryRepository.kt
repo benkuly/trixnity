@@ -4,10 +4,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
@@ -105,7 +105,7 @@ class InMemoryTimelineEventRepository : TimelineEventRepository,
 }
 
 class InMemoryTimelineEventRelationRepository : TimelineEventRelationRepository,
-    InMemoryMapRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>>() {
+    InMemoryMapRepository<TimelineEventRelationKey, EventId, TimelineEventRelation>() {
     override suspend fun deleteByRoomId(roomId: RoomId) {
         content.update { value -> value.filterKeys { it.roomId != roomId } }
     }

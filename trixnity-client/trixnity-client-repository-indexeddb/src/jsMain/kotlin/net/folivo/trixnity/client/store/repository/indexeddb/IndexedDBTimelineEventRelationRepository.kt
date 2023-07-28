@@ -9,35 +9,43 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.RelationType
 
 @Serializable
 internal class IndexedDBTimelineEventRelation(
+    val eventId: String,
     val roomId: String,
-    val relatedEventId: String,
     val relationType: String,
-    val relations: Set<TimelineEventRelation>,
+    val relatedEventId: String,
 )
 
 internal class IndexedDBTimelineEventRelationRepository(
     json: Json
 ) : TimelineEventRelationRepository,
-    IndexedDBMapRepository<TimelineEventRelationKey, RelationType, Set<TimelineEventRelation>, IndexedDBTimelineEventRelation>(
+    IndexedDBMapRepository<TimelineEventRelationKey, EventId, TimelineEventRelation, IndexedDBTimelineEventRelation>(
         objectStoreName = objectStoreName,
-        firstKeyIndexName = "roomId|relatedEventId",
-        firstKeySerializer = { arrayOf(it.roomId.full, it.relatedEventId.full) },
-        secondKeySerializer = { arrayOf(it.name) },
-        secondKeyDestructor = { RelationType.of(it.relationType) },
-        mapToRepresentation = { k1, k2, v ->
+        firstKeyIndexName = "roomId|relatedEventId|relationType",
+        firstKeySerializer = { arrayOf(it.roomId.full, it.relatedEventId.full, it.relationType.name) },
+        secondKeySerializer = { arrayOf(it.full) },
+        secondKeyDestructor = { EventId(it.eventId) },
+        mapToRepresentation = { k1, k2, _ ->
             IndexedDBTimelineEventRelation(
-                k1.roomId.full,
-                k1.relatedEventId.full,
-                k2.name,
-                v
+                eventId = k2.full,
+                roomId = k1.roomId.full,
+                relatedEventId = k1.relatedEventId.full,
+                relationType = k1.relationType.name,
             )
         },
-        mapFromRepresentation = { it.relations },
+        mapFromRepresentation = {
+            TimelineEventRelation(
+                eventId = EventId(it.eventId),
+                roomId = RoomId(it.roomId),
+                relationType = RelationType.of(it.relationType),
+                relatedEventId = EventId(it.relatedEventId)
+            )
+        },
         representationSerializer = IndexedDBTimelineEventRelation.serializer(),
         json = json,
     ) {
@@ -49,9 +57,9 @@ internal class IndexedDBTimelineEventRelationRepository(
                     createIndexedDBTwoDimensionsStoreRepository(
                         database = database,
                         objectStoreName = objectStoreName,
-                        keyPath = KeyPath("roomId", "relatedEventId", "relationType"),
-                        firstKeyIndexName = "roomId|relatedEventId",
-                        firstKeyIndexKeyPath = KeyPath("roomId", "relatedEventId"),
+                        keyPath = KeyPath("roomId", "relatedEventId", "relationType", "eventId"),
+                        firstKeyIndexName = "roomId|relatedEventId|relationType",
+                        firstKeyIndexKeyPath = KeyPath("roomId", "relatedEventId", "relationType"),
                     ) {
                         createIndex("roomId", KeyPath("roomId"), unique = false)
                     }

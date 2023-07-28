@@ -5,6 +5,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
+import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.replace
 
 val TimelineEvent.isEncrypted: Boolean

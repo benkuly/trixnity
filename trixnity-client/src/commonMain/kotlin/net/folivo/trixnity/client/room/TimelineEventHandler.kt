@@ -16,7 +16,6 @@ import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.subscribe
@@ -330,111 +329,32 @@ class TimelineEventHandlerImpl(
     internal suspend fun addRelation(event: Event<MessageEventContent>) {
         if (event is Event.MessageEvent) {
             val relatesTo = event.content.relatesTo
-            val relationType = relatesTo?.relationType
-            val relatedEventId = relatesTo?.eventId
-            if (relatesTo != null && relationType != null && relatedEventId != null) {
+            if (relatesTo != null) {
                 log.debug { "add relation to ${relatesTo.eventId}" }
                 roomTimelineStore.addRelation(
                     TimelineEventRelation(
                         roomId = event.roomId,
                         eventId = event.id,
-                        relationType = relationType,
-                        relatedEventId = relatedEventId
+                        relationType = relatesTo.relationType,
+                        relatedEventId = relatesTo.eventId,
                     )
                 )
-                when (relatesTo) {
-                    is RelatesTo.Replace -> {
-                        // TODO should check same event type, but this would mean, that we must decrypt it
-                        log.debug { "set replace relation for $relatedEventId in ${event.roomId}" }
-                        roomTimelineStore.update(relatedEventId, event.roomId) { oldTimelineEvent ->
-                            val oldEvent = oldTimelineEvent?.event
-                            if (oldEvent is Event.MessageEvent && oldEvent.sender == event.sender) {
-                                val oldAggregations = oldEvent.unsigned?.relations.orEmpty()
-                                if ((oldAggregations.replace?.originTimestamp ?: 0) < event.originTimestamp) {
-                                    val newAggregations = oldAggregations +
-                                            ServerAggregation.Replace(
-                                                event.id,
-                                                event.sender,
-                                                event.originTimestamp
-                                            )
-                                    oldTimelineEvent.copy(
-                                        event = oldEvent.copy(
-                                            unsigned = oldEvent.unsigned?.copy(relations = newAggregations)
-                                                ?: UnsignedRoomEventData.UnsignedMessageEventData(relations = newAggregations)
-                                        )
-                                    )
-                                } else oldTimelineEvent
-                            } else oldTimelineEvent
-                        }
-                    }
-
-                    is RelatesTo.Thread -> {
-                        log.debug { "thread aggregations are not implemented yet" }
-                    }
-
-                    else -> {}
-                }
             }
         }
     }
 
     internal suspend fun redactRelation(redactedEvent: Event.MessageEvent<*>) {
         val relatesTo = redactedEvent.content.relatesTo
-        val relationType = relatesTo?.relationType
-        val relatedEventId = relatesTo?.eventId
-        if (relatesTo != null && relationType != null && relatedEventId != null) {
+        if (relatesTo != null) {
             log.debug { "delete relation from ${redactedEvent.id}" }
             roomTimelineStore.deleteRelation(
                 TimelineEventRelation(
                     roomId = redactedEvent.roomId,
                     eventId = redactedEvent.id,
-                    relationType = relationType,
-                    relatedEventId = relatedEventId
+                    relationType = relatesTo.relationType,
+                    relatedEventId = relatesTo.eventId,
                 )
             )
-            when (relatesTo) {
-                is RelatesTo.Replace -> {
-                    roomTimelineStore.update(relatedEventId, redactedEvent.roomId) { relatedEvent ->
-                        val oldEvent = relatedEvent?.event
-                        if (oldEvent is Event.MessageEvent) {
-                            val oldAggregations = oldEvent.unsigned?.relations.orEmpty()
-                            val oldReplaceAggregation = oldAggregations.replace
-                            if (oldReplaceAggregation != null && oldReplaceAggregation.eventId == redactedEvent.id) {
-                                log.debug { "a replace aggregation for $relatedEventId must be recalculated due to a redaction" }
-                                val newReplaceAggregation = roomTimelineStore.getRelations(
-                                    relatedEventId,
-                                    redactedEvent.roomId,
-                                    RelationType.Replace
-                                ).first()
-                                    ?.mapNotNull { roomTimelineStore.get(it.eventId, it.roomId).first() }
-                                    ?.filter { it.event.sender == relatedEvent.event.sender }
-                                    ?.maxByOrNull { it.event.originTimestamp }
-                                    ?.let {
-                                        ServerAggregation.Replace(
-                                            it.eventId,
-                                            it.event.sender,
-                                            it.event.originTimestamp
-                                        )
-                                    }
-                                log.trace { "new replace aggregation: $newReplaceAggregation" }
-                                val newAggregations = (oldAggregations - oldReplaceAggregation) + newReplaceAggregation
-                                relatedEvent.copy(
-                                    event = oldEvent.copy(
-                                        unsigned = oldEvent.unsigned?.copy(relations = newAggregations)
-                                            ?: UnsignedRoomEventData.UnsignedMessageEventData(relations = newAggregations)
-                                    )
-                                )
-                            } else relatedEvent
-                        } else relatedEvent
-                    }
-                }
-
-                is RelatesTo.Thread -> {
-                    log.debug { "thread aggregations are not implemented yet" }
-                }
-
-                else -> {}
-            }
         }
     }
 }

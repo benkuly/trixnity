@@ -30,7 +30,6 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
-import net.folivo.trixnity.core.model.events.m.replace
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
@@ -137,13 +136,8 @@ interface RoomService {
     fun getTimelineEventRelations(
         roomId: RoomId,
         eventId: EventId,
-    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?>
-
-    fun getTimelineEventRelations(
-        roomId: RoomId,
-        eventId: EventId,
         relationType: RelationType,
-    ): Flow<Set<TimelineEventRelation>?>
+    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?>
 
     /**
      * Puts a message to the outbox.
@@ -246,28 +240,30 @@ class RoomServiceImpl(
             .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent) {
-                    val replacedBy = event.unsigned?.relations?.replace
-                    if (replacedBy != null) {
-                        emitAll(getTimelineEvent(roomId, replacedBy.eventId)
-                            .map { replacedByTimelineEvent ->
-                                val newContent =
-                                    replacedByTimelineEvent?.content
-                                        ?.map { content ->
-                                            if (content is MessageEventContent) {
-                                                val relatesTo = content.relatesTo
-                                                if (relatesTo is RelatesTo.Replace) relatesTo.newContent
-                                                else null
-                                            } else null
-                                        }
-                                        ?.mapCatching {
-                                            if (it == null) {
-                                                log.warn { "getTimelineEvent: could not find replacing event content for $eventId in $roomId" }
-                                                throw IllegalStateException("replacing event did not contain replace")
-                                            } else it
-                                        } ?: timelineEvent.content
-                                timelineEvent.copy(content = newContent)
-                            })
-                    } else emit(timelineEvent)
+                    val replacedByFlow = getTimelineEventReplaceAggregation(roomId, eventId).map { it.replacedBy }
+                    emitAll(replacedByFlow.flatMapLatest { replacedBy ->
+                        if (replacedBy != null) {
+                            getTimelineEvent(roomId, replacedBy)
+                                .map { replacedByTimelineEvent ->
+                                    val newContent =
+                                        replacedByTimelineEvent?.content
+                                            ?.map { content ->
+                                                if (content is MessageEventContent) {
+                                                    val relatesTo = content.relatesTo
+                                                    if (relatesTo is RelatesTo.Replace) relatesTo.newContent
+                                                    else null
+                                                } else null
+                                            }
+                                            ?.mapCatching {
+                                                if (it == null) {
+                                                    log.warn { "getTimelineEvent: could not find replacing event content for $eventId in $roomId" }
+                                                    throw IllegalStateException("replacing event did not contain replace")
+                                                } else it
+                                            } ?: timelineEvent.content
+                                    timelineEvent.copy(content = newContent)
+                                }
+                        } else flowOf(timelineEvent)
+                    })
                 } else emit(timelineEvent)
             }
             .also { timelineEventFlow ->
@@ -565,14 +561,8 @@ class RoomServiceImpl(
     override fun getTimelineEventRelations(
         roomId: RoomId,
         eventId: EventId,
-    ): Flow<Map<RelationType, Flow<Set<TimelineEventRelation>?>>?> = roomTimelineStore.getRelations(eventId, roomId)
-
-    override fun getTimelineEventRelations(
-        roomId: RoomId,
-        eventId: EventId,
         relationType: RelationType,
-    ): Flow<Set<TimelineEventRelation>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
-
+    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> = roomTimelineStore.getRelations(eventId, roomId, relationType)
 
     override suspend fun sendMessage(
         roomId: RoomId,
