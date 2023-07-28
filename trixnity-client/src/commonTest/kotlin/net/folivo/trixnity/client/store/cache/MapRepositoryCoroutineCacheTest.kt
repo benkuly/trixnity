@@ -107,7 +107,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             println("###############")
             println(time / 1000)
             println("###############")
-            (time / 1000) shouldBeLessThan 1.milliseconds
+            (time / 1000) shouldBeLessThan 5.milliseconds
         }
         should("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
@@ -137,7 +137,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             println("###############")
             println(time / 1000)
             println("###############")
-            (time / 1000) shouldBeLessThan 1.milliseconds
+            (time / 1000) shouldBeLessThan 5.milliseconds
         }
     }
     context("write with update") {

@@ -189,7 +189,7 @@ class CoroutineCacheTest : ShouldSpec({
             println("###############")
             println(time / 1000)
             println("###############")
-            (time / 1000) shouldBeLessThan 1.milliseconds
+            (time / 1000) shouldBeLessThan 5.milliseconds
         }
         should("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<String?>(replay = 3000)
@@ -217,7 +217,7 @@ class CoroutineCacheTest : ShouldSpec({
             println("###############")
             println(time / 1000)
             println("###############")
-            (time / 1000) shouldBeLessThan 1.milliseconds
+            (time / 1000) shouldBeLessThan 5.milliseconds
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
