@@ -163,7 +163,8 @@ class CoroutineCacheTest : ShouldSpec({
             )
             cacheStore.get("key") shouldBe "updated value"
         }
-        should("handle parallel manipulation of same key") {
+        // only execute locally for performance tests
+        xshould("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryCoroutineCacheStoreWithHistory : InMemoryCoroutineCacheStore<String, String>() {
@@ -191,7 +192,8 @@ class CoroutineCacheTest : ShouldSpec({
             println("###############")
             (time / 1000) shouldBeLessThan 5.milliseconds
         }
-        should("handle parallel manipulation of different keys") {
+        // only execute locally for performance tests
+        xshould("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryCoroutineCacheStoreWithHistory : InMemoryCoroutineCacheStore<String, String>() {

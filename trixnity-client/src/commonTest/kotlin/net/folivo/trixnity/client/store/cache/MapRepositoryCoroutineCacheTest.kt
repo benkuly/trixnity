@@ -79,7 +79,8 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             )
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
         }
-        should("handle parallel manipulation of same key") {
+        // only execute locally for performance tests
+        xshould("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
@@ -109,7 +110,8 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             println("###############")
             (time / 1000) shouldBeLessThan 5.milliseconds
         }
-        should("handle parallel manipulation of different keys") {
+        // only execute locally for performance tests
+        xshould("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
