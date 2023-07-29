@@ -221,7 +221,7 @@ class CoroutineCacheTest : ShouldSpec({
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
-                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 20.milliseconds)
+                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 10.milliseconds)
                 cut.write(
                     key = "key",
                     updater = { "updated value" },
@@ -232,6 +232,30 @@ class CoroutineCacheTest : ShouldSpec({
                     key = "key",
                     updater = {
                         it shouldBe null
+                        "updated value"
+                    },
+                )
+            }
+            should("reset expireDuration on use") {
+                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 100.milliseconds)
+                cut.write(
+                    key = "key",
+                    updater = { "updated value 1" },
+                )
+                delay(60)
+                cut.write(
+                    key = "key",
+                    updater = {
+                        it shouldBe "updated value 1"
+                        "updated value 2"
+                    },
+                )
+                delay(60)
+                cacheStore.persist("key", null)
+                cut.write(
+                    key = "key",
+                    updater = {
+                        it shouldBe "updated value 2"
                         "updated value"
                     },
                 )

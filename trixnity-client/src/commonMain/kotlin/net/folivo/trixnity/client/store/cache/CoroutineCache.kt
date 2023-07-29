@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.cache
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -13,6 +14,7 @@ private val log = KotlinLogging.logger { }
 private data class CoroutineCacheValue<T>(
     val value: MutableStateFlow<T>,
     val persisted: MutableStateFlow<Set<StateFlow<Boolean>>>,
+    val resetExpireDuration: MutableSharedFlow<Unit>,
 )
 
 /**
@@ -144,7 +146,7 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
         get: suspend () -> V?,
         persist: suspend (newValue: V?) -> StateFlow<Boolean>?,
     ): StateFlow<V?> {
-        var removeFromCacheJobParameter: RemoveFromCacheJobParameter?
+        var removeFromCacheJobParameter: RemoveFromCacheJobParameter? = null
         val result = _values.update(key) { existingCacheValue ->
             if (existingCacheValue == null) {
                 log.trace { "$name: no cache hit for key $key" }
@@ -154,13 +156,17 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
                 val persistedFlows = MutableStateFlow(setOfNotNull(persisted))
                 val newStateFlowValue: MutableStateFlow<V?> = MutableStateFlow(newValue)
                 val subscriptionCountFlow = newStateFlowValue.subscriptionCount
+                val resetExpireDuration =
+                    MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
                 removeFromCacheJobParameter = RemoveFromCacheJobParameter(
                     subscriptionCount = subscriptionCountFlow,
-                    persisted = persistedFlows
+                    persisted = persistedFlows,
+                    resetExpireDuration = resetExpireDuration,
                 )
                 val newCacheValue = CoroutineCacheValue(
                     value = newStateFlowValue,
                     persisted = persistedFlows,
+                    resetExpireDuration = resetExpireDuration,
                 )
                 newCacheValue
             } else {
@@ -170,12 +176,12 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
                         existingCacheValue.persisted.update { it + persisted }
                     }
                 }
-                removeFromCacheJobParameter = null
                 existingCacheValue
             }
         }
         checkNotNull(result)
         removeFromCacheJobParameter?.also { launchRemoveFromCacheJob(key, it) }
+        result.resetExpireDuration.emit(Unit)
         return result.value
     }
 
@@ -183,7 +189,8 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
 
     private data class RemoveFromCacheJobParameter(
         val subscriptionCount: StateFlow<Int>,
-        val persisted: MutableStateFlow<Set<StateFlow<Boolean>>>,
+        val persisted: StateFlow<Set<StateFlow<Boolean>>>,
+        val resetExpireDuration: SharedFlow<Unit>,
     )
 
     private fun launchRemoveFromCacheJob(
@@ -192,9 +199,10 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
     ) = cacheScope.launch {
         if (infiniteCache.not())
             combine(
+                parameters.resetExpireDuration,
                 parameters.subscriptionCount,
-                parameters.persisted
-            ) { subscriptionCount, persisted ->
+                parameters.persisted,
+            ) { _, subscriptionCount, persisted ->
                 subscriptionCount to persisted
             }.collectLatest { (subscriptionCount, persisted) ->
                 delay(expireDuration)
