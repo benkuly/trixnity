@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.store.cache
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -11,8 +13,12 @@ import net.folivo.trixnity.client.store.repository.InMemoryMapRepository
 import net.folivo.trixnity.client.store.repository.MapRepository
 import net.folivo.trixnity.client.store.transaction.TransactionManager
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
+@OptIn(ExperimentalTime::class)
 class MapRepositoryCoroutineCacheTest : ShouldSpec({
     timeout = 5_000
     lateinit var repository: MapRepository<String, String, String>
@@ -72,6 +78,68 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
                 "secondKey2" to "value2"
             )
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "value2")
+        }
+        // only execute locally for performance tests
+        xshould("handle parallel manipulation of same key") {
+            val database = MutableSharedFlow<String?>(replay = 3000)
+
+            class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
+                override suspend fun save(firstKey: String, secondKey: String, value: String) {
+                    database.emit(value)
+                    super.save(firstKey, secondKey, value)
+                }
+
+                override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
+            }
+            cut = MapRepositoryCoroutineCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
+            val time = coroutineScope {
+                (0..999).map { i ->
+                    async {
+                        measureTimedValue {
+                            cut.write(
+                                key = MapRepositoryCoroutinesCacheKey("key", "key"),
+                                updater = { "$i" },
+                            )
+                        }.duration
+                    }
+                }.awaitAll().reduce { acc, duration -> acc + duration }
+            }
+            database.replayCache shouldContainAll (0..999).map { it.toString() }
+            println("###############")
+            println(time / 1000)
+            println("###############")
+            (time / 1000) shouldBeLessThan 5.milliseconds
+        }
+        // only execute locally for performance tests
+        xshould("handle parallel manipulation of different keys") {
+            val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
+
+            class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
+                override suspend fun save(firstKey: String, secondKey: String, value: String) {
+                    database.emit(firstKey to secondKey)
+                    super.save(firstKey, secondKey, value)
+                }
+
+                override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
+            }
+            cut = MapRepositoryCoroutineCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
+            val time = coroutineScope {
+                (0..999).map { i ->
+                    async {
+                        measureTimedValue {
+                            cut.write(
+                                key = MapRepositoryCoroutinesCacheKey("key", "$i"),
+                                updater = { "value" },
+                            )
+                        }.duration
+                    }
+                }.awaitAll().reduce { acc, duration -> acc + duration }
+            }
+            database.replayCache shouldContainAll (0..999).map { "key" to "$it" }
+            println("###############")
+            println(time / 1000)
+            println("###############")
+            (time / 1000) shouldBeLessThan 5.milliseconds
         }
     }
     context("write with update") {
