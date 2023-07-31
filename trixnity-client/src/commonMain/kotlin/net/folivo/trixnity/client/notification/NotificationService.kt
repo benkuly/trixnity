@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.notification
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -27,8 +27,6 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
-import net.folivo.trixnity.core.model.push.PushRuleKind
-import net.folivo.trixnity.core.model.push.PushRuleKind.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -60,7 +58,7 @@ class NotificationServiceImpl(
 
     private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 
-    @OptIn(FlowPreview::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getNotifications(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
@@ -76,9 +74,11 @@ class NotificationServiceImpl(
             globalAccountDataStore.get<PushRulesEventContent>().map { event ->
                 event?.content?.global?.let { globalRuleSet ->
                     log.trace { "global rule set: $globalRuleSet" }
-                    setOf(OVERRIDE, CONTENT, ROOM, SENDER, UNDERRIDE)
-                        .mapNotNull { kind -> globalRuleSet[kind]?.map { rule -> kind to rule } }
-                        .fold(listOf<Pair<PushRuleKind, PushRule>>()) { old, new -> old + new }
+                    globalRuleSet.override.orEmpty() +
+                            globalRuleSet.content.orEmpty() +
+                            globalRuleSet.room.orEmpty() +
+                            globalRuleSet.sender.orEmpty() +
+                            globalRuleSet.content.orEmpty()
                 } ?: listOf()
             }.stateIn(this)
         val inviteEvents = syncResponseFlow
@@ -133,26 +133,33 @@ class NotificationServiceImpl(
     @OptIn(ExperimentalSerializationApi::class)
     private suspend fun evaluatePushRules(
         event: Event<*>,
-        allRules: List<Pair<PushRuleKind, PushRule>>,
+        allRules: List<PushRule>,
     ): Notification? {
         log.trace { "evaluate push rules for event: ${event.getEventId()}" }
         val eventJson = lazy {
             try {
                 json.serializersModule.getContextual(Event::class)?.let {
-                    json.encodeToJsonElement(it, event) // TODO could be optimized
+                    json.encodeToJsonElement(it, event)
                 }?.jsonObject
             } catch (exception: Exception) {
                 log.warn { "could not serialize event" }
                 null
             }
         }
-        val rule = allRules.find { (kind, pushRule) ->
-            val pattern = pushRule.pattern
-            pushRule.enabled
-                    && (pushRule.conditions.orEmpty().all { matchPushCondition(event, eventJson, it) })
-                    && (if (pattern != null) bodyContainsPattern(event, pattern) else true)
-                    && (if (kind == ROOM) pushRule.ruleId == event.getRoomId()?.full else true)
-        }?.second
+        val rule = allRules
+            .filter { it.enabled }
+            .find { pushRule ->
+                when (pushRule) {
+                    is PushRule.Override -> pushRule.conditions.orEmpty()
+                        .all { matchPushCondition(event, eventJson, it) }
+
+                    is PushRule.Content -> bodyContainsPattern(event, pushRule.pattern)
+                    is PushRule.Room -> pushRule.roomId == event.getRoomId()
+                    is PushRule.Sender -> pushRule.userId == event.getSender()
+                    is PushRule.Underride -> pushRule.conditions.orEmpty()
+                        .all { matchPushCondition(event, eventJson, it) }
+                }
+            }
         log.trace { "event ${event.getEventId()}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
         return rule?.actions?.asFlow()
             ?.transform { pushAction ->
@@ -296,8 +303,8 @@ class NotificationServiceImpl(
                 when (char) {
                     '*' -> append(".*")
                     '?' -> append(".")
-                    '.' -> append("\\.")
-                    '\\' -> append("\\\\")
+                    '.' -> append("""\.""")
+                    '\\' -> append("""\\""")
                     else -> append(char)
                 }
             }

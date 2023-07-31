@@ -17,10 +17,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.push.PushAction
-import net.folivo.trixnity.core.model.push.PushCondition
-import net.folivo.trixnity.core.model.push.PushRule
-import net.folivo.trixnity.core.model.push.PushRuleKind
+import net.folivo.trixnity.core.model.push.*
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
@@ -230,9 +227,9 @@ class PushRoutesTest : TestsWithMocks() {
         everySuspending { handlerMock.getPushRules(isAny()) }
             .returns(
                 GetPushRules.Response(
-                    global = mapOf(
-                        PushRuleKind.CONTENT to listOf(
-                            PushRule(
+                    PushRuleSet(
+                        content = listOf(
+                            PushRule.Content(
                                 actions = setOf(
                                     PushAction.Notify,
                                     PushAction.SetSoundTweak("default"),
@@ -244,15 +241,15 @@ class PushRoutesTest : TestsWithMocks() {
                                 ruleId = ".m.rule.contains_user_name"
                             )
                         ),
-                        PushRuleKind.OVERRIDE to listOf(
-                            PushRule(
+                        override = listOf(
+                            PushRule.Override(
                                 actions = setOf(),
                                 conditions = setOf(),
                                 default = true,
                                 enabled = false,
                                 ruleId = ".m.rule.master"
                             ),
-                            PushRule(
+                            PushRule.Override(
                                 actions = setOf(),
                                 conditions = setOf(PushCondition.EventMatch("content.msgtype", "m.notice")),
                                 default = true,
@@ -260,10 +257,8 @@ class PushRoutesTest : TestsWithMocks() {
                                 ruleId = ".m.rule.suppress_notices"
                             )
                         ),
-                        PushRuleKind.ROOM to listOf(),
-                        PushRuleKind.SENDER to listOf(),
-                        PushRuleKind.UNDERRIDE to listOf(
-                            PushRule(
+                        underride = listOf(
+                            PushRule.Underride(
                                 actions = setOf(
                                     PushAction.Notify,
                                     PushAction.SetSoundTweak("ring"),
@@ -274,7 +269,7 @@ class PushRoutesTest : TestsWithMocks() {
                                 enabled = true,
                                 ruleId = ".m.rule.call"
                             ),
-                            PushRule(
+                            PushRule.Underride(
                                 actions = setOf(
                                     PushAction.Notify,
                                     PushAction.SetSoundTweak("default"),
@@ -285,7 +280,7 @@ class PushRoutesTest : TestsWithMocks() {
                                 enabled = true,
                                 ruleId = ".m.rule.contains_display_name"
                             ),
-                            PushRule(
+                            PushRule.Underride(
                                 actions = setOf(
                                     PushAction.Notify,
                                     PushAction.SetSoundTweak("default"),
@@ -299,7 +294,7 @@ class PushRoutesTest : TestsWithMocks() {
                                 enabled = true,
                                 ruleId = ".m.rule.room_one_to_one"
                             ),
-                            PushRule(
+                            PushRule.Underride(
                                 actions = setOf(
                                     PushAction.Notify,
                                     PushAction.SetSoundTweak("default"),
@@ -314,14 +309,14 @@ class PushRoutesTest : TestsWithMocks() {
                                 enabled = true,
                                 ruleId = ".m.rule.invite_for_me"
                             ),
-                            PushRule(
+                            PushRule.Underride(
                                 actions = setOf(PushAction.Notify, PushAction.SetHighlightTweak(false)),
                                 conditions = setOf(PushCondition.EventMatch("type", "m.room.member")),
                                 default = true,
                                 enabled = true,
                                 ruleId = ".m.rule.member_event"
                             ),
-                            PushRule(
+                            PushRule.Underride(
                                 actions = setOf(PushAction.Notify, PushAction.SetHighlightTweak(false)),
                                 conditions = setOf(PushCondition.EventMatch("type", "m.room.message")),
                                 default = true,
@@ -340,8 +335,33 @@ class PushRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """
                 {
                   "global": {
+                    "override": [
+                      {
+                        "rule_id": ".m.rule.master",
+                        "default": true,
+                        "enabled": false,
+                        "actions": [],
+                        "conditions": []
+                      },
+                      {
+                        "rule_id": ".m.rule.suppress_notices",
+                        "default": true,
+                        "enabled": true,
+                        "actions": [],
+                        "conditions": [
+                          {
+                            "key": "content.msgtype",
+                            "pattern": "m.notice",
+                            "kind": "event_match"
+                          }
+                        ]
+                      }
+                    ],
                     "content": [
                       {
+                        "rule_id": ".m.rule.contains_user_name",
+                        "default": true,
+                        "enabled": true,
                         "actions": [
                           "notify",
                           {
@@ -352,40 +372,14 @@ class PushRoutesTest : TestsWithMocks() {
                             "set_tweak": "highlight"
                           }
                         ],
-                        "default": true,
-                        "enabled": true,
-                        "pattern": "alice",
-                        "rule_id": ".m.rule.contains_user_name"
+                        "pattern": "alice"
                       }
                     ],
-                    "override": [
-                      {
-                        "actions": [
-                        ],
-                        "conditions": [],
-                        "default": true,
-                        "enabled": false,
-                        "rule_id": ".m.rule.master"
-                      },
-                      {
-                        "actions": [
-                        ],
-                        "conditions": [
-                          {
-                            "key": "content.msgtype",
-                            "pattern": "m.notice",
-                            "kind": "event_match"
-                          }
-                        ],
-                        "default": true,
-                        "enabled": true,
-                        "rule_id": ".m.rule.suppress_notices"
-                      }
-                    ],
-                    "room": [],
-                    "sender": [],
                     "underride": [
                       {
+                        "rule_id": ".m.rule.call",
+                        "default": true,
+                        "enabled": true,
                         "actions": [
                           "notify",
                           {
@@ -403,12 +397,12 @@ class PushRoutesTest : TestsWithMocks() {
                             "pattern": "m.call.invite",
                             "kind": "event_match"
                           }
-                        ],
-                        "default": true,
-                        "enabled": true,
-                        "rule_id": ".m.rule.call"
+                        ]
                       },
                       {
+                        "rule_id": ".m.rule.contains_display_name",
+                        "default": true,
+                        "enabled": true,
                         "actions": [
                           "notify",
                           {
@@ -423,12 +417,12 @@ class PushRoutesTest : TestsWithMocks() {
                           {
                             "kind": "contains_display_name"
                           }
-                        ],
-                        "default": true,
-                        "enabled": true,
-                        "rule_id": ".m.rule.contains_display_name"
+                        ]
                       },
                       {
+                        "rule_id": ".m.rule.room_one_to_one",
+                        "default": true,
+                        "enabled": true,
                         "actions": [
                           "notify",
                           {
@@ -450,12 +444,12 @@ class PushRoutesTest : TestsWithMocks() {
                             "pattern": "m.room.message",
                             "kind": "event_match"
                           }
-                        ],
-                        "default": true,
-                        "enabled": true,
-                        "rule_id": ".m.rule.room_one_to_one"
+                        ]
                       },
                       {
+                        "rule_id": ".m.rule.invite_for_me",
+                        "default": true,
+                        "enabled": true,
                         "actions": [
                           "notify",
                           {
@@ -483,12 +477,12 @@ class PushRoutesTest : TestsWithMocks() {
                             "pattern": "@alice:example.com",
                             "kind": "event_match"
                           }
-                        ],
-                        "default": true,
-                        "enabled": true,
-                        "rule_id": ".m.rule.invite_for_me"
+                        ]
                       },
                       {
+                        "rule_id": ".m.rule.member_event",
+                        "default": true,
+                        "enabled": true,
                         "actions": [
                           "notify",
                           {
@@ -502,12 +496,12 @@ class PushRoutesTest : TestsWithMocks() {
                             "pattern": "m.room.member",
                             "kind": "event_match"
                           }
-                        ],
-                        "default": true,
-                        "enabled": true,
-                        "rule_id": ".m.rule.member_event"
+                        ]
                       },
                       {
+                        "rule_id": ".m.rule.message",
+                        "default": true,
+                        "enabled": true,
                         "actions": [
                           "notify",
                           {
@@ -521,10 +515,7 @@ class PushRoutesTest : TestsWithMocks() {
                             "pattern": "m.room.message",
                             "kind": "event_match"
                           }
-                        ],
-                        "default": true,
-                        "enabled": true,
-                        "rule_id": ".m.rule.message"
+                        ]
                       }
                     ]
                   }
@@ -541,7 +532,7 @@ class PushRoutesTest : TestsWithMocks() {
         initCut()
         everySuspending { handlerMock.getPushRule(isAny()) }
             .returns(
-                PushRule(
+                PushRule.Content(
                     actions = setOf(PushAction.Notify),
                     default = false,
                     enabled = true,
@@ -556,14 +547,14 @@ class PushRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                {
+                  "rule_id":"nocake",
+                  "default":false,
+                  "enabled":true,
                   "actions":[
                     "notify"
                   ],
-                  "default":false,
-                  "enabled":true,
-                  "pattern":"cake*lie",
-                  "rule_id":"nocake"
-                }
+                  "pattern":"cake*lie"
+               }
             """.trimToFlatJson()
         }
         verifyWithSuspend {
