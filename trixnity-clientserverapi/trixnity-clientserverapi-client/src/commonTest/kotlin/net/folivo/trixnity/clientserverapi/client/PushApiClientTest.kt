@@ -2,7 +2,6 @@ package net.folivo.trixnity.clientserverapi.client
 
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -16,11 +15,11 @@ import net.folivo.trixnity.core.model.push.PushAction.*
 import net.folivo.trixnity.core.model.push.PushCondition.*
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.PushRuleKind
+import net.folivo.trixnity.core.model.push.PushRuleSet
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class PushApiClientTest {
 
     @Test
@@ -211,24 +210,6 @@ class PushApiClientTest {
         val response = """
             {
               "global": {
-                "content": [
-                  {
-                    "actions": [
-                      "notify",
-                      {
-                        "set_tweak": "sound",
-                        "value": "default"
-                      },
-                      {
-                        "set_tweak": "highlight"
-                      }
-                    ],
-                    "default": true,
-                    "enabled": true,
-                    "pattern": "alice",
-                    "rule_id": ".m.rule.contains_user_name"
-                  }
-                ],
                 "override": [
                   {
                     "actions": [
@@ -253,8 +234,24 @@ class PushApiClientTest {
                     "rule_id": ".m.rule.suppress_notices"
                   }
                 ],
-                "room": [],
-                "sender": [],
+                "content": [
+                  {
+                    "actions": [
+                      "notify",
+                      {
+                        "set_tweak": "sound",
+                        "value": "default"
+                      },
+                      {
+                        "set_tweak": "highlight"
+                      }
+                    ],
+                    "default": true,
+                    "enabled": true,
+                    "pattern": "alice",
+                    "rule_id": ".m.rule.contains_user_name"
+                  }
+                ],
                 "underride": [
                   {
                     "actions": [
@@ -420,25 +417,29 @@ class PushApiClientTest {
         val result = matrixRestClient.push.getPushRules().getOrThrow()
         assertEquals(
             GetPushRules.Response(
-                global = mapOf(
-                    PushRuleKind.CONTENT to listOf(
-                        PushRule(
-                            actions = setOf(Notify, SetSoundTweak("default"), SetHighlightTweak()),
+                global = PushRuleSet(
+                    content = listOf(
+                        PushRule.Content(
+                            actions = setOf(
+                                Notify,
+                                SetSoundTweak("default"),
+                                SetHighlightTweak()
+                            ),
                             default = true,
                             enabled = true,
                             pattern = "alice",
                             ruleId = ".m.rule.contains_user_name"
                         )
                     ),
-                    PushRuleKind.OVERRIDE to listOf(
-                        PushRule(
+                    override = listOf(
+                        PushRule.Override(
                             actions = setOf(),
                             conditions = setOf(),
                             default = true,
                             enabled = false,
                             ruleId = ".m.rule.master"
                         ),
-                        PushRule(
+                        PushRule.Override(
                             actions = setOf(),
                             conditions = setOf(EventMatch("content.msgtype", "m.notice")),
                             default = true,
@@ -446,32 +447,49 @@ class PushApiClientTest {
                             ruleId = ".m.rule.suppress_notices"
                         )
                     ),
-                    PushRuleKind.ROOM to listOf(),
-                    PushRuleKind.SENDER to listOf(),
-                    PushRuleKind.UNDERRIDE to listOf(
-                        PushRule(
-                            actions = setOf(Notify, SetSoundTweak("ring"), SetHighlightTweak(false)),
+                    underride = listOf(
+                        PushRule.Underride(
+                            actions = setOf(
+                                Notify,
+                                SetSoundTweak("ring"),
+                                SetHighlightTweak(false)
+                            ),
                             conditions = setOf(EventMatch("type", "m.call.invite")),
                             default = true,
                             enabled = true,
                             ruleId = ".m.rule.call"
                         ),
-                        PushRule(
-                            actions = setOf(Notify, SetSoundTweak("default"), SetHighlightTweak()),
+                        PushRule.Underride(
+                            actions = setOf(
+                                Notify,
+                                SetSoundTweak("default"),
+                                SetHighlightTweak()
+                            ),
                             conditions = setOf(ContainsDisplayName),
                             default = true,
                             enabled = true,
                             ruleId = ".m.rule.contains_display_name"
                         ),
-                        PushRule(
-                            actions = setOf(Notify, SetSoundTweak("default"), SetHighlightTweak(false)),
-                            conditions = setOf(RoomMemberCount("2"), EventMatch("type", "m.room.message")),
+                        PushRule.Underride(
+                            actions = setOf(
+                                Notify,
+                                SetSoundTweak("default"),
+                                SetHighlightTweak(false)
+                            ),
+                            conditions = setOf(
+                                RoomMemberCount("2"),
+                                EventMatch("type", "m.room.message")
+                            ),
                             default = true,
                             enabled = true,
                             ruleId = ".m.rule.room_one_to_one"
                         ),
-                        PushRule(
-                            actions = setOf(Notify, SetSoundTweak("default"), SetHighlightTweak(false)),
+                        PushRule.Underride(
+                            actions = setOf(
+                                Notify,
+                                SetSoundTweak("default"),
+                                SetHighlightTweak(false)
+                            ),
                             conditions = setOf(
                                 EventMatch("type", "m.room.member"),
                                 EventMatch("content.membership", "invite"),
@@ -481,14 +499,14 @@ class PushApiClientTest {
                             enabled = true,
                             ruleId = ".m.rule.invite_for_me"
                         ),
-                        PushRule(
+                        PushRule.Underride(
                             actions = setOf(Notify, SetHighlightTweak(false)),
                             conditions = setOf(EventMatch("type", "m.room.member")),
                             default = true,
                             enabled = true,
                             ruleId = ".m.rule.member_event"
                         ),
-                        PushRule(
+                        PushRule.Underride(
                             actions = setOf(Notify, SetHighlightTweak(false)),
                             conditions = setOf(EventMatch("type", "m.room.message")),
                             default = true,
@@ -533,7 +551,7 @@ class PushApiClientTest {
             })
         val result = matrixRestClient.push.getPushRule("scope", PushRuleKind.CONTENT, "ruleId").getOrThrow()
         assertEquals(
-            PushRule(
+            PushRule.Content(
                 actions = setOf(Notify),
                 default = false,
                 enabled = true,

@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.push.PushRules
+import net.folivo.trixnity.core.model.push.PushRuleSet
 
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#get_matrixclientv3pushrules">matrix spec</a>
@@ -20,6 +20,6 @@ data class GetPushRules(
 ) : MatrixEndpoint<Unit, GetPushRules.Response> {
     @Serializable
     data class Response(
-        @SerialName("global") val global: PushRules,
+        @SerialName("global") val global: PushRuleSet,
     )
 }

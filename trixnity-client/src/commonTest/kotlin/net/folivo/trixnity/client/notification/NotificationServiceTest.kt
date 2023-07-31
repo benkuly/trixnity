@@ -29,7 +29,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.push.PushAction.Notify
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
-import net.folivo.trixnity.core.model.push.PushRuleKind
+import net.folivo.trixnity.core.model.push.PushRuleSet
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -90,17 +90,17 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    fun pushRules(contentPushRules: List<PushRule>) = PushRulesEventContent(
-        global = mapOf(
-            PushRuleKind.CONTENT to contentPushRules,
-            PushRuleKind.OVERRIDE to listOf(),
-            PushRuleKind.ROOM to listOf(),
-            PushRuleKind.SENDER to listOf(),
-            PushRuleKind.UNDERRIDE to listOf(),
+    fun pushRules(overridePushRules: List<PushRule.Override>) = PushRulesEventContent(
+        global = PushRuleSet(
+            override = overridePushRules,
+            content = listOf(),
+            room = listOf(),
+            sender = listOf(),
+            underride = listOf(),
         )
     )
 
-    fun pushRuleDisplayName() = PushRule(
+    fun pushRuleDisplayName() = PushRule.Override(
         ruleId = ".m.rule.contains_display_name",
         enabled = true,
         default = true,
@@ -108,7 +108,7 @@ private val body: ShouldSpec.() -> Unit = {
         actions = setOf(Notify),
     )
 
-    fun pushRuleInvitation() = PushRule(
+    fun pushRuleInvitation() = PushRule.Override(
         ruleId = ".m.rule.invite_for_me",
         enabled = true,
         default = true,
@@ -120,7 +120,7 @@ private val body: ShouldSpec.() -> Unit = {
         actions = setOf(Notify),
     )
 
-    fun pushRuleEventMatchTriggeredDontNotify() = PushRule(
+    fun pushRuleEventMatchTriggeredDontNotify() = PushRule.Override(
         ruleId = "customRule1",
         enabled = true,
         default = false,
@@ -128,7 +128,7 @@ private val body: ShouldSpec.() -> Unit = {
         actions = setOf(),
     )
 
-    fun pushRuleEventMatchTriggeredNotEnabled() = PushRule(
+    fun pushRuleEventMatchTriggeredNotEnabled() = PushRule.Override(
         ruleId = "customRule1",
         enabled = false,
         default = false,
@@ -136,7 +136,7 @@ private val body: ShouldSpec.() -> Unit = {
         actions = setOf(Notify),
     )
 
-    fun pushRuleMemberCountGreaterEqual2() = PushRule(
+    fun pushRuleMemberCountGreaterEqual2() = PushRule.Override(
         ruleId = "customRule2",
         enabled = true,
         default = false,
@@ -144,7 +144,7 @@ private val body: ShouldSpec.() -> Unit = {
         actions = setOf(Notify)
     )
 
-    fun pushRulePowerLevelRoom() = PushRule(
+    fun pushRulePowerLevelRoom() = PushRule.Override(
         ruleId = "customRule3",
         enabled = true,
         default = false,
@@ -152,7 +152,7 @@ private val body: ShouldSpec.() -> Unit = {
         actions = setOf(Notify)
     )
 
-    fun pushRuleNoCondition() = PushRule(
+    fun pushRuleNoCondition() = PushRule.Override(
         ruleId = "customRule4",
         enabled = true,
         default = false,
@@ -160,7 +160,7 @@ private val body: ShouldSpec.() -> Unit = {
         actions = setOf(Notify)
     )
 
-    fun pushRuleWithMultipleConditions() = PushRule(
+    fun pushRuleWithMultipleConditions() = PushRule.Override(
         ruleId = "customRule5",
         enabled = true,
         default = false,
@@ -498,17 +498,15 @@ private val body: ShouldSpec.() -> Unit = {
                 globalAccountDataStore.save(
                     GlobalAccountDataEvent(
                         PushRulesEventContent(
-                            global = mapOf(
-                                PushRuleKind.OVERRIDE to listOf(
-                                    PushRule(
+                            global = PushRuleSet(
+                                override = listOf(
+                                    PushRule.Override(
                                         ruleId = "customRule10",
                                         enabled = true,
                                         default = false,
                                         conditions = setOf(PushCondition.EventMatch("content.body", "*User*")),
                                         actions = setOf()
-                                    )
-                                ),
-                                PushRuleKind.CONTENT to listOf(
+                                    ),
                                     pushRuleDisplayName()
                                 )
                             )
@@ -525,18 +523,17 @@ private val body: ShouldSpec.() -> Unit = {
                     globalAccountDataStore.save(
                         GlobalAccountDataEvent(
                             PushRulesEventContent(
-                                global = mapOf(
-                                    PushRuleKind.ROOM to listOf(
-                                        PushRule(
-                                            ruleId = "!andNowForSomethingCompletelyDifferent:localhost",
+                                global = PushRuleSet(
+                                    override = listOf(
+                                        pushRuleDisplayName()
+                                    ),
+                                    room = listOf(
+                                        PushRule.Room(
+                                            roomId = RoomId("!andNowForSomethingCompletelyDifferent:localhost"),
                                             enabled = true,
                                             default = false,
-                                            conditions = null,
                                             actions = setOf(Notify)
                                         )
-                                    ),
-                                    PushRuleKind.CONTENT to listOf(
-                                        pushRuleDisplayName()
                                     )
                                 )
                             )
@@ -549,18 +546,17 @@ private val body: ShouldSpec.() -> Unit = {
                     globalAccountDataStore.save(
                         GlobalAccountDataEvent(
                             PushRulesEventContent(
-                                global = mapOf(
-                                    PushRuleKind.ROOM to listOf(
-                                        PushRule(
-                                            ruleId = roomId.full,
+                                global = PushRuleSet(
+                                    override = listOf(
+                                        pushRuleDisplayName()
+                                    ),
+                                    room = listOf(
+                                        PushRule.Room(
+                                            roomId = roomId,
                                             enabled = true,
                                             default = false,
-                                            conditions = null,
                                             actions = setOf(Notify)
                                         )
-                                    ),
-                                    PushRuleKind.CONTENT to listOf(
-                                        pushRuleDisplayName()
                                     )
                                 )
                             )
