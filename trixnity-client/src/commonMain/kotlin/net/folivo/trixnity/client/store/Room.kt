@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.store
 
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -14,6 +15,7 @@ data class Room(
     val isDirect: Boolean = false,
     val lastEventId: EventId? = null, // this must only be changed by TimelineEventHandler!
     val lastRelevantEventId: EventId? = null,
+    val lastRelevantEventTimestamp: Instant? = null,
     val unreadMessageCount: Long = 0,
     val encryptionAlgorithm: EncryptionAlgorithm? = null,
     val membership: Membership = Membership.JOIN,
