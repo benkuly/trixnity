@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
@@ -36,25 +37,29 @@ class RoomListHandler(
                 val roomId = roomResponse.key
                 val newUnreadMessageCount = roomResponse.value.unreadNotifications?.notificationCount
                 val events = roomResponse.value.timeline?.events
-                val lastRelevantEventId = events?.lastOrNull { config.lastRelevantEventFilter(it) }?.id
-                roomStore.update(roomId) {
-                    val room = (it ?: Room(roomId = roomId))
+                val lastRelevantEvent = events?.lastOrNull { config.lastRelevantEventFilter(it) }
+                roomStore.update(roomId) { oldRoom ->
+                    val room = (oldRoom ?: Room(roomId = roomId))
                     room.copy(
                         membership = Membership.JOIN,
                         unreadMessageCount = newUnreadMessageCount ?: room.unreadMessageCount,
-                        lastRelevantEventId = lastRelevantEventId ?: room.lastRelevantEventId
+                        lastRelevantEventId = lastRelevantEvent?.id ?: room.lastRelevantEventId,
+                        lastRelevantEventTimestamp = lastRelevantEvent?.originTimestamp
+                            ?.let { Instant.fromEpochMilliseconds(it) } ?: room.lastRelevantEventTimestamp,
                     )
                 }
             }
             rooms.leave?.entries?.forEach { roomResponse ->
                 val roomId = roomResponse.key
                 val events = roomResponse.value.timeline?.events
-                val lastRelevantEventId = events?.lastOrNull { config.lastRelevantEventFilter(it) }?.id
-                roomStore.update(roomId) {
-                    val room = (it ?: Room(roomId = roomId))
+                val lastRelevantEvent = events?.lastOrNull { config.lastRelevantEventFilter(it) }
+                roomStore.update(roomId) { oldRoom ->
+                    val room = (oldRoom ?: Room(roomId = roomId))
                     room.copy(
                         membership = Membership.LEAVE,
-                        lastRelevantEventId = lastRelevantEventId ?: room.lastRelevantEventId
+                        lastRelevantEventId = lastRelevantEvent?.id ?: room.lastRelevantEventId,
+                        lastRelevantEventTimestamp = lastRelevantEvent?.originTimestamp
+                            ?.let { Instant.fromEpochMilliseconds(it) } ?: room.lastRelevantEventTimestamp,
                     )
                 }
             }
