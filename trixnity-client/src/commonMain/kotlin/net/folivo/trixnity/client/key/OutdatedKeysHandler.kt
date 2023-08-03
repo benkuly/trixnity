@@ -127,8 +127,8 @@ class OutdatedKeysHandler(
         ).getOrThrow()
 
         val joinedEncryptedRooms = lazy { roomStore.encryptedJoinedRooms() }
-        tm.writeTransaction {
-            userIds.forEach { userId ->
+        userIds.forEach { userId ->
+            tm.writeTransaction {
                 keysResponse.masterKeys?.get(userId)?.let { masterKey ->
                     handleOutdatedCrossSigningKey(
                         userId,
