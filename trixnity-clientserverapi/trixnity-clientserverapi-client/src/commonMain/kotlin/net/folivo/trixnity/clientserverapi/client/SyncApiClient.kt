@@ -20,18 +20,16 @@ import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 typealias SyncResponseSubscriber = suspend (Sync.Response) -> Unit
 typealias DeviceListsSubscriber = suspend (Sync.Response.DeviceLists?) -> Unit
 typealias OlmKeysChangeSubscriber = suspend (OlmKeysChange) -> Unit
+typealias SyncProcessingSubscriber = suspend (StateFlow<Boolean>) -> Unit
 
 data class OlmKeysChange(
     val oneTimeKeysCount: OneTimeKeysCount?,
     val fallbackKeyTypes: UnusedFallbackKeyTypes?,
 )
-
-typealias AfterSyncResponseSubscriber = suspend (Sync.Response) -> Unit
 
 private val log = KotlinLogging.logger {}
 
@@ -91,17 +89,29 @@ interface SyncApiClient : EventEmitter {
     fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber)
     fun subscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber)
     fun unsubscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber)
-    fun subscribeSyncResponse(subscriber: SyncResponseSubscriber)
-    fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber)
-    fun subscribeAfterSyncProcessing(subscriber: AfterSyncResponseSubscriber)
-    fun unsubscribeAfterSyncProcessing(subscriber: AfterSyncResponseSubscriber)
+    fun subscribeFirstInSyncProcessing(subscriber: SyncResponseSubscriber)
+    fun unsubscribeFirstInSyncProcessing(subscriber: SyncResponseSubscriber)
+    fun subscribeLastInSyncProcessing(subscriber: SyncResponseSubscriber)
+    fun unsubscribeLastInSyncProcessing(subscriber: SyncResponseSubscriber)
+    fun subscribeBeforeSyncProcessing(subscriber: SyncResponseSubscriber)
+    fun unsubscribeBeforeSyncProcessing(subscriber: SyncResponseSubscriber)
+
+    /**
+     * Parameter emits true, when sync processing has been finished. All work of the subscriber should be stopped.
+     * Otherwise, the sync processing cannot be finished.
+     */
+    fun subscribeSyncProcessing(subscriber: SyncProcessingSubscriber)
+    fun unsubscribeSyncProcessing(subscriber: SyncProcessingSubscriber)
+    fun subscribeAfterSyncProcessing(subscriber: SyncResponseSubscriber)
+    fun unsubscribeAfterSyncProcessing(subscriber: SyncResponseSubscriber)
 
     val currentSyncState: StateFlow<SyncState>
 
     suspend fun start(
         filter: String? = null,
         setPresence: Presence? = null,
-        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        getBatchToken: suspend () -> String?,
+        setBatchToken: suspend (String) -> Unit,
         timeout: Long = 30000,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId? = null,
@@ -112,7 +122,8 @@ interface SyncApiClient : EventEmitter {
     suspend fun <T> startOnce(
         filter: String? = null,
         setPresence: Presence? = null,
-        currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+        getBatchToken: suspend () -> String?,
+        setBatchToken: suspend (String) -> Unit,
         timeout: Long = 0,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId? = null,
@@ -126,26 +137,29 @@ interface SyncApiClient : EventEmitter {
 suspend fun SyncApiClient.start(
     filter: String? = null,
     setPresence: Presence? = null,
-    currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+    getBatchToken: suspend () -> String?,
+    setBatchToken: suspend (String) -> Unit,
     timeout: Long = 30000,
     asUserId: UserId? = null,
     wait: Boolean = false,
     scope: CoroutineScope,
-) = start(filter, setPresence, currentBatchToken, timeout, { it() }, asUserId, wait, scope)
+) = start(filter, setPresence, getBatchToken, setBatchToken, timeout, { it() }, asUserId, wait, scope)
 
 suspend fun <T> SyncApiClient.startOnce(
     filter: String? = null,
     setPresence: Presence? = null,
-    currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+    getBatchToken: suspend () -> String?,
+    setBatchToken: suspend (String) -> Unit,
     timeout: Long = 0,
     asUserId: UserId? = null,
     runOnce: suspend (Sync.Response) -> T,
-): Result<T> = startOnce(filter, setPresence, currentBatchToken, timeout, { it() }, asUserId, runOnce)
+): Result<T> = startOnce(filter, setPresence, getBatchToken, setBatchToken, timeout, { it() }, asUserId, runOnce)
 
 suspend fun SyncApiClient.startOnce(
     filter: String? = null,
     setPresence: Presence? = null,
-    currentBatchToken: MutableStateFlow<String?> = MutableStateFlow(null),
+    getBatchToken: suspend () -> String?,
+    setBatchToken: suspend (String) -> Unit,
     timeout: Long = 0,
     withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
     asUserId: UserId? = null,
@@ -153,12 +167,14 @@ suspend fun SyncApiClient.startOnce(
     startOnce(
         filter = filter,
         setPresence = setPresence,
-        currentBatchToken = currentBatchToken,
+        getBatchToken = getBatchToken,
+        setBatchToken = setBatchToken,
         timeout = timeout,
         withTransaction = withTransaction,
         asUserId = asUserId,
         runOnce = {}
     )
+
 
 class SyncApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
@@ -205,27 +221,56 @@ class SyncApiClientImpl(
     override fun unsubscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber) =
         deviceOneTimeKeysCountSubscribers.update { it - subscriber }
 
-    private val syncResponseSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> = MutableStateFlow(setOf())
-    override fun subscribeSyncResponse(subscriber: SyncResponseSubscriber) =
-        syncResponseSubscribers.update { it + subscriber }
-
-    override fun unsubscribeSyncResponse(subscriber: SyncResponseSubscriber) =
-        syncResponseSubscribers.update { it - subscriber }
-
-    private val afterSyncProcessingSubscribers: MutableStateFlow<Set<AfterSyncResponseSubscriber>> =
+    private val firstInSyncProcessingSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> =
         MutableStateFlow(setOf())
 
-    override fun subscribeAfterSyncProcessing(subscriber: AfterSyncResponseSubscriber) =
+    override fun subscribeFirstInSyncProcessing(subscriber: SyncResponseSubscriber) =
+        firstInSyncProcessingSubscribers.update { it + subscriber }
+
+    override fun unsubscribeFirstInSyncProcessing(subscriber: SyncResponseSubscriber) =
+        firstInSyncProcessingSubscribers.update { it - subscriber }
+
+    private val lastInSyncProcessingSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> =
+        MutableStateFlow(setOf())
+
+    override fun subscribeLastInSyncProcessing(subscriber: SyncResponseSubscriber) =
+        lastInSyncProcessingSubscribers.update { it + subscriber }
+
+    override fun unsubscribeLastInSyncProcessing(subscriber: SyncResponseSubscriber) =
+        lastInSyncProcessingSubscribers.update { it - subscriber }
+
+    private val beforeSyncProcessingSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> =
+        MutableStateFlow(setOf())
+
+    override fun subscribeBeforeSyncProcessing(subscriber: SyncResponseSubscriber) =
+        beforeSyncProcessingSubscribers.update { it + subscriber }
+
+    override fun unsubscribeBeforeSyncProcessing(subscriber: SyncResponseSubscriber) =
+        beforeSyncProcessingSubscribers.update { it - subscriber }
+
+    private val syncProcessingSubscribers: MutableStateFlow<Set<SyncProcessingSubscriber>> =
+        MutableStateFlow(setOf())
+
+    override fun subscribeSyncProcessing(subscriber: SyncProcessingSubscriber) =
+        syncProcessingSubscribers.update { it + subscriber }
+
+    override fun unsubscribeSyncProcessing(subscriber: SyncProcessingSubscriber) =
+        syncProcessingSubscribers.update { it - subscriber }
+
+    private val afterSyncProcessingSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> =
+        MutableStateFlow(setOf())
+
+    override fun subscribeAfterSyncProcessing(subscriber: SyncResponseSubscriber) =
         afterSyncProcessingSubscribers.update { it + subscriber }
 
-    override fun unsubscribeAfterSyncProcessing(subscriber: AfterSyncResponseSubscriber) =
+    override fun unsubscribeAfterSyncProcessing(subscriber: SyncResponseSubscriber) =
         afterSyncProcessingSubscribers.update { it - subscriber }
 
     override suspend fun start(
         filter: String?,
         setPresence: Presence?,
-        currentBatchToken: MutableStateFlow<String?>,
-        timeout: Long,
+        getBatchToken: suspend () -> String?,
+        setBatchToken: suspend (String) -> Unit, timeout: Long,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
         wait: Boolean,
@@ -237,13 +282,15 @@ class SyncApiClientImpl(
                 syncJob = scope.launch {
                     syncMutex.withLock {
                         log.info { "started syncLoop" }
-                        val isInitialSync = currentBatchToken.value == null
+                        val currentBatchToken = getBatchToken()
+                        val isInitialSync = currentBatchToken == null
                         if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
 
                         while (isActive && _currentSyncState.value != STOPPING) {
                             try {
                                 syncAndResponse(
-                                    currentBatchToken = currentBatchToken,
+                                    getBatchToken = getBatchToken,
+                                    setBatchToken = setBatchToken,
                                     filter = filter,
                                     setPresence = setPresence,
                                     timeout = if (_currentSyncState.value == STARTED) 0 else timeout,
@@ -254,18 +301,18 @@ class SyncApiClientImpl(
                             } catch (error: Throwable) {
                                 when (error) {
                                     is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
-                                        log.info { "timeout while sync with token ${currentBatchToken.value}" }
+                                        log.info { "timeout while sync with token $currentBatchToken" }
                                         updateSyncState(TIMEOUT)
                                     }
 
                                     is CancellationException -> throw error
                                     else -> {
-                                        log.error(error) { "error while sync with token ${currentBatchToken.value}" }
+                                        log.error(error) { "error while sync with token $currentBatchToken" }
                                         updateSyncState(ERROR)
                                     }
                                 }
                                 delay(syncLoopErrorDelay) // TODO better retry policy!
-                                if (currentBatchToken.value == null) updateSyncState(INITIAL_SYNC)
+                                if (getBatchToken() == null) updateSyncState(INITIAL_SYNC)
                                 else updateSyncState(STARTED)
                             }
                         }
@@ -284,7 +331,8 @@ class SyncApiClientImpl(
     override suspend fun <T> startOnce(
         filter: String?,
         setPresence: Presence?,
-        currentBatchToken: MutableStateFlow<String?>,
+        getBatchToken: suspend () -> String?,
+        setBatchToken: suspend (String) -> Unit,
         timeout: Long,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
@@ -292,11 +340,11 @@ class SyncApiClientImpl(
     ): Result<T> = kotlin.runCatching {
         stop(wait = true)
         syncMutex.withLock {
-            val isInitialSync = currentBatchToken.value == null
+            val isInitialSync = getBatchToken() == null
             log.info { "started single sync (initial=$isInitialSync)" }
             if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
             val syncResponse =
-                syncAndResponse(currentBatchToken, filter, setPresence, timeout, withTransaction, asUserId)
+                syncAndResponse(getBatchToken, setBatchToken, filter, setPresence, timeout, withTransaction, asUserId)
             runOnce(syncResponse)
         }
     }.onSuccess {
@@ -308,14 +356,15 @@ class SyncApiClientImpl(
     }
 
     private suspend fun syncAndResponse(
-        currentBatchToken: MutableStateFlow<String?>,
+        getBatchToken: suspend () -> String?,
+        setBatchToken: suspend (String) -> Unit,
         filter: String?,
         setPresence: Presence?,
         timeout: Long,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
     ): Sync.Response {
-        val batchToken = currentBatchToken.value
+        val batchToken = getBatchToken()
         val (response, measuredSyncDuration) = measureTime<Sync.Response> {
             sync(
                 filter = filter,
@@ -327,68 +376,80 @@ class SyncApiClientImpl(
             ).getOrThrow()
         }
         log.debug { "received sync response after about $measuredSyncDuration with token $batchToken" }
-        val measuredProcessDuration = measureTime {
-            withTransaction {
-                processSyncResponse(response)
-            }
+
+
+        coroutineScope {
+            beforeSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
         }
-        log.debug { "processed sync response in about $measuredProcessDuration with token $batchToken" }
-        currentBatchToken.value = response.nextBatch
+        withTransaction {
+            val measuredProcessDuration = processSyncResponse(response)
+            setBatchToken(response.nextBatch)
+            log.debug { "processed sync response in about $measuredProcessDuration with token $batchToken" }
+        }
+        coroutineScope {
+            afterSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
+        }
+
         updateSyncState(RUNNING)
         return response
     }
 
-    private suspend fun processSyncResponse(response: Sync.Response) {
-        coroutineScope {
-            deviceOneTimeKeysCountSubscribers.value.forEach {
+    private suspend fun processSyncResponse(response: Sync.Response) = coroutineScope {
+        val processingFinished = MutableStateFlow(false)
+        syncProcessingSubscribers.value.forEach { launch { it.invoke(processingFinished) } }
+        measureTime {
+            coroutineScope {
+                deviceOneTimeKeysCountSubscribers.value.forEach {
+                    launch {
+                        it.invoke(OlmKeysChange(response.oneTimeKeysCount, response.unusedFallbackKeyTypes))
+                    }
+                }
+            }
+            coroutineScope {
+                deviceListsSubscribers.value.forEach { launch { it.invoke(response.deviceLists) } }
+            }
+
+            // do it at first, to be able to decrypt stuff
+            response.toDevice?.events?.forEach { emitEvent(it) }
+            // do it at first, to be able to decrypt stuff
+            response.accountData?.events?.forEach { emitEvent(it) }
+
+            coroutineScope {
+                firstInSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
+            }
+
+            coroutineScope {
+                launch { response.presence?.events?.forEach { emitEvent(it) } }
                 launch {
-                    it.invoke(OlmKeysChange(response.oneTimeKeysCount, response.unusedFallbackKeyTypes))
+                    response.room?.join?.forEach { (_, joinedRoom) ->
+                        launch { joinedRoom.state?.events?.forEach { emitEvent(it) } }
+                        launch { joinedRoom.timeline?.events?.forEach { emitEvent(it) } }
+                        launch { joinedRoom.ephemeral?.events?.forEach { emitEvent(it) } }
+                        launch { joinedRoom.accountData?.events?.forEach { emitEvent(it) } }
+                    }
+                }
+                launch {
+                    response.room?.invite?.forEach { (_, invitedRoom) ->
+                        invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
+                    }
+                }
+                launch {
+                    response.room?.knock?.forEach { (_, invitedRoom) ->
+                        invitedRoom.knockState?.events?.forEach { emitEvent(it) }
+                    }
+                }
+                launch {
+                    response.room?.leave?.forEach { (_, leftRoom) ->
+                        launch { leftRoom.state?.events?.forEach { emitEvent(it) } }
+                        launch { leftRoom.timeline?.events?.forEach { emitEvent(it) } }
+                        launch { leftRoom.accountData?.events?.forEach { emitEvent(it) } }
+                    }
                 }
             }
-        }
-        coroutineScope {
-            deviceListsSubscribers.value.forEach { launch { it.invoke(response.deviceLists) } }
-        }
-
-        // do it at first, to be able to decrypt stuff
-        response.toDevice?.events?.forEach { emitEvent(it) }
-        // do it at first, to be able to decrypt stuff
-        response.accountData?.events?.forEach { emitEvent(it) }
-
-        coroutineScope {
-            syncResponseSubscribers.value.forEach { launch { it.invoke(response) } }
-        }
-
-        coroutineScope {
-            launch { response.presence?.events?.forEach { emitEvent(it) } }
-            launch {
-                response.room?.join?.forEach { (_, joinedRoom) ->
-                    joinedRoom.state?.events?.forEach { emitEvent(it) }
-                    joinedRoom.timeline?.events?.forEach { emitEvent(it) }
-                    joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
-                    joinedRoom.accountData?.events?.forEach { emitEvent(it) }
-                }
+            coroutineScope {
+                lastInSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
             }
-            launch {
-                response.room?.invite?.forEach { (_, invitedRoom) ->
-                    invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
-                }
-            }
-            launch {
-                response.room?.knock?.forEach { (_, invitedRoom) ->
-                    invitedRoom.knockState?.events?.forEach { emitEvent(it) }
-                }
-            }
-            launch {
-                response.room?.leave?.forEach { (_, leftRoom) ->
-                    leftRoom.state?.events?.forEach { emitEvent(it) }
-                    leftRoom.timeline?.events?.forEach { emitEvent(it) }
-                    leftRoom.accountData?.events?.forEach { emitEvent(it) }
-                }
-            }
-        }
-        coroutineScope {
-            afterSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
+            processingFinished.value = true
         }
     }
 

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.store.repository.InMemoryMapRepository
 import net.folivo.trixnity.client.store.repository.MapRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -24,30 +24,25 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
     lateinit var repository: MapRepository<String, String, String>
     lateinit var cacheScope: CoroutineScope
     lateinit var cut: MapRepositoryCoroutineCache<String, String, String>
-    val readOperationWasCalled = MutableStateFlow(false)
-    val writeOperationWasCalled = MutableStateFlow(false)
-    val tm = object : TransactionManager {
-        override suspend fun withAsyncWriteTransaction(block: suspend () -> Unit): StateFlow<Boolean>? =
-            throw AssertionError("should not call withWriteTransaction")
+    val readTransactionWasCalled = MutableStateFlow(false)
+    val writeTransactionWasCalled = MutableStateFlow(false)
+    val tm = object : RepositoryTransactionManager {
+        override val parallelTransactionsSupported: Boolean = true
 
-        override suspend fun <T> readOperation(block: suspend () -> T): T {
-            return block().also { readOperationWasCalled.value = true }
+        override suspend fun <T> readTransaction(block: suspend () -> T): T {
+            return block().also { readTransactionWasCalled.value = true }
         }
 
-        override suspend fun writeOperation(block: suspend () -> Unit) =
-            throw AssertionError("should not call writeOperation")
-
-        override suspend fun writeOperationAsync(key: String, block: suspend () -> Unit): StateFlow<Boolean>? {
+        override suspend fun writeTransaction(block: suspend () -> Unit) {
             block()
-            writeOperationWasCalled.value = true
-            return null
+            writeTransactionWasCalled.value = true
         }
     }
 
     beforeTest {
         cacheScope = CoroutineScope(Dispatchers.Default)
-        readOperationWasCalled.value = false
-        writeOperationWasCalled.value = false
+        readTransactionWasCalled.value = false
+        writeTransactionWasCalled.value = false
         repository = object : InMemoryMapRepository<String, String, String>() {
             override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
         }
@@ -62,8 +57,8 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             repository.save("firstKey", "secondKey1", "old")
             repository.save("firstKey", "secondKey2", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1"), "value1")
-            readOperationWasCalled.value shouldBe false
-            writeOperationWasCalled.value shouldBe true
+            readTransactionWasCalled.value shouldBe false
+            writeTransactionWasCalled.value shouldBe true
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value1", "secondKey2" to "old")
         }
         should("save existing cache value without reading old value") {
@@ -71,8 +66,8 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1"), "value1")
             repository.get("firstKey") shouldBe mapOf("secondKey1" to "value1")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey2"), "value2")
-            readOperationWasCalled.value shouldBe false
-            writeOperationWasCalled.value shouldBe true
+            readTransactionWasCalled.value shouldBe false
+            writeTransactionWasCalled.value shouldBe true
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "value1",
                 "secondKey2" to "value2"

@@ -6,13 +6,12 @@ import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -50,20 +49,20 @@ class OutgoingSecretKeyRequestEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer)
-        api.sync.subscribeAfterSyncProcessing(::cancelOldOutgoingKeyRequests)
+        api.sync.subscribeLastInSyncProcessing(::cancelOldOutgoingKeyRequests)
         api.sync.subscribe(::handleChangedSecrets)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleOutgoingKeyRequestAnswer)
-            api.sync.unsubscribeAfterSyncProcessing(::cancelOldOutgoingKeyRequests)
+            api.sync.unsubscribeLastInSyncProcessing(::cancelOldOutgoingKeyRequests)
             api.sync.unsubscribe(::handleChangedSecrets)
         }
     }
 
     internal suspend fun requestSecretKeys() {
         val missingSecrets = SecretType.values()
-            .subtract(keyStore.secrets.value.keys)
+            .subtract(keyStore.getSecrets().keys)
             .subtract(keyStore.allSecretKeyRequests.value.mapNotNull { request ->
                 request.content.name?.let { SecretType.ofId(it) }
             }.toSet())
@@ -98,7 +97,7 @@ class OutgoingSecretKeyRequestEventHandler(
     }
 
     internal suspend fun requestSecretKeysWhenCrossSigned() {
-        currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryLoopWhenSyncIs(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed request secrets" } },
         ) {
@@ -173,7 +172,7 @@ class OutgoingSecretKeyRequestEventHandler(
                 log.warn { "could not find encrypted secret" }
                 return
             }
-            keyStore.secrets.update {
+            keyStore.updateSecrets {
                 it + (secretType to StoredSecret(encryptedSecret, content.secret))
             }
 
@@ -196,11 +195,11 @@ class OutgoingSecretKeyRequestEventHandler(
             api.eventContentSerializerMappings.globalAccountData.find { event.content.instanceOf(it.kClass) }
                 ?.let { SecretType.ofId(it.type) }
         if (secretType != null) {
-            val storedSecret = keyStore.secrets.value[secretType]
+            val storedSecret = keyStore.getSecrets()[secretType]
             if (storedSecret?.event != event) {
                 keyStore.allSecretKeyRequests.value.filter { it.content.name == secretType.id }
                     .forEach { it.cancelRequest() }
-                keyStore.secrets.update { it - secretType }
+                keyStore.updateSecrets { it - secretType }
             }
         }
     }

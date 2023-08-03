@@ -3,7 +3,6 @@ package net.folivo.trixnity.crypto.olm
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -60,23 +59,20 @@ class OlmEventHandler(
     }
 
     internal suspend fun forgetOldFallbackKey() {
-        store.forgetFallbackKeyAfter.collect { forgetFallbackKeyAfter ->
+        store.getForgetFallbackKeyAfter().collect { forgetFallbackKeyAfter ->
             if (forgetFallbackKeyAfter != null) {
                 val wait = forgetFallbackKeyAfter - Clock.System.now()
                 log.debug { "wait for $wait and then forget old fallback key" }
                 delay(wait)
-                store.olmAccount.update { pickledOlmAccount ->
+                store.updateOlmAccount { pickledOlmAccount ->
                     freeAfter(
-                        OlmAccount.unpickle(
-                            store.olmPickleKey,
-                            requireNotNull(pickledOlmAccount) { "olm account should never be null" },
-                        ),
+                        OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount),
                     ) { olmAccount ->
                         olmAccount.forgetOldFallbackKey()
-                        olmAccount.pickle(store.olmPickleKey)
+                        olmAccount.pickle(store.getOlmPickleKey())
                     }
                 }
-                store.forgetFallbackKeyAfter.value = null
+                store.updateForgetFallbackKeyAfter { null }
             }
         }
     }
@@ -84,10 +80,9 @@ class OlmEventHandler(
     internal suspend fun handleOlmKeysChange(change: OlmKeysChange) {
         val oneTimeKeysCount = change.oneTimeKeysCount
         val fallbackKeyTypes = change.fallbackKeyTypes
-        store.olmAccount.update { pickledOlmAccount ->
+        store.updateOlmAccount { pickledOlmAccount ->
             freeAfter(
-                OlmAccount.unpickle(
-                    store.olmPickleKey, requireNotNull(pickledOlmAccount) { "olm account should never be null" })
+                OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount)
             ) { olmAccount ->
                 val newOneTimeKeys =
                     if (oneTimeKeysCount != null) {
@@ -111,7 +106,7 @@ class OlmEventHandler(
                                 Curve25519Key(keyId = it.key, value = it.value, fallback = true)
                             )
                         }.toSet())
-                            .also { store.forgetFallbackKeyAfter.update { it ?: (Clock.System.now() + 1.hours) } }
+                            .also { store.updateForgetFallbackKeyAfter { it ?: (Clock.System.now() + 1.hours) } }
                     } else null
 
                 if (newOneTimeKeys != null || newFallbackKeys != null) {
@@ -121,7 +116,7 @@ class OlmEventHandler(
                         fallbackKeys = newFallbackKeys
                     ).getOrThrow()
                     olmAccount.markKeysAsPublished()
-                    olmAccount.pickle(store.olmPickleKey)
+                    olmAccount.pickle(store.getOlmPickleKey())
                 } else pickledOlmAccount
             }
         }
@@ -151,7 +146,7 @@ class OlmEventHandler(
                                 hasBeenBackedUp = false,
                                 isTrusted = true,
                                 forwardingCurve25519KeyChain = emptyList(),
-                                pickled = session.pickle(store.olmPickleKey)
+                                pickled = session.pickle(store.getOlmPickleKey())
                             )
                         }
                     } catch (exception: OlmLibraryException) {

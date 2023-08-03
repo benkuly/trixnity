@@ -10,11 +10,11 @@ import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.media.MediaService
-import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.AfterSyncResponseSubscriber
+import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
@@ -523,9 +523,9 @@ class RoomServiceImpl(
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
         callbackFlow {
-            val subscriber: AfterSyncResponseSubscriber = { send(it) }
-            api.sync.subscribeAfterSyncProcessing(subscriber)
-            awaitClose { api.sync.unsubscribeAfterSyncProcessing(subscriber) }
+            val subscriber: SyncResponseSubscriber = { send(it) }
+            api.sync.subscribeLastInSyncProcessing(subscriber)
+            awaitClose { api.sync.unsubscribeLastInSyncProcessing(subscriber) }
         }.buffer(syncResponseBufferSize).flatMapConcat { syncResponse ->
             coroutineScope {
                 val timelineEvents =

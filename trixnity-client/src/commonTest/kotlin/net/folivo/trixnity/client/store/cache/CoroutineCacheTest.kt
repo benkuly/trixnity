@@ -81,21 +81,6 @@ class CoroutineCacheTest : ShouldSpec({
             cut.read(key = "key").stateIn(readScope).value shouldBe "another value"
             readScope.cancel()
         }
-        should("only remove from cache, when persisted") {
-            cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.ZERO)
-            val persisted = MutableStateFlow(false)
-            cacheStore.persisted.update { it + ("key" to persisted) }
-            cacheStore.persist("key", "value")
-            cut.write(key = "key", updater = { "value" })
-            cut.read(key = "key").first() shouldBe "value"
-            delay(30)
-            cacheStore.persist("key", "a new value")
-            cut.read(key = "key").first() shouldBe "value"
-
-            persisted.value = true
-            delay(30)
-            cut.read(key = "key").first() shouldBe "a new value"
-        }
         context("infinite cache enabled") {
             should("never remove from cache") {
                 cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.INFINITE)
@@ -168,9 +153,8 @@ class CoroutineCacheTest : ShouldSpec({
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryCoroutineCacheStoreWithHistory : InMemoryCoroutineCacheStore<String, String>() {
-                override suspend fun persist(key: String, value: String?): StateFlow<Boolean>? {
+                override suspend fun persist(key: String, value: String?) {
                     database.emit(value)
-                    return super.persist(key, value)
                 }
             }
             cut = CoroutineCache("", InMemoryCoroutineCacheStoreWithHistory(), cacheScope)
@@ -197,9 +181,8 @@ class CoroutineCacheTest : ShouldSpec({
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryCoroutineCacheStoreWithHistory : InMemoryCoroutineCacheStore<String, String>() {
-                override suspend fun persist(key: String, value: String?): StateFlow<Boolean>? {
+                override suspend fun persist(key: String, value: String?) {
                     database.emit(key)
-                    return super.persist(key, value)
                 }
             }
             cut = CoroutineCache("", InMemoryCoroutineCacheStoreWithHistory(), cacheScope)
@@ -261,32 +244,6 @@ class CoroutineCacheTest : ShouldSpec({
                         "updated value"
                     },
                 )
-            }
-            should("only remove from cache, when persisted") {
-                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.ZERO)
-                val persisted1 = MutableStateFlow(false)
-                val persisted2 = MutableStateFlow(false)
-                cacheStore.persisted.update { it + ("key" to persisted1) }
-                cut.write(
-                    key = "key",
-                    updater = { "o" },
-                )
-                cacheStore.persisted.update { it + ("key" to persisted2) }
-                cut.write(
-                    key = "key",
-                    updater = { "value" },
-                )
-                delay(30)
-                cacheStore.persist("key", "a new value")
-                cut.read(key = "key").first() shouldBe "value"
-
-                persisted1.value = true
-                delay(30)
-                cut.read(key = "key").first() shouldBe "value"
-
-                persisted2.value = true
-                delay(30)
-                cut.read(key = "key").first() shouldBe "a new value"
             }
         }
         context("infinite cache enabled") {

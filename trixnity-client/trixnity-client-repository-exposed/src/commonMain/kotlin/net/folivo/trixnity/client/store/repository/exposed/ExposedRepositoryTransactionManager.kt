@@ -4,7 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -46,6 +46,8 @@ suspend fun <T> withExposedWrite(block: () -> T) = coroutineScope {
 }
 
 class ExposedRepositoryTransactionManager(private val database: Database) : RepositoryTransactionManager {
+    override val parallelTransactionsSupported: Boolean = true
+
     // a single transaction is only allowed to read and write in one thread (no parallelism)
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun newLimitedDispatcher() = Dispatchers.IO.limitedParallelism(1)

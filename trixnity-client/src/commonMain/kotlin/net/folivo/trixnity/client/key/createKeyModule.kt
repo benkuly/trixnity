@@ -42,7 +42,7 @@ fun createKeyModule() = module {
             get(),
             get(),
             get(),
-            get(named<KeyBackupServiceImpl>()),
+            get(named<KeyBackupService>()),
             get(),
             get(),
             get()
@@ -53,9 +53,9 @@ fun createKeyModule() = module {
     singleOf(::KeyBackupServiceImpl) {
         bind<KeyBackupService>()
         bind<EventHandler>()
-        named<KeyBackupServiceImpl>()
+        named<KeyBackupService>()
     }
     single<KeyService> {
-        KeyServiceImpl(get(), get(), get(), get(), get(), get(), get(named<KeyBackupServiceImpl>()), get(), get())
+        KeyServiceImpl(get(), get(), get(), get(), get(), get(), get(named<KeyBackupService>()), get(), get())
     }
 }

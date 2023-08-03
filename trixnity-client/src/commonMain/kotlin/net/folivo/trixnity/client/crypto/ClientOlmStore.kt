@@ -1,6 +1,9 @@
 package net.folivo.trixnity.client.crypto
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.key.get
 import net.folivo.trixnity.client.key.getDeviceKey
 import net.folivo.trixnity.client.key.waitForUpdateOutdatedKey
@@ -19,12 +22,12 @@ import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 
 class ClientOlmStore(
-    accountStore: AccountStore,
+    private val accountStore: AccountStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val keyStore: KeyStore,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
-    private val userService: UserService
+    private val userService: UserService,
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
 
     private suspend fun getLocalCurve25519Key(userId: UserId, deviceId: String) =
@@ -94,9 +97,19 @@ class ClientOlmStore(
         olmCryptoStore.updateInboundMegolmMessageIndex(sessionId, roomId, messageIndex, updater)
     }
 
-    override val olmAccount = olmCryptoStore.account
-    override val olmPickleKey = requireNotNull(accountStore.olmPickleKey.value)
-    override val forgetFallbackKeyAfter = olmCryptoStore.forgetFallbackKeyAfter
+    override suspend fun getOlmAccount(): String = checkNotNull(olmCryptoStore.getOlmAccount())
+    override suspend fun updateOlmAccount(updater: suspend (String) -> String) = olmCryptoStore.updateOlmAccount {
+        updater(checkNotNull(it))
+    }
+
+    override suspend fun getOlmPickleKey(): String = checkNotNull(accountStore.getAccount()?.olmPickleKey)
+
+    override suspend fun getForgetFallbackKeyAfter(): Flow<Instant> =
+        olmCryptoStore.getForgetFallbackKeyAfter().filterNotNull()
+
+    override suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?) =
+        olmCryptoStore.updateForgetFallbackKeyAfter(updater)
+
 
     override suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>> {
         userService.loadMembers(roomId)

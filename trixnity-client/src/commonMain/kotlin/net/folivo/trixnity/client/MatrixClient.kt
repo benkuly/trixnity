@@ -10,7 +10,9 @@ import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
+import net.folivo.trixnity.client.utils.retryWhen
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -189,18 +191,28 @@ suspend fun MatrixClient.Companion.loginWith(
     val olmPickleKey = ""
 
     api.accessToken.value = accessToken
-    accountStore.olmPickleKey.value = olmPickleKey
-    accountStore.baseUrl.value = baseUrl
-    accountStore.accessToken.value = accessToken
-    accountStore.userId.value = userId
-    accountStore.deviceId.value = deviceId
-    accountStore.displayName.value = displayName
-    accountStore.avatarUrl.value = avatarUrl
+    accountStore.updateAccount {
+        Account(
+            olmPickleKey = olmPickleKey,
+            baseUrl = baseUrl.toString(),
+            accessToken = accessToken,
+            userId = userId,
+            deviceId = deviceId,
+            displayName = displayName,
+            avatarUrl = avatarUrl,
+            backgroundFilterId = null,
+            filterId = null,
+            syncBatchToken = null
+        )
+    }
+
 
     val olmCryptoStore = di.get<OlmCryptoStore>()
     val (signingKey, identityKey) = freeAfter(
-        olmCryptoStore.account.value?.let { OlmAccount.unpickle(olmPickleKey, it) }
-            ?: OlmAccount.create().also { olmCryptoStore.account.value = it.pickle(olmPickleKey) }
+        olmCryptoStore.getOlmAccount()
+            ?.let { OlmAccount.unpickle(olmPickleKey, it) }
+            ?: OlmAccount.create()
+                .also { olmAccount -> olmCryptoStore.updateOlmAccount { olmAccount.pickle(olmPickleKey) } }
     ) {
         Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
                 Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
@@ -237,7 +249,9 @@ suspend fun MatrixClient.Companion.loginWith(
         .onFailure { matrixClient.deleteAll() }
         .getOrThrow()
     keyStore.updateOutdatedKeys { it + userId }
-    matrixClient
+    matrixClient.also {
+        log.trace { "finished creating MatrixClient" }
+    }
 }
 
 suspend fun MatrixClient.Companion.fromStore(
@@ -268,11 +282,12 @@ suspend fun MatrixClient.Companion.fromStore(
     val accountStore = di.get<AccountStore>()
     val olmCryptoStore = di.get<OlmCryptoStore>()
 
-    val baseUrl = accountStore.baseUrl.value
-    val userId = accountStore.userId.value
-    val deviceId = accountStore.deviceId.value
-    val olmPickleKey = accountStore.olmPickleKey.value
-    val olmAccount = olmCryptoStore.account.value
+    val account = accountStore.getAccount()
+    val baseUrl = account?.baseUrl?.let { Url(it) }
+    val userId = account?.userId
+    val deviceId = account?.deviceId
+    val olmPickleKey = account?.olmPickleKey
+    val olmAccount = olmCryptoStore.getOlmAccount()
 
     if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
         val api = MatrixClientServerApiClientImpl(
@@ -284,11 +299,11 @@ suspend fun MatrixClient.Companion.fromStore(
             syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
             syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
         )
-        val accessToken = accountStore.accessToken.value ?: onSoftLogin?.let {
+        val accessToken = accountStore.getAccount()?.accessToken ?: onSoftLogin?.let {
             val (identifier, password, token, loginType) = onSoftLogin()
             api.authentication.login(identifier, password, token, loginType, deviceId)
                 .getOrThrow().accessToken
-                .also { accountStore.accessToken.value = it }
+                .also { accountStore.updateAccount { account -> account.copy(accessToken = it) } }
         }
         if (accessToken != null) {
             api.accessToken.value = accessToken
@@ -315,23 +330,26 @@ suspend fun MatrixClient.Companion.fromStore(
                 eventHandlers = di.getAll(),
                 tm = di.get(),
                 coroutineScope = coroutineScope,
-            )
+            ).also {
+                log.trace { "finished creating MatrixClient" }
+            }
         } else null
     } else null
 }
 
-private fun onLogout(
+private suspend fun onLogout(
     soft: Boolean,
     accountStore: AccountStore
 ) {
     log.debug { "This device has been logged out (soft=$soft)." }
-    accountStore.accessToken.value = null
-    if (!soft) {
-        accountStore.syncBatchToken.value = null
+    accountStore.updateAccount {
+        it.copy(
+            accessToken = null,
+            syncBatchToken = if (soft) it.syncBatchToken else null
+        )
     }
 }
 
-@OptIn(FlowPreview::class)
 class MatrixClientImpl internal constructor(
     override val userId: UserId,
     override val deviceId: String,
@@ -344,25 +362,27 @@ class MatrixClientImpl internal constructor(
     private val mediaStore: MediaStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
-    private val tm: TransactionManager,
+    private val tm: RepositoryTransactionManager,
     private val coroutineScope: CoroutineScope,
 ) : MatrixClient {
     private val started = MutableStateFlow(false)
 
-    override val displayName: StateFlow<String?> = accountStore.displayName
-    override val avatarUrl: StateFlow<String?> = accountStore.avatarUrl
+    override val displayName: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.displayName }
+        .stateIn(coroutineScope, Eagerly, null)
+    override val avatarUrl: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.avatarUrl }
+        .stateIn(coroutineScope, Eagerly, null)
     override val syncState = api.sync.currentSyncState
 
     override val initialSyncDone: StateFlow<Boolean> =
-        accountStore.syncBatchToken
+        accountStore.getAccountAsFlow().map { it?.syncBatchToken }
             .map { token -> token != null }
-            .stateIn(coroutineScope, Eagerly, accountStore.syncBatchToken.value != null)
+            .stateIn(coroutineScope, Eagerly, true)
 
     override val loginState: StateFlow<LoginState?> =
-        combine(accountStore.accessToken, accountStore.syncBatchToken) { accessToken, syncBatchToken ->
+        accountStore.getAccountAsFlow().map { account ->
             when {
-                accessToken != null -> LOGGED_IN
-                syncBatchToken != null -> LOGGED_OUT_SOFT
+                account?.accessToken != null -> LOGGED_IN
+                account?.syncBatchToken != null -> LOGGED_OUT_SOFT
                 else -> LOGGED_OUT
             }
         }.stateIn(coroutineScope, Eagerly, null)
@@ -399,20 +419,21 @@ class MatrixClientImpl internal constructor(
                 }
             }
 
-            val filterId = accountStore.filterId.value
+            val filterId = accountStore.getAccount()?.filterId
             if (filterId == null) {
-                accountStore.filterId.value = retryWhen(
-                    flowOf(true),
+                val newFilterId = retryWhen(
+                    flowOf(RUN),
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
                     api.users.setFilter(userId, baseFilters)
                         .getOrThrow().also { log.debug { "set new filter for sync: $it" } }
                 }
+                accountStore.updateAccount { it.copy(filterId = newFilterId) }
             }
-            val backgroundFilterId = accountStore.backgroundFilterId.value
+            val backgroundFilterId = accountStore.getAccount()?.backgroundFilterId
             if (backgroundFilterId == null) {
-                accountStore.backgroundFilterId.value = retryWhen(
-                    flowOf(true),
+                val newFilterId = retryWhen(
+                    flowOf(RUN),
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
                     api.users.setFilter(
@@ -420,6 +441,7 @@ class MatrixClientImpl internal constructor(
                         baseFilters.copy(presence = Filters.EventFilter(limit = 0))
                     ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
                 }
+                accountStore.updateAccount { it.copy(backgroundFilterId = newFilterId) }
             }
             started.value = true
         }
@@ -446,7 +468,7 @@ class MatrixClientImpl internal constructor(
      */
     override suspend fun clearCache(): Result<Unit> = kotlin.runCatching {
         stopSync(true)
-        accountStore.syncBatchToken.value = null
+        accountStore.updateAccount { it.copy(syncBatchToken = null) }
         rootStore.clearCache()
         startSync()
     }
@@ -458,17 +480,14 @@ class MatrixClientImpl internal constructor(
         startSync()
     }
 
-    private val syncTransaction: suspend (block: suspend () -> Unit) -> Unit =
-        { b -> tm.withAsyncWriteTransaction(block = b) }
-
-
     override suspend fun startSync(presence: Presence?) {
         started.first { it }
         api.sync.start(
-            filter = requireNotNull(accountStore.filterId.value),
+            filter = checkNotNull(accountStore.getAccount()?.filterId),
             setPresence = presence,
-            currentBatchToken = accountStore.syncBatchToken,
-            withTransaction = syncTransaction,
+            getBatchToken = { accountStore.getAccount()?.syncBatchToken },
+            setBatchToken = { accountStore.updateAccount { account -> account.copy(syncBatchToken = it) } },
+            withTransaction = tm::writeTransaction,
             scope = coroutineScope,
         )
     }
@@ -483,11 +502,12 @@ class MatrixClientImpl internal constructor(
     ): Result<T> {
         started.first { it }
         return api.sync.startOnce(
-            filter = requireNotNull(accountStore.backgroundFilterId.value),
+            filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
             setPresence = presence,
-            currentBatchToken = accountStore.syncBatchToken,
+            getBatchToken = { accountStore.getAccount()?.syncBatchToken },
+            setBatchToken = { accountStore.updateAccount { account -> account.copy(syncBatchToken = it) } },
             timeout = timeout,
-            withTransaction = syncTransaction,
+            withTransaction = tm::writeTransaction,
             runOnce = runOnce
         )
     }
@@ -514,13 +534,13 @@ class MatrixClientImpl internal constructor(
 
     override suspend fun setDisplayName(displayName: String?): Result<Unit> {
         return api.users.setDisplayName(userId, displayName).map {
-            accountStore.displayName.value = displayName
+            accountStore.updateAccount { it.copy(displayName = displayName) }
         }
     }
 
     override suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit> {
         return api.users.setAvatarUrl(userId, avatarUrl).map {
-            accountStore.avatarUrl.value = avatarUrl
+            accountStore.updateAccount { it.copy(avatarUrl = avatarUrl) }
         }
     }
 }

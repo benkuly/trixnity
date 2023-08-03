@@ -6,7 +6,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
@@ -23,7 +23,7 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository()
-        cut = RoomOutboxMessageStore(roomOutboxMessageRepository, TransactionManagerMock(), storeScope)
+        cut = RoomOutboxMessageStore(roomOutboxMessageRepository, RepositoryTransactionManagerMock(), storeScope)
     }
     afterTest {
         storeScope.cancel()

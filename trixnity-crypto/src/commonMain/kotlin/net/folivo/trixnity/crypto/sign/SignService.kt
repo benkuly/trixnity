@@ -63,8 +63,8 @@ class SignServiceImpl(
             SignWith.DeviceKey -> {
                 freeAfter(
                     OlmAccount.unpickle(
-                        store.olmPickleKey,
-                        requireNotNull(store.olmAccount)
+                        store.getOlmPickleKey(),
+                        store.getOlmAccount()
                     )
                 ) { olmAccount ->
                     mapOf(

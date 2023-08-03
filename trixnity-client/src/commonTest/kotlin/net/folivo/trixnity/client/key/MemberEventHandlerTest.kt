@@ -84,7 +84,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = alice.full
                 )
             )
-            keyStore.outdatedKeys.value shouldHaveSize 0
+            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
         }
         should("remove device keys on leave or ban of the last encrypted room") {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
@@ -172,7 +172,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            keyStore.outdatedKeys.value shouldHaveSize 0
+            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
         }
         should("mark keys as outdated when join or invite") {
             cut.handleMemberEvents(
@@ -185,7 +185,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = alice.full,
                 )
             )
-            keyStore.outdatedKeys.value shouldContain alice
+            keyStore.getOutdatedKeysFlow().first() shouldContain alice
 
             keyStore.updateOutdatedKeys { setOf() }
 
@@ -199,7 +199,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = alice.full,
                 )
             )
-            keyStore.outdatedKeys.value shouldContain alice
+            keyStore.getOutdatedKeysFlow().first() shouldContain alice
         }
         should("not mark keys as outdated when join, but devices are already tracked") {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
@@ -213,7 +213,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = alice.full,
                 )
             )
-            keyStore.outdatedKeys.value shouldHaveSize 0
+            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
         }
     }
 }

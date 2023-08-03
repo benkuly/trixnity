@@ -36,11 +36,11 @@ class IncomingSecretKeyRequestEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests)
-        api.sync.subscribeAfterSyncProcessing(::processIncomingKeyRequests)
+        api.sync.subscribeLastInSyncProcessing(::processIncomingKeyRequests)
         api.sync.subscribe(::handleIncomingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleEncryptedIncomingKeyRequests)
-            api.sync.unsubscribeAfterSyncProcessing(::processIncomingKeyRequests)
+            api.sync.unsubscribeLastInSyncProcessing(::processIncomingKeyRequests)
             api.sync.unsubscribe(::handleIncomingKeyRequests)
         }
     }
@@ -74,7 +74,7 @@ class IncomingSecretKeyRequestEventHandler(
             if (senderTrustLevel?.isVerified == true) {
                 val requestedSecret = request.name
                     ?.let { SecretType.ofId(it) }
-                    ?.let { keyStore.secrets.value[it] }
+                    ?.let { keyStore.getSecrets()[it] }
                 if (requestedSecret != null) {
                     log.info { "send incoming secret key request answer (${request.name}) to device $requestingDeviceId" }
                     val encryptedAnswer = try {

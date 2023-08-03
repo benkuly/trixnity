@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.repository.MapDeleteByRoomIdRepository
 import net.folivo.trixnity.client.store.repository.MinimalDeleteByRoomIdRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -47,7 +47,7 @@ private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
 
 class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
     private val repository: MinimalDeleteByRoomIdRepository<K, V>,
-    private val tm: TransactionManager,
+    private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
     keyMapper: (K) -> RoomId,
@@ -68,7 +68,7 @@ class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
     suspend fun deleteByRoomId(roomId: RoomId) {
         coroutineScope {
             launch {
-                tm.writeOperation { repository.deleteByRoomId(roomId) }
+                tm.writeTransaction { repository.deleteByRoomId(roomId) }
             }
             launch {
                 roomIdIndex.getMapping(roomId).forEach {
@@ -76,7 +76,7 @@ class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
                         key = it,
                         updater = { null },
                         get = { null },
-                        persist = { null },
+                        persist = {  },
                     )
                 }
             }
@@ -86,7 +86,7 @@ class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
 
 class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
     private val repository: MapDeleteByRoomIdRepository<K1, K2, V>,
-    private val tm: TransactionManager,
+    private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
     keyMapper: (MapRepositoryCoroutinesCacheKey<K1, K2>) -> RoomId,
@@ -106,7 +106,7 @@ class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
     suspend fun deleteByRoomId(roomId: RoomId) {
         coroutineScope {
             launch {
-                tm.writeOperation { repository.deleteByRoomId(roomId) }
+                tm.writeTransaction { repository.deleteByRoomId(roomId) }
             }
             launch {
                 roomIdIndex.getMapping(roomId).forEach {
@@ -114,7 +114,7 @@ class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
                         key = it,
                         updater = { null },
                         get = { null },
-                        persist = { null },
+                        persist = {  },
                     )
                 }
             }

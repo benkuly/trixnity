@@ -5,7 +5,7 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import net.folivo.trixnity.client.store.MediaCacheMapping
 import net.folivo.trixnity.client.store.repository.MediaCacheMappingRepository
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import org.koin.core.Koin
 
 

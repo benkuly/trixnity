@@ -5,7 +5,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.repository.MapRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -61,6 +61,8 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
         }
     }
 
+    // FIXME checkNotNull can fail when value has been removed!
+    //  -> launchRemoveOnEmptySubscriptionCount needs a subscriptionCount for subscriptionCount
     override suspend fun getSubscriptionCount(key: MapRepositoryCoroutinesCacheKey<K1, K2>): StateFlow<Int> =
         checkNotNull(firstKeyMapping.get(key.firstKey)?.subscriptionCount)
 
@@ -98,7 +100,7 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
 
 open class MapRepositoryCoroutineCache<K1, K2, V>(
     repository: MapRepository<K1, K2, V>,
-    tm: TransactionManager,
+    tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
 ) : CoroutineCache<MapRepositoryCoroutinesCacheKey<K1, K2>, V, MapRepositoryCoroutineCacheStore<K1, K2, V>>(
@@ -127,7 +129,7 @@ open class MapRepositoryCoroutineCache<K1, K2, V>(
                                             key = key,
                                             updater = null,
                                             get = { store.get(key) },
-                                            persist = { null },
+                                            persist = { },
                                         )
                             }
                         )
@@ -137,7 +139,7 @@ open class MapRepositoryCoroutineCache<K1, K2, V>(
                                 key = MapRepositoryCoroutinesCacheKey(key, value.key),
                                 updater = null,
                                 get = { value.value },
-                                persist = { null },
+                                persist = { },
                             )
                         }
                         mapRepositoryIndex.markFullyLoadedFromRepository(key)

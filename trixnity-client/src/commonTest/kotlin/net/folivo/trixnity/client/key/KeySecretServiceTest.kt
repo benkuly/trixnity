@@ -56,7 +56,7 @@ private val body: ShouldSpec.() -> Unit = {
                     GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())), "key3"
                 )
             )
-            keyStore.secrets.value = existingPrivateKeys
+            keyStore.updateSecrets { existingPrivateKeys }
 
             val key = Random.nextBytes(32)
             val secret = Random.nextBytes(32).encodeBase64()
@@ -72,7 +72,7 @@ private val body: ShouldSpec.() -> Unit = {
             globalAccountDataStore.save(event)
 
             cut.decryptMissingSecrets(key, "KEY", SecretKeyEventContent.AesHmacSha2Key())
-            keyStore.secrets.value shouldBe existingPrivateKeys + mapOf(
+            keyStore.getSecrets() shouldBe existingPrivateKeys + mapOf(
                 M_CROSS_SIGNING_USER_SIGNING to StoredSecret(event, secret),
             )
         }

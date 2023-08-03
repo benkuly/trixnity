@@ -5,13 +5,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import net.folivo.trixnity.client.store.cache.FullRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
 import kotlin.time.Duration
 
 class RoomOutboxMessageStore(
     roomOutboxMessageRepository: RoomOutboxMessageRepository,
-    tm: TransactionManager,
+    tm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) : Store {
     private val roomOutboxMessageCache = FullRepositoryCoroutineCache(

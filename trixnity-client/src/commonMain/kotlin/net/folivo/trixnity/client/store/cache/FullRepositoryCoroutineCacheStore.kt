@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.store.cache
 
 import net.folivo.trixnity.client.store.repository.FullRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 
 class FullRepositoryCoroutineCacheStore<K, V>(
     private val repository: FullRepository<K, V>,
-    private val tm: TransactionManager,
+    private val tm: RepositoryTransactionManager,
 ) : MinimalRepositoryCoroutineCacheStore<K, V>(repository, tm) {
-    suspend fun getAll() = tm.readOperation { repository.getAll() }
+    suspend fun getAll() = tm.readTransaction { repository.getAll() }
 }

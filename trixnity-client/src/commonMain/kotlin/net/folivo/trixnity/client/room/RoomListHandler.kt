@@ -22,11 +22,11 @@ class RoomListHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeSyncResponse(::handleSyncResponse)
-        api.sync.subscribeAfterSyncProcessing(::handleAfterSyncResponse)
+        api.sync.subscribeFirstInSyncProcessing(::handleSyncResponse)
+        api.sync.subscribeLastInSyncProcessing(::handleAfterSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeSyncResponse(::handleSyncResponse)
-            api.sync.unsubscribeAfterSyncProcessing(::handleAfterSyncResponse)
+            api.sync.unsubscribeFirstInSyncProcessing(::handleSyncResponse)
+            api.sync.unsubscribeLastInSyncProcessing(::handleAfterSyncResponse)
         }
     }
 

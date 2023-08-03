@@ -46,21 +46,21 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.updateOutdatedKeys { setOf(alice) }
                 keyStore.updateDeviceKeys(bob) { mapOf() }
                 cut.handleDeviceLists(Sync.Response.DeviceLists(changed = setOf(bob)))
-                keyStore.outdatedKeys.value shouldContainExactly setOf(alice, bob)
+                keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice, bob)
             }
             should("remove key when user left") {
                 keyStore.updateOutdatedKeys { setOf(alice, bob) }
                 keyStore.updateDeviceKeys(alice) { mapOf() }
                 cut.handleDeviceLists(Sync.Response.DeviceLists(left = setOf(alice)))
                 keyStore.getDeviceKeys(alice).first() should beNull()
-                keyStore.outdatedKeys.value shouldContainExactly setOf(bob)
+                keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(bob)
             }
         }
         context("device key is not tracked") {
             should("not add changed devices to outdated keys") {
                 keyStore.updateOutdatedKeys { setOf(alice) }
                 cut.handleDeviceLists(Sync.Response.DeviceLists(changed = setOf(bob)))
-                keyStore.outdatedKeys.value shouldContainExactly setOf(alice)
+                keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice)
             }
         }
     }

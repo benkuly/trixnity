@@ -21,11 +21,6 @@ class MatrixClientConfiguration {
     var autoJoinUpgradedRooms: Boolean = true
 
     /**
-     * Enables async database transactions. It adds a huge performance boost on processing syncs.
-     */
-    var asyncTransactions: Boolean = true
-
-    /**
      * Delete a room, when it's membership is [Membership.LEAVE].
      */
     var deleteRoomsOnLeave: Boolean = true

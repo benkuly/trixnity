@@ -33,7 +33,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
         cut = ClientOlmStore(
-            getInMemoryAccountStore(scope).apply { olmPickleKey.value = "" },
+            getInMemoryAccountStore(scope).apply { updateAccount { it.copy(olmPickleKey = "") } },
             getInMemoryOlmStore(scope),
             keyStore,
             getInMemoryRoomStore(scope),
@@ -65,7 +65,7 @@ private val body: ShouldSpec.() -> Unit = {
         context("identity key is not present") {
             should("fetch and return identity key when found") {
                 val result = async { cut.findCurve25519Key(alice, aliceDevice) }
-                keyStore.outdatedKeys.first { it.contains(alice) }
+                keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                 keyStore.updateDeviceKeys(alice) {
                     mapOf(
                         aliceDevice to StoredDeviceKeys(
@@ -81,7 +81,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("return null when no identity key found") {
                 val result = async { cut.findCurve25519Key(alice, aliceDevice) }
-                keyStore.outdatedKeys.first { it.contains(alice) }
+                keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                 keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe null
             }
@@ -106,7 +106,7 @@ private val body: ShouldSpec.() -> Unit = {
         context("signing key is not present") {
             should("fetch and return signing key when found") {
                 val result = async { cut.findEd25519Key(alice, aliceDevice) }
-                keyStore.outdatedKeys.first { it.contains(alice) }
+                keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                 keyStore.updateDeviceKeys(alice) {
                     mapOf(
                         aliceDevice to StoredDeviceKeys(
@@ -122,7 +122,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("return null when no signing key found") {
                 val result = async { cut.findEd25519Key(alice, aliceDevice) }
-                keyStore.outdatedKeys.first { it.contains(alice) }
+                keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                 keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe null
             }
@@ -148,7 +148,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val deviceKeys = DeviceKeys(alice, aliceDevice, setOf(), keysOf(Key.Curve25519Key(null, "key")))
 
                 val result = async { cut.findDeviceKeys(alice, Key.Curve25519Key(null, "key")) }
-                keyStore.outdatedKeys.first { it.contains(alice) }
+                keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                 keyStore.updateDeviceKeys(alice) {
                     mapOf(
                         aliceDevice to StoredDeviceKeys(
@@ -162,7 +162,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("return null when no device key found") {
                 val result = async { cut.findDeviceKeys(alice, Key.Curve25519Key(null, "key")) }
-                keyStore.outdatedKeys.first { it.contains(alice) }
+                keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                 keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe null
             }

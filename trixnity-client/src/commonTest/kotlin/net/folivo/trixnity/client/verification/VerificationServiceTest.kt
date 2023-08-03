@@ -135,7 +135,10 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                api.sync.startOnce().getOrThrow()
+                api.sync.startOnce(
+                    getBatchToken = { null },
+                    setBatchToken = {},
+                ).getOrThrow()
 
                 val activeDeviceVerifications = cut.activeDeviceVerification.value
                 activeDeviceVerifications shouldBe null
@@ -155,7 +158,10 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                api.sync.startOnce().getOrThrow()
+                api.sync.startOnce(
+                    getBatchToken = { null },
+                    setBatchToken = {},
+                ).getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
@@ -188,7 +194,10 @@ private val body: ShouldSpec.() -> Unit = {
                     matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
                     }
                 }
-                api.sync.startOnce().getOrThrow()
+                api.sync.startOnce(
+                    getBatchToken = { null },
+                    setBatchToken = {},
+                ).getOrThrow()
 
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
@@ -306,10 +315,16 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                api.sync.startOnce().getOrThrow()
+                api.sync.startOnce(
+                    getBatchToken = { null },
+                    setBatchToken = {},
+                ).getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
-                api.sync.startOnce().getOrThrow()
+                api.sync.startOnce(
+                    getBatchToken = { null },
+                    setBatchToken = {},
+                ).getOrThrow()
                 activeDeviceVerification.state.first { it is Cancel } shouldBe Cancel(
                     VerificationCancelEventContent(Code.User, "user", null, "transaction"),
                     false

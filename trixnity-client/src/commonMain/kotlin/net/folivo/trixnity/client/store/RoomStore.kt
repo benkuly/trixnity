@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.store.cache.FullRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration
 
 class RoomStore(
     roomRepository: RoomRepository,
-    tm: TransactionManager,
+    tm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) : Store {
     private val roomCache =

@@ -66,7 +66,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
-        accountStore = getInMemoryAccountStore(scope).apply { olmPickleKey.value = "" }
+        accountStore = getInMemoryAccountStore(scope).apply { updateAccount { it.copy(olmPickleKey = "") } }
         olmCryptoStore = getInMemoryOlmStore(scope)
         keyStore = getInMemoryKeyStore(scope)
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)

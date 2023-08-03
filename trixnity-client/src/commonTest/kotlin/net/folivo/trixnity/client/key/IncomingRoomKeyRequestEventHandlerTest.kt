@@ -62,7 +62,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
-        accountStore = getInMemoryAccountStore(scope).apply { olmPickleKey.value = "" }
+        accountStore = getInMemoryAccountStore(scope).apply { updateAccount { it.copy(olmPickleKey = "") } }
         keyStore = getInMemoryKeyStore(scope)
         olmStore = getInMemoryOlmStore(scope)
         olmEncryptionServiceMock = OlmEncryptionServiceMock()

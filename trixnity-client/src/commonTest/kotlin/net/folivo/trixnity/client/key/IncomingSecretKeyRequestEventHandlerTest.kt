@@ -100,13 +100,14 @@ private val body: ShouldSpec.() -> Unit = {
                     sendToDeviceEvents = it.messages
                 }
             }
-            keyStore.secrets.value =
+            keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
                         Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                         "secretUserSigningKey"
                     )
                 )
+            }
             olmEncryptionServiceMock.returnEncryptOlm = {
                 EncryptedEventContent.OlmEncryptedEventContent(
                     ciphertext = mapOf(),
@@ -192,13 +193,13 @@ private val body: ShouldSpec.() -> Unit = {
                     sendToDeviceEvents = it.messages
                 }
             }
-            keyStore.secrets.value =
+            keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
                         Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                         "secretUserSigningKey"
                     )
-                )
+                )}
             olmEncryptionServiceMock.returnEncryptOlm = {
                 EncryptedEventContent.OlmEncryptedEventContent(
                     ciphertext = mapOf(),

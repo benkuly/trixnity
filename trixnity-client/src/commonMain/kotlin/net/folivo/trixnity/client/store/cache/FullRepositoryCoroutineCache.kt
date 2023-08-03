@@ -2,13 +2,13 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.client.store.repository.FullRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 class FullRepositoryCoroutineCache<K, V>(
     repository: FullRepository<K, V>,
-    tm: TransactionManager,
+    tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
     private val valueToKeyMapper: (V) -> K,
@@ -28,7 +28,7 @@ class FullRepositoryCoroutineCache<K, V>(
                 key = key,
                 updater = null,
                 get = { value },
-                persist = { null }
+                persist = {  }
             )
         }
     }

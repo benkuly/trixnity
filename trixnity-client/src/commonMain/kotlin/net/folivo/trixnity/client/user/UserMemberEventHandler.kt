@@ -32,10 +32,10 @@ class UserMemberEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setRoomUser)
-        api.sync.subscribeAfterSyncProcessing(::reloadProfile)
+        api.sync.subscribeLastInSyncProcessing(::reloadProfile)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setRoomUser)
-            api.sync.unsubscribeAfterSyncProcessing(::reloadProfile)
+            api.sync.unsubscribeLastInSyncProcessing(::reloadProfile)
         }
     }
 
@@ -105,8 +105,8 @@ class UserMemberEventHandler(
         return usersWithSameDisplayName.isNotEmpty()
     }
 
-    private fun shouldReloadOwnProfile(userId: UserId) {
-        if (userId == accountStore.userId.value) {
+    private suspend fun shouldReloadOwnProfile(userId: UserId) {
+        if (userId == accountStore.getAccount()?.userId) {
             // only reload profile once, even if there are multiple events in multiple rooms
             reloadOwnProfile.value = true
         }
@@ -116,11 +116,15 @@ class UserMemberEventHandler(
         if (reloadOwnProfile.value) {
             reloadOwnProfile.value = false
 
-            accountStore.userId.value?.let { userId ->
+            accountStore.getAccount()?.userId?.let { userId ->
                 api.users.getProfile(userId)
                     .onSuccess {
-                        accountStore.displayName.value = it.displayName
-                        accountStore.avatarUrl.value = it.avatarUrl
+                        accountStore.updateAccount { account ->
+                            account.copy(
+                                displayName = it.displayName,
+                                avatarUrl = it.avatarUrl
+                            )
+                        }
                     }.getOrThrow()
             }
         }

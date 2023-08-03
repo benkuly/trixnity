@@ -7,12 +7,14 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
-import net.folivo.trixnity.client.retryWhen
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.StoredSecret
+import net.folivo.trixnity.client.utils.RetryLoopFlowState.PAUSE
+import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
+import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
+import net.folivo.trixnity.client.utils.retryWhen
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
@@ -88,12 +90,12 @@ class KeyBackupServiceImpl(
     }
 
     internal suspend fun setAndSignNewKeyBackupVersion() {
-        currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryLoopWhenSyncIs(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed get (and sign) current room key version" } },
             onCancel = { log.info { "stop get current room key version, because job was cancelled" } },
         ) {
-            keyStore.secrets.mapNotNull { it[SecretType.M_MEGOLM_BACKUP_V1] }
+            keyStore.getSecretsFlow().mapNotNull { it[SecretType.M_MEGOLM_BACKUP_V1] }
                 .distinctUntilChanged()
                 // TODO should use the version from secret, when MSC2474 is merged
                 .collectLatest { updateKeyBackupVersion(it.decryptedPrivateKey) }
@@ -140,7 +142,7 @@ class KeyBackupServiceImpl(
                                 version = currentVersion.version
                             )
                         ).getOrThrow()
-                    keyStore.secrets.update { it - SecretType.M_MEGOLM_BACKUP_V1 }
+                    keyStore.updateSecrets { it - SecretType.M_MEGOLM_BACKUP_V1 }
                     null
                 }
             } else null
@@ -164,7 +166,7 @@ class KeyBackupServiceImpl(
                 retryWhen(
                     combine(version, currentSyncState) { currentVersion, currentSyncState ->
                         currentVersion != null && currentSyncState == SyncState.RUNNING
-                    },
+                    }.map { if (it) RUN else PAUSE },
                     scheduleBase = 1.seconds,
                     scheduleLimit = 6.hours,
                     onError = {
@@ -183,7 +185,7 @@ class KeyBackupServiceImpl(
                         val encryptedSessionData =
                             api.keys.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
                         require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
-                        val privateKey = keyStore.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
+                        val privateKey = keyStore.getSecrets()[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
                         val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
                             it.decrypt(
                                 with(encryptedSessionData) {
@@ -198,7 +200,7 @@ class KeyBackupServiceImpl(
                         val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
                         val (firstKnownIndex, pickledSession) =
                             freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
-                                it.firstKnownIndex to it.pickle(requireNotNull(accountStore.olmPickleKey.value))
+                                it.firstKnownIndex to it.pickle(checkNotNull(accountStore.getAccount()?.olmPickleKey))
                             }
                         val senderSigningKey = Key.Ed25519Key(
                             null,
@@ -265,7 +267,7 @@ class KeyBackupServiceImpl(
 
     @OptIn(FlowPreview::class)
     internal suspend fun uploadRoomKeyBackup() {
-        currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryLoopWhenSyncIs(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed upload room key backup" } },
             onCancel = { log.debug { "stop upload room key backup, because job was cancelled" } },
@@ -283,7 +285,7 @@ class KeyBackupServiceImpl(
                                             freeAfter(OlmPkEncryption.create(version.authData.publicKey.value)) { pke ->
                                                 val sessionKey = freeAfter(
                                                     OlmInboundGroupSession.unpickle(
-                                                        requireNotNull(accountStore.olmPickleKey.value),
+                                                        checkNotNull(accountStore.getAccount()?.olmPickleKey),
                                                         session.pickled
                                                     )
                                                 ) { it.export(it.firstKnownIndex) }
@@ -317,7 +319,7 @@ class KeyBackupServiceImpl(
                                 val errorResponse = it.errorResponse
                                 if (errorResponse is ErrorResponse.WrongRoomKeysVersion) {
                                     log.info { "key backup version is outdated" }
-                                    updateKeyBackupVersion(keyStore.secrets.value[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey)
+                                    updateKeyBackupVersion(keyStore.getSecrets()[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey)
                                 }
                             }
                         }.getOrThrow()
@@ -361,7 +363,7 @@ class KeyBackupServiceImpl(
             val encryptedBackupKey = MegolmBackupV1EventContent(
                 encryptSecret(key, keyId, SecretType.M_MEGOLM_BACKUP_V1.id, keyBackupPrivateKey, api.json)
             )
-            keyStore.secrets.update {
+            keyStore.updateSecrets {
                 it + (SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
                     Event.GlobalAccountDataEvent(encryptedBackupKey),
                     keyBackupPrivateKey

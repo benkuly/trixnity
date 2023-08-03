@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store.cache
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -13,7 +13,6 @@ private val log = KotlinLogging.logger { }
 
 private data class CoroutineCacheValue<T>(
     val value: MutableStateFlow<T>,
-    val persisted: MutableStateFlow<Set<StateFlow<Boolean>>>,
     val resetExpireDuration: MutableSharedFlow<Unit>,
 )
 
@@ -28,10 +27,8 @@ interface CoroutineCacheStore<K, V> {
 
     /**
      * Save value to store.
-     *
-     * @return A [StateFlow] which indicates, when the value has been persisted (keyword asynchronous cache)
      */
-    suspend fun persist(key: K, value: V?): StateFlow<Boolean>?
+    suspend fun persist(key: K, value: V?)
 
     /**
      * Delete all values from store.
@@ -82,6 +79,10 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
         .map { value -> value.mapValues { it.value.value.asStateFlow() } }
         .shareIn(cacheScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
 
+    init {
+        addIndex(RemoverJobExecutingIndex(name, _values, cacheScope, expireDuration))
+    }
+
     fun addIndex(index: ObservableMapIndex<K>) {
         _values.indexes.update { it + index }
     }
@@ -101,7 +102,7 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
                 key = key,
                 updater = null,
                 get = { store.get(key) },
-                persist = { null },
+                persist = { },
             )
         )
     }
@@ -118,7 +119,6 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
             get = { store.get(key) },
             persist = { newValue ->
                 if (persistEnabled) store.persist(key, newValue).also { onPersist(newValue) }
-                else null
             },
         )
     }
@@ -135,7 +135,6 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
             get = { null }, // there may be a value saved in db, but we don't need it
             persist = { newValue ->
                 if (persistEnabled) store.persist(key, newValue).also { onPersist(newValue) }
-                else null
             },
         )
     }
@@ -144,78 +143,63 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
         key: K,
         updater: (suspend (oldValue: V?) -> V?)?,
         get: suspend () -> V?,
-        persist: suspend (newValue: V?) -> StateFlow<Boolean>?,
+        persist: suspend (newValue: V?) -> Unit,
     ): StateFlow<V?> {
-        var removeFromCacheJobParameter: RemoveFromCacheJobParameter? = null
         val result = _values.update(key) { existingCacheValue ->
             if (existingCacheValue == null) {
                 log.trace { "$name: no cache hit for key $key" }
                 val retrievedValue = get()
-                val newValue = if (updater != null) updater(retrievedValue) else retrievedValue
-                val persisted = if (updater != null) persist(newValue) else null
-                val persistedFlows = MutableStateFlow(setOfNotNull(persisted))
-                val newStateFlowValue: MutableStateFlow<V?> = MutableStateFlow(newValue)
-                val subscriptionCountFlow = newStateFlowValue.subscriptionCount
-                val resetExpireDuration =
-                    MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-                removeFromCacheJobParameter = RemoveFromCacheJobParameter(
-                    subscriptionCount = subscriptionCountFlow,
-                    persisted = persistedFlows,
-                    resetExpireDuration = resetExpireDuration,
-                )
                 val newCacheValue = CoroutineCacheValue(
-                    value = newStateFlowValue,
-                    persisted = persistedFlows,
-                    resetExpireDuration = resetExpireDuration,
+                    value = MutableStateFlow(retrievedValue),
+                    resetExpireDuration = MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = DROP_OLDEST)
+                        .also { it.emit(Unit) },
                 )
                 newCacheValue
             } else {
-                if (updater != null) {
-                    val newValue = existingCacheValue.value.updateAndGet { updater(it) }
-                    persist(newValue)?.let { persisted ->
-                        existingCacheValue.persisted.update { it + persisted }
-                    }
-                }
+                existingCacheValue.resetExpireDuration.emit(Unit)
                 existingCacheValue
             }
         }
         checkNotNull(result)
-        removeFromCacheJobParameter?.also { launchRemoveFromCacheJob(key, it) }
-        result.resetExpireDuration.emit(Unit)
+        if (updater != null) {
+            result.value.update { oldValue ->
+                updater(oldValue)
+                    .also { persist(it) }
+            }
+        }
         return result.value
     }
+}
 
-    protected val infiniteCache = expireDuration.isInfinite()
-
-    private data class RemoveFromCacheJobParameter(
-        val subscriptionCount: StateFlow<Int>,
-        val persisted: StateFlow<Set<StateFlow<Boolean>>>,
-        val resetExpireDuration: SharedFlow<Unit>,
-    )
-
-    private fun launchRemoveFromCacheJob(
-        key: K,
-        parameters: RemoveFromCacheJobParameter,
-    ) = cacheScope.launch {
-        if (infiniteCache.not())
-            combine(
-                parameters.resetExpireDuration,
-                parameters.subscriptionCount,
-                parameters.persisted,
-            ) { _, subscriptionCount, persisted ->
-                subscriptionCount to persisted
-            }.collectLatest { (subscriptionCount, persisted) ->
-                delay(expireDuration)
-                // waiting for the cache value to be written into the repository
-                // otherwise cache and repository could get out of sync
-                persisted.forEach { persistedFlow ->
-                    persistedFlow.first { it }
-                }
-                if (subscriptionCount == 0) {
-                    _values.getIndexSubscriptionCount(key).first { it == 0 }
-                    log.trace { "$name: remove value from cache with key $key" }
-                    _values.update(key) { null }
+private class RemoverJobExecutingIndex<K, V>(
+    private val name: String,
+    private val values: ObservableMap<K, CoroutineCacheValue<V?>>,
+    private val cacheScope: CoroutineScope,
+    private val expireDuration: Duration = 1.minutes,
+) : ObservableMapIndex<K> {
+    private val infiniteCache = expireDuration.isInfinite()
+    override suspend fun onPut(key: K) {
+        if (infiniteCache.not()) {
+            val value = values.get(key) ?: return
+            cacheScope.launch {
+                combine(
+                    value.resetExpireDuration,
+                    value.value.subscriptionCount,
+                ) { _, subscriptionCount ->
+                    subscriptionCount
+                }.collectLatest { subscriptionCount ->
+                    delay(expireDuration)
+                    if (subscriptionCount == 0) {
+                        values.getIndexSubscriptionCount(key).first { it == 0 }
+                        log.trace { "$name: remove value from cache with key $key" }
+                        values.update(key) { null }
+                    }
                 }
             }
+        }
     }
+
+    override suspend fun onRemove(key: K) {}
+    override suspend fun onRemoveAll() {}
+    override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = MutableStateFlow(0)
 }

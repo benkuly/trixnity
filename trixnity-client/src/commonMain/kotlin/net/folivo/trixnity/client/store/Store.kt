@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store
 
 interface Store {
-    suspend fun init()
+    suspend fun init() {}
 
     /**
      * Only deletes everything, that can be fetched from server.

@@ -5,9 +5,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.UserInfo
@@ -72,7 +72,7 @@ class UserServiceImpl(
     private val currentSyncState: CurrentSyncState,
     userInfo: UserInfo,
     private val mappings: EventContentSerializerMappings,
-    private val tm: TransactionManager,
+    private val tm: RepositoryTransactionManager,
     private val scope: CoroutineScope,
 ) : UserService {
 
@@ -93,10 +93,10 @@ class UserServiceImpl(
                             roomId = roomId,
                             notMembership = LEAVE
                         ).getOrThrow()
-                        memberEvents.chunked(500).forEach { chunk ->
-                            tm.withAsyncWriteTransaction {
+                        memberEvents.forEach {
+                            tm.writeTransaction {
                                 // TODO We should synchronize this with the sync. Otherwise this could overwrite a newer event.
-                                chunk.forEach { api.sync.emitEvent(it) }
+                                api.sync.emitEvent(it)
                             }
                         }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }

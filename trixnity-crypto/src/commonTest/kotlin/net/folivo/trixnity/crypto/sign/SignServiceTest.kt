@@ -48,8 +48,8 @@ class SignServiceTest : ShouldSpec({
             UserInfo(alice, aliceDevice, aliceOlmKeys.signingKey, aliceOlmKeys.identityKey),
             json,
             object : SignServiceStore {
-                override val olmAccount = aliceSigningAccount.pickle("")
-                override val olmPickleKey = ""
+                override suspend fun getOlmAccount(): String = aliceSigningAccount.pickle("")
+                override suspend fun getOlmPickleKey(): String = ""
             },
         )
         val olmAccount = freeAfter(OlmAccount.create()) { it.pickle("") }
@@ -58,8 +58,8 @@ class SignServiceTest : ShouldSpec({
             UserInfo(ownUserId, "ABCDEF", olmKeys.signingKey, olmKeys.identityKey),
             json,
             object : SignServiceStore {
-                override val olmAccount = olmAccount
-                override val olmPickleKey = ""
+                override suspend fun getOlmAccount(): String = olmAccount
+                override suspend fun getOlmPickleKey(): String = ""
             },
         )
     }

@@ -13,10 +13,10 @@ import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
 import net.folivo.trixnity.client.media.MediaService
-import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
+import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -37,9 +37,9 @@ class OutboxMessageEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(roomOutboxMessageStore.getAll()) }
-        api.sync.subscribeAfterSyncProcessing(::removeOldOutboxMessages)
+        api.sync.subscribeLastInSyncProcessing(::removeOldOutboxMessages)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeAfterSyncProcessing(::removeOldOutboxMessages)
+            api.sync.unsubscribeLastInSyncProcessing(::removeOldOutboxMessages)
         }
     }
 
@@ -56,7 +56,7 @@ class OutboxMessageEventHandler(
     }
 
     internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) {
-        currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryLoopWhenSyncIs(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },

@@ -6,7 +6,7 @@ import com.juul.indexeddb.Transaction
 import com.juul.indexeddb.WriteTransaction
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.coroutines.CoroutineContext
 
 class IndexedDBReadTransaction(
@@ -47,6 +47,7 @@ class IndexedDBRepositoryTransactionManager(
     private val database: Database,
     private val allObjectStores: Array<String>,
 ) : RepositoryTransactionManager {
+    override val parallelTransactionsSupported: Boolean = true
     override suspend fun writeTransaction(block: suspend () -> Unit): Unit = coroutineScope {
         val existingReadTransaction = coroutineContext[IndexedDBReadTransaction]?.transaction
         val existingWriteTransaction = coroutineContext[IndexedDBWriteTransaction]?.transaction
