@@ -2,11 +2,8 @@ package net.folivo.trixnity.client.utils
 
 import arrow.fx.coroutines.Schedule
 import arrow.fx.coroutines.retry
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -66,6 +63,7 @@ suspend fun <T> retryLoopFlow(
                         }
                     )
                 )
+                yield()
                 emit(RetryLoopFlowResult.Suspend) // if we don't do that, block may be called even if not needed
             } catch (error: Exception) {
                 if (error is CancellationException) {
