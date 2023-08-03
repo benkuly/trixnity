@@ -51,8 +51,6 @@ private sealed interface TransactionResult {
 }
 
 class RealmRepositoryTransactionManager(private val realm: Realm) : RepositoryTransactionManager {
-    override val parallelTransactionsSupported: Boolean = false
-
     override suspend fun writeTransaction(block: suspend () -> Unit): Unit = coroutineScope {
         val existingRealmWriteTransaction = coroutineContext[RealmWriteTransaction]
         val existingRealmReadTransaction = coroutineContext[RealmReadTransaction]

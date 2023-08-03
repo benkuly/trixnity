@@ -6,7 +6,6 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 internal class RoomRepositoryTransactionManager(
     private val db: TrixnityRoomDatabase,
 ) : RepositoryTransactionManager {
-    override val parallelTransactionsSupported: Boolean = true
     override suspend fun <T> readTransaction(block: suspend () -> T): T =
         db.withTransaction {
             block()

@@ -45,15 +45,13 @@ class OutdatedKeysHandler(
     private val normalLoopRunning = MutableStateFlow(false)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        if (tm.parallelTransactionsSupported.not()) {
-            api.sync.subscribeBeforeSyncProcessing(::beforeSyncProcessing)
-            api.sync.subscribeSyncProcessing(::syncLoop)
-            api.sync.subscribeAfterSyncProcessing(::afterSyncProcessing)
-            scope.coroutineContext.job.invokeOnCompletion {
-                api.sync.unsubscribeBeforeSyncProcessing(::beforeSyncProcessing)
-                api.sync.unsubscribeSyncProcessing(::syncLoop)
-                api.sync.unsubscribeAfterSyncProcessing(::afterSyncProcessing)
-            }
+        api.sync.subscribeBeforeSyncProcessing(::beforeSyncProcessing)
+        api.sync.subscribeSyncProcessing(::syncLoop)
+        api.sync.subscribeAfterSyncProcessing(::afterSyncProcessing)
+        scope.coroutineContext.job.invokeOnCompletion {
+            api.sync.unsubscribeBeforeSyncProcessing(::beforeSyncProcessing)
+            api.sync.unsubscribeSyncProcessing(::syncLoop)
+            api.sync.unsubscribeAfterSyncProcessing(::afterSyncProcessing)
         }
         scope.launch(start = CoroutineStart.UNDISPATCHED) { normalLoop() }
     }

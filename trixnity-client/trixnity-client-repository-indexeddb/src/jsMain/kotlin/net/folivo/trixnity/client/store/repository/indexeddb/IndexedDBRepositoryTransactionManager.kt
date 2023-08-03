@@ -47,7 +47,6 @@ class IndexedDBRepositoryTransactionManager(
     private val database: Database,
     private val allObjectStores: Array<String>,
 ) : RepositoryTransactionManager {
-    override val parallelTransactionsSupported: Boolean = true
     override suspend fun writeTransaction(block: suspend () -> Unit): Unit = coroutineScope {
         val existingReadTransaction = coroutineContext[IndexedDBReadTransaction]?.transaction
         val existingWriteTransaction = coroutineContext[IndexedDBWriteTransaction]?.transaction

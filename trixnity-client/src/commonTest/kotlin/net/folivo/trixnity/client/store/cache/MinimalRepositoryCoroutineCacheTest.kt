@@ -18,8 +18,6 @@ class MinimalRepositoryCoroutineCacheTest : ShouldSpec({
     val readTransactionWasCalled = MutableStateFlow(false)
     val writeTransactionWasCalled = MutableStateFlow(false)
     val tm = object : RepositoryTransactionManager {
-        override val parallelTransactionsSupported: Boolean = true
-
         override suspend fun <T> readTransaction(block: suspend () -> T): T {
             return block().also { readTransactionWasCalled.value = true }
         }

@@ -46,8 +46,6 @@ suspend fun <T> withExposedWrite(block: () -> T) = coroutineScope {
 }
 
 class ExposedRepositoryTransactionManager(private val database: Database) : RepositoryTransactionManager {
-    override val parallelTransactionsSupported: Boolean = true
-
     // a single transaction is only allowed to read and write in one thread (no parallelism)
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun newLimitedDispatcher() = Dispatchers.IO.limitedParallelism(1)
