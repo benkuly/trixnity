@@ -31,18 +31,12 @@ fun ShouldSpec.accountRepositoryTest(diReceiver: () -> Koin) {
         )
         rtm.writeTransaction {
             cut.save(1, account)
-            println(1)
             cut.get(1) shouldBe account
-            println(2)
             val accountCopy = account.copy(syncBatchToken = "otherSyncToken")
             cut.save(1, accountCopy)
-            println(3)
             cut.get(1) shouldBe accountCopy
-            println(4)
             cut.delete(1)
-            println(5)
             cut.get(1) shouldBe null
-            println(6)
         }
     }
 }
