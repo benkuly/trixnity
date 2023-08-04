@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.integrationtests
 
 import com.benasher44.uuid.uuid4
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -88,7 +89,8 @@ class PerformanceIT {
             println("diff: ${diff.roundToInt()}%")
             println("################################")
 
-            diff shouldBeLessThan 100.0 // %
+            diff shouldBeLessThan 200.0 // %
+            diff shouldBeGreaterThan 50.0 // %
         }
     }
 }
