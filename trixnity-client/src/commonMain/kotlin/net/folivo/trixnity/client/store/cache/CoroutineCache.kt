@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger { }
 
-private data class CoroutineCacheValue<T>(
+internal data class CoroutineCacheValue<T>(
     val value: MutableStateFlow<T>,
     val resetExpireDuration: MutableSharedFlow<Unit>,
 )
@@ -58,7 +58,7 @@ interface ObservableMapIndex<K> {
     /**
      * Get the subscription count on an index entry, which uses an entry of the cache.
      */
-    suspend fun getSubscriptionCount(key: K): StateFlow<Int>
+    suspend fun getSubscriptionCount(key: K): Flow<Int>
 }
 
 /**
@@ -68,32 +68,19 @@ interface ObservableMapIndex<K> {
  * @param cacheScope A long living [CoroutineScope] to spawn coroutines, which remove entries from cache when not used anymore.
  * @param expireDuration Duration to wait until entries from cache are when not used anymore.
  */
-open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
-    protected val name: String,
+internal open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
+    name: String,
     protected val store: S,
-    protected val cacheScope: CoroutineScope,
-    protected val expireDuration: Duration = 1.minutes,
+    cacheScope: CoroutineScope,
+    expireDuration: Duration = 1.minutes,
+) : CoroutineCacheBase<K, V>(
+    name = name,
+    cacheScope = cacheScope,
+    expireDuration = expireDuration,
 ) {
-    private val _values = ObservableMap<K, CoroutineCacheValue<V?>>(cacheScope)
-    val values: SharedFlow<Map<K, StateFlow<V?>>> = _values.values
-        .map { value -> value.mapValues { it.value.value.asStateFlow() } }
-        .shareIn(cacheScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
-
-    init {
-        addIndex(RemoverJobExecutingIndex(name, _values, cacheScope, expireDuration))
-    }
-
-    fun addIndex(index: ObservableMapIndex<K>) {
-        _values.indexes.update { it + index }
-    }
-
-    suspend fun clear() {
-        _values.removeAll()
-    }
-
     suspend fun deleteAll() {
         store.deleteAll()
-        _values.removeAll()
+        clear()
     }
 
     fun read(key: K): Flow<V?> = flow {
@@ -103,7 +90,7 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
                 updater = null,
                 get = { store.get(key) },
                 persist = { },
-            )
+            ).value
         )
     }
 
@@ -132,19 +119,42 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
         updateAndGet(
             key = key,
             updater = { value },
-            get = { null }, // there may be a value saved in db, but we don't need it
+            get = { value },
             persist = { newValue ->
                 if (persistEnabled) store.persist(key, newValue).also { onPersist(newValue) }
             },
         )
     }
+}
+
+internal open class CoroutineCacheBase<K, V>(
+    protected val name: String,
+    protected val cacheScope: CoroutineScope,
+    protected val expireDuration: Duration = 1.minutes,
+) {
+    private val _values = ObservableMap<K, CoroutineCacheValue<V?>>(cacheScope)
+    val values: SharedFlow<Map<K, StateFlow<V?>>> = _values.values
+        .map { value -> value.mapValues { it.value.value.asStateFlow() } }
+        .shareIn(cacheScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
+
+    init {
+        addIndex(RemoverJobExecutingIndex(name, _values, cacheScope, expireDuration))
+    }
+
+    fun addIndex(index: ObservableMapIndex<K>) {
+        _values.indexes.update { it + index }
+    }
+
+    suspend fun clear() {
+        _values.removeAll()
+    }
 
     protected suspend fun updateAndGet(
         key: K,
-        updater: (suspend (oldValue: V?) -> V?)?,
-        get: suspend () -> V?,
-        persist: suspend (newValue: V?) -> Unit,
-    ): StateFlow<V?> {
+        updater: (suspend (oldValue: V?) -> V?)? = null,
+        get: (suspend () -> V?),
+        persist: (suspend (newValue: V?) -> Unit)? = null,
+    ): CoroutineCacheValue<V?> {
         val result = _values.update(key) { existingCacheValue ->
             if (existingCacheValue == null) {
                 log.trace { "$name: no cache hit for key $key" }
@@ -164,10 +174,10 @@ open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
         if (updater != null) {
             result.value.update { oldValue ->
                 updater(oldValue)
-                    .also { persist(it) }
+                    .also { if (persist != null) persist(it) }
             }
         }
-        return result.value
+        return result
     }
 }
 
@@ -185,12 +195,12 @@ private class RemoverJobExecutingIndex<K, V>(
                 combine(
                     value.resetExpireDuration,
                     value.value.subscriptionCount,
-                ) { _, subscriptionCount ->
-                    subscriptionCount
-                }.collectLatest { subscriptionCount ->
+                    values.getIndexSubscriptionCount(key),
+                ) { _, subscriptionCount, indexSubscriptionCount ->
+                    subscriptionCount to indexSubscriptionCount
+                }.collectLatest { (subscriptionCount, indexSubscriptionCount) ->
                     delay(expireDuration)
-                    if (subscriptionCount == 0) {
-                        values.getIndexSubscriptionCount(key).first { it == 0 }
+                    if (subscriptionCount == 0 && indexSubscriptionCount == 0) {
                         log.trace { "$name: remove value from cache with key $key" }
                         values.update(key) { null }
                     }

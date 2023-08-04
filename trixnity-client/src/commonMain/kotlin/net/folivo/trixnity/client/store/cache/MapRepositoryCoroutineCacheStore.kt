@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.store.cache
 import net.folivo.trixnity.client.store.repository.MapRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 
-class MapRepositoryCoroutineCacheStore<K1, K2, V>(
+internal class MapRepositoryCoroutineCacheStore<K1, K2, V>(
     private val repository: MapRepository<K1, K2, V>,
     private val tm: RepositoryTransactionManager,
 ) : CoroutineCacheStore<MapRepositoryCoroutinesCacheKey<K1, K2>, V> {

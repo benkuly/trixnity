@@ -45,7 +45,7 @@ private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
         roomIdMapping.get(roomId).orEmpty()
 }
 
-class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
+internal class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
     private val repository: MinimalDeleteByRoomIdRepository<K, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
@@ -76,7 +76,7 @@ class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
                         key = it,
                         updater = { null },
                         get = { null },
-                        persist = {  },
+                        persist = { },
                     )
                 }
             }
@@ -84,7 +84,7 @@ class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
     }
 }
 
-class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
+internal class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
     private val repository: MapDeleteByRoomIdRepository<K1, K2, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
@@ -114,7 +114,7 @@ class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
                         key = it,
                         updater = { null },
                         get = { null },
-                        persist = {  },
+                        persist = { },
                     )
                 }
             }

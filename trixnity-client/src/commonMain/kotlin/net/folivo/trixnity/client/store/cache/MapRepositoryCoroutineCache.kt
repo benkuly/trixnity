@@ -1,104 +1,88 @@
 package net.folivo.trixnity.client.store.cache
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.store.repository.MapRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
+
+private val log = KotlinLogging.logger { }
 
 data class MapRepositoryCoroutinesCacheKey<K1, K2>(
     val firstKey: K1,
     val secondKey: K2,
 )
 
-private data class MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(
-    val keys: Set<MapRepositoryCoroutinesCacheKey<K1, K2>>,
-    val fullyLoadedFromRepository: Boolean,
+private data class MapRepositoryObservableMapIndexValue<K2>(
+    val keys: Set<K2> = setOf(),
+    val fullyLoadedFromRepository: Boolean = false,
 )
 
 private class MapRepositoryObservableMapIndex<K1, K2>(
-    private val cacheScope: CoroutineScope,
-) : ObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
-
-    private val firstKeyMapping =
-        ObservableMap<K1, MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>>>(cacheScope)
+    name: String,
+    cacheScope: CoroutineScope,
+    expireDuration: Duration = 1.minutes,
+    private val get: suspend (key: K1) -> Set<K2>,
+) : ObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>>,
+    CoroutineCacheBase<K1, MapRepositoryObservableMapIndexValue<K2>>(
+        name = name,
+        cacheScope = cacheScope,
+        expireDuration = expireDuration
+    ) {
 
     override suspend fun onPut(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
-        firstKeyMapping.update(key.firstKey) { mapping ->
-            if (mapping == null) {
-                MutableStateFlow(
-                    MapRepositoryCoroutineCacheValuesIndexValue(setOf(key), false)
-                ).launchRemoveOnEmptySubscriptionCount(key.firstKey)
-
-            } else {
-                mapping.update { it.copy(keys = it.keys + key) }
-                mapping
-            }
-        }
-    }
-
-    override suspend fun onRemove(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
-        firstKeyMapping.get(key.firstKey)?.update {
-            it.copy(
-                keys = it.keys - key,
-                fullyLoadedFromRepository = false
-            )
-        }
-    }
-
-    override suspend fun onRemoveAll() {
-        firstKeyMapping.getAll().forEach { entry ->
-            entry.value.update {
-                it.copy(
-                    keys = emptySet(),
-                    fullyLoadedFromRepository = false
-                )
-            }
-        }
-    }
-
-    // FIXME checkNotNull can fail when value has been removed!
-    //  -> launchRemoveOnEmptySubscriptionCount needs a subscriptionCount for subscriptionCount
-    override suspend fun getSubscriptionCount(key: MapRepositoryCoroutinesCacheKey<K1, K2>): StateFlow<Int> =
-        checkNotNull(firstKeyMapping.get(key.firstKey)?.subscriptionCount)
-
-    private fun MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>>.launchRemoveOnEmptySubscriptionCount(
-        key: K1
-    ): MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>> =
-        also {
-            cacheScope.launch {
-                delay(1.seconds) // prevent, that empty values are removed immediately
-                combine(this@launchRemoveOnEmptySubscriptionCount, subscriptionCount) { mapping, subscriptionCount ->
-                    if (mapping.keys.isEmpty() && subscriptionCount == 0) {
-                        firstKeyMapping.update(key) { null }
-                    }
-                }.collect()
-            }
-        }
-
-    fun getMapping(key: K1): Flow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>> = flow {
-        emitAll(
-            checkNotNull(
-                firstKeyMapping.update(key) { mapping ->
-                    mapping
-                        ?: MutableStateFlow(
-                            MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(setOf(), false)
-                        ).launchRemoveOnEmptySubscriptionCount(key)
-                }
-            )
+        // we only put, when mapping is fullyLoadedFromRepository
+        updateAndGet(
+            key = key.firstKey,
+            updater = { mapping ->
+                if (mapping != null && mapping.fullyLoadedFromRepository) {
+                    mapping.copy(keys = mapping.keys + key.secondKey)
+                } else mapping
+            },
+            get = { null },
         )
     }
 
-    suspend fun markFullyLoadedFromRepository(key: K1) {
-        firstKeyMapping.get(key)?.update { it.copy(fullyLoadedFromRepository = true) }
+    override suspend fun onRemove(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
+        // don't remove any mapping
     }
+
+    override suspend fun onRemoveAll() {
+        clear()
+    }
+
+    override suspend fun getSubscriptionCount(key: MapRepositoryCoroutinesCacheKey<K1, K2>): Flow<Int> =
+        flow {
+            val result = updateAndGet(
+                key = key.firstKey,
+                updater = { it ?: MapRepositoryObservableMapIndexValue() },
+                get = { null },
+            )
+            emitAll(result.value.subscriptionCount)
+        }
+
+    fun getMapping(key: K1): Flow<Set<K2>?> =
+        flow {
+            emitAll(
+                updateAndGet(
+                    key = key,
+                    updater = { mapping ->
+                        if (mapping == null || mapping.fullyLoadedFromRepository.not())
+                            MapRepositoryObservableMapIndexValue(get(key), true)
+                        else mapping
+                    },
+                    get = { null },
+                ).value.map { it?.keys }
+            )
+        }
 }
 
-open class MapRepositoryCoroutineCache<K1, K2, V>(
+internal open class MapRepositoryCoroutineCache<K1, K2, V>(
     repository: MapRepository<K1, K2, V>,
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
@@ -110,41 +94,32 @@ open class MapRepositoryCoroutineCache<K1, K2, V>(
     expireDuration = expireDuration
 ) {
     private val mapRepositoryIndex: MapRepositoryObservableMapIndex<K1, K2> =
-        MapRepositoryObservableMapIndex(cacheScope)
+        MapRepositoryObservableMapIndex(
+            name = (repository::class.simpleName ?: repository::class.toString()) + "MapIndex",
+            cacheScope = cacheScope,
+            expireDuration = expireDuration,
+        ) { key ->
+            log.trace { "load map by first key $key" }
+            val getByFirstKey = store.getByFirstKey(key)
+            getByFirstKey.forEach { value ->
+                updateAndGet(
+                    key = MapRepositoryCoroutinesCacheKey(key, value.key),
+                    updater = null,
+                    get = { value.value },
+                    persist = { },
+                )
+            }
+            getByFirstKey.keys
+        }
 
     init {
         addIndex(mapRepositoryIndex)
     }
 
-    fun readByFirstKey(key: K1): Flow<Map<K2, Flow<V?>>?> = flow {
-        emitAll(
-            mapRepositoryIndex.getMapping(key)
-                .distinctUntilChanged()
-                .transform { firstKeyMapping ->
-                    if (firstKeyMapping.fullyLoadedFromRepository) {
-                        emit(
-                            firstKeyMapping.keys.associate { key ->
-                                key.secondKey to
-                                        updateAndGet(
-                                            key = key,
-                                            updater = null,
-                                            get = { store.get(key) },
-                                            persist = { },
-                                        )
-                            }
-                        )
-                    } else {
-                        store.getByFirstKey(key).forEach { value ->
-                            updateAndGet(
-                                key = MapRepositoryCoroutinesCacheKey(key, value.key),
-                                updater = null,
-                                get = { value.value },
-                                persist = { },
-                            )
-                        }
-                        mapRepositoryIndex.markFullyLoadedFromRepository(key)
-                    }
-                }
-        )
-    }
+    fun readByFirstKey(key: K1): Flow<Map<K2, Flow<V?>>?> =
+        mapRepositoryIndex.getMapping(key).map { mapping ->
+            mapping?.associateWith { secondKey ->
+                read(MapRepositoryCoroutinesCacheKey(key, secondKey))
+            }
+        }
 }
