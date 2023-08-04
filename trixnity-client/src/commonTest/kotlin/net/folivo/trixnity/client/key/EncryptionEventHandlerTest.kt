@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.getInMemoryRoomStateStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.RoomStateStore
@@ -56,7 +57,7 @@ private val body: ShouldSpec.() -> Unit = {
         keyStore = getInMemoryKeyStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         cut = KeyEncryptionEventHandler(
-            mockMatrixClientServerApiClient(json).first, roomStateStore, keyStore
+            mockMatrixClientServerApiClient(json).first, roomStateStore, keyStore, RepositoryTransactionManagerMock(),
         )
     }
 
@@ -64,7 +65,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    context(KeyEncryptionEventHandler::handleEncryptionEvents.name) {
+    context(KeyEncryptionEventHandler::updateDeviceKeysFromChangedEncryption.name) {
         should("mark users as outdated dependent on history visibility") {
             listOf(
                 Event.StateEvent(
@@ -84,7 +85,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = bob.full
                 ),
             ).forEach { roomStateStore.save(it) }
-            cut.handleEncryptionEvents(
+            cut.updateDeviceKeysFromChangedEncryption(
                 Event.StateEvent(
                     EncryptionEventContent(),
                     EventId("\$event3"),
@@ -117,7 +118,7 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = bob.full
                 ),
             ).forEach { roomStateStore.save(it) }
-            cut.handleEncryptionEvents(
+            cut.updateDeviceKeysFromChangedEncryption(
                 Event.StateEvent(
                     EncryptionEventContent(),
                     EventId("\$event3"),

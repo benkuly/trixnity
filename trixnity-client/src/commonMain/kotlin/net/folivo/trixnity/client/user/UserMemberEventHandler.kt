@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.user
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
@@ -14,7 +13,7 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.client.store.originalName
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.utils.filterStateEventContent
+import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -45,8 +44,7 @@ class UserMemberEventHandler(
     private val reloadOwnProfile = MutableStateFlow(false)
 
     internal suspend fun setAllRoomUsers(syncResponse: Sync.Response) = tm.writeTransaction {
-        syncResponse.filterStateEventContent()
-            .filter { it.content is MemberEventContent }
+        syncResponse.filter<MemberEventContent>()
             .filterIsInstance<Event<MemberEventContent>>().collect {
                 setRoomUser(it)
             }

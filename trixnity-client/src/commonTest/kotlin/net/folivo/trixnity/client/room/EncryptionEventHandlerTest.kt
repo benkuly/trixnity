@@ -8,6 +8,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.core.model.EventId
@@ -31,7 +32,10 @@ class EncryptionEventHandlerTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         roomStore = getInMemoryRoomStore(scope)
-        cut = RoomEncryptionEventHandler(mockMatrixClientServerApiClient(json).first, roomStore)
+        cut = RoomEncryptionEventHandler(
+            mockMatrixClientServerApiClient(json).first, roomStore,
+            RepositoryTransactionManagerMock(),
+        )
     }
 
     afterTest {

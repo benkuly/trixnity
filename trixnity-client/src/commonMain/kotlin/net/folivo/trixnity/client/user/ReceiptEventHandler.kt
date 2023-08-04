@@ -6,24 +6,32 @@ import kotlinx.coroutines.job
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
 
 private val log = KotlinLogging.logger {}
 
 class ReceiptEventHandler(
     private val api: MatrixClientServerApiClient,
     private val roomUserStore: RoomUserStore,
+    private val tm: RepositoryTransactionManager,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribe(::setReadReceipts)
+        api.sync.subscribeLastInSyncProcessing(::setState)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribe(::setReadReceipts)
+            api.sync.unsubscribeLastInSyncProcessing(::setState)
+        }
+    }
+
+    internal suspend fun setState(syncResponse: Sync.Response) = tm.writeTransaction {
+        syncResponse.filter<ReceiptEventContent>().collect {
+            setReadReceipts(it)
         }
     }
 

@@ -10,6 +10,7 @@ import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.getInMemoryRoomStateStore
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStateStore
@@ -47,7 +48,8 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
         cut = RoomAvatarUrlEventHandler(
             UserInfo(alice, "", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             mockMatrixClientServerApiClient(json).first,
-            roomStore, roomStateStore, globalAccountDataStore
+            roomStore, roomStateStore, globalAccountDataStore,
+            RepositoryTransactionManagerMock(),
         )
     }
 

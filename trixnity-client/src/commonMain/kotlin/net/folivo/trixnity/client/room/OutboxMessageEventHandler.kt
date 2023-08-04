@@ -16,6 +16,7 @@ import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -33,6 +34,7 @@ class OutboxMessageEventHandler(
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val outboxMessageMediaUploaderMappings: OutboxMessageMediaUploaderMappings,
     private val currentSyncState: CurrentSyncState,
+    private val tm: RepositoryTransactionManager,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -43,7 +45,7 @@ class OutboxMessageEventHandler(
         }
     }
 
-    internal suspend fun removeOldOutboxMessages(syncResponse: Sync.Response) {
+    internal suspend fun removeOldOutboxMessages(syncResponse: Sync.Response) = tm.writeTransaction {
         val outboxMessages = roomOutboxMessageStore.getAll().value
         outboxMessages.forEach {
             // a sync means, that the message must have been received. we just give the ui a bit time to update.

@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -98,6 +99,7 @@ class UserServiceImpl(
                                 // TODO We should synchronize this with the sync. Otherwise this could overwrite a newer event.
                                 chunk.forEach { api.sync.emitEvent(it) }
                             }
+                            yield()
                         }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }
                     }

@@ -160,9 +160,9 @@ class OlmEventHandler(
 
     internal suspend fun handleMemberEvents(event: Event<MemberEventContent>) {
         if (event is StateEvent && store.getRoomEncryptionAlgorithm(event.roomId) == Megolm) {
-            log.debug { "remove outbound megolm session" }
             when (event.content.membership) {
                 Membership.LEAVE, Membership.BAN -> {
+                    log.debug { "remove outbound megolm session" }
                     store.updateOutboundMegolmSession(event.roomId) { null }
                 }
 

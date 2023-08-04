@@ -10,6 +10,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.UserId
@@ -32,7 +33,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
         cut = DeviceListsHandler(
-            mockMatrixClientServerApiClient(json).first, keyStore
+            mockMatrixClientServerApiClient(json).first, keyStore, RepositoryTransactionManagerMock(),
         )
     }
 
