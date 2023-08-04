@@ -422,10 +422,12 @@ class SyncApiClientImpl(
                 launch { response.presence?.events?.forEach { emitEvent(it) } }
                 launch {
                     response.room?.join?.forEach { (_, joinedRoom) ->
-                        launch { joinedRoom.state?.events?.forEach { emitEvent(it) } }
-                        launch { joinedRoom.timeline?.events?.forEach { emitEvent(it) } }
-                        launch { joinedRoom.ephemeral?.events?.forEach { emitEvent(it) } }
-                        launch { joinedRoom.accountData?.events?.forEach { emitEvent(it) } }
+                        launch {
+                            joinedRoom.state?.events?.forEach { emitEvent(it) }
+                            joinedRoom.timeline?.events?.forEach { emitEvent(it) }
+                            joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
+                            joinedRoom.accountData?.events?.forEach { emitEvent(it) }
+                        }
                     }
                 }
                 launch {
@@ -440,9 +442,11 @@ class SyncApiClientImpl(
                 }
                 launch {
                     response.room?.leave?.forEach { (_, leftRoom) ->
-                        launch { leftRoom.state?.events?.forEach { emitEvent(it) } }
-                        launch { leftRoom.timeline?.events?.forEach { emitEvent(it) } }
-                        launch { leftRoom.accountData?.events?.forEach { emitEvent(it) } }
+                        launch {
+                            leftRoom.state?.events?.forEach { emitEvent(it) }
+                            leftRoom.timeline?.events?.forEach { emitEvent(it) }
+                            leftRoom.accountData?.events?.forEach { emitEvent(it) }
+                        }
                     }
                 }
             }

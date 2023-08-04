@@ -10,12 +10,9 @@ import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
 import net.folivo.trixnity.client.utils.retryWhen
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
-import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -242,7 +239,6 @@ suspend fun MatrixClient.Companion.loginWith(
         mediaStore = di.get(),
         mediaCacheMappingStore = di.get(),
         eventHandlers = di.getAll(),
-        tm = di.get(),
         coroutineScope = coroutineScope,
     )
     api.keys.setKeys(deviceKeys = selfSignedDeviceKeys)
@@ -328,7 +324,6 @@ suspend fun MatrixClient.Companion.fromStore(
                 mediaStore = di.get(),
                 mediaCacheMappingStore = di.get(),
                 eventHandlers = di.getAll(),
-                tm = di.get(),
                 coroutineScope = coroutineScope,
             ).also {
                 log.trace { "finished creating MatrixClient" }
@@ -362,7 +357,6 @@ class MatrixClientImpl internal constructor(
     private val mediaStore: MediaStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
-    private val tm: RepositoryTransactionManager,
     private val coroutineScope: CoroutineScope,
 ) : MatrixClient {
     private val started = MutableStateFlow(false)
@@ -487,7 +481,6 @@ class MatrixClientImpl internal constructor(
             setPresence = presence,
             getBatchToken = { accountStore.getAccount()?.syncBatchToken },
             setBatchToken = { accountStore.updateAccount { account -> account.copy(syncBatchToken = it) } },
-            withTransaction = tm::writeTransaction,
             scope = coroutineScope,
         )
     }
@@ -507,7 +500,6 @@ class MatrixClientImpl internal constructor(
             getBatchToken = { accountStore.getAccount()?.syncBatchToken },
             setBatchToken = { accountStore.updateAccount { account -> account.copy(syncBatchToken = it) } },
             timeout = timeout,
-            withTransaction = tm::writeTransaction,
             runOnce = runOnce
         )
     }

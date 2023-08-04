@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryAccountStore
 import net.folivo.trixnity.client.getInMemoryRoomUserStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
@@ -38,6 +39,7 @@ class MemberEventHandlerTest : ShouldSpec({
             mockMatrixClientServerApiClient(json).first,
             accountStore,
             roomUserStore,
+            RepositoryTransactionManagerMock(),
         )
     }
 

@@ -3,6 +3,8 @@ package net.folivo.trixnity.client.user
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.getRoomId
@@ -11,6 +13,8 @@ import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.client.store.originalName
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.utils.filterStateEventContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -19,8 +23,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
 
 private val log = KotlinLogging.logger {}
 
@@ -28,18 +30,27 @@ class UserMemberEventHandler(
     private val api: MatrixClientServerApiClient,
     private val accountStore: AccountStore,
     private val roomUserStore: RoomUserStore,
+    private val tm: RepositoryTransactionManager,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribe(::setRoomUser)
+        api.sync.subscribeFirstInSyncProcessing(::setAllRoomUsers)
         api.sync.subscribeLastInSyncProcessing(::reloadProfile)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribe(::setRoomUser)
+            api.sync.subscribeFirstInSyncProcessing(::setAllRoomUsers)
             api.sync.unsubscribeLastInSyncProcessing(::reloadProfile)
         }
     }
 
     private val reloadOwnProfile = MutableStateFlow(false)
+
+    internal suspend fun setAllRoomUsers(syncResponse: Sync.Response) = tm.writeTransaction {
+        syncResponse.filterStateEventContent()
+            .filter { it.content is MemberEventContent }
+            .filterIsInstance<Event<MemberEventContent>>().collect {
+                setRoomUser(it)
+            }
+    }
 
     internal suspend fun setRoomUser(event: Event<MemberEventContent>, skipWhenAlreadyPresent: Boolean = false) {
         val roomId = event.getRoomId()

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomStore
@@ -48,6 +49,7 @@ class RoomListHandlerTest : ShouldSpec({
             api,
             roomStore,
             roomServiceMock,
+            RepositoryTransactionManagerMock(),
             config,
         )
     }
@@ -56,10 +58,10 @@ class RoomListHandlerTest : ShouldSpec({
         scope.cancel()
     }
 
-    context(RoomListHandler::handleSyncResponse.name) {
+    context(RoomListHandler::updateRoomList.name) {
         context("unreadMessageCount") {
             should("set unread message count") {
-                cut.handleSyncResponse(
+                cut.updateRoomList(
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
@@ -76,7 +78,7 @@ class RoomListHandlerTest : ShouldSpec({
         }
         context("lastRelevantEventId") {
             should("setlastRelevantEventId ") {
-                cut.handleSyncResponse(
+                cut.updateRoomList(
                     Sync.Response(
                         room = Sync.Response.Rooms(
                             join = mapOf(
@@ -117,9 +119,9 @@ class RoomListHandlerTest : ShouldSpec({
             }
         }
     }
-    context(RoomListHandler::handleAfterSyncResponse.name) {
+    context(RoomListHandler::deleteLeftRooms.name) {
         should("forget rooms on leave when activated") {
-            cut.handleAfterSyncResponse(
+            cut.deleteLeftRooms(
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
@@ -136,7 +138,7 @@ class RoomListHandlerTest : ShouldSpec({
 
             roomStore.getAll().first { it.size == 1 }
 
-            cut.handleAfterSyncResponse(
+            cut.deleteLeftRooms(
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(

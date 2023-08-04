@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.integrationtests
 
+import com.benasher44.uuid.uuid4
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -44,7 +45,10 @@ class PerformanceIT {
             }
             val realmClient = startClient(
                 "client3", "user1", baseUrl,
-                repositoriesModule = createRealmRepositoriesModule { inMemory() },
+                repositoriesModule = createRealmRepositoriesModule {
+                    inMemory()
+                    directory("build/test-db/${uuid4()}")
+                },
             ) {
                 modules = createDefaultModules()
             }
@@ -84,7 +88,7 @@ class PerformanceIT {
             println("diff: ${diff.roundToInt()}%")
             println("################################")
 
-            diff shouldBeLessThan 300.00 // %
+            diff shouldBeLessThan 100.0 // %
         }
     }
 }

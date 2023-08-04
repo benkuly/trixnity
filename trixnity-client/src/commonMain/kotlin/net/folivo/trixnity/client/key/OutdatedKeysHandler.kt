@@ -3,19 +3,19 @@ package net.folivo.trixnity.client.key
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.utils.RetryLoopFlowState.*
+import net.folivo.trixnity.client.utils.RetryLoopFlowState.PAUSE
+import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
 import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -45,29 +45,11 @@ class OutdatedKeysHandler(
     private val normalLoopRunning = MutableStateFlow(false)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeBeforeSyncProcessing(::beforeSyncProcessing)
-        api.sync.subscribeSyncProcessing(::syncLoop)
-        api.sync.subscribeAfterSyncProcessing(::afterSyncProcessing)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeBeforeSyncProcessing(::beforeSyncProcessing)
-            api.sync.unsubscribeSyncProcessing(::syncLoop)
-            api.sync.unsubscribeAfterSyncProcessing(::afterSyncProcessing)
-        }
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { normalLoop() }
-    }
-
-    internal suspend fun beforeSyncProcessing(syncResponse: Sync.Response) {
-        syncProcessingRunning.value = true
-        log.debug { "sync processing waits for normal outdated keys loop to be finished" }
-        normalLoopRunning.first { it.not() }
-    }
-
-    internal fun afterSyncProcessing(syncResponse: Sync.Response) {
-        syncProcessingRunning.value = false
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { updateLoop() }
     }
 
     private val loopSyncStates = setOf(SyncState.STARTED, SyncState.INITIAL_SYNC, SyncState.RUNNING)
-    internal suspend fun normalLoop() {
+    internal suspend fun updateLoop() {
         val requestedState =
             combine(
                 currentSyncState,
@@ -91,31 +73,7 @@ class OutdatedKeysHandler(
         }
     }
 
-    internal suspend fun syncLoop(syncProcessingFinished: StateFlow<Boolean>) {
-        val requestedState =
-            combine(
-                syncProcessingFinished,
-                keyStore.getOutdatedKeysFlow()
-            ) { syncProcessingFinishedValue, outdatedKeys ->
-                when {
-                    syncProcessingFinishedValue -> STOP
-                    outdatedKeys.isNotEmpty() -> RUN
-                    else -> PAUSE
-                }
-            }
-        retryLoop(
-            requestedState = requestedState,
-            scheduleLimit = 30.seconds,
-            onError = { log.warn(it) { "failed update outdated keys" } },
-            onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
-        ) {
-            log.debug { "update outdated keys in sync update loop" }
-            updateOutdatedKeys()
-        }
-    }
-
-    private val mutex = Mutex()
-    internal suspend fun updateOutdatedKeys(requestedKeys: Set<UserId>? = null) = mutex.withLock {
+    internal suspend fun updateOutdatedKeys(requestedKeys: Set<UserId>? = null) {
         val userIds = keyStore.getOutdatedKeys()
         if (userIds.isEmpty()) return
         if (requestedKeys != null && userIds.none { requestedKeys.contains(it) }) return
