@@ -84,7 +84,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 ),
                 roomId = room,
             )
-            cut.setReadReceipts(event)
+            cut.setReadReceipts(listOf(event))
 
             roomUserStore.get(alice, room).first() shouldBeSameInstanceAs existingRoomUser
         }
@@ -104,7 +104,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 ),
                 roomId = room,
             )
-            cut.setReadReceipts(event)
+            cut.setReadReceipts(listOf(event))
 
             roomUserStore.get(alice, room).first() shouldBeSameInstanceAs existingRoomUser
         }
@@ -125,7 +125,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 ),
                 roomId = room,
             )
-            cut.setReadReceipts(event)
+            cut.setReadReceipts(listOf(event))
 
             roomUserStore.get(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
                     RoomUser.RoomUserReceipt(eventId, Receipt(0L))
@@ -155,7 +155,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 ),
                 roomId = room,
             )
-            cut.setReadReceipts(event)
+            cut.setReadReceipts(listOf(event))
             roomUserStore.get(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
                     RoomUser.RoomUserReceipt(eventId, Receipt(3L))
         }

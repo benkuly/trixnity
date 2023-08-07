@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
@@ -29,24 +30,30 @@ class RoomEncryptionEventHandler(
         }
     }
 
-    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) = tm.writeTransaction {
-        syncResponse.filter<EncryptionEventContent>()
-            .filterIsInstance<Event.StateEvent<EncryptionEventContent>>()
-            .collect {
-                setEncryptionAlgorithm(it)
-            }
+    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
+        setEncryptionAlgorithm(
+            syncResponse.filter<EncryptionEventContent>()
+                .filterIsInstance<Event.StateEvent<EncryptionEventContent>>()
+                .toList()
+        )
     }
 
-    internal suspend fun setEncryptionAlgorithm(event: Event.StateEvent<EncryptionEventContent>) {
-        log.debug { "set encryption algorithm of room ${event.roomId}" }
-        roomStore.update(event.roomId) { oldRoom ->
-            oldRoom?.copy(
-                encryptionAlgorithm = event.content.algorithm,
-                membersLoaded = false // enforce all keys are loaded
-            ) ?: Room(
-                roomId = event.roomId,
-                encryptionAlgorithm = event.content.algorithm,
-            )
+    internal suspend fun setEncryptionAlgorithm(events: List<Event.StateEvent<EncryptionEventContent>>) {
+        if (events.isNotEmpty()) {
+            tm.writeTransaction {
+                events.forEach { event ->
+                    log.debug { "set encryption algorithm of room ${event.roomId}" }
+                    roomStore.update(event.roomId) { oldRoom ->
+                        oldRoom?.copy(
+                            encryptionAlgorithm = event.content.algorithm,
+                            membersLoaded = false // enforce all keys are loaded
+                        ) ?: Room(
+                            roomId = event.roomId,
+                            encryptionAlgorithm = event.content.algorithm,
+                        )
+                    }
+                }
+            }
         }
     }
 }

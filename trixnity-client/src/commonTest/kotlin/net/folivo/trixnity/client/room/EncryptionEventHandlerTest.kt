@@ -46,13 +46,15 @@ class EncryptionEventHandlerTest : ShouldSpec({
         should("update set encryption algorithm") {
             roomStore.update(room) { simpleRoom.copy(membersLoaded = true) }
             cut.setEncryptionAlgorithm(
-                Event.StateEvent(
-                    EncryptionEventContent(algorithm = EncryptionAlgorithm.Megolm),
-                    EventId("\$event1"),
-                    alice,
-                    room,
-                    25,
-                    stateKey = alice.full
+                listOf(
+                    Event.StateEvent(
+                        EncryptionEventContent(algorithm = EncryptionAlgorithm.Megolm),
+                        EventId("\$event1"),
+                        alice,
+                        room,
+                        25,
+                        stateKey = alice.full
+                    )
                 )
             )
             roomStore.get(room).first()?.encryptionAlgorithm shouldBe EncryptionAlgorithm.Megolm

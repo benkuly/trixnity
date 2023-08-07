@@ -21,7 +21,11 @@ class GlobalAccountDataEventHandler(
         }
     }
 
-    internal suspend fun setGlobalAccountData(syncResponse: Sync.Response) = tm.writeTransaction {
-        syncResponse.accountData?.events?.forEach { globalAccountDataStore.save(it) }
+    internal suspend fun setGlobalAccountData(syncResponse: Sync.Response) {
+        val events = syncResponse.accountData?.events
+        if (events?.isNotEmpty() == true)
+            tm.writeTransaction {
+                events.forEach { globalAccountDataStore.save(it) }
+            }
     }
 }

@@ -45,16 +45,20 @@ class OutboxMessageEventHandler(
         }
     }
 
-    internal suspend fun removeOldOutboxMessages(syncResponse: Sync.Response) = tm.writeTransaction {
+    internal suspend fun removeOldOutboxMessages(syncResponse: Sync.Response) {
         val outboxMessages = roomOutboxMessageStore.getAll().value
-        outboxMessages.forEach {
+        val removeOutboxMessages = outboxMessages.mapNotNull {
             // a sync means, that the message must have been received. we just give the ui a bit time to update.
             val deleteBeforeTimestamp = Clock.System.now() - 10.seconds
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
                 log.debug { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
-                roomOutboxMessageStore.update(it.transactionId) { null }
-            }
+                it.transactionId
+            } else null
         }
+        if (removeOutboxMessages.isNotEmpty())
+            tm.writeTransaction {
+                removeOutboxMessages.forEach { roomOutboxMessageStore.update(it) { null } }
+            }
     }
 
     internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) {

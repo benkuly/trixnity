@@ -97,12 +97,10 @@ class UserServiceImpl(
                             notMembership = LEAVE
                         ).getOrThrow()
                         memberEvents.chunked(50).forEach { chunk ->
-                            tm.writeTransaction {
-                                chunk.forEach { event ->
-                                    lazyMemberEventHandlers.forEach { it.handleLazyMemberEvent(event) }
-                                    api.sync.emitEvent(event)
-                                }
+                            lazyMemberEventHandlers.forEach {
+                                it.handleLazyMemberEvents(chunk)
                             }
+                            chunk.forEach { event -> api.sync.emitEvent(event) }
                             yield()
                         }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }

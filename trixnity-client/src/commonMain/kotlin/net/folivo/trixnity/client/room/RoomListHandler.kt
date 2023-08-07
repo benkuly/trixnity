@@ -84,7 +84,7 @@ class RoomListHandler(
         }
     }
 
-    internal suspend fun deleteLeftRooms(syncResponse: Sync.Response) = tm.writeTransaction {
+    internal suspend fun deleteLeftRooms(syncResponse: Sync.Response) {
         val syncLeaveRooms = syncResponse.room?.leave?.keys
         if (syncLeaveRooms != null && config.deleteRoomsOnLeave) {
             val existingLeaveRooms = roomStore.getAll().value
@@ -100,9 +100,11 @@ class RoomListHandler(
             log.trace { "existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms" }
             if (forgetRooms.isNotEmpty()) {
                 log.debug { "forget rooms: $forgetRooms" }
-            }
-            forgetRooms.forEach { roomId ->
-                roomService.forgetRoom(roomId)
+                tm.writeTransaction {
+                    forgetRooms.forEach { roomId ->
+                        roomService.forgetRoom(roomId)
+                    }
+                }
             }
         }
     }

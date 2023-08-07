@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.getInMemoryRoomStateStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.RoomStateStore
@@ -57,7 +56,7 @@ private val body: ShouldSpec.() -> Unit = {
         keyStore = getInMemoryKeyStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         cut = KeyEncryptionEventHandler(
-            mockMatrixClientServerApiClient(json).first, roomStateStore, keyStore, RepositoryTransactionManagerMock(),
+            mockMatrixClientServerApiClient(json).first, roomStateStore, keyStore
         )
     }
 
@@ -86,14 +85,16 @@ private val body: ShouldSpec.() -> Unit = {
                 ),
             ).forEach { roomStateStore.save(it) }
             cut.updateDeviceKeysFromChangedEncryption(
-                Event.StateEvent(
-                    EncryptionEventContent(),
-                    EventId("\$event3"),
-                    bob,
-                    RoomId("room", "server"),
-                    1234,
-                    stateKey = ""
-                ),
+                listOf(
+                    Event.StateEvent(
+                        EncryptionEventContent(),
+                        EventId("\$event3"),
+                        bob,
+                        RoomId("room", "server"),
+                        1234,
+                        stateKey = ""
+                    ),
+                )
             )
             keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice)
         }
@@ -119,14 +120,16 @@ private val body: ShouldSpec.() -> Unit = {
                 ),
             ).forEach { roomStateStore.save(it) }
             cut.updateDeviceKeysFromChangedEncryption(
-                Event.StateEvent(
-                    EncryptionEventContent(),
-                    EventId("\$event3"),
-                    bob,
-                    RoomId("room", "server"),
-                    1234,
-                    stateKey = ""
-                ),
+                listOf(
+                    Event.StateEvent(
+                        EncryptionEventContent(),
+                        EventId("\$event3"),
+                        bob,
+                        RoomId("room", "server"),
+                        1234,
+                        stateKey = ""
+                    ),
+                )
             )
             keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
         }

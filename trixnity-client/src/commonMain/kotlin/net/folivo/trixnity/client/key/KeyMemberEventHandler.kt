@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -35,40 +36,47 @@ class KeyMemberEventHandler(
         }
     }
 
-    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) = tm.writeTransaction {
-        syncResponse.filter<MemberEventContent>()
-            .filterIsInstance<Event.StateEvent<MemberEventContent>>()
-            .collect {
-                updateDeviceKeysFromChangedMembership(it)
-            }
+    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
+        updateDeviceKeysFromChangedMembership(
+            syncResponse.filter<MemberEventContent>().filterIsInstance<Event.StateEvent<MemberEventContent>>().toList()
+        )
     }
 
-    override suspend fun handleLazyMemberEvent(memberEvent: Event<MemberEventContent>) {
-        if (memberEvent is Event.StateEvent) updateDeviceKeysFromChangedMembership(memberEvent)
+    override suspend fun handleLazyMemberEvents(memberEvents: List<Event<MemberEventContent>>) {
+        updateDeviceKeysFromChangedMembership(memberEvents.filterIsInstance<Event.StateEvent<MemberEventContent>>())
     }
 
-    internal suspend fun updateDeviceKeysFromChangedMembership(event: Event.StateEvent<MemberEventContent>) {
-        if (roomStore.get(event.roomId).first()?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
-            log.trace { "handle membership change in an encrypted room" }
-            val userId = UserId(event.stateKey)
-            when (event.content.membership) {
-                Membership.LEAVE, Membership.BAN -> {
-                    if (roomStore.encryptedJoinedRooms().find { roomId ->
-                            roomStateStore.getByStateKey<MemberEventContent>(roomId, event.stateKey).first()
-                                ?.content?.membership.let { it == Membership.JOIN || it == Membership.INVITE }
-                        } == null)
-                        keyStore.deleteDeviceKeys(userId)
-                }
+    internal suspend fun updateDeviceKeysFromChangedMembership(events: List<Event.StateEvent<MemberEventContent>>) {
+        val deleteDeviceKeys = mutableSetOf<UserId>()
+        val updateOutdatedKeys = mutableSetOf<UserId>()
+        events.forEach { event ->
+            if (roomStore.get(event.roomId).first()?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
+                log.trace { "handle membership change in an encrypted room" }
+                val userId = UserId(event.stateKey)
+                when (event.content.membership) {
+                    Membership.LEAVE, Membership.BAN -> {
+                        if (roomStore.encryptedJoinedRooms().find { roomId ->
+                                roomStateStore.getByStateKey<MemberEventContent>(roomId, event.stateKey).first()
+                                    ?.content?.membership.let { it == Membership.JOIN || it == Membership.INVITE }
+                            } == null)
+                            deleteDeviceKeys.add(userId)
+                    }
 
-                Membership.JOIN, Membership.INVITE -> {
-                    if (event.unsigned?.previousContent?.membership != event.content.membership
-                        && keyStore.getDeviceKeys(userId).first() == null
-                    ) keyStore.updateOutdatedKeys { it + userId }
-                }
+                    Membership.JOIN, Membership.INVITE -> {
+                        if (event.unsigned?.previousContent?.membership != event.content.membership
+                            && keyStore.getDeviceKeys(userId).first() == null
+                        ) updateOutdatedKeys.add(userId)
+                    }
 
-                else -> {
+                    else -> {
+                    }
                 }
             }
         }
+        if (deleteDeviceKeys.isNotEmpty() || updateOutdatedKeys.isNotEmpty())
+            tm.writeTransaction {
+                deleteDeviceKeys.forEach { keyStore.deleteDeviceKeys(it) }
+                keyStore.updateOutdatedKeys { it + updateOutdatedKeys }
+            }
     }
 }

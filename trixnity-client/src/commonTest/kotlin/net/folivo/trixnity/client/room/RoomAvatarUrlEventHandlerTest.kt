@@ -73,7 +73,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
                 stateKey = bob.full,
             )
 
-            cut.setAvatarUrlForMemberUpdates(event)
+            cut.setAvatarUrlForMemberUpdates(listOf(event))
 
             roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }
@@ -92,7 +92,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
                 stateKey = bob.full,
             )
 
-            cut.setAvatarUrlForMemberUpdates(event)
+            cut.setAvatarUrlForMemberUpdates(listOf(event))
 
             roomStore.get(room).first()?.avatarUrl shouldBe null
         }
@@ -112,7 +112,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
                 stateKey = alice.full,
             )
 
-            cut.setAvatarUrlForMemberUpdates(event)
+            cut.setAvatarUrlForMemberUpdates(listOf(event))
 
             roomStore.get(room).first()?.avatarUrl shouldBe null
         }
@@ -130,7 +130,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
                 stateKey = bob.full,
             )
 
-            cut.setAvatarUrlForAvatarEvents(event)
+            cut.setAvatarUrlForAvatarEvents(listOf(event))
 
             roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }
@@ -146,7 +146,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
                 stateKey = bob.full,
             )
 
-            cut.setAvatarUrlForAvatarEvents(event)
+            cut.setAvatarUrlForAvatarEvents(listOf(event))
 
             roomStore.get(room).first()?.avatarUrl shouldBe null
         }
@@ -162,7 +162,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
                 stateKey = bob.full,
             )
 
-            cut.setAvatarUrlForAvatarEvents(event)
+            cut.setAvatarUrlForAvatarEvents(listOf(event))
 
             roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }
@@ -196,7 +196,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
                 stateKey = bob.full,
             )
 
-            cut.setAvatarUrlForAvatarEvents(event)
+            cut.setAvatarUrlForAvatarEvents(listOf(event))
 
             roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }

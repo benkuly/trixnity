@@ -76,13 +76,15 @@ private val body: ShouldSpec.() -> Unit = {
             val room2 = RoomId("roo2", "server")
             roomStore.update(room2) { simpleRoom.copy(roomId = room2) }
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.JOIN),
-                    EventId("\$event"),
-                    alice,
-                    room2,
-                    1234,
-                    stateKey = alice.full
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room2,
+                        1234,
+                        stateKey = alice.full
+                    )
                 )
             )
             keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
@@ -90,26 +92,30 @@ private val body: ShouldSpec.() -> Unit = {
         should("remove device keys on leave or ban of the last encrypted room") {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.LEAVE),
-                    EventId("\$event"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.LEAVE),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    )
                 )
             )
             keyStore.getDeviceKeys(alice).first() should beNull()
 
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.BAN),
-                    EventId("\$event"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.BAN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    )
                 )
             )
             keyStore.getDeviceKeys(alice).first() should beNull()
@@ -135,41 +141,47 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.LEAVE),
-                    EventId("\$event"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.LEAVE),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    )
                 )
             )
             keyStore.getDeviceKeys(alice) shouldNot beNull()
 
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.BAN),
-                    EventId("\$event"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.BAN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    )
                 )
             )
             keyStore.getDeviceKeys(alice) shouldNot beNull()
         }
         should("ignore join without real change (already join)") {
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.JOIN),
-                    EventId("\$event"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full,
-                    unsigned = UnsignedRoomEventData.UnsignedStateEventData(
-                        previousContent = MemberEventContent(membership = Membership.JOIN)
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                        unsigned = UnsignedRoomEventData.UnsignedStateEventData(
+                            previousContent = MemberEventContent(membership = Membership.JOIN)
+                        )
                     )
                 )
             )
@@ -177,13 +189,15 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("mark keys as outdated when join or invite") {
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.JOIN),
-                    EventId("\$event"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full,
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                    )
                 )
             )
             keyStore.getOutdatedKeysFlow().first() shouldContain alice
@@ -191,13 +205,15 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateOutdatedKeys { setOf() }
 
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.INVITE),
-                    EventId("\$event"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full,
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.INVITE),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                    )
                 )
             )
             keyStore.getOutdatedKeysFlow().first() shouldContain alice
@@ -205,13 +221,15 @@ private val body: ShouldSpec.() -> Unit = {
         should("not mark keys as outdated when join, but devices are already tracked") {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
-                Event.StateEvent(
-                    MemberEventContent(membership = Membership.JOIN),
-                    EventId("\$event"),
-                    alice,
-                    room,
-                    1234,
-                    stateKey = alice.full,
+                listOf(
+                    Event.StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                    )
                 )
             )
             keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0

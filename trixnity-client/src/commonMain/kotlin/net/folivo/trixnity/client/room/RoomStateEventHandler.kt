@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.RoomStateStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -22,9 +23,13 @@ class RoomStateEventHandler(
         }
     }
 
-    internal suspend fun setState(syncResponse: Sync.Response) = tm.writeTransaction {
-        syncResponse.filter<StateEventContent>().collect {
-            roomStateStore.save(it)
-        }
+    internal suspend fun setState(syncResponse: Sync.Response) {
+        val stateEvents = syncResponse.filter<StateEventContent>().toList()
+        if (stateEvents.isNotEmpty())
+            tm.writeTransaction {
+                stateEvents.forEach {
+                    roomStateStore.save(it)
+                }
+            }
     }
 }

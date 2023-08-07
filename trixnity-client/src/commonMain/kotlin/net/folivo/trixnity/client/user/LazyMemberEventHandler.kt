@@ -4,5 +4,5 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 
 interface LazyMemberEventHandler {
-    suspend fun handleLazyMemberEvent(memberEvent: Event<MemberEventContent>)
+    suspend fun handleLazyMemberEvents(memberEvents: List<Event<MemberEventContent>>)
 }

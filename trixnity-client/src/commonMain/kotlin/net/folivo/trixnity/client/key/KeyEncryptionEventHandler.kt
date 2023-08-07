@@ -4,9 +4,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -22,7 +22,6 @@ class KeyEncryptionEventHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStateStore: RoomStateStore,
     private val keyStore: KeyStore,
-    private val tm: RepositoryTransactionManager,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -32,23 +31,26 @@ class KeyEncryptionEventHandler(
         }
     }
 
-    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) = tm.writeTransaction {
-        syncResponse.filter<EncryptionEventContent>()
-            .filterIsInstance<Event.StateEvent<EncryptionEventContent>>()
-            .collect {
-                updateDeviceKeysFromChangedEncryption(it)
-            }
+    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
+        updateDeviceKeysFromChangedEncryption(
+            syncResponse.filter<EncryptionEventContent>()
+                .filterIsInstance<Event.StateEvent<EncryptionEventContent>>()
+                .toList()
+        )
     }
 
-    internal suspend fun updateDeviceKeysFromChangedEncryption(event: Event.StateEvent<EncryptionEventContent>) {
+    internal suspend fun updateDeviceKeysFromChangedEncryption(events: List<Event.StateEvent<EncryptionEventContent>>) {
         log.debug { "update device keys from changed encryption" }
-        val allowedMemberships =
-            roomStateStore.getByStateKey<HistoryVisibilityEventContent>(event.roomId)
-                .first()?.content?.historyVisibility
-                .membershipsAllowedToReceiveKey
-        val outdatedKeys = roomStateStore.members(event.roomId, allowedMemberships).filterNot {
-            keyStore.isTracked(it)
-        }
+        val outdatedKeys = events.map { event ->
+            val allowedMemberships =
+                roomStateStore.getByStateKey<HistoryVisibilityEventContent>(event.roomId)
+                    .first()?.content?.historyVisibility
+                    .membershipsAllowedToReceiveKey
+            val outdatedKeys = roomStateStore.members(event.roomId, allowedMemberships).filterNot {
+                keyStore.isTracked(it)
+            }
+            outdatedKeys
+        }.flatten()
         keyStore.updateOutdatedKeys { it + outdatedKeys }
     }
 }
