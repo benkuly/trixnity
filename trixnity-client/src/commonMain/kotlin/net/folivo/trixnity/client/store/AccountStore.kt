@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.store.cache.MinimalRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
@@ -12,7 +12,7 @@ class AccountStore(
     tm: RepositoryTransactionManager,
     storeScope: CoroutineScope
 ) : Store {
-    private val accountCache = MinimalRepositoryCoroutineCache(repository, tm, storeScope, Duration.INFINITE)
+    private val accountCache = MinimalRepositoryObservableCache(repository, tm, storeScope, Duration.INFINITE)
 
     suspend fun getAccount() = accountCache.read(1).first()
     fun getAccountAsFlow() = accountCache.read(1)

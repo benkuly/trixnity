@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import net.folivo.trixnity.client.store.cache.FullRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomRepository
 import net.folivo.trixnity.core.model.RoomId
@@ -17,7 +17,7 @@ class RoomStore(
     storeScope: CoroutineScope
 ) : Store {
     private val roomCache =
-        FullRepositoryCoroutineCache(roomRepository, tm, storeScope, Duration.INFINITE) { it.roomId }
+        FullRepositoryObservableCache(roomRepository, tm, storeScope, Duration.INFINITE) { it.roomId }
 
     override suspend fun init() {
         roomCache.fillWithValuesFromRepository()

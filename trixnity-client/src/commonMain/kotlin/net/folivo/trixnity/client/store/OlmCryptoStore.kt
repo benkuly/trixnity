@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.MinimalRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
@@ -28,9 +28,9 @@ class OlmCryptoStore(
     private val storeScope: CoroutineScope
 ) : Store {
     private val olmAccountCache =
-        MinimalRepositoryCoroutineCache(olmAccountRepository, tm, storeScope, Duration.INFINITE)
+        MinimalRepositoryObservableCache(olmAccountRepository, tm, storeScope, Duration.INFINITE)
     private val olmForgetFallbackKeyAfterCache =
-        MinimalRepositoryCoroutineCache(olmForgetFallbackKeyAfterRepository, tm, storeScope, Duration.INFINITE)
+        MinimalRepositoryObservableCache(olmForgetFallbackKeyAfterRepository, tm, storeScope, Duration.INFINITE)
 
     private val _notBackedUpInboundMegolmSessions =
         MutableStateFlow<Map<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>>(mapOf())
@@ -57,7 +57,7 @@ class OlmCryptoStore(
     }
 
     private val olmSessionsCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             olmSessionRepository,
             tm,
             storeScope,
@@ -79,7 +79,7 @@ class OlmCryptoStore(
     ) = olmSessionsCache.write(senderKey, updater = updater)
 
     private val inboundMegolmSessionCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             inboundMegolmSessionRepository,
             tm,
             storeScope,
@@ -109,7 +109,7 @@ class OlmCryptoStore(
     )
 
     private val inboundMegolmSessionIndexCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             inboundMegolmMessageIndexRepository,
             tm,
             storeScope,
@@ -126,7 +126,7 @@ class OlmCryptoStore(
     )
 
     private val outboundMegolmSessionCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             outboundMegolmSessionRepository,
             tm,
             storeScope,

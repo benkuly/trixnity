@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MapRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -24,7 +24,7 @@ class GlobalAccountDataStore(
     storeScope: CoroutineScope,
 ) : Store {
     private val globalAccountDataCache =
-        MapRepositoryCoroutineCache(
+        MapRepositoryObservableCache(
             globalAccountDataRepository,
             tm,
             storeScope,

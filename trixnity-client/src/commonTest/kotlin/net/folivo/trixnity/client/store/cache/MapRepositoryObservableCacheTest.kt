@@ -15,11 +15,11 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
 @OptIn(ExperimentalTime::class)
-class MapRepositoryCoroutineCacheTest : ShouldSpec({
+class MapRepositoryObservableCacheTest : ShouldSpec({
     timeout = 5_000
     lateinit var repository: MapRepository<String, String, String>
     lateinit var cacheScope: CoroutineScope
-    lateinit var cut: MapRepositoryCoroutineCache<String, String, String>
+    lateinit var cut: MapRepositoryObservableCache<String, String, String>
     val readTransactionCalled = MutableStateFlow(0)
     val writeTransactionCalled = MutableStateFlow(0)
     val tm = object : RepositoryTransactionManager {
@@ -40,7 +40,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
         repository = object : InMemoryMapRepository<String, String, String>() {
             override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
         }
-        cut = MapRepositoryCoroutineCache(repository, tm, cacheScope)
+        cut = MapRepositoryObservableCache(repository, tm, cacheScope)
     }
     afterTest {
         cacheScope.cancel()
@@ -84,7 +84,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
 
                 override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
             }
-            cut = MapRepositoryCoroutineCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
+            cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
             val time = coroutineScope {
                 (0..999).map { i ->
                     async {
@@ -115,7 +115,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
 
                 override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
             }
-            cut = MapRepositoryCoroutineCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
+            cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
             val time = coroutineScope {
                 (0..999).map { i ->
                     async {
@@ -191,7 +191,7 @@ class MapRepositoryCoroutineCacheTest : ShouldSpec({
             )
         }
         should("load from database, when cache values removed") {
-            cut = MapRepositoryCoroutineCache(repository, tm, cacheScope, expireDuration = 100.milliseconds)
+            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 100.milliseconds)
             repository.save("firstKey", "secondKey1", "old1")
             repository.save("firstKey", "secondKey2", "old2")
             val stopCollectReadByFirstKey = MutableStateFlow(false)

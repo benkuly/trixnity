@@ -29,7 +29,7 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
     expireDuration: Duration = 1.minutes,
     private val get: suspend (key: K1) -> Set<K2>,
 ) : ObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>>,
-    CoroutineCacheBase<K1, MapRepositoryObservableMapIndexValue<K2>>(
+    ObservableCacheBase<K1, MapRepositoryObservableMapIndexValue<K2>>(
         name = name,
         cacheScope = cacheScope,
         expireDuration = expireDuration
@@ -82,14 +82,14 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
         }
 }
 
-internal open class MapRepositoryCoroutineCache<K1, K2, V>(
+internal open class MapRepositoryObservableCache<K1, K2, V>(
     repository: MapRepository<K1, K2, V>,
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
-) : CoroutineCache<MapRepositoryCoroutinesCacheKey<K1, K2>, V, MapRepositoryCoroutineCacheStore<K1, K2, V>>(
+) : ObservableCache<MapRepositoryCoroutinesCacheKey<K1, K2>, V, MapRepositoryObservableCacheStore<K1, K2, V>>(
     name = repository::class.simpleName ?: repository::class.toString(),
-    store = MapRepositoryCoroutineCacheStore(repository, tm),
+    store = MapRepositoryObservableCacheStore(repository, tm),
     cacheScope = cacheScope,
     expireDuration = expireDuration
 ) {

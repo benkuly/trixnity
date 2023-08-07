@@ -4,8 +4,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.FullRepositoryCoroutineCache
-import net.folivo.trixnity.client.store.cache.MinimalRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
@@ -26,45 +26,45 @@ class KeyStore(
     storeScope: CoroutineScope
 ) : Store {
     private val outdatedKeysCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             repository = outdatedKeysRepository,
             tm = tm,
             cacheScope = storeScope,
             expireDuration = Duration.INFINITE
         )
     private val secretsCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             repository = secretsRepository,
             tm = tm,
             cacheScope = storeScope,
             expireDuration = Duration.INFINITE
         )
     private val deviceKeysCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             repository = deviceKeysRepository,
             tm = tm,
             cacheScope = storeScope,
             expireDuration = config.cacheExpireDurations.deviceKeys
         )
-    private val crossSigningKeysCache = MinimalRepositoryCoroutineCache(
+    private val crossSigningKeysCache = MinimalRepositoryObservableCache(
         repository = crossSigningKeysRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = config.cacheExpireDurations.crossSigningKeys
     )
-    private val keyVerificationStateCache = MinimalRepositoryCoroutineCache(
+    private val keyVerificationStateCache = MinimalRepositoryObservableCache(
         repository = keyVerificationStateRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = config.cacheExpireDurations.keyVerificationState
     )
-    private val secretKeyRequestCache = FullRepositoryCoroutineCache(
+    private val secretKeyRequestCache = FullRepositoryObservableCache(
         repository = secretKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = Duration.INFINITE
     ) { it.content.requestId }
-    private val roomKeyRequestCache = FullRepositoryCoroutineCache(
+    private val roomKeyRequestCache = FullRepositoryObservableCache(
         repository = roomKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,

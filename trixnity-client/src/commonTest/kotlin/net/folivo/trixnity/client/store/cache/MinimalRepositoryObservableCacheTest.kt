@@ -10,11 +10,11 @@ import net.folivo.trixnity.client.store.repository.InMemoryMinimalRepository
 import net.folivo.trixnity.client.store.repository.MinimalRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 
-class MinimalRepositoryCoroutineCacheTest : ShouldSpec({
+class MinimalRepositoryObservableCacheTest : ShouldSpec({
     timeout = 5_000
     lateinit var repository: MinimalRepository<String, String>
     lateinit var cacheScope: CoroutineScope
-    lateinit var cut: MinimalRepositoryCoroutineCache<String, String>
+    lateinit var cut: MinimalRepositoryObservableCache<String, String>
     val readTransactionWasCalled = MutableStateFlow(false)
     val writeTransactionWasCalled = MutableStateFlow(false)
     val tm = object : RepositoryTransactionManager {
@@ -35,7 +35,7 @@ class MinimalRepositoryCoroutineCacheTest : ShouldSpec({
         repository = object : InMemoryMinimalRepository<String, String>() {
             override fun serializeKey(key: String): String = key
         }
-        cut = MinimalRepositoryCoroutineCache(repository, tm, cacheScope)
+        cut = MinimalRepositoryObservableCache(repository, tm, cacheScope)
     }
     afterTest {
         cacheScope.cancel()

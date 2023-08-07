@@ -45,13 +45,13 @@ private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
         roomIdMapping.get(roomId).orEmpty()
 }
 
-internal class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
+internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
     private val repository: MinimalDeleteByRoomIdRepository<K, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
     keyMapper: (K) -> RoomId,
-) : MinimalRepositoryCoroutineCache<K, V>(
+) : MinimalRepositoryObservableCache<K, V>(
     repository = repository,
     tm = tm,
     cacheScope = cacheScope,
@@ -84,13 +84,13 @@ internal class MinimalDeleteByRoomIdRepositoryCoroutineCache<K, V>(
     }
 }
 
-internal class MapDeleteByRoomIdRepositoryCoroutineCache<K1, K2, V>(
+internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
     private val repository: MapDeleteByRoomIdRepository<K1, K2, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
     keyMapper: (MapRepositoryCoroutinesCacheKey<K1, K2>) -> RoomId,
-) : MapRepositoryCoroutineCache<K1, K2, V>(
+) : MapRepositoryObservableCache<K1, K2, V>(
     repository = repository,
     tm = tm,
     cacheScope = cacheScope,

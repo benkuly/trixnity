@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger { }
 
-internal data class CoroutineCacheValue<T>(
+internal data class ObservableCacheValue<T>(
     val value: MutableStateFlow<T>,
     val resetExpireDuration: MutableSharedFlow<Unit>,
 )
@@ -19,7 +19,7 @@ internal data class CoroutineCacheValue<T>(
 /**
  * The actual source and sink of the data to be cached. This could be any database.
  */
-interface CoroutineCacheStore<K, V> {
+interface ObservableCacheStore<K, V> {
     /**
      * Retrieve value from store.
      */
@@ -68,12 +68,12 @@ interface ObservableMapIndex<K> {
  * @param cacheScope A long living [CoroutineScope] to spawn coroutines, which remove entries from cache when not used anymore.
  * @param expireDuration Duration to wait until entries from cache are when not used anymore.
  */
-internal open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
+internal open class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
     name: String,
     protected val store: S,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
-) : CoroutineCacheBase<K, V>(
+) : ObservableCacheBase<K, V>(
     name = name,
     cacheScope = cacheScope,
     expireDuration = expireDuration,
@@ -127,12 +127,12 @@ internal open class CoroutineCache<K, V, S : CoroutineCacheStore<K, V>>(
     }
 }
 
-internal open class CoroutineCacheBase<K, V>(
+internal open class ObservableCacheBase<K, V>(
     protected val name: String,
     protected val cacheScope: CoroutineScope,
     protected val expireDuration: Duration = 1.minutes,
 ) {
-    private val _values = ObservableMap<K, CoroutineCacheValue<V?>>(cacheScope)
+    private val _values = ObservableMap<K, ObservableCacheValue<V?>>(cacheScope)
     val values: SharedFlow<Map<K, StateFlow<V?>>> = _values.values
         .map { value -> value.mapValues { it.value.value.asStateFlow() } }
         .shareIn(cacheScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
@@ -154,12 +154,12 @@ internal open class CoroutineCacheBase<K, V>(
         updater: (suspend (oldValue: V?) -> V?)? = null,
         get: (suspend () -> V?),
         persist: (suspend (newValue: V?) -> Unit)? = null,
-    ): CoroutineCacheValue<V?> {
+    ): ObservableCacheValue<V?> {
         val result = _values.update(key) { existingCacheValue ->
             if (existingCacheValue == null) {
                 log.trace { "$name: no cache hit for key $key" }
                 val retrievedValue = get()
-                val newCacheValue = CoroutineCacheValue(
+                val newCacheValue = ObservableCacheValue(
                     value = MutableStateFlow(retrievedValue),
                     resetExpireDuration = MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = DROP_OLDEST)
                         .also { it.emit(Unit) },
@@ -183,7 +183,7 @@ internal open class CoroutineCacheBase<K, V>(
 
 private class RemoverJobExecutingIndex<K, V>(
     private val name: String,
-    private val values: ObservableMap<K, CoroutineCacheValue<V?>>,
+    private val values: ObservableMap<K, ObservableCacheValue<V?>>,
     private val cacheScope: CoroutineScope,
     private val expireDuration: Duration = 1.minutes,
 ) : ObservableMapIndex<K> {

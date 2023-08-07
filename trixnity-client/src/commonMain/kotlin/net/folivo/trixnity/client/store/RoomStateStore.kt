@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.mapLatest
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
-import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
@@ -30,7 +30,7 @@ class RoomStateStore(
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
 ) : Store {
-    private val roomStateCache = MapDeleteByRoomIdRepositoryCoroutineCache(
+    private val roomStateCache = MapDeleteByRoomIdRepositoryObservableCache(
         roomStateRepository,
         tm,
         storeScope,
