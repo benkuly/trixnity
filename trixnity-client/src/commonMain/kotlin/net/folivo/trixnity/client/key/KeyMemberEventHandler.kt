@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -25,7 +26,7 @@ class KeyMemberEventHandler(
     private val roomStateStore: RoomStateStore,
     private val keyStore: KeyStore,
     private val tm: RepositoryTransactionManager,
-) : EventHandler {
+) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeLastInSyncProcessing(::handleSyncResponse)
@@ -40,6 +41,10 @@ class KeyMemberEventHandler(
             .collect {
                 updateDeviceKeysFromChangedMembership(it)
             }
+    }
+
+    override suspend fun handleLazyMemberEvent(memberEvent: Event<MemberEventContent>) {
+        if (memberEvent is Event.StateEvent) updateDeviceKeysFromChangedMembership(memberEvent)
     }
 
     internal suspend fun updateDeviceKeysFromChangedMembership(event: Event.StateEvent<MemberEventContent>) {

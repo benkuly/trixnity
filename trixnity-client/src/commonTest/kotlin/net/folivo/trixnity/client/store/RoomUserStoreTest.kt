@@ -29,7 +29,12 @@ class RoomUserStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         roomUserRepository = InMemoryRoomUserRepository()
-        cut = RoomUserStore(roomUserRepository, RepositoryTransactionManagerMock(), MatrixClientConfiguration(), storeScope)
+        cut = RoomUserStore(
+            roomUserRepository,
+            RepositoryTransactionManagerMock(),
+            MatrixClientConfiguration(),
+            storeScope
+        )
     }
     afterTest {
         storeScope.cancel()
