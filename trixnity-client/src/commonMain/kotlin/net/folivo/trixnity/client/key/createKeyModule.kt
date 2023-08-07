@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.key
 
+import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.core.EventHandler
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
@@ -10,6 +11,7 @@ import org.koin.dsl.module
 fun createKeyModule() = module {
     singleOf(::KeyMemberEventHandler) {
         bind<EventHandler>()
+        bind<LazyMemberEventHandler>()
         named<KeyMemberEventHandler>()
     }
     singleOf(::KeyEncryptionEventHandler) {

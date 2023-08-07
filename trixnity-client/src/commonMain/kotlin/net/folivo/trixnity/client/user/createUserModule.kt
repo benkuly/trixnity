@@ -10,6 +10,7 @@ import org.koin.dsl.module
 fun createUserModule() = module {
     singleOf(::UserMemberEventHandler) {
         bind<EventHandler>()
+        bind<LazyMemberEventHandler>()
         named<UserMemberEventHandler>()
     }
     singleOf(::PresenceEventHandler) {
@@ -26,18 +27,19 @@ fun createUserModule() = module {
     }
     single<UserService> {
         UserServiceImpl(
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(named<PresenceEventHandler>()),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
+            roomUserStore = get(),
+            roomStore = get(),
+            roomStateStore = get(),
+            roomTimelineStore = get(),
+            globalAccountDataStore = get(),
+            api = get(),
+            presenceEventHandler = get(named<PresenceEventHandler>()),
+            lazyMemberEventHandlers = getAll(),
+            currentSyncState = get(),
+            userInfo = get(),
+            mappings = get(),
+            tm = get(),
+            scope = get(),
         )
     }
 }
