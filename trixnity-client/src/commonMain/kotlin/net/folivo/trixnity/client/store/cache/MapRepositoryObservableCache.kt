@@ -15,7 +15,7 @@ data class MapRepositoryCoroutinesCacheKey<K1, K2>(
     val secondKey: K2,
 )
 
-private data class MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(
+private data class MapRepositoryObservableCacheValuesIndexValue<K1, K2>(
     val keys: Set<MapRepositoryCoroutinesCacheKey<K1, K2>>,
     val fullyLoadedFromRepository: Boolean,
 )
@@ -25,13 +25,13 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
 ) : ObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
 
     private val firstKeyMapping =
-        ObservableMap<K1, MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>>>(cacheScope)
+        ObservableMap<K1, MutableStateFlow<MapRepositoryObservableCacheValuesIndexValue<K1, K2>>>(cacheScope)
 
     override suspend fun onPut(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
         firstKeyMapping.update(key.firstKey) { mapping ->
             if (mapping == null) {
                 MutableStateFlow(
-                    MapRepositoryCoroutineCacheValuesIndexValue(setOf(key), false)
+                    MapRepositoryObservableCacheValuesIndexValue(setOf(key), false)
                 ).launchRemoveOnEmptySubscriptionCount(key.firstKey)
 
             } else {
@@ -64,9 +64,9 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
     override suspend fun getSubscriptionCount(key: MapRepositoryCoroutinesCacheKey<K1, K2>): StateFlow<Int> =
         firstKeyMapping.get(key.firstKey)?.subscriptionCount ?: MutableStateFlow(0)
 
-    private fun MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>>.launchRemoveOnEmptySubscriptionCount(
+    private fun MutableStateFlow<MapRepositoryObservableCacheValuesIndexValue<K1, K2>>.launchRemoveOnEmptySubscriptionCount(
         key: K1
-    ): MutableStateFlow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>> =
+    ): MutableStateFlow<MapRepositoryObservableCacheValuesIndexValue<K1, K2>> =
         also {
             cacheScope.launch {
                 delay(1.seconds) // prevent, that empty values are removed immediately
@@ -78,13 +78,13 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
             }
         }
 
-    fun getMapping(key: K1): Flow<MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>> = flow {
+    fun getMapping(key: K1): Flow<MapRepositoryObservableCacheValuesIndexValue<K1, K2>> = flow {
         emitAll(
             checkNotNull(
                 firstKeyMapping.update(key) { mapping ->
                     mapping
                         ?: MutableStateFlow(
-                            MapRepositoryCoroutineCacheValuesIndexValue<K1, K2>(setOf(), false)
+                            MapRepositoryObservableCacheValuesIndexValue<K1, K2>(setOf(), false)
                         ).launchRemoveOnEmptySubscriptionCount(key)
                 }
             )
