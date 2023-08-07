@@ -44,10 +44,10 @@ class TimelineEventHandlerImpl(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::redactTimelineEvent)
-        api.sync.subscribeFirstInSyncProcessing(::handleSyncResponse)
+        api.sync.syncResponse.subscribe(::handleSyncResponse, 90)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::redactTimelineEvent)
-            api.sync.unsubscribeFirstInSyncProcessing(::handleSyncResponse)
+            api.sync.syncResponse.unsubscribe(::handleSyncResponse)
         }
     }
 

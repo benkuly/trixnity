@@ -15,9 +15,9 @@ class GlobalAccountDataEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeFirstInSyncProcessing(::setGlobalAccountData)
+        api.sync.syncResponse.subscribe(::setGlobalAccountData)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeFirstInSyncProcessing(::setGlobalAccountData)
+            api.sync.syncResponse.unsubscribe(::setGlobalAccountData)
         }
     }
 

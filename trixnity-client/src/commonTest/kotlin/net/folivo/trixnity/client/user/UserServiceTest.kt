@@ -92,6 +92,7 @@ class UserServiceTest : ShouldSpec({
             globalAccountDataStore,
             api,
             PresenceEventHandler(api),
+            listOf(),
             CurrentSyncState(currentSyncState),
             userInfo = UserInfo(
                 me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(value = ""),

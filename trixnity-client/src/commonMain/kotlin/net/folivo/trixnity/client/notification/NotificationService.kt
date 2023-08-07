@@ -14,8 +14,8 @@ import net.folivo.trixnity.client.notification.NotificationService.Notification
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
@@ -65,9 +65,9 @@ class NotificationServiceImpl(
     ): Flow<Notification> = channelFlow {
         currentSyncState.first { it == SyncState.STARTED || it == SyncState.RUNNING }
         val syncResponseFlow = callbackFlow {
-            val subscriber: SyncResponseSubscriber = { send(it) }
-            api.sync.subscribeLastInSyncProcessing(subscriber)
-            awaitClose { api.sync.unsubscribeLastInSyncProcessing(subscriber) }
+            val subscriber: suspend (Sync.Response) -> Unit = { send(it) }
+            api.sync.afterSyncResponse.subscribe(subscriber)
+            awaitClose { api.sync.afterSyncResponse.unsubscribe(subscriber) }
         }
 
         val pushRules =

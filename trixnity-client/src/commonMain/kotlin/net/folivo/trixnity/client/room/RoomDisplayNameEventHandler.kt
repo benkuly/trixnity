@@ -12,7 +12,6 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
@@ -27,17 +26,16 @@ class RoomDisplayNameEventHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
-    private val userInfo: UserInfo,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
         api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
-        api.sync.subscribeLastInSyncProcessing(::handleSetRoomDisplayNamesQueue)
+        api.sync.afterSyncResponse.subscribe(::handleSetRoomDisplayNamesQueue)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setRoomDisplayNameFromNameEvent)
             api.sync.unsubscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
-            api.sync.unsubscribeLastInSyncProcessing(::handleSetRoomDisplayNamesQueue)
+            api.sync.afterSyncResponse.unsubscribe(::handleSetRoomDisplayNamesQueue)
         }
     }
 

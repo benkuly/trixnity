@@ -31,9 +31,9 @@ class RoomAvatarUrlEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeLastInSyncProcessing(::handleSyncResponse)
+        api.sync.afterSyncResponse.subscribe(::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeLastInSyncProcessing(::handleSyncResponse)
+            api.sync.afterSyncResponse.unsubscribe(::handleSyncResponse)
         }
     }
 

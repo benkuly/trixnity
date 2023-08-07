@@ -17,7 +17,6 @@ import net.folivo.trixnity.client.store.RoomDisplayName
 import net.folivo.trixnity.client.store.RoomStateStore
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
-import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -28,7 +27,6 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomDisplayNameEventHandlerTest : ShouldSpec({
@@ -55,7 +53,6 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
             mockMatrixClientServerApiClient(json).first,
             roomStore,
             roomStateStore,
-            UserInfo(ownUserId, "ownDevice", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, ""))
         )
         roomStore.update(roomId) { simpleRoom.copy(roomId = roomId) }
     }

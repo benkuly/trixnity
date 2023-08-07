@@ -23,9 +23,9 @@ class ReceiptEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeLastInSyncProcessing(::setState)
+        api.sync.afterSyncResponse.subscribe(::setState)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeLastInSyncProcessing(::setState)
+            api.sync.afterSyncResponse.unsubscribe(::setState)
         }
     }
 

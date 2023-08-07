@@ -19,9 +19,9 @@ class DeviceListsHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeDeviceLists(::handleDeviceLists)
+        api.sync.deviceLists.subscribe(::handleDeviceLists)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeDeviceLists(::handleDeviceLists)
+            api.sync.deviceLists.unsubscribe (::handleDeviceLists)
         }
     }
 

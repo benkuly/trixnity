@@ -14,11 +14,11 @@ import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncResponseSubscriber
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -523,9 +523,9 @@ class RoomServiceImpl(
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
         callbackFlow {
-            val subscriber: SyncResponseSubscriber = { send(it) }
-            api.sync.subscribeLastInSyncProcessing(subscriber)
-            awaitClose { api.sync.unsubscribeLastInSyncProcessing(subscriber) }
+            val subscriber: suspend (Sync.Response) -> Unit = { send(it) }
+            api.sync.afterSyncResponse.subscribe(subscriber)
+            awaitClose { api.sync.afterSyncResponse.unsubscribe(subscriber) }
         }.buffer(syncResponseBufferSize).flatMapConcat { syncResponse ->
             coroutineScope {
                 val timelineEvents =

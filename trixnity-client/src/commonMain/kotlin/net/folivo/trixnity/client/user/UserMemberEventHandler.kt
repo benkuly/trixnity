@@ -33,11 +33,11 @@ class UserMemberEventHandler(
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeFirstInSyncProcessing(::setAllRoomUsers)
-        api.sync.subscribeLastInSyncProcessing(::reloadProfile)
+        api.sync.syncResponse.subscribe(::setAllRoomUsers, 90)
+        api.sync.afterSyncResponse.subscribe(::reloadProfile)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.subscribeFirstInSyncProcessing(::setAllRoomUsers)
-            api.sync.unsubscribeLastInSyncProcessing(::reloadProfile)
+            api.sync.syncResponse.unsubscribe(::setAllRoomUsers)
+            api.sync.afterSyncResponse.unsubscribe(::reloadProfile)
         }
     }
 

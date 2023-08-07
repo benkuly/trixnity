@@ -49,13 +49,13 @@ class OutgoingSecretKeyRequestEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer)
-        api.sync.subscribeLastInSyncProcessing(::cancelOldOutgoingKeyRequests)
+        api.sync.afterSyncResponse.subscribe(::cancelOldOutgoingKeyRequests)
         api.sync.subscribe(::handleChangedSecrets)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleOutgoingKeyRequestAnswer)
-            api.sync.unsubscribeLastInSyncProcessing(::cancelOldOutgoingKeyRequests)
+            api.sync.afterSyncResponse.unsubscribe(::cancelOldOutgoingKeyRequests)
             api.sync.unsubscribe(::handleChangedSecrets)
         }
     }

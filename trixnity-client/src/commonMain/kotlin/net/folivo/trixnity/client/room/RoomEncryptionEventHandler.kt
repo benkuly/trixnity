@@ -23,9 +23,9 @@ class RoomEncryptionEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeFirstInSyncProcessing(::handleSyncResponse)
+        api.sync.syncResponse.subscribe(::handleSyncResponse, 99)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeLastInSyncProcessing(::handleSyncResponse)
+            api.sync.syncResponse.unsubscribe(::handleSyncResponse)
         }
     }
 

@@ -15,9 +15,9 @@ class RoomAccountDataEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeFirstInSyncProcessing(::setRoomAccountData)
+        api.sync.syncResponse.subscribe(::setRoomAccountData)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeFirstInSyncProcessing(::setRoomAccountData)
+            api.sync.syncResponse.unsubscribe(::setRoomAccountData)
         }
     }
 

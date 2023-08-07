@@ -16,9 +16,9 @@ class RoomStateEventHandler(
     private val tm: RepositoryTransactionManager,
 ) : EventHandler {
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeFirstInSyncProcessing(::setState)
+        api.sync.syncResponse.subscribe(::setState)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeFirstInSyncProcessing(::setState)
+            api.sync.syncResponse.unsubscribe(::setState)
         }
     }
 

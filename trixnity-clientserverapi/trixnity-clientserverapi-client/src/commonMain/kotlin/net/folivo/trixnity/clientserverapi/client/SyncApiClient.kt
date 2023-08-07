@@ -21,17 +21,52 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 import kotlin.time.Duration
 
-typealias SyncResponseSubscriber = suspend (Sync.Response) -> Unit
-typealias DeviceListsSubscriber = suspend (Sync.Response.DeviceLists?) -> Unit
-typealias OlmKeysChangeSubscriber = suspend (OlmKeysChange) -> Unit
-typealias SyncProcessingSubscriber = suspend (StateFlow<Boolean>) -> Unit
+private val log = KotlinLogging.logger {}
+
+typealias Subscriber<T> = suspend (T) -> Unit
+
+class Subscribable<T> {
+    data class PrioritySubscribers<T>(
+        val subscribers: Set<Subscriber<T>>,
+        val priority: Int,
+    ) : Comparable<PrioritySubscribers<T>> {
+        override fun compareTo(other: PrioritySubscribers<T>): Int = other.priority - priority
+    }
+
+    private val _subscribers: MutableStateFlow<List<PrioritySubscribers<T>>> = MutableStateFlow(listOf())
+
+    fun subscribe(subscriber: Subscriber<T>, priority: Int = 0) {
+        _subscribers.update { oldList ->
+            val existingPriority = oldList.find { it.priority == priority }
+            val newList =
+                if (existingPriority != null)
+                    oldList - existingPriority + existingPriority.copy(subscribers = existingPriority.subscribers + subscriber)
+                else
+                    oldList + PrioritySubscribers(setOf(subscriber), priority)
+            newList.sortedDescending()
+        }
+    }
+
+    fun unsubscribe(subscriber: Subscriber<T>) {
+        _subscribers.update { oldList ->
+            oldList.map {
+                it.copy(subscribers = it.subscribers - subscriber)
+            }.filterNot { it.subscribers.isEmpty() }
+                .sortedDescending()
+        }
+    }
+
+    suspend fun process(value: T) = coroutineScope {
+        _subscribers.value.forEach { prioritySubscribers ->
+            prioritySubscribers.subscribers.forEach { subscriber -> launch { subscriber(value) } }
+        }
+    }
+}
 
 data class OlmKeysChange(
     val oneTimeKeysCount: OneTimeKeysCount?,
     val fallbackKeyTypes: UnusedFallbackKeyTypes?,
 )
-
-private val log = KotlinLogging.logger {}
 
 enum class SyncState {
     /**
@@ -85,25 +120,10 @@ interface SyncApiClient : EventEmitter {
         asUserId: UserId? = null
     ): Result<Sync.Response>
 
-    fun subscribeDeviceLists(subscriber: DeviceListsSubscriber)
-    fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber)
-    fun subscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber)
-    fun unsubscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber)
-    fun subscribeFirstInSyncProcessing(subscriber: SyncResponseSubscriber)
-    fun unsubscribeFirstInSyncProcessing(subscriber: SyncResponseSubscriber)
-    fun subscribeLastInSyncProcessing(subscriber: SyncResponseSubscriber)
-    fun unsubscribeLastInSyncProcessing(subscriber: SyncResponseSubscriber)
-    fun subscribeBeforeSyncProcessing(subscriber: SyncResponseSubscriber)
-    fun unsubscribeBeforeSyncProcessing(subscriber: SyncResponseSubscriber)
-
-    /**
-     * Parameter emits true, when sync processing has been finished. All work of the subscriber should be stopped.
-     * Otherwise, the sync processing cannot be finished.
-     */
-    fun subscribeSyncProcessing(subscriber: SyncProcessingSubscriber)
-    fun unsubscribeSyncProcessing(subscriber: SyncProcessingSubscriber)
-    fun subscribeAfterSyncProcessing(subscriber: SyncResponseSubscriber)
-    fun unsubscribeAfterSyncProcessing(subscriber: SyncResponseSubscriber)
+    val deviceLists: Subscribable<Sync.Response.DeviceLists?>
+    val olmKeysChange: Subscribable<OlmKeysChange>
+    val syncResponse: Subscribable<Sync.Response>
+    val afterSyncResponse: Subscribable<Sync.Response>
 
     val currentSyncState: StateFlow<SyncState>
 
@@ -205,66 +225,15 @@ class SyncApiClientImpl(
     private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(SyncState.STOPPED)
     override val currentSyncState = _currentSyncState.asStateFlow()
 
-    private val deviceListsSubscribers: MutableStateFlow<Set<DeviceListsSubscriber>> = MutableStateFlow(setOf())
-    override fun subscribeDeviceLists(subscriber: DeviceListsSubscriber) =
-        deviceListsSubscribers.update { it + subscriber }
+    private data class PrioritySubscriber<T>(
+        val subscriber: T,
+        val priority: Int,
+    )
 
-    override fun unsubscribeDeviceLists(subscriber: DeviceListsSubscriber) =
-        deviceListsSubscribers.update { it - subscriber }
-
-    private val deviceOneTimeKeysCountSubscribers: MutableStateFlow<Set<OlmKeysChangeSubscriber>> =
-        MutableStateFlow(setOf())
-
-    override fun subscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber) =
-        deviceOneTimeKeysCountSubscribers.update { it + subscriber }
-
-    override fun unsubscribeOlmKeysChange(subscriber: OlmKeysChangeSubscriber) =
-        deviceOneTimeKeysCountSubscribers.update { it - subscriber }
-
-    private val firstInSyncProcessingSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> =
-        MutableStateFlow(setOf())
-
-    override fun subscribeFirstInSyncProcessing(subscriber: SyncResponseSubscriber) =
-        firstInSyncProcessingSubscribers.update { it + subscriber }
-
-    override fun unsubscribeFirstInSyncProcessing(subscriber: SyncResponseSubscriber) =
-        firstInSyncProcessingSubscribers.update { it - subscriber }
-
-    private val lastInSyncProcessingSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> =
-        MutableStateFlow(setOf())
-
-    override fun subscribeLastInSyncProcessing(subscriber: SyncResponseSubscriber) =
-        lastInSyncProcessingSubscribers.update { it + subscriber }
-
-    override fun unsubscribeLastInSyncProcessing(subscriber: SyncResponseSubscriber) =
-        lastInSyncProcessingSubscribers.update { it - subscriber }
-
-    private val beforeSyncProcessingSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> =
-        MutableStateFlow(setOf())
-
-    override fun subscribeBeforeSyncProcessing(subscriber: SyncResponseSubscriber) =
-        beforeSyncProcessingSubscribers.update { it + subscriber }
-
-    override fun unsubscribeBeforeSyncProcessing(subscriber: SyncResponseSubscriber) =
-        beforeSyncProcessingSubscribers.update { it - subscriber }
-
-    private val syncProcessingSubscribers: MutableStateFlow<Set<SyncProcessingSubscriber>> =
-        MutableStateFlow(setOf())
-
-    override fun subscribeSyncProcessing(subscriber: SyncProcessingSubscriber) =
-        syncProcessingSubscribers.update { it + subscriber }
-
-    override fun unsubscribeSyncProcessing(subscriber: SyncProcessingSubscriber) =
-        syncProcessingSubscribers.update { it - subscriber }
-
-    private val afterSyncProcessingSubscribers: MutableStateFlow<Set<SyncResponseSubscriber>> =
-        MutableStateFlow(setOf())
-
-    override fun subscribeAfterSyncProcessing(subscriber: SyncResponseSubscriber) =
-        afterSyncProcessingSubscribers.update { it + subscriber }
-
-    override fun unsubscribeAfterSyncProcessing(subscriber: SyncResponseSubscriber) =
-        afterSyncProcessingSubscribers.update { it - subscriber }
+    override val deviceLists: Subscribable<Sync.Response.DeviceLists?> = Subscribable()
+    override val olmKeysChange: Subscribable<OlmKeysChange> = Subscribable()
+    override val syncResponse: Subscribable<Sync.Response> = Subscribable()
+    override val afterSyncResponse: Subscribable<Sync.Response> = Subscribable()
 
     override suspend fun start(
         filter: String?,
@@ -378,83 +347,61 @@ class SyncApiClientImpl(
         log.debug { "received sync response after about $measuredSyncDuration with token $batchToken" }
 
 
-        coroutineScope {
-            beforeSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
+        val measuredProcessDuration = measureTime {
+            withTransaction {
+                processSyncResponse(response)
+                setBatchToken(response.nextBatch)
+            }
         }
-        withTransaction {
-            val measuredProcessDuration = processSyncResponse(response)
-            setBatchToken(response.nextBatch)
-            log.debug { "processed sync response in about $measuredProcessDuration with token $batchToken" }
-        }
-        coroutineScope {
-            afterSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
-        }
-
+        log.debug { "processed sync response in about $measuredProcessDuration with token $batchToken" }
         updateSyncState(RUNNING)
         return response
     }
 
     private suspend fun processSyncResponse(response: Sync.Response) = coroutineScope {
-        val processingFinished = MutableStateFlow(false)
-        syncProcessingSubscribers.value.forEach { launch { it.invoke(processingFinished) } }
-        measureTime {
-            coroutineScope {
-                deviceOneTimeKeysCountSubscribers.value.forEach {
+        olmKeysChange.process(OlmKeysChange(response.oneTimeKeysCount, response.unusedFallbackKeyTypes))
+        deviceLists.process(response.deviceLists)
+
+        // do it at first, to be able to decrypt stuff
+        response.toDevice?.events?.forEach { emitEvent(it) }
+        // do it at first, to be able to decrypt stuff
+        response.accountData?.events?.forEach { emitEvent(it) }
+
+        syncResponse.process(response)
+
+        coroutineScope {
+            launch { response.presence?.events?.forEach { emitEvent(it) } }
+            launch {
+                response.room?.join?.forEach { (_, joinedRoom) ->
                     launch {
-                        it.invoke(OlmKeysChange(response.oneTimeKeysCount, response.unusedFallbackKeyTypes))
+                        joinedRoom.state?.events?.forEach { emitEvent(it) }
+                        joinedRoom.timeline?.events?.forEach { emitEvent(it) }
+                        joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
+                        joinedRoom.accountData?.events?.forEach { emitEvent(it) }
                     }
                 }
             }
-            coroutineScope {
-                deviceListsSubscribers.value.forEach { launch { it.invoke(response.deviceLists) } }
+            launch {
+                response.room?.invite?.forEach { (_, invitedRoom) ->
+                    invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
+                }
             }
-
-            // do it at first, to be able to decrypt stuff
-            response.toDevice?.events?.forEach { emitEvent(it) }
-            // do it at first, to be able to decrypt stuff
-            response.accountData?.events?.forEach { emitEvent(it) }
-
-            coroutineScope {
-                firstInSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
+            launch {
+                response.room?.knock?.forEach { (_, invitedRoom) ->
+                    invitedRoom.knockState?.events?.forEach { emitEvent(it) }
+                }
             }
-
-            coroutineScope {
-                launch { response.presence?.events?.forEach { emitEvent(it) } }
-                launch {
-                    response.room?.join?.forEach { (_, joinedRoom) ->
-                        launch {
-                            joinedRoom.state?.events?.forEach { emitEvent(it) }
-                            joinedRoom.timeline?.events?.forEach { emitEvent(it) }
-                            joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
-                            joinedRoom.accountData?.events?.forEach { emitEvent(it) }
-                        }
-                    }
-                }
-                launch {
-                    response.room?.invite?.forEach { (_, invitedRoom) ->
-                        invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
-                    }
-                }
-                launch {
-                    response.room?.knock?.forEach { (_, invitedRoom) ->
-                        invitedRoom.knockState?.events?.forEach { emitEvent(it) }
-                    }
-                }
-                launch {
-                    response.room?.leave?.forEach { (_, leftRoom) ->
-                        launch {
-                            leftRoom.state?.events?.forEach { emitEvent(it) }
-                            leftRoom.timeline?.events?.forEach { emitEvent(it) }
-                            leftRoom.accountData?.events?.forEach { emitEvent(it) }
-                        }
+            launch {
+                response.room?.leave?.forEach { (_, leftRoom) ->
+                    launch {
+                        leftRoom.state?.events?.forEach { emitEvent(it) }
+                        leftRoom.timeline?.events?.forEach { emitEvent(it) }
+                        leftRoom.accountData?.events?.forEach { emitEvent(it) }
                     }
                 }
             }
-            coroutineScope {
-                lastInSyncProcessingSubscribers.value.forEach { launch { it.invoke(response) } }
-            }
-            processingFinished.value = true
         }
+        afterSyncResponse.process(response)
     }
 
     override suspend fun stop(wait: Boolean) {

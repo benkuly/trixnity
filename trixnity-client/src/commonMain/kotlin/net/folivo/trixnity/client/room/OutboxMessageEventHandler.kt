@@ -39,9 +39,9 @@ class OutboxMessageEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(roomOutboxMessageStore.getAll()) }
-        api.sync.subscribeLastInSyncProcessing(::removeOldOutboxMessages)
+        api.sync.afterSyncResponse.subscribe(::removeOldOutboxMessages)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeLastInSyncProcessing(::removeOldOutboxMessages)
+            api.sync.afterSyncResponse.unsubscribe(::removeOldOutboxMessages)
         }
     }
 
