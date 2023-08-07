@@ -126,6 +126,7 @@ class OutdatedKeysHandler(
             }
             yield()
         }
+        log.debug { "finished update outdated keys of $userIds" }
     }
 
     private suspend fun handleOutdatedCrossSigningKey(

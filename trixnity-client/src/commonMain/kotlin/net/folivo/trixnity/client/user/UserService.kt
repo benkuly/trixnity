@@ -89,14 +89,14 @@ class UserServiceImpl(
                     SyncState.RUNNING,
                     onError = { log.warn(it) { "failed loading members" } },
                 ) {
-                    log.debug { "load members of room $roomId" }
                     val room = roomStore.get(roomId).first()
                     if (room?.membersLoaded != true) {
+                        log.debug { "load members of room $roomId" }
                         val memberEvents = api.rooms.getMembers(
                             roomId = roomId,
                             notMembership = LEAVE
                         ).getOrThrow()
-                        memberEvents.chunked(100).forEach { chunk ->
+                        memberEvents.chunked(50).forEach { chunk ->
                             tm.writeTransaction {
                                 chunk.forEach { event ->
                                     lazyMemberEventHandlers.forEach { it.handleLazyMemberEvent(event) }
