@@ -30,7 +30,7 @@ class UserMemberEventHandler(
     private val accountStore: AccountStore,
     private val roomUserStore: RoomUserStore,
     private val tm: RepositoryTransactionManager,
-) : EventHandler {
+) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeFirstInSyncProcessing(::setAllRoomUsers)
@@ -50,13 +50,16 @@ class UserMemberEventHandler(
             }
     }
 
+    override suspend fun handleLazyMemberEvent(memberEvent: Event<MemberEventContent>) {
+        setRoomUser(memberEvent, skipWhenAlreadyPresent = true)
+    }
+
     internal suspend fun setRoomUser(event: Event<MemberEventContent>, skipWhenAlreadyPresent: Boolean = false) {
         val roomId = event.getRoomId()
         val stateKey = event.getStateKey()
         if (roomId != null && stateKey != null) {
             val userId = UserId(stateKey)
-            val storedRoomUser = roomUserStore.get(userId, roomId).first()
-            if (skipWhenAlreadyPresent && storedRoomUser != null) return
+            if (skipWhenAlreadyPresent && roomUserStore.get(userId, roomId).first() != null) return
             val membership = event.content.membership
             val newDisplayName = event.content.displayName
 
@@ -64,13 +67,14 @@ class UserMemberEventHandler(
                 membership == Membership.LEAVE || membership == Membership.BAN
 
             val oldDisplayName = roomUserStore.get(userId, roomId).first()?.originalName
-            val hasCollisions = if (hasLeftRoom || oldDisplayName != newDisplayName) {
-                if (!oldDisplayName.isNullOrEmpty())
-                    resolveUserDisplayNameCollisions(oldDisplayName, true, userId, roomId)
-                if (!newDisplayName.isNullOrEmpty())
-                    resolveUserDisplayNameCollisions(newDisplayName, hasLeftRoom, userId, roomId)
-                else false
-            } else false
+            val hasCollisions =
+                if (hasLeftRoom || oldDisplayName != newDisplayName) {
+                    if (!oldDisplayName.isNullOrEmpty())
+                        resolveUserDisplayNameCollisions(oldDisplayName, true, userId, roomId)
+                    if (!newDisplayName.isNullOrEmpty())
+                        resolveUserDisplayNameCollisions(newDisplayName, hasLeftRoom, userId, roomId)
+                    else false
+                } else false
             val calculatedName = calculateUserDisplayName(newDisplayName, !hasLeftRoom && !hasCollisions, userId)
             log.debug { "calculated displayName in $roomId for $userId is '$calculatedName' (hasCollisions=$hasCollisions, hasLeftRoom=$hasLeftRoom)" }
 

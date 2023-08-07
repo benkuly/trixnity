@@ -52,7 +52,7 @@ class RoomUserStore(
         membership: Set<Membership>,
         roomId: RoomId
     ): Set<UserId> {
-        // TODO loading all users into memory could could make performance issues -> make db query
+        // TODO loading all users into memory could lead to performance issues -> make db query?
         return roomUserCache.readByFirstKey(roomId).first()
             ?.filter {
                 val user = it.value.first()

@@ -70,6 +70,7 @@ class UserServiceImpl(
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val api: MatrixClientServerApiClient,
     presenceEventHandler: PresenceEventHandler,
+    private val lazyMemberEventHandlers: List<LazyMemberEventHandler>,
     private val currentSyncState: CurrentSyncState,
     userInfo: UserInfo,
     private val mappings: EventContentSerializerMappings,
@@ -96,8 +97,10 @@ class UserServiceImpl(
                         ).getOrThrow()
                         memberEvents.chunked(100).forEach { chunk ->
                             tm.writeTransaction {
-                                // TODO We should synchronize this with the sync. Otherwise this could overwrite a newer event.
-                                chunk.forEach { api.sync.emitEvent(it) }
+                                chunk.forEach { event ->
+                                    lazyMemberEventHandlers.forEach { it.handleLazyMemberEvent(event) }
+                                    api.sync.emitEvent(event)
+                                }
                             }
                             yield()
                         }
