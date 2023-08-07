@@ -29,9 +29,7 @@ class Subscribable<T> {
     data class PrioritySubscribers<T>(
         val subscribers: Set<Subscriber<T>>,
         val priority: Int,
-    ) : Comparable<PrioritySubscribers<T>> {
-        override fun compareTo(other: PrioritySubscribers<T>): Int = other.priority - priority
-    }
+    )
 
     private val _subscribers: MutableStateFlow<List<PrioritySubscribers<T>>> = MutableStateFlow(listOf())
 
@@ -43,7 +41,7 @@ class Subscribable<T> {
                     oldList - existingPriority + existingPriority.copy(subscribers = existingPriority.subscribers + subscriber)
                 else
                     oldList + PrioritySubscribers(setOf(subscriber), priority)
-            newList.sortedDescending()
+            newList.sortedByDescending { it.priority }
         }
     }
 
@@ -52,17 +50,19 @@ class Subscribable<T> {
             oldList.map {
                 it.copy(subscribers = it.subscribers - subscriber)
             }.filterNot { it.subscribers.isEmpty() }
-                .sortedDescending()
+                .sortedByDescending { it.priority }
         }
     }
 
-    suspend fun process(value: T) = coroutineScope {
+    suspend fun process(value: T) =
         _subscribers.value.forEach { prioritySubscribers ->
-            prioritySubscribers.subscribers.forEach { subscriber ->
-                launch { subscriber(value) }
+            coroutineScope {
+                log.trace { "process value in subscribers ${prioritySubscribers.subscribers}" }
+                prioritySubscribers.subscribers.forEach { subscriber ->
+                    launch { subscriber(value) }
+                }
             }
         }
-    }
 }
 
 data class OlmKeysChange(
