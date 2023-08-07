@@ -58,7 +58,9 @@ class Subscribable<T> {
 
     suspend fun process(value: T) = coroutineScope {
         _subscribers.value.forEach { prioritySubscribers ->
-            prioritySubscribers.subscribers.forEach { subscriber -> launch { subscriber(value) } }
+            prioritySubscribers.subscribers.forEach { subscriber ->
+                launch { subscriber(value) }
+            }
         }
     }
 }
@@ -346,29 +348,37 @@ class SyncApiClientImpl(
         }
         log.debug { "received sync response after about $measuredSyncDuration with token $batchToken" }
 
-
-        val measuredProcessDuration = measureTime {
-            withTransaction {
+        withTransaction {
+            val measuredProcessDuration = measureTime {
                 processSyncResponse(response)
-                setBatchToken(response.nextBatch)
             }
+            log.debug { "processed sync response in about $measuredProcessDuration with token $batchToken" }
+
+            setBatchToken(response.nextBatch)
         }
-        log.debug { "processed sync response in about $measuredProcessDuration with token $batchToken" }
         updateSyncState(RUNNING)
         return response
     }
 
-    private suspend fun processSyncResponse(response: Sync.Response) = coroutineScope {
+    private suspend fun processSyncResponse(response: Sync.Response) {
+        log.trace { "process olmKeysChange" }
         olmKeysChange.process(OlmKeysChange(response.oneTimeKeysCount, response.unusedFallbackKeyTypes))
+
+        log.trace { "process deviceLists" }
         deviceLists.process(response.deviceLists)
 
+        log.trace { "process toDevice" }
         // do it at first, to be able to decrypt stuff
         response.toDevice?.events?.forEach { emitEvent(it) }
+
+        log.trace { "process accountData" }
         // do it at first, to be able to decrypt stuff
         response.accountData?.events?.forEach { emitEvent(it) }
 
+        log.trace { "process syncResponse" }
         syncResponse.process(response)
 
+        log.trace { "process each event" }
         coroutineScope {
             launch { response.presence?.events?.forEach { emitEvent(it) } }
             launch {
@@ -401,6 +411,7 @@ class SyncApiClientImpl(
                 }
             }
         }
+        log.trace { "process afterSyncResponse" }
         afterSyncResponse.process(response)
     }
 
