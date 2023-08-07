@@ -192,6 +192,7 @@ private class RemoverJobExecutingIndex<K, V>(
         if (infiniteCache.not()) {
             val value = values.get(key) ?: return
             cacheScope.launch {
+                log.trace { "$name: launch remover job for key $key" }
                 combine(
                     value.resetExpireDuration,
                     value.value.subscriptionCount,
