@@ -372,7 +372,7 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>("some")
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.subscribeSyncProcessing { syncResponses.emit(it) }
+        matrixRestClient.sync.syncResponse.subscribe({ syncResponses.emit(it) })
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
@@ -443,7 +443,7 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.subscribeSyncProcessing { syncResponses.emit(it) }
+        matrixRestClient.sync.syncResponse.subscribe({ syncResponses.emit(it) })
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
@@ -498,9 +498,9 @@ class SyncApiClientTest {
         val collector = launch {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
-        matrixRestClient.sync.subscribeDeviceLists {
+        matrixRestClient.sync.deviceLists.subscribe({
             matrixRestClient.sync.currentSyncState.first { it == INITIAL_SYNC }
-        }
+        })
         matrixRestClient.sync.currentSyncState.first { it == STOPPED }
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncJob = launch {
@@ -571,9 +571,9 @@ class SyncApiClientTest {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
         matrixRestClient.sync.currentSyncState.first { it == STOPPED }
-        matrixRestClient.sync.subscribeDeviceLists {
+        matrixRestClient.sync.deviceLists.subscribe({
             matrixRestClient.sync.currentSyncState.first { it == STARTED }
-        }
+        })
         val currentBatchToken = MutableStateFlow<String?>("ananas")
         val sync = launch {
             matrixRestClient.sync.start(
@@ -762,7 +762,7 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.subscribeSyncProcessing { syncResponses.emit(it) }
+        matrixRestClient.sync.syncResponse.subscribe({ syncResponses.emit(it) })
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
@@ -819,13 +819,15 @@ class SyncApiClientTest {
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
         var subscribeCall = 0
-        matrixRestClient.sync.subscribeSyncProcessing {
-            subscribeCall++
-            when (subscribeCall) {
-                1 -> throw RuntimeException("dino")
-                else -> syncResponses.emit(it)
+        matrixRestClient.sync.syncResponse.subscribe(
+            {
+                subscribeCall++
+                when (subscribeCall) {
+                    1 -> throw RuntimeException("dino")
+                    else -> syncResponses.emit(it)
+                }
             }
-        }
+        )
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
