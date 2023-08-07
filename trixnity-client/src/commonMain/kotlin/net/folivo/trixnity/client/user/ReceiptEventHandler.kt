@@ -23,13 +23,13 @@ class ReceiptEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.afterSyncResponse.subscribe(::setState)
+        api.sync.afterSyncResponse.subscribe(::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.afterSyncResponse.unsubscribe(::setState)
+            api.sync.afterSyncResponse.unsubscribe(::handleSyncResponse)
         }
     }
 
-    internal suspend fun setState(syncResponse: Sync.Response) = tm.writeTransaction {
+    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) = tm.writeTransaction {
         syncResponse.filter<ReceiptEventContent>().collect {
             setReadReceipts(it)
         }

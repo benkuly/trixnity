@@ -89,6 +89,7 @@ class UserServiceImpl(
                     SyncState.RUNNING,
                     onError = { log.warn(it) { "failed loading members" } },
                 ) {
+                    log.debug { "load members of room $roomId" }
                     val room = roomStore.get(roomId).first()
                     if (room?.membersLoaded != true) {
                         val memberEvents = api.rooms.getMembers(
