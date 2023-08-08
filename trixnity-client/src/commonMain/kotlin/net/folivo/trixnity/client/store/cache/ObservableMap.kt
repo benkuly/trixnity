@@ -26,7 +26,7 @@ internal class ObservableMap<K, V>(
 
     val values = changeSignal
         .map { valuesMutex.withLock { _values.toMap() } }
-        .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
+        .shareIn(coroutineScope, SharingStarted.WhileSubscribed())
 
     sealed interface CompareAndSetResult {
         object TryAgain : CompareAndSetResult
