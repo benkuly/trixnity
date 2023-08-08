@@ -1,18 +1,11 @@
 package net.folivo.trixnity.client.user
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.job
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
-import net.folivo.trixnity.client.store.AccountStore
-import net.folivo.trixnity.client.store.RoomUser
-import net.folivo.trixnity.client.store.RoomUserStore
-import net.folivo.trixnity.client.store.originalName
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -56,47 +49,72 @@ class UserMemberEventHandler(
 
     internal suspend fun setRoomUser(events: List<Event<MemberEventContent>>, skipWhenAlreadyPresent: Boolean = false) {
         if (events.isNotEmpty()) {
-            val updatedRoomUsers =
-                events.mapNotNull { event ->
-                    val roomId = event.getRoomId()
-                    val stateKey = event.getStateKey()
-                    if (roomId != null && stateKey != null) {
-                        val userId = UserId(stateKey)
-                        val membership = event.content.membership
-                        val newDisplayName = event.content.displayName
-
-                        val hasLeftRoom =
-                            membership == Membership.LEAVE || membership == Membership.BAN
-
-                        val oldDisplayName = roomUserStore.get(userId, roomId).first()?.originalName
-                        val hasCollisions =
-                            if (hasLeftRoom || oldDisplayName != newDisplayName) {
-                                if (!oldDisplayName.isNullOrEmpty())
-                                    resolveUserDisplayNameCollisions(oldDisplayName, true, userId, roomId)
-                                if (!newDisplayName.isNullOrEmpty())
-                                    resolveUserDisplayNameCollisions(newDisplayName, hasLeftRoom, userId, roomId)
-                                else false
-                            } else false
-                        val calculatedName =
-                            calculateUserDisplayName(newDisplayName, !hasLeftRoom && !hasCollisions, userId)
-                        log.debug { "calculated displayName in $roomId for $userId is '$calculatedName' (hasCollisions=$hasCollisions, hasLeftRoom=$hasLeftRoom)" }
-                        shouldReloadOwnProfile(userId)
-                        RoomUser(
-                            roomId = roomId,
-                            userId = userId,
-                            name = calculatedName,
-                            event = event
-                        )
-                    } else null
-                }
             tm.writeTransaction {
-                updatedRoomUsers.forEach { updatedRoomUser ->
-                    roomUserStore.update(updatedRoomUser.userId, updatedRoomUser.roomId) { oldRoomUser ->
-                        if (skipWhenAlreadyPresent && oldRoomUser != null) oldRoomUser
-                        else oldRoomUser?.copy(
-                            name = updatedRoomUser.name,
-                            event = updatedRoomUser.event,
-                        ) ?: updatedRoomUser
+                events.groupBy { it.getRoomId() }.forEach { (roomId, eventsByRoomId) ->
+                    if (roomId != null) coroutineScope {
+                        val allDisplayNames = mutableMapOf<UserId, String>()
+                        val putAllDisplayNames = async(start = CoroutineStart.LAZY) {// FIXME test
+                            allDisplayNames.putAll(allRoomDisplayNames(roomId))
+                        }
+                        eventsByRoomId.forEach { event ->
+                            val stateKey = event.getStateKey()
+                            if (stateKey != null) {
+                                val userId = UserId(stateKey)
+                                val membership = event.content.membership
+                                val newDisplayName = event.content.displayName
+
+                                val hasLeftRoom =
+                                    membership == Membership.LEAVE || membership == Membership.BAN
+
+                                val oldDisplayName = roomUserStore.get(userId, roomId).first()?.originalName
+                                val hasCollisions =
+                                    if (hasLeftRoom || oldDisplayName != newDisplayName) {
+                                        if (!oldDisplayName.isNullOrEmpty()) {
+                                            putAllDisplayNames.await()
+                                            resolveUserDisplayNameCollisions(
+                                                oldDisplayName,
+                                                allDisplayNames,
+                                                true,
+                                                userId,
+                                                roomId
+                                            )
+                                        }
+                                        if (!newDisplayName.isNullOrEmpty()) {
+                                            putAllDisplayNames.await()
+                                            resolveUserDisplayNameCollisions(
+                                                newDisplayName,
+                                                allDisplayNames,
+                                                hasLeftRoom,
+                                                userId,
+                                                roomId
+                                            )
+                                        } else false
+                                    } else false
+                                val calculatedName =
+                                    calculateUserDisplayName(
+                                        newDisplayName,
+                                        !hasLeftRoom && !hasCollisions,
+                                        userId
+                                    )
+                                allDisplayNames[userId] = calculatedName
+                                log.debug { "calculated displayName in $roomId for $userId is '$calculatedName' (hasCollisions=$hasCollisions, hasLeftRoom=$hasLeftRoom)" }
+                                shouldReloadOwnProfile(userId)
+
+                                roomUserStore.update(userId, roomId) { oldRoomUser ->
+                                    if (skipWhenAlreadyPresent && oldRoomUser != null) oldRoomUser
+                                    else oldRoomUser?.copy(
+                                        name = calculatedName,
+                                        event = event
+                                    ) ?: RoomUser(
+                                        roomId = roomId,
+                                        userId = userId,
+                                        name = calculatedName,
+                                        event = event
+                                    )
+                                }
+                            }
+                        }
+                        putAllDisplayNames.cancel()
                     }
                 }
             }
@@ -105,16 +123,13 @@ class UserMemberEventHandler(
 
     private suspend fun resolveUserDisplayNameCollisions(
         displayName: String,
+        allDisplayNames: Map<UserId, String>,
         isOld: Boolean,
         sourceUserId: UserId,
         roomId: RoomId
     ): Boolean {
         val usersWithSameDisplayName =
-            roomUserStore.getByOriginalNameAndMembership(
-                displayName,
-                setOf(Membership.JOIN, Membership.INVITE),
-                roomId
-            ) - sourceUserId
+            allDisplayNames.filter { it.value == displayName && it.key != sourceUserId }.keys
         if (usersWithSameDisplayName.size == 1) {
             val userId = usersWithSameDisplayName.first()
             val calculatedName = calculateUserDisplayName(displayName, isOld, userId)
@@ -161,5 +176,20 @@ class UserMemberEventHandler(
             isUnique -> displayName
             else -> "$displayName (${userId.full})"
         }
+    }
+
+    private suspend fun allRoomDisplayNames(
+        roomId: RoomId
+    ): Map<UserId, String> {
+        val memberships = setOf(Membership.JOIN, Membership.INVITE)
+        return roomUserStore.getAll(roomId)
+            .first()
+            ?.values?.asFlow()
+            ?.mapNotNull { it.first() }
+            ?.filter { memberships.contains(it.membership) }
+            ?.mapNotNull { user -> user.originalName?.let { user.userId to it } }
+            ?.toList()
+            ?.toMap()
+            .orEmpty()
     }
 }

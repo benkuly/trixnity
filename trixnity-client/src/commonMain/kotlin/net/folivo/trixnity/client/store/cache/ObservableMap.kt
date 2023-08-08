@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
@@ -56,7 +57,7 @@ internal class ObservableMap<K, V>(
     @OptIn(ExperimentalContracts::class)
     suspend fun update(
         key: K,
-        updater: suspend (V?) -> V?
+        updater: suspend (V?) -> V?,
     ): V? {
         contract {
             callsInPlace(updater, InvocationKind.AT_LEAST_ONCE)
@@ -101,11 +102,12 @@ internal class ObservableMap<K, V>(
         indexes.value.forEach { index -> index.onRemoveAll() }
     }
 
-    suspend fun getIndexSubscriptionCount(key: K): Flow<Int> {
-        val indexesValue = indexes.value
-        return if (indexesValue.isEmpty()) flowOf(0)
-        else combine(indexesValue.map { it.getSubscriptionCount(key) }) { subscriptionCounts ->
-            subscriptionCounts.sum()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun getIndexSubscriptionCount(key: K): Flow<Int> =
+        indexes.flatMapLatest { indexesValue ->
+            if (indexesValue.isEmpty()) flowOf(0)
+            else combine(indexesValue.map { it.getSubscriptionCount(key) }) { subscriptionCounts ->
+                subscriptionCounts.sum()
+            }
         }
-    }
 }

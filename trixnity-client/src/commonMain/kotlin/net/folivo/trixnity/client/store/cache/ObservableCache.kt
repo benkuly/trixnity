@@ -73,10 +73,12 @@ internal open class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
     protected val store: S,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
+    values: ObservableMap<K, ObservableCacheValue<V?>> = ObservableMap(cacheScope),
 ) : ObservableCacheBase<K, V>(
     name = name,
     cacheScope = cacheScope,
     expireDuration = expireDuration,
+    _values = values,
 ) {
     suspend fun deleteAll() {
         store.deleteAll()
@@ -131,8 +133,8 @@ internal open class ObservableCacheBase<K, V>(
     protected val name: String,
     protected val cacheScope: CoroutineScope,
     protected val expireDuration: Duration = 1.minutes,
+    private val _values: ObservableMap<K, ObservableCacheValue<V?>> = ObservableMap(cacheScope),
 ) {
-    private val _values = ObservableMap<K, ObservableCacheValue<V?>>(cacheScope)
     val values: SharedFlow<Map<K, StateFlow<V?>>> = _values.values
         .map { value -> value.mapValues { it.value.value.asStateFlow() } }
         .shareIn(cacheScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)

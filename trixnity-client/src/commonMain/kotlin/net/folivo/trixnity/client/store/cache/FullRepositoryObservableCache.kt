@@ -26,9 +26,7 @@ internal class FullRepositoryObservableCache<K, V>(
             val key = valueToKeyMapper(value)
             updateAndGet(
                 key = key,
-                updater = null,
                 get = { value },
-                persist = { }
             )
         }
     }
