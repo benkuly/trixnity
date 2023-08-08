@@ -3,14 +3,10 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
-import net.folivo.trixnity.client.store.cache.MinimalDeleteByRoomIdRepositoryCoroutineCache
-import net.folivo.trixnity.client.store.repository.TimelineEventKey
-import net.folivo.trixnity.client.store.repository.TimelineEventRelationKey
-import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
-import net.folivo.trixnity.client.store.repository.TimelineEventRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.cache.MinimalDeleteByRoomIdRepositoryObservableCache
+import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.RelationType
@@ -18,26 +14,24 @@ import net.folivo.trixnity.core.model.events.m.RelationType
 class RoomTimelineStore(
     timelineEventRepository: TimelineEventRepository,
     timelineEventRelationRepository: TimelineEventRelationRepository,
-    tm: TransactionManager,
+    tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
 ) : Store {
-    private val timelineEventCache = MinimalDeleteByRoomIdRepositoryCoroutineCache(
+    private val timelineEventCache = MinimalDeleteByRoomIdRepositoryObservableCache(
         timelineEventRepository,
         tm,
         storeScope,
         config.cacheExpireDurations.timelineEvent
     ) { it.roomId }
     private val timelineEventRelationCache =
-        MapDeleteByRoomIdRepositoryCoroutineCache(
+        MapDeleteByRoomIdRepositoryObservableCache(
             timelineEventRelationRepository,
             tm,
             storeScope,
             config.cacheExpireDurations.timelineEventRelation
         ) { it.firstKey.roomId }
 
-
-    override suspend fun init() {}
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {

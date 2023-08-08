@@ -6,58 +6,40 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.MinimalRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
+import kotlin.time.Duration
 
 class OlmCryptoStore(
-    private val olmAccountRepository: OlmAccountRepository,
-    private val olmForgetFallbackKeyAfterRepository: OlmForgetFallbackKeyAfterRepository,
-    private val olmSessionRepository: OlmSessionRepository,
+    olmAccountRepository: OlmAccountRepository,
+    olmForgetFallbackKeyAfterRepository: OlmForgetFallbackKeyAfterRepository,
+    olmSessionRepository: OlmSessionRepository,
     private val inboundMegolmSessionRepository: InboundMegolmSessionRepository,
-    private val inboundMegolmMessageIndexRepository: InboundMegolmMessageIndexRepository,
-    private val outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
-    private val tm: TransactionManager,
+    inboundMegolmMessageIndexRepository: InboundMegolmMessageIndexRepository,
+    outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
+    private val tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
     private val storeScope: CoroutineScope
 ) : Store {
-    val account = MutableStateFlow<String?>(null)
-    val forgetFallbackKeyAfter = MutableStateFlow<Instant?>(null)
+    private val olmAccountCache =
+        MinimalRepositoryObservableCache(olmAccountRepository, tm, storeScope, Duration.INFINITE)
+    private val olmForgetFallbackKeyAfterCache =
+        MinimalRepositoryObservableCache(olmForgetFallbackKeyAfterRepository, tm, storeScope, Duration.INFINITE)
 
     private val _notBackedUpInboundMegolmSessions =
         MutableStateFlow<Map<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>>(mapOf())
 
     val notBackedUpInboundMegolmSessions = _notBackedUpInboundMegolmSessions.asStateFlow()
-
     override suspend fun init() {
-        account.value = tm.readOperation { olmAccountRepository.get(1) }
-        forgetFallbackKeyAfter.value = tm.readOperation { olmForgetFallbackKeyAfterRepository.get(1) }
-        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        storeScope.launch(start = UNDISPATCHED) {
-            account.collect {
-                tm.writeOperationAsync(olmAccountRepository.serializeKey(1)) {
-                    if (it != null) olmAccountRepository.save(1, it)
-                    else olmAccountRepository.delete(1)
-                }
-            }
-        }
-        storeScope.launch(start = UNDISPATCHED) {
-            forgetFallbackKeyAfter.collect {
-                tm.writeOperationAsync(olmForgetFallbackKeyAfterRepository.serializeKey(1)) {
-                    if (it != null) olmForgetFallbackKeyAfterRepository.save(1, it)
-                    else olmForgetFallbackKeyAfterRepository.delete(1)
-                }
-            }
-        }
         storeScope.launch(start = UNDISPATCHED) {
             _notBackedUpInboundMegolmSessions.value =
-                tm.readOperation { inboundMegolmSessionRepository.getByNotBackedUp() }
+                tm.readTransaction { inboundMegolmSessionRepository.getByNotBackedUp() }
                     .associateBy { InboundMegolmSessionRepositoryKey(it.sessionId, it.roomId) }
         }
     }
@@ -65,12 +47,9 @@ class OlmCryptoStore(
     override suspend fun clearCache() {}
 
     override suspend fun deleteAll() {
-        tm.writeOperation {
-            olmAccountRepository.deleteAll()
-            olmForgetFallbackKeyAfterRepository.deleteAll()
-        }
-        account.value = null
         _notBackedUpInboundMegolmSessions.value = mapOf()
+        olmAccountCache.deleteAll()
+        olmForgetFallbackKeyAfterCache.deleteAll()
         olmSessionsCache.deleteAll()
         inboundMegolmSessionCache.deleteAll()
         inboundMegolmSessionIndexCache.deleteAll()
@@ -78,12 +57,21 @@ class OlmCryptoStore(
     }
 
     private val olmSessionsCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             olmSessionRepository,
             tm,
             storeScope,
             config.cacheExpireDurations.olmSession
         )
+
+    suspend fun getOlmAccount() = olmAccountCache.read(1).first()
+    suspend fun updateOlmAccount(updater: suspend (String?) -> String) = olmAccountCache.write(1) {
+        updater(it)
+    }
+
+    suspend fun getForgetFallbackKeyAfter() = olmForgetFallbackKeyAfterCache.read(1)
+    suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?) =
+        olmForgetFallbackKeyAfterCache.write(1, updater = updater)
 
     suspend fun updateOlmSessions(
         senderKey: Curve25519Key,
@@ -91,7 +79,7 @@ class OlmCryptoStore(
     ) = olmSessionsCache.write(senderKey, updater = updater)
 
     private val inboundMegolmSessionCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             inboundMegolmSessionRepository,
             tm,
             storeScope,
@@ -121,7 +109,7 @@ class OlmCryptoStore(
     )
 
     private val inboundMegolmSessionIndexCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             inboundMegolmMessageIndexRepository,
             tm,
             storeScope,
@@ -138,7 +126,7 @@ class OlmCryptoStore(
     )
 
     private val outboundMegolmSessionCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             outboundMegolmSessionRepository,
             tm,
             storeScope,

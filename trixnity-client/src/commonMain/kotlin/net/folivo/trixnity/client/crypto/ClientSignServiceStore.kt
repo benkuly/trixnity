@@ -4,8 +4,8 @@ import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.crypto.sign.SignServiceStore
 
-class ClientSignServiceStore(olmCryptoStore: OlmCryptoStore, accountStore: AccountStore) :
+class ClientSignServiceStore(private val olmCryptoStore: OlmCryptoStore, private val accountStore: AccountStore) :
     SignServiceStore {
-    override val olmAccount: String = requireNotNull(olmCryptoStore.account.value)
-    override val olmPickleKey: String = requireNotNull(accountStore.olmPickleKey.value)
+    override suspend fun getOlmAccount(): String = checkNotNull(olmCryptoStore.getOlmAccount())
+    override suspend fun getOlmPickleKey(): String = checkNotNull(accountStore.getAccount()?.olmPickleKey)
 }

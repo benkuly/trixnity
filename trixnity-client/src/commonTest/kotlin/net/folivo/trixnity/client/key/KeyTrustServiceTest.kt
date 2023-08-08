@@ -546,13 +546,15 @@ private val body: ShouldSpec.() -> Unit = {
                 usage = setOf(SelfSigningKey),
                 keys = keysOf(Ed25519Key("A-SSK", "A-SSK-value"))
             )
-            keyStore.secrets.value = mapOf(
-                SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(
-                        SelfSigningKeyEventContent(mapOf())
-                    ), ""
+            keyStore.updateSecrets {
+                mapOf(
+                    SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                        Event.GlobalAccountDataEvent(
+                            SelfSigningKeyEventContent(mapOf())
+                        ), ""
+                    )
                 )
-            )
+            }
             val otherCrossSigningKey = CrossSigningKeys(
                 userId = alice,
                 usage = setOf(UserSigningKey),
@@ -629,13 +631,15 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateCrossSigningKeys(bob) {
                 setOf(StoredCrossSigningKeys(Signed(othersMasterKey, mapOf()), Valid(false)))
             }
-            keyStore.secrets.value = mapOf(
-                SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(
-                        UserSigningKeyEventContent(mapOf())
-                    ), ""
+            keyStore.updateSecrets {
+                mapOf(
+                    SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
+                        Event.GlobalAccountDataEvent(
+                            UserSigningKeyEventContent(mapOf())
+                        ), ""
+                    )
                 )
-            )
+            }
 
             cut.trustAndSignKeys(
                 keys = setOf(othersDeviceEdKey, othersMasterEdKey),
@@ -682,13 +686,15 @@ private val body: ShouldSpec.() -> Unit = {
                     StoredCrossSigningKeys(Signed(selfSigningKey, mapOf()), Valid(false)),
                 )
             }
-            keyStore.secrets.value = mapOf(
-                SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(
-                        SelfSigningKeyEventContent(mapOf())
-                    ), ""
+            keyStore.updateSecrets {
+                mapOf(
+                    SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                        Event.GlobalAccountDataEvent(
+                            SelfSigningKeyEventContent(mapOf())
+                        ), ""
+                    )
                 )
-            )
+            }
 
             shouldThrow<UploadSignaturesException> {
                 cut.trustAndSignKeys(

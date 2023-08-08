@@ -5,7 +5,7 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.repository.RoomRepository
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import org.koin.core.Koin

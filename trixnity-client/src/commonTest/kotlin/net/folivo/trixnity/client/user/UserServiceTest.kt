@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -92,13 +92,14 @@ class UserServiceTest : ShouldSpec({
             globalAccountDataStore,
             api,
             PresenceEventHandler(api),
+            listOf(),
             CurrentSyncState(currentSyncState),
             userInfo = UserInfo(
                 me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(value = ""),
                 Key.Curve25519Key(value = "")
             ),
             DefaultEventContentSerializerMappings,
-            TransactionManagerMock(),
+            RepositoryTransactionManagerMock(),
             scope = scope
         )
 

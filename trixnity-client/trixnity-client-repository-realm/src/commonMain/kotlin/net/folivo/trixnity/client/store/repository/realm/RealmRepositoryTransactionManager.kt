@@ -6,7 +6,7 @@ import io.realm.kotlin.TypedRealm
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.coroutines.CoroutineContext
 
 class RealmReadTransaction(

@@ -35,13 +35,13 @@ class DirectRoomEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setDirectRooms)
         api.sync.subscribe(::setDirectEventContent)
-        api.sync.subscribeAfterSyncProcessing(::handleDirectEventContent)
-        api.sync.subscribeAfterSyncProcessing(::setDirectRoomsAfterSync)
+        api.sync.afterSyncResponse.subscribe(::handleDirectEventContent)
+        api.sync.afterSyncResponse.subscribe(::setDirectRoomsAfterSync)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setDirectRooms)
             api.sync.unsubscribe(::setDirectEventContent)
-            api.sync.unsubscribeAfterSyncProcessing(::handleDirectEventContent)
-            api.sync.unsubscribeAfterSyncProcessing(::setDirectRoomsAfterSync)
+            api.sync.afterSyncResponse.unsubscribe(::handleDirectEventContent)
+            api.sync.afterSyncResponse.unsubscribe(::setDirectRoomsAfterSync)
         }
     }
 

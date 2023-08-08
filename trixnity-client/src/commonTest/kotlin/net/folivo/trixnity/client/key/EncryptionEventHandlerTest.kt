@@ -6,6 +6,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.getInMemoryRoomStateStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -63,7 +64,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    context(KeyEncryptionEventHandler::handleEncryptionEvents.name) {
+    context(KeyEncryptionEventHandler::updateDeviceKeysFromChangedEncryption.name) {
         should("mark users as outdated dependent on history visibility") {
             listOf(
                 Event.StateEvent(
@@ -83,17 +84,19 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = bob.full
                 ),
             ).forEach { roomStateStore.save(it) }
-            cut.handleEncryptionEvents(
-                Event.StateEvent(
-                    EncryptionEventContent(),
-                    EventId("\$event3"),
-                    bob,
-                    RoomId("room", "server"),
-                    1234,
-                    stateKey = ""
-                ),
+            cut.updateDeviceKeysFromChangedEncryption(
+                listOf(
+                    Event.StateEvent(
+                        EncryptionEventContent(),
+                        EventId("\$event3"),
+                        bob,
+                        RoomId("room", "server"),
+                        1234,
+                        stateKey = ""
+                    ),
+                )
             )
-            keyStore.outdatedKeys.value shouldContainExactly setOf(alice)
+            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice)
         }
         should("not mark joined or invited users as outdated, when keys already tracked") {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
@@ -116,17 +119,19 @@ private val body: ShouldSpec.() -> Unit = {
                     stateKey = bob.full
                 ),
             ).forEach { roomStateStore.save(it) }
-            cut.handleEncryptionEvents(
-                Event.StateEvent(
-                    EncryptionEventContent(),
-                    EventId("\$event3"),
-                    bob,
-                    RoomId("room", "server"),
-                    1234,
-                    stateKey = ""
-                ),
+            cut.updateDeviceKeysFromChangedEncryption(
+                listOf(
+                    Event.StateEvent(
+                        EncryptionEventContent(),
+                        EventId("\$event3"),
+                        bob,
+                        RoomId("room", "server"),
+                        1234,
+                        stateKey = ""
+                    ),
+                )
             )
-            keyStore.outdatedKeys.value shouldHaveSize 0
+            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
         }
     }
 }

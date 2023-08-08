@@ -6,7 +6,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.StoredSecretKeyRequest
 import net.folivo.trixnity.client.store.repository.SecretKeyRequestRepository
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import org.koin.core.Koin

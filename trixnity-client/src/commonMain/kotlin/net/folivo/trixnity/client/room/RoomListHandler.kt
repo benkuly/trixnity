@@ -7,6 +7,7 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
@@ -18,19 +19,20 @@ class RoomListHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomService: RoomService,
+    private val tm: RepositoryTransactionManager,
     private val config: MatrixClientConfiguration,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeSyncResponse(::handleSyncResponse)
-        api.sync.subscribeAfterSyncProcessing(::handleAfterSyncResponse)
+        api.sync.syncResponse.subscribe(::updateRoomList, 100)
+        api.sync.afterSyncResponse.subscribe(::deleteLeftRooms)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeSyncResponse(::handleSyncResponse)
-            api.sync.unsubscribeAfterSyncProcessing(::handleAfterSyncResponse)
+            api.sync.syncResponse.unsubscribe(::updateRoomList)
+            api.sync.afterSyncResponse.unsubscribe(::deleteLeftRooms)
         }
     }
 
-    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
+    internal suspend fun updateRoomList(syncResponse: Sync.Response) = tm.writeTransaction {
         val rooms = syncResponse.room
         if (rooms != null) {
             rooms.join?.entries?.forEach { roomResponse ->
@@ -82,7 +84,7 @@ class RoomListHandler(
         }
     }
 
-    internal suspend fun handleAfterSyncResponse(syncResponse: Sync.Response) {
+    internal suspend fun deleteLeftRooms(syncResponse: Sync.Response) {
         val syncLeaveRooms = syncResponse.room?.leave?.keys
         if (syncLeaveRooms != null && config.deleteRoomsOnLeave) {
             val existingLeaveRooms = roomStore.getAll().value
@@ -98,9 +100,11 @@ class RoomListHandler(
             log.trace { "existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms" }
             if (forgetRooms.isNotEmpty()) {
                 log.debug { "forget rooms: $forgetRooms" }
-            }
-            forgetRooms.forEach { roomId ->
-                roomService.forgetRoom(roomId)
+                tm.writeTransaction {
+                    forgetRooms.forEach { roomId ->
+                        roomService.forgetRoom(roomId)
+                    }
+                }
             }
         }
     }

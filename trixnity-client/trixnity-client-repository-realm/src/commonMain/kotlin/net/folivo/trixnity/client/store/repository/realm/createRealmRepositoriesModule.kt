@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf

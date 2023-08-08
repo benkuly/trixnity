@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.key
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.KeyStore
@@ -33,7 +32,7 @@ class KeySecretServiceImpl(
         keyInfo: SecretKeyEventContent,
     ) {
         val decryptedSecrets = SecretType.values()
-            .subtract(keyStore.secrets.value.keys)
+            .subtract(keyStore.getSecrets().keys)
             .mapNotNull { allowedSecret ->
                 val event = allowedSecret.getEncryptedSecret(globalAccountDataStore).first()
                 if (event != null) {
@@ -46,7 +45,7 @@ class KeySecretServiceImpl(
                     null
                 }
             }.toMap()
-        keyStore.secrets.update {
+        keyStore.updateSecrets {
             it + decryptedSecrets
         }
     }

@@ -1,62 +1,70 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.FullRepositoryCoroutineCache
-import net.folivo.trixnity.client.store.cache.MinimalRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
 import kotlin.time.Duration
 
 class KeyStore(
-    private val outdatedKeysRepository: OutdatedKeysRepository,
-    private val deviceKeysRepository: DeviceKeysRepository,
-    private val crossSigningKeysRepository: CrossSigningKeysRepository,
-    private val keyVerificationStateRepository: KeyVerificationStateRepository,
+    outdatedKeysRepository: OutdatedKeysRepository,
+    deviceKeysRepository: DeviceKeysRepository,
+    crossSigningKeysRepository: CrossSigningKeysRepository,
+    keyVerificationStateRepository: KeyVerificationStateRepository,
     private val keyChainLinkRepository: KeyChainLinkRepository,
-    private val secretsRepository: SecretsRepository,
-    private val secretKeyRequestRepository: SecretKeyRequestRepository,
-    private val roomKeyRequestRepository: RoomKeyRequestRepository,
-    private val tm: TransactionManager,
+    secretsRepository: SecretsRepository,
+    secretKeyRequestRepository: SecretKeyRequestRepository,
+    roomKeyRequestRepository: RoomKeyRequestRepository,
+    private val tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
-    private val storeScope: CoroutineScope
+    storeScope: CoroutineScope
 ) : Store {
-    private val _outdatedKeys = MutableStateFlow<Set<UserId>>(setOf())
-    val outdatedKeys = _outdatedKeys.asStateFlow()
-    val secrets = MutableStateFlow<Map<SecretType, StoredSecret>>(mapOf())
+    private val outdatedKeysCache =
+        MinimalRepositoryObservableCache(
+            repository = outdatedKeysRepository,
+            tm = tm,
+            cacheScope = storeScope,
+            expireDuration = Duration.INFINITE
+        )
+    private val secretsCache =
+        MinimalRepositoryObservableCache(
+            repository = secretsRepository,
+            tm = tm,
+            cacheScope = storeScope,
+            expireDuration = Duration.INFINITE
+        )
     private val deviceKeysCache =
-        MinimalRepositoryCoroutineCache(
+        MinimalRepositoryObservableCache(
             repository = deviceKeysRepository,
             tm = tm,
             cacheScope = storeScope,
             expireDuration = config.cacheExpireDurations.deviceKeys
         )
-    private val crossSigningKeysCache = MinimalRepositoryCoroutineCache(
+    private val crossSigningKeysCache = MinimalRepositoryObservableCache(
         repository = crossSigningKeysRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = config.cacheExpireDurations.crossSigningKeys
     )
-    private val keyVerificationStateCache = MinimalRepositoryCoroutineCache(
+    private val keyVerificationStateCache = MinimalRepositoryObservableCache(
         repository = keyVerificationStateRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = config.cacheExpireDurations.keyVerificationState
     )
-    private val secretKeyRequestCache = FullRepositoryCoroutineCache(
+    private val secretKeyRequestCache = FullRepositoryObservableCache(
         repository = secretKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = Duration.INFINITE
     ) { it.content.requestId }
-    private val roomKeyRequestCache = FullRepositoryCoroutineCache(
+    private val roomKeyRequestCache = FullRepositoryObservableCache(
         repository = roomKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
@@ -64,25 +72,15 @@ class KeyStore(
     ) { it.content.requestId }
 
     override suspend fun init() {
-        _outdatedKeys.value = tm.readOperation { outdatedKeysRepository.get(1) ?: setOf() }
-        secrets.value = tm.readOperation { secretsRepository.get(1) ?: mapOf() }
-        storeScope.launch(start = UNDISPATCHED) {
-            secrets.collect {
-                tm.writeOperationAsync(secretsRepository.serializeKey(1)) {
-                    secretsRepository.save(1, it)
-                }
-            }
-        }
         secretKeyRequestCache.fillWithValuesFromRepository()
         roomKeyRequestCache.fillWithValuesFromRepository()
     }
 
     override suspend fun clearCache() {
-        tm.writeOperation {
-            outdatedKeysRepository.deleteAll()
+        tm.writeTransaction {
             keyChainLinkRepository.deleteAll()
-            outdatedKeysRepository.deleteAll()
         }
+        outdatedKeysCache.deleteAll()
         deviceKeysCache.deleteAll()
         crossSigningKeysCache.deleteAll()
         secretKeyRequestCache.deleteAll()
@@ -91,15 +89,23 @@ class KeyStore(
 
     override suspend fun deleteAll() {
         clearCache()
+        secretsCache.deleteAll()
         keyVerificationStateCache.deleteAll()
     }
 
-    suspend fun updateOutdatedKeys(updater: suspend (Set<UserId>) -> Set<UserId>) {
-        val newValue = _outdatedKeys.updateAndGet { updater(it) }
-        tm.writeOperationAsync(outdatedKeysRepository.serializeKey(1)) {
-            outdatedKeysRepository.save(1, newValue)
+    suspend fun getOutdatedKeys(): Set<UserId> = outdatedKeysCache.read(1).first().orEmpty()
+    fun getOutdatedKeysFlow(): Flow<Set<UserId>> = outdatedKeysCache.read(1).map { it.orEmpty() }
+    suspend fun updateOutdatedKeys(updater: suspend (Set<UserId>) -> Set<UserId>) =
+        outdatedKeysCache.write(1) {
+            updater(it.orEmpty())
         }
-    }
+
+    suspend fun getSecrets(): Map<SecretType, StoredSecret> = secretsCache.read(1).first().orEmpty()
+    fun getSecretsFlow(): Flow<Map<SecretType, StoredSecret>> = secretsCache.read(1).map { it.orEmpty() }
+    suspend fun updateSecrets(updater: suspend (Map<SecretType, StoredSecret>) -> Map<SecretType, StoredSecret>) =
+        secretsCache.write(1) {
+            updater(it ?: mapOf())
+        }
 
     fun getDeviceKeys(
         userId: UserId,
@@ -157,19 +163,15 @@ class KeyStore(
     }
 
     suspend fun saveKeyChainLink(keyChainLink: KeyChainLink) =
-        tm.writeOperationAsync(
-            "saveKeyChainLink" + keyChainLink.run { signingUserId.full + signingKey.keyId + signingKey.value + signedUserId.full + signedKey.keyId + signedKey.value }
-        ) {
+        tm.writeTransaction {
             keyChainLinkRepository.save(keyChainLink)
         }
 
     suspend fun getKeyChainLinksBySigningKey(userId: UserId, signingKey: Key.Ed25519Key) =
-        tm.readOperation { keyChainLinkRepository.getBySigningKey(userId, signingKey) }
+        tm.readTransaction { keyChainLinkRepository.getBySigningKey(userId, signingKey) }
 
     suspend fun deleteKeyChainLinksBySignedKey(userId: UserId, signedKey: Key.Ed25519Key) =
-        tm.writeOperationAsync(
-            "deleteKeyChainLinks" + userId.full + signedKey.keyId + signedKey.value
-        ) { keyChainLinkRepository.deleteBySignedKey(userId, signedKey) }
+        tm.writeTransaction { keyChainLinkRepository.deleteBySignedKey(userId, signedKey) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val allSecretKeyRequests = secretKeyRequestCache.values

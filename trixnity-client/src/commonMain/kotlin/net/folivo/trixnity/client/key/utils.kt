@@ -2,69 +2,22 @@ package net.folivo.trixnity.client.key
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.GlobalAccountDataStore
+import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
+import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.crypto.SecretType
-import net.folivo.trixnity.olm.OlmAccount
 
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(user: UserId) = waitForUpdateOutdatedKey(setOf(user))
 internal suspend fun KeyStore.waitForUpdateOutdatedKey(users: Set<UserId> = setOf()) {
-    outdatedKeys.first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
+    getOutdatedKeysFlow().first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
 }
 
-internal suspend inline fun <reified T : Key> KeyStore.getFromDevice(
-    userId: UserId,
-    deviceId: String?
-): T? {
-    return getDeviceKeys(userId).first()?.get(deviceId)?.value?.get()
-}
-
-internal suspend inline fun <reified T : Key> KeyStore.getOrFetchKeyFromDevice(
-    userId: UserId,
-    deviceId: String?
-): T? {
-    val key = this.getFromDevice<T>(userId, deviceId)
-    return if (key == null) {
-        updateOutdatedKeys { it + userId }
-        waitForUpdateOutdatedKey(userId)
-        this.getFromDevice(userId, deviceId)
-    } else key
-}
-
-internal suspend inline fun <reified T : Key> KeyStore.getOrFetchKeysFromDevice(
-    userId: UserId,
-    deviceId: String?
-): Set<T>? {
-    val userKeys = getDeviceKeys(userId).first() ?: run {
-        updateOutdatedKeys { it + userId }
-        waitForUpdateOutdatedKey(userId)
-        getDeviceKeys(userId).first()
-    }
-    val keys = userKeys?.get(deviceId)?.value?.signed?.keys?.filterIsInstance<T>()
-    return keys?.toSet()
-}
-
-internal suspend inline fun <reified T : Key> KeyStore.getDeviceKeyByValue(
-    userId: UserId,
-    keyValue: String
-): T? {
-    return getDeviceKeys(userId).first()?.map { deviceKeys ->
-        deviceKeys.value.value.signed.keys.keys.filterIsInstance<T>().find { it.value == keyValue }
-    }?.filterNotNull()?.firstOrNull() ?: run {
-        updateOutdatedKeys { it + userId }
-        waitForUpdateOutdatedKey(userId)
-        getDeviceKeys(userId).first()?.map { deviceKeys ->
-            deviceKeys.value.value.signed.keys.keys.filterIsInstance<T>().find { it.value == keyValue }
-        }?.filterNotNull()?.firstOrNull()
-    }
-}
-
-// TODO test
 internal suspend inline fun <reified T : Key> KeyStore.getAllKeysFromUser(
     userId: UserId,
     filterDeviceId: String? = null,
@@ -84,7 +37,7 @@ internal suspend inline fun <reified T : Key> KeyStore.getAllKeysFromUser(
 }
 
 
-internal inline fun KeyStore.getDeviceKey(userId: UserId, deviceId: String) =
+internal fun KeyStore.getDeviceKey(userId: UserId, deviceId: String) =
     this.getDeviceKeys(userId).map { it?.get(deviceId) }
 
 internal suspend inline fun KeyStore.getCrossSigningKey(
@@ -101,10 +54,6 @@ internal suspend inline fun KeyStore.getCrossSigningKey(
     return this.getCrossSigningKeys(userId).first()?.find { keys ->
         keys.value.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().any { it.keyId == keyId }
     }
-}
-
-internal fun OlmCryptoStore.storeAccount(olmAccount: OlmAccount, pickleKey: String) {
-    account.update { olmAccount.pickle(pickleKey) }
 }
 
 internal inline fun <reified T : Key> DeviceKeys.get(): T? {

@@ -10,7 +10,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -62,7 +62,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             api,
             roomStore, roomTimelineStore, roomOutboxMessageStore,
             TimelineMutex(),
-            TransactionManagerMock(),
+            RepositoryTransactionManagerMock(),
         )
     }
 

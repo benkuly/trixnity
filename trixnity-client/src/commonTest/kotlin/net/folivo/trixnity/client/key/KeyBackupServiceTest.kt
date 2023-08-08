@@ -11,12 +11,9 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -84,7 +81,7 @@ private val body: ShouldSpec.() -> Unit = {
         accountStore = getInMemoryAccountStore(scope)
         olmCryptoStore = getInMemoryOlmStore(scope)
         keyStore = getInMemoryKeyStore(scope)
-        accountStore.olmPickleKey.value = ""
+        accountStore.updateAccount { it.copy(olmPickleKey = "") }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         cut = KeyBackupServiceImpl(
@@ -117,12 +114,14 @@ private val body: ShouldSpec.() -> Unit = {
             etag = "etag",
             version = version
         )
-        keyStore.secrets.value = mapOf(
-            M_MEGOLM_BACKUP_V1 to StoredSecret(
-                Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
-                keyBackupPrivateKey
+        keyStore.updateSecrets {
+            mapOf(
+                M_MEGOLM_BACKUP_V1 to StoredSecret(
+                    Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                    keyBackupPrivateKey
+                )
             )
-        )
+        }
         olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
         apiConfig.endpoints {
             matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
@@ -160,19 +159,23 @@ private val body: ShouldSpec.() -> Unit = {
             }
             olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
             cut.version.value shouldBe null
-            keyStore.secrets.value = mapOf(
-                M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
-                    validKeyBackupPrivateKey
+            keyStore.updateSecrets {
+                mapOf(
+                    M_MEGOLM_BACKUP_V1 to StoredSecret(
+                        Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                        validKeyBackupPrivateKey
+                    )
                 )
-            )
+            }
             cut.version.first { it != null } shouldBe keyVersion
-            keyStore.secrets.value = mapOf(
-                M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf("" to JsonPrimitive("something")))),
-                    validKeyBackupPrivateKey
+            keyStore.updateSecrets {
+                mapOf(
+                    M_MEGOLM_BACKUP_V1 to StoredSecret(
+                        Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf("" to JsonPrimitive("something")))),
+                        validKeyBackupPrivateKey
+                    )
                 )
-            )
+            }
             cut.version.first { it == null } shouldBe null
         }
         context("key backup can be trusted") {
@@ -183,13 +186,15 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
-                keyStore.secrets.value = mapOf(
-                    M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(
-                            MegolmBackupV1EventContent(mapOf())
-                        ), validKeyBackupPrivateKey
+                keyStore.updateSecrets {
+                    mapOf(
+                        M_MEGOLM_BACKUP_V1 to StoredSecret(
+                            Event.GlobalAccountDataEvent(
+                                MegolmBackupV1EventContent(mapOf())
+                            ), validKeyBackupPrivateKey
+                        )
                     )
-                )
+                }
                 cut.version.first { it != null } shouldBe keyVersion
             }
             should("set version and sign when not signed by own device") {
@@ -213,13 +218,15 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s24"))))
-                keyStore.secrets.value = mapOf(
-                    M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(
-                            MegolmBackupV1EventContent(mapOf())
-                        ), validKeyBackupPrivateKey
+                keyStore.updateSecrets {
+                    mapOf(
+                        M_MEGOLM_BACKUP_V1 to StoredSecret(
+                            Event.GlobalAccountDataEvent(
+                                MegolmBackupV1EventContent(mapOf())
+                            ), validKeyBackupPrivateKey
+                        )
                     )
-                )
+                }
                 cut.version.first { it != null } shouldBe keyVersion
                 setRoomKeyBackupVersionCalled shouldBe true
             }
@@ -248,25 +255,29 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
-                keyStore.secrets.value = mapOf(
-                    M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(
-                            MegolmBackupV1EventContent(mapOf())
-                        ), validKeyBackupPrivateKey
+                keyStore.updateSecrets {
+                    mapOf(
+                        M_MEGOLM_BACKUP_V1 to StoredSecret(
+                            Event.GlobalAccountDataEvent(
+                                MegolmBackupV1EventContent(mapOf())
+                            ), validKeyBackupPrivateKey
+                        )
                     )
-                )
+                }
                 cut.version.first { it != null } shouldBe keyVersion
-                keyStore.secrets.value = mapOf(
-                    M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(
-                            MegolmBackupV1EventContent(mapOf())
-                        ), "invalidPri"
+                keyStore.updateSecrets {
+                    mapOf(
+                        M_MEGOLM_BACKUP_V1 to StoredSecret(
+                            Event.GlobalAccountDataEvent(
+                                MegolmBackupV1EventContent(mapOf())
+                            ), "invalidPri"
+                        )
                     )
-                )
+                }
                 cut.version.first { it == null } shouldBe null
 
                 setRoomKeyBackupVersionCalled shouldBe true
-                keyStore.secrets.value.shouldBeEmpty()
+                keyStore.getSecrets().shouldBeEmpty()
             }
         }
     }
@@ -478,7 +489,7 @@ private val body: ShouldSpec.() -> Unit = {
 
             setRoomKeyBackupVersionCalled shouldBe true
             setGlobalAccountDataCalled shouldBe true
-            keyStore.secrets.value.keys shouldContain M_MEGOLM_BACKUP_V1
+            keyStore.getSecrets().keys shouldContain M_MEGOLM_BACKUP_V1
         }
     }
     context(KeyBackupServiceImpl::uploadRoomKeyBackup.name) {

@@ -3,13 +3,18 @@ package net.folivo.trixnity.client.key
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.utils.RetryLoopFlowState.PAUSE
+import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
+import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.EventHandler
@@ -28,7 +33,6 @@ private val log = KotlinLogging.logger {}
 
 class OutdatedKeysHandler(
     private val api: MatrixClientServerApiClient,
-    private val accountStore: AccountStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
@@ -36,76 +40,93 @@ class OutdatedKeysHandler(
     private val signService: SignService,
     private val keyTrustService: KeyTrustService,
     private val currentSyncState: CurrentSyncState,
-    private val tm: TransactionManager,
+    private val tm: RepositoryTransactionManager,
 ) : EventHandler {
+    private val syncProcessingRunning = MutableStateFlow(false)
+    private val normalLoopRunning = MutableStateFlow(false)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { handleOutdatedKeys() }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { updateLoop() }
     }
 
-    internal suspend fun handleOutdatedKeys() {
-        currentSyncState.retryInfiniteWhenSyncIs(
-            SyncState.STARTED, SyncState.INITIAL_SYNC, SyncState.RUNNING,
+    private val loopSyncStates = setOf(SyncState.STARTED, SyncState.INITIAL_SYNC, SyncState.RUNNING)
+    internal suspend fun updateLoop() {
+        val requestedState =
+            combine(
+                currentSyncState,
+                syncProcessingRunning,
+                keyStore.getOutdatedKeysFlow()
+            ) { currentSyncState, syncProcessingRunning, outdatedKeys ->
+                syncProcessingRunning.not()
+                        && loopSyncStates.any { it == currentSyncState }
+                        && outdatedKeys.isNotEmpty()
+            }.map { if (it) RUN else PAUSE }
+        retryLoop(
+            requestedState = requestedState,
             scheduleLimit = 30.seconds,
             onError = { log.warn(it) { "failed update outdated keys" } },
             onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
         ) {
-            coroutineScope {
-                keyStore.outdatedKeys.collect { originalUserIds ->
-                    if (originalUserIds.isNotEmpty()) {
-                        originalUserIds.chunked(50).forEach { userIds ->
-                            tm.withAsyncWriteTransaction {
-                                log.debug { "try update outdated keys of $userIds" }
-                                val keysResponse = api.keys.getKeys(
-                                    deviceKeys = userIds.associateWith { emptySet() },
-                                ).getOrThrow()
+            log.debug { "update outdated keys in normal update loop" }
+            normalLoopRunning.value = true
+            updateOutdatedKeys()
+            normalLoopRunning.value = false
+        }
+    }
 
-                                val joinedEncryptedRooms = lazy { roomStore.encryptedJoinedRooms() }
-                                userIds.forEach { userId ->
-                                    keysResponse.masterKeys?.get(userId)?.let { masterKey ->
-                                        handleOutdatedCrossSigningKey(
-                                            userId,
-                                            masterKey,
-                                            CrossSigningKeysUsage.MasterKey,
-                                            masterKey.getSelfSigningKey(),
-                                            true
-                                        )
-                                    }
-                                    keysResponse.selfSigningKeys?.get(userId)?.let { selfSigningKey ->
-                                        handleOutdatedCrossSigningKey(
-                                            userId, selfSigningKey, CrossSigningKeysUsage.SelfSigningKey,
-                                            keyStore.getCrossSigningKey(
-                                                userId,
-                                                CrossSigningKeysUsage.MasterKey
-                                            )?.value?.signed?.get()
-                                        )
-                                    }
-                                    keysResponse.userSigningKeys?.get(userId)?.let { userSigningKey ->
-                                        handleOutdatedCrossSigningKey(
-                                            userId, userSigningKey, CrossSigningKeysUsage.UserSigningKey,
-                                            keyStore.getCrossSigningKey(
-                                                userId,
-                                                CrossSigningKeysUsage.MasterKey
-                                            )?.value?.signed?.get()
-                                        )
-                                    }
-                                    keysResponse.deviceKeys?.get(userId)?.let { devices ->
-                                        handleOutdatedDeviceKeys(userId, devices, joinedEncryptedRooms)
-                                    }
-                                    // indicate, that we fetched the keys of the user
-                                    keyStore.updateCrossSigningKeys(userId) { it ?: setOf() }
-                                    keyStore.updateDeviceKeys(userId) { it ?: mapOf() }
+    internal suspend fun updateOutdatedKeys() {
+        val userIds = keyStore.getOutdatedKeys()
+        if (userIds.isEmpty()) return
+        log.debug { "try update outdated keys of $userIds" }
+        val keysResponse = api.keys.getKeys(
+            deviceKeys = userIds.associateWith { emptySet() },
+        ).getOrThrow()
 
-                                    log.debug { "updated outdated keys of $userId" }
-                                    keyStore.updateOutdatedKeys { it - userId }
-                                }
-                            }
-                        }
+        val joinedEncryptedRooms = lazy { roomStore.encryptedJoinedRooms() }
+        userIds.chunked(25).forEach { userIdChunk ->
+            tm.writeTransaction {
+                userIdChunk.forEach { userId ->
+                    keysResponse.masterKeys?.get(userId)?.let { masterKey ->
+                        handleOutdatedCrossSigningKey(
+                            userId,
+                            masterKey,
+                            CrossSigningKeysUsage.MasterKey,
+                            masterKey.getSelfSigningKey(),
+                            true
+                        )
                     }
+                    keysResponse.selfSigningKeys?.get(userId)?.let { selfSigningKey ->
+                        handleOutdatedCrossSigningKey(
+                            userId, selfSigningKey, CrossSigningKeysUsage.SelfSigningKey,
+                            keyStore.getCrossSigningKey(
+                                userId,
+                                CrossSigningKeysUsage.MasterKey
+                            )?.value?.signed?.get()
+                        )
+                    }
+                    keysResponse.userSigningKeys?.get(userId)?.let { userSigningKey ->
+                        handleOutdatedCrossSigningKey(
+                            userId, userSigningKey, CrossSigningKeysUsage.UserSigningKey,
+                            keyStore.getCrossSigningKey(
+                                userId,
+                                CrossSigningKeysUsage.MasterKey
+                            )?.value?.signed?.get()
+                        )
+                    }
+                    keysResponse.deviceKeys?.get(userId)?.let { devices ->
+                        handleOutdatedDeviceKeys(userId, devices, joinedEncryptedRooms)
+                    }
+                    // indicate, that we fetched the keys of the user
+                    keyStore.updateCrossSigningKeys(userId) { it ?: setOf() }
+                    keyStore.updateDeviceKeys(userId) { it ?: mapOf() }
+
+                    log.debug { "updated outdated keys of $userId" }
+                    keyStore.updateOutdatedKeys { it - userId }
                 }
             }
+            yield()
         }
+        log.debug { "finished update outdated keys of $userIds" }
     }
 
     private suspend fun handleOutdatedCrossSigningKey(

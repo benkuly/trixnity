@@ -43,11 +43,11 @@ class IncomingRoomKeyRequestEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests)
         api.sync.subscribe(::handleIncomingKeyRequests)
-        api.sync.subscribeAfterSyncProcessing(::processIncomingKeyRequests)
+        api.sync.afterSyncResponse.subscribe(::processIncomingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleEncryptedIncomingKeyRequests)
             api.sync.unsubscribe(::handleIncomingKeyRequests)
-            api.sync.unsubscribeAfterSyncProcessing(::processIncomingKeyRequests)
+            api.sync.afterSyncResponse.unsubscribe (::processIncomingKeyRequests)
         }
     }
 
@@ -91,7 +91,7 @@ class IncomingRoomKeyRequestEventHandler(
                                 sessionId = foundInboundMegolmSession.sessionId,
                                 sessionKey = freeAfter(
                                     OlmInboundGroupSession.unpickle(
-                                        requireNotNull(accountStore.olmPickleKey.value),
+                                        checkNotNull(accountStore.getAccount()?.olmPickleKey),
                                         foundInboundMegolmSession.pickled
                                     )
                                 ) { it.export(it.firstKnownIndex) },

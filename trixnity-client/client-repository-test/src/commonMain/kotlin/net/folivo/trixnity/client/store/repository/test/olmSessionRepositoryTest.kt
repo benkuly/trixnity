@@ -5,7 +5,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import org.koin.core.Koin

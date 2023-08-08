@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.store.repository.test
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.repository.OlmAccountRepository
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import org.koin.core.Koin
 
 

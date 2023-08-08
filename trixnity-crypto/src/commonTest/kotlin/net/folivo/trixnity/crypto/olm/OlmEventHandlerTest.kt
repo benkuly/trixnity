@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.clientserverapi.client.OlmKeysChange
-import net.folivo.trixnity.clientserverapi.client.OlmKeysChangeSubscriber
 import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -55,11 +54,11 @@ class OlmEventHandlerTest : ShouldSpec({
 
         val eventEmitter: EventEmitterImpl = object : EventEmitterImpl() {}
         val olmKeysChangeEmitter: OlmKeysChangeEmitter = object : OlmKeysChangeEmitter {
-            override fun subscribeOneTimeKeysCount(subscriber: OlmKeysChangeSubscriber) {
+            override fun subscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit) {
                 throw NotImplementedError()
             }
 
-            override fun unsubscribeOneTimeKeysCount(subscriber: OlmKeysChangeSubscriber) {
+            override fun unsubscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit) {
                 throw NotImplementedError()
             }
         }

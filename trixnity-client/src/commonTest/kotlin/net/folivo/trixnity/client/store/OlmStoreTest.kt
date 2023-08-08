@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.Key
@@ -34,7 +34,7 @@ class OlmStoreTest : ShouldSpec({
             inboundMegolmSessionRepository,
             InMemoryInboundMegolmMessageIndexRepository(),
             InMemoryOutboundMegolmSessionRepository(),
-            TransactionManagerMock(),
+            RepositoryTransactionManagerMock(),
             MatrixClientConfiguration(),
             storeScope
         )
@@ -48,7 +48,7 @@ class OlmStoreTest : ShouldSpec({
 
             cut.init()
 
-            cut.account.value shouldBe "olm_account"
+            cut.updateOlmAccount { "olm_account" }
         }
         should("start job, which saves changes to database and fills notBackedUp inbound megolm sessions") {
             inboundMegolmSessionRepository.save(
@@ -86,7 +86,7 @@ class OlmStoreTest : ShouldSpec({
 
             cut.init()
 
-            cut.account.value = "olm_account"
+            cut.updateOlmAccount { "olm_account" }
 
             eventually(5.seconds) {
                 olmAccountRepository.get(1) shouldBe "olm_account"

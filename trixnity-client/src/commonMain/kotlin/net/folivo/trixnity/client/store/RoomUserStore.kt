@@ -4,29 +4,27 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
 class RoomUserStore(
     roomUserRepository: RoomUserRepository,
-    tm: TransactionManager,
+    tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope
 ) : Store {
     private val roomUserCache =
-        MapDeleteByRoomIdRepositoryCoroutineCache(
+        MapDeleteByRoomIdRepositoryObservableCache(
             roomUserRepository,
             tm,
             storeScope,
             config.cacheExpireDurations.roomUser
         ) { it.firstKey }
-
-    override suspend fun init() {}
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {
@@ -54,7 +52,7 @@ class RoomUserStore(
         membership: Set<Membership>,
         roomId: RoomId
     ): Set<UserId> {
-        // TODO loading all users into memory could could make performance issues -> make db query
+        // TODO loading all users into memory could lead to performance issues -> make db query?
         return roomUserCache.readByFirstKey(roomId).first()
             ?.filter {
                 val user = it.value.first()

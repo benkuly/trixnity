@@ -207,7 +207,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("bootstrap") {
                 launch {
-                    keyStore.outdatedKeys.first { it.contains(alice) }
+                    keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                     keyStore.updateOutdatedKeys { setOf() }
                     keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
                     keyStore.updateDeviceKeys(alice) {
@@ -235,7 +235,7 @@ private val body: ShouldSpec.() -> Unit = {
                     Ed25519Key(aliceDevice, "dev")
                 ) to alice)
                 keyBackupServiceMock.bootstrapRoomKeyBackupCalled.value shouldBe true
-                keyStore.secrets.value.keys shouldBe setOf(
+                keyStore.getSecrets().keys shouldBe setOf(
                     M_CROSS_SIGNING_SELF_SIGNING,
                     M_CROSS_SIGNING_USER_SIGNING
                 )
@@ -249,7 +249,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("bootstrap from passphrase") {
                 launch {
-                    keyStore.outdatedKeys.first { it.contains(alice) }
+                    keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                     keyStore.updateOutdatedKeys { setOf() }
                     keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
                     keyStore.updateDeviceKeys(alice) {
@@ -276,7 +276,7 @@ private val body: ShouldSpec.() -> Unit = {
                     Ed25519Key(aliceDevice, "dev")
                 ) to alice)
                 keyBackupServiceMock.bootstrapRoomKeyBackupCalled.value shouldBe true
-                keyStore.secrets.value.keys shouldBe setOf(
+                keyStore.getSecrets().keys shouldBe setOf(
                     M_CROSS_SIGNING_SELF_SIGNING,
                     M_CROSS_SIGNING_USER_SIGNING
                 )

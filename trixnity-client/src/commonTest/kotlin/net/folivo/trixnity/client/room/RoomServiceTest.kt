@@ -430,9 +430,9 @@ class RoomServiceTest : ShouldSpec({
             roomTimelineStore.get(EventId("2"), room).first() shouldBe null
 
             roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace)
-                .first()?.values?.first()?.first() shouldBe null
+                .first()?.values?.firstOrNull()?.first() shouldBe null
             roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace)
-                .first()?.values?.first()?.first() shouldBe null
+                .first()?.values?.firstOrNull()?.first() shouldBe null
 
             roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldBe null
             roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldBe null

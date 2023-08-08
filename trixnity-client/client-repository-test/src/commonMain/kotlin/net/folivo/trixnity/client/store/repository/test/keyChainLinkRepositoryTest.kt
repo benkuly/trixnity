@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.client.store.repository.KeyChainLinkRepository
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import org.koin.core.Koin

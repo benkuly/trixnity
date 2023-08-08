@@ -210,7 +210,10 @@ private val body: ShouldSpec.() -> Unit = {
 
     suspend fun checkNoNotification() = coroutineScope {
         val notifications = async { cut.getNotifications(0.seconds).first() }
-        api.sync.startOnce().getOrThrow()
+        api.sync.startOnce(
+            getBatchToken = { null },
+            setBatchToken = {},
+        ).getOrThrow()
 
         continually(50.milliseconds) {
             notifications.isCompleted shouldBe false
@@ -257,7 +260,10 @@ private val body: ShouldSpec.() -> Unit = {
             }
             val notification = async { cut.getNotifications(0.seconds).first() }
             delay(50)
-            api.sync.startOnce().getOrThrow()
+            api.sync.startOnce(
+                getBatchToken = { null },
+                setBatchToken = {},
+            ).getOrThrow()
             continually(50.milliseconds) {
                 notification.isCompleted shouldBe false
             }
@@ -310,7 +316,10 @@ private val body: ShouldSpec.() -> Unit = {
             }
             val notification = async { cut.getNotifications(0.seconds).first() }
             delay(50)
-            api.sync.startOnce().getOrThrow()
+            api.sync.startOnce(
+                getBatchToken = { null },
+                setBatchToken = {},
+            ).getOrThrow()
             notification.await() shouldBe Notification(invitation)
         }
         context("new timeline events") {

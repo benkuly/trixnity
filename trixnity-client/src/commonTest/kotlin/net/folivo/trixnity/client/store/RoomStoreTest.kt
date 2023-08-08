@@ -6,7 +6,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomRepository
 import net.folivo.trixnity.client.store.repository.RoomRepository
 import net.folivo.trixnity.core.model.RoomId
@@ -21,7 +21,7 @@ class RoomStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         roomRepository = InMemoryRoomRepository()
-        cut = RoomStore(roomRepository, TransactionManagerMock(), storeScope)
+        cut = RoomStore(roomRepository, RepositoryTransactionManagerMock(), storeScope)
     }
     afterTest {
         storeScope.cancel()

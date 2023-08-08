@@ -194,7 +194,7 @@ class KeyServiceImpl(
                             api.json
                         )
                     )
-                    keyStore.secrets.update {
+                    keyStore.updateSecrets {
                         mapOf(
                             SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
                                 Event.GlobalAccountDataEvent(encryptedSelfSigningKey),

@@ -1,6 +1,6 @@
 package net.folivo.trixnity.crypto.olm
 
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -45,10 +45,11 @@ interface OlmStore {
         updater: suspend (StoredInboundMegolmMessageIndex?) -> StoredInboundMegolmMessageIndex?
     )
 
-    val olmAccount: MutableStateFlow<String?>
-    val olmPickleKey: String
-
-    val forgetFallbackKeyAfter: MutableStateFlow<Instant?>
+    suspend fun getOlmAccount(): String
+    suspend fun updateOlmAccount(updater: suspend (String) -> String)
+    suspend fun getOlmPickleKey(): String
+    suspend fun getForgetFallbackKeyAfter(): Flow<Instant?>
+    suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?)
 
     suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>>?
 

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
@@ -36,7 +36,7 @@ class RoomStateStoreTest : ShouldSpec({
         storeScope = CoroutineScope(Dispatchers.Default)
         cut = RoomStateStore(
             roomStateRepository,
-            TransactionManagerMock(),
+            RepositoryTransactionManagerMock(),
             DefaultEventContentSerializerMappings,
             MatrixClientConfiguration(),
             storeScope

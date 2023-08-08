@@ -267,7 +267,7 @@ class KeyTrustServiceImpl(
     }
 
     private suspend fun signWithSecret(type: SecretType): SignWith.PrivateKey {
-        val privateKey = keyStore.secrets.value[type]?.decryptedPrivateKey
+        val privateKey = keyStore.getSecrets()[type]?.decryptedPrivateKey
         requireNotNull(privateKey) { "could not find private key of $type" }
         val publicKey =
             keyStore.getCrossSigningKey(

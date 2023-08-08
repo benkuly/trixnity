@@ -13,16 +13,16 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
 @OptIn(ExperimentalTime::class)
-class CoroutineCacheTest : ShouldSpec({
+class ObservableCacheTest : ShouldSpec({
     timeout = 10_000
     lateinit var cacheScope: CoroutineScope
-    lateinit var cacheStore: InMemoryCoroutineCacheStore<String, String>
-    lateinit var cut: CoroutineCache<String, String, InMemoryCoroutineCacheStore<String, String>>
+    lateinit var cacheStore: InMemoryObservableCacheStore<String, String>
+    lateinit var cut: ObservableCache<String, String, InMemoryObservableCacheStore<String, String>>
 
     beforeTest {
         cacheScope = CoroutineScope(Dispatchers.Default)
-        cacheStore = InMemoryCoroutineCacheStore()
-        cut = CoroutineCache("", cacheStore, cacheScope)
+        cacheStore = InMemoryObservableCacheStore()
+        cut = ObservableCache("", cacheStore, cacheScope)
     }
     afterTest {
         cacheScope.cancel()
@@ -56,7 +56,7 @@ class CoroutineCacheTest : ShouldSpec({
 
         }
         should("remove from cache when not used anymore") {
-            cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.ZERO)
+            cut = ObservableCache("", cacheStore, cacheScope, expireDuration = Duration.ZERO)
             val cache = cut.values.stateIn(cacheScope)
             val readScope1 = CoroutineScope(Dispatchers.Default)
             cacheStore.persist("key", "a new value")
@@ -66,7 +66,7 @@ class CoroutineCacheTest : ShouldSpec({
             cache.first { it.isEmpty() }
         }
         should("remove from cache, when cache time expired") {
-            cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 20.milliseconds)
+            cut = ObservableCache("", cacheStore, cacheScope, expireDuration = 20.milliseconds)
             cacheStore.persist("key", "a new value")
             cut.read(key = "key").first() shouldBe "a new value"
             delay(50)
@@ -81,24 +81,9 @@ class CoroutineCacheTest : ShouldSpec({
             cut.read(key = "key").stateIn(readScope).value shouldBe "another value"
             readScope.cancel()
         }
-        should("only remove from cache, when persisted") {
-            cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.ZERO)
-            val persisted = MutableStateFlow(false)
-            cacheStore.persisted.update { it + ("key" to persisted) }
-            cacheStore.persist("key", "value")
-            cut.write(key = "key", updater = { "value" })
-            cut.read(key = "key").first() shouldBe "value"
-            delay(30)
-            cacheStore.persist("key", "a new value")
-            cut.read(key = "key").first() shouldBe "value"
-
-            persisted.value = true
-            delay(30)
-            cut.read(key = "key").first() shouldBe "a new value"
-        }
         context("infinite cache enabled") {
             should("never remove from cache") {
-                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.INFINITE)
+                cut = ObservableCache("", cacheStore, cacheScope, expireDuration = Duration.INFINITE)
                 cacheStore.persist("key", "a new value")
                 val readScope = CoroutineScope(Dispatchers.Default)
                 cut.read(key = "key").stateIn(readScope).value shouldBe "a new value"
@@ -167,13 +152,12 @@ class CoroutineCacheTest : ShouldSpec({
         xshould("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
-            class InMemoryCoroutineCacheStoreWithHistory : InMemoryCoroutineCacheStore<String, String>() {
-                override suspend fun persist(key: String, value: String?): StateFlow<Boolean>? {
+            class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
+                override suspend fun persist(key: String, value: String?) {
                     database.emit(value)
-                    return super.persist(key, value)
                 }
             }
-            cut = CoroutineCache("", InMemoryCoroutineCacheStoreWithHistory(), cacheScope)
+            cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), cacheScope)
             val time = coroutineScope {
                 (0..999).map { i ->
                     async {
@@ -196,13 +180,12 @@ class CoroutineCacheTest : ShouldSpec({
         xshould("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
-            class InMemoryCoroutineCacheStoreWithHistory : InMemoryCoroutineCacheStore<String, String>() {
-                override suspend fun persist(key: String, value: String?): StateFlow<Boolean>? {
+            class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
+                override suspend fun persist(key: String, value: String?) {
                     database.emit(key)
-                    return super.persist(key, value)
                 }
             }
-            cut = CoroutineCache("", InMemoryCoroutineCacheStoreWithHistory(), cacheScope)
+            cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), cacheScope)
             val time = coroutineScope {
                 (0..999).map { i ->
                     async {
@@ -223,7 +206,7 @@ class CoroutineCacheTest : ShouldSpec({
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
-                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 10.milliseconds)
+                cut = ObservableCache("", cacheStore, cacheScope, expireDuration = 10.milliseconds)
                 cut.write(
                     key = "key",
                     updater = { "updated value" },
@@ -239,7 +222,7 @@ class CoroutineCacheTest : ShouldSpec({
                 )
             }
             should("reset expireDuration on use") {
-                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = 100.milliseconds)
+                cut = ObservableCache("", cacheStore, cacheScope, expireDuration = 100.milliseconds)
                 cut.write(
                     key = "key",
                     updater = { "updated value 1" },
@@ -262,36 +245,10 @@ class CoroutineCacheTest : ShouldSpec({
                     },
                 )
             }
-            should("only remove from cache, when persisted") {
-                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.ZERO)
-                val persisted1 = MutableStateFlow(false)
-                val persisted2 = MutableStateFlow(false)
-                cacheStore.persisted.update { it + ("key" to persisted1) }
-                cut.write(
-                    key = "key",
-                    updater = { "o" },
-                )
-                cacheStore.persisted.update { it + ("key" to persisted2) }
-                cut.write(
-                    key = "key",
-                    updater = { "value" },
-                )
-                delay(30)
-                cacheStore.persist("key", "a new value")
-                cut.read(key = "key").first() shouldBe "value"
-
-                persisted1.value = true
-                delay(30)
-                cut.read(key = "key").first() shouldBe "value"
-
-                persisted2.value = true
-                delay(30)
-                cut.read(key = "key").first() shouldBe "a new value"
-            }
         }
         context("infinite cache enabled") {
             should("never remove from cache") {
-                cut = CoroutineCache("", cacheStore, cacheScope, expireDuration = Duration.INFINITE)
+                cut = ObservableCache("", cacheStore, cacheScope, expireDuration = Duration.INFINITE)
                 cut.write(
                     key = "key",
                     updater = { "updated value" },
@@ -309,12 +266,12 @@ class CoroutineCacheTest : ShouldSpec({
         }
     }
     context("index") {
-        class IndexedCoroutineCache(
+        class IndexedObservableCache(
             name: String,
-            store: InMemoryCoroutineCacheStore<String, String>,
+            store: InMemoryObservableCacheStore<String, String>,
             cacheScope: CoroutineScope,
             expireDuration: Duration = 1.minutes,
-        ) : CoroutineCache<String, String, InMemoryCoroutineCacheStore<String, String>>(
+        ) : ObservableCache<String, String, InMemoryObservableCacheStore<String, String>>(
             name, store, cacheScope, expireDuration
         ) {
             val index = object : ObservableMapIndex<String> {
@@ -344,9 +301,9 @@ class CoroutineCacheTest : ShouldSpec({
             }
         }
 
-        lateinit var indexedCut: IndexedCoroutineCache
+        lateinit var indexedCut: IndexedObservableCache
         beforeTest {
-            indexedCut = IndexedCoroutineCache("", cacheStore, cacheScope)
+            indexedCut = IndexedObservableCache("", cacheStore, cacheScope)
         }
         should("call onPut on cache insert") {
             indexedCut.write("key", "value")
@@ -360,19 +317,19 @@ class CoroutineCacheTest : ShouldSpec({
             indexedCut.index.onPut.value shouldBe null
         }
         should("call onRemove on cache remove") {
-            indexedCut = IndexedCoroutineCache("", cacheStore, cacheScope, Duration.ZERO)
+            indexedCut = IndexedObservableCache("", cacheStore, cacheScope, Duration.ZERO)
             indexedCut.write("key", "value")
             indexedCut.index.onPut.value shouldBe "key"
             indexedCut.index.onRemove.first { it == "key" } shouldBe "key"
         }
         should("call onRemoveALl on clear") {
-            indexedCut = IndexedCoroutineCache("", cacheStore, cacheScope, Duration.ZERO)
+            indexedCut = IndexedObservableCache("", cacheStore, cacheScope, Duration.ZERO)
             indexedCut.write("key", "value")
             indexedCut.clear()
             indexedCut.index.onRemoveAllCalled.value shouldBe true
         }
         should("wait for index subsciptions before remove from cache") {
-            indexedCut = IndexedCoroutineCache("", cacheStore, cacheScope, Duration.ZERO)
+            indexedCut = IndexedObservableCache("", cacheStore, cacheScope, Duration.ZERO)
             indexedCut.index.getSubscriptionCount.value = 1
             indexedCut.write("key", "value")
             delay(30)

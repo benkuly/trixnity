@@ -6,11 +6,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryCoroutineCache
+import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
-import net.folivo.trixnity.client.store.transaction.TransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
@@ -19,21 +19,19 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import kotlin.reflect.KClass
 
 class RoomAccountDataStore(
-    private val roomAccountDataRepository: RoomAccountDataRepository,
-    private val tm: TransactionManager,
+    roomAccountDataRepository: RoomAccountDataRepository,
+    tm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
 ) : Store {
     private val roomAccountDataCache =
-        MapDeleteByRoomIdRepositoryCoroutineCache(
+        MapDeleteByRoomIdRepositoryObservableCache(
             roomAccountDataRepository,
             tm,
             storeScope,
             config.cacheExpireDurations.roomAccountData
         ) { it.firstKey.roomId }
-
-    override suspend fun init() {}
 
     override suspend fun clearCache() = deleteAll()
     override suspend fun deleteAll() {

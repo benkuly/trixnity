@@ -557,8 +557,14 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val result = async {
                 cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).take(2).toList()
             }
-            api.sync.startOnce().getOrThrow()
-            api.sync.startOnce().getOrThrow()
+            api.sync.startOnce(
+                getBatchToken = { null },
+                setBatchToken = {},
+            ).getOrThrow()
+            api.sync.startOnce(
+                getBatchToken = { null },
+                setBatchToken = {},
+            ).getOrThrow()
             result.await().map { it.eventId } shouldBe listOf(event1.id, event10.id)
         }
     }

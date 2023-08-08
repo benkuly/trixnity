@@ -347,13 +347,12 @@ class MatrixClientTest : ShouldSpec({
         }
         should("$LOGGED_OUT_SOFT when access token is null, but sync batch token not") {
             val accountStore = cut.di.get<AccountStore>()
-            accountStore.accessToken.value = null
+            accountStore.updateAccount { it.copy(accessToken = null) }
             cut.loginState.first { it == LOGGED_OUT_SOFT }
         }
         should("$LOGGED_OUT when access token and sync batch token are null") {
             val accountStore = cut.di.get<AccountStore>()
-            accountStore.accessToken.value = null
-            accountStore.syncBatchToken.value = null
+            accountStore.updateAccount { it.copy(accessToken = null, syncBatchToken = null) }
             cut.loginState.first { it == LOGGED_OUT }
         }
     }
@@ -401,14 +400,13 @@ class MatrixClientTest : ShouldSpec({
                 },
             ).getOrThrow().shouldNotBeNull()
             val accountStore = cut.di.get<AccountStore>()
-            accountStore.accessToken.value = null
-            accountStore.syncBatchToken.value = "sync"
+            accountStore.updateAccount { it.copy(accessToken = null, syncBatchToken = "sync") }
             cut.loginState.first { it == LOGGED_OUT_SOFT }
             cut.logout().getOrThrow()
 
             logoutCalled shouldBe false
             cut.userId
-            accountStore.userId.value shouldBe null
+            accountStore.getAccount()?.userId shouldBe null
             cut.stop()
         }
         should("call api and delete all") {
@@ -430,7 +428,7 @@ class MatrixClientTest : ShouldSpec({
 
             logoutCalled shouldBe true
             val accountStore = cut.di.get<AccountStore>()
-            accountStore.userId.value shouldBe null
+            accountStore.getAccount()?.userId shouldBe null
 
             cut.stop()
         }

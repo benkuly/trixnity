@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import org.koin.core.Koin
 
 fun ShouldSpec.repositoryTransactionManagerTest(disabledRollbackTest: Boolean, diReceiver: () -> Koin) {

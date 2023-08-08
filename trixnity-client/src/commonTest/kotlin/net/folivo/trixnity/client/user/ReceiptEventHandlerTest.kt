@@ -9,6 +9,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryRoomUserStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.core.model.EventId
@@ -37,7 +38,8 @@ class ReceiptEventHandlerTest : ShouldSpec({
         roomUserStore = getInMemoryRoomUserStore(scope)
         cut = ReceiptEventHandler(
             mockMatrixClientServerApiClient(json).first,
-            roomUserStore
+            roomUserStore,
+            RepositoryTransactionManagerMock(),
         )
     }
 
@@ -82,7 +84,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 ),
                 roomId = room,
             )
-            cut.setReadReceipts(event)
+            cut.setReadReceipts(listOf(event))
 
             roomUserStore.get(alice, room).first() shouldBeSameInstanceAs existingRoomUser
         }
@@ -102,7 +104,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 ),
                 roomId = room,
             )
-            cut.setReadReceipts(event)
+            cut.setReadReceipts(listOf(event))
 
             roomUserStore.get(alice, room).first() shouldBeSameInstanceAs existingRoomUser
         }
@@ -123,7 +125,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 ),
                 roomId = room,
             )
-            cut.setReadReceipts(event)
+            cut.setReadReceipts(listOf(event))
 
             roomUserStore.get(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
                     RoomUser.RoomUserReceipt(eventId, Receipt(0L))
@@ -153,7 +155,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 ),
                 roomId = room,
             )
-            cut.setReadReceipts(event)
+            cut.setReadReceipts(listOf(event))
             roomUserStore.get(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
                     RoomUser.RoomUserReceipt(eventId, Receipt(3L))
         }

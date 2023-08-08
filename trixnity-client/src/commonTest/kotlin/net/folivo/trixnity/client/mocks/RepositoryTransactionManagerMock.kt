@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.mocks
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 
 class RepositoryTransactionManagerMock : RepositoryTransactionManager {
     val readTransactionCalled = MutableStateFlow(listOf<suspend () -> Any?>())

@@ -13,10 +13,11 @@ import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
 import net.folivo.trixnity.client.media.MediaService
-import net.folivo.trixnity.client.retryInfiniteWhenSyncIs
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -33,30 +34,35 @@ class OutboxMessageEventHandler(
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val outboxMessageMediaUploaderMappings: OutboxMessageMediaUploaderMappings,
     private val currentSyncState: CurrentSyncState,
+    private val tm: RepositoryTransactionManager,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(roomOutboxMessageStore.getAll()) }
-        api.sync.subscribeAfterSyncProcessing(::removeOldOutboxMessages)
+        api.sync.afterSyncResponse.subscribe(::removeOldOutboxMessages)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribeAfterSyncProcessing(::removeOldOutboxMessages)
+            api.sync.afterSyncResponse.unsubscribe(::removeOldOutboxMessages)
         }
     }
 
     internal suspend fun removeOldOutboxMessages(syncResponse: Sync.Response) {
         val outboxMessages = roomOutboxMessageStore.getAll().value
-        outboxMessages.forEach {
+        val removeOutboxMessages = outboxMessages.mapNotNull {
             // a sync means, that the message must have been received. we just give the ui a bit time to update.
             val deleteBeforeTimestamp = Clock.System.now() - 10.seconds
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
                 log.debug { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
-                roomOutboxMessageStore.update(it.transactionId) { null }
-            }
+                it.transactionId
+            } else null
         }
+        if (removeOutboxMessages.isNotEmpty())
+            tm.writeTransaction {
+                removeOutboxMessages.forEach { roomOutboxMessageStore.update(it) { null } }
+            }
     }
 
     internal suspend fun processOutboxMessages(outboxMessages: Flow<List<RoomOutboxMessage<*>>>) {
-        currentSyncState.retryInfiniteWhenSyncIs(
+        currentSyncState.retryLoopWhenSyncIs(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },

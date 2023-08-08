@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -50,10 +50,10 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer)
-        api.sync.subscribeAfterSyncProcessing(::cancelOldOutgoingKeyRequests)
+        api.sync.afterSyncResponse.subscribe(::cancelOldOutgoingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleOutgoingKeyRequestAnswer)
-            api.sync.unsubscribeAfterSyncProcessing(::cancelOldOutgoingKeyRequests)
+            api.sync.afterSyncResponse.unsubscribe(::cancelOldOutgoingKeyRequests)
         }
     }
 
@@ -78,7 +78,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
             val (firstKnownIndex, pickledSession) =
                 try {
                     freeAfter(OlmInboundGroupSession.import(content.sessionKey)) {
-                        it.firstKnownIndex to it.pickle(requireNotNull(accountStore.olmPickleKey.value))
+                        it.firstKnownIndex to it.pickle(checkNotNull(accountStore.getAccount()?.olmPickleKey))
                     }
                 } catch (exception: Exception) {
                     log.warn(exception) { "could not import olm inbound session" }

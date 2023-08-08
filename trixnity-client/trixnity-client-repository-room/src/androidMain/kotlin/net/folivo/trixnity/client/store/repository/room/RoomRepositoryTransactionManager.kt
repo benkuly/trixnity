@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.withTransaction
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 
 internal class RoomRepositoryTransactionManager(
     private val db: TrixnityRoomDatabase,

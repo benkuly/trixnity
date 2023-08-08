@@ -1,4 +1,4 @@
-package net.folivo.trixnity.client.store.transaction
+package net.folivo.trixnity.client.store.repository
 
 /**
  * This must be implemented by new database implementations.

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryAccountStore
 import net.folivo.trixnity.client.getInMemoryRoomUserStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
@@ -38,6 +39,7 @@ class MemberEventHandlerTest : ShouldSpec({
             mockMatrixClientServerApiClient(json).first,
             accountStore,
             roomUserStore,
+            RepositoryTransactionManagerMock(),
         )
     }
 
@@ -99,9 +101,9 @@ class MemberEventHandlerTest : ShouldSpec({
                     membership = Membership.JOIN
                 )
             )
-            cut.setRoomUser(event)
+            cut.setRoomUser(listOf(event))
             cut.setRoomUser(
-                event.copy(content = event.content.copy(displayName = "CHANGED!!!")),
+                listOf(event.copy(content = event.content.copy(displayName = "CHANGED!!!"))),
                 skipWhenAlreadyPresent = true
             )
             roomUserStore.get(user1, roomId).first() shouldBe RoomUser(roomId, user1, "U1", event)
@@ -114,7 +116,7 @@ class MemberEventHandlerTest : ShouldSpec({
                         membership = Membership.JOIN
                     )
                 )
-                cut.setRoomUser(event)
+                cut.setRoomUser(listOf(event))
                 roomUserStore.get(user1, roomId).first() shouldBe RoomUser(roomId, user1, "U1", event)
             }
         }
@@ -152,7 +154,7 @@ class MemberEventHandlerTest : ShouldSpec({
                             membership = Membership.JOIN
                         )
                     )
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(roomId, user1, "U1", event)
                 }
                 should("not change our displayName when it has not changed") {
@@ -162,12 +164,12 @@ class MemberEventHandlerTest : ShouldSpec({
                             membership = Membership.JOIN
                         )
                     )
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(roomId, user1, "OLD", event)
                 }
                 should("set our displayName to '@user:server' when no displayName set") {
                     val event = user1Event.copy(content = MemberEventContent(membership = Membership.JOIN))
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId,
                         user1,
@@ -178,7 +180,7 @@ class MemberEventHandlerTest : ShouldSpec({
                 should("set our displayName to '@user:server' when displayName is empty") {
                     val event =
                         user1Event.copy(content = MemberEventContent(displayName = "", membership = Membership.JOIN))
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId,
                         user1,
@@ -195,7 +197,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     val event = user1Event.copy(
                         content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
                     )
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId, user1, "U1 (@user1:server)", event
                     )
@@ -219,7 +221,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     val event = user1Event.copy(
                         content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
                     )
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId, user1, "U1 (@user1:server)", event
                     )
@@ -241,7 +243,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     val event = user1Event.copy(
                         content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
                     )
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "OLD", event2
                     )
@@ -262,7 +264,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     val event = user1Event.copy(
                         content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
                     )
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
 
                     roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "OLD (@user2:server)", event2
@@ -288,7 +290,7 @@ class MemberEventHandlerTest : ShouldSpec({
                 val event = user1Event.copy(
                     content = MemberEventContent(displayName = "OLD", membership = Membership.LEAVE)
                 )
-                cut.setRoomUser(event)
+                cut.setRoomUser(listOf(event))
                 roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                     roomId, user1, "OLD (@user1:server)", event
                 )
@@ -301,7 +303,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     val event = user1Event.copy(
                         content = MemberEventContent(displayName = "U1", membership = Membership.BAN)
                     )
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId, user1, "U1 (@user1:server)", event
                     )
@@ -328,7 +330,7 @@ class MemberEventHandlerTest : ShouldSpec({
                             membership = Membership.LEAVE
                         )
                     )
-                    cut.setRoomUser(event)
+                    cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
                         roomId, user1, "U1 (@user1:server)", event
                     )

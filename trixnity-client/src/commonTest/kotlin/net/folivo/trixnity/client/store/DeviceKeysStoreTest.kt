@@ -9,7 +9,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -53,7 +53,7 @@ class DeviceKeysStoreTest : ShouldSpec({
             secretsRepository,
             secretKeyRequestRepository,
             roomKeyRequestRepository,
-            TransactionManagerMock(),
+            RepositoryTransactionManagerMock(),
             MatrixClientConfiguration(),
             storeScope
         )
@@ -91,8 +91,8 @@ class DeviceKeysStoreTest : ShouldSpec({
 
             cut.init()
 
-            cut.outdatedKeys.value shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))
-            cut.secrets.value shouldBe mapOf(
+            cut.getOutdatedKeysFlow().first() shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))
+            cut.getSecrets() shouldBe mapOf(
                 SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
                     Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                 )
@@ -107,11 +107,11 @@ class DeviceKeysStoreTest : ShouldSpec({
             cut.init()
 
             cut.updateOutdatedKeys { setOf(UserId("alice", "server"), UserId("bob", "server")) }
-            cut.secrets.value = mapOf(
+            cut.updateSecrets {  mapOf(
                 SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
                     Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                 )
-            )
+            )}
 
             eventually(5.seconds) {
                 outdatedKeysRepository.get(1) shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))

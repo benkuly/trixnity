@@ -27,7 +27,7 @@ import net.folivo.trixnity.client.store.repository.SecretKeyRequestRepository
 import net.folivo.trixnity.client.store.repository.SecretsRepository
 import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
 import net.folivo.trixnity.client.store.repository.TimelineEventRepository
-import net.folivo.trixnity.client.store.transaction.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf

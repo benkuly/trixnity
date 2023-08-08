@@ -372,12 +372,13 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>("some")
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.subscribeSyncResponse { syncResponses.emit(it) }
+        matrixRestClient.sync.syncResponse.subscribe({ syncResponses.emit(it) })
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
                 setPresence = Presence.ONLINE,
-                currentBatchToken = currentBatchToken,
+                getBatchToken = { currentBatchToken.value },
+                setBatchToken = { currentBatchToken.value = it },
                 scope = this,
                 timeout = 30_000
             )
@@ -442,12 +443,13 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.subscribeSyncResponse { syncResponses.emit(it) }
+        matrixRestClient.sync.syncResponse.subscribe({ syncResponses.emit(it) })
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
                 setPresence = Presence.ONLINE,
-                currentBatchToken = currentBatchToken,
+                getBatchToken = { currentBatchToken.value },
+                setBatchToken = { currentBatchToken.value = it },
                 scope = this,
                 timeout = 30_000
             )
@@ -496,16 +498,17 @@ class SyncApiClientTest {
         val collector = launch {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
-        matrixRestClient.sync.subscribeDeviceLists {
+        matrixRestClient.sync.deviceLists.subscribe({
             matrixRestClient.sync.currentSyncState.first { it == INITIAL_SYNC }
-        }
+        })
         matrixRestClient.sync.currentSyncState.first { it == STOPPED }
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncJob = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
                 setPresence = Presence.ONLINE,
-                currentBatchToken = currentBatchToken,
+                getBatchToken = { currentBatchToken.value },
+                setBatchToken = { currentBatchToken.value = it },
                 scope = this,
                 timeout = 300
             )
@@ -568,15 +571,16 @@ class SyncApiClientTest {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
         matrixRestClient.sync.currentSyncState.first { it == STOPPED }
-        matrixRestClient.sync.subscribeDeviceLists {
+        matrixRestClient.sync.deviceLists.subscribe({
             matrixRestClient.sync.currentSyncState.first { it == STARTED }
-        }
+        })
         val currentBatchToken = MutableStateFlow<String?>("ananas")
         val sync = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
                 setPresence = Presence.ONLINE,
-                currentBatchToken = currentBatchToken,
+                getBatchToken = { currentBatchToken.value },
+                setBatchToken = { currentBatchToken.value = it },
                 scope = this,
                 timeout = 100
             )
@@ -632,7 +636,8 @@ class SyncApiClientTest {
             matrixRestClient.sync.start(
                 filter = null,
                 setPresence = null,
-                currentBatchToken = currentBatchToken,
+                getBatchToken = { currentBatchToken.value },
+                setBatchToken = { currentBatchToken.value = it },
                 asUserId = null,
                 scope = this
             )
@@ -682,7 +687,12 @@ class SyncApiClientTest {
                 }
             })
         val job = launch {
-            matrixRestClient.sync.start(timeout = 100, currentBatchToken = MutableStateFlow("a"), scope = this)
+            matrixRestClient.sync.start(
+                timeout = 100,
+                getBatchToken = { "a" },
+                setBatchToken = {},
+                scope = this
+            )
         }
         requestCount.first { it == 2 } shouldBe 2
         job.cancelAndJoin()
@@ -752,12 +762,13 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.subscribeSyncResponse { syncResponses.emit(it) }
+        matrixRestClient.sync.syncResponse.subscribe({ syncResponses.emit(it) })
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
                 setPresence = Presence.ONLINE,
-                currentBatchToken = currentBatchToken,
+                getBatchToken = { currentBatchToken.value },
+                setBatchToken = { currentBatchToken.value = it },
                 scope = this,
                 timeout = 30_000
             )
@@ -808,18 +819,21 @@ class SyncApiClientTest {
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
         var subscribeCall = 0
-        matrixRestClient.sync.subscribeSyncResponse {
-            subscribeCall++
-            when (subscribeCall) {
-                1 -> throw RuntimeException("dino")
-                else -> syncResponses.emit(it)
+        matrixRestClient.sync.syncResponse.subscribe(
+            {
+                subscribeCall++
+                when (subscribeCall) {
+                    1 -> throw RuntimeException("dino")
+                    else -> syncResponses.emit(it)
+                }
             }
-        }
+        )
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
                 setPresence = Presence.ONLINE,
-                currentBatchToken = currentBatchToken,
+                getBatchToken = { currentBatchToken.value },
+                setBatchToken = { currentBatchToken.value = it },
                 scope = this,
                 timeout = 0
             )
@@ -991,14 +1005,18 @@ class SyncApiClientTest {
             val roomAccountDataEventsCount = MutableStateFlow(0)
             matrixRestClient.sync.subscribe<RoomAccountDataEventContent> { roomAccountDataEventsCount.update { it + 1 } }
 
-            val currentSyncBatchToken = MutableStateFlow<String?>(null)
+            val currentBatchToken = MutableStateFlow<String?>(null)
             val sync = launch {
-                matrixRestClient.sync.start(scope = this, currentBatchToken = currentSyncBatchToken)
+                matrixRestClient.sync.start(
+                    scope = this,
+                    getBatchToken = { currentBatchToken.value },
+                    setBatchToken = { currentBatchToken.value = it },
+                )
             }
 
             inChannel.send(response)
 
-            currentSyncBatchToken.first { it != null }
+            currentBatchToken.first { it != null }
 
             assertEquals(10, allEventsCount.value)
             assertEquals(2, messageEventsCount.value)
@@ -1058,10 +1076,16 @@ class SyncApiClientTest {
         matrixRestClient.sync.subscribeAllEvents { allEventsCount.update { it + 1 } }
 
         launch {
-            matrixRestClient.sync.start(scope = this)
+            matrixRestClient.sync.start(
+                scope = this, getBatchToken = { "" },
+                setBatchToken = {},
+            )
         }
         launch {
-            matrixRestClient.sync.start(scope = this)
+            matrixRestClient.sync.start(
+                scope = this, getBatchToken = { "" },
+                setBatchToken = {},
+            )
         }
 
         inChannel.send(response)
@@ -1114,13 +1138,21 @@ class SyncApiClientTest {
 
         val allEventsCount = MutableStateFlow(0)
         launch(Dispatchers.Default) {
-            matrixClientServerApiClient.sync.startOnce(timeout = 0L) {
+            matrixClientServerApiClient.sync.startOnce(
+                timeout = 0L,
+                getBatchToken = { "" },
+                setBatchToken = {},
+            ) {
                 delay(500)
                 allEventsCount.update { it + 1 }
             }
         }
         launch(Dispatchers.Default) {
-            matrixClientServerApiClient.sync.startOnce(timeout = 0L) {
+            matrixClientServerApiClient.sync.startOnce(
+                timeout = 0L,
+                getBatchToken = { "" },
+                setBatchToken = {},
+            ) {
                 delay(500)
                 allEventsCount.update { it + 1 }
             }

@@ -1,87 +1,28 @@
 package net.folivo.trixnity.client.store
 
-import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.AccountRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
-import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import kotlin.time.Duration
 
 class AccountStore(
-    private val repository: AccountRepository,
-    private val tm: TransactionManager,
-    private val storeScope: CoroutineScope
+    repository: AccountRepository,
+    tm: RepositoryTransactionManager,
+    storeScope: CoroutineScope
 ) : Store {
-    val olmPickleKey = MutableStateFlow<String?>(null)
-    val baseUrl = MutableStateFlow<Url?>(null)
-    val userId = MutableStateFlow<UserId?>(null)
-    val deviceId = MutableStateFlow<String?>(null)
-    val accessToken = MutableStateFlow<String?>(null)
-    val syncBatchToken = MutableStateFlow<String?>(null)
-    val filterId = MutableStateFlow<String?>(null)
-    val backgroundFilterId = MutableStateFlow<String?>(null)
-    val displayName = MutableStateFlow<String?>(null)
-    val avatarUrl = MutableStateFlow<String?>(null)
+    private val accountCache = MinimalRepositoryObservableCache(repository, tm, storeScope, Duration.INFINITE)
 
-    override suspend fun init() {
-        val account = tm.readOperation { repository.get(1) }
-        olmPickleKey.value = account?.olmPickleKey
-        baseUrl.value = account?.baseUrl?.let { Url(it) }
-        userId.value = account?.userId
-        deviceId.value = account?.deviceId
-        syncBatchToken.value = account?.syncBatchToken
-        accessToken.value = account?.accessToken
-        filterId.value = account?.filterId
-        backgroundFilterId.value = account?.backgroundFilterId
-        displayName.value = account?.displayName
-        avatarUrl.value = account?.avatarUrl
-
-        // we use UNDISPATCHED because we want to ensure, that collect is called immediately
-        storeScope.launch(start = UNDISPATCHED) {
-            combine(
-                olmPickleKey,
-                baseUrl,
-                userId,
-                deviceId,
-                accessToken,
-                syncBatchToken,
-                filterId,
-                backgroundFilterId,
-                displayName,
-                avatarUrl
-            ) { values ->
-                Account(
-                    olmPickleKey = values[0] as String?,
-                    baseUrl = values[1]?.toString(),
-                    userId = values[2] as UserId?,
-                    deviceId = values[3] as String?,
-                    accessToken = values[4] as String?,
-                    syncBatchToken = values[5] as String?,
-                    filterId = values[6] as String?,
-                    backgroundFilterId = values[7] as String?,
-                    displayName = values[8] as String?,
-                    avatarUrl = values[9] as String?,
-                )
-            }.collect { tm.writeOperationAsync(repository.serializeKey(1)) { repository.save(1, it) } }
-        }
+    suspend fun getAccount() = accountCache.read(1).first()
+    fun getAccountAsFlow() = accountCache.read(1)
+    suspend fun updateAccount(updater: suspend (Account) -> Account) = accountCache.write(1) { account ->
+        updater(account ?: Account(null, null, null, null, null, null, null, null, null, null))
     }
 
     override suspend fun clearCache() {}
 
     override suspend fun deleteAll() {
-        tm.writeOperation { repository.deleteAll() }
-        olmPickleKey.value = null
-        baseUrl.value = null
-        userId.value = null
-        deviceId.value = null
-        syncBatchToken.value = null
-        accessToken.value = null
-        filterId.value = null
-        backgroundFilterId.value = null
-        displayName.value = null
-        avatarUrl.value = null
+        accountCache.deleteAll()
     }
 }

@@ -19,7 +19,7 @@ sidebar_position: 12
     implements a database for trixnity-client
     with [room](https://developer.android.com/jetpack/androidx/releases/room).
     This supports Android.
-- [x] extremely fast reactive cache on top of the database using async transactions
+- [x] extremely fast reactive cache on top of the database
 - [x] exchangeable media store
   - in memory (e. g. for tests)
   - [trixnity-client-media-okio](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-media-okio)
@@ -28,8 +28,6 @@ sidebar_position: 12
   - [trixnity-client-media-indexeddb](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-media-indexeddb)
     implements a store with [indexeddb](https://github.com/JuulLabs/indexeddb).
     This supports JS (browser).
-- [x] very fast sync processing because of async transactions, so Trixnity doesn't need to wait until all events are
-  saved to the database
 - [x] media support (thumbnail generation, offline "upload", huge files, etc.)
 - [x] E2E (olm, megolm)
 - [x] verification
@@ -61,15 +59,3 @@ a generic database layer and also writes changes to it. The values are kept in t
 subscribed. This means, that if someone else subscribes a value, he will immediately get the value without an additional
 database call. This goes so far, that even if there are no subscribers anymore, the value is kept a bit longer in
 this layer. If someone ask for the value (for example) 10 seconds later, there is – again - no database call needed.
-
-## Async transactions
-
-Before async transactions has been added to Trixnity, most time of a sync processing was wasted due to writing to the
-database.
-
-Async transactions means, that all changes to the database are collected and processed in the background.
-So database operations are decoupled from the cache and the cache does not need to wait for each write.
-This means that even if a sync has not been saved completely to the database, the UI can already render the processed
-sync.
-
-![async transactions](../assets/asyncTransactions.png)

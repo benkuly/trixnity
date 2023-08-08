@@ -4,10 +4,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.retryWhenSyncIs
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.UserInfo
@@ -69,10 +70,11 @@ class UserServiceImpl(
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val api: MatrixClientServerApiClient,
     presenceEventHandler: PresenceEventHandler,
+    private val lazyMemberEventHandlers: List<LazyMemberEventHandler>,
     private val currentSyncState: CurrentSyncState,
     userInfo: UserInfo,
     private val mappings: EventContentSerializerMappings,
-    private val tm: TransactionManager,
+    private val tm: RepositoryTransactionManager,
     private val scope: CoroutineScope,
 ) : UserService {
 
@@ -89,15 +91,17 @@ class UserServiceImpl(
                 ) {
                     val room = roomStore.get(roomId).first()
                     if (room?.membersLoaded != true) {
+                        log.debug { "load members of room $roomId" }
                         val memberEvents = api.rooms.getMembers(
                             roomId = roomId,
                             notMembership = LEAVE
                         ).getOrThrow()
-                        memberEvents.chunked(500).forEach { chunk ->
-                            tm.withAsyncWriteTransaction {
-                                // TODO We should synchronize this with the sync. Otherwise this could overwrite a newer event.
-                                chunk.forEach { api.sync.emitEvent(it) }
+                        memberEvents.chunked(50).forEach { chunk ->
+                            lazyMemberEventHandlers.forEach {
+                                it.handleLazyMemberEvents(chunk)
                             }
+                            chunk.forEach { event -> api.sync.emitEvent(event) }
+                            yield()
                         }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }
                     }

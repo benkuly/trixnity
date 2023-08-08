@@ -2,18 +2,18 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.client.store.repository.MinimalRepository
-import net.folivo.trixnity.client.store.transaction.TransactionManager
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-open class MinimalRepositoryCoroutineCache<K, V>(
+internal open class MinimalRepositoryObservableCache<K, V>(
     repository: MinimalRepository<K, V>,
-    tm: TransactionManager,
+    tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
-) : CoroutineCache<K, V, CoroutineCacheStore<K, V>>(
+) : ObservableCache<K, V, ObservableCacheStore<K, V>>(
     name = repository::class.simpleName ?: repository::class.toString(),
-    store = MinimalRepositoryCoroutineCacheStore(repository, tm),
+    store = MinimalRepositoryObservableCacheStore(repository, tm),
     cacheScope = cacheScope,
     expireDuration = expireDuration
 )

@@ -1,17 +1,15 @@
 package net.folivo.trixnity.client.store
 
-import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.InMemoryAccountRepository
 import net.folivo.trixnity.core.model.UserId
-import kotlin.time.Duration.Companion.seconds
 
 class AccountStoreTest : ShouldSpec({
     timeout = 60_000
@@ -22,7 +20,7 @@ class AccountStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         repository = InMemoryAccountRepository()
-        cut = AccountStore(repository, TransactionManagerMock(), storeScope)
+        cut = AccountStore(repository, RepositoryTransactionManagerMock(), storeScope)
     }
     afterTest {
         storeScope.cancel()
@@ -47,33 +45,16 @@ class AccountStoreTest : ShouldSpec({
 
             cut.init()
 
-            cut.olmPickleKey.value shouldBe ""
-            cut.baseUrl.value shouldBe Url("http://localhost")
-            cut.userId.value shouldBe UserId("user", "server")
-            cut.deviceId.value shouldBe "device"
-            cut.accessToken.value shouldBe "access_token"
-            cut.syncBatchToken.value shouldBe "sync_token"
-            cut.filterId.value shouldBe "filter_id"
-            cut.displayName.value shouldBe "display_name"
-            cut.avatarUrl.value shouldBe "mxc://localhost/123456"
-        }
-        should("start job, which saves changes to database") {
-            cut.init()
-
-            cut.userId.value = UserId("user", "server")
-            eventually(5.seconds) {
-                repository.get(1) shouldBe Account(
-                    null,
-                    null,
-                    UserId("user", "server"),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                )
+            cut.getAccount().shouldNotBeNull().run {
+                olmPickleKey shouldBe ""
+                baseUrl shouldBe "http://localhost"
+                userId shouldBe UserId("user", "server")
+                deviceId shouldBe "device"
+                accessToken shouldBe "access_token"
+                syncBatchToken shouldBe "sync_token"
+                filterId shouldBe "filter_id"
+                displayName shouldBe "display_name"
+                avatarUrl shouldBe "mxc://localhost/123456"
             }
         }
     }
