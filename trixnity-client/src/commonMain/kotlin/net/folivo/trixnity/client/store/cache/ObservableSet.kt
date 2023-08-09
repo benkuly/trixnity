@@ -24,7 +24,7 @@ class ObservableSet<T>(
 
     val values = changeSignal
         .map { mutex.withLock { _values.toSet() } }
-        .shareIn(coroutineScope, SharingStarted.WhileSubscribed())
+        .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
 
     suspend fun add(element: T): Boolean = mutex.withLock {
         _values.add(element)
