@@ -25,7 +25,7 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
         val fullyLoadedFromRepository: Boolean = false,
         val subscribers: MutableStateFlow<Set<String>> = MutableStateFlow(setOf()),
     )
-    
+
     private val values = ObservableMap<K1, MapRepositoryObservableMapIndexValue<K2>>(cacheScope)
 
     override suspend fun onPut(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
@@ -37,14 +37,15 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
 
     override suspend fun onRemove(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
         values.update(key.firstKey) { mapping ->
+            mapping?.keys?.remove(key.secondKey)
             if (mapping != null) {
                 when {
-                    mapping.keys.size() == 1 -> null
+                    mapping.keys.size() == 0 -> null
                     mapping.fullyLoadedFromRepository -> mapping.copy(fullyLoadedFromRepository = false)
                     else -> mapping
                 }
             } else mapping
-        }?.keys?.remove(key.secondKey)
+        }
     }
 
     override suspend fun onRemoveAll() {

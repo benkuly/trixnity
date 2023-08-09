@@ -25,6 +25,7 @@ internal class ObservableMap<K, V>(
     }
 
     val values = changeSignal
+        .conflate()
         .map { valuesMutex.withLock { _values.toMap() } }
         .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
 

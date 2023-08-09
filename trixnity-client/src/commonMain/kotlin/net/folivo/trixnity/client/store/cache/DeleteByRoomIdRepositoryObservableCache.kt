@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.repository.MapDeleteByRoomIdRepository
 import net.folivo.trixnity.client.store.repository.MinimalDeleteByRoomIdRepository
@@ -13,36 +14,44 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
-    cacheScope: CoroutineScope,
+    private val cacheScope: CoroutineScope,
     private val keyMapper: (K) -> RoomId,
 ) : ObservableMapIndex<K> {
 
-    private val roomIdMapping = ObservableMap<RoomId, Set<K>>(cacheScope)
+    private val values = ObservableMap<RoomId, ObservableSet<K>>(cacheScope)
 
     override suspend fun onPut(key: K) {
         val roomId = keyMapper(key)
-        roomIdMapping.update(roomId) { mapping ->
-            mapping.orEmpty() + key
-        }
+        val mapping = checkNotNull(
+            values.update(roomId) { mapping ->
+                mapping ?: ObservableSet(cacheScope)
+            }
+        )
+        mapping.add(key)
     }
 
     override suspend fun onRemove(key: K) {
         val roomId = keyMapper(key)
-        roomIdMapping.update(roomId) { mapping ->
-            val newMapping = mapping.orEmpty() - key
-            newMapping.ifEmpty { null }
+        values.update(roomId) { mapping ->
+            mapping?.remove(key)
+            if (mapping == null || mapping.size() == 0) null
+            else mapping
         }
     }
 
     override suspend fun onRemoveAll() {
-        roomIdMapping.removeAll()
+        values.removeAll()
     }
 
     private val zeroStateFlow = MutableStateFlow(0)
     override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = zeroStateFlow
 
     suspend fun getMapping(roomId: RoomId): Set<K> =
-        roomIdMapping.get(roomId).orEmpty()
+        checkNotNull(
+            values.update(roomId) { mapping ->
+                mapping ?: ObservableSet(cacheScope)
+            }
+        ).values.first()
 }
 
 internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
