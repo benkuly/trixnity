@@ -4,12 +4,14 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 
 @Serializable
 data class Room(
     val roomId: RoomId,
+    val createEventContent: CreateEventContent? = null,
     val name: RoomDisplayName? = null,
     val avatarUrl: String? = null,
     val isDirect: Boolean = false,
