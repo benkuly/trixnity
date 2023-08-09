@@ -229,9 +229,10 @@ class RoomServiceTest : ShouldSpec({
                 val expectedDecryptedEvent = TextMessageEventContent("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = { Result.success(expectedDecryptedEvent) }
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                (0..99).map {
+                (0..99).map { i ->
                     async {
                         cut.getTimelineEvent(room, eventId)
+                            .onEach { "$i ${it?.content == null} " }
                             .first { it?.content?.getOrNull() != null }
                     }
                 }.awaitAll()

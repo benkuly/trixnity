@@ -220,6 +220,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             repository.save("firstKey", "secondKey1", "old1")
             repository.save("firstKey", "secondKey2", "old2")
             cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")).first() shouldBe "old1"
+            delay(50.milliseconds)
             readTransactionCalled.value = 0
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
@@ -257,6 +258,58 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                 "secondKey2" to "old2",
                 "secondKey3" to "new3",
             )
+        }
+        should("remove from cache when not used anymore") {
+            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 100.milliseconds)
+            val cache = cut.values.stateIn(cacheScope)
+            val readScope1 = CoroutineScope(Dispatchers.Default)
+            repository.save("firstKey", "secondKey1", "old1")
+            cut.readByFirstKey(key = "firstKey").flatten().stateIn(readScope1).value shouldBe
+                    mapOf("secondKey1" to "old1")
+            cache.first { it.isNotEmpty() }
+            repository.save("firstKey", "secondKey1", "new1")
+            readScope1.cancel()
+            delay(200.milliseconds)
+            cache.first { it.isEmpty() }
+            cut.readByFirstKey(key = "firstKey").flatten().first() shouldBe
+                    mapOf("secondKey1" to "new1")
+        }
+    }
+    context("index") {
+        should("has right subscription count") {
+            val values =
+                ObservableMap<MapRepositoryCoroutinesCacheKey<String, String>, ObservableCacheValue<String?>>(cacheScope)
+            cut = MapRepositoryObservableCache(
+                repository = repository,
+                tm = tm,
+                cacheScope = cacheScope,
+                expireDuration = 100.milliseconds,
+                values = values
+            )
+            val subscriptionCountScope = CoroutineScope(Dispatchers.Default)
+            val subscriptionCount1 =
+                values.getIndexSubscriptionCount(MapRepositoryCoroutinesCacheKey("firstKey", "secondsKey1"))
+                    .stateIn(subscriptionCountScope)
+            val subscriptionCount2 =
+                values.getIndexSubscriptionCount(MapRepositoryCoroutinesCacheKey("firstKey2", "secondsKey1"))
+                    .stateIn(subscriptionCountScope)
+            subscriptionCount1.value shouldBe 0
+            subscriptionCount2.value shouldBe 0
+
+            cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondsKey1"), "value")
+            subscriptionCount1.value shouldBe 0
+            subscriptionCount2.value shouldBe 0
+
+            val readByFirstKeyScope = CoroutineScope(Dispatchers.Default)
+            cut.readByFirstKey("firstKey").flatten().stateIn(readByFirstKeyScope)
+            delay(50.milliseconds)
+            subscriptionCount1.value shouldBe 1
+            subscriptionCount2.value shouldBe 0
+
+            readByFirstKeyScope.cancel()
+            delay(50.milliseconds)
+            subscriptionCount1.value shouldBe 0
+            subscriptionCount2.value shouldBe 0
         }
     }
 })
