@@ -3,7 +3,7 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 object Versions {
-    val trixnity = "3.10.0"
+    val trixnity = "3.10.1"
 
     val kotlinJvmTarget = JavaVersion.VERSION_11
     const val ksp = "1.8.22-1.0.11" // https://github.com/google/ksp/releases
