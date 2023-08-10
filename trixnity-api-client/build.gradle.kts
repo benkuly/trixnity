@@ -22,11 +22,9 @@ kotlin {
                 api(project(":trixnity-core"))
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
 
-                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
+                api("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-resources:${Versions.ktor}")
 
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")

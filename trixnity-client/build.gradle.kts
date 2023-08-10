@@ -26,10 +26,7 @@ kotlin {
 
                 api("io.insert-koin:koin-core:${Versions.koin}")
 
-                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
-
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 api("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 
                 implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")

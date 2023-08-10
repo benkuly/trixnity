@@ -23,7 +23,6 @@ kotlin {
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
 
                 implementation("io.ktor:ktor-server-auth:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-cors:${Versions.ktor}")

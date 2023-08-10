@@ -21,7 +21,6 @@ kotlin {
                 api(project(":trixnity-core"))
 
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
 
                 implementation("io.ktor:ktor-server-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")

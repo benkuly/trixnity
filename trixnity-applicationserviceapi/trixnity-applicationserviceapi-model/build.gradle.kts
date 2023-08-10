@@ -21,9 +21,6 @@ kotlin {
             dependencies {
                 api(project(":trixnity-core"))
 
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-
-                implementation("io.ktor:ktor-http:${Versions.ktor}")
                 implementation("io.ktor:ktor-resources:${Versions.ktor}")
             }
         }

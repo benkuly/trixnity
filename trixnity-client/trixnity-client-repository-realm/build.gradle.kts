@@ -21,8 +21,6 @@ kotlin {
             dependencies {
                 implementation(project(":trixnity-client"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
 
