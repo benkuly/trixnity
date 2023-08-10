@@ -14,6 +14,7 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomStore
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.LeftRoom
@@ -62,15 +63,18 @@ class RoomListHandlerTest : ShouldSpec({
         context("unreadMessageCount") {
             should("set unread message count") {
                 cut.updateRoomList(
-                    Sync.Response(
-                        nextBatch = "",
-                        room = Sync.Response.Rooms(
-                            join = mapOf(
-                                room to JoinedRoom(
-                                    unreadNotifications = JoinedRoom.UnreadNotificationCounts(notificationCount = 24)
-                                )
-                            ),
-                        )
+                    SyncProcessingData(
+                        Sync.Response(
+                            nextBatch = "",
+                            room = Sync.Response.Rooms(
+                                join = mapOf(
+                                    room to JoinedRoom(
+                                        unreadNotifications = JoinedRoom.UnreadNotificationCounts(notificationCount = 24)
+                                    )
+                                ),
+                            )
+                        ),
+                        emptyList()
                     )
                 )
                 roomStore.get(room).first()?.unreadMessageCount shouldBe 24
@@ -79,40 +83,43 @@ class RoomListHandlerTest : ShouldSpec({
         context("lastRelevantEventId") {
             should("setlastRelevantEventId ") {
                 cut.updateRoomList(
-                    Sync.Response(
-                        room = Sync.Response.Rooms(
-                            join = mapOf(
-                                room to JoinedRoom(
-                                    timeline = Sync.Response.Rooms.Timeline(
-                                        events = listOf(
-                                            Event.StateEvent(
-                                                CreateEventContent(UserId("user1", "localhost")),
-                                                EventId("event1"),
-                                                UserId("user1", "localhost"),
-                                                room,
-                                                0,
-                                                stateKey = ""
-                                            ),
-                                            MessageEvent(
-                                                TextMessageEventContent("Hello!"),
-                                                EventId("event2"),
-                                                UserId("user1", "localhost"),
-                                                room,
-                                                5,
-                                            ),
-                                            Event.StateEvent(
-                                                AvatarEventContent("mxc://localhost/123456"),
-                                                EventId("event3"),
-                                                UserId("user1", "localhost"),
-                                                room,
-                                                10,
-                                                stateKey = ""
-                                            ),
-                                        ), previousBatch = "abcdef"
+                    SyncProcessingData(
+                        Sync.Response(
+                            room = Sync.Response.Rooms(
+                                join = mapOf(
+                                    room to JoinedRoom(
+                                        timeline = Sync.Response.Rooms.Timeline(
+                                            events = listOf(
+                                                Event.StateEvent(
+                                                    CreateEventContent(UserId("user1", "localhost")),
+                                                    EventId("event1"),
+                                                    UserId("user1", "localhost"),
+                                                    room,
+                                                    0,
+                                                    stateKey = ""
+                                                ),
+                                                MessageEvent(
+                                                    TextMessageEventContent("Hello!"),
+                                                    EventId("event2"),
+                                                    UserId("user1", "localhost"),
+                                                    room,
+                                                    5,
+                                                ),
+                                                Event.StateEvent(
+                                                    AvatarEventContent("mxc://localhost/123456"),
+                                                    EventId("event3"),
+                                                    UserId("user1", "localhost"),
+                                                    room,
+                                                    10,
+                                                    stateKey = ""
+                                                ),
+                                            ), previousBatch = "abcdef"
+                                        )
                                     )
                                 )
-                            )
-                        ), nextBatch = "123456"
+                            ), nextBatch = "123456"
+                        ),
+                        emptyList()
                     )
                 )
                 roomStore.get(room).first()?.lastRelevantEventId shouldBe EventId("event2")
@@ -122,11 +129,14 @@ class RoomListHandlerTest : ShouldSpec({
     context(RoomListHandler::deleteLeftRooms.name) {
         should("forget rooms on leave when activated") {
             cut.deleteLeftRooms(
-                Sync.Response(
-                    nextBatch = "",
-                    room = Sync.Response.Rooms(
-                        leave = mapOf(room to LeftRoom())
-                    )
+                SyncProcessingData(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            leave = mapOf(room to LeftRoom())
+                        )
+                    ),
+                    emptyList()
                 )
             )
 
@@ -139,11 +149,13 @@ class RoomListHandlerTest : ShouldSpec({
             roomStore.getAll().first { it.size == 1 }
 
             cut.deleteLeftRooms(
-                Sync.Response(
-                    nextBatch = "",
-                    room = Sync.Response.Rooms(
-                        leave = mapOf(room to LeftRoom())
-                    )
+                SyncProcessingData(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            leave = mapOf(room to LeftRoom())
+                        )
+                    ), emptyList()
                 )
             )
 

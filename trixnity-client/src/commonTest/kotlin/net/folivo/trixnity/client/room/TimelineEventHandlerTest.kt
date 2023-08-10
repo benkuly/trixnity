@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
@@ -584,41 +585,47 @@ class TimelineEventHandlerTest : ShouldSpec({
         context("lastEventId") {
             should("set lastEventId from room event") {
                 cut.handleSyncResponse(
-                    Sync.Response(
-                        nextBatch = "",
-                        room = Sync.Response.Rooms(
-                            join = mapOf(
-                                room to Sync.Response.Rooms.JoinedRoom(
-                                    timeline = Sync.Response.Rooms.Timeline(listOf(textEvent(24)))
-                                )
-                            ),
-                        )
+                    SyncProcessingData(
+                        Sync.Response(
+                            nextBatch = "",
+                            room = Sync.Response.Rooms(
+                                join = mapOf(
+                                    room to Sync.Response.Rooms.JoinedRoom(
+                                        timeline = Sync.Response.Rooms.Timeline(listOf(textEvent(24)))
+                                    )
+                                ),
+                            )
+                        ),
+                        emptyList()
                     )
                 )
                 roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event24")
             }
             should("set lastEventId from state event") {
                 cut.handleSyncResponse(
-                    Sync.Response(
-                        nextBatch = "",
-                        room = Sync.Response.Rooms(
-                            join = mapOf(
-                                room to Sync.Response.Rooms.JoinedRoom(
-                                    timeline = Sync.Response.Rooms.Timeline(
-                                        listOf(
-                                            Event.StateEvent(
-                                                MemberEventContent(membership = Membership.JOIN),
-                                                EventId("\$event24"),
-                                                alice,
-                                                room,
-                                                25,
-                                                stateKey = alice.full
+                    SyncProcessingData(
+                        Sync.Response(
+                            nextBatch = "",
+                            room = Sync.Response.Rooms(
+                                join = mapOf(
+                                    room to Sync.Response.Rooms.JoinedRoom(
+                                        timeline = Sync.Response.Rooms.Timeline(
+                                            listOf(
+                                                Event.StateEvent(
+                                                    MemberEventContent(membership = Membership.JOIN),
+                                                    EventId("\$event24"),
+                                                    alice,
+                                                    room,
+                                                    25,
+                                                    stateKey = alice.full
+                                                )
                                             )
                                         )
                                     )
-                                )
-                            ),
-                        )
+                                ),
+                            )
+                        ),
+                        emptyList()
                     )
                 )
                 roomStore.get(room).first()?.lastEventId shouldBe EventId("\$event24")

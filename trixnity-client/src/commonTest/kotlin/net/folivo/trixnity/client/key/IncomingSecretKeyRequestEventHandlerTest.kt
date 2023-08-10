@@ -15,6 +15,7 @@ import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredSecret
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
@@ -129,7 +130,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(Sync.Response(""))
+            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
             sendToDeviceEvents shouldBe null
         }
         should("add request on request") {
@@ -146,7 +147,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(Sync.Response(""))
+            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
             sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
         }
         should("remove request on request cancellation") {
@@ -176,7 +177,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(Sync.Response(""))
+            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
             sendToDeviceEvents shouldBe null
         }
     }
@@ -199,7 +200,8 @@ private val body: ShouldSpec.() -> Unit = {
                         Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                         "secretUserSigningKey"
                     )
-                )}
+                )
+            }
             olmEncryptionServiceMock.returnEncryptOlm = {
                 EncryptedEventContent.OlmEncryptedEventContent(
                     ciphertext = mapOf(),
@@ -230,8 +232,8 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 )
-                cut.processIncomingKeyRequests(Sync.Response(""))
-                cut.processIncomingKeyRequests(Sync.Response(""))
+                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
                 sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
             }
         }
@@ -260,8 +262,8 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 )
-                cut.processIncomingKeyRequests(Sync.Response(""))
-                cut.processIncomingKeyRequests(Sync.Response(""))
+                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
                 sendToDeviceEvents shouldBe null
             }
         }

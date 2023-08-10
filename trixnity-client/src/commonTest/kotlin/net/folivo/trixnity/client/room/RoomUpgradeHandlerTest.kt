@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.model.rooms.JoinRoom
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.RoomId
@@ -71,7 +72,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
                 Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
             }
             roomStore.getAll().first { it.size == 2 }
-            cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
+            cut.joinUpgradedRooms(SyncProcessingData(Sync.Response(""), listOf()))
 
             joinCalled shouldBe true
         }
@@ -84,7 +85,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
                 Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
             }
             roomStore.getAll().first { it.size == 2 }
-            cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
+            cut.joinUpgradedRooms(SyncProcessingData(Sync.Response(""), listOf()))
 
             joinCalled shouldBe false
         }
@@ -96,7 +97,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
                 Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
             }
             roomStore.getAll().first { it.size == 2 }
-            cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
+            cut.joinUpgradedRooms(SyncProcessingData(Sync.Response(""), listOf()))
 
             joinCalled shouldBe false
         }
@@ -108,7 +109,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
                 Room(roomId = roomId2, previousRoomId = roomId1, membership = INVITE)
             }
             roomStore.getAll().first { it.size == 2 }
-            cut.joinUpgradedRooms(Sync.Response(nextBatch = ""))
+            cut.joinUpgradedRooms(SyncProcessingData(Sync.Response(""), listOf()))
 
             joinCalled shouldBe false
         }
