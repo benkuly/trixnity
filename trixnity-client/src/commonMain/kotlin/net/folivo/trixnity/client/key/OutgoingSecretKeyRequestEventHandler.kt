@@ -13,8 +13,8 @@ import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
@@ -49,13 +49,13 @@ class OutgoingSecretKeyRequestEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer)
-        api.sync.afterSyncResponse.subscribe(::cancelOldOutgoingKeyRequests)
+        api.sync.afterSyncProcessing.subscribe(::cancelOldOutgoingKeyRequests)
         api.sync.subscribe(::handleChangedSecrets)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleOutgoingKeyRequestAnswer)
-            api.sync.afterSyncResponse.unsubscribe(::cancelOldOutgoingKeyRequests)
+            api.sync.afterSyncProcessing.unsubscribe(::cancelOldOutgoingKeyRequests)
             api.sync.unsubscribe(::handleChangedSecrets)
         }
     }
@@ -181,7 +181,7 @@ class OutgoingSecretKeyRequestEventHandler(
     }
 
 
-    internal suspend fun cancelOldOutgoingKeyRequests(syncResponse: Sync.Response) {
+    internal suspend fun cancelOldOutgoingKeyRequests(syncProcessingData: SyncProcessingData) {
         keyStore.allSecretKeyRequests.value.forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
                 it.cancelRequest()

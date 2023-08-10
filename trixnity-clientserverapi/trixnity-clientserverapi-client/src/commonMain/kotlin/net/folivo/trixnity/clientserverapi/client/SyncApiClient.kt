@@ -18,6 +18,7 @@ import net.folivo.trixnity.clientserverapi.model.sync.UnusedFallbackKeyTypes
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.Presence
 import kotlin.time.Duration
 
@@ -54,12 +55,14 @@ class Subscribable<T> {
         }
     }
 
-    suspend fun process(value: T) =
+    suspend fun process(value: T) = process(lazy { value })
+
+    suspend fun process(value: Lazy<T>) =
         _subscribers.value.forEach { prioritySubscribers ->
             coroutineScope {
                 log.trace { "process value in subscribers ${prioritySubscribers.subscribers}" }
                 prioritySubscribers.subscribers.forEach { subscriber ->
-                    launch { subscriber(value) }
+                    launch { subscriber(value.value) }
                 }
             }
         }
@@ -68,6 +71,11 @@ class Subscribable<T> {
 data class OlmKeysChange(
     val oneTimeKeysCount: OneTimeKeysCount?,
     val fallbackKeyTypes: UnusedFallbackKeyTypes?,
+)
+
+data class SyncProcessingData(
+    val syncResponse: Sync.Response,
+    val allEvents: List<Event<*>>,
 )
 
 enum class SyncState {
@@ -124,8 +132,8 @@ interface SyncApiClient : EventEmitter {
 
     val deviceLists: Subscribable<Sync.Response.DeviceLists?>
     val olmKeysChange: Subscribable<OlmKeysChange>
-    val syncResponse: Subscribable<Sync.Response>
-    val afterSyncResponse: Subscribable<Sync.Response>
+    val syncProcessing: Subscribable<SyncProcessingData>
+    val afterSyncProcessing: Subscribable<SyncProcessingData>
 
     val currentSyncState: StateFlow<SyncState>
 
@@ -224,18 +232,13 @@ class SyncApiClientImpl(
     private val startStopMutex = Mutex()
     private val syncMutex = Mutex()
 
-    private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(SyncState.STOPPED)
+    private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(STOPPED)
     override val currentSyncState = _currentSyncState.asStateFlow()
-
-    private data class PrioritySubscriber<T>(
-        val subscriber: T,
-        val priority: Int,
-    )
 
     override val deviceLists: Subscribable<Sync.Response.DeviceLists?> = Subscribable()
     override val olmKeysChange: Subscribable<OlmKeysChange> = Subscribable()
-    override val syncResponse: Subscribable<Sync.Response> = Subscribable()
-    override val afterSyncResponse: Subscribable<Sync.Response> = Subscribable()
+    override val syncProcessing: Subscribable<SyncProcessingData> = Subscribable()
+    override val afterSyncProcessing: Subscribable<SyncProcessingData> = Subscribable()
 
     override suspend fun start(
         filter: String?,
@@ -361,6 +364,7 @@ class SyncApiClientImpl(
     }
 
     private suspend fun processSyncResponse(response: Sync.Response) {
+        // ####### do it at first, to be able to decrypt stuff #######
         log.trace { "process olmKeysChange" }
         olmKeysChange.process(OlmKeysChange(response.oneTimeKeysCount, response.unusedFallbackKeyTypes))
 
@@ -368,15 +372,41 @@ class SyncApiClientImpl(
         deviceLists.process(response.deviceLists)
 
         log.trace { "process toDevice" }
-        // do it at first, to be able to decrypt stuff
         response.toDevice?.events?.forEach { emitEvent(it) }
 
         log.trace { "process accountData" }
-        // do it at first, to be able to decrypt stuff
         response.accountData?.events?.forEach { emitEvent(it) }
+        // ###########################################################
 
+        val syncProcessingData = lazy {
+            SyncProcessingData(
+                syncResponse = response,
+                allEvents = buildList {
+                    response.toDevice?.events?.forEach { add(it) }
+                    response.accountData?.events?.forEach { add(it) }
+                    response.presence?.events?.forEach { add(it) }
+                    response.room?.join?.forEach { (_, joinedRoom) ->
+                        joinedRoom.state?.events?.forEach { add(it) }
+                        joinedRoom.timeline?.events?.forEach { add(it) }
+                        joinedRoom.ephemeral?.events?.forEach { add(it) }
+                        joinedRoom.accountData?.events?.forEach { add(it) }
+                    }
+                    response.room?.invite?.forEach { (_, invitedRoom) ->
+                        invitedRoom.inviteState?.events?.forEach { add(it) }
+                    }
+                    response.room?.knock?.forEach { (_, invitedRoom) ->
+                        invitedRoom.knockState?.events?.forEach { add(it) }
+                    }
+                    response.room?.leave?.forEach { (_, leftRoom) ->
+                        leftRoom.state?.events?.forEach { add(it) }
+                        leftRoom.timeline?.events?.forEach { add(it) }
+                        leftRoom.accountData?.events?.forEach { add(it) }
+                    }
+                }
+            )
+        }
         log.trace { "process syncResponse" }
-        syncResponse.process(response)
+        syncProcessing.process(syncProcessingData)
 
         log.trace { "process each event" }
         coroutineScope {
@@ -412,7 +442,7 @@ class SyncApiClientImpl(
             }
         }
         log.trace { "process afterSyncResponse" }
-        afterSyncResponse.process(response)
+        afterSyncProcessing.process(syncProcessingData)
     }
 
     override suspend fun stop(wait: Boolean) {

@@ -19,8 +19,8 @@ import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import kotlin.time.Duration.Companion.seconds
 
@@ -39,13 +39,13 @@ class OutboxMessageEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(roomOutboxMessageStore.getAll()) }
-        api.sync.afterSyncResponse.subscribe(::removeOldOutboxMessages)
+        api.sync.afterSyncProcessing.subscribe(::removeOldOutboxMessages)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.afterSyncResponse.unsubscribe(::removeOldOutboxMessages)
+            api.sync.afterSyncProcessing.unsubscribe(::removeOldOutboxMessages)
         }
     }
 
-    internal suspend fun removeOldOutboxMessages(syncResponse: Sync.Response) {
+    internal suspend fun removeOldOutboxMessages(syncProcessingData: SyncProcessingData) {
         val outboxMessages = roomOutboxMessageStore.getAll().value
         val removeOutboxMessages = outboxMessages.mapNotNull {
             // a sync means, that the message must have been received. we just give the ui a bit time to update.

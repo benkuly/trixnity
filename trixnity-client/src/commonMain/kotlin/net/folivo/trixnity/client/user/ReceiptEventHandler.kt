@@ -8,9 +8,9 @@ import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.utils.filter
+import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
@@ -24,15 +24,15 @@ class ReceiptEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.afterSyncResponse.subscribe(::handleSyncResponse)
+        api.sync.afterSyncProcessing.subscribe(::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.afterSyncResponse.unsubscribe(::handleSyncResponse)
+            api.sync.afterSyncProcessing.unsubscribe(::handleSyncResponse)
         }
     }
 
-    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
+    internal suspend fun handleSyncResponse(syncProcessingData: SyncProcessingData) {
         setReadReceipts(
-            syncResponse.filter<ReceiptEventContent>().toList()
+            syncProcessingData.allEvents.filterContent<ReceiptEventContent>().toList()
         )
     }
 

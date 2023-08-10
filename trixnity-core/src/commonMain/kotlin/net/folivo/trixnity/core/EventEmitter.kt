@@ -76,7 +76,7 @@ abstract class EventEmitterImpl : EventEmitter {
 }
 
 /**
- * Subscribers have to be aware to unsubscribe() when the scope of the subscriber is destroyed.
+ * Subscribers have to be aware to [unsubscribe] when the scope of the subscriber is destroyed.
  */
 inline fun <reified T : EventContent> EventEmitter.subscribe(noinline subscriber: EventSubscriber<T>) {
     subscribe(T::class, subscriber)

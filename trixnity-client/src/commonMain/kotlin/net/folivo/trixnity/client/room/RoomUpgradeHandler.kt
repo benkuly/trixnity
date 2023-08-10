@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
@@ -26,11 +26,11 @@ class RoomUpgradeHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setRoomReplacedBy)
         api.sync.subscribe(::setRoomReplaces)
-        api.sync.afterSyncResponse.subscribe(::joinUpgradedRooms)
+        api.sync.afterSyncProcessing.subscribe(::joinUpgradedRooms)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setRoomReplacedBy)
             api.sync.unsubscribe(::setRoomReplaces)
-            api.sync.afterSyncResponse.unsubscribe(::joinUpgradedRooms)
+            api.sync.afterSyncProcessing.unsubscribe(::joinUpgradedRooms)
         }
     }
 
@@ -53,7 +53,7 @@ class RoomUpgradeHandler(
         }
     }
 
-    internal suspend fun joinUpgradedRooms(syncResponse: Sync.Response) {
+    internal suspend fun joinUpgradedRooms(syncProcessingData: SyncProcessingData) {
         if (configuration.autoJoinUpgradedRooms.not()) return
 
         val allRooms =

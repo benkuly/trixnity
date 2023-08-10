@@ -14,8 +14,8 @@ import net.folivo.trixnity.client.notification.NotificationService.Notification
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
@@ -65,9 +65,9 @@ class NotificationServiceImpl(
     ): Flow<Notification> = channelFlow {
         currentSyncState.first { it == SyncState.STARTED || it == SyncState.RUNNING }
         val syncResponseFlow = callbackFlow {
-            val subscriber: suspend (Sync.Response) -> Unit = { send(it) }
-            api.sync.afterSyncResponse.subscribe(subscriber)
-            awaitClose { api.sync.afterSyncResponse.unsubscribe(subscriber) }
+            val subscriber: suspend (syncProcessingData: SyncProcessingData) -> Unit = { send(it) }
+            api.sync.afterSyncProcessing.subscribe(subscriber)
+            awaitClose { api.sync.afterSyncProcessing.unsubscribe(subscriber) }
         }
 
         val pushRules =
@@ -82,7 +82,7 @@ class NotificationServiceImpl(
                 } ?: listOf()
             }.stateIn(this)
         val inviteEvents = syncResponseFlow
-            .map { syncResponse ->
+            .map { (syncResponse, _) ->
                 syncResponse.room?.invite?.values?.flatMap { inviteRoom ->
                     inviteRoom.inviteState?.events.orEmpty()
                 }?.asFlow()

@@ -7,9 +7,9 @@ import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.utils.filter
+import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -27,19 +27,19 @@ class UserMemberEventHandler(
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.syncResponse.subscribe(::setAllRoomUsers, 90)
-        api.sync.afterSyncResponse.subscribe(::reloadProfile)
+        api.sync.syncProcessing.subscribe(::setAllRoomUsers, 90)
+        api.sync.afterSyncProcessing.subscribe(::reloadProfile)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.syncResponse.unsubscribe(::setAllRoomUsers)
-            api.sync.afterSyncResponse.unsubscribe(::reloadProfile)
+            api.sync.syncProcessing.unsubscribe(::setAllRoomUsers)
+            api.sync.afterSyncProcessing.unsubscribe(::reloadProfile)
         }
     }
 
     private val reloadOwnProfile = MutableStateFlow(false)
 
-    internal suspend fun setAllRoomUsers(syncResponse: Sync.Response) {
+    internal suspend fun setAllRoomUsers(syncProcessingData: SyncProcessingData) {
         setRoomUser(
-            syncResponse.filter<MemberEventContent>().filterIsInstance<Event<MemberEventContent>>().toList()
+            syncProcessingData.allEvents.filterContent<MemberEventContent>().toList()
         )
     }
 
@@ -148,7 +148,7 @@ class UserMemberEventHandler(
         }
     }
 
-    private suspend fun reloadProfile(syncResponse: Sync.Response) {
+    private suspend fun reloadProfile(syncProcessingData: SyncProcessingData) {
         if (reloadOwnProfile.value) {
             reloadOwnProfile.value = false
 

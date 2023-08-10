@@ -10,8 +10,8 @@ import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -44,14 +44,15 @@ class TimelineEventHandlerImpl(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::redactTimelineEvent)
-        api.sync.syncResponse.subscribe(::handleSyncResponse, 90)
+        api.sync.syncProcessing.subscribe(::handleSyncResponse, 90)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::redactTimelineEvent)
-            api.sync.syncResponse.unsubscribe(::handleSyncResponse)
+            api.sync.syncProcessing.unsubscribe(::handleSyncResponse)
         }
     }
 
-    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) = tm.writeTransaction {
+    internal suspend fun handleSyncResponse(syncProcessingData: SyncProcessingData) = tm.writeTransaction {
+        val syncResponse = syncProcessingData.syncResponse
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
             room.value.timeline?.also {

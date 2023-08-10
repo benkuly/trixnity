@@ -1,18 +1,17 @@
 package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.job
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.utils.filter
+import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -28,19 +27,22 @@ class RoomListHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.syncResponse.subscribe(::updateRoomList, 100)
-        api.sync.afterSyncResponse.subscribe(::deleteLeftRooms)
+        api.sync.syncProcessing.subscribe(::updateRoomList, 100)
+        api.sync.afterSyncProcessing.subscribe(::deleteLeftRooms)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.syncResponse.unsubscribe(::updateRoomList)
-            api.sync.afterSyncResponse.unsubscribe(::deleteLeftRooms)
+            api.sync.syncProcessing.unsubscribe(::updateRoomList)
+            api.sync.afterSyncProcessing.unsubscribe(::deleteLeftRooms)
         }
     }
 
-    internal suspend fun updateRoomList(syncResponse: Sync.Response) = tm.writeTransaction {
-        val rooms = syncResponse.room
-        if (rooms != null) {
+    internal suspend fun updateRoomList(syncProcessingData: SyncProcessingData) = tm.writeTransaction {
+        val rooms = syncProcessingData.syncResponse.room
+        if (rooms != null) coroutineScope {
             val createEventContents =
-                syncResponse.filter<CreateEventContent>().toList().associateBy { it.getRoomId() }
+                async(start = CoroutineStart.LAZY) {
+                    syncProcessingData.allEvents.filterContent<CreateEventContent>().toList()
+                        .associateBy { it.getRoomId() }
+                }
             rooms.join?.entries?.forEach { roomResponse ->
                 val roomId = roomResponse.key
                 val newUnreadMessageCount = roomResponse.value.unreadNotifications?.notificationCount
@@ -48,7 +50,10 @@ class RoomListHandler(
                 val lastRelevantEvent = events?.lastOrNull { config.lastRelevantEventFilter(it) }
                 roomStore.update(roomId) { oldRoom ->
                     val room =
-                        (oldRoom ?: Room(roomId = roomId, createEventContent = createEventContents[roomId]?.content))
+                        (oldRoom ?: Room(
+                            roomId = roomId,
+                            createEventContent = createEventContents.await()[roomId]?.content
+                        ))
                     room.copy(
                         membership = Membership.JOIN,
                         unreadMessageCount = newUnreadMessageCount ?: room.unreadMessageCount,
@@ -64,7 +69,10 @@ class RoomListHandler(
                 val lastRelevantEvent = events?.lastOrNull { config.lastRelevantEventFilter(it) }
                 roomStore.update(roomId) { oldRoom ->
                     val room =
-                        (oldRoom ?: Room(roomId = roomId, createEventContent = createEventContents[roomId]?.content))
+                        (oldRoom ?: Room(
+                            roomId = roomId,
+                            createEventContent = createEventContents.await()[roomId]?.content
+                        ))
                     room.copy(
                         membership = Membership.LEAVE,
                         lastRelevantEventId = lastRelevantEvent?.id ?: room.lastRelevantEventId,
@@ -77,7 +85,7 @@ class RoomListHandler(
                 roomStore.update(roomId) {
                     it?.copy(membership = Membership.KNOCK) ?: Room(
                         roomId,
-                        createEventContent = createEventContents[roomId]?.content,
+                        createEventContent = createEventContents.await()[roomId]?.content,
                         membership = Membership.KNOCK
                     )
                 }
@@ -86,16 +94,17 @@ class RoomListHandler(
                 roomStore.update(roomId) {
                     it?.copy(membership = Membership.INVITE) ?: Room(
                         roomId,
-                        createEventContent = createEventContents[roomId]?.content,
+                        createEventContent = createEventContents.await()[roomId]?.content,
                         membership = Membership.INVITE
                     )
                 }
             }
+            createEventContents.cancel()
         }
     }
 
-    internal suspend fun deleteLeftRooms(syncResponse: Sync.Response) {
-        val syncLeaveRooms = syncResponse.room?.leave?.keys
+    internal suspend fun deleteLeftRooms(syncProcessingData: SyncProcessingData) {
+        val syncLeaveRooms = syncProcessingData.syncResponse.room?.leave?.keys
         if (syncLeaveRooms != null && config.deleteRoomsOnLeave) {
             val existingLeaveRooms = roomStore.getAll().value
                 .filter { it.value.value?.membership == Membership.LEAVE }

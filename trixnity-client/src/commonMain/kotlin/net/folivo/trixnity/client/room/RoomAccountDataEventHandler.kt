@@ -1,14 +1,13 @@
 package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.RoomAccountDataStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
@@ -20,15 +19,16 @@ class RoomAccountDataEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.syncResponse.subscribe(::setRoomAccountData)
+        api.sync.syncProcessing.subscribe(::setRoomAccountData)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.syncResponse.unsubscribe(::setRoomAccountData)
+            api.sync.syncProcessing.unsubscribe(::setRoomAccountData)
         }
     }
 
-    internal suspend fun setRoomAccountData(syncResponse: Sync.Response) {
-        val accountData = syncResponse.filter<RoomAccountDataEventContent>()
-            .filterIsInstance<Event.RoomAccountDataEvent<RoomAccountDataEventContent>>().toList()
+    internal suspend fun setRoomAccountData(syncProcessingData: SyncProcessingData) {
+        val accountData = syncProcessingData.allEvents
+            .filter<RoomAccountDataEventContent, Event.RoomAccountDataEvent<RoomAccountDataEventContent>>()
+            .toList()
         if (accountData.isNotEmpty())
             tm.writeTransaction {
                 accountData.forEach { roomAccountDataStore.save(it) }

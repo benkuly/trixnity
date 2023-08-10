@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
@@ -35,13 +35,13 @@ class DirectRoomEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setDirectRooms)
         api.sync.subscribe(::setDirectEventContent)
-        api.sync.afterSyncResponse.subscribe(::handleDirectEventContent)
-        api.sync.afterSyncResponse.subscribe(::setDirectRoomsAfterSync)
+        api.sync.afterSyncProcessing.subscribe(::handleDirectEventContent)
+        api.sync.afterSyncProcessing.subscribe(::setDirectRoomsAfterSync)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setDirectRooms)
             api.sync.unsubscribe(::setDirectEventContent)
-            api.sync.afterSyncResponse.unsubscribe(::handleDirectEventContent)
-            api.sync.afterSyncResponse.unsubscribe(::setDirectRoomsAfterSync)
+            api.sync.afterSyncProcessing.unsubscribe(::handleDirectEventContent)
+            api.sync.afterSyncProcessing.unsubscribe(::setDirectRoomsAfterSync)
         }
     }
 
@@ -100,7 +100,7 @@ class DirectRoomEventHandler(
         }
     }
 
-    internal suspend fun setDirectRoomsAfterSync(syncResponse: Sync.Response) {
+    internal suspend fun setDirectRoomsAfterSync(syncProcessingData: SyncProcessingData) {
         val newDirectRooms = setDirectRoomsEventContent.value
         if (newDirectRooms != null && newDirectRooms != globalAccountDataStore.get<DirectEventContent>()
                 .first()?.content
@@ -116,7 +116,7 @@ class DirectRoomEventHandler(
         directEventContent.value = directEvent.content
     }
 
-    internal suspend fun handleDirectEventContent(syncResponse: Sync.Response) {
+    internal suspend fun handleDirectEventContent(syncProcessingData: SyncProcessingData) {
         val content = directEventContent.value
         if (content != null) {
             setRoomIsDirect(content)

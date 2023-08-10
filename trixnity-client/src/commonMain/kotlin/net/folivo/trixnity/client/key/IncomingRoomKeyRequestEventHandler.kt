@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
@@ -43,11 +43,11 @@ class IncomingRoomKeyRequestEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests)
         api.sync.subscribe(::handleIncomingKeyRequests)
-        api.sync.afterSyncResponse.subscribe(::processIncomingKeyRequests)
+        api.sync.afterSyncProcessing.subscribe(::processIncomingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleEncryptedIncomingKeyRequests)
             api.sync.unsubscribe(::handleIncomingKeyRequests)
-            api.sync.afterSyncResponse.unsubscribe (::processIncomingKeyRequests)
+            api.sync.afterSyncProcessing.unsubscribe(::processIncomingKeyRequests)
         }
     }
 
@@ -72,7 +72,7 @@ class IncomingRoomKeyRequestEventHandler(
         }
     }
 
-    internal suspend fun processIncomingKeyRequests(syncResponse: Sync.Response) {
+    internal suspend fun processIncomingKeyRequests(syncProcessingData: SyncProcessingData) {
         incomingRoomKeyRequests.value.forEach { request ->
             val requestingDeviceId = request.requestingDeviceId
             val senderTrustLevel = keyStore.getDeviceKey(ownUserId, requestingDeviceId).first()?.trustLevel

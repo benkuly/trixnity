@@ -9,7 +9,7 @@ import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.Event
@@ -36,11 +36,11 @@ class IncomingSecretKeyRequestEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests)
-        api.sync.afterSyncResponse.subscribe(::processIncomingKeyRequests)
+        api.sync.afterSyncProcessing.subscribe(::processIncomingKeyRequests)
         api.sync.subscribe(::handleIncomingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleEncryptedIncomingKeyRequests)
-            api.sync.afterSyncResponse.unsubscribe(::processIncomingKeyRequests)
+            api.sync.afterSyncProcessing.unsubscribe(::processIncomingKeyRequests)
             api.sync.unsubscribe(::handleIncomingKeyRequests)
         }
     }
@@ -66,7 +66,7 @@ class IncomingSecretKeyRequestEventHandler(
         }
     }
 
-    internal suspend fun processIncomingKeyRequests(syncResponse: Sync.Response) {
+    internal suspend fun processIncomingKeyRequests(syncProcessingData: SyncProcessingData) {
         incomingSecretKeyRequests.value.forEach { request ->
             log.debug { "process incoming secret key request: ${request.requestId}" }
             val requestingDeviceId = request.requestingDeviceId

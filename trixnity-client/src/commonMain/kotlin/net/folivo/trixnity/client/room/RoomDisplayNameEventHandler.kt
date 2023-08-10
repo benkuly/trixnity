@@ -9,7 +9,7 @@ import kotlinx.coroutines.job
 import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
@@ -31,11 +31,11 @@ class RoomDisplayNameEventHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
         api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
-        api.sync.afterSyncResponse.subscribe(::handleSetRoomDisplayNamesQueue)
+        api.sync.afterSyncProcessing.subscribe(::handleSetRoomDisplayNamesQueue)
         scope.coroutineContext.job.invokeOnCompletion {
             api.sync.unsubscribe(::setRoomDisplayNameFromNameEvent)
             api.sync.unsubscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
-            api.sync.afterSyncResponse.unsubscribe(::handleSetRoomDisplayNamesQueue)
+            api.sync.afterSyncProcessing.unsubscribe(::handleSetRoomDisplayNamesQueue)
         }
     }
 
@@ -76,8 +76,8 @@ class RoomDisplayNameEventHandler(
         }
     }
 
-    internal suspend fun handleSetRoomDisplayNamesQueue(syncResponse: Sync.Response) {
-        syncResponse.room?.join?.entries?.forEach { (roomId, room) ->
+    internal suspend fun handleSetRoomDisplayNamesQueue(syncProcessingData: SyncProcessingData) {
+        syncProcessingData.syncResponse.room?.join?.entries?.forEach { (roomId, room) ->
             room.summary?.also { roomSummary ->
                 setRoomDisplayNamesQueue.update {
                     it + (roomId to (

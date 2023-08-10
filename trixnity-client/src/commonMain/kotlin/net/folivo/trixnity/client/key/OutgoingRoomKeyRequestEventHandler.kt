@@ -10,8 +10,8 @@ import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
@@ -50,10 +50,10 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer)
-        api.sync.afterSyncResponse.subscribe(::cancelOldOutgoingKeyRequests)
+        api.sync.afterSyncProcessing.subscribe(::cancelOldOutgoingKeyRequests)
         scope.coroutineContext.job.invokeOnCompletion {
             olmDecrypter.unsubscribe(::handleOutgoingKeyRequestAnswer)
-            api.sync.afterSyncResponse.unsubscribe(::cancelOldOutgoingKeyRequests)
+            api.sync.afterSyncProcessing.unsubscribe(::cancelOldOutgoingKeyRequests)
         }
     }
 
@@ -106,7 +106,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
     }
 
 
-    internal suspend fun cancelOldOutgoingKeyRequests(syncResponse: Sync.Response) {
+    internal suspend fun cancelOldOutgoingKeyRequests(syncProcessingData: SyncProcessingData) {
         keyStore.allRoomKeyRequests.value.forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
                 it.cancelRequest()

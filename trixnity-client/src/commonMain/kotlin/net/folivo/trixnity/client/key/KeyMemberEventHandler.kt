@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.key
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
@@ -11,7 +10,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
@@ -30,15 +29,15 @@ class KeyMemberEventHandler(
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.afterSyncResponse.subscribe(::handleSyncResponse)
+        api.sync.afterSyncProcessing.subscribe(::handleSyncResponse)
         scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.afterSyncResponse.unsubscribe(::handleSyncResponse)
+            api.sync.afterSyncProcessing.unsubscribe(::handleSyncResponse)
         }
     }
 
-    internal suspend fun handleSyncResponse(syncResponse: Sync.Response) {
+    internal suspend fun handleSyncResponse(syncProcessingData: SyncProcessingData) {
         updateDeviceKeysFromChangedMembership(
-            syncResponse.filter<MemberEventContent>().filterIsInstance<Event.StateEvent<MemberEventContent>>().toList()
+            syncProcessingData.allEvents.filter<MemberEventContent, Event.StateEvent<MemberEventContent>>().toList()
         )
     }
 
