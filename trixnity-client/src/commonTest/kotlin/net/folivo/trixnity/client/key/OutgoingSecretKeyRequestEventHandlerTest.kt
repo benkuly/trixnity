@@ -21,6 +21,7 @@ import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.OlmDecrypterMock
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeyBackupVersion
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
@@ -412,7 +413,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.addSecretKeyRequest(request2)
             keyStore.allSecretKeyRequests.first { it.size == 2 }
 
-            cut.cancelOldOutgoingKeyRequests(Sync.Response(""))
+            cut.cancelOldOutgoingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
 
             keyStore.allSecretKeyRequests.first { it.size == 1 } shouldBe setOf(request1)
             sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldBe SecretKeyRequestEventContent(
