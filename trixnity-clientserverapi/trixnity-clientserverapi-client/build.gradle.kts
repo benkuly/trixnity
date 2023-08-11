@@ -25,7 +25,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 
-                implementation("io.ktor:ktor-client-core:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
                 implementation("io.ktor:ktor-client-resources:${Versions.ktor}")
