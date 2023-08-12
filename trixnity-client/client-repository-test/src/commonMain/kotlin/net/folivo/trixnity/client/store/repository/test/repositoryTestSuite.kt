@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.repository.test
 
 import io.kotest.core.spec.style.ShouldSpec
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -12,6 +13,7 @@ import org.koin.dsl.module
 
 fun ShouldSpec.repositoryTestSuite(
     disabledRollbackTest: Boolean = false,
+    customRepositoryTransactionManager: suspend () -> RepositoryTransactionManager? = { null },
     repositoriesModuleBuilder: suspend () -> Module
 ) {
     val mappings = DefaultEventContentSerializerMappings
@@ -34,7 +36,7 @@ fun ShouldSpec.repositoryTestSuite(
         }.koin
     }
 
-    repositoryTransactionManagerTest(disabledRollbackTest) { di }
+    repositoryTransactionManagerTest(disabledRollbackTest, customRepositoryTransactionManager) { di }
 
     accountRepositoryTest { di }
     crossSigningKeysRepositoryTest { di }
