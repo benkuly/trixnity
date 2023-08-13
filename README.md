@@ -13,4 +13,4 @@ You can register custom events and Trixnity will take care, that you can send an
 
 [Website with documentation](https://trixnity.gitlab.io/trixnity)
 
-**You need help? Ask your questions in [#trixnity:imbitbu.de](matrix:r/trixnity:imbitbu.de).**
+**You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).**
