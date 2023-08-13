@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.Flow
@@ -82,9 +83,10 @@ class OutboxMessageEventHandler(
                         val content = outboxMessage.content
                             .let { content ->
                                 val uploader =
-                                    outboxMessageMediaUploaderMappings.mappings.find { it.kClass.isInstance(content) }?.uploader
+                                    outboxMessageMediaUploaderMappings.mappings.find { content.instanceOf(it.kClass) }?.uploader
                                         ?: throw IllegalArgumentException(
-                                            "EventContent class ${content::class.simpleName}} is not supported by any media uploader."
+                                            "EventContent class ${content::class.simpleName}} is not supported by any media uploader. " +
+                                                    "Supported types: ${outboxMessageMediaUploaderMappings.mappings.map { it.kClass }}"
                                         )
                                 val uploadedContent = uploader(content) { cacheUri ->
                                     mediaService.uploadMedia(
