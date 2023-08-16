@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store.cache
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.comparables.shouldBeLessThan
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -273,6 +274,27 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             cache.first { it.isEmpty() }
             cut.readByFirstKey(key = "firstKey").flatten().first() shouldBe
                     mapOf("secondKey1" to "new1")
+        }
+        should("handle parallel read and write") {
+            repository = object : InMemoryMapRepository<String, String, String>() {
+                override suspend fun save(firstKey: String, secondKey: String, value: String) {
+                    delay(50.milliseconds)
+                    super.save(firstKey, secondKey, value)
+                }
+
+                override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
+            }
+            cut = MapRepositoryObservableCache(repository, tm, cacheScope)
+            cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondsKey1"), "value1")
+            coroutineScope {
+                launch {
+                    cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondsKey2")) { "value2" }
+                }
+                launch {
+                    cut.readByFirstKey("firstKey").filterNotNull().first()
+                }
+            }
+            cut.readByFirstKey("firstKey").filterNotNull().first() shouldHaveSize 2
         }
     }
     context("index") {

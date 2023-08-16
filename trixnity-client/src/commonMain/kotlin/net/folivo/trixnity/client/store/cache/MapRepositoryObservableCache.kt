@@ -29,16 +29,16 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
     private val values = ObservableMap<K1, MapRepositoryObservableMapIndexValue<K2>>(cacheScope)
 
     override suspend fun onPut(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
-        val mapping = values.get(key.firstKey)
-        if (mapping != null && mapping.fullyLoadedFromRepository) {
-            mapping.keys.add(key.secondKey)
+        values.update(key.firstKey) { mapping ->
+            mapping?.also { it.keys.add(key.secondKey) }
+                ?: MapRepositoryObservableMapIndexValue(ObservableSet(cacheScope, setOf(key.secondKey)))
         }
     }
 
     override suspend fun onRemove(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
         values.update(key.firstKey) { mapping ->
-            mapping?.keys?.remove(key.secondKey)
             if (mapping != null) {
+                mapping.keys.remove(key.secondKey)
                 when {
                     mapping.keys.size() == 0 -> null
                     mapping.fullyLoadedFromRepository -> mapping.copy(fullyLoadedFromRepository = false)
@@ -66,10 +66,8 @@ private class MapRepositoryObservableMapIndex<K1, K2>(
             val value = values.update(key) { mapping ->
                 when {
                     mapping == null -> MapRepositoryObservableMapIndexValue(ObservableSet(cacheScope, get(key)), true)
-                    mapping.fullyLoadedFromRepository.not() -> mapping.copy(
-                        keys = mapping.keys.also { it.addAll(get(key)) },
-                        fullyLoadedFromRepository = true
-                    )
+                    mapping.fullyLoadedFromRepository.not() -> mapping.copy(fullyLoadedFromRepository = true)
+                        .also { it.keys.addAll(get(key)) }
 
                     else -> mapping
                 }
