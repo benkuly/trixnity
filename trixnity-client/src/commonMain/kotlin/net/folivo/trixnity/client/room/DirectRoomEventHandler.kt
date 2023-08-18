@@ -5,9 +5,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
-import net.folivo.trixnity.client.getRoomId
-import net.folivo.trixnity.client.getSender
-import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
@@ -19,6 +16,9 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.roomIdOrNull
+import net.folivo.trixnity.core.model.events.senderOrNull
+import net.folivo.trixnity.core.model.events.stateKeyOrNull
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 
@@ -48,9 +48,9 @@ class DirectRoomEventHandler(
     private val setDirectRoomsEventContent = MutableStateFlow<DirectEventContent?>(null)
 
     internal suspend fun setDirectRooms(event: Event<MemberEventContent>) {
-        val roomId = event.getRoomId()
-        val stateKey = event.getStateKey()
-        val sender = event.getSender()
+        val roomId = event.roomIdOrNull
+        val stateKey = event.stateKeyOrNull
+        val sender = event.senderOrNull
         if (roomId != null && stateKey != null && sender != null) {
             log.trace { "set direct room $roomId for $stateKey" }
             val userWithMembershipChange = UserId(stateKey)

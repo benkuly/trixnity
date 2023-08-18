@@ -7,9 +7,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.getEventId
-import net.folivo.trixnity.client.getRoomId
-import net.folivo.trixnity.client.getSender
 import net.folivo.trixnity.client.notification.NotificationService.Notification
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
@@ -17,9 +14,7 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.UserInfo
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -135,7 +130,7 @@ class NotificationServiceImpl(
         event: Event<*>,
         allRules: List<PushRule>,
     ): Notification? {
-        log.trace { "evaluate push rules for event: ${event.getEventId()}" }
+        log.trace { "evaluate push rules for event: ${event.eventIdOrNull}" }
         val eventJson = lazy {
             try {
                 json.serializersModule.getContextual(Event::class)?.let {
@@ -154,17 +149,17 @@ class NotificationServiceImpl(
                         .all { matchPushCondition(event, eventJson, it) }
 
                     is PushRule.Content -> bodyContainsPattern(event, pushRule.pattern)
-                    is PushRule.Room -> pushRule.roomId == event.getRoomId()
-                    is PushRule.Sender -> pushRule.userId == event.getSender()
+                    is PushRule.Room -> pushRule.roomId == event.roomIdOrNull
+                    is PushRule.Sender -> pushRule.userId == event.senderOrNull
                     is PushRule.Underride -> pushRule.conditions.orEmpty()
                         .all { matchPushCondition(event, eventJson, it) }
                 }
             }
-        log.trace { "event ${event.getEventId()}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
+        log.trace { "event ${event.eventIdOrNull}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
         return rule?.actions?.asFlow()
             ?.transform { pushAction ->
                 if (pushAction is PushAction.Notify) {
-                    log.debug { "notify for event ${event.getEventId()} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
+                    log.debug { "notify for event ${event.eventIdOrNull} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
                     emit(Notification(event))
                 }
             }?.firstOrNull()
@@ -179,7 +174,7 @@ class NotificationServiceImpl(
             is PushCondition.ContainsDisplayName -> {
                 val content = event.content
                 if (content is RoomMessageEventContent) {
-                    event.getRoomId()?.let { roomId ->
+                    event.roomIdOrNull?.let { roomId ->
                         roomUserStore.get(userInfo.userId, roomId).first()?.name?.let { username ->
                             content.body.contains(username)
                         } ?: false
@@ -188,7 +183,7 @@ class NotificationServiceImpl(
             }
 
             is PushCondition.RoomMemberCount -> {
-                event.getRoomId()?.let { roomId ->
+                event.roomIdOrNull?.let { roomId ->
                     pushCondition.isCount.checkIsCount(
                         roomStore.get(roomId).first()?.name?.summary?.joinedMemberCount ?: 0
                     )
@@ -196,12 +191,12 @@ class NotificationServiceImpl(
             }
 
             is PushCondition.SenderNotificationPermission -> {
-                event.getRoomId()?.let { roomId ->
+                event.roomIdOrNull?.let { roomId ->
                     // at the moment, key can only be "room"
                     val powerLevels =
                         roomStateStore.getByStateKey<PowerLevelsEventContent>(roomId, "").first()?.content
                     val requiredNotificationPowerLevel = powerLevels?.notifications?.room ?: 100
-                    val senderPowerLevel = powerLevels?.users?.get(event.getSender()) ?: powerLevels?.usersDefault ?: 0
+                    val senderPowerLevel = powerLevels?.users?.get(event.senderOrNull) ?: powerLevels?.usersDefault ?: 0
                     senderPowerLevel >= requiredNotificationPowerLevel
                 } ?: false
             }

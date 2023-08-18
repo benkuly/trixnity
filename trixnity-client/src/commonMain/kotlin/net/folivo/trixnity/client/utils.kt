@@ -1,57 +1,45 @@
 package net.folivo.trixnity.client
 
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-fun Event<*>?.getStateKey(): String? {
-    return when (this) {
-        is StateEvent -> this.stateKey
-        is StrippedStateEvent -> this.stateKey
-        else -> null
-    }
-}
+@Deprecated(
+    "use stateKeyOrNull instead",
+    ReplaceWith("this.stateKeyOrNull", "net.folivo.trixnity.core.model.events.stateKeyOrNull")
+)
+fun Event<*>?.getStateKey(): String? = this?.stateKeyOrNull
 
-fun Event<*>?.getEventId(): EventId? {
-    return when (this) {
-        is RoomEvent -> this.id
-        else -> null
-    }
-}
+@Deprecated(
+    "use eventIdOrNull instead",
+    ReplaceWith("this.eventIdOrNull", "net.folivo.trixnity.core.model.events.eventIdOrNull")
+)
+fun Event<*>?.getEventId(): EventId? = this?.eventIdOrNull
 
-fun Event<*>?.getOriginTimestamp(): Long? {
-    return when (this) {
-        is RoomEvent -> this.originTimestamp
-        else -> null
-    }
-}
+@Deprecated(
+    "use originTimestampOrNull instead",
+    ReplaceWith("this.originTimestampOrNull", "net.folivo.trixnity.core.model.events.originTimestampOrNull")
+)
+fun Event<*>?.getOriginTimestamp(): Long? = this?.originTimestampOrNull
 
-fun Event<*>?.getRoomId(): RoomId? {
-    return when (this) {
-        is RoomEvent -> this.roomId
-        is StrippedStateEvent -> this.roomId
-        is RoomAccountDataEvent -> this.roomId
-        is EphemeralEvent -> this.roomId
-        else -> null
-    }
-}
+@Deprecated(
+    "use roomIdOrNull instead",
+    ReplaceWith("this.roomIdOrNull", "net.folivo.trixnity.core.model.events.roomIdOrNull")
+)
+fun Event<*>?.getRoomId(): RoomId? = this?.roomIdOrNull
 
-fun Event<*>?.getSender(): UserId? {
-    return when (this) {
-        is RoomEvent -> this.sender
-        is StrippedStateEvent -> this.sender
-        is ToDeviceEvent -> this.sender
-        is EphemeralEvent -> this.sender
-        else -> null
-    }
-}
+@Deprecated(
+    "use senderOrNull instead",
+    ReplaceWith("this.senderOrNull", "net.folivo.trixnity.core.model.events.senderOrNull")
+)
+fun Event<*>?.getSender(): UserId? = this?.senderOrNull
 
 fun String.toMxcUri(): Url =
     Url(this).also { require(it.protocol.name == "mxc") { "uri protocol was not mxc" } }

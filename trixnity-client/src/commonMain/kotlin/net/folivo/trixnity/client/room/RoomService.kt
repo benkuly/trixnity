@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
@@ -22,11 +21,8 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWA
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
@@ -402,7 +398,7 @@ class RoomServiceImpl(
                         val successor: RoomEventIdPair? =
                             if (direction == FORWARDS && timelineEventSnapshotContent is TombstoneEventContent) {
                                 getState<CreateEventContent>(timelineEventSnapshotContent.replacementRoom).first()
-                                    ?.getEventId()
+                                    ?.eventIdOrNull
                                     ?.let { RoomEventIdPair(it, timelineEventSnapshotContent.replacementRoom) }
                             } else null
 

@@ -5,7 +5,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -15,6 +14,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.roomIdOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -41,7 +41,7 @@ class RoomListHandler(
             val createEventContents =
                 async(start = CoroutineStart.LAZY) {
                     syncProcessingData.allEvents.filterContent<CreateEventContent>().toList()
-                        .associateBy { it.getRoomId() }
+                        .associateBy { it.roomIdOrNull }
                 }
             rooms.join?.entries?.forEach { roomResponse ->
                 val roomId = roomResponse.key

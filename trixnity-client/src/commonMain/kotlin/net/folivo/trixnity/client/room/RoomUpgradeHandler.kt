@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
@@ -13,6 +12,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
+import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 
@@ -35,7 +35,7 @@ class RoomUpgradeHandler(
     }
 
     internal suspend fun setRoomReplacedBy(event: Event<TombstoneEventContent>) {
-        val roomId = event.getRoomId()
+        val roomId = event.roomIdOrNull
         if (roomId != null) {
             roomStore.update(roomId) {
                 it?.copy(nextRoomId = event.content.replacementRoom)
@@ -44,7 +44,7 @@ class RoomUpgradeHandler(
     }
 
     internal suspend fun setRoomReplaces(event: Event<CreateEventContent>) {
-        val roomId = event.getRoomId()
+        val roomId = event.roomIdOrNull
         val predecessor = event.content.predecessor
         if (roomId != null && predecessor != null) {
             roomStore.update(roomId) {

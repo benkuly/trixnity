@@ -8,18 +8,13 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.getRoomId
-import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.RedactedStateEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.UnknownStateEventContent
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
@@ -52,8 +47,8 @@ class RoomStateStore(
     }
 
     suspend fun save(event: Event<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
-        val roomId = event.getRoomId()
-        val stateKey = event.getStateKey()
+        val roomId = event.roomIdOrNull
+        val stateKey = event.stateKeyOrNull
         if (roomId != null && stateKey != null) {
             val eventType = when (val content = event.content) {
                 is UnknownStateEventContent -> content.eventType
