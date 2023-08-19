@@ -34,7 +34,8 @@ suspend fun Url.serverDiscovery(
             defaultRequest { url.takeFrom(hostnameBaseUrl) }
         }
     }).request(GetWellKnown)
-        .map { Url(it.homeserver.baseUrl.removeSuffix("/")) }.getOrThrow()
+        .map { Url(it.homeserver.baseUrl.removeSuffix("/")) }
+        .getOrElse { this } // fallback when no .well-known exists
     MatrixApiClient(httpClientFactory = {
         httpClientFactory {
             it()
