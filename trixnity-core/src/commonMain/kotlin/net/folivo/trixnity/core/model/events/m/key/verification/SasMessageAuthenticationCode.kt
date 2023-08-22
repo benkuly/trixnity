@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = MessageAuthenticationCodeSerializer::class)
-interface SasMessageAuthenticationCode {
+sealed interface SasMessageAuthenticationCode {
     val name: String
 
     object HkdfHmacSha256 : SasMessageAuthenticationCode {
