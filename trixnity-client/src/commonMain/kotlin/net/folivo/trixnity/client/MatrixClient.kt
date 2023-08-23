@@ -110,7 +110,7 @@ interface MatrixClient {
 
 suspend fun MatrixClient.Companion.login(
     baseUrl: Url,
-    identifier: IdentifierType,
+    identifier: IdentifierType? = null,
     password: String? = null,
     token: String? = null,
     loginType: LoginType = LoginType.Password,
