@@ -310,11 +310,27 @@ class ActiveSasVerificationMethod private constructor(
             theirMac == null && state.value is ComparisonByUser -> _state.value = WaitForMacs
             theirMac != null && (state.value == WaitForMacs || isOurOwn) -> {
                 when (messageAuthenticationCode) {
-                    HkdfHmacSha256 ->
-                        checkHkdfHmacSha256Mac(stepContent, olmSas::calculateMac)
+                    HkdfHmacSha256 -> {
+                        log.trace { "checkHkdfHmacSha256Mac with old (wrong) base64" }
+                        checkHkdfHmacSha256Mac(theirMac, olmSas::calculateMac)
+                    }
 
-                    HkdfHmacSha256V2 ->
-                        checkHkdfHmacSha256Mac(stepContent, olmSas::calculateMacFixedBase64)
+                    HkdfHmacSha256V2 -> {
+                        log.trace { "checkHkdfHmacSha256Mac with fixed base64" }
+                        checkHkdfHmacSha256Mac(theirMac, olmSas::calculateMacFixedBase64)
+                    }
+
+                    else -> {
+                        log.warn { "messageAuthenticationCode is not set" }
+                        sendVerificationStep(
+                            VerificationCancelEventContent(
+                                UnexpectedMessage,
+                                "messageAuthenticationCode is not set",
+                                relatesTo,
+                                transactionId
+                            )
+                        )
+                    }
                 }
             }
 
@@ -329,13 +345,13 @@ class ActiveSasVerificationMethod private constructor(
                 actualTransactionId
         val theirMacs = theirMac.mac.keys.filterIsInstance<Ed25519Key>()
         val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
-        val allKeysOfDevice = keyStore.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
-        val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullKeyId) }
         val input = theirMacIds.sortedBy { it }.joinToString(",")
         val info = baseInfo + "KEY_IDS"
         log.trace { "create keys mac from input $input and info $info" }
         val keys = calculateMac(input, info)
         if (keys == theirMac.keys) {
+            val allKeysOfDevice = keyStore.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
+            val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullKeyId) }
             val containsMismatchedMac = keysToMac.asSequence()
                 .map { keyToMac ->
                     log.trace { "create key mac from input ${keyToMac.value} and info ${baseInfo + keyToMac.fullKeyId}" }

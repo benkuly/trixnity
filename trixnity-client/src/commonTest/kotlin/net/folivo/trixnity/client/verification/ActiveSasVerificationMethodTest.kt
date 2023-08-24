@@ -8,6 +8,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -365,47 +366,159 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
             }
         }
         context("current state is ${ComparisonByUser::class.simpleName}") {
-            beforeTest {
-                cut.handleVerificationStep(
+            context("their mac not received yet") {
+                beforeTest {
+                    cut.handleVerificationStep(
+                        SasAcceptEventContent(
+                            "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
+                            hash = SasHash.Sha256,
+                            keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                            messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                            shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                            relatesTo = null,
+                            transactionId = "t"
+                        ), false
+                    )
+                    cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
+                    cut.handleVerificationStep(
+                        SasKeyEventContent(
+                            "3vPVpNPsVYVYuozmCrihhndEvVZUHpoHBSb5+TdkaAA",
+                            relatesTo = null,
+                            transactionId = "t"
+                        ), false
+                    )
+                    cut.state.value.shouldBeInstanceOf<ComparisonByUser>()
+                }
+                checkNotAllowedStateChange(
                     SasAcceptEventContent(
-                        "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
+                        "c",
                         hash = SasHash.Sha256,
                         keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
                         messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
                         shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
-                        relatesTo = null,
-                        transactionId = "t"
-                    ), false
+                        relatesTo = null, transactionId = "t"
+                    ),
+                    SasKeyEventContent("key", null, "t")
                 )
-                cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
-                cut.handleVerificationStep(
-                    SasKeyEventContent(
-                        "3vPVpNPsVYVYuozmCrihhndEvVZUHpoHBSb5+TdkaAA",
-                        relatesTo = null,
-                        transactionId = "t"
-                    ), false
+                should("change state to ${WaitForMacs::class.simpleName} when accepted") {
+                    cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), true)
+                    cut.state.value shouldBe WaitForMacs
+                }
+                should("not change state to ${WaitForMacs::class.simpleName} when from other") {
+                    val oldState = cut.state.value
+                    cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), false)
+                    cut.state.value shouldBe oldState
+                }
+            }
+            context("their mac already received") {
+                beforeTest {
+                    keyStore.updateDeviceKeys(alice) {
+                        mapOf(
+                            bobDevice to StoredDeviceKeys(
+                                Signed(
+                                    DeviceKeys(
+                                        alice, aliceDevice, setOf(Megolm),
+                                        keysOf(
+                                            Ed25519Key(aliceDevice, "aliceKey"),
+                                            Ed25519Key("HUHU", "buh")
+                                        )
+                                    ), mapOf()
+                                ), Valid(true)
+                            )
+                        )
+                    }
+                    keyStore.updateCrossSigningKeys(alice) {
+                        setOf(
+                            StoredCrossSigningKeys(
+                                Signed(
+                                    CrossSigningKeys(
+                                        userId = alice,
+                                        usage = setOf(CrossSigningKeysUsage.MasterKey),
+                                        keys = keysOf(
+                                            Ed25519Key("AAKey3", "key3")
+                                        )
+                                    ), mapOf()
+                                ), Valid(false)
+                            )
+                        )
+                    }
+                    keyStore.updateDeviceKeys(bob) {
+                        mapOf(
+                            bobDevice to StoredDeviceKeys(
+                                Signed(
+                                    DeviceKeys(
+                                        bob, bobDevice, setOf(Megolm),
+                                        keysOf(
+                                            Ed25519Key(bobDevice, "bobKey"),
+                                            Ed25519Key("HUHU", "buh")
+                                        )
+                                    ), mapOf()
+                                ), Valid(true)
+                            )
+                        )
+                    }
+                    keyStore.updateCrossSigningKeys(bob) {
+                        setOf(
+                            StoredCrossSigningKeys(
+                                Signed(
+                                    CrossSigningKeys(
+                                        userId = bob,
+                                        usage = setOf(CrossSigningKeysUsage.MasterKey),
+                                        keys = keysOf(
+                                            Ed25519Key("BBKey3", "Bkey3")
+                                        )
+                                    ), mapOf()
+                                ), Valid(false)
+                            )
+                        )
+                    }
+
+                    freeAfter(OlmSAS.create()) { bobOlmSas ->
+                        cut.handleVerificationStep(
+                            SasAcceptEventContent(
+                                "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
+                                hash = SasHash.Sha256,
+                                keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                                messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                                shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                                relatesTo = null,
+                                transactionId = "t"
+                            ), true
+                        )
+                        cut.handleVerificationStep(
+                            SasKeyEventContent(bobOlmSas.publicKey, relatesTo = null, transactionId = "t"), false
+                        )
+                        cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
+
+                        val alicePublicKey = sendVerificationStepFlow.filterIsInstance<SasKeyEventContent>().first().key
+                        bobOlmSas.setTheirPublicKey(alicePublicKey)
+
+                        var sasMacFromBob: VerificationStep? = null
+                        ComparisonByUser(
+                            listOf(), listOf(),
+                            bob, bobDevice, alice, aliceDevice,
+                            SasMessageAuthenticationCode.HkdfHmacSha256,
+                            null, "t",
+                            bobOlmSas, keyStore
+                        ) { sasMacFromBob = it }.match()
+                        cut.handleVerificationStep(sasMacFromBob.shouldNotBeNull(), false)
+                    }
+                }
+                checkNotAllowedStateChange(
+                    SasAcceptEventContent(
+                        "c",
+                        hash = SasHash.Sha256,
+                        keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                        messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                        shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                        relatesTo = null, transactionId = "t"
+                    ),
+                    SasKeyEventContent("key", null, "t"),
                 )
-                cut.state.value.shouldBeInstanceOf<ComparisonByUser>()
-            }
-            checkNotAllowedStateChange(
-                SasAcceptEventContent(
-                    "c",
-                    hash = SasHash.Sha256,
-                    keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
-                    messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
-                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
-                    relatesTo = null, transactionId = "t"
-                ),
-                SasKeyEventContent("key", null, "t")
-            )
-            should("change state to ${WaitForMacs::class.simpleName} when accepted") {
-                cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), true)
-                cut.state.value shouldBe WaitForMacs
-            }
-            should("not change state to ${WaitForMacs::class.simpleName} when from other") {
-                val oldState = cut.state.value
-                cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), false)
-                cut.state.value shouldBe oldState
+                should("check mac and send ${VerificationDoneEventContent::class.simpleName} when correct") {
+                    cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), true)
+                    sendVerificationStepFlow.replayCache shouldContain VerificationDoneEventContent(null, "t")
+                }
             }
         }
         context("current state is ${WaitForMacs::class.simpleName}") {

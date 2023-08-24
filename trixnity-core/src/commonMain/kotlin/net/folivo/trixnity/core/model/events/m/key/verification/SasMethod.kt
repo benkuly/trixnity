@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = SasMethodSerializer::class)
-interface SasMethod {
+sealed interface SasMethod {
     val name: String
 
     object Decimal : SasMethod {

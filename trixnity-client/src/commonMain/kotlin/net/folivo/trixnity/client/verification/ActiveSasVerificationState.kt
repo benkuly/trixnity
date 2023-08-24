@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.verification
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.KeyStore
@@ -16,6 +17,8 @@ import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.olm.OlmSAS
+
+private val log = KotlinLogging.logger {}
 
 sealed interface ActiveSasVerificationState {
     data class OwnSasStart(
@@ -120,8 +123,15 @@ sealed interface ActiveSasVerificationState {
 
         suspend fun match() {
             when (messageAuthenticationCode) {
-                HkdfHmacSha256 -> sendHkdfHmacSha256Mac(olmSas::calculateMac)
-                HkdfHmacSha256V2 -> sendHkdfHmacSha256Mac(olmSas::calculateMacFixedBase64)
+                HkdfHmacSha256 -> {
+                    log.trace { "sendHkdfHmacSha256Mac with old (wrong) base64" }
+                    sendHkdfHmacSha256Mac(olmSas::calculateMac)
+                }
+
+                HkdfHmacSha256V2 -> {
+                    log.trace { "sendHkdfHmacSha256Mac with fixed base64" }
+                    sendHkdfHmacSha256Mac(olmSas::calculateMacFixedBase64)
+                }
 
                 is SasMessageAuthenticationCode.Unknown -> {
                     send(
@@ -143,13 +153,15 @@ sealed interface ActiveSasVerificationState {
                     actualTransactionId
             val keysToMac = keyStore.getAllKeysFromUser<Ed25519Key>(ownUserId, ownDeviceId, MasterKey)
             if (keysToMac.isNotEmpty()) {
-                val keys =
-                    calculateMac(
-                        keysToMac.map { it.fullKeyId }.sortedBy { it }.joinToString(","),
-                        baseInfo + "KEY_IDS"
-                    )
+                val input = keysToMac.map { it.fullKeyId }.sortedBy { it }.joinToString(",")
+                val info = baseInfo + "KEY_IDS"
+                log.trace { "create keys mac from input $input and info $info" }
+                val keys = calculateMac(input, info)
                 val macs =
-                    keysToMac.map { it.copy(value = calculateMac(it.value, baseInfo + it.fullKeyId)) }
+                    keysToMac.map {
+                        log.trace { "create key mac from input $it and info ${baseInfo + it.fullKeyId}" }
+                        it.copy(value = calculateMac(it.value, baseInfo + it.fullKeyId))
+                    }
                 send(SasMacEventContent(keys, Keys(macs.toSet()), relatesTo, transactionId))
             } else send(
                 VerificationCancelEventContent(

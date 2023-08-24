@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = SasKeyAgreementProtocolSerializer::class)
-interface SasKeyAgreementProtocol {
+sealed interface SasKeyAgreementProtocol {
     val name: String
 
     object Curve25519HkdfSha256 : SasKeyAgreementProtocol {

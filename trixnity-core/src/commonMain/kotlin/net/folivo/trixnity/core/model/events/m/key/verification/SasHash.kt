@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = SasHashSerializer::class)
-interface SasHash {
+sealed interface SasHash {
     val name: String
 
     object Sha256 : SasHash {
