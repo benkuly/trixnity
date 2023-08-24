@@ -9,7 +9,6 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.getEventId
 import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room
@@ -25,6 +24,7 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWA
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.eventIdOrNull
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -292,7 +292,8 @@ class TimelineEventIT {
 
             val timelineFromOldRoom =
                 client1.room.getTimeline(oldRoom).apply {
-                    init(client1.room.getState<CreateEventContent>(oldRoom).first()?.getEventId().shouldNotBeNull(),
+                    init(
+                        client1.room.getState<CreateEventContent>(oldRoom).first()?.eventIdOrNull.shouldNotBeNull(),
                         configAfter = { maxSize = 20 })
                 }
             val timelineFromNewRoom =

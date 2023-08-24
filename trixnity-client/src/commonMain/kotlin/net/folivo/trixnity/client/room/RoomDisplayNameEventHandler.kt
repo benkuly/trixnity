@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
-import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
@@ -17,6 +16,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribe
 
@@ -51,7 +51,7 @@ class RoomDisplayNameEventHandler(
         MutableStateFlow(mapOf<RoomId, RoomDisplayNameChange>())
 
     internal fun setRoomDisplayNameFromNameEvent(event: Event<NameEventContent>) {
-        val roomId = event.getRoomId()
+        val roomId = event.roomIdOrNull
         if (roomId != null) {
             log.debug { "update room displayname of $roomId due to name event" }
             setRoomDisplayNamesQueue.update {
@@ -64,7 +64,7 @@ class RoomDisplayNameEventHandler(
     }
 
     internal fun setRoomDisplayNameFromCanonicalAliasEvent(event: Event<CanonicalAliasEventContent>) {
-        val roomId = event.getRoomId()
+        val roomId = event.roomIdOrNull
         if (roomId != null) {
             log.debug { "update room displayname of $roomId doe to alias event" }
             setRoomDisplayNamesQueue.update {

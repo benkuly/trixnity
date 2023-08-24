@@ -5,7 +5,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
-import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -18,6 +17,8 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.roomIdOrNull
+import net.folivo.trixnity.core.model.events.stateKeyOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -48,9 +49,9 @@ class RoomAvatarUrlEventHandler(
 
     internal suspend fun setAvatarUrlForMemberUpdates(memberEvents: List<Event<MemberEventContent>>) {
         val newAvatarUrls = memberEvents.mapNotNull { memberEvent ->
-            memberEvent.getRoomId()?.let { roomId ->
+            memberEvent.roomIdOrNull?.let { roomId ->
                 val room = roomStore.get(roomId).first()
-                if (room?.isDirect == true && userInfo.userId.full != memberEvent.getStateKey()) {
+                if (room?.isDirect == true && userInfo.userId.full != memberEvent.stateKeyOrNull) {
                     log.debug { "set room avatar of room $roomId due to member update" }
                     roomId to memberEvent.content.avatarUrl?.ifEmpty { null }
                 } else null
@@ -68,15 +69,15 @@ class RoomAvatarUrlEventHandler(
 
     internal suspend fun setAvatarUrlForAvatarEvents(avatarEvents: List<Event<AvatarEventContent>>) {
         val newAvatarUrls = avatarEvents.mapNotNull { avatarEvent ->
-            avatarEvent.getRoomId()?.let { roomId ->
+            avatarEvent.roomIdOrNull?.let { roomId ->
                 log.debug { "set room avatar of room $roomId due to new avatar event" }
                 val avatarUrl = avatarEvent.content.url
                 val room = roomStore.get(roomId).first()
                 if (room?.isDirect?.not() == true || avatarUrl.isNullOrEmpty().not()) {
                     listOf(roomId to avatarUrl?.ifEmpty { null })
                 } else if (avatarUrl.isNullOrEmpty()) {
-                    globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.let { mappings ->
-                        mappings.entries.mapNotNull { (userId, rooms) ->
+                    globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.entries
+                        ?.mapNotNull { (userId, rooms) ->
                             rooms
                                 ?.filter { room -> room == roomId }
                                 ?.map { room ->
@@ -85,8 +86,7 @@ class RoomAvatarUrlEventHandler(
                                             .first()?.content?.avatarUrl
                                     room to newAvatarUrl?.ifEmpty { null }
                                 }
-                        }.flatten()
-                    }
+                        }?.flatten()
                 } else null
             }
         }.flatten()

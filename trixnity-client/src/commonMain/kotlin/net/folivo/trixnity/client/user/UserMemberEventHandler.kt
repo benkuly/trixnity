@@ -3,8 +3,6 @@ package net.folivo.trixnity.client.user
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.client.getRoomId
-import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.filterContent
@@ -16,6 +14,8 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.roomIdOrNull
+import net.folivo.trixnity.core.model.events.stateKeyOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -50,14 +50,14 @@ class UserMemberEventHandler(
     internal suspend fun setRoomUser(events: List<Event<MemberEventContent>>, skipWhenAlreadyPresent: Boolean = false) {
         if (events.isNotEmpty()) {
             tm.writeTransaction {
-                events.groupBy { it.getRoomId() }.forEach { (roomId, eventsByRoomId) ->
+                events.groupBy { it.roomIdOrNull }.forEach { (roomId, eventsByRoomId) ->
                     if (roomId != null) coroutineScope {
                         val allDisplayNames = mutableMapOf<UserId, String>()
-                        val putAllDisplayNames = async(start = CoroutineStart.LAZY) {// FIXME test
+                        val putAllDisplayNames = async(start = CoroutineStart.LAZY) {
                             allDisplayNames.putAll(allRoomDisplayNames(roomId))
                         }
                         eventsByRoomId.forEach { event ->
-                            val stateKey = event.getStateKey()
+                            val stateKey = event.stateKeyOrNull
                             if (stateKey != null) {
                                 val userId = UserId(stateKey)
                                 val membership = event.content.membership

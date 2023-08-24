@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.job
-import net.folivo.trixnity.client.getRoomId
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -14,6 +13,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
+import net.folivo.trixnity.core.model.events.roomIdOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -40,7 +40,7 @@ class ReceiptEventHandler(
         if (receiptEvents.isNotEmpty())
             tm.writeTransaction {
                 receiptEvents.forEach { receiptEvent ->
-                    receiptEvent.getRoomId()?.let { roomId ->
+                    receiptEvent.roomIdOrNull?.let { roomId ->
                         log.debug { "set read receipts of room $roomId" }
                         receiptEvent.content.events.forEach { (eventId, receipts) ->
                             receipts
