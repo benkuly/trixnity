@@ -131,20 +131,22 @@ class ServerDiscoveryTest : ShouldSpec({
             "http://someHost:8008".serverDiscovery(httpClientFactory)
                 .getOrThrow() shouldBe Url("http://otherHost:8008")
         }
-        should("fail when cannot get discovery information") {
+        should("not fail when cannot get discovery information (use url as is)") {
             val httpClientFactory = createMockEngineFactory {
                 addHandler {
                     when (it.url) {
-                        Url("https://someHost:8008/.well-known/matrix/client") -> respondError(HttpStatusCode.NotFound)
+                        Url("http://someHost:8008/.well-known/matrix/client") -> respondError(HttpStatusCode.NotFound)
+                        Url("http://someHost:8008/_matrix/client/versions") -> respond(
+                            "{}",
+                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        )
+
                         else -> fail("unchecked request")
                     }
                 }
             }
-            "https://someHost:8008".serverDiscovery(httpClientFactory)
-                .exceptionOrNull() shouldBe MatrixServerException(
-                HttpStatusCode.NotFound,
-                ErrorResponse.CustomErrorResponse("UNKNOWN", "Not Found")
-            )
+            "http://someHost:8008".serverDiscovery(httpClientFactory)
+                .getOrThrow() shouldBe Url("http://someHost:8008")
         }
         should("fail when cannot get version") {
             val httpClientFactory = createMockEngineFactory {
