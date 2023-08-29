@@ -4,10 +4,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
@@ -55,9 +53,15 @@ class Subscribable<T> {
         }
     }
 
-    suspend fun process(value: T) = process(lazy { value })
+    fun subscribeAsFlow(priority: Int = 0): Flow<T> = callbackFlow {
+        val callback: Subscriber<T> = { send(it) }
+        subscribe(callback, priority)
+        awaitClose { unsubscribe(callback) }
+    }
 
-    suspend fun process(value: Lazy<T>) =
+    internal suspend fun process(value: T) = process(lazy { value })
+
+    internal suspend fun process(value: Lazy<T>) =
         _subscribers.value.forEach { prioritySubscribers ->
             coroutineScope {
                 log.trace { "process value in subscribers ${prioritySubscribers.subscribers}" }
