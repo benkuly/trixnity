@@ -29,7 +29,8 @@ the [trixnity-examples](https://gitlab.com/trixnity/trixnity-examples).
 You may also take a look into
 the [integration tests](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/integration-tests).
 
-For a messenger implementation you can take a look into the community project [smalk](https://gitlab.com/terrakok/smalk).
+For a messenger implementation you can take a look into the community
+project [smalk](https://gitlab.com/terrakok/smalk).
 
 ## Snapshot builds
 
