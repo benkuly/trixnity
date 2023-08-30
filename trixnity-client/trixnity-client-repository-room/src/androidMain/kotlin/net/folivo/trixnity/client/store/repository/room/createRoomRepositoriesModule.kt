@@ -3,31 +3,7 @@ package net.folivo.trixnity.client.store.repository.room
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import net.folivo.trixnity.client.store.repository.AccountRepository
-import net.folivo.trixnity.client.store.repository.CrossSigningKeysRepository
-import net.folivo.trixnity.client.store.repository.DeviceKeysRepository
-import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
-import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
-import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepository
-import net.folivo.trixnity.client.store.repository.KeyChainLinkRepository
-import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
-import net.folivo.trixnity.client.store.repository.MediaCacheMappingRepository
-import net.folivo.trixnity.client.store.repository.OlmAccountRepository
-import net.folivo.trixnity.client.store.repository.OlmForgetFallbackKeyAfterRepository
-import net.folivo.trixnity.client.store.repository.OlmSessionRepository
-import net.folivo.trixnity.client.store.repository.OutboundMegolmSessionRepository
-import net.folivo.trixnity.client.store.repository.OutdatedKeysRepository
-import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
-import net.folivo.trixnity.client.store.repository.RoomKeyRequestRepository
-import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
-import net.folivo.trixnity.client.store.repository.RoomRepository
-import net.folivo.trixnity.client.store.repository.RoomStateRepository
-import net.folivo.trixnity.client.store.repository.RoomUserRepository
-import net.folivo.trixnity.client.store.repository.SecretKeyRequestRepository
-import net.folivo.trixnity.client.store.repository.SecretsRepository
-import net.folivo.trixnity.client.store.repository.TimelineEventRelationRepository
-import net.folivo.trixnity.client.store.repository.TimelineEventRepository
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.*
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -41,7 +17,7 @@ fun createRoomRepositoriesModule(
     /* Provide the actual database as a singleton */
     single {
         Room.databaseBuilder(appContext, TrixnityRoomDatabase::class.java, databaseName)
-            .extraDbConfig()
+            .apply { extraDbConfig() }
             .build()
     }
 
