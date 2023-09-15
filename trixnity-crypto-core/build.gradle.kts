@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
@@ -30,16 +29,15 @@ val opensslNativeTargetList = listOf(
     ),
 )
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default {
-        group("native") {
-            group("openssl") {
-                withLinux()
-                withMingw()
-            }
-        }
-    }
+//    applyDefaultHierarchyTemplate{
+//        group("native") {
+//            group("openssl") {
+//                withLinux()
+//                withMingw()
+//            }
+//        }
+//    }
     jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)

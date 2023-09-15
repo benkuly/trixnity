@@ -1,6 +1,5 @@
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -11,8 +10,6 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
-
-val jvmProcessedResourcesDir = buildDir.resolve("processedResources").resolve("jvm").resolve("main")
 
 val trixnityBinariesDirs = TrixnityBinariesDirs(project)
 
@@ -67,7 +64,7 @@ val installOlmToJvmResources by tasks.registering(Copy::class) {
     group = "olm"
     from(trixnityBinariesDirs.olmBinSharedDir)
     include("*/libolm.so", "*/olm.dll", "*/libolm.dylib")
-    into(jvmProcessedResourcesDir)
+    into(layout.buildDirectory.dir("processedResources/jvm/main"))
     dependsOn(trixnityBinariesTask)
 }
 
@@ -117,9 +114,7 @@ tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).conf
     }
 }
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
     jvmToolchain()
     addJvmTarget()
     addAndroidTarget()
@@ -180,7 +175,7 @@ kotlin {
                 implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
             }
         }
-        val nativeMain by getting {
+        val nativeMain by creating {
             dependsOn(olmLibraryMain)
         }
         val commonTest by getting {
