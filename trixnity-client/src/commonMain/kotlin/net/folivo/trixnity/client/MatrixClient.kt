@@ -148,11 +148,57 @@ suspend fun MatrixClient.Companion.login(
         configuration = configuration
     )
 
+suspend fun MatrixClient.Companion.loginWithPassword(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> =
+    login(
+        baseUrl = baseUrl,
+        identifier = identifier,
+        password = password,
+        token = null,
+        loginType = LoginType.Password,
+        deviceId = deviceId,
+        initialDeviceDisplayName = initialDeviceDisplayName,
+        repositoriesModule = repositoriesModule,
+        mediaStore = mediaStore,
+        configuration = configuration
+    )
+
+suspend fun MatrixClient.Companion.loginWithToken(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    token: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> =
+    login(
+        baseUrl = baseUrl,
+        identifier = identifier,
+        password = null,
+        token = token,
+        loginType = LoginType.Token(),
+        deviceId = deviceId,
+        initialDeviceDisplayName = initialDeviceDisplayName,
+        repositoriesModule = repositoriesModule,
+        mediaStore = mediaStore,
+        configuration = configuration
+    )
+
 suspend fun MatrixClient.Companion.loginWith(
     baseUrl: Url,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    getLoginInfo: suspend (MatrixClientServerApiClientImpl) -> Result<LoginInfo>,
+    getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
