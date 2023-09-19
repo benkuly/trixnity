@@ -62,7 +62,7 @@ interface VerificationService {
      * * [SelfVerificationMethods.AlreadyCrossSigned]
      * * [SelfVerificationMethods.CrossSigningEnabled]
      */
-    interface SelfVerificationMethods {
+    sealed interface SelfVerificationMethods {
         /**
          * We don't have enough information yet to calculated available methods (e.g. waiting for the first sync).
          */
@@ -88,8 +88,7 @@ interface VerificationService {
         /**
          * If empty: no other device & no key backup -> consider new bootstrapping of cross signing
          */
-        @JvmInline
-        value class CrossSigningEnabled(val methods: Set<SelfVerificationMethod>) : SelfVerificationMethods
+        data class CrossSigningEnabled(val methods: Set<SelfVerificationMethod>) : SelfVerificationMethods
     }
 
     fun getSelfVerificationMethods(): Flow<SelfVerificationMethods>
