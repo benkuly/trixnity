@@ -13,13 +13,12 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {}
-        val commonTest by getting {
+        commonMain {}
+        commonTest {
             dependencies {
                 implementation(project(":trixnity-client"))
                 implementation(project(":trixnity-client:trixnity-client-repository-exposed"))
                 implementation(project(":trixnity-client:trixnity-client-repository-realm"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation(kotlin("test"))
                 implementation("io.kotest:kotest-common:${Versions.kotest}")
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")

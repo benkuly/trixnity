@@ -14,19 +14,18 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-core"))
                 api(project(":trixnity-crypto-core"))
                 api(project(":trixnity-olm"))
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
 
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")

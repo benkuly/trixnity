@@ -20,7 +20,7 @@ fun KotlinMultiplatformExtension.addJvmTarget(
     }
 
 fun KotlinMultiplatformExtension.addAndroidTarget() =
-    android {
+    androidTarget {
         publishLibraryVariants("release")
     }
 

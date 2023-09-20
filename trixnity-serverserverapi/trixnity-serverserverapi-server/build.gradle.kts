@@ -13,18 +13,16 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-api-server"))
                 api(project(":trixnity-serverserverapi:trixnity-serverserverapi-model"))
-
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
 
                 implementation("io.ktor:ktor-server-auth:${Versions.ktor}")
                 implementation("io.ktor:ktor-server-double-receive:${Versions.ktor}")
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")

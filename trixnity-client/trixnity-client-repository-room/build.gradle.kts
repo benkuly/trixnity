@@ -11,7 +11,6 @@ android {
     buildToolsVersion = Versions.androidBuildTools
     defaultConfig {
         minSdk = Versions.androidMinSdk
-        targetSdk = Versions.androidTargetSdk
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -37,7 +36,6 @@ kotlin {
             dependencies {
                 implementation(project(":trixnity-client"))
 
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
 
                 implementation("androidx.room:room-ktx:${Versions.androidxRoom}")

@@ -86,7 +86,6 @@ android {
     buildToolsVersion = Versions.androidBuildTools
     defaultConfig {
         minSdk = Versions.androidMinSdk
-        targetSdk = Versions.androidTargetSdk
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets.getByName("main") {
@@ -144,10 +143,9 @@ kotlin {
             languageSettings.optIn("kotlin.RequiresOptIn")
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 implementation(project(":trixnity-crypto-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
                 implementation("io.ktor:ktor-utils:${Versions.ktor}")
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
@@ -155,7 +153,7 @@ kotlin {
             }
         }
         val olmLibraryMain by creating {
-            dependsOn(commonMain)
+            dependsOn(commonMain.get())
         }
         val jvmMain by getting {
             dependsOn(olmLibraryMain)
@@ -178,7 +176,7 @@ kotlin {
         val nativeMain by creating {
             dependsOn(olmLibraryMain)
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")

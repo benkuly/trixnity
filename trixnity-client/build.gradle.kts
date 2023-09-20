@@ -14,17 +14,16 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
                 api(project(":trixnity-crypto"))
 
                 api("io.insert-koin:koin-core:${Versions.koin}")
 
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 api("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
 
-                implementation("io.arrow-kt:arrow-fx-coroutines:${Versions.arrow}")
+                implementation("io.arrow-kt:arrow-resilience:${Versions.arrow}")
 
                 implementation("com.benasher44:uuid:${Versions.uuid}")
 
@@ -34,7 +33,7 @@ kotlin {
                 implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":test-utils"))

@@ -15,7 +15,7 @@ import kotlinx.serialization.json.*
 sealed interface PushAction {
     val name: String?
 
-    object Notify : PushAction {
+    data object Notify : PushAction {
         override val name = "notify"
     }
 

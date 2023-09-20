@@ -15,7 +15,6 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 implementation(project(":trixnity-client"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
 
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
 

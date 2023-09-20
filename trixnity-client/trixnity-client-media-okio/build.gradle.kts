@@ -13,10 +13,9 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 implementation(project(":trixnity-client"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
 
                 api("com.squareup.okio:okio:${Versions.okio}")
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
@@ -27,7 +26,7 @@ kotlin {
                 implementation("com.squareup.okio:okio-nodefilesystem:${Versions.okio}")
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")

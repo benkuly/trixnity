@@ -13,7 +13,7 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-core"))
 
@@ -22,7 +22,7 @@ kotlin {
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
             }

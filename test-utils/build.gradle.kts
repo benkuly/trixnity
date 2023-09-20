@@ -13,7 +13,7 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-core"))
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
@@ -27,7 +27,7 @@ kotlin {
                 implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
             }

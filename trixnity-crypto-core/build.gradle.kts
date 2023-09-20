@@ -30,20 +30,12 @@ val opensslNativeTargetList = listOf(
 )
 
 kotlin {
-//    applyDefaultHierarchyTemplate{
-//        group("native") {
-//            group("openssl") {
-//                withLinux()
-//                withMingw()
-//            }
-//        }
-//    }
     jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addNativeAppleTargets()
 
-    val opensslNativeTargets = opensslNativeTargetList.mapNotNull { target ->
+    opensslNativeTargetList.onEach { target ->
         target.createTarget(this).apply {
             compilations {
                 "main" {
@@ -74,16 +66,26 @@ kotlin {
             languageSettings.optIn("kotlin.RequiresOptIn")
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-utils"))
 
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
+        val opensslMain by creating {
+            dependsOn(commonMain.get())
+        }
 
-        val commonTest by getting {
+        val linuxX64Main by getting {
+            dependsOn(opensslMain)
+        }
+
+        val mingwX64Main by getting {
+            dependsOn(opensslMain)
+        }
+
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
