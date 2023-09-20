@@ -73,16 +73,40 @@ kotlin {
                 implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
             }
         }
+
         val opensslMain by creating {
             dependsOn(commonMain.get())
         }
-
-        val linuxX64Main by getting {
+        val linuxMain by creating {
             dependsOn(opensslMain)
         }
-
-        val mingwX64Main by getting {
+        val linuxX64Main by getting {
+            dependsOn(linuxMain)
+        }
+        val mingwMain by creating {
             dependsOn(opensslMain)
+        }
+        val mingwX64Main by getting {
+            dependsOn(mingwMain)
+        }
+
+        val appleMain by creating {
+            dependsOn(commonMain.get())
+        }
+        val macosX64Main by getting {
+            dependsOn(appleMain)
+        }
+        val macosArm64Main by getting {
+            dependsOn(appleMain)
+        }
+        val iosArm64Main by getting {
+            dependsOn(appleMain)
+        }
+        val iosSimulatorArm64Main by getting {
+            dependsOn(appleMain)
+        }
+        val iosX64Main by getting {
+            dependsOn(appleMain)
         }
 
         commonTest {

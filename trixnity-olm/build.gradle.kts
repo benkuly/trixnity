@@ -119,7 +119,7 @@ kotlin {
     addAndroidTarget()
     addJsTarget(rootDir)
 
-    olmNativeTargetList.forEach { target ->
+    val nativeOlmTargets = olmNativeTargetList.mapNotNull { target ->
         target.createTarget(this).apply {
             compilations {
                 "main" {
@@ -175,6 +175,9 @@ kotlin {
         }
         val nativeMain by creating {
             dependsOn(olmLibraryMain)
+        }
+        nativeOlmTargets.forEach {
+            getByName(it.targetName + "Main").dependsOn(nativeMain)
         }
         commonTest {
             dependencies {
