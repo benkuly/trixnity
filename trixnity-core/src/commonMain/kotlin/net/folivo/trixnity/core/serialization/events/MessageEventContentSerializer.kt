@@ -17,16 +17,6 @@ class MessageEventContentSerializer(
     private val mappings: Set<SerializerMapping<out MessageEventContent>>,
     private val type: String? = null,
 ) : KSerializer<MessageEventContent> {
-    companion object {
-        fun withRedaction(
-            mappings: Set<SerializerMapping<out MessageEventContent>>,
-            type: String,
-            isRedacted: Boolean,
-        ): KSerializer<out MessageEventContent> =
-            if (isRedacted) RedactedMessageEventContentSerializer(type)
-            else MessageEventContentSerializer(mappings, type)
-    }
-
     override val descriptor = buildClassSerialDescriptor("MessageEventContentSerializer")
     override fun deserialize(decoder: Decoder): MessageEventContent {
         require(decoder is JsonDecoder)
@@ -37,7 +27,11 @@ class MessageEventContentSerializer(
 
         @Suppress("UNCHECKED_CAST")
         val serializer = mappings.contentDeserializer(type) as KSerializer<MessageEventContent>
-        return decoder.json.tryDeserializeOrElse(NewContentToRelatesToSerializer(type, serializer), jsonObject) {
+        return decoder.json.tryDeserializeOrElse(
+            NewContentToRelatesToSerializer(type, serializer),
+            jsonObject,
+            lazy { RedactedMessageEventContentSerializer(type) },
+        ) {
             log.warn(it) { "could not deserialize content of type $type" }
             UnknownMessageEventContentSerializer(type)
         }

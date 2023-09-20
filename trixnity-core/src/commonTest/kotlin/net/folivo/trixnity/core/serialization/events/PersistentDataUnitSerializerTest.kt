@@ -409,7 +409,7 @@ class PersistentDataUnitSerializerTest {
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
               "state_key": "@user:server",
-              "type": "m.room.avatar",
+              "type": "m.room.name",
               "unsigned": {
                 "age": 4612
               }
@@ -418,7 +418,7 @@ class PersistentDataUnitSerializerTest {
 
     private val redactedStatePdu = PersistentStateDataUnitV3(
         authEvents = listOf(),
-        content = RedactedStateEventContent("m.room.avatar"),
+        content = RedactedStateEventContent("m.room.name"),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
         originTimestamp = 1404838188000,

@@ -23,7 +23,7 @@ class EphemeralEventContentSerializer(
         return decoder.json.tryDeserializeOrElse(
             mappings.contentDeserializer(type), decoder.decodeJsonElement()
         ) {
-            log.warn(it) { "could not deserialize content of type $type" }
+            log.warn(it) { "could not deserialize ephemeral event content of type $type" }
             UnknownEphemeralEventContentSerializer(type)
         }
     }

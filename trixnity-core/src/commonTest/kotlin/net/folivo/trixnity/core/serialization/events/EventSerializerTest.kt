@@ -670,6 +670,37 @@ class EventSerializerTest {
     }
 
     @Test
+    fun shouldDeserializeStateEventWithEmptyContent() {
+        val input = """
+        {
+            "content":{},
+            "event_id":"$143273582443PhrSn",
+            "sender":"@example:example.org",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "type":"m.room.avatar",
+            "state_key":""
+        }
+    """.trimToFlatJson()
+        val result = json.decodeFromString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+                StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
+            ), input
+        )
+        assertEquals(
+            StateEvent(
+                AvatarEventContent(),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                stateKey = "",
+            ), result
+        )
+    }
+
+    @Test
     fun shouldSerializeRedactedMessageEvent() {
         val content = MessageEvent(
             RedactedMessageEventContent("m.room.message"),

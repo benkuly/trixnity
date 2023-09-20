@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core.serialization.events
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -16,8 +15,6 @@ import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger {}
-
 class ToDeviceEventSerializer(
     private val toDeviceEventContentSerializers: Set<SerializerMapping<out ToDeviceEventContent>>,
 ) : KSerializer<ToDeviceEvent<*>> {
@@ -27,11 +24,8 @@ class ToDeviceEventSerializer(
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val contentSerializer = toDeviceEventContentSerializers.contentDeserializer(type)
-        return decoder.json.tryDeserializeOrElse(ToDeviceEvent.serializer(contentSerializer), jsonObj) {
-            log.warn(it) { "could not deserialize event: $jsonObj" }
-            ToDeviceEvent.serializer(UnknownToDeviceEventContentSerializer(type))
-        }
+        val contentSerializer = ToDeviceEventContentSerializer(type, toDeviceEventContentSerializers)
+        return decoder.json.decodeFromJsonElement(ToDeviceEvent.serializer(contentSerializer), jsonObj)
     }
 
     override fun serialize(encoder: Encoder, value: ToDeviceEvent<*>) {
