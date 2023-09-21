@@ -17,7 +17,6 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
@@ -28,7 +27,6 @@ class RoomUpgradeHandlerTest : ShouldSpec({
     lateinit var config: MatrixClientConfiguration
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
-    val mappings = DefaultEventContentSerializerMappings
 
     lateinit var cut: RoomUpgradeHandler
 
@@ -58,7 +56,7 @@ class RoomUpgradeHandlerTest : ShouldSpec({
         beforeTest {
             joinCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, JoinRoom("!room2:server")) {
+                matrixJsonEndpoint(JoinRoom("!room2:server")) {
                     joinCalled = true
                     JoinRoom.Response(roomId2)
                 }

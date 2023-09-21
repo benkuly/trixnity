@@ -33,7 +33,6 @@ import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.crypto.olm.DecryptionException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -48,7 +47,6 @@ class TimelineEventHandlerTest : ShouldSpec({
     lateinit var scope: CoroutineScope
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
-    val mappings = DefaultEventContentSerializerMappings
 
     lateinit var cut: TimelineEventHandlerImpl
 
@@ -643,7 +641,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 should("add elements to timeline") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
-                            json, mappings,
                             GetEvents(
                                 room,
                                 "start",
@@ -679,7 +676,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 should("add one element to timeline") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
-                            json, mappings,
                             GetEvents(
                                 room,
                                 "start",
@@ -714,7 +710,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 should("detect start of timeline when start and end are the same") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
-                            json, mappings,
                             GetEvents(
                                 room,
                                 "start",
@@ -751,7 +746,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 should("detect start of timeline when end is null") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
-                            json, mappings,
                             GetEvents(
                                 room,
                                 "start",
@@ -789,7 +783,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("add element to timeline") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "start-3",
@@ -829,7 +822,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("add element to timeline when end is null") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "start-3",
@@ -869,7 +861,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("ignore overlapping events") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "start-3",
@@ -909,7 +900,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("prevent loop") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "gap",
@@ -951,7 +941,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("add element to timeline") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "start-3",
@@ -996,7 +985,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 should("add elements to timeline") {
                     apiConfig.endpoints {
                         matrixJsonEndpoint(
-                            json, mappings,
                             GetEvents(
                                 room,
                                 "start",
@@ -1032,7 +1020,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("add elements to timeline") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "start",
@@ -1075,7 +1062,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("add elements to timeline when end is null") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "start",
@@ -1118,7 +1104,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("ignore overlapping events") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "start",
@@ -1164,7 +1149,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     should("add element to timeline") {
                         apiConfig.endpoints {
                             matrixJsonEndpoint(
-                                json, mappings,
                                 GetEvents(
                                     room,
                                     "start",
@@ -1213,7 +1197,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 roomStore.update(room) { Room(roomId = room, lastEventId = event3.id, membership = Membership.JOIN) }
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json, mappings,
                         GetEvents(
                             room,
                             "start",
@@ -1252,7 +1235,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 roomStore.update(room) { Room(roomId = room, membership = Membership.JOIN) }
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json, mappings,
                         GetEvents(
                             room,
                             "before-2",
@@ -1304,7 +1286,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 roomStore.update(room) { Room(roomId = room, membership = Membership.JOIN) }
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json, mappings,
                         GetEvents(
                             room,
                             "before-3",
@@ -1322,7 +1303,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                         )
                     }
                     matrixJsonEndpoint(
-                        json, mappings,
                         GetEvents(
                             room,
                             "after-3",
@@ -1368,7 +1348,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 roomStore.update(room) { Room(roomId = room, membership = Membership.JOIN) }
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json, mappings,
                         GetEvents(
                             room,
                             "after-2",
@@ -1386,7 +1365,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                         )
                     }
                     matrixJsonEndpoint(
-                        json, mappings,
                         GetEvents(
                             room,
                             "before-4",
@@ -1445,7 +1423,6 @@ class TimelineEventHandlerTest : ShouldSpec({
             )
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
                     GetEvents(
                         room,
                         "start",
@@ -1483,7 +1460,6 @@ class TimelineEventHandlerTest : ShouldSpec({
             val resumeFirstEndpointCall = MutableStateFlow(false)
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
                     GetEvents(
                         room,
                         "before-3",
@@ -1502,7 +1478,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                     )
                 }
                 matrixJsonEndpoint(
-                    json, mappings,
                     GetEvents(
                         room,
                         "before-3",

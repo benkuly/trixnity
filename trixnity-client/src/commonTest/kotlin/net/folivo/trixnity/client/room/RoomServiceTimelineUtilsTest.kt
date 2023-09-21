@@ -27,7 +27,6 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.seconds
@@ -50,7 +49,6 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var roomEventDecryptionServiceMock: RoomEventDecryptionServiceMock
     lateinit var timelineEventHandlerMock: TimelineEventHandlerMock
     val json = createMatrixEventJson()
-    val contentMappings = DefaultEventContentSerializerMappings
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
 
     lateinit var cut: RoomServiceImpl
@@ -527,7 +525,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 )
             )
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, contentMappings, Sync(timeout = 0)) {
+                matrixJsonEndpoint(Sync(timeout = 0, since = "token1")) {
                     Sync.Response(
                         nextBatch = "next", room = Sync.Response.Rooms(
                             join = mapOf(
@@ -540,7 +538,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                         )
                     )
                 }
-                matrixJsonEndpoint(json, contentMappings, Sync(timeout = 0)) {
+                matrixJsonEndpoint(Sync(timeout = 0, since = "token2")) {
                     Sync.Response(
                         nextBatch = "next", room = Sync.Response.Rooms(
                             join = mapOf(
@@ -558,11 +556,11 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).take(2).toList()
             }
             api.sync.startOnce(
-                getBatchToken = { null },
+                getBatchToken = { "token1" },
                 setBatchToken = {},
             ).getOrThrow()
             api.sync.startOnce(
-                getBatchToken = { null },
+                getBatchToken = { "token2" },
                 setBatchToken = {},
             ).getOrThrow()
             result.await().map { it.eventId } shouldBe listOf(event1.id, event10.id)

@@ -37,7 +37,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.Megolm
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -58,7 +57,6 @@ class ActiveUserVerificationTest : ShouldSpec({
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var api: MatrixClientServerApiClientImpl
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
     lateinit var roomServiceMock: RoomServiceMock
     lateinit var possiblyEncryptEventMock: PossiblyEncryptEventMock
     lateinit var keyStore: KeyStore
@@ -245,7 +243,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         var sendMessageCalled = false
         val encrypted = MegolmEncryptedEventContent("", Curve25519Key(null, ""), "", "")
         apiConfig.endpoints {
-            matrixJsonEndpoint(json, mappings, SendMessageEvent(roomId, "m.room.encrypted", ""), skipUrlCheck = true) {
+            matrixJsonEndpoint(SendMessageEvent(roomId, "m.room.encrypted", "*")) {
                 it shouldBe encrypted
                 sendMessageCalled = true
                 SendEventResponse(EventId("event"))
@@ -262,10 +260,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         var sendMessageCalled = false
         apiConfig.endpoints {
             matrixJsonEndpoint(
-                json,
-                mappings,
-                SendMessageEvent(roomId, "m.key.verification.cancel", ""),
-                skipUrlCheck = true
+                SendMessageEvent(roomId, "m.key.verification.cancel", "*"),
             ) {
                 it shouldBe VerificationCancelEventContent(User, "user cancelled verification", relatesTo, null)
                 sendMessageCalled = true

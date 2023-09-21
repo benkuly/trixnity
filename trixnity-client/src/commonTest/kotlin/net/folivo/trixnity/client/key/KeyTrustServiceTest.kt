@@ -29,7 +29,6 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.createAesHmacSha2MacFromKey
@@ -58,7 +57,6 @@ private val body: ShouldSpec.() -> Unit = {
     val signServiceMock = SignServiceMock()
 
     val json = createMatrixEventJson()
-    val contentMappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
 
     lateinit var cut: KeyTrustServiceImpl
@@ -121,7 +119,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("be success, when master key matches") {
             var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, contentMappings, AddSignatures()) {
+                matrixJsonEndpoint(AddSignatures()) {
                     addSignaturesRequest = it
                     AddSignatures.Response(mapOf())
                 }
@@ -520,7 +518,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("handle own account keys") {
             var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, contentMappings, AddSignatures()) {
+                matrixJsonEndpoint(AddSignatures()) {
                     addSignaturesRequest = it
                     AddSignatures.Response(mapOf())
                 }
@@ -594,7 +592,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("handle others account keys") {
             var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, contentMappings, AddSignatures()) {
+                matrixJsonEndpoint(AddSignatures()) {
                     addSignaturesRequest = it
                     AddSignatures.Response(mapOf())
                 }
@@ -660,7 +658,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("throw exception, when signature upload fails") {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, contentMappings, AddSignatures()) {
+                matrixJsonEndpoint(AddSignatures()) {
                     AddSignatures.Response(mapOf(alice to mapOf("AAAAAA" to JsonPrimitive("oh"))))
                 }
             }

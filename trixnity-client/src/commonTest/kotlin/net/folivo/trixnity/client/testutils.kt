@@ -11,20 +11,25 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
-import net.folivo.trixnity.testutils.configurePortableMockEngine
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
 
 val simpleRoom = Room(RoomId("room", "server"), lastEventId = EventId("\$event"))
 val simpleUserInfo =
     UserInfo(UserId("me", "server"), "myDevice", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = ""))
 
-fun mockMatrixClientServerApiClient(json: Json): Pair<MatrixClientServerApiClientImpl, PortableMockEngineConfig> {
+fun mockMatrixClientServerApiClient(
+    json: Json = createMatrixEventJson(),
+    contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+): Pair<MatrixClientServerApiClientImpl, PortableMockEngineConfig> {
     val config = PortableMockEngineConfig()
     val api = MatrixClientServerApiClientImpl(
         json = json,
-        httpClientFactory = mockEngineFactory { configurePortableMockEngine(config) }
+        httpClientFactory = mockEngineFactoryWithEndpoints(json, contentMappings, portableConfig = config)
     )
     return api to config
 }

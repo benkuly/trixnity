@@ -36,7 +36,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.milliseconds
@@ -53,7 +52,6 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
     lateinit var currentSyncState: MutableStateFlow<SyncState>
     val json = createMatrixEventJson()
     lateinit var apiConfig: PortableMockEngineConfig
-    val mappings = DefaultEventContentSerializerMappings
 
     lateinit var cut: OutboxMessageEventHandler
 
@@ -117,14 +115,12 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             var sendMessageEventCalled = false
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
                     SendMessageEvent(room, "m.room.message", "transaction1"),
                 ) {
                     it shouldBe RoomMessageEventContent.ImageMessageEventContent("hi.png", url = mxcUrl)
                     SendEventResponse(EventId("event"))
                 }
                 matrixJsonEndpoint(
-                    json, mappings,
                     SendMessageEvent(room, "m.room.message", "transaction2"),
                 ) {
                     it shouldBe RoomMessageEventContent.TextMessageEventContent("hi")
@@ -166,7 +162,6 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             var sendMessageEventCalled = false
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
                     SendMessageEvent(room, "m.room.encrypted", "transaction"),
                 ) {
                     it shouldBe megolmEventContent
@@ -190,18 +185,17 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val message =
                 RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
             roomOutboxMessageStore.update(message.transactionId) { message }
+            var call = 0
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
                     SendMessageEvent(room, "m.room.message", "transaction"),
                 ) {
-                    throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
-                }
-                matrixJsonEndpoint(
-                    json, mappings,
-                    SendMessageEvent(room, "m.room.message", "transaction"),
-                ) {
-                    SendEventResponse(EventId("event"))
+                    call++
+                    when (call) {
+                        1 -> throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
+                        else -> SendEventResponse(EventId("event"))
+                    }
+
                 }
             }
             currentSyncState.value = SyncState.RUNNING
@@ -223,7 +217,6 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             apiConfig.endpoints {
                 repeat(3) {
                     matrixJsonEndpoint(
-                        json, mappings,
                         SendMessageEvent(room, "m.room.message", "transaction"),
                     ) {
                         throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
