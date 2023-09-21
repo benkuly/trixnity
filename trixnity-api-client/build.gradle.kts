@@ -18,6 +18,7 @@ kotlin {
                 api(project(":trixnity-core"))
 
                 api(libs.ktor.client.core)
+                implementation(libs.ktor.serialization.kotlinx.json)
                 implementation(libs.ktor.client.contentNegotiation)
                 implementation(libs.ktor.client.resources)
 

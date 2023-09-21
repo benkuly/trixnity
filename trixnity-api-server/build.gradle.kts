@@ -16,6 +16,7 @@ kotlin {
             dependencies {
                 api(project(":trixnity-core"))
 
+                implementation(libs.ktor.serialization.kotlinx.json)
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.contentNegotiation)
                 implementation(libs.ktor.server.resources)
