@@ -39,7 +39,6 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
@@ -63,7 +62,6 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var keyBackupServiceMock: KeyBackupServiceMock
     lateinit var keyTrustServiceMock: KeyTrustServiceMock
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
     lateinit var olmSign: SignServiceMock
     lateinit var apiConfig: PortableMockEngineConfig
 
@@ -119,9 +117,7 @@ private val body: ShouldSpec.() -> Unit = {
 
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json, mappings,
-                        SetGlobalAccountData(alice, "m.secret_storage.key."),
-                        skipUrlCheck = true
+                        SetGlobalAccountData(alice, "m.secret_storage.key.*"),
                     ) {
                         it.shouldBeInstanceOf<AesHmacSha2Key>()
                         it.iv shouldNot beEmpty()
@@ -130,7 +126,6 @@ private val body: ShouldSpec.() -> Unit = {
                         secretKeyEventContentCalled = true
                     }
                     matrixJsonEndpoint(
-                        json, mappings,
                         SetGlobalAccountData(alice, "m.secret_storage.default_key")
                     ) {
                         it.shouldBeInstanceOf<DefaultSecretKeyEventContent>()
@@ -138,7 +133,6 @@ private val body: ShouldSpec.() -> Unit = {
                         defaultSecretKeyEventContentCalled = true
                     }
                     matrixJsonEndpoint(
-                        json, mappings,
                         SetGlobalAccountData(alice, "m.cross_signing.master")
                     ) {
                         it.shouldBeInstanceOf<MasterKeyEventContent>()
@@ -149,7 +143,6 @@ private val body: ShouldSpec.() -> Unit = {
                         masterKeyEventContentCalled = true
                     }
                     matrixJsonEndpoint(
-                        json, mappings,
                         SetGlobalAccountData(alice, "m.cross_signing.user_signing")
                     ) {
                         it.shouldBeInstanceOf<UserSigningKeyEventContent>()
@@ -160,7 +153,6 @@ private val body: ShouldSpec.() -> Unit = {
                         userSigningKeyEventContentCalled = true
                     }
                     matrixJsonEndpoint(
-                        json, mappings,
                         SetGlobalAccountData(alice, "m.cross_signing.self_signing")
                     ) {
                         it.shouldBeInstanceOf<SelfSigningKeyEventContent>()
@@ -170,7 +162,7 @@ private val body: ShouldSpec.() -> Unit = {
                         encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
                         selfSigningKeyEventContentCalled = true
                     }
-                    matrixJsonEndpoint(json, mappings, SetCrossSigningKeys()) {
+                    matrixJsonEndpoint(SetCrossSigningKeys()) {
                         it.request.masterKey shouldNotBe null
                         it.request.selfSigningKey shouldNotBe null
                         it.request.userSigningKey shouldNotBe null

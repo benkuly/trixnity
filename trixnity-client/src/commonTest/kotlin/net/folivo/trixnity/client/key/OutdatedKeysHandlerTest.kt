@@ -34,7 +34,6 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 import net.folivo.trixnity.crypto.sign.VerifyResult
@@ -57,7 +56,6 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var signServiceMock: SignServiceMock
     lateinit var keyTrustServiceMock: KeyTrustServiceMock
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
     lateinit var apiConfig: PortableMockEngineConfig
 
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
@@ -116,7 +114,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("do nothing when no keys outdated") {
             var getKeysCalled = false
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, GetKeys()) {
+                matrixJsonEndpoint(GetKeys()) {
                     getKeysCalled = true
                     GetKeys.Response(
                         mapOf(), mapOf(),
@@ -132,7 +130,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("set to empty if there are no keys") {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, GetKeys()) {
+                matrixJsonEndpoint(GetKeys()) {
                     GetKeys.Response(
                         mapOf(), mapOf(),
                         mapOf(),
@@ -155,7 +153,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 signServiceMock.returnVerify = VerifyResult.MissingSignature("")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(),
                             mapOf(alice to key),
@@ -183,7 +181,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 signServiceMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(),
                             mapOf(alice to invalidKey),
@@ -205,7 +203,7 @@ private val body: ShouldSpec.() -> Unit = {
                     ), mapOf()
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(),
                             mapOf(alice to key),
@@ -235,7 +233,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 signServiceMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(),
                             mapOf(alice to invalidKey),
@@ -257,7 +255,7 @@ private val body: ShouldSpec.() -> Unit = {
                     ), mapOf()
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(),
                             mapOf(alice to key),
@@ -291,7 +289,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(),
                             mapOf(alice to key),
@@ -321,7 +319,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 signServiceMock.returnVerify = VerifyResult.Invalid("")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(), mapOf(),
                             mapOf(alice to invalidKey)
@@ -342,7 +340,7 @@ private val body: ShouldSpec.() -> Unit = {
                     ), mapOf()
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(), mapOf(),
                             mapOf(alice to key)
@@ -375,7 +373,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(), mapOf(), mapOf(), mapOf(),
                             mapOf(alice to key)
@@ -394,23 +392,25 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("device keys") {
             should("update outdated device keys") {
+                var call = 0
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
-                        GetKeys.Response(
-                            mapOf(),
-                            mapOf(
-                                cedric to mapOf(cedricDevice to cedricKey1),
-                                alice to mapOf(aliceDevice2 to aliceKey2)
-                            ),
-                            mapOf(), mapOf(), mapOf()
-                        )
-                    }
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
-                        GetKeys.Response(
-                            mapOf(),
-                            mapOf(alice to mapOf()),
-                            mapOf(), mapOf(), mapOf()
-                        )
+                    matrixJsonEndpoint(GetKeys()) {
+                        when (call) {
+                            0 -> GetKeys.Response(
+                                mapOf(),
+                                mapOf(
+                                    cedric to mapOf(cedricDevice to cedricKey1),
+                                    alice to mapOf(aliceDevice2 to aliceKey2)
+                                ),
+                                mapOf(), mapOf(), mapOf()
+                            )
+
+                            else -> GetKeys.Response(
+                                mapOf(),
+                                mapOf(alice to mapOf()),
+                                mapOf(), mapOf(), mapOf()
+                            )
+                        }.also { call++ }
                     }
                 }
                 keyStore.updateOutdatedKeys { setOf(cedric, alice) }
@@ -441,7 +441,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("look for encrypted room, where the user participates and notify megolm sessions about new devices") {
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(),
                             mapOf(
@@ -543,7 +543,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, GetKeys()) {
+                    matrixJsonEndpoint(GetKeys()) {
                         GetKeys.Response(
                             mapOf(),
                             mapOf(
@@ -573,7 +573,7 @@ private val body: ShouldSpec.() -> Unit = {
                             keyTrustServiceMock.returnCalculateDeviceKeysTrustLevel =
                                 KeySignatureTrustLevel.NotCrossSigned()
                             apiConfig.endpoints {
-                                matrixJsonEndpoint(json, mappings, GetKeys()) {
+                                matrixJsonEndpoint(GetKeys()) {
                                     GetKeys.Response(
                                         mapOf(),
                                         mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
@@ -614,7 +614,7 @@ private val body: ShouldSpec.() -> Unit = {
                             KeySignatureTrustLevel.Blocked()
                         ) { levelBefore ->
                             apiConfig.endpoints {
-                                matrixJsonEndpoint(json, mappings, GetKeys()) {
+                                matrixJsonEndpoint(GetKeys()) {
                                     GetKeys.Response(
                                         mapOf(),
                                         mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
@@ -652,7 +652,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                     beforeTest {
                         apiConfig.endpoints {
-                            matrixJsonEndpoint(json, mappings, GetKeys()) {
+                            matrixJsonEndpoint(GetKeys()) {
                                 GetKeys.Response(
                                     mapOf(),
                                     mapOf(
@@ -683,7 +683,7 @@ private val body: ShouldSpec.() -> Unit = {
                 should("signature") {
                     signServiceMock.returnVerify = VerifyResult.Invalid("")
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, GetKeys()) {
+                        matrixJsonEndpoint(GetKeys()) {
                             GetKeys.Response(
                                 mapOf(), mapOf(cedric to mapOf(cedricDevice to cedricKey1)), mapOf(), mapOf(), mapOf()
                             )
@@ -702,7 +702,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 ) { deviceKeys ->
                     apiConfig.endpoints {
-                        matrixJsonEndpoint(json, mappings, GetKeys()) {
+                        matrixJsonEndpoint(GetKeys()) {
                             GetKeys.Response(
                                 mapOf(), deviceKeys, mapOf(), mapOf(), mapOf()
                             )

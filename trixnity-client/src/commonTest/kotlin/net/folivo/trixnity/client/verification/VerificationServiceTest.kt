@@ -54,7 +54,6 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.olm.OlmLibraryException
@@ -88,7 +87,6 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var keyTrustServiceMock: KeyTrustServiceMock
     lateinit var keySecretServiceMock: KeySecretServiceMock
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: VerificationServiceImpl
@@ -128,7 +126,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("ignore request, that is timed out") {
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(), skipUrlCheck = true) {
+                    matrixJsonEndpoint(Sync()) {
                         Sync.Response(
                             nextBatch = "nextBatch",
                             toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(request, bobUserId)))
@@ -151,7 +149,7 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction1"
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(), skipUrlCheck = true) {
+                    matrixJsonEndpoint(Sync()) {
                         Sync.Response(
                             nextBatch = "nextBatch",
                             toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(request, bobUserId)))
@@ -180,7 +178,7 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction2"
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(), skipUrlCheck = true) {
+                    matrixJsonEndpoint(Sync()) {
                         Sync.Response(
                             nextBatch = "nextBatch",
                             toDevice = Sync.Response.ToDevice(
@@ -191,7 +189,7 @@ private val body: ShouldSpec.() -> Unit = {
                             )
                         )
                     }
-                    matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
+                    matrixJsonEndpoint(SendToDevice("m.key.verification.cancel", "*")) {
                     }
                 }
                 api.sync.startOnce(
@@ -241,7 +239,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             should("cancel second device verification") {
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
+                    matrixJsonEndpoint(SendToDevice("m.key.verification.cancel", "*")) {
                     }
                 }
 
@@ -295,13 +293,13 @@ private val body: ShouldSpec.() -> Unit = {
                     "transaction"
                 )
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(), skipUrlCheck = true) {
+                    matrixJsonEndpoint(Sync(since = "token1")) {
                         Sync.Response(
                             nextBatch = "nextBatch",
                             toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(request, bobUserId)))
                         )
                     }
-                    matrixJsonEndpoint(json, mappings, Sync(), skipUrlCheck = true) {
+                    matrixJsonEndpoint(Sync(since = "token2")) {
                         Sync.Response(
                             nextBatch = "nextBatch",
                             toDevice = Sync.Response.ToDevice(
@@ -316,13 +314,13 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 api.sync.startOnce(
-                    getBatchToken = { null },
+                    getBatchToken = { "token1" },
                     setBatchToken = {},
                 ).getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 api.sync.startOnce(
-                    getBatchToken = { null },
+                    getBatchToken = { "token2" },
                     setBatchToken = {},
                 ).getOrThrow()
                 activeDeviceVerification.state.first { it is Cancel } shouldBe Cancel(
@@ -335,7 +333,6 @@ private val body: ShouldSpec.() -> Unit = {
                 val nextEventId = EventId("$1nextEventId")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json, mappings,
                         SendMessageEvent(roomId, "m.room.message", "transaction1"),
                     ) {
                         SendEventResponse(EventId("$24event"))
@@ -392,9 +389,7 @@ private val body: ShouldSpec.() -> Unit = {
             var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
-                    SendToDevice("m.key.verification.request", "txn"),
-                    skipUrlCheck = true
+                    SendToDevice("m.key.verification.request", "*"),
                 ) {
                     sendToDeviceEvents = it.messages
                 }
@@ -415,15 +410,13 @@ private val body: ShouldSpec.() -> Unit = {
             should("create room and send request into it") {
                 var sendMessageEventCalled = false
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, CreateRoom()) {
+                    matrixJsonEndpoint(CreateRoom()) {
                         it.invite shouldBe setOf(bobUserId)
                         it.isDirect shouldBe true
                         CreateRoom.Response(roomId)
                     }
                     matrixJsonEndpoint(
-                        json, mappings,
-                        SendMessageEvent(roomId, "m.room.message", "transaction1"),
-                        skipUrlCheck = true
+                        SendMessageEvent(roomId, "m.room.message", "*"),
                     ) {
                         it shouldBe VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas))
                         sendMessageEventCalled = true
@@ -440,9 +433,7 @@ private val body: ShouldSpec.() -> Unit = {
                 var sendMessageEventCalled = false
                 apiConfig.endpoints {
                     matrixJsonEndpoint(
-                        json, mappings,
-                        SendMessageEvent(roomId, "m.room.message", "transaction1"),
-                        skipUrlCheck = true
+                        SendMessageEvent(roomId, "m.room.message", "*"),
                     ) {
                         it shouldBe VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas))
                         sendMessageEventCalled = true
@@ -533,7 +524,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("add ${CrossSignedDeviceVerification::class.simpleName}") {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
+                matrixJsonEndpoint(SendToDevice("m.key.verification.request", "*")) {
                 }
             }
             keyStore.updateCrossSigningKeys(aliceUserId) {
