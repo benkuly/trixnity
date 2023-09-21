@@ -29,6 +29,7 @@ import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.test.assertEquals
@@ -392,8 +393,8 @@ class MatrixClientTest : ShouldSpec({
                 repositoriesModule = repositoriesModule,
                 mediaStore = InMemoryMediaStore(),
                 configuration = {
-                    httpClientFactory = mockEngineFactory {
-                        matrixJsonEndpoint(json, mappings, Logout()) {
+                    httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                        matrixJsonEndpoint( Logout()) {
                             logoutCalled = true
                         }
                     }
@@ -415,8 +416,8 @@ class MatrixClientTest : ShouldSpec({
                 repositoriesModule = repositoriesModule,
                 mediaStore = InMemoryMediaStore(),
                 configuration = {
-                    httpClientFactory = mockEngineFactory {
-                        matrixJsonEndpoint(json, mappings, Logout()) {
+                    httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                        matrixJsonEndpoint(Logout()) {
                             logoutCalled = true
                         }
                     }

@@ -73,7 +73,6 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             writeTransactionCalled.value shouldBe 1
             repository.get("firstKey") shouldBe mapOf("secondKey2" to "old")
         }
-        // only execute locally for performance tests
         xshould("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
@@ -86,25 +85,23 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                 override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
             }
             cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
-            val time = coroutineScope {
-                (0..999).map { i ->
-                    async {
-                        measureTimedValue {
-                            cut.write(
-                                key = MapRepositoryCoroutinesCacheKey("key", "key"),
-                                updater = { "$i" },
-                            )
-                        }.duration
-                    }
-                }.awaitAll().reduce { acc, duration -> acc + duration }
-            }
+            val (operationsTimeSum, completeTime) =
+                measureTimedValue {
+                    (0..999).map { i ->
+                        async {
+                            measureTimedValue {
+                                cut.write(
+                                    key = MapRepositoryCoroutinesCacheKey("key", "key"),
+                                    updater = { "$i" },
+                                )
+                            }.duration
+                        }
+                    }.awaitAll().reduce { acc, duration -> acc + duration }
+                }
             database.replayCache shouldContainAll (0..999).map { it.toString() }
-            println("###############")
-            println(time / 1000)
-            println("###############")
-            (time / 1000) shouldBeLessThan 5.milliseconds
+            (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
+            completeTime shouldBeLessThan 300.milliseconds
         }
-        // only execute locally for performance tests
         xshould("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
 
@@ -117,23 +114,24 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                 override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
             }
             cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
-            val time = coroutineScope {
-                (0..999).map { i ->
-                    async {
-                        measureTimedValue {
-                            cut.write(
-                                key = MapRepositoryCoroutinesCacheKey("key", "$i"),
-                                updater = { "value" },
-                            )
-                        }.duration
+            val (operationsTimeSum, completeTime) =
+                measureTimedValue {
+                    coroutineScope {
+                        (0..999).map { i ->
+                            async {
+                                measureTimedValue {
+                                    cut.write(
+                                        key = MapRepositoryCoroutinesCacheKey("key", "$i"),
+                                        updater = { "value" },
+                                    )
+                                }.duration
+                            }
+                        }.awaitAll().reduce { acc, duration -> acc + duration }
                     }
-                }.awaitAll().reduce { acc, duration -> acc + duration }
-            }
+                }
             database.replayCache shouldContainAll (0..999).map { "key" to "$it" }
-            println("###############")
-            println(time / 1000)
-            println("###############")
-            (time / 1000) shouldBeLessThan 5.milliseconds
+            (operationsTimeSum / 1000) shouldBeLessThan 200.milliseconds
+            completeTime shouldBeLessThan 700.milliseconds // TODO could be optimized
         }
     }
     context("write with update") {

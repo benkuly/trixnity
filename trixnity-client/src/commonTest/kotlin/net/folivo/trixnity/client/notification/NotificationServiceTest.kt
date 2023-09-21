@@ -31,7 +31,6 @@ import net.folivo.trixnity.core.model.push.PushAction.Notify
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.PushRuleSet
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -49,7 +48,6 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var globalAccountDataStore: GlobalAccountDataStore
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
     lateinit var api: MatrixClientServerApiClientImpl
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var room: RoomServiceMock
@@ -244,7 +242,7 @@ private val body: ShouldSpec.() -> Unit = {
                 stateKey = user1.full,
             )
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                matrixJsonEndpoint(Sync(timeout = 0)) {
                     Sync.Response(
                         nextBatch = "next",
                         room = Sync.Response.Rooms(
@@ -272,7 +270,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("do nothing when no events") {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                matrixJsonEndpoint(Sync(timeout = 0)) {
                     Sync.Response("next")
                 }
             }
@@ -300,7 +298,7 @@ private val body: ShouldSpec.() -> Unit = {
                 stateKey = user1.full,
             )
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                matrixJsonEndpoint(Sync(timeout = 0)) {
                     Sync.Response(
                         nextBatch = "next",
                         room = Sync.Response.Rooms(
@@ -333,7 +331,7 @@ private val body: ShouldSpec.() -> Unit = {
                 setUser1DisplayName(roomId)
                 globalAccountDataStore.save(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                    matrixJsonEndpoint(Sync(timeout = 0)) {
                         Sync.Response("next")
                     }
                 }
@@ -381,7 +379,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             beforeTest {
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                    matrixJsonEndpoint(Sync(timeout = 0)) {
                         Sync.Response("next")
                     }
                 }
@@ -405,7 +403,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             beforeTest {
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                    matrixJsonEndpoint(Sync(timeout = 0)) {
                         Sync.Response("next")
                     }
                 }
@@ -585,7 +583,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             beforeTest {
                 apiConfig.endpoints {
-                    matrixJsonEndpoint(json, mappings, Sync(timeout = 0)) {
+                    matrixJsonEndpoint(Sync(timeout = 0)) {
                         Sync.Response("next")
                     }
                 }

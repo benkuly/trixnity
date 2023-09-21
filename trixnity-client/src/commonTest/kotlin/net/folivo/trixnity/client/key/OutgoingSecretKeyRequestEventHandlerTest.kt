@@ -43,7 +43,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
@@ -62,7 +61,6 @@ private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val aliceDevice = "ALICEDEVICE"
@@ -150,7 +148,7 @@ private val body: ShouldSpec.() -> Unit = {
 
         fun returnRoomKeysVersion(publicKey: String? = null) {
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
                     if (publicKey == null) throw MatrixServerException(
                         HttpStatusCode.InternalServerError,
                         ErrorResponse.Unknown("")
@@ -350,9 +348,7 @@ private val body: ShouldSpec.() -> Unit = {
             var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
-                    SendToDevice("m.secret.request", "txn"),
-                    skipUrlCheck = true
+                    SendToDevice("m.secret.request", "*"),
                 ) {
                     sendToDeviceEvents = it.messages
                 }
@@ -386,9 +382,7 @@ private val body: ShouldSpec.() -> Unit = {
             var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
-                    SendToDevice("m.secret.request", "txn"),
-                    skipUrlCheck = true
+                    SendToDevice("m.secret.request", "*"),
                 ) {
                     sendToDeviceEvents = it.messages
                 }
@@ -430,9 +424,7 @@ private val body: ShouldSpec.() -> Unit = {
             sendToDeviceEvents = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
-                    SendToDevice("m.secret.request", "txn"),
-                    skipUrlCheck = true
+                    SendToDevice("m.secret.request", "*"),
                 ) {
                     sendToDeviceEvents = it.messages
                 }
@@ -509,7 +501,7 @@ private val body: ShouldSpec.() -> Unit = {
 
             val sendToDeviceCalled = MutableStateFlow(false)
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, SendToDevice("", ""), skipUrlCheck = true) {
+                matrixJsonEndpoint(SendToDevice("m.secret.request", "*")) {
                     sendToDeviceCalled.value = true
                 }
             }
@@ -539,9 +531,7 @@ private val body: ShouldSpec.() -> Unit = {
             sendToDeviceEvents = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
-                    SendToDevice("m.secret.request", "txn"),
-                    skipUrlCheck = true
+                    SendToDevice("m.secret.request", "*"),
                 ) {
                     sendToDeviceEvents = it.messages
                 }

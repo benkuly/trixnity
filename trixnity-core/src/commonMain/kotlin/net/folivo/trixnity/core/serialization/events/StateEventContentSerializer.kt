@@ -34,7 +34,7 @@ class StateEventContentSerializer(
             ?: throw SerializationException("type must not be null for deserializing StateEventContent")
         require(decoder is JsonDecoder)
         return decoder.json.tryDeserializeOrElse(
-            mappings.contentDeserializer(type), decoder.decodeJsonElement()
+            mappings.contentDeserializer(type), decoder.decodeJsonElement(),
         ) {
             log.warn(it) { "could not deserialize content of type $type" }
             UnknownStateEventContentSerializer(type)

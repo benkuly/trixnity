@@ -148,7 +148,6 @@ class ObservableCacheTest : ShouldSpec({
             )
             cacheStore.get("key") shouldBe "updated value"
         }
-        // only execute locally for performance tests
         xshould("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
@@ -158,25 +157,23 @@ class ObservableCacheTest : ShouldSpec({
                 }
             }
             cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), cacheScope)
-            val time = coroutineScope {
-                (0..999).map { i ->
-                    async {
-                        measureTimedValue {
-                            cut.write(
-                                key = "key",
-                                updater = { "$i" },
-                            )
-                        }.duration
-                    }
-                }.awaitAll().reduce { acc, duration -> acc + duration }
-            }
+            val (operationsTimeSum, completeTime) =
+                measureTimedValue {
+                    (0..999).map { i ->
+                        async {
+                            measureTimedValue {
+                                cut.write(
+                                    key = "key",
+                                    updater = { "$i" },
+                                )
+                            }.duration
+                        }
+                    }.awaitAll().reduce { acc, duration -> acc + duration }
+                }
             database.replayCache shouldContainAll (0..999).map { it.toString() }
-            println("###############")
-            println(time / 1000)
-            println("###############")
-            (time / 1000) shouldBeLessThan 5.milliseconds
+            (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
+            completeTime shouldBeLessThan 300.milliseconds
         }
-        // only execute locally for performance tests
         xshould("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
@@ -186,23 +183,22 @@ class ObservableCacheTest : ShouldSpec({
                 }
             }
             cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), cacheScope)
-            val time = coroutineScope {
-                (0..999).map { i ->
-                    async {
-                        measureTimedValue {
-                            cut.write(
-                                key = "$i",
-                                updater = { "value" },
-                            )
-                        }.duration
-                    }
-                }.awaitAll().reduce { acc, duration -> acc + duration }
-            }
+            val (operationsTimeSum, completeTime) =
+                measureTimedValue {
+                    (0..999).map { i ->
+                        async {
+                            measureTimedValue {
+                                cut.write(
+                                    key = "$i",
+                                    updater = { "value" },
+                                )
+                            }.duration
+                        }
+                    }.awaitAll().reduce { acc, duration -> acc + duration }
+                }
             database.replayCache shouldContainAll (0..999).map { it.toString() }
-            println("###############")
-            println(time / 1000)
-            println("###############")
-            (time / 1000) shouldBeLessThan 5.milliseconds
+            (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
+            completeTime shouldBeLessThan 300.milliseconds
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {

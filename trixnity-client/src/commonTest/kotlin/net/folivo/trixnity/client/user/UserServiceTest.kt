@@ -27,7 +27,6 @@ import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.subscribe
@@ -50,7 +49,6 @@ class UserServiceTest : ShouldSpec({
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
     lateinit var cut: UserServiceImpl
@@ -140,7 +138,7 @@ class UserServiceTest : ShouldSpec({
                 stateKey = bob.full
             )
             apiConfig.endpoints {
-                matrixJsonEndpoint(json, mappings, GetMembers(roomId, notMembership = LEAVE)) {
+                matrixJsonEndpoint(GetMembers(roomId, notMembership = LEAVE)) {
                     GetMembers.Response(
                         setOf(aliceEvent, bobEvent)
                     )
