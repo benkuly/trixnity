@@ -20,17 +20,16 @@ allprojects {
 }
 
 subprojects {
-    apply(plugin = "org.jetbrains.dokka")
-
-    val dokkaJar by tasks.registering(Jar::class) {
-        dependsOn(tasks.dokkaHtml)
-        from(tasks.dokkaHtml.flatMap { it.outputDirectory })
-        archiveClassifier.set("javadoc")
-    }
-
     if (project.name.startsWith("trixnity-")) {
+        apply(plugin = "org.jetbrains.dokka")
         apply(plugin = "maven-publish")
         apply(plugin = "signing")
+
+        val dokkaJar by tasks.registering(Jar::class) {
+            dependsOn(tasks.dokkaHtml)
+            from(tasks.dokkaHtml.flatMap { it.outputDirectory })
+            archiveClassifier.set("javadoc")
+        }
 
         publishing {
             repositories {
@@ -85,11 +84,6 @@ subprojects {
                 System.getenv("OSSRH_PGP_PASSWORD")
             )
             sign(publishing.publications)
-        }
-    }
-    tasks.withType<AbstractPublishToMaven>().configureEach {
-        onlyIf {
-            publication.artifactId.contains("dummy").not()
         }
     }
 }
