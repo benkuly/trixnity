@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core.serialization.events
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -16,8 +15,6 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger {}
-
 class StrippedStateEventSerializer(
     private val stateEventContentSerializers: Set<SerializerMapping<out StateEventContent>>,
     private val stateEventContentSerializer: StateEventContentSerializer,
@@ -28,13 +25,8 @@ class StrippedStateEventSerializer(
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val isFullyRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
-        val contentSerializer =
-            StateEventContentSerializer.withRedaction(stateEventContentSerializers, type, isFullyRedacted)
-        return decoder.json.tryDeserializeOrElse(StrippedStateEvent.serializer(contentSerializer), jsonObj) {
-            log.warn(it) { "could not deserialize event: $jsonObj" }
-            StrippedStateEvent.serializer(UnknownStateEventContentSerializer(type))
-        }
+        val contentSerializer = StateEventContentSerializer(stateEventContentSerializers, type)
+        return decoder.json.decodeFromJsonElement(StrippedStateEvent.serializer(contentSerializer), jsonObj)
     }
 
     override fun serialize(encoder: Encoder, value: StrippedStateEvent<*>) {

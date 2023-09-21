@@ -17,16 +17,6 @@ class StateEventContentSerializer(
     private val mappings: Set<SerializerMapping<out StateEventContent>>,
     private val type: String? = null
 ) : KSerializer<StateEventContent> {
-    companion object {
-        fun withRedaction(
-            mappings: Set<SerializerMapping<out StateEventContent>>,
-            type: String,
-            isRedacted: Boolean,
-        ): KSerializer<out StateEventContent> =
-            if (isRedacted) RedactedStateEventContentSerializer(type)
-            else StateEventContentSerializer(mappings, type)
-    }
-
     override val descriptor = buildClassSerialDescriptor("StateEventContentSerializer")
 
     override fun deserialize(decoder: Decoder): StateEventContent {
@@ -34,7 +24,9 @@ class StateEventContentSerializer(
             ?: throw SerializationException("type must not be null for deserializing StateEventContent")
         require(decoder is JsonDecoder)
         return decoder.json.tryDeserializeOrElse(
-            mappings.contentDeserializer(type), decoder.decodeJsonElement(),
+            mappings.contentDeserializer(type),
+            decoder.decodeJsonElement(),
+            lazy { RedactedStateEventContentSerializer(type) },
         ) {
             log.warn(it) { "could not deserialize content of type $type" }
             UnknownStateEventContentSerializer(type)

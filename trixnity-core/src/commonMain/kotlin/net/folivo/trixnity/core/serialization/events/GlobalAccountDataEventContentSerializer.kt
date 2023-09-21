@@ -23,7 +23,7 @@ class GlobalAccountDataEventContentSerializer(
         return decoder.json.tryDeserializeOrElse(
             mappings.contentDeserializer(type), decoder.decodeJsonElement()
         ) {
-            log.warn(it) { "could not deserialize content of type $type" }
+            log.warn(it) { "could not deserialize global account data event content of type $type" }
             UnknownGlobalAccountDataEventContentSerializer(type)
         }
     }

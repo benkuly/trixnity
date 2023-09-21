@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core.serialization.events
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -18,8 +17,6 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger {}
-
 // TODO hopefully a new spec removes the redaction hack
 class MessageEventSerializer(
     private val messageEventContentSerializers: Set<SerializerMapping<out MessageEventContent>>,
@@ -31,19 +28,14 @@ class MessageEventSerializer(
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val isRedacted = jsonObj["unsigned"]?.jsonObject?.get("redacted_because") != null
         val redacts = jsonObj["redacts"]?.jsonPrimitive?.content
-        val contentSerializer =
-            MessageEventContentSerializer.withRedaction(messageEventContentSerializers, type, isRedacted)
-        return decoder.json.tryDeserializeOrElse(
+        val contentSerializer = MessageEventContentSerializer(messageEventContentSerializers, type)
+        return decoder.json.decodeFromJsonElement(
             MessageEvent.serializer(
                 if (redacts == null) contentSerializer
                 else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
             ), jsonObj
-        ) {
-            log.warn(it) { "could not deserialize event: $jsonObj" }
-            MessageEvent.serializer(UnknownMessageEventContentSerializer(type))
-        }
+        )
     }
 
     override fun serialize(encoder: Encoder, value: MessageEvent<*>) {

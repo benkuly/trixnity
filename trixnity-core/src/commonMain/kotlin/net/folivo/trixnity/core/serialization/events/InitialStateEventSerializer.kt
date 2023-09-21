@@ -28,9 +28,7 @@ class InitialStateEventSerializer(
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val isFullyRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
-        val contentSerializer =
-            StateEventContentSerializer.withRedaction(stateEventContentSerializers, type, isFullyRedacted)
+        val contentSerializer = StateEventContentSerializer(stateEventContentSerializers, type)
         return decoder.json.tryDeserializeOrElse(InitialStateEvent.serializer(contentSerializer), jsonObj) {
             log.warn(it) { "could not deserialize event: $jsonObj" }
             InitialStateEvent.serializer(UnknownStateEventContentSerializer(type))

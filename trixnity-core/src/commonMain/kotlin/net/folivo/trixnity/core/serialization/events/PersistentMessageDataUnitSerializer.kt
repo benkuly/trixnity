@@ -34,36 +34,27 @@ class PersistentMessageDataUnitSerializer(
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val isRedacted = jsonObj["content"]?.jsonObject?.isEmpty() == true
         val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
-        val contentSerializer =
-            if (isRedacted) RedactedMessageEventContentSerializer(type)
-            else MessageEventContentSerializer(messageEventContentSerializers, type)
+        val contentSerializer = MessageEventContentSerializer(messageEventContentSerializers, type)
         val roomId = jsonObj["room_id"]?.jsonPrimitive?.content
         requireNotNull(roomId)
         return when (val roomVersion = getRoomVersion(RoomId(roomId))) {
             "1", "2" -> {
-                decoder.json.tryDeserializeOrElse(
+                decoder.json.decodeFromJsonElement(
                     PersistentMessageDataUnitV1.serializer(
                         if (redacts == null) contentSerializer
                         else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
                     ), jsonObj
-                ) {
-                    log.warn(it) { "could not deserialize event: $jsonObj" }
-                    PersistentMessageDataUnitV1.serializer(UnknownMessageEventContentSerializer(type))
-                }
+                )
             }
 
             "3", "4", "5", "6", "7", "8", "9" -> {
-                decoder.json.tryDeserializeOrElse(
+                decoder.json.decodeFromJsonElement(
                     PersistentMessageDataUnitV3.serializer(
                         if (redacts == null) contentSerializer
                         else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
                     ), jsonObj
-                ) {
-                    log.warn(it) { "could not deserialize event: $jsonObj" }
-                    PersistentMessageDataUnitV3.serializer(UnknownMessageEventContentSerializer(type))
-                }
+                )
             }
 
             else -> throw SerializationException("room version $roomVersion not supported")

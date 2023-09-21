@@ -29,17 +29,14 @@ class RoomAccountDataEventSerializer(
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val mappingType = roomAccountDataEventContentSerializers.firstOrNull { type.startsWith(it.type) }?.type
-        val contentSerializer = roomAccountDataEventContentSerializers.contentDeserializer(type)
+        val contentSerializer = RoomAccountDataEventContentSerializer(type, roomAccountDataEventContentSerializers)
         val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
-        return decoder.json.tryDeserializeOrElse(
+        return decoder.json.decodeFromJsonElement(
             AddFieldsSerializer(
                 Event.RoomAccountDataEvent.serializer(contentSerializer),
                 "key" to key
             ), jsonObj
-        ) {
-            log.warn(it) { "could not deserialize event: $jsonObj" }
-            Event.RoomAccountDataEvent.serializer(UnknownRoomAccountDataEventContentSerializer(type))
-        }
+        )
     }
 
     override fun serialize(encoder: Encoder, value: Event.RoomAccountDataEvent<*>) {

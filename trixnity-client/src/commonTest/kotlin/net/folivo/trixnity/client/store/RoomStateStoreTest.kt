@@ -20,6 +20,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnknownStateEventContent
+import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
@@ -216,6 +217,20 @@ class RoomStateStoreTest : ShouldSpec({
                 result.replayCache shouldBe listOf(event1, null)
                 scope.cancel()
             }
+        }
+        should("return empty event contents") {
+            val event =
+                Event.StateEvent(
+                    AvatarEventContent(),
+                    EventId("\$event"),
+                    UserId("alice", "server"),
+                    roomId,
+                    1234,
+                    stateKey = ""
+                )
+            cut.save(event)
+            roomStateRepository.get(RoomStateRepositoryKey(roomId, "m.room.avatar"), "") shouldBe event
+            cut.getByStateKey<AvatarEventContent>(roomId).first()?.content shouldBe AvatarEventContent()
         }
     }
 })
