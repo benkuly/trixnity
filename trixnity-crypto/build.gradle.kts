@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.kotest)
 }
 
 kotlin {
@@ -21,24 +21,24 @@ kotlin {
                 api(project(":trixnity-olm"))
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
 
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.oshai.logging)
             }
         }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.common)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotest.framework.engine)
+                implementation(libs.kotest.assertions.core)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.kotest.runner.junit5)
+                implementation(libs.logback.classic)
             }
         }
     }

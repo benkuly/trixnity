@@ -11,7 +11,7 @@ fun KotlinMultiplatformExtension.addJvmTarget(
 ): KotlinJvmTarget =
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = Versions.kotlinJvmTarget.toString()
+            kotlinOptions.jvmTarget = kotlinJvmTarget.toString()
         }
         testRuns["test"].executionTask.configure {
             enabled = testEnabled

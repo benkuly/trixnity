@@ -17,13 +17,11 @@ kotlin {
             dependencies {
                 api(project(":trixnity-core"))
 
-                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
+                api(libs.ktor.client.core)
+                implementation(libs.ktor.client.contentNegotiation)
+                implementation(libs.ktor.client.resources)
 
-                api("io.ktor:ktor-client-core:${Versions.ktor}")
-                implementation("io.ktor:ktor-client-content-negotiation:${Versions.ktor}")
-                implementation("io.ktor:ktor-client-resources:${Versions.ktor}")
-
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
             }
         }
         commonTest {
@@ -31,14 +29,14 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(project(":test-utils"))
 
-                implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
+                implementation(libs.ktor.client.mock)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.logback.classic)
             }
         }
     }

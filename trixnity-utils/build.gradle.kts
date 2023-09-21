@@ -14,20 +14,20 @@ kotlin {
         }
         commonMain {
             dependencies {
-                api("io.ktor:ktor-utils:${Versions.ktor}")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
+                api(libs.ktor.utils)
+                api(libs.kotlinx.coroutines.core)
             }
         }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.assertions.core)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.logback.classic)
             }
         }
     }

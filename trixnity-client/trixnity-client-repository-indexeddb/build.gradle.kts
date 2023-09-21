@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.kotest)
 }
 
 kotlin {
@@ -16,16 +16,16 @@ kotlin {
             dependencies {
                 implementation(project(":trixnity-client"))
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
 
-                api("com.juul.indexeddb:core:${Versions.juulLabsIndexeddb}")
+                api(libs.juulLabs.indexeddb)
             }
         }
         val jsTest by getting {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":trixnity-client:client-repository-test"))
-                implementation("com.benasher44:uuid:${Versions.uuid}")
+                implementation(libs.benasher44.uuid)
             }
         }
     }

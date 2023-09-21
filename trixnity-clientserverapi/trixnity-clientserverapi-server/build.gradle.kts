@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
@@ -18,31 +18,30 @@ kotlin {
                 api(project(":trixnity-api-server"))
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
 
-                implementation("io.ktor:ktor-server-auth:${Versions.ktor}")
-                implementation("io.ktor:ktor-server-cors:${Versions.ktor}")
+                implementation(libs.ktor.server.auth)
+                implementation(libs.ktor.server.cors)
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
             }
         }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
+                implementation(libs.kotlinx.coroutines.test)
 
-                implementation("org.kodein.mock:mockmp-runtime:${Versions.mocKmp}")
-                implementation("org.kodein.mock:mockmp-test-helper:${Versions.mocKmp}")
+                implementation(libs.mocKmp.runtime)
+                implementation(libs.mocKmp.testHelper)
 
-                implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
-                implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
-                implementation("io.ktor:ktor-server-resources:${Versions.ktor}")
+                implementation(libs.ktor.server.testHost)
+                implementation(libs.ktor.server.contentNegotiation)
+                implementation(libs.ktor.server.resources)
 
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation(libs.kotest.assertions.core)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.logback.classic)
             }
         }
     }
@@ -52,6 +51,6 @@ dependencies {
     configurations
         .filter { it.name.startsWith("ksp") && it.name.contains("Test") }
         .forEach {
-            add(it.name, "org.kodein.mock:mockmp-processor:${Versions.mocKmp}")
+            add(it.name, libs.mocKmp.processor)
         }
 }

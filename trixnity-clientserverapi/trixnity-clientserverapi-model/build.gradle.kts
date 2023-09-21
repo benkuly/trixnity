@@ -17,9 +17,9 @@ kotlin {
             dependencies {
                 api(project(":trixnity-core"))
 
-                implementation("io.ktor:ktor-resources:${Versions.ktor}")
+                implementation(libs.ktor.resources)
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
             }
         }
         commonTest {

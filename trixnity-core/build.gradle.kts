@@ -16,21 +16,21 @@ kotlin {
         commonMain {
             dependencies {
                 api(project(":trixnity-utils"))
-                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-                api("io.ktor:ktor-http:${Versions.ktor}")
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                api(libs.kotlinx.serialization.json)
+                api(libs.ktor.http)
+                implementation(libs.oshai.logging)
             }
         }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.assertions.core)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.logback.classic)
             }
         }
     }

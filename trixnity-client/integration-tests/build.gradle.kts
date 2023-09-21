@@ -20,19 +20,19 @@ kotlin {
                 implementation(project(":trixnity-client:trixnity-client-repository-exposed"))
                 implementation(project(":trixnity-client:trixnity-client-repository-realm"))
                 implementation(kotlin("test"))
-                implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("com.benasher44:uuid:${Versions.uuid}")
+                implementation(libs.kotest.common)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.benasher44.uuid)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-java:${Versions.ktor}")
-                implementation("io.ktor:ktor-client-logging:${Versions.ktor}")
-                implementation("org.testcontainers:testcontainers:${Versions.testContainers}")
-                implementation("org.testcontainers:junit-jupiter:${Versions.testContainers}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
-                implementation("com.h2database:h2:${Versions.h2}")
+                implementation(libs.ktor.client.java)
+                implementation(libs.ktor.client.logging)
+                implementation(libs.testcontainers)
+                implementation(libs.testcontainers.junitJupiter)
+                implementation(libs.logback.classic)
+                implementation(libs.h2)
             }
         }
     }

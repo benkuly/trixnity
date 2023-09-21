@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.kotest)
 }
 
 kotlin {
@@ -19,18 +19,17 @@ kotlin {
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
                 api(project(":trixnity-crypto"))
 
-                api("io.insert-koin:koin-core:${Versions.koin}")
+                api(libs.koin.core)
 
-                api("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.kotlinxDatetime}")
+                api(libs.kotlinx.datetime)
 
-                implementation("io.arrow-kt:arrow-resilience:${Versions.arrow}")
+                implementation(libs.arrow.resilience)
 
-                implementation("com.benasher44:uuid:${Versions.uuid}")
+                implementation(libs.benasher44.uuid)
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
 
-                implementation("com.soywiz.korlibs.korim:korim:${Versions.korlibs}")
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
+                implementation(libs.korlibs.korim)
             }
         }
         commonTest {
@@ -38,19 +37,19 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(project(":test-utils"))
 
-                implementation("io.ktor:ktor-client-mock:${Versions.ktor}")
+                implementation(libs.ktor.client.mock)
 
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-datatest:${Versions.kotest}")
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.common)
+                implementation(libs.kotest.framework.engine)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotest.framework.datatest)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.kotest.runner.junit5)
+                implementation(libs.logback.classic)
             }
         }
     }

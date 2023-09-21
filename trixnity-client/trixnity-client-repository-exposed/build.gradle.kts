@@ -15,29 +15,29 @@ kotlin {
             dependencies {
                 implementation(project(":trixnity-client"))
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
             }
         }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":trixnity-client:client-repository-test"))
-                implementation("com.benasher44:uuid:${Versions.uuid}")
+                implementation(libs.benasher44.uuid)
             }
         }
         val jvmMain by getting {
             dependencies {
-                api("org.jetbrains.exposed:exposed-core:${Versions.exposed}")
+                api(libs.exposed.core)
 
-                implementation("org.jetbrains.exposed:exposed-dao:${Versions.exposed}")
-                implementation("org.jetbrains.exposed:exposed-jdbc:${Versions.exposed}")
+                implementation(libs.exposed.dao)
+                implementation(libs.exposed.jdbc)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
-                implementation("com.h2database:h2:${Versions.h2}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.kotest.runner.junit5)
+                implementation(libs.h2)
+                implementation(libs.logback.classic)
             }
         }
     }

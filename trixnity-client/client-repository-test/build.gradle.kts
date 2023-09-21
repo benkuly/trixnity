@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.kotest)
 }
 
 kotlin {
@@ -18,11 +18,11 @@ kotlin {
             dependencies {
                 implementation(project(":trixnity-client"))
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
 
-                api("io.kotest:kotest-common:${Versions.kotest}")
-                api("io.kotest:kotest-framework-engine:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                api(libs.kotest.common)
+                api(libs.kotest.framework.engine)
+                implementation(libs.kotest.assertions.core)
             }
         }
     }

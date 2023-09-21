@@ -5,13 +5,13 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
-    id("de.undercouch.download")
     id("com.android.library")
+    alias(libs.plugins.download)
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
-val trixnityBinariesDirs = TrixnityBinariesDirs(project)
+val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
 
 class OlmNativeTarget(
     val target: KonanTarget,
@@ -82,10 +82,10 @@ tasks.withType<ExternalNativeBuildTask> {
 
 android {
     namespace = "net.folivo.trixnity.olm"
-    compileSdk = Versions.androidTargetSdk
-    buildToolsVersion = Versions.androidBuildTools
+    compileSdk = libs.versions.androidTargetSdk.get().toInt()
+    buildToolsVersion = libs.versions.androidBuildTools.get()
     defaultConfig {
-        minSdk = Versions.androidMinSdk
+        minSdk = libs.versions.androidMinSdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets.getByName("main") {
@@ -93,8 +93,8 @@ android {
         jniLibs.srcDirs(trixnityBinariesDirs.olmBinSharedAndroidDir)
     }
     compileOptions {
-        sourceCompatibility = Versions.kotlinJvmTarget
-        targetCompatibility = Versions.kotlinJvmTarget
+        sourceCompatibility = kotlinJvmTarget
+        targetCompatibility = kotlinJvmTarget
     }
     buildTypes {
         release {
@@ -146,10 +146,9 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(project(":trixnity-crypto-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-                implementation("io.ktor:ktor-utils:${Versions.ktor}")
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.ktor.utils)
+                implementation(libs.oshai.logging)
             }
         }
         val olmLibraryMain by creating {
@@ -158,19 +157,19 @@ kotlin {
         val jvmMain by getting {
             dependsOn(olmLibraryMain)
             dependencies {
-                implementation("net.java.dev.jna:jna:${Versions.jna}")
+                implementation(libs.jna)
             }
         }
         val androidMain by getting {
             dependsOn(olmLibraryMain)
             kotlin.srcDirs("src/jvmMain/kotlin")
             dependencies {
-                api("net.java.dev.jna:jna:${Versions.jna}@aar")
+                api(libs.jna.get().toString() + "@aar")
             }
         }
         val jsMain by getting {
             dependencies {
-                implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
+                implementation(npm("@matrix-org/olm", libs.versions.olm.get()))
             }
         }
         val nativeMain by creating {
@@ -182,13 +181,13 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.assertions.core)
             }
         }
         val androidUnitTest by getting { // TODO does not work
             dependencies {
-                implementation("androidx.test:runner:${Versions.androidxTestRunner}")
+                implementation(libs.androidx.test.runner)
             }
         }
     }

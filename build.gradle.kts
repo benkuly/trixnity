@@ -1,35 +1,21 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://www.jetbrains.com/intellij-repository/releases")
-    }
-}
-
 plugins {
     `maven-publish`
     signing
-    id("org.jetbrains.dokka") version Versions.dokka
-    id("io.kotest.multiplatform") version Versions.kotest apply false
-    id("com.google.devtools.ksp") version Versions.ksp apply false
-    id("io.realm.kotlin") version Versions.realm apply false
-    id("de.undercouch.download") version Versions.downloadGradlePlugin apply false
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.ksp).apply(false)
+    alias(libs.plugins.realm).apply(false)
+    alias(libs.plugins.download).apply(false)
+    alias(libs.plugins.kotest).apply(false)
 }
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix(Versions.trixnity)
-
-    repositories {
-        mavenCentral()
-        google()
-        mavenLocal()
-    }
-
-    apply(plugin = "org.jetbrains.dokka")
+    version = withVersionSuffix("3.11.0")
 }
 
 subprojects {
+    apply(plugin = "org.jetbrains.dokka")
+
     val dokkaJar by tasks.registering(Jar::class) {
         dependsOn(tasks.dokkaHtml)
         from(tasks.dokkaHtml.flatMap { it.outputDirectory })
@@ -103,11 +89,11 @@ subprojects {
 }
 
 val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")
-val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${Versions.trixnityBinaries}.zip")
-val trixnityBinariesDirs = TrixnityBinariesDirs(project)
+val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${libs.versions.trixnityBinaries.get()}.zip")
+val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
 
 val downloadTrixnityBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
-    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${Versions.trixnityBinaries}/build.zip")
+    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${libs.versions.trixnityBinaries.get()}/build.zip")
     dest(trixnityBinariesZipDir)
     overwrite(false)
 }

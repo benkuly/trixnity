@@ -1,12 +1,10 @@
 import org.gradle.api.Project
-import org.gradle.api.file.Directory
-import org.gradle.api.provider.Provider
 
 val trixnityBinariesTask = ":trixnityBinaries"
 
-class TrixnityBinariesDirs(project: Project) {
+class TrixnityBinariesDirs(project: Project, version: String) {
     val root = project.rootProject.layout.buildDirectory.get().asFile
-        .resolve("trixnity-binaries").resolve(Versions.trixnityBinaries)
+        .resolve("trixnity-binaries").resolve(version)
 
     val olmDir = root.resolve("olm")
     val olmHeadersDir = olmDir.resolve("headers")

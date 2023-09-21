@@ -18,13 +18,12 @@ kotlin {
                 api(project(":trixnity-core"))
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
 
-                api("io.ktor:ktor-client-mock:${Versions.ktor}")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
-                implementation("io.ktor:ktor-resources:${Versions.ktor}")
+                api(libs.ktor.client.mock)
+                implementation(libs.ktor.resources)
 
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation(libs.kotest.assertions.core)
             }
         }
         commonTest {
@@ -34,7 +33,7 @@ kotlin {
         }
         val jvmTest by getting {
             dependencies {
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.logback.classic)
             }
         }
     }

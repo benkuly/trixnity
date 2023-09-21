@@ -2,20 +2,20 @@ plugins {
     id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "net.folivo.trixnity.client.store.repository.room"
-    compileSdk = Versions.androidTargetSdk
-    buildToolsVersion = Versions.androidBuildTools
+    compileSdk = libs.versions.androidTargetSdk.get().toInt()
+    buildToolsVersion = libs.versions.androidBuildTools.get()
     defaultConfig {
-        minSdk = Versions.androidMinSdk
+        minSdk = libs.versions.androidMinSdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
-        sourceCompatibility = Versions.kotlinJvmTarget
-        targetCompatibility = Versions.kotlinJvmTarget
+        sourceCompatibility = kotlinJvmTarget
+        targetCompatibility = kotlinJvmTarget
     }
     buildTypes {
         release {
@@ -36,24 +36,24 @@ kotlin {
             dependencies {
                 implementation(project(":trixnity-client"))
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
 
-                implementation("androidx.room:room-ktx:${Versions.androidxRoom}")
-                implementation("androidx.room:room-runtime:${Versions.androidxRoom}")
+                implementation(libs.androidx.room.runtime)
+                implementation(libs.androidx.room.ktx)
             }
         }
         val androidUnitTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("androidx.room:room-testing:${Versions.androidxRoom}")
-                implementation("androidx.test:core-ktx:${Versions.androidxTextKtx}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
-                implementation("com.benasher44:uuid:${Versions.uuid}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
-                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
-                implementation("org.robolectric:robolectric:${Versions.robolectric}")
+                implementation(libs.androidx.room.testing)
+                implementation(libs.androidx.test.core)
+                implementation(libs.logback.classic)
+                implementation(libs.benasher44.uuid)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotest.common)
+                implementation(libs.kotest.framework.engine)
+                implementation(libs.kotest.runner.junit5)
+                implementation(libs.robolectric)
             }
         }
     }
@@ -63,6 +63,6 @@ dependencies {
     configurations
         .filter { it.name.startsWith("ksp") }
         .forEach {
-            add(it.name, "androidx.room:room-compiler:${Versions.androidxRoom}")
+            add(it.name, libs.androidx.room.compiler)
         }
 }
