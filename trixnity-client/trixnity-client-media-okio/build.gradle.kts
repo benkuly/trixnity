@@ -21,7 +21,7 @@ kotlin {
                 implementation(libs.oshai.logging)
             }
         }
-        val jsMain by getting {
+        jsMain {
             dependencies {
                 implementation(libs.okio.nodefilesystem)
             }
@@ -34,7 +34,7 @@ kotlin {
                 implementation(libs.okio.fakefilesystem)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(libs.kotest.runner.junit5)
                 implementation(libs.logback.classic)

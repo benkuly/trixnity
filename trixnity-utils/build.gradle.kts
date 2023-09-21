@@ -25,7 +25,7 @@ kotlin {
                 implementation(libs.kotest.assertions.core)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(libs.logback.classic)
             }

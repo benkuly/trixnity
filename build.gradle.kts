@@ -1,3 +1,9 @@
+buildscript {
+    dependencies {
+        classpath(libs.kotlin.gradle.plugin.api)
+    }
+}
+
 plugins {
     `maven-publish`
     signing

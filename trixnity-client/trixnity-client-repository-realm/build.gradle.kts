@@ -29,7 +29,7 @@ kotlin {
                 implementation(libs.benasher44.uuid)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(libs.kotest.runner.junit5)
                 implementation(libs.logback.classic)

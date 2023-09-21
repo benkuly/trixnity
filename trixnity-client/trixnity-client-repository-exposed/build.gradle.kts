@@ -25,7 +25,7 @@ kotlin {
                 implementation(libs.benasher44.uuid)
             }
         }
-        val jvmMain by getting {
+        jvmMain {
             dependencies {
                 api(libs.exposed.core)
 
@@ -33,7 +33,7 @@ kotlin {
                 implementation(libs.exposed.jdbc)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(libs.kotest.runner.junit5)
                 implementation(libs.h2)

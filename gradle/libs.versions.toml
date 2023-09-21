@@ -51,6 +51,7 @@ androidBuildTools = "34.0.0"
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-gradle-plugin-api = {module="org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref="kotlin"}
 kotlin-gradle-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
 

@@ -31,7 +31,7 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(libs.logback.classic)
             }

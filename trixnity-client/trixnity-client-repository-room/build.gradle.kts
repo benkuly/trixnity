@@ -32,7 +32,7 @@ kotlin {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
 
-        val androidMain by getting {
+        androidMain {
             dependencies {
                 implementation(project(":trixnity-client"))
 

@@ -32,7 +32,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.test)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(libs.logback.classic)
             }

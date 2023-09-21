@@ -154,7 +154,7 @@ kotlin {
         val olmLibraryMain by creating {
             dependsOn(commonMain.get())
         }
-        val jvmMain by getting {
+        jvmMain {
             dependsOn(olmLibraryMain)
             dependencies {
                 implementation(libs.jna)
@@ -167,7 +167,7 @@ kotlin {
                 api(libs.jna.get().toString() + "@aar")
             }
         }
-        val jsMain by getting {
+        jsMain {
             dependencies {
                 implementation(npm("@matrix-org/olm", libs.versions.olm.get()))
             }

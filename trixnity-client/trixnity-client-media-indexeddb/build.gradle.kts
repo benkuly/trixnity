@@ -11,7 +11,7 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val jsMain by getting {
+        jsMain {
             dependencies {
                 implementation(project(":trixnity-client"))
 
@@ -19,7 +19,7 @@ kotlin {
                 implementation(libs.oshai.logging)
             }
         }
-        val jsTest by getting {
+        jsTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)

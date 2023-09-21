@@ -25,7 +25,7 @@ kotlin {
                 implementation(libs.benasher44.uuid)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(libs.ktor.client.java)
                 implementation(libs.ktor.client.logging)

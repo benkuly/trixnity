@@ -12,7 +12,7 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val jsMain by getting {
+        jsMain {
             dependencies {
                 implementation(project(":trixnity-client"))
 
@@ -21,7 +21,7 @@ kotlin {
                 api(libs.juulLabs.indexeddb)
             }
         }
-        val jsTest by getting {
+        jsTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":trixnity-client:client-repository-test"))
