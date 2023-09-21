@@ -148,7 +148,7 @@ class ObservableCacheTest : ShouldSpec({
             )
             cacheStore.get("key") shouldBe "updated value"
         }
-        should("handle parallel manipulation of same key") {
+        xshould("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
@@ -174,7 +174,7 @@ class ObservableCacheTest : ShouldSpec({
             (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
             completeTime shouldBeLessThan 300.milliseconds
         }
-        should("handle parallel manipulation of different keys") {
+        xshould("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {

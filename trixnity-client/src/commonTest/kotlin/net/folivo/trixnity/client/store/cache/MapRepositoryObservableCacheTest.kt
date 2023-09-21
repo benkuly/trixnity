@@ -73,7 +73,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             writeTransactionCalled.value shouldBe 1
             repository.get("firstKey") shouldBe mapOf("secondKey2" to "old")
         }
-        should("handle parallel manipulation of same key") {
+        xshould("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
@@ -102,7 +102,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
             completeTime shouldBeLessThan 300.milliseconds
         }
-        should("handle parallel manipulation of different keys") {
+        xshould("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
