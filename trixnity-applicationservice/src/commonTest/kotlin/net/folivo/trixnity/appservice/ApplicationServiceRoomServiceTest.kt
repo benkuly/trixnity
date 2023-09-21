@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
 import kotlin.test.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -28,15 +28,17 @@ class ApplicationServiceRoomServiceTest {
 
     @Test
     fun `should create and save room`() = runTest {
-        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
-            matrixJsonEndpoint(json, mappings, CreateRoom()) { requestBody ->
-                assertSoftly(requestBody) {
-                    it.roomAliasLocalPart shouldBe roomAlias.localpart
-                    it.name shouldBe "someName"
+        val api = MatrixClientServerApiClientImpl(
+            json = json,
+            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                matrixJsonEndpoint(CreateRoom()) { requestBody ->
+                    assertSoftly(requestBody) {
+                        it.roomAliasLocalPart shouldBe roomAlias.localpart
+                        it.name shouldBe "someName"
+                    }
+                    CreateRoom.Response(roomId)
                 }
-                CreateRoom.Response(roomId)
-            }
-        })
+            })
         val cut = TestApplicationServiceRoomService(api)
 
         cut.createRoomParameter = CreateRoomParameter(name = "someName")
@@ -49,14 +51,16 @@ class ApplicationServiceRoomServiceTest {
 
     @Test
     fun `should have error when creation fails`() = runTest {
-        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
-            matrixJsonEndpoint(json, mappings, CreateRoom()) {
-                throw MatrixServerException(
-                    HttpStatusCode.InternalServerError,
-                    ErrorResponse.Unknown("internal server error")
-                )
-            }
-        })
+        val api = MatrixClientServerApiClientImpl(
+            json = json,
+            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                matrixJsonEndpoint(CreateRoom()) {
+                    throw MatrixServerException(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse.Unknown("internal server error")
+                    )
+                }
+            })
         val cut = TestApplicationServiceRoomService(api)
         cut.createRoomParameter = CreateRoomParameter()
 
@@ -69,11 +73,13 @@ class ApplicationServiceRoomServiceTest {
 
     @Test
     fun `should have error when saving by room service fails`() = runTest {
-        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory {
-            matrixJsonEndpoint(json, mappings, CreateRoom()) {
-                CreateRoom.Response(roomId)
-            }
-        })
+        val api = MatrixClientServerApiClientImpl(
+            json = json,
+            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                matrixJsonEndpoint(CreateRoom()) {
+                    CreateRoom.Response(roomId)
+                }
+            })
         val cut = TestApplicationServiceRoomService(api)
 
         cut.createRoomParameter = CreateRoomParameter()

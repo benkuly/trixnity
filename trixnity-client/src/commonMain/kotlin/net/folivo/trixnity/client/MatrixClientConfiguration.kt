@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client
 
 import io.ktor.client.*
+import net.folivo.trixnity.api.client.defaultTrixnityHttpClient
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -38,7 +39,8 @@ class MatrixClientConfiguration {
     /**
      * Set custom [HttpClient].
      */
-    var httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { HttpClient(it) }
+    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient =
+        { defaultTrixnityHttpClient(config = it) }
 
     /**
      * Set custom delays for the sync loop.

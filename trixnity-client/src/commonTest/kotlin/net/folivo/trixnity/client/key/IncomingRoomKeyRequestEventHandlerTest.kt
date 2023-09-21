@@ -67,7 +67,7 @@ private val body: ShouldSpec.() -> Unit = {
         keyStore = getInMemoryKeyStore(scope)
         olmStore = getInMemoryOlmStore(scope)
         olmEncryptionServiceMock = OlmEncryptionServiceMock()
-        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
+        val (api, newApiConfig) = mockMatrixClientServerApiClient(json, mappings)
         apiConfig = newApiConfig
         cut = IncomingRoomKeyRequestEventHandler(
             UserInfo(alice, aliceDevice, Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
@@ -106,9 +106,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
-                    SendToDevice("m.room.encrypted", "txn"),
-                    skipUrlCheck = true
+                    SendToDevice("m.room.encrypted", "*"),
                 ) {
                     sendToDeviceEvents = it.messages
                 }
@@ -220,9 +218,7 @@ private val body: ShouldSpec.() -> Unit = {
             sendToDeviceEvents = null
             apiConfig.endpoints {
                 matrixJsonEndpoint(
-                    json, mappings,
-                    SendToDevice("m.room.encrypted", "txn"),
-                    skipUrlCheck = true
+                    SendToDevice("m.room.encrypted", "*"),
                 ) {
                     sendToDeviceEvents = it.messages
                 }
