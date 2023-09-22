@@ -22,6 +22,9 @@ fun KotlinMultiplatformExtension.addJvmTarget(
 fun KotlinMultiplatformExtension.addAndroidTarget() =
     androidTarget {
         publishLibraryVariants("release")
+        compilations.all {
+            kotlinOptions.jvmTarget = kotlinJvmTarget.toString()
+        }
     }
 
 fun KotlinMultiplatformExtension.addJsTarget(
