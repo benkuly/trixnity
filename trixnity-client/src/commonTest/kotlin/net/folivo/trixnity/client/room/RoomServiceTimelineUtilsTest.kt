@@ -552,7 +552,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     )
                 }
             }
-            val result = async {
+            val result = async(start = CoroutineStart.UNDISPATCHED) {
                 cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).take(2).toList()
             }
             api.sync.startOnce(
