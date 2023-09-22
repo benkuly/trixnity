@@ -37,6 +37,7 @@ interface MatrixClient {
 
     val userId: UserId
     val deviceId: String
+    val baseUrl: Url
     val identityKey: Key.Curve25519Key
     val signingKey: Key.Ed25519Key
 
@@ -276,6 +277,7 @@ suspend fun MatrixClient.Companion.loginWith(
     val matrixClient = MatrixClientImpl(
         userId = userId,
         deviceId = deviceId,
+        baseUrl = baseUrl,
         identityKey = identityKey,
         signingKey = signingKey,
         api = api,
@@ -361,6 +363,7 @@ suspend fun MatrixClient.Companion.fromStore(
             MatrixClientImpl(
                 userId = userId,
                 deviceId = deviceId,
+                baseUrl = baseUrl,
                 identityKey = identityKey,
                 signingKey = signingKey,
                 api = api,
@@ -394,6 +397,7 @@ private suspend fun onLogout(
 class MatrixClientImpl internal constructor(
     override val userId: UserId,
     override val deviceId: String,
+    override val baseUrl: Url,
     override val identityKey: Key.Curve25519Key,
     override val signingKey: Key.Ed25519Key,
     override val api: MatrixClientServerApiClient,
