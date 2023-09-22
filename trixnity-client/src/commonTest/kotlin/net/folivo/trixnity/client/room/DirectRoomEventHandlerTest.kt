@@ -11,8 +11,6 @@ import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStateStore
 import net.folivo.trixnity.client.store.RoomStore
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
@@ -87,7 +85,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         }
                     }
                     cut.setDirectRooms(event)
-                    cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                    cut.setDirectRoomsAfterSync()
                     setDirectCalled shouldBe true
                 }
             }
@@ -115,7 +113,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         }
                     }
                     cut.setDirectRooms(event)
-                    cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                    cut.setDirectRoomsAfterSync()
                     setDirectCalled shouldBe true
                 }
                 should("add multiple direct rooms") {
@@ -144,9 +142,9 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             stateKey = UserId("other", "server").full
                         )
                     )
-                    cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                    cut.setDirectRoomsAfterSync()
                     // ensure, that cache is cleared
-                    cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                    cut.setDirectRoomsAfterSync()
                     setDirectCalled shouldBe true
                 }
             }
@@ -160,7 +158,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         }
                     }
                     cut.setDirectRooms(event)
-                    cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                    cut.setDirectRoomsAfterSync()
                     setDirectCalled shouldBe true
                 }
             }
@@ -182,7 +180,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         }
                     }
                     cut.setDirectRooms(joinEvent)
-                    cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                    cut.setDirectRoomsAfterSync()
                     setDirectCalled shouldBe true
                 }
             }
@@ -204,7 +202,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         }
                     }
                     cut.setDirectRooms(joinEvent)
-                    cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                    cut.setDirectRoomsAfterSync()
                     setDirectCalled shouldBe true
                 }
             }
@@ -285,7 +283,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     }
                 }
                 cut.setDirectRooms(event)
-                cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.setDirectRoomsAfterSync()
                 setDirectCalled shouldBe true
             }
             should("remove direct room on ban") {
@@ -309,7 +307,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     }
                 }
                 cut.setDirectRooms(event)
-                cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.setDirectRoomsAfterSync()
                 setDirectCalled shouldBe true
             }
         }
@@ -343,7 +341,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     }
                 }
                 cut.setDirectRooms(event)
-                cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.setDirectRoomsAfterSync()
                 setDirectCalled shouldBe true
             }
             should("remove direct room on ban") {
@@ -363,7 +361,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     }
                 }
                 cut.setDirectRooms(event)
-                cut.setDirectRoomsAfterSync(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.setDirectRoomsAfterSync()
                 setDirectCalled shouldBe true
             }
         }

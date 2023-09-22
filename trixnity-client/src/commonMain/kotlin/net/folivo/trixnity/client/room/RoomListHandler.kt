@@ -1,7 +1,10 @@
 package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
@@ -10,11 +13,13 @@ import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
+import net.folivo.trixnity.clientserverapi.client.SyncEvents
+import net.folivo.trixnity.core.EventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.roomIdOrNull
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
@@ -27,20 +32,16 @@ class RoomListHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.syncProcessing.subscribe(::updateRoomList, 100)
-        api.sync.afterSyncProcessing.subscribe(::deleteLeftRooms)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.syncProcessing.unsubscribe(::updateRoomList)
-            api.sync.afterSyncProcessing.unsubscribe(::deleteLeftRooms)
-        }
+        api.sync.subscribe(Priority.ROOM_LIST, ::updateRoomList).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::deleteLeftRooms).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun updateRoomList(syncProcessingData: SyncProcessingData) = tm.writeTransaction {
-        val rooms = syncProcessingData.syncResponse.room
+    internal suspend fun updateRoomList(syncEvents: SyncEvents) = tm.writeTransaction {
+        val rooms = syncEvents.syncResponse.room
         if (rooms != null) coroutineScope {
             val createEventContents =
                 async(start = CoroutineStart.LAZY) {
-                    syncProcessingData.allEvents.filterContent<CreateEventContent>().toList()
+                    syncEvents.filterContent<CreateEventContent>().toList()
                         .associateBy { it.roomIdOrNull }
                 }
             rooms.join?.entries?.forEach { roomResponse ->
@@ -103,8 +104,8 @@ class RoomListHandler(
         }
     }
 
-    internal suspend fun deleteLeftRooms(syncProcessingData: SyncProcessingData) {
-        val syncLeaveRooms = syncProcessingData.syncResponse.room?.leave?.keys
+    internal suspend fun deleteLeftRooms(syncEvents: SyncEvents) {
+        val syncLeaveRooms = syncEvents.syncResponse.room?.leave?.keys
         if (syncLeaveRooms != null && config.deleteRoomsOnLeave) {
             val existingLeaveRooms = roomStore.getAll().value
                 .filter { it.value.value?.membership == Membership.LEAVE }

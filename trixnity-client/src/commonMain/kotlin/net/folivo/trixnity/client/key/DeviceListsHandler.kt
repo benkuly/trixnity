@@ -2,13 +2,14 @@ package net.folivo.trixnity.client.key
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.isTracked
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.core.EventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
@@ -19,10 +20,8 @@ class DeviceListsHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.deviceLists.subscribe(::handleDeviceLists)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.deviceLists.unsubscribe (::handleDeviceLists)
-        }
+        api.sync.subscribe(Priority.DEVICE_LISTS) { handleDeviceLists(it.syncResponse.deviceLists) }
+            .unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?) = tm.writeTransaction {

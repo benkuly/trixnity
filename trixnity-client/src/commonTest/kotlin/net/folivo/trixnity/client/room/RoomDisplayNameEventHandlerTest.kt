@@ -37,7 +37,6 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
     lateinit var scope: CoroutineScope
 
     lateinit var cut: RoomDisplayNameEventHandler
-    val ownUserId = UserId("own", "server")
     val user1 = UserId("user1", "server")
     val user2 = UserId("user2", "server")
     val user3 = UserId("user3", "server")

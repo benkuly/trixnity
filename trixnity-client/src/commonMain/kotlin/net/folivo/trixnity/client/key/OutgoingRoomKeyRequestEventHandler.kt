@@ -4,14 +4,13 @@ import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.job
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.core.EventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
@@ -20,6 +19,8 @@ import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -49,12 +50,8 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
     private val ownDeviceId = userInfo.deviceId
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer)
-        api.sync.afterSyncProcessing.subscribe(::cancelOldOutgoingKeyRequests)
-        scope.coroutineContext.job.invokeOnCompletion {
-            olmDecrypter.unsubscribe(::handleOutgoingKeyRequestAnswer)
-            api.sync.afterSyncProcessing.unsubscribe(::cancelOldOutgoingKeyRequests)
-        }
+        olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::cancelOldOutgoingKeyRequests).unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun handleOutgoingKeyRequestAnswer(event: DecryptedOlmEventContainer) {
@@ -106,7 +103,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
     }
 
 
-    internal suspend fun cancelOldOutgoingKeyRequests(syncProcessingData: SyncProcessingData) {
+    internal suspend fun cancelOldOutgoingKeyRequests() {
         keyStore.allRoomKeyRequests.value.forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
                 it.cancelRequest()

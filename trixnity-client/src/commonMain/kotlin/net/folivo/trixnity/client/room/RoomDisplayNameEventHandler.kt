@@ -5,11 +5,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
+import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.core.EventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.Event
@@ -17,8 +17,8 @@ import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.roomIdOrNull
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
+import net.folivo.trixnity.core.subscribeContent
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
@@ -29,14 +29,10 @@ class RoomDisplayNameEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribe(::setRoomDisplayNameFromNameEvent)
-        api.sync.subscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
-        api.sync.afterSyncProcessing.subscribe(::handleSetRoomDisplayNamesQueue)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribe(::setRoomDisplayNameFromNameEvent)
-            api.sync.unsubscribe(::setRoomDisplayNameFromCanonicalAliasEvent)
-            api.sync.afterSyncProcessing.unsubscribe(::handleSetRoomDisplayNamesQueue)
-        }
+        api.sync.subscribeContent(subscriber = ::setRoomDisplayNameFromNameEvent).unsubscribeOnCompletion(scope)
+        api.sync.subscribeContent(subscriber = ::setRoomDisplayNameFromCanonicalAliasEvent)
+            .unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::handleSetRoomDisplayNamesQueue).unsubscribeOnCompletion(scope)
     }
 
     internal data class RoomDisplayNameChange(
@@ -76,8 +72,8 @@ class RoomDisplayNameEventHandler(
         }
     }
 
-    internal suspend fun handleSetRoomDisplayNamesQueue(syncProcessingData: SyncProcessingData) {
-        syncProcessingData.syncResponse.room?.join?.entries?.forEach { (roomId, room) ->
+    internal suspend fun handleSetRoomDisplayNamesQueue(syncEvents: SyncEvents) {
+        syncEvents.syncResponse.room?.join?.entries?.forEach { (roomId, room) ->
             room.summary?.also { roomSummary ->
                 setRoomDisplayNamesQueue.update {
                     it + (roomId to (

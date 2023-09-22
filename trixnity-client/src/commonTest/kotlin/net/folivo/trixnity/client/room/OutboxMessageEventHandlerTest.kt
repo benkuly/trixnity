@@ -23,12 +23,10 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
@@ -92,7 +90,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             roomOutboxMessageStore.update(outbox3.transactionId) { outbox3 }
 
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                cut.removeOldOutboxMessages(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.removeOldOutboxMessages()
                 roomOutboxMessageStore.getAll().value shouldContainExactly listOf(outbox1, outbox3)
             }
         }

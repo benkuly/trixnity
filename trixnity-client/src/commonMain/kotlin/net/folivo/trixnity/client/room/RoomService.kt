@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.room
 import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -13,11 +12,11 @@ import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.core.EventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -29,6 +28,7 @@ import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
+import net.folivo.trixnity.core.subscribeAsFlow
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
@@ -519,31 +519,28 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
-        callbackFlow {
-            val subscriber: suspend (syncProcessingData: SyncProcessingData) -> Unit = { send(it) }
-            api.sync.afterSyncProcessing.subscribe(subscriber)
-            awaitClose { api.sync.afterSyncProcessing.unsubscribe(subscriber) }
-        }.buffer(syncResponseBufferSize).flatMapConcat { (syncResponse, _) ->
-            coroutineScope {
-                val timelineEvents =
-                    syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
-                            syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
-                timelineEvents.map {
-                    async {
-                        getTimelineEvent(it.roomId, it.id) {
-                            this.decryptionTimeout = decryptionTimeout
+        api.sync.subscribeAsFlow(Priority.AFTER_DEFAULT).map { it.syncResponse }
+            .buffer(syncResponseBufferSize).flatMapConcat { syncResponse ->
+                coroutineScope {
+                    val timelineEvents =
+                        syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
+                                syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
+                    timelineEvents.map {
+                        async {
+                            getTimelineEvent(it.roomId, it.id) {
+                                this.decryptionTimeout = decryptionTimeout
+                            }
                         }
-                    }
-                }.asFlow()
-                    .map { timelineEventFlow ->
-                        // we must wait until TimelineEvent is saved into store
-                        val notNullTimelineEvent = timelineEventFlow.await().filterNotNull().first()
-                        withTimeoutOrNull(decryptionTimeout) {
-                            timelineEventFlow.await().filterNotNull().first { it.content != null }
-                        } ?: notNullTimelineEvent
-                    }
+                    }.asFlow()
+                        .map { timelineEventFlow ->
+                            // we must wait until TimelineEvent is saved into store
+                            val notNullTimelineEvent = timelineEventFlow.await().filterNotNull().first()
+                            withTimeoutOrNull(decryptionTimeout) {
+                                timelineEventFlow.await().filterNotNull().first { it.content != null }
+                            } ?: notNullTimelineEvent
+                        }
+                }
             }
-        }
 
     override fun <T> getTimeline(
         roomId: RoomId,

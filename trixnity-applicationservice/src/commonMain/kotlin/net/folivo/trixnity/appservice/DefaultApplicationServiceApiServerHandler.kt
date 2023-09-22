@@ -12,12 +12,12 @@ class DefaultApplicationServiceApiServerHandler(
     private val applicationServiceEventTxnService: ApplicationServiceEventTxnService,
     private val applicationServiceUserService: ApplicationServiceUserService,
     private val applicationServiceRoomService: ApplicationServiceRoomService,
-) : ApplicationServiceApiServerHandler, EventEmitterImpl() {
+) : ApplicationServiceApiServerHandler, EventEmitterImpl<List<Event<*>>>() {
 
     override suspend fun addTransaction(txnId: String, events: List<Event<*>>) {
         when (applicationServiceEventTxnService.eventTnxProcessingState(txnId)) {
             ApplicationServiceEventTxnService.EventTnxProcessingState.NOT_PROCESSED -> {
-                events.forEach { emitEvent(it) }
+                emit(events)
                 applicationServiceEventTxnService.onEventTnxProcessed(txnId)
             }
 

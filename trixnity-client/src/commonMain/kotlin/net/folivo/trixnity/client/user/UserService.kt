@@ -10,7 +10,9 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -100,7 +102,8 @@ class UserServiceImpl(
                             lazyMemberEventHandlers.forEach {
                                 it.handleLazyMemberEvents(chunk)
                             }
-                            chunk.forEach { event -> api.sync.emitEvent(event) }
+                            // TODO is there a nicer way? Maybe some sort of merged EventEmitter (including lazy members)
+                            api.sync.emit(SyncEvents(Sync.Response(""), chunk))
                             yield()
                         }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }

@@ -10,8 +10,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
+import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -66,9 +65,11 @@ class ActiveDeviceVerification(
     }
 
     override suspend fun lifecycle() {
-        try {
-            api.sync.subscribe(::handleVerificationStepEvents)
+        val unsubscribeHandleVerificationStepEvents =
+            api.sync.subscribeContent(subscriber = ::handleVerificationStepEvents)
+        val unsubscribeHandleOlmDecryptedVerificationRequestEvents =
             olmDecrypter.subscribe(::handleOlmDecryptedVerificationRequestEvents)
+        try {
             // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
             while (isVerificationRequestActive(timestamp, state.value)) {
                 delay(500)
@@ -77,8 +78,8 @@ class ActiveDeviceVerification(
                 cancel(Timeout, "verification timed out")
             }
         } finally {
-            api.sync.unsubscribe(::handleVerificationStepEvents)
-            olmDecrypter.unsubscribe(::handleOlmDecryptedVerificationRequestEvents)
+            unsubscribeHandleVerificationStepEvents()
+            unsubscribeHandleOlmDecryptedVerificationRequestEvents()
         }
     }
 

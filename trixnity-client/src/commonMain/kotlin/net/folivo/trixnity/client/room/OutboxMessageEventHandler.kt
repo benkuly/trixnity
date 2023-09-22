@@ -7,7 +7,6 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.scan
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
@@ -20,9 +19,11 @@ import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.core.EventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
@@ -40,13 +41,10 @@ class OutboxMessageEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         scope.launch(start = UNDISPATCHED) { processOutboxMessages(roomOutboxMessageStore.getAll()) }
-        api.sync.afterSyncProcessing.subscribe(::removeOldOutboxMessages)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.afterSyncProcessing.unsubscribe(::removeOldOutboxMessages)
-        }
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::removeOldOutboxMessages).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun removeOldOutboxMessages(syncProcessingData: SyncProcessingData) {
+    internal suspend fun removeOldOutboxMessages() {
         val outboxMessages = roomOutboxMessageStore.getAll().value
         val removeOutboxMessages = outboxMessages.mapNotNull {
             // a sync means, that the message must have been received. we just give the ui a bit time to update.

@@ -4,12 +4,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.EventEmitter.Priority
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -19,8 +17,6 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.events.senderOrNull
 import net.folivo.trixnity.core.model.events.stateKeyOrNull
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
 
 private val log = KotlinLogging.logger {}
 
@@ -33,16 +29,10 @@ class DirectRoomEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribe(::setDirectRooms)
-        api.sync.subscribe(::setDirectEventContent)
-        api.sync.afterSyncProcessing.subscribe(::handleDirectEventContent)
-        api.sync.afterSyncProcessing.subscribe(::setDirectRoomsAfterSync)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribe(::setDirectRooms)
-            api.sync.unsubscribe(::setDirectEventContent)
-            api.sync.afterSyncProcessing.unsubscribe(::handleDirectEventContent)
-            api.sync.afterSyncProcessing.unsubscribe(::setDirectRoomsAfterSync)
-        }
+        api.sync.subscribeContent(subscriber = ::setDirectRooms).unsubscribeOnCompletion(scope)
+        api.sync.subscribeContent(subscriber = ::setDirectEventContent).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::handleDirectEventContent).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::setDirectRoomsAfterSync).unsubscribeOnCompletion(scope)
     }
 
     private val setDirectRoomsEventContent = MutableStateFlow<DirectEventContent?>(null)
@@ -100,7 +90,7 @@ class DirectRoomEventHandler(
         }
     }
 
-    internal suspend fun setDirectRoomsAfterSync(syncProcessingData: SyncProcessingData) {
+    internal suspend fun setDirectRoomsAfterSync() {
         val newDirectRooms = setDirectRoomsEventContent.value
         if (newDirectRooms != null && newDirectRooms != globalAccountDataStore.get<DirectEventContent>()
                 .first()?.content
@@ -116,7 +106,7 @@ class DirectRoomEventHandler(
         directEventContent.value = directEvent.content
     }
 
-    internal suspend fun handleDirectEventContent(syncProcessingData: SyncProcessingData) {
+    internal suspend fun handleDirectEventContent() {
         val content = directEventContent.value
         if (content != null) {
             setRoomIsDirect(content)

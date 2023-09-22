@@ -4,15 +4,15 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.clientserverapi.client.SyncState.*
-import net.folivo.trixnity.clientserverapi.model.sync.OneTimeKeysCount
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.clientserverapi.model.sync.UnusedFallbackKeyTypes
 import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
@@ -22,65 +22,10 @@ import kotlin.time.Duration
 
 private val log = KotlinLogging.logger {}
 
-typealias Subscriber<T> = suspend (T) -> Unit
-
-class Subscribable<T> {
-    data class PrioritySubscribers<T>(
-        val subscribers: Set<Subscriber<T>>,
-        val priority: Int,
-    )
-
-    private val _subscribers: MutableStateFlow<List<PrioritySubscribers<T>>> = MutableStateFlow(listOf())
-
-    fun subscribe(subscriber: Subscriber<T>, priority: Int = 0) {
-        _subscribers.update { oldList ->
-            val existingPriority = oldList.find { it.priority == priority }
-            val newList =
-                if (existingPriority != null)
-                    oldList - existingPriority + existingPriority.copy(subscribers = existingPriority.subscribers + subscriber)
-                else
-                    oldList + PrioritySubscribers(setOf(subscriber), priority)
-            newList.sortedByDescending { it.priority }
-        }
-    }
-
-    fun unsubscribe(subscriber: Subscriber<T>) {
-        _subscribers.update { oldList ->
-            oldList.map {
-                it.copy(subscribers = it.subscribers - subscriber)
-            }.filterNot { it.subscribers.isEmpty() }
-                .sortedByDescending { it.priority }
-        }
-    }
-
-    fun subscribeAsFlow(priority: Int = 0): Flow<T> = callbackFlow {
-        val callback: Subscriber<T> = { send(it) }
-        subscribe(callback, priority)
-        awaitClose { unsubscribe(callback) }
-    }
-
-    internal suspend fun process(value: T) = process(lazy { value })
-
-    internal suspend fun process(value: Lazy<T>) =
-        _subscribers.value.forEach { prioritySubscribers ->
-            coroutineScope {
-                log.trace { "process value in subscribers ${prioritySubscribers.subscribers}" }
-                prioritySubscribers.subscribers.forEach { subscriber ->
-                    launch { subscriber(value.value) }
-                }
-            }
-        }
-}
-
-data class OlmKeysChange(
-    val oneTimeKeysCount: OneTimeKeysCount?,
-    val fallbackKeyTypes: UnusedFallbackKeyTypes?,
-)
-
-data class SyncProcessingData(
+class SyncEvents(
     val syncResponse: Sync.Response,
-    val allEvents: List<Event<*>>,
-)
+    allEvents: List<Event<*>>,
+) : List<Event<*>> by allEvents
 
 enum class SyncState {
     /**
@@ -119,7 +64,7 @@ enum class SyncState {
     STOPPED,
 }
 
-interface SyncApiClient : EventEmitter {
+interface SyncApiClient : EventEmitter<SyncEvents> {
     /**
      * This is the plain sync request. If you want to subscribe to events and ore, use [start] or [startOnce].
      *
@@ -133,11 +78,6 @@ interface SyncApiClient : EventEmitter {
         timeout: Long = 0,
         asUserId: UserId? = null
     ): Result<Sync.Response>
-
-    val deviceLists: Subscribable<Sync.Response.DeviceLists?>
-    val olmKeysChange: Subscribable<OlmKeysChange>
-    val syncProcessing: Subscribable<SyncProcessingData>
-    val afterSyncProcessing: Subscribable<SyncProcessingData>
 
     val currentSyncState: StateFlow<SyncState>
 
@@ -214,7 +154,7 @@ class SyncApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
     private val syncLoopDelay: Duration,
     private val syncLoopErrorDelay: Duration,
-) : EventEmitterImpl(), SyncApiClient {
+) : EventEmitterImpl<SyncEvents>(), SyncApiClient {
 
     override suspend fun sync(
         filter: String?,
@@ -238,11 +178,6 @@ class SyncApiClientImpl(
 
     private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(STOPPED)
     override val currentSyncState = _currentSyncState.asStateFlow()
-
-    override val deviceLists: Subscribable<Sync.Response.DeviceLists?> = Subscribable()
-    override val olmKeysChange: Subscribable<OlmKeysChange> = Subscribable()
-    override val syncProcessing: Subscribable<SyncProcessingData> = Subscribable()
-    override val afterSyncProcessing: Subscribable<SyncProcessingData> = Subscribable()
 
     override suspend fun start(
         filter: String?,
@@ -368,22 +303,9 @@ class SyncApiClientImpl(
     }
 
     private suspend fun processSyncResponse(response: Sync.Response) {
-        // ####### do it at first, to be able to decrypt stuff #######
-        log.trace { "process olmKeysChange" }
-        olmKeysChange.process(OlmKeysChange(response.oneTimeKeysCount, response.unusedFallbackKeyTypes))
-
-        log.trace { "process deviceLists" }
-        deviceLists.process(response.deviceLists)
-
-        log.trace { "process toDevice" }
-        response.toDevice?.events?.forEach { emitEvent(it) }
-
-        log.trace { "process accountData" }
-        response.accountData?.events?.forEach { emitEvent(it) }
-        // ###########################################################
-
-        val syncProcessingData = lazy {
-            SyncProcessingData(
+        log.trace { "process syncResponse" }
+        val syncEvents =
+            SyncEvents(
                 syncResponse = response,
                 allEvents = buildList {
                     response.toDevice?.events?.forEach { add(it) }
@@ -408,45 +330,8 @@ class SyncApiClientImpl(
                     }
                 }
             )
-        }
-        log.trace { "process syncResponse" }
-        syncProcessing.process(syncProcessingData)
-
-        log.trace { "process each event" }
-        coroutineScope {
-            launch { response.presence?.events?.forEach { emitEvent(it) } }
-            launch {
-                response.room?.join?.forEach { (_, joinedRoom) ->
-                    launch {
-                        joinedRoom.state?.events?.forEach { emitEvent(it) }
-                        joinedRoom.timeline?.events?.forEach { emitEvent(it) }
-                        joinedRoom.ephemeral?.events?.forEach { emitEvent(it) }
-                        joinedRoom.accountData?.events?.forEach { emitEvent(it) }
-                    }
-                }
-            }
-            launch {
-                response.room?.invite?.forEach { (_, invitedRoom) ->
-                    invitedRoom.inviteState?.events?.forEach { emitEvent(it) }
-                }
-            }
-            launch {
-                response.room?.knock?.forEach { (_, invitedRoom) ->
-                    invitedRoom.knockState?.events?.forEach { emitEvent(it) }
-                }
-            }
-            launch {
-                response.room?.leave?.forEach { (_, leftRoom) ->
-                    launch {
-                        leftRoom.state?.events?.forEach { emitEvent(it) }
-                        leftRoom.timeline?.events?.forEach { emitEvent(it) }
-                        leftRoom.accountData?.events?.forEach { emitEvent(it) }
-                    }
-                }
-            }
-        }
-        log.trace { "process afterSyncResponse" }
-        afterSyncProcessing.process(syncProcessingData)
+        emit(syncEvents)
+        log.trace { "finished process syncResponse" }
     }
 
     override suspend fun stop(wait: Boolean) {

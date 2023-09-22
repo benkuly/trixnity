@@ -22,6 +22,7 @@ import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.subscribeEachEvent
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactory
 import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
@@ -71,7 +72,7 @@ class DefaultApplicationServiceApiServerHandlerTest {
         )
 
         var allEventsCount = 0
-        cut.subscribeAllEvents { allEventsCount++ }
+        cut.subscribeEachEvent { allEventsCount++ }
 
         applicationServiceEventTxnService.eventTnxProcessingState = Result
             .success(ApplicationServiceEventTxnService.EventTnxProcessingState.PROCESSED)
@@ -100,12 +101,14 @@ class DefaultApplicationServiceApiServerHandlerTest {
 
     @Test
     fun `should hasUser and create it when delegated service want to`() = runTest {
-        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactoryWithEndpoints(json,mappings) {
-            matrixJsonEndpoint(Register()) {
-                ResponseWithUIA.Success(Register.Response(userId))
-            }
-            matrixJsonEndpoint(SetDisplayName(userId, userId)) { }
-        })
+        val api = MatrixClientServerApiClientImpl(
+            json = json,
+            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                matrixJsonEndpoint(Register()) {
+                    ResponseWithUIA.Success(Register.Response(userId))
+                }
+                matrixJsonEndpoint(SetDisplayName(userId, userId)) { }
+            })
         initCut(api)
         applicationServiceUserService.userExistingState =
             Result.success(ApplicationServiceUserService.UserExistingState.CAN_BE_CREATED)
@@ -117,11 +120,13 @@ class DefaultApplicationServiceApiServerHandlerTest {
 
     @Test
     fun `should have error when helper fails`() = runTest {
-        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactoryWithEndpoints(json,mappings) {
-            matrixJsonEndpoint(Register()) {
-                throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown(""))
-            }
-        })
+        val api = MatrixClientServerApiClientImpl(
+            json = json,
+            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                matrixJsonEndpoint(Register()) {
+                    throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown(""))
+                }
+            })
         initCut(api)
         applicationServiceUserService.userExistingState =
             Result.success(ApplicationServiceUserService.UserExistingState.CAN_BE_CREATED)
@@ -157,11 +162,13 @@ class DefaultApplicationServiceApiServerHandlerTest {
 
     @Test
     fun `should hasRoomAlias and create it when delegated service want to`() = runTest {
-        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactoryWithEndpoints(json,mappings) {
-            matrixJsonEndpoint(CreateRoom()) {
-                CreateRoom.Response(RoomId("room", "server"))
-            }
-        })
+        val api = MatrixClientServerApiClientImpl(
+            json = json,
+            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                matrixJsonEndpoint(CreateRoom()) {
+                    CreateRoom.Response(RoomId("room", "server"))
+                }
+            })
         initCut(api)
         applicationServiceRoomService.roomExistingState = ApplicationServiceRoomService.RoomExistingState.CAN_BE_CREATED
         applicationServiceRoomService.createRoomParameter = CreateRoomParameter(name = "someName")
@@ -173,11 +180,13 @@ class DefaultApplicationServiceApiServerHandlerTest {
 
     @Test
     fun `should not hasRoomAlias when creation fails`() = runTest {
-        val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactoryWithEndpoints(json,mappings) {
-            matrixJsonEndpoint(CreateRoom()) {
-                throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown(""))
-            }
-        })
+        val api = MatrixClientServerApiClientImpl(
+            json = json,
+            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+                matrixJsonEndpoint(CreateRoom()) {
+                    throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown(""))
+                }
+            })
         initCut(api)
         applicationServiceRoomService.roomExistingState = ApplicationServiceRoomService.RoomExistingState.CAN_BE_CREATED
         applicationServiceRoomService.createRoomParameter = CreateRoomParameter(name = "someName")

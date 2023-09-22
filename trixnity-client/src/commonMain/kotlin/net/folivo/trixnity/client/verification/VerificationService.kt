@@ -2,9 +2,12 @@ package net.folivo.trixnity.client.verification
 
 import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
@@ -33,12 +36,11 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Veri
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
+import net.folivo.trixnity.core.subscribeContent
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
-import kotlin.jvm.JvmInline
 import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger {}
@@ -120,18 +122,16 @@ class VerificationServiceImpl(
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribe(::handleDeviceVerificationRequestEvents)
+        api.sync.subscribeContent(subscriber = ::handleDeviceVerificationRequestEvents)
+            .unsubscribeOnCompletion(scope)
         olmDecrypter.subscribe(::handleOlmDecryptedDeviceVerificationRequestEvents)
+            .unsubscribeOnCompletion(scope)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {
             activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
         }
         scope.launch(start = UNDISPATCHED) {
             activeDeviceVerification.collect { it?.let { startLifecycleOfActiveVerifications(listOf(it), this) } }
-        }
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribe(::handleDeviceVerificationRequestEvents)
-            olmDecrypter.unsubscribe(::handleOlmDecryptedDeviceVerificationRequestEvents)
         }
     }
 

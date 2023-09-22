@@ -29,7 +29,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.milliseconds
@@ -147,7 +147,7 @@ class UserServiceTest : ShouldSpec({
             val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
             roomStore.update(roomId) { storedRoom }
             val newMemberEvents = mutableListOf<Event<MemberEventContent>>()
-            api.sync.subscribe {
+            api.sync.subscribeContent<MemberEventContent> {
                 newMemberEvents += it
             }
             cut.loadMembers(roomId)

@@ -2,17 +2,15 @@ package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
+import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
@@ -23,17 +21,7 @@ class RoomEncryptionEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.syncProcessing.subscribe(::handleSyncResponse, 99)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.syncProcessing.unsubscribe(::handleSyncResponse)
-        }
-    }
-
-    internal suspend fun handleSyncResponse(syncProcessingData: SyncProcessingData) {
-        setEncryptionAlgorithm(
-            syncProcessingData.allEvents.filter<EncryptionEventContent, Event.StateEvent<EncryptionEventContent>>()
-                .toList()
-        )
+        api.sync.subscribeEventList(subscriber = ::setEncryptionAlgorithm).unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun setEncryptionAlgorithm(events: List<Event.StateEvent<EncryptionEventContent>>) {
