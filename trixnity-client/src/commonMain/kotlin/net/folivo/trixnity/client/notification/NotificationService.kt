@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.notification
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -11,8 +10,8 @@ import net.folivo.trixnity.client.notification.NotificationService.Notification
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
@@ -22,6 +21,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
+import net.folivo.trixnity.core.subscribeAsFlow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -59,11 +59,7 @@ class NotificationServiceImpl(
         syncResponseBufferSize: Int,
     ): Flow<Notification> = channelFlow {
         currentSyncState.first { it == SyncState.STARTED || it == SyncState.RUNNING }
-        val syncResponseFlow = callbackFlow {
-            val subscriber: suspend (syncProcessingData: SyncProcessingData) -> Unit = { send(it) }
-            api.sync.afterSyncProcessing.subscribe(subscriber)
-            awaitClose { api.sync.afterSyncProcessing.unsubscribe(subscriber) }
-        }
+        val syncResponseFlow = api.sync.subscribeAsFlow(EventEmitter.Priority.AFTER_DEFAULT).map { it.syncResponse }
 
         val pushRules =
             globalAccountDataStore.get<PushRulesEventContent>().map { event ->
@@ -77,7 +73,7 @@ class NotificationServiceImpl(
                 } ?: listOf()
             }.stateIn(this)
         val inviteEvents = syncResponseFlow
-            .map { (syncResponse, _) ->
+            .map { syncResponse ->
                 syncResponse.room?.invite?.values?.flatMap { inviteRoom ->
                     inviteRoom.inviteState?.events.orEmpty()
                 }?.asFlow()

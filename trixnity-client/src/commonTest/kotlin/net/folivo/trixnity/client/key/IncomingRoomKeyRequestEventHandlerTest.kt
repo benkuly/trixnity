@@ -14,8 +14,6 @@ import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.OlmDecrypterMock
 import net.folivo.trixnity.client.mocks.OlmEncryptionServiceMock
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
@@ -153,7 +151,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+            cut.processIncomingKeyRequests()
             sendToDeviceEvents shouldBe null
         }
         should("add request on request") {
@@ -174,7 +172,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+            cut.processIncomingKeyRequests()
             sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
         }
         should("remove request on request cancellation") {
@@ -208,7 +206,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+            cut.processIncomingKeyRequests()
             sendToDeviceEvents shouldBe null
         }
     }
@@ -274,8 +272,8 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 )
-                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
-                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.processIncomingKeyRequests()
+                cut.processIncomingKeyRequests()
                 sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
             }
         }
@@ -308,8 +306,8 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 )
-                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
-                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.processIncomingKeyRequests()
+                cut.processIncomingKeyRequests()
                 sendToDeviceEvents shouldBe null
             }
         }

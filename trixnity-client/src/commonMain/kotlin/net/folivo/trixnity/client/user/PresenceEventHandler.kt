@@ -4,25 +4,21 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.job
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.senderOrNull
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
+import net.folivo.trixnity.core.subscribeContent
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 class PresenceEventHandler(
     private val api: MatrixClientServerApiClient,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribe(::setPresence)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribe(::setPresence)
-        }
+        api.sync.subscribeContent(subscriber = ::setPresence).unsubscribeOnCompletion(scope)
     }
 
     private val _userPresence = MutableStateFlow(mapOf<UserId, PresenceEventContent>())

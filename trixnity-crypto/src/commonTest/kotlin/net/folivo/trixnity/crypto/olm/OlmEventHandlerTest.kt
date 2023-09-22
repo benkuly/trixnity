@@ -13,8 +13,8 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.clientserverapi.client.OlmKeysChange
 import net.folivo.trixnity.core.EventEmitterImpl
+import net.folivo.trixnity.core.Unsubscriber
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -52,13 +52,9 @@ class OlmEventHandlerTest : ShouldSpec({
 
         olmStoreMock.olmAccount.value = freeAfter(OlmAccount.create()) { it.pickle("") }
 
-        val eventEmitter: EventEmitterImpl = object : EventEmitterImpl() {}
+        val eventEmitter: EventEmitterImpl<List<Event<*>>> = object : EventEmitterImpl<List<Event<*>>>() {}
         val olmKeysChangeEmitter: OlmKeysChangeEmitter = object : OlmKeysChangeEmitter {
-            override fun subscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit) {
-                throw NotImplementedError()
-            }
-
-            override fun unsubscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit) {
+            override fun subscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit): Unsubscriber {
                 throw NotImplementedError()
             }
         }

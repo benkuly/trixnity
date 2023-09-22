@@ -6,19 +6,19 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
+import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
+import net.folivo.trixnity.core.subscribeContent
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
@@ -43,16 +43,12 @@ class TimelineEventHandlerImpl(
     }
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribe(::redactTimelineEvent)
-        api.sync.syncProcessing.subscribe(::handleSyncResponse, 90)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.unsubscribe(::redactTimelineEvent)
-            api.sync.syncProcessing.unsubscribe(::handleSyncResponse)
-        }
+        api.sync.subscribeContent(subscriber = ::redactTimelineEvent).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(EventEmitter.Priority.BEFORE_DEFAULT, ::handleSyncResponse).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun handleSyncResponse(syncProcessingData: SyncProcessingData) = tm.writeTransaction {
-        val syncResponse = syncProcessingData.syncResponse
+    internal suspend fun handleSyncResponse(syncEvents: SyncEvents) = tm.writeTransaction {
+        val syncResponse = syncEvents.syncResponse
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
             room.value.timeline?.also {
