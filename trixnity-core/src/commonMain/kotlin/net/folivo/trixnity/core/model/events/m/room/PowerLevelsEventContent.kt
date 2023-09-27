@@ -15,38 +15,38 @@ import kotlin.reflect.KClass
 @Serializable
 data class PowerLevelsEventContent(
     @SerialName("ban")
-    val ban: Int = 50,
+    val ban: Long = 50,
     @SerialName("events")
-    val events: Map<@Contextual EventType, Int> = emptyMap(),
+    val events: Map<@Contextual EventType, Long> = emptyMap(),
     @SerialName("events_default")
-    val eventsDefault: Int = 0,
+    val eventsDefault: Long = 0,
     @SerialName("invite")
-    val invite: Int = 0,
+    val invite: Long = 0,
     @SerialName("kick")
-    val kick: Int = 50,
+    val kick: Long = 50,
     @SerialName("redact")
-    val redact: Int = 50,
+    val redact: Long = 50,
     @SerialName("state_default")
-    val stateDefault: Int = 50,
+    val stateDefault: Long = 50,
     @SerialName("users")
-    val users: Map<UserId, Int> = emptyMap(),
+    val users: Map<UserId, Long> = emptyMap(),
     @SerialName("users_default")
-    val usersDefault: Int = 0,
+    val usersDefault: Long = 0,
     @SerialName("notifications")
     val notifications: Notifications? = null
 ) : StateEventContent {
     @Serializable
     data class Notifications(
         @SerialName("room")
-        val room: Int = 50
+        val room: Long = 50
     )
 }
 
-operator fun Map<EventType, Int>.get(kClass: KClass<out EventContent>): Int? =
+operator fun Map<EventType, Long>.get(kClass: KClass<out EventContent>): Long? =
     entries.find { it.key.kClass == kClass }?.value
 
-operator fun Map<EventType, Int>.get(name: String): Int? =
+operator fun Map<EventType, Long>.get(name: String): Long? =
     entries.find { it.key.name == name }?.value
 
-inline fun <reified T : EventContent> Map<EventType, Int>.get(): Int? =
+inline fun <reified T : EventContent> Map<EventType, Long>.get(): Long? =
     get(T::class)
