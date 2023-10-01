@@ -36,7 +36,7 @@ class MatrixClientServerApiClientImpl(
     onLogout: suspend (isSoft: Boolean) -> Unit = {},
     override val eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = { defaultTrixnityHttpClient(config=it) },
+    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient(),
     syncLoopDelay: Duration = 2.seconds,
     syncLoopErrorDelay: Duration = 5.seconds
 ) : MatrixClientServerApiClient {

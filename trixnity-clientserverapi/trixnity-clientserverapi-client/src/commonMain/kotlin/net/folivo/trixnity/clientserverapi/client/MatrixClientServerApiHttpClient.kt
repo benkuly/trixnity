@@ -6,12 +6,10 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.resources.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.client.utils.EmptyContent.contentType
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -33,7 +31,7 @@ class MatrixClientServerApiHttpClient(
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     accessToken: MutableStateFlow<String?>,
     private val onLogout: suspend (isSoft: Boolean) -> Unit = {},
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = { defaultTrixnityHttpClient(config = it) },
+    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient(),
 ) : MatrixApiClient(
     eventContentSerializerMappings,
     json,

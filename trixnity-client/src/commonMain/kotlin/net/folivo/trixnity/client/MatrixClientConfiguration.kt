@@ -39,8 +39,7 @@ class MatrixClientConfiguration {
     /**
      * Set custom [HttpClient].
      */
-    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient =
-        { defaultTrixnityHttpClient(config = it) }
+    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient()
 
     /**
      * Set custom delays for the sync loop.
