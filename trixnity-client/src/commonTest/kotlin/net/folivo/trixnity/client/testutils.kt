@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -24,7 +24,7 @@ val simpleUserInfo =
 
 fun mockMatrixClientServerApiClient(
     json: Json = createMatrixEventJson(),
-    contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+    contentMappings: EventContentSerializerMappings = createDefaultEventContentSerializerMappings(),
 ): Pair<MatrixClientServerApiClientImpl, PortableMockEngineConfig> {
     val config = PortableMockEngineConfig()
     val api = MatrixClientServerApiClientImpl(

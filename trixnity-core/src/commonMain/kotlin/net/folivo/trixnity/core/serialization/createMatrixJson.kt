@@ -54,8 +54,8 @@ fun createMatrixEventAndDataUnitJson(
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
 }
 
-fun createEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
+fun createDefaultEventContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
     DefaultEventContentSerializerMappings + customMappings
 
-fun createDataUnitContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
+fun createDefaultDataUnitContentSerializerMappings(customMappings: EventContentSerializerMappings? = null): EventContentSerializerMappings =
     DefaultDataUnitContentSerializerMappings + customMappings

@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.junit.Before
 import org.junit.Test
@@ -26,7 +26,7 @@ class RoomRoomOutboxMessageRepositoryTest {
         db = buildTestDatabase()
         repo = RoomRoomOutboxMessageRepository(
             db,
-            createEventContentSerializerMappings(),
+            createDefaultEventContentSerializerMappings(),
             createMatrixEventJson(),
         )
     }

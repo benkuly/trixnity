@@ -25,7 +25,7 @@ import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -41,7 +41,7 @@ private val body: ShouldSpec.() -> Unit = {
     timeout = 30_000
 
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
+    val mappings = createDefaultEventContentSerializerMappings()
     val room = RoomId("room", "server")
     val senderKey = Key.Curve25519Key("sender", "sender")
     val senderSigningKey = Key.Ed25519Key("sender", "sender")

@@ -40,7 +40,7 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData.RoomKeyBackupV1AuthData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -68,7 +68,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     lateinit var olmSignMock: SignServiceMock
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
+    val mappings = createDefaultEventContentSerializerMappings()
     lateinit var cut: KeyBackupServiceImpl
 
     lateinit var validKeyBackupPrivateKey: String

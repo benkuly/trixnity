@@ -16,14 +16,14 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.test.Test
 
 class MatrixEndpointRouteTest {
     private val json = createMatrixEventJson()
-    private val contentMappings = createEventContentSerializerMappings()
+    private val contentMappings = createDefaultEventContentSerializerMappings()
 
     @Serializable
     @Resource("/path/{pathParam}")
