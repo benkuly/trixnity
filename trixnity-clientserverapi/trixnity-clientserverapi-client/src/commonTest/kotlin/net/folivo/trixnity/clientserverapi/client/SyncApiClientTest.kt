@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -906,7 +906,7 @@ class SyncApiClientTest {
                                     RoomId("room1", "server")
                                 ),
                                 Event.RoomAccountDataEvent(
-                                    UnknownRoomAccountDataEventContent(
+                                    UnknownEventContent(
                                         JsonObject(mapOf("cool" to JsonPrimitive("trixnity"))),
                                         "org.example.mynamespace"
                                     ),
@@ -1024,7 +1024,7 @@ class SyncApiClientTest {
             assertEquals(1, presenceEventsCount.value)
             assertEquals(1, roomKeyEventsCount.value)
             assertEquals(1, globalAccountDataEventsCount.value)
-            assertEquals(2, roomAccountDataEventsCount.value)
+            assertEquals(1, roomAccountDataEventsCount.value)
 
             sync.cancel()
         }

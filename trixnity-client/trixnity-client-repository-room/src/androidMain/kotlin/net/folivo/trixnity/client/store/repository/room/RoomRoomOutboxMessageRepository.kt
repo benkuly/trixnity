@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.SerializerMapping
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMapping
 
 @Entity(tableName = "RoomOutboxMessage")
 internal data class RoomRoomOutboxMessage(
@@ -84,8 +84,8 @@ internal class RoomRoomOutboxMessageRepository(
         )
 
     private fun getMappingOrThrow(
-        condition: (SerializerMapping<out MessageEventContent>) -> Boolean,
-    ): SerializerMapping<out MessageEventContent> =
+        condition: (EventContentSerializerMapping<out MessageEventContent>) -> Boolean,
+    ): EventContentSerializerMapping<out MessageEventContent> =
         mappings.message
             .find { condition.invoke(it) }
             ?: error("No serialiser found required condition!")

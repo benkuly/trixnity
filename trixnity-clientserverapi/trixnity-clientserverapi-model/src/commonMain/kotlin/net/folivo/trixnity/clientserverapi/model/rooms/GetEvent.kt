@@ -29,7 +29,8 @@ data class GetEvent(
     @OptIn(ExperimentalSerializationApi::class)
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
+        json: Json,
+        value: Event<*>?
     ): KSerializer<Event<*>> {
         return requireNotNull(json.serializersModule.getContextual(Event::class))
     }

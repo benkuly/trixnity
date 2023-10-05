@@ -6,7 +6,6 @@ import io.realm.kotlin.ext.copyFromRealm
 import io.realm.kotlin.ext.query
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
@@ -40,7 +39,7 @@ internal class RealmRoomOutboxMessageRepository(
                 transactionId = key
                 @Suppress("UNCHECKED_CAST")
                 this.value = json.encodeToString(
-                    RoomOutboxMessage.serializer(mapping.serializer as KSerializer<MessageEventContent>),
+                    RoomOutboxMessage.serializer(mapping.serializer),
                     value as RoomOutboxMessage<MessageEventContent>,
                 )
                 contentType = mapping.type

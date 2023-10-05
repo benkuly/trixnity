@@ -8,5 +8,5 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class EphemeralDataUnit<C : EphemeralDataUnitContent>(
-    @SerialName("content") val content: C,
-)
+    @SerialName("content") override val content: C,
+) : Event<C>

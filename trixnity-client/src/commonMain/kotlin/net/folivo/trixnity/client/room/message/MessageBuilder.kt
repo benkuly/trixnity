@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 
-// TODO this has MSC-1767 in mind.
+// TODO this has MSC1767 in mind.
 class MessageBuilder(
     val roomId: RoomId,
     val roomService: RoomService,

@@ -11,9 +11,11 @@ import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 
 private val log = KotlinLogging.logger {}
 
+// TODO this should be removed as there is no real use case for it
 class EventSerializer(
     private val roomEventSerializer: KSerializer<RoomEvent<*>>,
     private val strippedStateEventSerializer: KSerializer<StrippedStateEvent<*>>,
@@ -57,6 +59,7 @@ class EventSerializer(
             is GlobalAccountDataEvent -> encoder.json.encodeToJsonElement(globalAccountDataEventSerializer, value)
             is RoomAccountDataEvent -> encoder.json.encodeToJsonElement(roomAccountDataEventSerializer, value)
             is UnknownEvent -> encoder.json.encodeToJsonElement(UnknownEventSerializer, value)
+            else -> throw UnsupportedEventContentTypeException(value.content::class)
         }
         encoder.encodeJsonElement(jsonElement)
     }

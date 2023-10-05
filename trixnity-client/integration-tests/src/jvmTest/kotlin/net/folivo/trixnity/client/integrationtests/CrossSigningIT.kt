@@ -30,7 +30,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -123,7 +123,7 @@ class CrossSigningIT {
             withClue("user1 invites user3, so user3 gets user1s keys") {
                 val roomId = client1.api.rooms.createRoom(
                     invite = setOf(client3.userId),
-                    initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
+                    initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
                 client1.room.getById(roomId).first { it != null }
                 client3.api.rooms.joinRoom(roomId).getOrThrow()

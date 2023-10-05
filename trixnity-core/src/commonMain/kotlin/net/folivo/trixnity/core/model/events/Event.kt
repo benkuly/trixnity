@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedState
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#types-of-room-events">matrix spec</a>
  */
-sealed interface Event<C : EventContent> {
+interface Event<C : EventContent> {
     val content: C
 
     data class UnknownEvent(
@@ -65,12 +65,6 @@ sealed interface Event<C : EventContent> {
         @SerialName("origin_server_ts") val originTimestamp: Long? = null,
         @SerialName("unsigned") val unsigned: UnsignedStateEventData<C>? = null,
         @SerialName("state_key") val stateKey: String,
-    ) : Event<C>
-
-    @Serializable
-    data class InitialStateEvent<C : StateEventContent>(
-        @SerialName("content") override val content: C,
-        @SerialName("state_key") val stateKey: String
     ) : Event<C>
 
     @Serializable

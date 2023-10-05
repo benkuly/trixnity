@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
@@ -223,7 +223,7 @@ class UserServiceImpl(
             val allowRedactOwnMessages by lazy { userPowerLevel >= sendRedactionEventPowerLevel }
             val allowRedactOtherMessages by lazy { userPowerLevel >= redactPowerLevelNeeded }
             val content = timelineEvent.content?.getOrNull()
-            content is MessageEventContent && content !is RedactedMessageEventContent &&
+            content is MessageEventContent && content !is RedactedEventContent &&
                     (isOwnMessage && allowRedactOwnMessages || allowRedactOtherMessages)
         }
     }

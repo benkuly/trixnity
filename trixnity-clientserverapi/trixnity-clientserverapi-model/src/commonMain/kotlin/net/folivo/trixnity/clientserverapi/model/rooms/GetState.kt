@@ -28,8 +28,9 @@ data class GetState(
     @OptIn(ExperimentalSerializationApi::class)
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
-    ): KSerializer<List<Event.StateEvent<*>>> {
+        json: Json,
+        value: List<Event.StateEvent<*>>?
+    ): KSerializer<List<Event.StateEvent<*>>>? {
         return ListSerializer(requireNotNull(json.serializersModule.getContextual(Event.StateEvent::class)))
     }
 }

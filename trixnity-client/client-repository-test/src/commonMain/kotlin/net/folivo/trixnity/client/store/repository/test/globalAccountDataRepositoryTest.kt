@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import org.koin.core.Koin
 
@@ -37,14 +37,14 @@ fun ShouldSpec.globalAccountDataRepositoryTest(diReceiver: () -> Koin) {
             ), ""
         )
         val accountDataEvent2 = GlobalAccountDataEvent(
-            UnknownGlobalAccountDataEventContent(
+            UnknownEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
                 "org.example.mynamespace"
             ),
             ""
         )
         val accountDataEvent3 = GlobalAccountDataEvent(
-            UnknownGlobalAccountDataEventContent(
+            UnknownEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
                 "org.example.mynamespace.2"
             ),

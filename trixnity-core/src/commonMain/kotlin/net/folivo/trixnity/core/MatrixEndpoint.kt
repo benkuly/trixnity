@@ -13,13 +13,17 @@ interface MatrixEndpoint<REQUEST, RESPONSE> {
     val responseContentType: ContentType?
         get() = ContentType.Application.Json
 
-    fun requestSerializerBuilder(mappings: EventContentSerializerMappings, json: Json): KSerializer<REQUEST>? {
-        return null
-    }
+    fun requestSerializerBuilder(
+        mappings: EventContentSerializerMappings,
+        json: Json,
+        value: REQUEST?
+    ): KSerializer<REQUEST>? = null
 
-    fun responseSerializerBuilder(mappings: EventContentSerializerMappings, json: Json): KSerializer<RESPONSE>? {
-        return null
-    }
+    fun responseSerializerBuilder(
+        mappings: EventContentSerializerMappings,
+        json: Json,
+        value: RESPONSE?
+    ): KSerializer<RESPONSE>? = null
 }
 
 @OptIn(ExperimentalSerializationApi::class)

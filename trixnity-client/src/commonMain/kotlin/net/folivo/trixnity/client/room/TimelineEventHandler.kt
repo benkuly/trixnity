@@ -15,7 +15,10 @@ import net.folivo.trixnity.core.EventEmitter
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.core.unsubscribeOnCompletion
@@ -253,7 +256,7 @@ class TimelineEventHandlerImpl(
                                 api.eventContentSerializerMappings.message
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
                                     ?: "UNKNOWN"
-                            val newContent = RedactedMessageEventContent(eventType)
+                            val newContent = RedactedEventContent(eventType)
                             oldTimelineEvent.copy(
                                 event = Event.MessageEvent(
                                     newContent,
@@ -274,7 +277,7 @@ class TimelineEventHandlerImpl(
                                 api.eventContentSerializerMappings.state
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
                                     ?: "UNKNOWN"
-                            val newContent = RedactedStateEventContent(eventType)
+                            val newContent = RedactedEventContent(eventType)
                             oldTimelineEvent.copy(
                                 event = Event.StateEvent(
                                     // TODO should keep some fields and change state: https://spec.matrix.org/v1.7/rooms/v9/#redactions

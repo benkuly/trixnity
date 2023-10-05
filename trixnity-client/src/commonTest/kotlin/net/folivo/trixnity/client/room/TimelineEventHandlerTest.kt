@@ -20,8 +20,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedStateEventContent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
@@ -140,7 +139,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 cut.redactTimelineEvent(redactionEvent)
                 assertSoftly(roomTimelineStore.get(event2.id, room).first().shouldNotBeNull()) {
                     event shouldBe MessageEvent(
-                        RedactedMessageEventContent("m.room.message"),
+                        RedactedEventContent("m.room.message"),
                         event2.id,
                         UserId("sender", "server"),
                         room,
@@ -149,7 +148,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             redactedBecause = redactionEvent
                         )
                     )
-                    content shouldBe Result.success(RedactedMessageEventContent("m.room.message"))
+                    content shouldBe Result.success(RedactedEventContent("m.room.message"))
                     roomId shouldBe room
                     eventId shouldBe event2.id
                     previousEventId shouldBe event1.id
@@ -201,7 +200,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 cut.redactTimelineEvent(redactionEvent)
                 assertSoftly(roomTimelineStore.get(event2.id, room).first().shouldNotBeNull()) {
                     event shouldBe Event.StateEvent(
-                        RedactedStateEventContent("m.room.name"),
+                        RedactedEventContent("m.room.name"),
                         event2.id,
                         UserId("sender", "server"),
                         room,
@@ -211,7 +210,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         ),
                         ""
                     )
-                    content shouldBe Result.success(RedactedStateEventContent("m.room.name"))
+                    content shouldBe Result.success(RedactedEventContent("m.room.name"))
                     roomId shouldBe room
                     eventId shouldBe event2.id
                     previousEventId shouldBe event1.id
@@ -1414,7 +1413,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 2
             )
             val redactedEvent = MessageEvent(
-                RedactedMessageEventContent("m.room.message"),
+                RedactedEventContent("m.room.message"),
                 EventId("\$event3"),
                 UserId("sender", "server"),
                 RoomId("room", "server"),

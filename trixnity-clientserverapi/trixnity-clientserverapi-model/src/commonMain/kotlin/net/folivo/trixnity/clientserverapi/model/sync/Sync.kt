@@ -33,7 +33,8 @@ data class Sync(
 ) : MatrixEndpoint<Unit, Sync.Response> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
+        json: Json,
+        value: Response?
     ): KSerializer<Response> = SyncResponseSerializer
 
     @Serializable

@@ -20,36 +20,42 @@ import net.folivo.trixnity.core.serialization.canonicalJson
 private val log = KotlinLogging.logger {}
 
 class GlobalAccountDataEventSerializer(
-    private val globalAccountDataEventContentSerializers: Set<SerializerMapping<out GlobalAccountDataEventContent>>,
+    private val globalAccountDataEventContentSerializers: Set<EventContentSerializerMapping<GlobalAccountDataEventContent>>,
 ) : KSerializer<GlobalAccountDataEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("GlobalAccountDataEventSerializer")
+    private val mappings = EventContentToEventSerializerMappings(
+        baseMapping = globalAccountDataEventContentSerializers,
+        eventDeserializer = { GlobalAccountDataEvent.serializer(it.serializer) },
+        unknownEventSerializer = { GlobalAccountDataEvent.serializer(UnknownEventContentSerializer(it)) },
+        typeField = null,
+    )
 
     override fun deserialize(decoder: Decoder): GlobalAccountDataEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
         val mappingType = globalAccountDataEventContentSerializers.find { type.startsWith(it.type) }?.type
-        val contentSerializer = globalAccountDataEventContentSerializers.contentDeserializer(type)
+        val baseSerializer = mappings[mappingType ?: type]
         val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
         return decoder.json.tryDeserializeOrElse(
             AddFieldsSerializer(
-                GlobalAccountDataEvent.serializer(contentSerializer),
+                baseSerializer,
                 "key" to key
             ), jsonObj
         ) {
             log.warn(it) { "could not deserialize event: $jsonObj" }
-            GlobalAccountDataEvent.serializer(UnknownGlobalAccountDataEventContentSerializer(type))
+            @Suppress("UNCHECKED_CAST")
+            GlobalAccountDataEvent.serializer(UnknownEventContentSerializer(type)) as KSerializer<GlobalAccountDataEvent<GlobalAccountDataEventContent>>
         }
     }
 
     override fun serialize(encoder: Encoder, value: GlobalAccountDataEvent<*>) {
         require(encoder is JsonEncoder)
-        val (type, serializer) = globalAccountDataEventContentSerializers.contentSerializer(value.content)
+        val (type, baseSerializer) = mappings[value.content]
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST")
             (HideFieldsSerializer(
                 AddFieldsSerializer(
-                    GlobalAccountDataEvent.serializer(serializer) as KSerializer<GlobalAccountDataEvent<*>>,
+                    @Suppress("UNCHECKED_CAST") (baseSerializer as KSerializer<GlobalAccountDataEvent<*>>),
                     "type" to type + value.key
                 ), "key"
             )), value

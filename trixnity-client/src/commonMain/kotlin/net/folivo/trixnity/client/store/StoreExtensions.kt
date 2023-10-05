@@ -43,7 +43,7 @@ inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.ge
     key: String = "",
 ): Flow<GlobalAccountDataEvent<C>?> = get(C::class, key)
 
-suspend inline fun RoomStateStore.members(
+suspend fun RoomStateStore.members(
     roomId: RoomId,
     memberships: Set<Membership>,
 ): Set<UserId> =
@@ -51,7 +51,7 @@ suspend inline fun RoomStateStore.members(
         ?.filter { memberships.contains(it.value.first()?.content?.membership) }
         ?.map { UserId(it.key) }?.toSet() ?: setOf()
 
-suspend inline fun RoomStateStore.membersCount(
+suspend fun RoomStateStore.membersCount(
     roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
@@ -66,15 +66,15 @@ fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
         .filter { it.value?.encryptionAlgorithm != null && it.value?.membership == JOIN }
         .mapNotNull { it.value?.roomId }
 
-inline fun RoomTimelineStore.getNext(
+fun RoomTimelineStore.getNext(
     event: TimelineEvent,
 ): Flow<TimelineEvent?>? =
     event.nextEventId?.let { get(it, event.roomId) }
 
-suspend inline fun RoomTimelineStore.getPrevious(event: TimelineEvent): TimelineEvent? =
+suspend fun RoomTimelineStore.getPrevious(event: TimelineEvent): TimelineEvent? =
     event.previousEventId?.let { get(it, event.roomId) }?.first()
 
-suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
+suspend fun KeyStore.isTracked(userId: UserId): Boolean =
     getDeviceKeys(userId).first() != null
 
 suspend fun OlmCryptoStore.waitForInboundMegolmSession(

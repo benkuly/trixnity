@@ -51,8 +51,8 @@ class RoomStateStore(
         val stateKey = event.stateKeyOrNull
         if (roomId != null && stateKey != null) {
             val eventType = when (val content = event.content) {
-                is UnknownStateEventContent -> content.eventType
-                is RedactedStateEventContent -> content.eventType
+                is UnknownEventContent -> content.eventType
+                is RedactedEventContent -> content.eventType
                 else -> contentMappings.state.find { it.kClass.isInstance(event.content) }?.type
             }
                 ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")

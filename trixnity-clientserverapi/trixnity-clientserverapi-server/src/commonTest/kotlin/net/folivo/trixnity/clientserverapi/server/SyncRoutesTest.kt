@@ -21,8 +21,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -84,7 +83,7 @@ class SyncRoutesTest : TestsWithMocks() {
                     accountData = GlobalAccountData(
                         listOf(
                             GlobalAccountDataEvent(
-                                content = UnknownGlobalAccountDataEventContent(
+                                content = UnknownEventContent(
                                     JsonObject(mapOf("custom_config_key" to JsonPrimitive("custom_config_value"))),
                                     eventType = "org.example.custom.config"
                                 ),
@@ -176,7 +175,7 @@ class SyncRoutesTest : TestsWithMocks() {
                                 accountData = RoomAccountData(
                                     listOf(
                                         RoomAccountDataEvent(
-                                            content = UnknownRoomAccountDataEventContent(
+                                            content = UnknownEventContent(
                                                 JsonObject(mapOf("custom_config_key" to JsonPrimitive("custom_config_value"))),
                                                 eventType = "org.example.custom.config"
                                             ),

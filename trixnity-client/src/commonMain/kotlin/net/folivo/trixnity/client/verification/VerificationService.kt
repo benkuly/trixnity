@@ -223,6 +223,8 @@ class VerificationServiceImpl(
                     }
                 }
             }
+
+            else -> {}
         }
     }
 

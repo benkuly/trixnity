@@ -1,62 +1,64 @@
 package net.folivo.trixnity.core.serialization.events
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonTransformingSerializer
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import net.folivo.trixnity.core.serialization.HideFieldsSerializer
-import net.folivo.trixnity.core.serialization.canonicalJson
 
-// TODO hopefully a new spec removes the redaction hack
 class MessageEventSerializer(
-    private val messageEventContentSerializers: Set<SerializerMapping<out MessageEventContent>>,
-    private val messageEventContentSerializer: MessageEventContentSerializer,
-) : KSerializer<MessageEvent<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("MessageEventSerializer")
-
-    override fun deserialize(decoder: Decoder): MessageEvent<*> {
-        require(decoder is JsonDecoder)
-        val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val redacts = jsonObj["redacts"]?.jsonPrimitive?.content
-        val contentSerializer = MessageEventContentSerializer(messageEventContentSerializers, type)
-        return decoder.json.decodeFromJsonElement(
-            MessageEvent.serializer(
-                if (redacts == null) contentSerializer
-                else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
-            ), jsonObj
-        )
-    }
-
-    override fun serialize(encoder: Encoder, value: MessageEvent<*>) {
-        require(encoder is JsonEncoder)
-        val content = value.content
-        val type = messageEventContentSerializers.contentType(content)
-
-        val addFields = mutableListOf("type" to type)
-        if (content is RedactionEventContent) addFields.add("redacts" to content.redacts.full)
-        val contentSerializer =
-            if (content is RedactionEventContent)
-                HideFieldsSerializer(messageEventContentSerializer, "redacts")
-            else messageEventContentSerializer
-
-        val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST")
-            AddFieldsSerializer(
-                MessageEvent.serializer(contentSerializer) as KSerializer<MessageEvent<*>>,
-                *addFields.toTypedArray()
-            ), value
-        )
-        encoder.encodeJsonElement(canonicalJson(jsonElement))
-    }
-}
+    messageEventContentSerializers: Set<EventContentSerializerMapping<MessageEventContent>>,
+) : BaseEventSerializer<MessageEventContent, MessageEvent<*>>(
+    "MessageEvent",
+    RoomEventContentToEventSerializerMappings(
+        baseMapping = messageEventContentSerializers,
+        eventDeserializer = {
+            val baseSerializer = MessageEvent.serializer(it.serializer)
+            if (it.kClass == RedactionEventContent::class)
+                object : JsonTransformingSerializer<MessageEvent<MessageEventContent>>(baseSerializer) {
+                    override fun transformDeserialize(element: JsonElement): JsonElement {
+                        val jsonObject = element.jsonObject
+                        val redacts = jsonObject["redacts"]
+                        val content = jsonObject["content"]?.jsonObject
+                        return if (redacts != null && content != null)
+                            JsonObject(buildMap {
+                                putAll(jsonObject)
+                                put("content", JsonObject(
+                                    buildMap {
+                                        putAll(content)
+                                        put("redacts", redacts)
+                                    }
+                                ))
+                            })
+                        else element
+                    }
+                }
+            else baseSerializer
+        },
+        eventSerializer = {
+            val baseSerializer = AddFieldsSerializer(
+                MessageEvent.serializer(it.serializer),
+                "type" to it.type
+            )
+            if (it.kClass == RedactionEventContent::class)
+                object : JsonTransformingSerializer<MessageEvent<MessageEventContent>>(baseSerializer) {
+                    override fun transformSerialize(element: JsonElement): JsonElement {
+                        val jsonObject = element.jsonObject
+                        val redacts = jsonObject["content"]?.jsonObject?.get("redacts")
+                        return if (redacts != null)
+                            JsonObject(buildMap {
+                                putAll(jsonObject)
+                                put("redacts", redacts)
+                            })
+                        else element
+                    }
+                }
+            else baseSerializer
+        },
+        unknownEventSerializer = { MessageEvent.serializer(UnknownEventContentSerializer(it)) },
+        redactedEventSerializer = { MessageEvent.serializer(RedactedEventContentSerializer(it)) },
+    )
+)

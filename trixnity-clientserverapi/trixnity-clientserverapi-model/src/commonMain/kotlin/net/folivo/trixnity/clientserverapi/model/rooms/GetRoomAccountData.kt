@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.RoomAccountDataEventContentSerializer
+import net.folivo.trixnity.core.serialization.events.contentSerializer
 
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#get_matrixclientv3useruseridroomsroomidaccount_datatype">matrix spec</a>
@@ -28,7 +28,8 @@ data class GetRoomAccountData(
 ) : MatrixEndpoint<Unit, RoomAccountDataEventContent> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
+        json: Json,
+        value: RoomAccountDataEventContent?
     ): KSerializer<RoomAccountDataEventContent> =
-        RoomAccountDataEventContentSerializer(type, mappings.roomAccountData)
+        mappings.roomAccountData.contentSerializer(type, value)
 }

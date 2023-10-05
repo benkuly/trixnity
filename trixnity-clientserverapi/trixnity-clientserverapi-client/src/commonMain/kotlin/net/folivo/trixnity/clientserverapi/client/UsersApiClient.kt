@@ -10,8 +10,7 @@ import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.contentSerializer
-import net.folivo.trixnity.core.serialization.events.fromClass
+import net.folivo.trixnity.core.serialization.events.contentType
 
 interface UsersApiClient {
     val contentMappings: EventContentSerializerMappings
@@ -111,7 +110,7 @@ interface UsersApiClient {
     ): Result<String>
 
     /**
-     * @see [GetAccountData]
+     * @see [GetGlobalAccountData]
      */
     suspend fun getAccountData(
         type: String,
@@ -121,7 +120,7 @@ interface UsersApiClient {
     ): Result<GlobalAccountDataEventContent>
 
     /**
-     * @see [SetAccountData]
+     * @see [SetGlobalAccountData]
      */
     suspend fun setAccountData(
         content: GlobalAccountDataEventContent,
@@ -197,7 +196,7 @@ class UsersApiClientImpl(
     ): Result<Unit> {
         val firstEventForType = events.entries.firstOrNull()?.value?.entries?.firstOrNull()?.value
             ?: throw IllegalArgumentException("you need to send at least on event")
-        val type = contentMappings.toDevice.contentSerializer(firstEventForType).first
+        val type = contentMappings.toDevice.contentType(firstEventForType)
         return sendToDevice(type, events, transactionId, asUserId)
     }
 
@@ -239,8 +238,8 @@ class UsersApiClientImpl(
         key: String,
         asUserId: UserId?
     ): Result<Unit> {
-        val mapping = contentMappings.globalAccountData.contentSerializer(content)
-        val eventType = mapping.first.let { type -> if (key.isEmpty()) type else type + key }
+        val eventType = contentMappings.globalAccountData.contentType(content)
+            .let { type -> if (key.isEmpty()) type else type + key }
 
         return httpClient.request(SetGlobalAccountData(userId, eventType, asUserId), content)
     }
@@ -257,14 +256,14 @@ class UsersApiClientImpl(
 }
 
 /**
- * @see [GetAccountData]
+ * @see [GetGlobalAccountData]
  */
 suspend inline fun <reified C : GlobalAccountDataEventContent> UsersApiClient.getAccountData(
     userId: UserId,
     key: String = "",
     asUserId: UserId? = null
 ): Result<C> {
-    val type = contentMappings.globalAccountData.fromClass(C::class).type
+    val type = contentMappings.globalAccountData.contentType(C::class)
     @Suppress("UNCHECKED_CAST")
     return getAccountData(type, userId, key, asUserId) as Result<C>
 }

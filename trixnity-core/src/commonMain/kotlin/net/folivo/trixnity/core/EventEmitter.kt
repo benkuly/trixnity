@@ -5,15 +5,14 @@ import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.core.EventEmitter.Priority
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EventContent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger { }
@@ -87,6 +86,21 @@ abstract class EventEmitterImpl<T : List<Event<*>>> : EventEmitter<T> {
     }
 }
 
+fun <C : EventContent, E : Event<out C>> Flow<E>.filterContent(
+    contentClass: KClass<out C>,
+    eventClass: KClass<out E>? = null
+): Flow<E> {
+    val allowSpecialContent = eventClass != null && eventClass != Event::class
+            || contentClass == UnknownEventContent::class
+            || contentClass == RedactedEventContent::class
+    return filter {
+        it.content.instanceOf(contentClass) &&
+                (allowSpecialContent ||
+                        !it.content.instanceOf(UnknownEventContent::class) &&
+                        !it.content.instanceOf(RedactedEventContent::class))
+    }
+}
+
 /**
  * Subscribers have to be aware to unsubscribe when the scope of the subscriber is destroyed.
  *
@@ -97,8 +111,7 @@ fun <C : EventContent> EventEmitter<*>.subscribeContent(
     priority: Int,
     subscriber: Subscriber<Event<C>>
 ) = subscribe(priority) { events ->
-    events.filter { it.content.instanceOf(contentClass) }.filterIsInstance<Event<C>>()
-        .forEach { subscriber(it) }
+    events.asFlow().filterContent(contentClass).filterIsInstance<Event<C>>().collect { subscriber(it) }
 }
 
 /**
@@ -112,7 +125,7 @@ fun <C : EventContent> EventEmitter<*>.subscribeContentList(
     subscriber: Subscriber<List<Event<C>>>
 ) = subscribe(priority) { events ->
     subscriber(
-        events.filter { it.content.instanceOf(contentClass) }.filterIsInstance<Event<C>>()
+        events.asFlow().filterContent(contentClass).filterIsInstance<Event<C>>().toList()
     )
 }
 
@@ -147,8 +160,8 @@ fun <C : EventContent, E : Event<C>> EventEmitter<*>.subscribeEvent(
     priority: Int,
     subscriber: Subscriber<E>
 ) = subscribe(priority) { events ->
-    events.filter { it.instanceOf(eventClass) }.filter { it.content.instanceOf(contentClass) }
-        .forEach { @Suppress("UNCHECKED_CAST") subscriber(it as E) }
+    events.asFlow().filter { it.instanceOf(eventClass) }.filterContent(contentClass, eventClass)
+        .collect { @Suppress("UNCHECKED_CAST") subscriber(it as E) }
 }
 
 /**
@@ -162,7 +175,8 @@ fun <C : EventContent, E : Event<C>> EventEmitter<*>.subscribeEventList(
     priority: Int,
     subscriber: Subscriber<List<E>>
 ) = subscribe(priority) { events ->
-    val filteredEvents = events.filter { it.instanceOf(eventClass) }.filter { it.content.instanceOf(contentClass) }
+    val filteredEvents =
+        events.asFlow().filter { it.instanceOf(eventClass) }.filterContent(contentClass, eventClass).toList()
 
     @Suppress("UNCHECKED_CAST")
     val typedFilteredEvents = filteredEvents as List<E>

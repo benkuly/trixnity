@@ -669,7 +669,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.stateKey shouldBe ""
                 it.endpoint.type shouldBe "m.unknown"
-                it.requestBody shouldBe UnknownStateEventContent(
+                it.requestBody shouldBe UnknownEventContent(
                     JsonObject(mapOf("dino" to JsonPrimitive("unicorn"))),
                     "m.unknown"
                 )
@@ -732,7 +732,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.type shouldBe "m.unknown"
-                it.requestBody shouldBe UnknownMessageEventContent(
+                it.requestBody shouldBe UnknownEventContent(
                     JsonObject(mapOf("dino" to JsonPrimitive("unicorn"))),
                     "m.unknown"
                 )

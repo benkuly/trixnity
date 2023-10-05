@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.UnknownStateEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -114,7 +114,7 @@ class RoomStateStoreTest : ShouldSpec({
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     "@bob:server",
                     Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                        UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
                         roomId,
@@ -140,7 +140,7 @@ class RoomStateStoreTest : ShouldSpec({
                 result.first { it?.size == 1 }
                 cut.save(
                     Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                        UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
                         roomId,
@@ -184,7 +184,7 @@ class RoomStateStoreTest : ShouldSpec({
             should("ignore unknown state event") {
                 cut.save(
                     Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                        UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
                         roomId,
@@ -205,7 +205,7 @@ class RoomStateStoreTest : ShouldSpec({
                 result.first { it != null }
                 cut.save(
                     Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                        UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
                         roomId,
