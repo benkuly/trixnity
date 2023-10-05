@@ -28,7 +28,6 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import net.folivo.trixnity.testutils.mockEngineFactory
 import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
 import org.koin.core.module.Module
 import org.koin.dsl.module
