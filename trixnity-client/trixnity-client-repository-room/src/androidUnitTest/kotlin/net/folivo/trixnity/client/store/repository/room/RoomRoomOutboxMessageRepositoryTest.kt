@@ -44,14 +44,14 @@ class RoomRoomOutboxMessageRepositoryTest {
         repo.save(key2, message2)
         val get1 = repo.get(key1)
         assertNotNull(get1)
-        get1 shouldBe message1.copy(mediaUploadProgress = get1.mediaUploadProgress)
+        get1 shouldBe message1
         val get2 = repo.get(key2)
         assertNotNull(get2)
-        get2 shouldBe message2.copy(mediaUploadProgress = get2.mediaUploadProgress)
+        get2 shouldBe message2
         repo.save(key2, message2Copy)
         val get2Copy = repo.get(key2)
         assertNotNull(get2Copy)
-        get2Copy shouldBe message2Copy.copy(mediaUploadProgress = get2Copy.mediaUploadProgress)
+        get2Copy shouldBe message2Copy
         repo.delete(key1)
         repo.get(key1) shouldBe null
     }
