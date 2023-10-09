@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Instant
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonClassDiscriminator
@@ -33,24 +34,28 @@ data class RoomOutboxMessage<T : MessageEventContent>(
          * The user has no permission to send this event in this room.
          */
         @Serializable
+        @SerialName("no_event_permission")
         object NoEventPermission : SendError
 
         /**
          * The user has no permission to send this media (for example file type not allowed or quota reached).
          */
         @Serializable
+        @SerialName("no_media_permission")
         object NoMediaPermission : SendError
 
         /**
          * The media tried to upload is too large.
          */
+        @SerialName("media_too_large")
         @Serializable
         object MediaTooLarge : SendError
 
         /**
          * The event tried to send is invalid.
          */
-        @Serializable // FIXME test, that de/seri works.
+        @Serializable
+        @SerialName("bad_request")
         data class BadRequest(
             val errorResponse: @Serializable(with = ErrorResponseSerializer::class) ErrorResponse
         ) : SendError
@@ -58,7 +63,8 @@ data class RoomOutboxMessage<T : MessageEventContent>(
         /**
          * The [EventContent] is not supported. You must register a media uploader for it.
          */
-        @Serializable // FIXME test, that de/seri works.
+        @Serializable
+        @SerialName("unknown")
         data class Unknown(
             val errorResponse: @Serializable(with = ErrorResponseSerializer::class) ErrorResponse
         ) : SendError
