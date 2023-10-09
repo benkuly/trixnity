@@ -27,6 +27,8 @@ import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent.HistoryVisibility
@@ -466,7 +468,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 listOf(
                     // room1
-                    Event.StateEvent(
+                    StateEvent(
                         HistoryVisibilityEventContent(HistoryVisibility.INVITED),
                         EventId("\$event1"),
                         alice,
@@ -474,7 +476,7 @@ private val body: ShouldSpec.() -> Unit = {
                         1234,
                         stateKey = ""
                     ),
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.INVITE),
                         EventId("\$event1"),
                         alice,
@@ -482,7 +484,7 @@ private val body: ShouldSpec.() -> Unit = {
                         1234,
                         stateKey = alice.full
                     ),
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.LEAVE),
                         EventId("\$event4"),
                         cedric,
@@ -491,7 +493,7 @@ private val body: ShouldSpec.() -> Unit = {
                         stateKey = cedric.full
                     ),
                     // room2
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event2"),
                         alice,
@@ -500,7 +502,7 @@ private val body: ShouldSpec.() -> Unit = {
                         stateKey = alice.full
                     ),
                     // room3
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event3"),
                         alice,

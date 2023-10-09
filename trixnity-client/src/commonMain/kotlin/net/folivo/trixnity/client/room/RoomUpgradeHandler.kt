@@ -6,6 +6,7 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -22,10 +23,10 @@ class RoomUpgradeHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeContent(subscriber = ::setRoomReplacedBy).unsubscribeOnCompletion(scope)
         api.sync.subscribeContent(subscriber = ::setRoomReplaces).unsubscribeOnCompletion(scope)
-        api.sync.subscribe(EventEmitter.Priority.AFTER_DEFAULT, ::joinUpgradedRooms).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(ClientEventEmitter.Priority.AFTER_DEFAULT, ::joinUpgradedRooms).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun setRoomReplacedBy(event: Event<TombstoneEventContent>) {
+    internal suspend fun setRoomReplacedBy(event: ClientEvent<TombstoneEventContent>) {
         val roomId = event.roomIdOrNull
         if (roomId != null) {
             roomStore.update(roomId) {
@@ -34,7 +35,7 @@ class RoomUpgradeHandler(
         }
     }
 
-    internal suspend fun setRoomReplaces(event: Event<CreateEventContent>) {
+    internal suspend fun setRoomReplaces(event: ClientEvent<CreateEventContent>) {
         val roomId = event.roomIdOrNull
         val predecessor = event.content.predecessor
         if (roomId != null && predecessor != null) {

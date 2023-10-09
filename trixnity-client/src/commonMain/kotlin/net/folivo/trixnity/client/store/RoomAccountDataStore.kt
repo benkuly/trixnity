@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings

@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.push.PushAction
 
 /**
@@ -34,7 +34,7 @@ data class GetNotifications(
             @SerialName("actions")
             val actions: Set<PushAction>,
             @SerialName("event")
-            val event: @Contextual Event<*>,
+            val event: @Contextual RoomEvent<*>,
             @SerialName("profile_tag")
             val profileTag: String? = null,
             @SerialName("read")

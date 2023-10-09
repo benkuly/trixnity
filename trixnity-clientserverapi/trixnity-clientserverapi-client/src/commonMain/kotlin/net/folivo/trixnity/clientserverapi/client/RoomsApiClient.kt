@@ -6,8 +6,12 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.InitialStateEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TagEventContent
@@ -30,7 +34,7 @@ interface RoomsApiClient {
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId? = null
-    ): Result<Event<*>>
+    ): Result<RoomEvent<*>>
 
     /**
      * @see [GetStateEvent]
@@ -498,7 +502,7 @@ class RoomsApiClientImpl(
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId?
-    ): Result<Event<*>> =
+    ): Result<RoomEvent<*>> =
         httpClient.request(GetEvent(roomId, eventId, asUserId))
 
     override suspend fun getStateEvent(

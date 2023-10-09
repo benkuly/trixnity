@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
@@ -32,7 +32,7 @@ class RoomRoomStateRepositoryTest {
     fun `Save, get and delete`() = runTest {
         val key1 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.member")
         val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")
-        val state1 = Event.StateEvent(
+        val state1 = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("$1event"),
             UserId("alice", "server"),
@@ -41,7 +41,7 @@ class RoomRoomStateRepositoryTest {
             stateKey = "@alice:server"
         )
         val state1Copy = state1.copy(id = EventId("$2event"))
-        val state2 = Event.StateEvent(
+        val state2 = StateEvent(
             NameEventContent("room name"),
             EventId("$2eventId"),
             UserId("bob", "server"),
@@ -49,7 +49,7 @@ class RoomRoomStateRepositoryTest {
             originTimestamp = 24,
             stateKey = ""
         )
-        val state3 = Event.StateEvent(
+        val state3 = StateEvent(
             NameEventContent("room name"),
             EventId("$2eventId"),
             UserId("celina", "server"),
@@ -76,7 +76,7 @@ class RoomRoomStateRepositoryTest {
     @Test
     fun `Save and get by second key`() = runTest {
         val key = RoomStateRepositoryKey(RoomId("room3", "server"), "m.room.member")
-        val event = Event.StateEvent(
+        val event = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("\$event"),
             UserId("alice", "server"),
@@ -95,7 +95,7 @@ class RoomRoomStateRepositoryTest {
         val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")
         val key3 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.name")
 
-        val state1 = Event.StateEvent(
+        val state1 = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("$1event"),
             UserId("alice", "server"),
@@ -103,7 +103,7 @@ class RoomRoomStateRepositoryTest {
             1234,
             stateKey = "@alice:server"
         )
-        val state2 = Event.StateEvent(
+        val state2 = StateEvent(
             NameEventContent("room name"),
             EventId("$2eventId"),
             UserId("bob", "server"),
@@ -111,7 +111,7 @@ class RoomRoomStateRepositoryTest {
             originTimestamp = 24,
             stateKey = ""
         )
-        val state3 = Event.StateEvent(
+        val state3 = StateEvent(
             NameEventContent("room name"),
             EventId("$2eventId"),
             UserId("bob", "server"),

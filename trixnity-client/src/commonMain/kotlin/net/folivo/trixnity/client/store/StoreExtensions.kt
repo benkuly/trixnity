@@ -9,9 +9,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.*
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -22,12 +20,12 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
-): Flow<Map<String, Flow<Event<C>?>>?> = get(roomId, C::class)
+): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> = get(roomId, C::class)
 
 inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<Event<C>?> = getByStateKey(roomId, C::class, stateKey)
+): Flow<StateBaseEvent<C>?> = getByStateKey(roomId, C::class, stateKey)
 
 inline fun <reified C : StateEventContent> RoomStateStore.getContentByStateKey(
     roomId: RoomId,

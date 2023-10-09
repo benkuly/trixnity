@@ -7,8 +7,9 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
@@ -23,7 +24,7 @@ import net.folivo.trixnity.core.serialization.trimToFlatJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class EventSerializerTest {
+class ClientEventSerializerTest {
 
     private val json = createMatrixEventJson()
 
@@ -823,7 +824,7 @@ class EventSerializerTest {
             "prev_content":null
         }
     """.trimIndent()
-        val serializer = json.serializersModule.getContextual(Event::class)
+        val serializer = json.serializersModule.getContextual(RoomEvent::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, input)
         assertEquals(
@@ -880,7 +881,7 @@ class EventSerializerTest {
             "unsigned":{"age":1234}
         }
     """.trimToFlatJson()
-        val serializer = json.serializersModule.getContextual(Event::class)
+        val serializer = json.serializersModule.getContextual(RoomEvent::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, content)
         assertEquals(expectedResult, result)
@@ -903,7 +904,7 @@ class EventSerializerTest {
             originTimestamp = 1643815115835,
             unsigned = UnsignedMessageEventData(age = 241)
         )
-        val serializer = json.serializersModule.getContextual(Event::class)
+        val serializer = json.serializersModule.getContextual(RoomEvent::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, input)
         assertEquals(
@@ -961,7 +962,7 @@ class EventSerializerTest {
            "room_id": "!aNgXnqwYApWloKSPKD:imbitbu.de"
         }
         """.trimIndent()
-        val serializer = json.serializersModule.getContextual(Event::class)
+        val serializer = json.serializersModule.getContextual(RoomEvent::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, input)
         assertEquals(

@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.subscribeContentList
@@ -25,7 +25,7 @@ class ReceiptEventHandler(
         api.sync.subscribeContentList(subscriber = ::setReadReceipts).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun setReadReceipts(receiptEvents: List<Event<ReceiptEventContent>>) {
+    internal suspend fun setReadReceipts(receiptEvents: List<ClientEvent<ReceiptEventContent>>) {
         if (receiptEvents.isNotEmpty())
             tm.writeTransaction {
                 receiptEvents.forEach { receiptEvent ->

@@ -13,10 +13,10 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.core.EventEmitter
-import net.folivo.trixnity.core.EventEmitterImpl
+import net.folivo.trixnity.core.ClientEventEmitter
+import net.folivo.trixnity.core.ClientEventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.Presence
 import kotlin.time.Duration
 
@@ -24,8 +24,8 @@ private val log = KotlinLogging.logger {}
 
 class SyncEvents(
     val syncResponse: Sync.Response,
-    allEvents: List<Event<*>>,
-) : List<Event<*>> by allEvents
+    allEvents: List<ClientEvent<*>>,
+) : List<ClientEvent<*>> by allEvents
 
 enum class SyncState {
     /**
@@ -64,7 +64,7 @@ enum class SyncState {
     STOPPED,
 }
 
-interface SyncApiClient : EventEmitter<SyncEvents> {
+interface SyncApiClient : ClientEventEmitter<SyncEvents> {
     /**
      * This is the plain sync request. If you want to subscribe to events and ore, use [start] or [startOnce].
      *
@@ -154,7 +154,7 @@ class SyncApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
     private val syncLoopDelay: Duration,
     private val syncLoopErrorDelay: Duration,
-) : EventEmitterImpl<SyncEvents>(), SyncApiClient {
+) : ClientEventEmitterImpl<SyncEvents>(), SyncApiClient {
 
     override suspend fun sync(
         filter: String?,

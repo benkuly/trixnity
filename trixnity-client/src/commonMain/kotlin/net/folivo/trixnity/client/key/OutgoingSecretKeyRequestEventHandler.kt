@@ -14,8 +14,8 @@ import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.*
-import net.folivo.trixnity.core.EventEmitter.Priority
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
@@ -180,7 +180,7 @@ class OutgoingSecretKeyRequestEventHandler(
         }
     }
 
-    internal suspend fun handleChangedSecrets(event: Event<out SecretEventContent>) {
+    internal suspend fun handleChangedSecrets(event: ClientEvent<out SecretEventContent>) {
         log.debug { "handle changed secrets" }
         val secretType =
             api.eventContentSerializerMappings.globalAccountData.find { event.content.instanceOf(it.kClass) }

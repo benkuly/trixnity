@@ -9,7 +9,7 @@ import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 
 internal class RealmGlobalAccountData : RealmObject {
     @PrimaryKey
@@ -24,17 +24,17 @@ internal class RealmGlobalAccountDataRepository(
     private val json: Json
 ) : GlobalAccountDataRepository {
     @OptIn(ExperimentalSerializationApi::class)
-    private val serializer = json.serializersModule.getContextual(Event.GlobalAccountDataEvent::class)
+    private val serializer = json.serializersModule.getContextual(GlobalAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(firstKey: String): Map<String, Event.GlobalAccountDataEvent<*>> = withRealmRead {
+    override suspend fun get(firstKey: String): Map<String, GlobalAccountDataEvent<*>> = withRealmRead {
         query<RealmGlobalAccountData>("type == $0", firstKey).find().copyFromRealm()
             .associate { realmGlobalAccountData ->
                 realmGlobalAccountData.key to json.decodeFromString(serializer, realmGlobalAccountData.event)
             }
     }
 
-    override suspend fun get(firstKey: String, secondKey: String): Event.GlobalAccountDataEvent<*>? =
+    override suspend fun get(firstKey: String, secondKey: String): GlobalAccountDataEvent<*>? =
         withRealmRead {
             findByKeys(firstKey, secondKey).find()?.copyFromRealm()?.let {
                 json.decodeFromString(serializer, it.event)
@@ -44,7 +44,7 @@ internal class RealmGlobalAccountDataRepository(
     override suspend fun save(
         firstKey: String,
         secondKey: String,
-        value: Event.GlobalAccountDataEvent<*>
+        value: GlobalAccountDataEvent<*>
     ): Unit =
         withRealmWrite {
             copyToRealm(

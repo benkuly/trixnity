@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.subscribeContent
@@ -24,7 +24,7 @@ class TypingEventHandler(
     private val _usersTyping = MutableStateFlow(mapOf<RoomId, TypingEventContent>())
     internal val usersTyping = _usersTyping.asStateFlow()
 
-    internal fun setTyping(typingEvent: Event<TypingEventContent>) {
+    internal fun setTyping(typingEvent: ClientEvent<TypingEventContent>) {
         typingEvent.roomIdOrNull?.let { roomId ->
             _usersTyping.update { oldValue -> oldValue + (roomId to typingEvent.content) }
         }

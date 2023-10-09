@@ -7,9 +7,9 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -37,7 +37,7 @@ class DirectRoomEventHandler(
 
     private val setDirectRoomsEventContent = MutableStateFlow<DirectEventContent?>(null)
 
-    internal suspend fun setDirectRooms(event: Event<MemberEventContent>) {
+    internal suspend fun setDirectRooms(event: ClientEvent<MemberEventContent>) {
         val roomId = event.roomIdOrNull
         val stateKey = event.stateKeyOrNull
         val sender = event.senderOrNull
@@ -102,7 +102,7 @@ class DirectRoomEventHandler(
     // because DirectEventContent could be set before any rooms are in store
     private val directEventContent = MutableStateFlow<DirectEventContent?>(null)
 
-    internal fun setDirectEventContent(directEvent: Event<DirectEventContent>) {
+    internal fun setDirectEventContent(directEvent: ClientEvent<DirectEventContent>) {
         directEventContent.value = directEvent.content
     }
 

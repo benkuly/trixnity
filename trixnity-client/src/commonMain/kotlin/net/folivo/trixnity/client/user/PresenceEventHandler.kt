@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.senderOrNull
 import net.folivo.trixnity.core.subscribeContent
@@ -24,7 +24,7 @@ class PresenceEventHandler(
     private val _userPresence = MutableStateFlow(mapOf<UserId, PresenceEventContent>())
     internal val userPresence = _userPresence.asStateFlow()
 
-    internal fun setPresence(presenceEvent: Event<PresenceEventContent>) {
+    internal fun setPresence(presenceEvent: ClientEvent<PresenceEventContent>) {
         presenceEvent.senderOrNull?.let { sender ->
             _userPresence.update { oldValue -> oldValue + (sender to presenceEvent.content) }
         }

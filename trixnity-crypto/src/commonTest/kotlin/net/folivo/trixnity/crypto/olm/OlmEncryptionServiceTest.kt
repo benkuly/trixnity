@@ -23,9 +23,9 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
@@ -679,7 +679,7 @@ private val body: ShouldSpec.() -> Unit = {
             val ciphertext =
                 outboundSession.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
             cut.decryptMegolm(
-                Event.MessageEvent(
+                MessageEvent(
                     EncryptedEventContent.MegolmEncryptedEventContent(
                         ciphertext,
                         bobCurveKey,
@@ -705,7 +705,7 @@ private val body: ShouldSpec.() -> Unit = {
                 session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
             shouldThrow<DecryptionException> {
                 cut.decryptMegolm(
-                    Event.MessageEvent(
+                    MessageEvent(
                         EncryptedEventContent.MegolmEncryptedEventContent(
                             ciphertext,
                             bobCurveKey,
@@ -744,7 +744,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             shouldThrow<DecryptionException> {
                 cut.decryptMegolm(
-                    Event.MessageEvent(
+                    MessageEvent(
                         EncryptedEventContent.MegolmEncryptedEventContent(
                             ciphertext,
                             bobCurveKey,
@@ -783,7 +783,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             shouldThrow<DecryptionException> {
                 cut.decryptMegolm(
-                    Event.MessageEvent(
+                    MessageEvent(
                         EncryptedEventContent.MegolmEncryptedEventContent(
                             ciphertext,
                             bobCurveKey,
@@ -803,7 +803,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             shouldThrow<DecryptionException> {
                 cut.decryptMegolm(
-                    Event.MessageEvent(
+                    MessageEvent(
                         EncryptedEventContent.MegolmEncryptedEventContent(
                             ciphertext,
                             bobCurveKey,

@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 
 internal class RealmRoomAccountData : RealmObject {
     @PrimaryKey
@@ -27,10 +27,10 @@ internal class RealmRoomAccountDataRepository(
     private val json: Json,
 ) : RoomAccountDataRepository {
     @OptIn(ExperimentalSerializationApi::class)
-    private val serializer = json.serializersModule.getContextual(Event.RoomAccountDataEvent::class)
+    private val serializer = json.serializersModule.getContextual(RoomAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(firstKey: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> =
+    override suspend fun get(firstKey: RoomAccountDataRepositoryKey): Map<String, RoomAccountDataEvent<*>> =
         withRealmRead {
             findByKey(firstKey).copyFromRealm().associate {
                 it.key to json.decodeFromString(serializer, it.event)
@@ -45,7 +45,7 @@ internal class RealmRoomAccountDataRepository(
     override suspend fun get(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String
-    ): Event.RoomAccountDataEvent<*>? = withRealmRead {
+    ): RoomAccountDataEvent<*>? = withRealmRead {
         findByKeys(firstKey, secondKey).find()?.copyFromRealm()?.let {
             json.decodeFromString(serializer, it.event)
         }
@@ -54,7 +54,7 @@ internal class RealmRoomAccountDataRepository(
     override suspend fun save(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String,
-        value: Event.RoomAccountDataEvent<*>
+        value: RoomAccountDataEvent<*>
     ): Unit = withRealmWrite {
         copyToRealm(
             RealmRoomAccountData().apply {

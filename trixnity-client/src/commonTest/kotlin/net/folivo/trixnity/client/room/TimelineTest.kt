@@ -9,6 +9,8 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
@@ -25,7 +27,7 @@ class TimelineTest : ShouldSpec({
 
     fun timelineEvent(id: String): TimelineEvent =
         TimelineEvent(
-            event = Event.MessageEvent(
+            event = MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent(id),
                 EventId(id),
                 UserId("sender", "server"),

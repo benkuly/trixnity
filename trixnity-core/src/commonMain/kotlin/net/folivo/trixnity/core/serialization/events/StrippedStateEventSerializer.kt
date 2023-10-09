@@ -1,6 +1,6 @@
 package net.folivo.trixnity.core.serialization.events
 
-import net.folivo.trixnity.core.model.events.Event.StrippedStateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.StateEventContent
 
 class StrippedStateEventSerializer(

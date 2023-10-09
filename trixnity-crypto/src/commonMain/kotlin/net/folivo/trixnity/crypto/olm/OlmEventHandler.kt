@@ -7,8 +7,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.*
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
@@ -29,7 +29,7 @@ import kotlin.time.Duration.Companion.hours
 private val log = KotlinLogging.logger {}
 
 class OlmEventHandler(
-    private val eventEmitter: EventEmitter<*>,
+    private val eventEmitter: ClientEventEmitter<*>,
     private val olmKeysChangeEmitter: OlmKeysChangeEmitter,
     private val decrypter: OlmDecrypter,
     private val signService: SignService,
@@ -41,7 +41,7 @@ class OlmEventHandler(
         olmKeysChangeEmitter.subscribeOneTimeKeysCount(::handleOlmKeysChange).unsubscribeOnCompletion(scope)
         eventEmitter.subscribeEvent(subscriber = ::handleMemberEvents).unsubscribeOnCompletion(scope)
         eventEmitter.subscribeEvent(subscriber = ::handleHistoryVisibility).unsubscribeOnCompletion(scope)
-        eventEmitter.subscribeEventList(EventEmitter.Priority.TO_DEVICE_EVENTS, ::handleOlmEvents)
+        eventEmitter.subscribeEventList(ClientEventEmitter.Priority.TO_DEVICE_EVENTS, ::handleOlmEvents)
             .unsubscribeOnCompletion(scope)
         decrypter.subscribe(::handleOlmEncryptedRoomKeyEventContent).unsubscribeOnCompletion(scope)
         scope.launch {
@@ -49,7 +49,7 @@ class OlmEventHandler(
         }
     }
 
-    internal suspend fun handleOlmEvents(events: List<Event.ToDeviceEvent<EncryptedEventContent.OlmEncryptedEventContent>>) =
+    internal suspend fun handleOlmEvents(events: List<ToDeviceEvent<EncryptedEventContent.OlmEncryptedEventContent>>) =
         coroutineScope {
             events.groupBy { it.sender }
                 .forEach { (_, events) ->

@@ -8,11 +8,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.core.EventEmitter.Priority
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.EventContent
-import net.folivo.trixnity.core.model.events.RedactedEventContent
-import net.folivo.trixnity.core.model.events.UnknownEventContent
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.events.*
 import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger { }
@@ -20,7 +17,7 @@ private val log = KotlinLogging.logger { }
 typealias Subscriber<T> = suspend (T) -> Unit
 typealias Unsubscriber = () -> Unit
 
-interface EventEmitter<T : List<Event<*>>> {
+interface ClientEventEmitter<T : List<ClientEvent<*>>> {
     object Priority {
         const val FIRST = Int.MAX_VALUE
 
@@ -46,7 +43,7 @@ interface EventEmitter<T : List<Event<*>>> {
     suspend fun emit(events: T)
 }
 
-abstract class EventEmitterImpl<T : List<Event<*>>> : EventEmitter<T> {
+abstract class ClientEventEmitterImpl<T : List<ClientEvent<*>>> : ClientEventEmitter<T> {
     private data class PrioritySubscribers<T : List<Event<*>>>(
         val subscribers: Set<Subscriber<T>>,
         val priority: Int,
@@ -86,11 +83,11 @@ abstract class EventEmitterImpl<T : List<Event<*>>> : EventEmitter<T> {
     }
 }
 
-fun <C : EventContent, E : Event<out C>> Flow<E>.filterContent(
+fun <C : EventContent, E : ClientEvent<out C>> Flow<E>.filterContent(
     contentClass: KClass<out C>,
     eventClass: KClass<out E>? = null
 ): Flow<E> {
-    val allowSpecialContent = eventClass != null && eventClass != Event::class
+    val allowSpecialContent = eventClass != null && eventClass != ClientEvent::class
             || contentClass == UnknownEventContent::class
             || contentClass == RedactedEventContent::class
     return filter {
@@ -106,12 +103,12 @@ fun <C : EventContent, E : Event<out C>> Flow<E>.filterContent(
  *
  * @return A function to unsubscribe.
  */
-fun <C : EventContent> EventEmitter<*>.subscribeContent(
+fun <C : EventContent> ClientEventEmitter<*>.subscribeContent(
     contentClass: KClass<C>,
     priority: Int,
-    subscriber: Subscriber<Event<C>>
+    subscriber: Subscriber<ClientEvent<C>>
 ) = subscribe(priority) { events ->
-    events.asFlow().filterContent(contentClass).filterIsInstance<Event<C>>().collect { subscriber(it) }
+    events.asFlow().filterContent(contentClass).filterIsInstance<ClientEvent<C>>().collect { subscriber(it) }
 }
 
 /**
@@ -119,13 +116,13 @@ fun <C : EventContent> EventEmitter<*>.subscribeContent(
  *
  * @return A function to unsubscribe.
  */
-fun <C : EventContent> EventEmitter<*>.subscribeContentList(
+fun <C : EventContent> ClientEventEmitter<*>.subscribeContentList(
     contentClass: KClass<C>,
     priority: Int,
-    subscriber: Subscriber<List<Event<C>>>
+    subscriber: Subscriber<List<ClientEvent<C>>>
 ) = subscribe(priority) { events ->
     subscriber(
-        events.asFlow().filterContent(contentClass).filterIsInstance<Event<C>>().toList()
+        events.asFlow().filterContent(contentClass).filterIsInstance<ClientEvent<C>>().toList()
     )
 }
 
@@ -134,9 +131,9 @@ fun <C : EventContent> EventEmitter<*>.subscribeContentList(
  *
  * @return A function to unsubscribe.
  */
-inline fun <reified C : EventContent> EventEmitter<*>.subscribeContent(
+inline fun <reified C : EventContent> ClientEventEmitter<*>.subscribeContent(
     priority: Int = Priority.DEFAULT,
-    noinline subscriber: Subscriber<Event<C>>
+    noinline subscriber: Subscriber<ClientEvent<C>>
 ) = subscribeContent(C::class, priority, subscriber)
 
 /**
@@ -144,9 +141,9 @@ inline fun <reified C : EventContent> EventEmitter<*>.subscribeContent(
  *
  * @return A function to unsubscribe.
  */
-inline fun <reified C : EventContent> EventEmitter<*>.subscribeContentList(
+inline fun <reified C : EventContent> ClientEventEmitter<*>.subscribeContentList(
     priority: Int = Priority.DEFAULT,
-    noinline subscriber: Subscriber<List<Event<C>>>
+    noinline subscriber: Subscriber<List<ClientEvent<C>>>
 ) = subscribeContentList(C::class, priority, subscriber)
 
 /**
@@ -154,7 +151,7 @@ inline fun <reified C : EventContent> EventEmitter<*>.subscribeContentList(
  *
  * @return A function to unsubscribe.
  */
-fun <C : EventContent, E : Event<C>> EventEmitter<*>.subscribeEvent(
+fun <C : EventContent, E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEvent(
     contentClass: KClass<C>,
     eventClass: KClass<E>,
     priority: Int,
@@ -169,7 +166,7 @@ fun <C : EventContent, E : Event<C>> EventEmitter<*>.subscribeEvent(
  *
  * @return A function to unsubscribe.
  */
-fun <C : EventContent, E : Event<C>> EventEmitter<*>.subscribeEventList(
+fun <C : EventContent, E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEventList(
     contentClass: KClass<C>,
     eventClass: KClass<E>,
     priority: Int,
@@ -188,7 +185,7 @@ fun <C : EventContent, E : Event<C>> EventEmitter<*>.subscribeEventList(
  *
  * @return A function to unsubscribe.
  */
-inline fun <reified C : EventContent, reified E : Event<C>> EventEmitter<*>.subscribeEvent(
+inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEvent(
     priority: Int = Priority.DEFAULT,
     noinline subscriber: Subscriber<E>
 ) = subscribeEvent(C::class, E::class, priority, subscriber)
@@ -198,7 +195,7 @@ inline fun <reified C : EventContent, reified E : Event<C>> EventEmitter<*>.subs
  *
  * @return A function to unsubscribe.
  */
-inline fun <reified C : EventContent, reified E : Event<C>> EventEmitter<*>.subscribeEventList(
+inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEventList(
     priority: Int = Priority.DEFAULT,
     noinline subscriber: Subscriber<List<E>>
 ) = subscribeEventList(C::class, E::class, priority, subscriber)
@@ -208,7 +205,7 @@ inline fun <reified C : EventContent, reified E : Event<C>> EventEmitter<*>.subs
  *
  * @return A function to unsubscribe.
  */
-fun EventEmitter<*>.subscribe(
+fun ClientEventEmitter<*>.subscribe(
     priority: Int = Priority.DEFAULT,
     subscriber: suspend () -> Unit
 ) = subscribe(priority) { subscriber() }
@@ -218,7 +215,7 @@ fun EventEmitter<*>.subscribe(
  *
  * @return A function to unsubscribe.
  */
-fun EventEmitter<*>.subscribeEachEvent(priority: Int = Priority.DEFAULT, subscriber: Subscriber<Event<*>>) =
+fun ClientEventEmitter<*>.subscribeEachEvent(priority: Int = Priority.DEFAULT, subscriber: Subscriber<ClientEvent<*>>) =
     subscribe(priority) { events -> events.forEach { subscriber(it) } }
 
 /**
@@ -227,7 +224,7 @@ fun EventEmitter<*>.subscribeEachEvent(priority: Int = Priority.DEFAULT, subscri
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-inline fun <reified C : EventContent> EventEmitter<*>.subscribeContentAsFlow(priority: Int = Priority.DEFAULT): Flow<Event<C>> =
+inline fun <reified C : EventContent> ClientEventEmitter<*>.subscribeContentAsFlow(priority: Int = Priority.DEFAULT): Flow<ClientEvent<C>> =
     callbackFlow {
         val unsubscribe = subscribeContent(priority) { send(it) }
         awaitClose { unsubscribe() }
@@ -239,7 +236,7 @@ inline fun <reified C : EventContent> EventEmitter<*>.subscribeContentAsFlow(pri
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-inline fun <reified C : EventContent> EventEmitter<*>.subscribeContentListAsFlow(priority: Int = Priority.DEFAULT): Flow<List<Event<C>>> =
+inline fun <reified C : EventContent> ClientEventEmitter<*>.subscribeContentListAsFlow(priority: Int = Priority.DEFAULT): Flow<List<ClientEvent<C>>> =
     callbackFlow {
         val unsubscribe = subscribeContentList(priority) { send(it) }
         awaitClose { unsubscribe() }
@@ -251,7 +248,7 @@ inline fun <reified C : EventContent> EventEmitter<*>.subscribeContentListAsFlow
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-inline fun <reified C : EventContent, reified E : Event<C>> EventEmitter<*>.subscribeEventAsFlow(priority: Int = Priority.DEFAULT): Flow<E> =
+inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEventAsFlow(priority: Int = Priority.DEFAULT): Flow<E> =
     callbackFlow {
         val unsubscribe = subscribeEvent<C, E>(priority) { send(it) }
         awaitClose { unsubscribe() }
@@ -263,7 +260,7 @@ inline fun <reified C : EventContent, reified E : Event<C>> EventEmitter<*>.subs
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-inline fun <reified C : EventContent, reified E : Event<C>> EventEmitter<*>.subscribeEventListAsFlow(priority: Int = Priority.DEFAULT): Flow<List<E>> =
+inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEventListAsFlow(priority: Int = Priority.DEFAULT): Flow<List<E>> =
     callbackFlow {
         val unsubscribe = subscribeEventList<C, E>(priority) { send(it) }
         awaitClose { unsubscribe() }
@@ -275,7 +272,7 @@ inline fun <reified C : EventContent, reified E : Event<C>> EventEmitter<*>.subs
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-fun EventEmitter<*>.subscribeEachEventAsFlow(priority: Int = Priority.DEFAULT): Flow<Event<*>> =
+fun ClientEventEmitter<*>.subscribeEachEventAsFlow(priority: Int = Priority.DEFAULT): Flow<ClientEvent<*>> =
     callbackFlow {
         val unsubscribe = subscribeEachEvent(priority) { send(it) }
         awaitClose { unsubscribe() }
@@ -287,7 +284,7 @@ fun EventEmitter<*>.subscribeEachEventAsFlow(priority: Int = Priority.DEFAULT): 
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-fun <T : List<Event<*>>> EventEmitter<T>.subscribeAsFlow(priority: Int = Priority.DEFAULT): Flow<T> = callbackFlow {
+fun <T : List<ClientEvent<*>>> ClientEventEmitter<T>.subscribeAsFlow(priority: Int = Priority.DEFAULT): Flow<T> = callbackFlow {
     val unsubscribe = subscribe(priority) { send(it) }
     awaitClose { unsubscribe() }
 }
@@ -298,7 +295,7 @@ fun <T : List<Event<*>>> EventEmitter<T>.subscribeAsFlow(priority: Int = Priorit
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-fun EventEmitter<*>.subscribeChangeAsFlow(priority: Int = Priority.DEFAULT): Flow<Unit> = callbackFlow {
+fun ClientEventEmitter<*>.subscribeChangeAsFlow(priority: Int = Priority.DEFAULT): Flow<Unit> = callbackFlow {
     val unsubscribe = subscribe(priority) { send(Unit) }
     awaitClose { unsubscribe() }
 }

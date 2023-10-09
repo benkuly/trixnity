@@ -18,6 +18,8 @@ import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
@@ -83,7 +85,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    val encryptedEvent = Event.ToDeviceEvent(
+    val encryptedEvent = ToDeviceEvent(
         EncryptedEventContent.OlmEncryptedEventContent(
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "")

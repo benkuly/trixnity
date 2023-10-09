@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
 import net.folivo.trixnity.client.store.cache.MapRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings

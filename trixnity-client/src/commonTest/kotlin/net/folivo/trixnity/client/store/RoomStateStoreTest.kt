@@ -18,6 +18,8 @@ import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
@@ -48,7 +50,7 @@ class RoomStateStoreTest : ShouldSpec({
     }
 
     val roomId = RoomId("room", "server")
-    val event1 = Event.StateEvent(
+    val event1 = StateEvent(
         MemberEventContent(membership = LEAVE),
         EventId("\$event"),
         UserId("alice", "server"),
@@ -56,7 +58,7 @@ class RoomStateStoreTest : ShouldSpec({
         1234,
         stateKey = "@user:server"
     )
-    val event2 = Event.StateEvent(
+    val event2 = StateEvent(
         MemberEventContent(membership = JOIN),
         EventId("\$event"),
         UserId("alice", "server"),
@@ -113,7 +115,7 @@ class RoomStateStoreTest : ShouldSpec({
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     "@bob:server",
-                    Event.StateEvent(
+                    StateEvent(
                         UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
@@ -139,7 +141,7 @@ class RoomStateStoreTest : ShouldSpec({
                     .shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it?.size == 1 }
                 cut.save(
-                    Event.StateEvent(
+                    StateEvent(
                         UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
@@ -183,7 +185,7 @@ class RoomStateStoreTest : ShouldSpec({
             }
             should("ignore unknown state event") {
                 cut.save(
-                    Event.StateEvent(
+                    StateEvent(
                         UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
@@ -204,7 +206,7 @@ class RoomStateStoreTest : ShouldSpec({
                     .shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it != null }
                 cut.save(
-                    Event.StateEvent(
+                    StateEvent(
                         UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
@@ -220,7 +222,7 @@ class RoomStateStoreTest : ShouldSpec({
         }
         should("return empty event contents") {
             val event =
-                Event.StateEvent(
+                StateEvent(
                     AvatarEventContent(),
                     EventId("\$event"),
                     UserId("alice", "server"),

@@ -29,6 +29,9 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
@@ -93,7 +96,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    val encryptedEvent = Event.ToDeviceEvent(
+    val encryptedEvent = ToDeviceEvent(
         EncryptedEventContent.OlmEncryptedEventContent(
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "")
@@ -162,7 +165,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("ignore, when request was never made") {
             setDeviceKeys(true)
             setCrossSigningKeys(crossSigningPublicKey)
-            val secretEvent = Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
+            val secretEvent = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             globalAccountDataStore.save(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
                 DecryptedOlmEventContainer(
@@ -239,7 +242,7 @@ private val body: ShouldSpec.() -> Unit = {
             setRequest(SecretType.M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
             returnRoomKeysVersion(null)
             val secretEventContent = MegolmBackupV1EventContent(mapOf())
-            globalAccountDataStore.save(Event.GlobalAccountDataEvent(secretEventContent))
+            globalAccountDataStore.save(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
@@ -257,7 +260,7 @@ private val body: ShouldSpec.() -> Unit = {
             setRequest(SecretType.M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
             setCrossSigningKeys(freeAfter(OlmPkSigning.create(null)) { it.publicKey })
             val secretEventContent = UserSigningKeyEventContent(mapOf())
-            globalAccountDataStore.save(Event.GlobalAccountDataEvent(secretEventContent))
+            globalAccountDataStore.save(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
@@ -276,7 +279,7 @@ private val body: ShouldSpec.() -> Unit = {
             setRequest(SecretType.M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
             returnRoomKeysVersion(freeAfter(OlmPkDecryption.create(null)) { it.publicKey })
             val secretEventContent = MegolmBackupV1EventContent(mapOf())
-            globalAccountDataStore.save(Event.GlobalAccountDataEvent(secretEventContent))
+            globalAccountDataStore.save(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
                 DecryptedOlmEventContainer(
                     encryptedEvent, DecryptedOlmEvent(
@@ -309,7 +312,7 @@ private val body: ShouldSpec.() -> Unit = {
             setDeviceKeys(true)
             setRequest(SecretType.M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
             setCrossSigningKeys(crossSigningPublicKey)
-            val secretEvent = Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
+            val secretEvent = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             globalAccountDataStore.save(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
                 DecryptedOlmEventContainer(
@@ -328,7 +331,7 @@ private val body: ShouldSpec.() -> Unit = {
             setDeviceKeys(true)
             setRequest(SecretType.M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
             returnRoomKeysVersion(keyBackupPublicKey)
-            val secretEvent = Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf()))
+            val secretEvent = GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf()))
             globalAccountDataStore.save(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
                 DecryptedOlmEventContainer(
@@ -354,7 +357,7 @@ private val body: ShouldSpec.() -> Unit = {
             setDeviceKeys(true)
             setRequest(SecretType.M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice, "OTHER_DEVICE"))
             setCrossSigningKeys(crossSigningPublicKey)
-            val secretEvent = Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
+            val secretEvent = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             globalAccountDataStore.save(secretEvent)
             cut.handleOutgoingKeyRequestAnswer(
                 DecryptedOlmEventContainer(
@@ -432,15 +435,15 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                         "key1"
                     ),
                     SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
+                        GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
                         "key2"
                     ),
                     SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                        GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
                         "key3"
                     )
                 )
@@ -452,7 +455,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                        GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
                         "key3"
                     )
                 )
@@ -549,17 +552,17 @@ private val body: ShouldSpec.() -> Unit = {
         should("do nothing when secret is not allowed to cache") {
             val crossSigningPrivateKeys = mapOf(
                 SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
+                    GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                     "key"
                 )
             )
             keyStore.updateSecrets { crossSigningPrivateKeys }
-            cut.handleChangedSecrets(Event.GlobalAccountDataEvent(MasterKeyEventContent(mapOf())))
+            cut.handleChangedSecrets(GlobalAccountDataEvent(MasterKeyEventContent(mapOf())))
             sendToDeviceEvents shouldBe null
             keyStore.getSecrets() shouldBe crossSigningPrivateKeys
         }
         should("do nothing when event did not change") {
-            val event = Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
+            val event = GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf()))
             val crossSigningPrivateKeys = mapOf(
                 SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
                     event, "bla"
@@ -574,12 +577,12 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf("oh" to JsonPrimitive("change!")))),
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf("oh" to JsonPrimitive("change!")))),
                         "bla"
                     )
                 )
             }
-            cut.handleChangedSecrets(Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())))
+            cut.handleChangedSecrets(GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())))
 
             assertSoftly(sendToDeviceEvents?.get(alice)?.get("DEVICE_2")) {
                 assertNotNull(this)

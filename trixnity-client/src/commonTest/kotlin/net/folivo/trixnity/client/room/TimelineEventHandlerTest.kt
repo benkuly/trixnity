@@ -18,8 +18,10 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -68,12 +70,12 @@ class TimelineEventHandlerTest : ShouldSpec({
         scope.cancel()
     }
 
-    suspend fun storeTimeline(vararg events: Event.RoomEvent<*>) = events.map {
+    suspend fun storeTimeline(vararg events: RoomEvent<*>) = events.map {
         roomTimelineStore.get(it.id, it.roomId).first()
     }
 
-    fun nameEvent(i: Long = 60): Event.StateEvent<NameEventContent> {
-        return Event.StateEvent(
+    fun nameEvent(i: Long = 60): StateEvent<NameEventContent> {
+        return StateEvent(
             NameEventContent("The room name"),
             EventId("\$event$i"),
             UserId("sender", "server"),
@@ -199,7 +201,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 )
                 cut.redactTimelineEvent(redactionEvent)
                 assertSoftly(roomTimelineStore.get(event2.id, room).first().shouldNotBeNull()) {
-                    event shouldBe Event.StateEvent(
+                    event shouldBe StateEvent(
                         RedactedEventContent("m.room.name"),
                         event2.id,
                         UserId("sender", "server"),
@@ -608,7 +610,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                                     room to Sync.Response.Rooms.JoinedRoom(
                                         timeline = Sync.Response.Rooms.Timeline(
                                             listOf(
-                                                Event.StateEvent(
+                                                StateEvent(
                                                     MemberEventContent(membership = Membership.JOIN),
                                                     EventId("\$event24"),
                                                     alice,

@@ -15,7 +15,7 @@ import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -75,7 +75,7 @@ class NotificationIT {
 
             withClue("first notification") {
                 notifications.first { it.size == 1 }.getOrNull(0).shouldNotBeNull()
-                    .event.shouldBeInstanceOf<Event.StrippedStateEvent<*>>()
+                    .event.shouldBeInstanceOf<StrippedStateEvent<*>>()
                     .content.shouldBeInstanceOf<MemberEventContent>().displayName shouldBe "user2"
             }
 

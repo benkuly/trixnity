@@ -9,9 +9,10 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -46,7 +47,7 @@ class RoomDisplayNameEventHandler(
     private val setRoomDisplayNamesQueue =
         MutableStateFlow(mapOf<RoomId, RoomDisplayNameChange>())
 
-    internal fun setRoomDisplayNameFromNameEvent(event: Event<NameEventContent>) {
+    internal fun setRoomDisplayNameFromNameEvent(event: ClientEvent<NameEventContent>) {
         val roomId = event.roomIdOrNull
         if (roomId != null) {
             log.debug { "update room displayname of $roomId due to name event" }
@@ -59,7 +60,7 @@ class RoomDisplayNameEventHandler(
         }
     }
 
-    internal fun setRoomDisplayNameFromCanonicalAliasEvent(event: Event<CanonicalAliasEventContent>) {
+    internal fun setRoomDisplayNameFromCanonicalAliasEvent(event: ClientEvent<CanonicalAliasEventContent>) {
         val roomId = event.roomIdOrNull
         if (roomId != null) {
             log.debug { "update room displayname of $roomId doe to alias event" }

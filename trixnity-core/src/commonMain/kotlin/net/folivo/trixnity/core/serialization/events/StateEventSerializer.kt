@@ -1,6 +1,6 @@
 package net.folivo.trixnity.core.serialization.events
 
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.StateEventContent
 
 class StateEventSerializer(

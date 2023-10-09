@@ -20,6 +20,9 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.Joined
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
@@ -144,7 +147,7 @@ class SyncRoutesTest : TestsWithMocks() {
                                             stateKey = "@alice:example.org",
                                             roomId = RoomId("!726s6s6q:example.com")
                                         ),
-                                        MessageEvent(
+                                        ClientEvent.RoomEvent.MessageEvent(
                                             content = TextMessageEventContent(
                                                 body = "This is an example text message",
                                                 format = "org.matrix.custom.html",

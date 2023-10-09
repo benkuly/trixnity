@@ -7,7 +7,9 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
@@ -91,7 +93,7 @@ class InMemoryRoomUserRepository : RoomUserRepository, InMemoryMapRepository<Roo
 }
 
 class InMemoryRoomStateRepository : RoomStateRepository,
-    InMemoryMapRepository<RoomStateRepositoryKey, String, Event<*>>() {
+    InMemoryMapRepository<RoomStateRepositoryKey, String, ClientEvent.StateBaseEvent<*>>() {
     override suspend fun deleteByRoomId(roomId: RoomId) {
         content.update { value -> value.filterKeys { it.roomId != roomId } }
     }
@@ -116,10 +118,10 @@ class InMemoryMediaCacheMappingRepository : MediaCacheMappingRepository,
     InMemoryMinimalRepository<String, MediaCacheMapping>()
 
 class InMemoryGlobalAccountDataRepository : GlobalAccountDataRepository,
-    InMemoryMapRepository<String, String, Event.GlobalAccountDataEvent<*>>()
+    InMemoryMapRepository<String, String, GlobalAccountDataEvent<*>>()
 
 class InMemoryRoomAccountDataRepository : RoomAccountDataRepository,
-    InMemoryMapRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>>() {
+    InMemoryMapRepository<RoomAccountDataRepositoryKey, String, RoomAccountDataEvent<*>>() {
     override suspend fun deleteByRoomId(roomId: RoomId) {
         content.update { value -> value.filterKeys { it.roomId != roomId } }
     }

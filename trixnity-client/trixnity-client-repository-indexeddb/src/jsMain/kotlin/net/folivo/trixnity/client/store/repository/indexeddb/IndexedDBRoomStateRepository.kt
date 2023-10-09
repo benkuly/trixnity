@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 
 @Serializable
 internal class IndexedDBRoomState(
@@ -18,13 +18,13 @@ internal class IndexedDBRoomState(
     val type: String,
     val stateKey: String,
     @Contextual
-    val event: Event<*>,
+    val event: StateBaseEvent<*>,
 )
 
 internal class IndexedDBRoomStateRepository(
     json: Json
 ) : RoomStateRepository,
-    IndexedDBMapRepository<RoomStateRepositoryKey, String, Event<*>, IndexedDBRoomState>(
+    IndexedDBMapRepository<RoomStateRepositoryKey, String, StateBaseEvent<*>, IndexedDBRoomState>(
         objectStoreName = objectStoreName,
         firstKeyIndexName = "roomId|type",
         firstKeySerializer = { arrayOf(it.roomId.full, it.type) },

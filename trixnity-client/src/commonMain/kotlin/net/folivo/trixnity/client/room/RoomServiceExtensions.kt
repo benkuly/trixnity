@@ -10,6 +10,8 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -33,11 +35,11 @@ inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
 inline fun <reified C : StateEventContent> RoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<Event<C>?> = getState(roomId, C::class, stateKey)
+): Flow<StateBaseEvent<C>?> = getState(roomId, C::class, stateKey)
 
 inline fun <reified C : StateEventContent> RoomService.getAllState(
     roomId: RoomId,
-): Flow<Map<String, Flow<Event<C>?>>?> = getAllState(roomId, C::class)
+): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> = getAllState(roomId, C::class)
 
 /**
  * This collects all rooms, so when one room changes, a new room set gets emitted.
