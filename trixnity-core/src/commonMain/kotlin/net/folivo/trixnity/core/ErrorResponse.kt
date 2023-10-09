@@ -280,6 +280,13 @@ sealed interface ErrorResponse {
     data class UnableToGrantJoin(override val error: String? = null) : ErrorResponse
 
     /**
+     * No resource was found for this request.
+     */
+    @Serializable
+    @SerialName("M_DUPLICATE_ANNOTATION")
+    data class DuplicateAnnotation(override val error: String? = null) : ErrorResponse
+
+    /**
      * All ErrorResponses, that we cannot map to a subtype of ErrorResponse.
      */
     @Serializable

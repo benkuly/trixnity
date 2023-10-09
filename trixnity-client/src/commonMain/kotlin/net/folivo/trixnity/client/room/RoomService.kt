@@ -573,7 +573,6 @@ class RoomServiceImpl(
                 content = content,
                 sentAt = null,
                 keepMediaInCache = keepMediaInCache,
-                mediaUploadProgress = MutableStateFlow(null)
             )
         }
         return transactionId
@@ -584,7 +583,7 @@ class RoomServiceImpl(
     }
 
     override suspend fun retrySendMessage(transactionId: String) {
-        roomOutboxMessageStore.update(transactionId) { it?.copy(retryCount = 0) }
+        roomOutboxMessageStore.update(transactionId) { it?.copy(sendError = null) }
     }
 
     override fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = roomStore.getAll()

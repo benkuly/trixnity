@@ -24,7 +24,6 @@ import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderM
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.core.ErrorResponse
@@ -89,7 +88,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             roomOutboxMessageStore.update(outbox2.transactionId) { outbox2 }
             roomOutboxMessageStore.update(outbox3.transactionId) { outbox3 }
 
-            retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 cut.removeOldOutboxMessages()
                 roomOutboxMessageStore.getAll().value shouldContainExactly listOf(outbox1, outbox3)
             }
@@ -99,14 +98,14 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         should("wait until connected, upload media, send message and mark outbox message as sent") {
             val mxcUrl = "mxc://dino"
             val cacheUrl = "cache://unicorn"
-            val mediaUploadProgress = MutableStateFlow<FileTransferProgress?>(null)
             val message1 =
                 RoomOutboxMessage(
-                    "transaction1", room, RoomMessageEventContent.ImageMessageEventContent("hi.png", url = cacheUrl),
-                    null, mediaUploadProgress = mediaUploadProgress
+                    "transaction1",
+                    room,
+                    RoomMessageEventContent.ImageMessageEventContent("hi.png", url = cacheUrl)
                 )
             val message2 =
-                RoomOutboxMessage("transaction2", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
+                RoomOutboxMessage("transaction2", room, RoomMessageEventContent.TextMessageEventContent("hi"))
             roomOutboxMessageStore.update(message1.transactionId) { message1 }
             roomOutboxMessageStore.update(message2.transactionId) { message2 }
             mediaServiceMock.returnUploadMedia = Result.success(mxcUrl)
@@ -134,9 +133,8 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 job.isActive
             }
             currentSyncState.value = SyncState.RUNNING
-
             mediaServiceMock.uploadMediaCalled.first { it == cacheUrl }
-            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
+            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().value
                 outboxMessages shouldHaveSize 2
                 outboxMessages[0].sentAt shouldNotBe null
@@ -171,7 +169,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
+            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].sentAt shouldNotBe null
@@ -180,6 +178,34 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             job.cancel()
         }
         should("retry on sending error") {
+            val message =
+                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
+            roomOutboxMessageStore.update(message.transactionId) { message }
+            var call = 0
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    SendMessageEvent(room, "m.room.message", "transaction"),
+                ) {
+                    call++
+                    when (call) {
+                        1 -> throw RuntimeException("http send failure")
+                        else -> SendEventResponse(EventId("event"))
+                    }
+
+                }
+            }
+            currentSyncState.value = SyncState.RUNNING
+
+            val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
+
+            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+                val outboxMessages = roomOutboxMessageStore.getAll().value
+                outboxMessages shouldHaveSize 1
+                outboxMessages[0].sentAt shouldNotBe null
+            }
+            job.cancel()
+        }
+        should("not retry on MatrixServerException") {
             val message =
                 RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
             roomOutboxMessageStore.update(message.transactionId) { message }
@@ -200,36 +226,47 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
+            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().value
                 outboxMessages shouldHaveSize 1
-                outboxMessages[0].sentAt shouldNotBe null
+                outboxMessages[0].sentAt shouldBe null
             }
             job.cancel()
         }
-
-        should("not retry infinite on sending error") {
+        should("retry on MatrixServerException rate limit") {
             val message =
                 RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
             roomOutboxMessageStore.update(message.transactionId) { message }
+            var call = 0
             apiConfig.endpoints {
-                repeat(3) {
-                    matrixJsonEndpoint(
-                        SendMessageEvent(room, "m.room.message", "transaction"),
-                    ) {
-                        throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
+                matrixJsonEndpoint(
+                    SendMessageEvent(room, "m.room.message", "transaction"),
+                ) {
+                    call++
+                    when (call) {
+                        1 -> throw MatrixServerException(
+                            HttpStatusCode.TooManyRequests,
+                            ErrorResponse.LimitExceeded(retryAfterMillis = 300)
+                        )
+
+                        else -> SendEventResponse(EventId("event"))
                     }
+
                 }
             }
             currentSyncState.value = SyncState.RUNNING
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-            retry(100, 3_000.milliseconds, 30.milliseconds) { // we need this, because the cache may not be fast enough
+            retry(100, 200.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().value
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].sentAt shouldBe null
-                outboxMessages[0].reachedMaxRetryCount shouldBe true
+            }
+            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+                val outboxMessages = roomOutboxMessageStore.getAll().value
+                outboxMessages shouldHaveSize 1
+                outboxMessages[0].sentAt shouldBe null
             }
             job.cancel()
         }
