@@ -21,8 +21,8 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.LeftRo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -90,7 +90,7 @@ class RoomListHandlerTest : ShouldSpec({
                                     room to JoinedRoom(
                                         timeline = Sync.Response.Rooms.Timeline(
                                             events = listOf(
-                                                Event.StateEvent(
+                                                StateEvent(
                                                     CreateEventContent(UserId("user1", "localhost")),
                                                     EventId("event1"),
                                                     UserId("user1", "localhost"),
@@ -105,7 +105,7 @@ class RoomListHandlerTest : ShouldSpec({
                                                     room,
                                                     5,
                                                 ),
-                                                Event.StateEvent(
+                                                StateEvent(
                                                     AvatarEventContent("mxc://localhost/123456"),
                                                     EventId("event3"),
                                                     UserId("user1", "localhost"),

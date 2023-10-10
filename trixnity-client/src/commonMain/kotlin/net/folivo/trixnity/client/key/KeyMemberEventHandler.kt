@@ -7,10 +7,10 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -32,11 +32,11 @@ class KeyMemberEventHandler(
             .unsubscribeOnCompletion(scope)
     }
 
-    override suspend fun handleLazyMemberEvents(memberEvents: List<Event<MemberEventContent>>) {
-        updateDeviceKeysFromChangedMembership(memberEvents.filterIsInstance<Event.StateEvent<MemberEventContent>>())
+    override suspend fun handleLazyMemberEvents(memberEvents: List<StateEvent<MemberEventContent>>) {
+        updateDeviceKeysFromChangedMembership(memberEvents)
     }
 
-    internal suspend fun updateDeviceKeysFromChangedMembership(events: List<Event.StateEvent<MemberEventContent>>) {
+    internal suspend fun updateDeviceKeysFromChangedMembership(events: List<StateEvent<MemberEventContent>>) {
         val deleteDeviceKeys = mutableSetOf<UserId>()
         val updateOutdatedKeys = mutableSetOf<UserId>()
         events.forEach { event ->

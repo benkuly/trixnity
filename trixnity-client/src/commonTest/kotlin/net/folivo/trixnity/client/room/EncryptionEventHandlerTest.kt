@@ -13,6 +13,8 @@ import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -47,7 +49,7 @@ class EncryptionEventHandlerTest : ShouldSpec({
             roomStore.update(room) { simpleRoom.copy(membersLoaded = true) }
             cut.setEncryptionAlgorithm(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         EncryptionEventContent(algorithm = EncryptionAlgorithm.Megolm),
                         EventId("\$event1"),
                         alice,

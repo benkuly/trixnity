@@ -19,9 +19,10 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.eventIdOrNull
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
@@ -195,7 +196,7 @@ private val body: ShouldSpec.() -> Unit = {
                 roomId,
                 user1,
                 user1DisplayName,
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("JOIN"),
                     user1,
@@ -232,7 +233,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            val invitation = Event.StrippedStateEvent(
+            val invitation = StrippedStateEvent(
                 content = MemberEventContent(
                     membership = Membership.INVITE,
                     displayName = user1DisplayName,
@@ -288,7 +289,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            val invitation = Event.StrippedStateEvent(
+            val invitation = StrippedStateEvent(
                 content = MemberEventContent(
                     membership = Membership.INVITE,
                     displayName = user1DisplayName,
@@ -436,7 +437,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 should("notify when met") {
                     roomStateStore.save(
-                        Event.StateEvent(
+                        StateEvent(
                             PowerLevelsEventContent(
                                 notifications = PowerLevelsEventContent.Notifications(50),
                                 users = mapOf(otherUser to 50, user1 to 30)
@@ -452,7 +453,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 should("not notify when not met") {
                     roomStateStore.save(
-                        Event.StateEvent(
+                        StateEvent(
                             PowerLevelsEventContent(
                                 notifications = PowerLevelsEventContent.Notifications(100),
                                 users = mapOf(otherUser to 50, user1 to 30)

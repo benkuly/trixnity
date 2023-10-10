@@ -21,9 +21,10 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.*
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -396,7 +397,7 @@ class RoomServiceTest : ShouldSpec({
             roomTimelineStore.addRelation(timelineEventRelation(room, 2))
 
             fun stateEvent(roomId: RoomId, i: Int) =
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("$i"),
                     UserId("sender", "server"),
@@ -408,7 +409,7 @@ class RoomServiceTest : ShouldSpec({
             roomStateStore.save(stateEvent(room, 2))
 
             fun roomAccountDataEvent(roomId: RoomId, i: Int) =
-                Event.RoomAccountDataEvent(
+                RoomAccountDataEvent(
                     FullyReadEventContent(EventId("$i")),
                     roomId,
                     key = "$i",

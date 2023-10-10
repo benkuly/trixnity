@@ -28,8 +28,9 @@ data class ExchangeThirdPartyInvite(
     @OptIn(ExperimentalSerializationApi::class)
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
-    ): KSerializer<Signed<PersistentStateDataUnit<MemberEventContent>, String>> {
+        json: Json,
+        value: Signed<PersistentStateDataUnit<MemberEventContent>, String>?
+    ): KSerializer<Signed<PersistentStateDataUnit<MemberEventContent>, String>>? {
         @Suppress("UNCHECKED_CAST")
         val serializer = requireNotNull(json.serializersModule.getContextual(PersistentStateDataUnit::class))
                 as KSerializer<PersistentStateDataUnit<MemberEventContent>>

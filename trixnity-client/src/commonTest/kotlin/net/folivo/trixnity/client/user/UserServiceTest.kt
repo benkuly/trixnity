@@ -19,10 +19,12 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.EventType
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
@@ -1146,7 +1148,7 @@ class UserServiceTest : ShouldSpec({
 
     context(UserServiceImpl::canRedactEvent.name) {
         val eventByUser = TimelineEvent(
-            event = Event.MessageEvent(
+            event = MessageEvent(
                 content = RoomMessageEventContent.TextMessageEventContent(body = "Hi"),
                 id = EventId("4711"),
                 sender = me,
@@ -1158,7 +1160,7 @@ class UserServiceTest : ShouldSpec({
             gap = null,
         )
         val eventByOtherUser = TimelineEvent(
-            event = Event.MessageEvent(
+            event = MessageEvent(
                 content = RoomMessageEventContent.TextMessageEventContent(body = "Hi"),
                 id = EventId("4711"),
                 sender = UserId("otherUser"),
@@ -1269,8 +1271,8 @@ class UserServiceTest : ShouldSpec({
                 )
             )
             val event = TimelineEvent(
-                event = Event.MessageEvent(
-                    content = RedactedMessageEventContent(eventType = "redacted"),
+                event = MessageEvent(
+                    content = RedactedEventContent(eventType = "redacted"),
                     id = EventId("event"),
                     sender = me,
                     roomId = roomId,

@@ -21,6 +21,8 @@ import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.clientserverapi.model.keys.AddSignatures
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
@@ -98,7 +100,7 @@ private val body: ShouldSpec.() -> Unit = {
             cut.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, keyInfo).isFailure shouldBe true
         }
         should("fail when master key does not match") {
-            globalAccountDataStore.save(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
+            globalAccountDataStore.save(GlobalAccountDataEvent(encryptedMasterSigningKey))
             val publicKey = Random.nextBytes(32).encodeUnpaddedBase64()
             keyStore.updateCrossSigningKeys(alice) {
                 setOf(
@@ -125,7 +127,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
 
-            globalAccountDataStore.save(Event.GlobalAccountDataEvent(encryptedMasterSigningKey))
+            globalAccountDataStore.save(GlobalAccountDataEvent(encryptedMasterSigningKey))
             val aliceMasterKey = CrossSigningKeys(
                 alice, setOf(MasterKey), keysOf(
                     Ed25519Key(masterSigningPublicKey, masterSigningPublicKey)
@@ -547,7 +549,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(
+                        GlobalAccountDataEvent(
                             SelfSigningKeyEventContent(mapOf())
                         ), ""
                     )
@@ -632,7 +634,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(
+                        GlobalAccountDataEvent(
                             UserSigningKeyEventContent(mapOf())
                         ), ""
                     )
@@ -687,7 +689,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(
+                        GlobalAccountDataEvent(
                             SelfSigningKeyEventContent(mapOf())
                         ), ""
                     )

@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.isTracked
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 

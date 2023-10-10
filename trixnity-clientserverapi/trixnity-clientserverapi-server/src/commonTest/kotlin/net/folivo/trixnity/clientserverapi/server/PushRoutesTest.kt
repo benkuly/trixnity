@@ -15,10 +15,10 @@ import net.folivo.trixnity.clientserverapi.model.push.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.push.*
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
@@ -28,7 +28,7 @@ class PushRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
     private val json = createMatrixEventJson()
-    private val mapping = createEventContentSerializerMappings()
+    private val mapping = createDefaultEventContentSerializerMappings()
 
     @Mock
     lateinit var handlerMock: PushApiHandler
@@ -160,7 +160,7 @@ class PushRoutesTest : TestsWithMocks() {
                     notifications = listOf(
                         GetNotifications.Response.Notification(
                             actions = setOf(PushAction.Notify, PushAction.SetSoundTweak("default")),
-                            event = Event.MessageEvent(
+                            event = MessageEvent(
                                 content = RoomMessageEventContent.TextMessageEventContent("body"),
                                 id = EventId("\$143273582443PhrSn:example.org"),
                                 originTimestamp = 1432735824653,

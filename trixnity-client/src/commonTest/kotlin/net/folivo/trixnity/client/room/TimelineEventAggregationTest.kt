@@ -15,6 +15,8 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
@@ -80,7 +82,7 @@ class TimelineEventAggregationTest : ShouldSpec({
         eventContent: MessageEventContent = RoomMessageEventContent.TextMessageEventContent(id)
     ): TimelineEvent =
         TimelineEvent(
-            event = Event.MessageEvent(
+            event = MessageEvent(
                 eventContent,
                 EventId(id),
                 sender,

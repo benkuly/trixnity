@@ -14,7 +14,8 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -197,11 +198,11 @@ class KeyServiceImpl(
                     keyStore.updateSecrets {
                         mapOf(
                             SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                                Event.GlobalAccountDataEvent(encryptedSelfSigningKey),
+                                GlobalAccountDataEvent(encryptedSelfSigningKey),
                                 selfSigningPrivateKey
                             ),
                             SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                                Event.GlobalAccountDataEvent(encryptedUserSigningKey),
+                                GlobalAccountDataEvent(encryptedUserSigningKey),
                                 userSigningPrivateKey
                             ),
                         )
@@ -299,7 +300,7 @@ class KeyServiceImpl(
         roomService.getTimelineEvent(roomId, eventId).flatMapLatest { timelineEvent ->
             val event = timelineEvent?.event
             val content = event?.content
-            if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
+            if (event is MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
                 combine(
                     olmCryptoStore.getInboundMegolmSession(content.sessionId, event.roomId),
                     keyStore.getDeviceKeys(event.sender)

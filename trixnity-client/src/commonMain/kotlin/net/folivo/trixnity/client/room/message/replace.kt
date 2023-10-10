@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.utils.TrixnityDsl
 
@@ -13,7 +13,7 @@ fun MessageBuilder.replace(
 
 @TrixnityDsl
 fun MessageBuilder.replace(
-    event: Event.MessageEvent<*>,
+    event: MessageEvent<*>,
 ) = replace(event.id)
 
 @TrixnityDsl

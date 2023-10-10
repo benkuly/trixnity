@@ -10,7 +10,8 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#post_matrixclientv3search">matrix spec</a>
@@ -85,7 +86,7 @@ data class Search(
                 @SerialName("highlights") val highlights: Set<String>? = null,
                 @SerialName("next_batch") val nextBatch: String? = null,
                 @SerialName("results") val results: List<Results>? = null,
-                @SerialName("state") val state: Map<RoomId, Set<@Contextual Event.StateEvent<*>>>? = null,
+                @SerialName("state") val state: Map<RoomId, Set<@Contextual StateEvent<*>>>? = null,
             ) {
                 @Serializable
                 data class GroupValue(
@@ -98,13 +99,13 @@ data class Search(
                 data class Results(
                     @SerialName("context") val context: EventContext? = null,
                     @SerialName("rank") val rank: Double? = null,
-                    @SerialName("result") val result: @Contextual Event.RoomEvent<*>? = null
+                    @SerialName("result") val result: @Contextual RoomEvent<*>? = null
                 ) {
                     @Serializable
                     data class EventContext(
                         @SerialName("end") val end: String? = null,
-                        @SerialName("events_after") val eventsAfter: List<@Contextual Event.RoomEvent<*>>? = null,
-                        @SerialName("events_before") val eventsBefore: List<@Contextual Event.RoomEvent<*>>? = null,
+                        @SerialName("events_after") val eventsAfter: List<@Contextual RoomEvent<*>>? = null,
+                        @SerialName("events_before") val eventsBefore: List<@Contextual RoomEvent<*>>? = null,
                         @SerialName("profile_info") val profileInfo: Map<UserId, UserProfile>? = null,
                         @SerialName("start") val start: String? = null
                     ) {

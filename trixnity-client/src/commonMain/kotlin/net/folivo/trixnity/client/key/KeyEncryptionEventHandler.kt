@@ -5,9 +5,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.subscribeEventList
@@ -27,7 +27,7 @@ class KeyEncryptionEventHandler(
             .unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun updateDeviceKeysFromChangedEncryption(events: List<Event.StateEvent<EncryptionEventContent>>) {
+    internal suspend fun updateDeviceKeysFromChangedEncryption(events: List<StateEvent<EncryptionEventContent>>) {
         log.debug { "update device keys from changed encryption" }
         val outdatedKeys = events.map { event ->
             val allowedMemberships =

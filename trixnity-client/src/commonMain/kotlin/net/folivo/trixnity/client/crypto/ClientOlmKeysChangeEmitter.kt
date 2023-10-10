@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.crypto
 
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.crypto.olm.OlmKeysChange
 import net.folivo.trixnity.crypto.olm.OlmKeysChangeEmitter
 

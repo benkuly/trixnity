@@ -5,7 +5,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
@@ -19,10 +19,10 @@ internal object ExposedRoomAccountData : Table("room_account_data") {
 
 internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAccountDataRepository {
     @OptIn(ExperimentalSerializationApi::class)
-    private val serializer = json.serializersModule.getContextual(Event.RoomAccountDataEvent::class)
+    private val serializer = json.serializersModule.getContextual(RoomAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(firstKey: RoomAccountDataRepositoryKey): Map<String, Event.RoomAccountDataEvent<*>> =
+    override suspend fun get(firstKey: RoomAccountDataRepositoryKey): Map<String, RoomAccountDataEvent<*>> =
         withExposedRead {
             ExposedRoomAccountData.select {
                 ExposedRoomAccountData.roomId.eq(firstKey.roomId.full) and
@@ -39,7 +39,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
     override suspend fun get(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String
-    ): Event.RoomAccountDataEvent<*>? = withExposedRead {
+    ): RoomAccountDataEvent<*>? = withExposedRead {
         ExposedRoomAccountData.select {
             ExposedRoomAccountData.roomId.eq(firstKey.roomId.full) and
                     ExposedRoomAccountData.type.eq(firstKey.type) and
@@ -52,7 +52,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
     override suspend fun save(
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String,
-        value: Event.RoomAccountDataEvent<*>
+        value: RoomAccountDataEvent<*>
     ): Unit = withExposedWrite {
         ExposedRoomAccountData.replace {
             it[roomId] = firstKey.roomId.full

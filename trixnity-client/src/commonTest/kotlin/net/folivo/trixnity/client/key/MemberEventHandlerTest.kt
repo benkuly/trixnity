@@ -18,6 +18,8 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -77,7 +79,7 @@ private val body: ShouldSpec.() -> Unit = {
             roomStore.update(room2) { simpleRoom.copy(roomId = room2) }
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event"),
                         alice,
@@ -93,7 +95,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.LEAVE),
                         EventId("\$event"),
                         alice,
@@ -108,7 +110,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.BAN),
                         EventId("\$event"),
                         alice,
@@ -131,7 +133,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             delay(500)
             roomStateStore.save(
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("\$event"),
                     alice,
@@ -142,7 +144,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.LEAVE),
                         EventId("\$event"),
                         alice,
@@ -157,7 +159,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.BAN),
                         EventId("\$event"),
                         alice,
@@ -172,7 +174,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("ignore join without real change (already join)") {
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event"),
                         alice,
@@ -190,7 +192,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("mark keys as outdated when join or invite") {
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event"),
                         alice,
@@ -206,7 +208,7 @@ private val body: ShouldSpec.() -> Unit = {
 
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.INVITE),
                         EventId("\$event"),
                         alice,
@@ -222,7 +224,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(membership = Membership.JOIN),
                         EventId("\$event"),
                         alice,

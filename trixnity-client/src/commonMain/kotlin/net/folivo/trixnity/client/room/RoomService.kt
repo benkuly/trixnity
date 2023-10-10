@@ -16,12 +16,16 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.eventIdOrNull
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
@@ -176,12 +180,12 @@ interface RoomService {
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String = "",
-    ): Flow<Event<C>?>
+    ): Flow<StateBaseEvent<C>?>
 
     fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?>
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?>
 }
 
 class RoomServiceImpl(
@@ -617,14 +621,14 @@ class RoomServiceImpl(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String,
-    ): Flow<Event<C>?> {
+    ): Flow<StateBaseEvent<C>?> {
         return roomStateStore.getByStateKey(roomId, eventContentClass, stateKey)
     }
 
     override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> {
         return roomStateStore.get(roomId, eventContentClass)
     }
 }

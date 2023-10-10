@@ -6,8 +6,9 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -20,9 +21,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.contentSerializer
 import net.folivo.trixnity.core.serialization.events.contentType
-import net.folivo.trixnity.core.serialization.events.fromClass
 
 interface RoomsApiClient {
 
@@ -35,7 +34,7 @@ interface RoomsApiClient {
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId? = null
-    ): Result<Event<*>>
+    ): Result<RoomEvent<*>>
 
     /**
      * @see [GetStateEvent]
@@ -177,7 +176,7 @@ interface RoomsApiClient {
         inviteThirdPid: Set<CreateRoom.Request.InviteThirdPid>? = null,
         roomVersion: String? = null,
         creationContent: CreateEventContent? = null,
-        initialState: List<Event.InitialStateEvent<*>>? = null,
+        initialState: List<InitialStateEvent<*>>? = null,
         preset: CreateRoom.Request.Preset? = null,
         isDirect: Boolean? = null,
         powerLevelContentOverride: PowerLevelsEventContent? = null,
@@ -503,7 +502,7 @@ class RoomsApiClientImpl(
         roomId: RoomId,
         eventId: EventId,
         asUserId: UserId?
-    ): Result<Event<*>> =
+    ): Result<RoomEvent<*>> =
         httpClient.request(GetEvent(roomId, eventId, asUserId))
 
     override suspend fun getStateEvent(
@@ -646,7 +645,7 @@ class RoomsApiClientImpl(
         inviteThirdPid: Set<CreateRoom.Request.InviteThirdPid>?,
         roomVersion: String?,
         creationContent: CreateEventContent?,
-        initialState: List<Event.InitialStateEvent<*>>?,
+        initialState: List<InitialStateEvent<*>>?,
         preset: CreateRoom.Request.Preset?,
         isDirect: Boolean?,
         powerLevelContentOverride: PowerLevelsEventContent?,
@@ -827,8 +826,8 @@ class RoomsApiClientImpl(
         key: String,
         asUserId: UserId?
     ): Result<Unit> {
-        val mapping = contentMappings.roomAccountData.contentSerializer(content)
-        val eventType = mapping.first.let { type -> if (key.isEmpty()) type else type + key }
+        val eventType = contentMappings.roomAccountData.contentType(content)
+            .let { type -> if (key.isEmpty()) type else type + key }
 
         return httpClient.request(SetRoomAccountData(userId, roomId, eventType, asUserId), content)
     }
@@ -947,7 +946,7 @@ suspend inline fun <reified C : RoomAccountDataEventContent> RoomsApiClient.getA
     key: String = "",
     asUserId: UserId? = null
 ): Result<C> {
-    val type = contentMappings.roomAccountData.fromClass(C::class).type
+    val type = contentMappings.roomAccountData.contentType(C::class)
     @Suppress("UNCHECKED_CAST")
     return getAccountData(type, roomId, userId, key, asUserId) as Result<C>
 }
@@ -960,7 +959,7 @@ suspend inline fun <reified C : StateEventContent> RoomsApiClient.getStateEvent(
     stateKey: String = "",
     asUserId: UserId? = null
 ): Result<C> {
-    val type = contentMappings.state.fromClass(C::class).type
+    val type = contentMappings.state.contentType(C::class)
     @Suppress("UNCHECKED_CAST")
     return getStateEvent(type, roomId, stateKey, asUserId) as Result<C>
 }
@@ -977,6 +976,6 @@ suspend inline fun <reified C : MessageEventContent> RoomsApiClient.getRelations
     limit: Long? = null,
     asUserId: UserId? = null
 ): Result<GetRelationsResponse> {
-    val eventType = contentMappings.message.fromClass(C::class).type
+    val eventType = contentMappings.message.contentType(C::class)
     return getRelations(roomId, eventId, relationType, eventType, from, to, limit, asUserId)
 }

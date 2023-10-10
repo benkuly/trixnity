@@ -6,12 +6,12 @@ import net.folivo.trixnity.client.store.RoomTimelineStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 
 private val log = KotlinLogging.logger {}
 
 internal suspend fun RoomTimelineStore.filterDuplicateEvents(
-    events: List<Event.RoomEvent<*>>?,
+    events: List<RoomEvent<*>>?,
 ) =
     events?.distinctBy { it.id }
         ?.filter { get(it.id, it.roomId).first() == null }
@@ -22,11 +22,11 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
     previousToken: String?,
     previousHasGap: Boolean,
     previousEvent: EventId?,
-    previousEventChunk: List<Event.RoomEvent<*>>?,
+    previousEventChunk: List<RoomEvent<*>>?,
     nextToken: String?,
     nextHasGap: Boolean,
     nextEvent: EventId?,
-    nextEventChunk: List<Event.RoomEvent<*>>?,
+    nextEventChunk: List<RoomEvent<*>>?,
     processTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent>
 ) {
     log.trace {

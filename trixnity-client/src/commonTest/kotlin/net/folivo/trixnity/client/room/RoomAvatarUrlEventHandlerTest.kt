@@ -19,6 +19,9 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
@@ -61,7 +64,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
     context(RoomAvatarUrlEventHandler::setAvatarUrlForMemberUpdates.name) {
         should("update the room's avatar URL when the room is a direct room") {
             roomStore.update(room) { Room(room, isDirect = true) }
-            val event = Event.StateEvent(
+            val event = StateEvent(
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/123456",
                     membership = Membership.JOIN,
@@ -80,7 +83,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
         should("do nothing when the room is not a direct room") {
             roomStore.update(room) { Room(room, isDirect = false) }
-            val event = Event.StateEvent(
+            val event = StateEvent(
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/123456",
                     membership = Membership.JOIN,
@@ -99,7 +102,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
         should("use the membership event of other user and not own (which is the invitation we might have sent)") {
             roomStore.update(room) { Room(room, isDirect = true) }
-            val event = Event.StateEvent(
+            val event = StateEvent(
                 // invitation
                 MemberEventContent(
                     avatarUrl = "mxc://localhost/abcdef",
@@ -121,7 +124,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
     context(RoomAvatarUrlEventHandler::setAvatarUrlForAvatarEvents.name) {
         should("set the avatar URL for normal rooms") {
             roomStore.update(room) { Room(room, avatarUrl = "mxc://localhost/abcdef") }
-            val event = Event.StateEvent(
+            val event = StateEvent(
                 AvatarEventContent("mxc://localhost/123456"),
                 EventId("1"),
                 bob,
@@ -137,7 +140,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
         should("set an empty avatar URL for normal rooms") {
             roomStore.update(room) { Room(room, avatarUrl = "mxc://localhost/abcdef") }
-            val event = Event.StateEvent(
+            val event = StateEvent(
                 AvatarEventContent(""),
                 EventId("1"),
                 bob,
@@ -153,7 +156,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
 
         should("set the avatar URL for direct rooms") {
             roomStore.update(room) { Room(room, isDirect = true) }
-            val event = Event.StateEvent(
+            val event = StateEvent(
                 AvatarEventContent("mxc://localhost/123456"),
                 EventId("1"),
                 bob,
@@ -170,12 +173,12 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
         should("set the avatar URL to a member of a direct room when the new avatar URL is empty") {
             roomStore.update(room) { Room(room, isDirect = true, avatarUrl = "mxc://localhost/abcdef") }
             globalAccountDataStore.save(
-                Event.GlobalAccountDataEvent(
+                GlobalAccountDataEvent(
                     DirectEventContent(mappings = mapOf(bob to setOf(room, RoomId("room2", "localhost"))))
                 )
             )
             roomStateStore.save(
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(
                         avatarUrl = "mxc://localhost/123456",
                         membership = Membership.JOIN
@@ -187,7 +190,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
                     stateKey = bob.full
                 )
             )
-            val event = Event.StateEvent(
+            val event = StateEvent(
                 AvatarEventContent(""),
                 EventId("1"),
                 bob,

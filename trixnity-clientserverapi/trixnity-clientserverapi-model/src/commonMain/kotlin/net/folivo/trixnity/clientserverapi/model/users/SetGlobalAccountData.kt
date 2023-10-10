@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.GlobalAccountDataEventContentSerializer
+import net.folivo.trixnity.core.serialization.events.contentSerializer
 
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#put_matrixclientv3useruseridaccount_datatype">matrix spec</a>
@@ -26,7 +26,8 @@ data class SetGlobalAccountData(
 ) : MatrixEndpoint<GlobalAccountDataEventContent, Unit> {
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
+        json: Json,
+        value: GlobalAccountDataEventContent?
     ): KSerializer<GlobalAccountDataEventContent> =
-        GlobalAccountDataEventContentSerializer(type, mappings.globalAccountData)
+        mappings.globalAccountData.contentSerializer(type, value)
 }

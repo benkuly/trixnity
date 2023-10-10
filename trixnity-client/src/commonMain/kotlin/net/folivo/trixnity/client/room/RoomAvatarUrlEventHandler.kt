@@ -8,6 +8,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
@@ -33,7 +34,7 @@ class RoomAvatarUrlEventHandler(
         api.sync.subscribeEventList(subscriber = ::setAvatarUrlForAvatarEvents).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun setAvatarUrlForMemberUpdates(memberEvents: List<Event<MemberEventContent>>) {
+    internal suspend fun setAvatarUrlForMemberUpdates(memberEvents: List<ClientEvent<MemberEventContent>>) {
         val newAvatarUrls = memberEvents.mapNotNull { memberEvent ->
             memberEvent.roomIdOrNull?.let { roomId ->
                 val room = roomStore.get(roomId).first()
@@ -53,7 +54,7 @@ class RoomAvatarUrlEventHandler(
             }
     }
 
-    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvents: List<Event<AvatarEventContent>>) {
+    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvents: List<ClientEvent<AvatarEventContent>>) {
         val newAvatarUrls = avatarEvents.mapNotNull { avatarEvent ->
             avatarEvent.roomIdOrNull?.let { roomId ->
                 log.debug { "set room avatar of room $roomId due to new avatar event" }

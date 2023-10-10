@@ -5,7 +5,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.resources.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.SerialName
@@ -17,13 +16,13 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethodType.POST
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
 
 class MatrixUIAEndpointRouteTest {
     private val json = createMatrixEventJson()
-    private val mapping = createEventContentSerializerMappings()
+    private val mapping = createDefaultEventContentSerializerMappings()
 
     @Serializable
     @Resource("/path/{pathParam}")

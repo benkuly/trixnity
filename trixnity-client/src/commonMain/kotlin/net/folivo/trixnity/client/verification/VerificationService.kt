@@ -27,7 +27,8 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
@@ -135,10 +136,10 @@ class VerificationServiceImpl(
         }
     }
 
-    private suspend fun handleDeviceVerificationRequestEvents(event: Event<VerificationRequestEventContent>) {
+    private suspend fun handleDeviceVerificationRequestEvents(event: ClientEvent<VerificationRequestEventContent>) {
         val content = event.content
         when (event) {
-            is Event.ToDeviceEvent -> {
+            is ToDeviceEvent -> {
                 if (isVerificationRequestActive(content.timestamp)) {
                     log.info { "got new device verification request from ${event.sender}" }
                     if (_activeDeviceVerification.value != null) {
@@ -223,6 +224,8 @@ class VerificationServiceImpl(
                     }
                 }
             }
+
+            else -> {}
         }
     }
 

@@ -19,11 +19,10 @@ Serializers. In this example we added a new message event `net.folivo.dino`. As 
 of this Kotlin type like all other default events.
 
 ```kotlin
-val customMappings = object : BaseEventContentSerializerMappings {
-    override val message: Set<SerializerMapping<out MessageEventContent>> =
-        setOf(
-            of("net.folivo.dino", DinoEventContentSerializer),
-        )
+val customMappings = createEventContentSerializerMappings {
+    ofMessage<DingoEventContent>("net.folivo.dino")
+    // ot
+    ofMessage("net.folivo.dino", DingoEventContentSerializer)
 }
 val customModule = module {
     single<EventContentSerializerMappings> {

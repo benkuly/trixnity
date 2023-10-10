@@ -6,10 +6,11 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.subscribeContentList
+import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 class RoomStateEventHandler(
@@ -18,14 +19,18 @@ class RoomStateEventHandler(
     private val tm: RepositoryTransactionManager,
 ) : EventHandler, LazyMemberEventHandler {
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeContentList<StateEventContent> { setState(it) }.unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList<StateEventContent, StateBaseEvent<StateEventContent>> { setState(it) }
+            .unsubscribeOnCompletion(scope)
     }
 
-    override suspend fun handleLazyMemberEvents(memberEvents: List<Event<MemberEventContent>>) {
-        setState(memberEvents.filterIsInstance<Event<StateEventContent>>(), skipWhenAlreadyPresent = true)
+    override suspend fun handleLazyMemberEvents(memberEvents: List<StateEvent<MemberEventContent>>) {
+        setState(memberEvents, skipWhenAlreadyPresent = true)
     }
 
-    internal suspend fun setState(events: List<Event<StateEventContent>>, skipWhenAlreadyPresent: Boolean = false) {
+    internal suspend fun setState(
+        events: List<StateBaseEvent<*>>,
+        skipWhenAlreadyPresent: Boolean = false
+    ) {
         if (events.isNotEmpty())
             tm.writeTransaction {
                 events.forEach {

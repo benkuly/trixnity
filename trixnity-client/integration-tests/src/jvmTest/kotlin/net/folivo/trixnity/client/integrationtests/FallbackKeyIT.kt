@@ -14,7 +14,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import org.junit.jupiter.api.fail
@@ -59,7 +59,7 @@ class FallbackKeyIT {
     fun testFallbackKey(): Unit = runBlocking {
         withTimeout(90_000) {
             val roomId = startedClient1.client.api.rooms.createRoom(
-                initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
             startedClient1.client.room.getAll().first { it.size == 1 }
             val startFrom =

@@ -7,20 +7,20 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 
 @Serializable
 internal class IndexedDBGlobalAccountData(
     val type: String,
     val key: String,
     @Contextual
-    val value: Event.GlobalAccountDataEvent<*>,
+    val value: GlobalAccountDataEvent<*>,
 )
 
 internal class IndexedDBGlobalAccountDataRepository(
     json: Json
 ) : GlobalAccountDataRepository,
-    IndexedDBMapRepository<String, String, Event.GlobalAccountDataEvent<*>, IndexedDBGlobalAccountData>(
+    IndexedDBMapRepository<String, String, GlobalAccountDataEvent<*>, IndexedDBGlobalAccountData>(
         objectStoreName = objectStoreName,
         firstKeyIndexName = "type",
         firstKeySerializer = { arrayOf(it) },

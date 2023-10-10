@@ -18,9 +18,9 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.subscribeEachEvent
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -38,7 +38,7 @@ class DefaultApplicationServiceApiServerHandlerTest {
     private lateinit var cut: DefaultApplicationServiceApiServerHandler
 
     private val json = createMatrixEventJson()
-    private val mappings = createEventContentSerializerMappings()
+    private val mappings = createDefaultEventContentSerializerMappings()
     private val userId = UserId("user", "server")
     private val roomAlias = RoomAliasId("alias", "server")
 
@@ -63,7 +63,7 @@ class DefaultApplicationServiceApiServerHandlerTest {
         val api = MatrixClientServerApiClientImpl(json = json, httpClientFactory = mockEngineFactory())
         initCut(api)
 
-        val event = Event.MessageEvent(
+        val event = MessageEvent(
             RoomMessageEventContent.NoticeMessageEventContent("hi"),
             EventId("event4"),
             userId,
