@@ -44,8 +44,7 @@ class MatrixClientConfiguration {
     /**
      * Set custom [HttpClient].
      */
-    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient =
-        { defaultTrixnityHttpClient(config = it) }
+    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient()
 
     /**
      * Inject and override modules into Trixnity.
