@@ -32,6 +32,11 @@ class MatrixClientConfiguration {
     var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes)
 
     /**
+     * Set custom delays for the sync loop.
+     */
+    var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default()
+
+    /**
      * Allows you to customize, which [Room.lastRelevantEventId] is set.
      */
     var lastRelevantEventFilter: (Event.RoomEvent<*>) -> Boolean = { it is Event.MessageEvent<*> }
@@ -41,11 +46,6 @@ class MatrixClientConfiguration {
      */
     var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient =
         { defaultTrixnityHttpClient(config = it) }
-
-    /**
-     * Set custom delays for the sync loop.
-     */
-    var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default()
 
     /**
      * Inject and override modules into Trixnity.
