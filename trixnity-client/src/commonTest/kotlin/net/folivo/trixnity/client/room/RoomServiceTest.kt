@@ -21,10 +21,9 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -357,7 +356,7 @@ class RoomServiceTest : ShouldSpec({
                 contentBuilder = { _, _, _ -> content }
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboundMessages = roomOutboxMessageStore.getAll().value
+                val outboundMessages = roomOutboxMessageStore.getAll().flatten().first()
                 outboundMessages shouldHaveSize 1
                 assertSoftly(outboundMessages.first()) {
                     roomId shouldBe room

@@ -1,9 +1,10 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
@@ -21,16 +22,6 @@ class RoomOutboxMessageStore(
         Duration.INFINITE
     ) { it.transactionId }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val allRoomOutboxMessages =
-        roomOutboxMessageCache.values
-            .flatMapLatest {
-                if (it.isEmpty()) flowOf(arrayOf())
-                else combine(it.values) { transform -> transform }
-            }
-            .mapLatest { it.filterNotNull() }
-            .stateIn(storeScope, Eagerly, listOf())
-
     override suspend fun init() {
         roomOutboxMessageCache.fillWithValuesFromRepository()
     }
@@ -41,7 +32,10 @@ class RoomOutboxMessageStore(
         roomOutboxMessageCache.deleteAll()
     }
 
-    fun getAll(): StateFlow<List<RoomOutboxMessage<*>>> = allRoomOutboxMessages
+    private val allRoomOutboxMessages =
+        roomOutboxMessageCache.values.stateIn(storeScope, Eagerly, mapOf())
+
+    fun getAll(): StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>> = allRoomOutboxMessages
 
     suspend fun update(transactionId: String, updater: suspend (RoomOutboxMessage<*>?) -> RoomOutboxMessage<*>?) =
         roomOutboxMessageCache.write(transactionId, updater = updater)
