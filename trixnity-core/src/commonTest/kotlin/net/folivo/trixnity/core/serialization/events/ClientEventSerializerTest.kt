@@ -7,8 +7,11 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.Event.*
+import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.*
@@ -21,7 +24,7 @@ import net.folivo.trixnity.core.serialization.trimToFlatJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class EventSerializerTest {
+class ClientEventSerializerTest {
 
     private val json = createMatrixEventJson()
 
@@ -53,7 +56,6 @@ class EventSerializerTest {
         val result = json.encodeToString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
-                StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
             ), content
         )
         assertEquals(expectedResult, result)
@@ -79,7 +81,6 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             StateEventSerializer(
                 DefaultEventContentSerializerMappings.state,
-                StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
             ), input
         )
         assertEquals(
@@ -151,7 +152,6 @@ class EventSerializerTest {
         val result = json.encodeToString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ),
             content
         )
@@ -199,7 +199,6 @@ class EventSerializerTest {
         val result = json.encodeToString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ),
             content
         )
@@ -245,7 +244,6 @@ class EventSerializerTest {
         val result = json.encodeToString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ),
             content
         )
@@ -286,7 +284,6 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ),
             input
         )
@@ -345,7 +342,6 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ),
             input
         )
@@ -390,7 +386,6 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -434,7 +429,6 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
@@ -487,12 +481,11 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
             MessageEvent(
-                UnknownMessageEventContent(
+                UnknownEventContent(
                     JsonObject(
                         mapOf(
                             "msgtype" to JsonPrimitive("m.dino"),
@@ -569,7 +562,6 @@ class EventSerializerTest {
                 ListSerializer(
                     StateEventSerializer(
                         DefaultEventContentSerializerMappings.state,
-                        StateEventContentSerializer(DefaultEventContentSerializerMappings.state)
                     )
                 ),
                 content
@@ -590,7 +582,8 @@ class EventSerializerTest {
         val expectedResult = """
         {
             "content":{
-                "reason":"spam"
+                "reason":"spam",
+                "redacts":"$123"
             },
             "event_id":"$143273582443PhrSn",
             "origin_server_ts":1432735824653,
@@ -606,7 +599,6 @@ class EventSerializerTest {
         val result = json.encodeToString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ),
             content
         )
@@ -645,12 +637,11 @@ class EventSerializerTest {
         val result = json.decodeFromString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ), input
         )
         assertEquals(
             MessageEvent(
-                RedactedMessageEventContent("m.room.message"),
+                RedactedEventContent("m.room.message"),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -670,9 +661,39 @@ class EventSerializerTest {
     }
 
     @Test
+    fun shouldDeserializeStateEventWithEmptyContent() {
+        val input = """
+        {
+            "content":{},
+            "event_id":"$143273582443PhrSn",
+            "sender":"@example:example.org",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "type":"m.room.avatar",
+            "state_key":""
+        }
+    """.trimToFlatJson()
+        val result = json.decodeFromString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+            ), input
+        )
+        assertEquals(
+            StateEvent(
+                AvatarEventContent(),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                stateKey = "",
+            ), result
+        )
+    }
+
+    @Test
     fun shouldSerializeRedactedMessageEvent() {
         val content = MessageEvent(
-            RedactedMessageEventContent("m.room.message"),
+            RedactedEventContent("m.room.message"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -700,11 +721,12 @@ class EventSerializerTest {
                 "age":1234,
                 "redacted_because":{
                     "content":{
-                        "reason":"spam"
+                        "reason":"spam",
+                        "redacts":"$143273582443PhrSn"
                     },
                     "event_id":"$143273582443PhrSn",
                     "origin_server_ts":1432735824653,
-                    "redacts":"${'$'}143273582443PhrSn",
+                    "redacts":"$143273582443PhrSn",
                     "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
                     "sender":"@example:example.org",
                     "type":"m.room.redaction",
@@ -718,7 +740,6 @@ class EventSerializerTest {
         val result = json.encodeToString(
             MessageEventSerializer(
                 DefaultEventContentSerializerMappings.message,
-                MessageEventContentSerializer(DefaultEventContentSerializerMappings.message)
             ),
             content
         )
@@ -742,7 +763,7 @@ class EventSerializerTest {
         val result = json.decodeFromString(serializer, input)
         assertEquals(
             RoomAccountDataEvent(
-                UnknownRoomAccountDataEventContent(
+                UnknownEventContent(
                     JsonObject(
                         mapOf(
                             "ancestor_of_chicken" to JsonPrimitive("dinos")
@@ -759,7 +780,7 @@ class EventSerializerTest {
     @Test
     fun shouldSerializeUnknownAccountDataEvent() {
         val event = RoomAccountDataEvent(
-            UnknownRoomAccountDataEventContent(
+            UnknownEventContent(
                 JsonObject(
                     mapOf(
                         "ancestor_of_chicken" to JsonPrimitive("dinos")
@@ -803,12 +824,12 @@ class EventSerializerTest {
             "prev_content":null
         }
     """.trimIndent()
-        val serializer = json.serializersModule.getContextual(Event::class)
+        val serializer = json.serializersModule.getContextual(RoomEvent::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, input)
         assertEquals(
             StateEvent(
-                UnknownStateEventContent(
+                UnknownEventContent(
                     JsonObject(
                         mapOf(
                             "membership" to JsonPrimitive("dino"),
@@ -830,7 +851,7 @@ class EventSerializerTest {
     @Test
     fun shouldSerializeMalformedEvent() {
         val content = StateEvent(
-            UnknownStateEventContent(
+            UnknownEventContent(
                 JsonObject(
                     mapOf(
                         "alias" to JsonPrimitive("dino"),
@@ -860,7 +881,7 @@ class EventSerializerTest {
             "unsigned":{"age":1234}
         }
     """.trimToFlatJson()
-        val serializer = json.serializersModule.getContextual(Event::class)
+        val serializer = json.serializersModule.getContextual(RoomEvent::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, content)
         assertEquals(expectedResult, result)
@@ -883,7 +904,7 @@ class EventSerializerTest {
             originTimestamp = 1643815115835,
             unsigned = UnsignedMessageEventData(age = 241)
         )
-        val serializer = json.serializersModule.getContextual(Event::class)
+        val serializer = json.serializersModule.getContextual(RoomEvent::class)
         requireNotNull(serializer)
         val result = json.encodeToString(serializer, input)
         assertEquals(
@@ -941,7 +962,7 @@ class EventSerializerTest {
            "room_id": "!aNgXnqwYApWloKSPKD:imbitbu.de"
         }
         """.trimIndent()
-        val serializer = json.serializersModule.getContextual(Event::class)
+        val serializer = json.serializersModule.getContextual(RoomEvent::class)
         requireNotNull(serializer)
         val result = json.decodeFromString(serializer, input)
         assertEquals(

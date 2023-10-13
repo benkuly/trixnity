@@ -3,20 +3,19 @@ package net.folivo.trixnity.client.key
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
-import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
+import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
@@ -29,23 +28,15 @@ class KeyMemberEventHandler(
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.afterSyncProcessing.subscribe(::handleSyncResponse)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.afterSyncProcessing.unsubscribe(::handleSyncResponse)
-        }
+        api.sync.subscribeEventList(Priority.AFTER_DEFAULT, subscriber = ::updateDeviceKeysFromChangedMembership)
+            .unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun handleSyncResponse(syncProcessingData: SyncProcessingData) {
-        updateDeviceKeysFromChangedMembership(
-            syncProcessingData.allEvents.filter<MemberEventContent, Event.StateEvent<MemberEventContent>>().toList()
-        )
+    override suspend fun handleLazyMemberEvents(memberEvents: List<StateEvent<MemberEventContent>>) {
+        updateDeviceKeysFromChangedMembership(memberEvents)
     }
 
-    override suspend fun handleLazyMemberEvents(memberEvents: List<Event<MemberEventContent>>) {
-        updateDeviceKeysFromChangedMembership(memberEvents.filterIsInstance<Event.StateEvent<MemberEventContent>>())
-    }
-
-    internal suspend fun updateDeviceKeysFromChangedMembership(events: List<Event.StateEvent<MemberEventContent>>) {
+    internal suspend fun updateDeviceKeysFromChangedMembership(events: List<StateEvent<MemberEventContent>>) {
         val deleteDeviceKeys = mutableSetOf<UserId>()
         val updateOutdatedKeys = mutableSetOf<UserId>()
         events.forEach { event ->

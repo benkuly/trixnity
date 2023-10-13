@@ -19,7 +19,7 @@ kotlin {
                 api(project(":trixnity-core"))
                 api(project(":trixnity-crypto-core"))
                 api(project(":trixnity-olm"))
-                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-client"))
+                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
 
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.oshai.logging)

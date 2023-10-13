@@ -24,7 +24,7 @@ class MatrixServerServerApiClientImpl(
     getRoomVersion: GetRoomVersionFunction,
     private val eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
     private val json: Json = createMatrixEventAndDataUnitJson(getRoomVersion, eventContentSerializerMappings),
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = { defaultTrixnityHttpClient(config=it) },
+    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient(),
 ) : MatrixServerServerApiClient {
     override val httpClient = MatrixApiClient(eventContentSerializerMappings, json) {
         httpClientFactory {

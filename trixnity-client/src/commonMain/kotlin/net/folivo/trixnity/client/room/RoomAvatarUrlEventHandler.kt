@@ -3,22 +3,20 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.job
-import net.folivo.trixnity.client.getStateKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.events.stateKeyOrNull
+import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
@@ -32,22 +30,11 @@ class RoomAvatarUrlEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.afterSyncProcessing.subscribe(::handleSyncResponse)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.afterSyncProcessing.unsubscribe(::handleSyncResponse)
-        }
+        api.sync.subscribeEventList(subscriber = ::setAvatarUrlForMemberUpdates).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList(subscriber = ::setAvatarUrlForAvatarEvents).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun handleSyncResponse(syncProcessingData: SyncProcessingData) {
-        setAvatarUrlForMemberUpdates(
-            syncProcessingData.allEvents.filterContent<MemberEventContent>().toList()
-        )
-        setAvatarUrlForAvatarEvents(
-            syncProcessingData.allEvents.filterContent<AvatarEventContent>().toList()
-        )
-    }
-
-    internal suspend fun setAvatarUrlForMemberUpdates(memberEvents: List<Event<MemberEventContent>>) {
+    internal suspend fun setAvatarUrlForMemberUpdates(memberEvents: List<ClientEvent<MemberEventContent>>) {
         val newAvatarUrls = memberEvents.mapNotNull { memberEvent ->
             memberEvent.roomIdOrNull?.let { roomId ->
                 val room = roomStore.get(roomId).first()
@@ -67,7 +54,7 @@ class RoomAvatarUrlEventHandler(
             }
     }
 
-    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvents: List<Event<AvatarEventContent>>) {
+    internal suspend fun setAvatarUrlForAvatarEvents(avatarEvents: List<ClientEvent<AvatarEventContent>>) {
         val newAvatarUrls = avatarEvents.mapNotNull { avatarEvent ->
             avatarEvent.roomIdOrNull?.let { roomId ->
                 log.debug { "set room avatar of room $roomId due to new avatar event" }

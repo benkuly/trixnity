@@ -25,6 +25,8 @@ import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.*
+import net.folivo.trixnity.core.model.events.ClientEvent.*
 
 class EncryptionEventHandlerTest : ShouldSpec(body)
 
@@ -67,7 +69,7 @@ private val body: ShouldSpec.() -> Unit = {
     context(KeyEncryptionEventHandler::updateDeviceKeysFromChangedEncryption.name) {
         should("mark users as outdated dependent on history visibility") {
             listOf(
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("\$event1"),
                     alice,
@@ -75,7 +77,7 @@ private val body: ShouldSpec.() -> Unit = {
                     1234,
                     stateKey = alice.full
                 ),
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(membership = Membership.INVITE),
                     EventId("\$event2"),
                     bob,
@@ -86,7 +88,7 @@ private val body: ShouldSpec.() -> Unit = {
             ).forEach { roomStateStore.save(it) }
             cut.updateDeviceKeysFromChangedEncryption(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         EncryptionEventContent(),
                         EventId("\$event3"),
                         bob,
@@ -102,7 +104,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             keyStore.updateDeviceKeys(bob) { mapOf(bobDevice to bobKeys) }
             listOf(
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("\$event1"),
                     alice,
@@ -110,7 +112,7 @@ private val body: ShouldSpec.() -> Unit = {
                     1234,
                     stateKey = alice.full
                 ),
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(membership = Membership.INVITE),
                     EventId("\$event2"),
                     bob,
@@ -121,7 +123,7 @@ private val body: ShouldSpec.() -> Unit = {
             ).forEach { roomStateStore.save(it) }
             cut.updateDeviceKeysFromChangedEncryption(
                 listOf(
-                    Event.StateEvent(
+                    StateEvent(
                         EncryptionEventContent(),
                         EventId("\$event3"),
                         bob,

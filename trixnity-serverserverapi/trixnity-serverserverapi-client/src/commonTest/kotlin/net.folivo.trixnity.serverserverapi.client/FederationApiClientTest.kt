@@ -9,8 +9,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.EphemeralDataUnit
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
@@ -727,12 +727,12 @@ class FederationApiClientTest {
             )
         ).getOrThrow() shouldBe SendKnock.Response(
             listOf(
-                Event.StrippedStateEvent(
+                StrippedStateEvent(
                     content = NameEventContent("Example Room"),
                     sender = UserId("@bob:example.org"),
                     stateKey = ""
                 ),
-                Event.StrippedStateEvent(
+                StrippedStateEvent(
                     content = JoinRulesEventContent(JoinRulesEventContent.JoinRule.Knock),
                     sender = UserId("@bob:example.org"),
                     stateKey = ""
@@ -857,12 +857,12 @@ class FederationApiClientTest {
                     )
                 ),
                 inviteRoomState = listOf(
-                    Event.StrippedStateEvent(
+                    StrippedStateEvent(
                         content = NameEventContent("Example Room"),
                         sender = UserId("@bob:example.org"),
                         stateKey = ""
                     ),
-                    Event.StrippedStateEvent(
+                    StrippedStateEvent(
                         content = JoinRulesEventContent(JoinRulesEventContent.JoinRule.Invite),
                         sender = UserId("@bob:example.org"),
                         stateKey = ""
@@ -1428,7 +1428,7 @@ class FederationApiClientTest {
                     avatarUrl = "mxc://example.org/abcdef2",
                     canonicalAlias = RoomAliasId("#general:example.org"),
                     childrenState = setOf(
-                        Event.StrippedStateEvent(
+                        StrippedStateEvent(
                             ChildEventContent(via = setOf("remote.example.org")),
                             originTimestamp = 1629422222222,
                             sender = UserId("@alice:example.org"),
@@ -1451,7 +1451,7 @@ class FederationApiClientTest {
                 avatarUrl = "mxc://example.org/abcdef",
                 canonicalAlias = RoomAliasId("#general:example.org"),
                 childrenState = setOf(
-                    Event.StrippedStateEvent(
+                    StrippedStateEvent(
                         ChildEventContent(via = setOf("remote.example.org")),
                         originTimestamp = 1629413349153,
                         sender = UserId("@alice:example.org"),

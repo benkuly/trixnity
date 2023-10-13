@@ -14,13 +14,13 @@ import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.OlmDecrypterMock
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
@@ -104,7 +104,7 @@ private val body: ShouldSpec.() -> Unit = {
     suspend fun pickleToInbound(sessionKey: String) =
         freeAfter(OlmInboundGroupSession.import(sessionKey)) { it.pickle("") }
 
-    val encryptedEvent = Event.ToDeviceEvent(
+    val encryptedEvent = ToDeviceEvent(
         EncryptedEventContent.OlmEncryptedEventContent(
             ciphertext = mapOf(),
             senderKey = forwardingSenderKey,
@@ -322,7 +322,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.addRoomKeyRequest(request2)
             keyStore.allRoomKeyRequests.first { it.size == 2 }
 
-            cut.cancelOldOutgoingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+            cut.cancelOldOutgoingKeyRequests()
 
             keyStore.allRoomKeyRequests.first { it.size == 1 } shouldBe setOf(request1)
             sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldBe

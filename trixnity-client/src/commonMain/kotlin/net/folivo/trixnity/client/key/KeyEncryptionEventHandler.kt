@@ -3,16 +3,15 @@ package net.folivo.trixnity.client.key
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.utils.filter
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
+import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.olm.membershipsAllowedToReceiveKey
 
 private val log = KotlinLogging.logger {}
@@ -24,20 +23,11 @@ class KeyEncryptionEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.afterSyncProcessing.subscribe(::handleSyncResponse)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.afterSyncProcessing.unsubscribe(::handleSyncResponse)
-        }
+        api.sync.subscribeEventList(Priority.AFTER_DEFAULT, subscriber = ::updateDeviceKeysFromChangedEncryption)
+            .unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun handleSyncResponse(syncProcessingData: SyncProcessingData) {
-        updateDeviceKeysFromChangedEncryption(
-            syncProcessingData.allEvents.filter<EncryptionEventContent, Event.StateEvent<EncryptionEventContent>>()
-                .toList()
-        )
-    }
-
-    internal suspend fun updateDeviceKeysFromChangedEncryption(events: List<Event.StateEvent<EncryptionEventContent>>) {
+    internal suspend fun updateDeviceKeysFromChangedEncryption(events: List<StateEvent<EncryptionEventContent>>) {
         log.debug { "update device keys from changed encryption" }
         val outdatedKeys = events.map { event ->
             val allowedMemberships =

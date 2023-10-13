@@ -25,7 +25,8 @@ data class GetKeys(
 ) : MatrixEndpoint<GetKeys.Request, GetKeys.Response> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
+        json: Json,
+        value: Response?
     ): KSerializer<Response> = CatchingGetKeysResponseSerializer
 
     @Serializable

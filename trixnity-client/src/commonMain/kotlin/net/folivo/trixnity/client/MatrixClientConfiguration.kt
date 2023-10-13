@@ -3,7 +3,7 @@ package net.folivo.trixnity.client
 import io.ktor.client.*
 import net.folivo.trixnity.api.client.defaultTrixnityHttpClient
 import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
 import kotlin.time.Duration
@@ -32,20 +32,19 @@ class MatrixClientConfiguration {
     var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes)
 
     /**
+     * Set custom delays for the sync loop.
+     */
+    var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default()
+
+    /**
      * Allows you to customize, which [Room.lastRelevantEventId] is set.
      */
-    var lastRelevantEventFilter: (Event.RoomEvent<*>) -> Boolean = { it is Event.MessageEvent<*> }
+    var lastRelevantEventFilter: (RoomEvent<*>) -> Boolean = { it is RoomEvent.MessageEvent<*> }
 
     /**
      * Set custom [HttpClient].
      */
-    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient =
-        { defaultTrixnityHttpClient(config = it) }
-
-    /**
-     * Set custom delays for the sync loop.
-     */
-    var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default()
+    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient()
 
     /**
      * Inject and override modules into Trixnity.

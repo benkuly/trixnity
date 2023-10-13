@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
@@ -29,7 +29,7 @@ class UsersRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
     private val json = createMatrixEventJson()
-    private val mapping = createEventContentSerializerMappings()
+    private val mapping = createDefaultEventContentSerializerMappings()
 
     @Mock
     lateinit var handlerMock: UsersApiHandler

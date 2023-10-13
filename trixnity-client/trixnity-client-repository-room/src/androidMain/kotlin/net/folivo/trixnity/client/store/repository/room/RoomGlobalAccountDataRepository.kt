@@ -4,7 +4,7 @@ import androidx.room.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 
 @Entity(
     tableName = "GlobalAccountData",
@@ -48,24 +48,24 @@ internal class RoomGlobalAccountDataRepository(
 
     @OptIn(ExperimentalSerializationApi::class)
     private val serializer = json.serializersModule
-        .getContextual(Event.GlobalAccountDataEvent::class)
+        .getContextual(GlobalAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(firstKey: String): Map<String, Event.GlobalAccountDataEvent<*>> =
+    override suspend fun get(firstKey: String): Map<String, GlobalAccountDataEvent<*>> =
         dao.getAllByType(firstKey)
             .associate { entity -> entity.key to json.decodeFromString(serializer, entity.event) }
 
     override suspend fun get(
         firstKey: String,
         secondKey: String
-    ): Event.GlobalAccountDataEvent<*>? =
+    ): GlobalAccountDataEvent<*>? =
         dao.getByKeys(firstKey, secondKey)
             ?.let { entity -> json.decodeFromString(serializer, entity.event) }
 
     override suspend fun save(
         firstKey: String,
         secondKey: String,
-        value: Event.GlobalAccountDataEvent<*>
+        value: GlobalAccountDataEvent<*>
     ) {
         dao.insert(
             RoomGlobalAccountData(

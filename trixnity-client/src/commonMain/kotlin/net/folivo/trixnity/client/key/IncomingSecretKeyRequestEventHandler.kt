@@ -5,19 +5,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
@@ -35,14 +32,9 @@ class IncomingSecretKeyRequestEventHandler(
     private val ownUserId = userInfo.userId
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests)
-        api.sync.afterSyncProcessing.subscribe(::processIncomingKeyRequests)
-        api.sync.subscribe(::handleIncomingKeyRequests)
-        scope.coroutineContext.job.invokeOnCompletion {
-            olmDecrypter.unsubscribe(::handleEncryptedIncomingKeyRequests)
-            api.sync.afterSyncProcessing.unsubscribe(::processIncomingKeyRequests)
-            api.sync.unsubscribe(::handleIncomingKeyRequests)
-        }
+        olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEvent(subscriber = ::handleIncomingKeyRequests).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::processIncomingKeyRequests).unsubscribeOnCompletion(scope)
     }
 
     private val incomingSecretKeyRequests = MutableStateFlow<Set<SecretKeyRequestEventContent>>(setOf())
@@ -50,12 +42,12 @@ class IncomingSecretKeyRequestEventHandler(
     internal fun handleEncryptedIncomingKeyRequests(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeyRequestEventContent) {
-            handleIncomingKeyRequests(Event.ToDeviceEvent(content, event.decrypted.sender))
+            handleIncomingKeyRequests(ToDeviceEvent(content, event.decrypted.sender))
         }
     }
 
-    internal fun handleIncomingKeyRequests(event: Event<SecretKeyRequestEventContent>) {
-        if (event is Event.ToDeviceEvent && event.sender == ownUserId) {
+    internal fun handleIncomingKeyRequests(event: ClientEvent<SecretKeyRequestEventContent>) {
+        if (event is ToDeviceEvent && event.sender == ownUserId) {
             log.debug { "handle incoming secret key requests" }
             val content = event.content
             when (content.action) {
@@ -66,7 +58,7 @@ class IncomingSecretKeyRequestEventHandler(
         }
     }
 
-    internal suspend fun processIncomingKeyRequests(syncProcessingData: SyncProcessingData) {
+    internal suspend fun processIncomingKeyRequests() {
         incomingSecretKeyRequests.value.forEach { request ->
             log.debug { "process incoming secret key request: ${request.requestId}" }
             val requestingDeviceId = request.requestingDeviceId

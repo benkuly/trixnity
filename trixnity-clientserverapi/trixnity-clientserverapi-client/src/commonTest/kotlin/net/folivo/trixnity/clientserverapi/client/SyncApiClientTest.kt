@@ -21,19 +21,20 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.subscribeContent
+import net.folivo.trixnity.core.subscribeEachEvent
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -280,10 +281,10 @@ class SyncApiClientTest {
         assertEquals(1, result.room?.join?.size)
         result.room?.join?.get(RoomId("!726s6s6q:example.com"))?.timeline?.events?.lastOrNull()
             .shouldNotBeNull()
-            .shouldBeInstanceOf<Event.MessageEvent<*>>()
+            .shouldBeInstanceOf<MessageEvent<*>>()
             .unsigned.also {
-                it?.redactedBecause.shouldNotBeNull().shouldBeInstanceOf<Event.MessageEvent<*>>()
-                it?.relations?.thread?.latestEvent.shouldNotBeNull().shouldBeInstanceOf<Event.MessageEvent<*>>()
+                it?.redactedBecause.shouldNotBeNull().shouldBeInstanceOf<MessageEvent<*>>()
+                it?.relations?.thread?.latestEvent.shouldNotBeNull().shouldBeInstanceOf<MessageEvent<*>>()
             }
         assertEquals(1, result.room?.invite?.size)
         assertEquals(0, result.room?.leave?.size)
@@ -372,7 +373,7 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>("some")
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.syncProcessing.subscribe({ syncResponses.emit(it.syncResponse) })
+        matrixRestClient.sync.subscribe { syncResponses.emit(it.syncResponse) }
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
@@ -443,7 +444,7 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.syncProcessing.subscribe({ syncResponses.emit(it.syncResponse) })
+        matrixRestClient.sync.subscribe { syncResponses.emit(it.syncResponse) }
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
@@ -498,9 +499,9 @@ class SyncApiClientTest {
         val collector = launch {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
-        matrixRestClient.sync.deviceLists.subscribe({
+        matrixRestClient.sync.subscribe {
             matrixRestClient.sync.currentSyncState.first { it == INITIAL_SYNC }
-        })
+        }
         matrixRestClient.sync.currentSyncState.first { it == STOPPED }
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncJob = launch {
@@ -571,9 +572,9 @@ class SyncApiClientTest {
             matrixRestClient.sync.currentSyncState.toCollection(stateResult)
         }
         matrixRestClient.sync.currentSyncState.first { it == STOPPED }
-        matrixRestClient.sync.deviceLists.subscribe({
+        matrixRestClient.sync.subscribe {
             matrixRestClient.sync.currentSyncState.first { it == STARTED }
-        })
+        }
         val currentBatchToken = MutableStateFlow<String?>("ananas")
         val sync = launch {
             matrixRestClient.sync.start(
@@ -762,7 +763,7 @@ class SyncApiClientTest {
 
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
-        matrixRestClient.sync.syncProcessing.subscribe({ syncResponses.emit(it.syncResponse) })
+        matrixRestClient.sync.subscribe { syncResponses.emit(it.syncResponse) }
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
@@ -819,15 +820,14 @@ class SyncApiClientTest {
         val currentBatchToken = MutableStateFlow<String?>(null)
         val syncResponses = MutableSharedFlow<Response>(replay = 5)
         var subscribeCall = 0
-        matrixRestClient.sync.syncProcessing.subscribe(
-            {
-                subscribeCall++
-                when (subscribeCall) {
-                    1 -> throw RuntimeException("dino")
-                    else -> syncResponses.emit(it.syncResponse)
-                }
+        matrixRestClient.sync.subscribe {
+            subscribeCall++
+            when (subscribeCall) {
+                1 -> throw RuntimeException("dino")
+                else -> syncResponses.emit(it.syncResponse)
             }
-        )
+        }
+
         val job = launch {
             matrixRestClient.sync.start(
                 filter = "someFilter",
@@ -866,7 +866,7 @@ class SyncApiClientTest {
             oneTimeKeysCount = emptyMap(),
             presence = Response.Presence(
                 listOf(
-                    Event.EphemeralEvent(
+                    EphemeralEvent(
                         PresenceEventContent(Presence.ONLINE),
                         sender = UserId("dino", "server")
                     )
@@ -877,7 +877,7 @@ class SyncApiClientTest {
                     RoomId("room1", "Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
-                                Event.MessageEvent(
+                                MessageEvent(
                                     RoomMessageEventContent.TextMessageEventContent("hi"),
                                     EventId("event1"),
                                     UserId("user", "server"),
@@ -888,7 +888,7 @@ class SyncApiClientTest {
                         ),
                         state = Response.Rooms.State(
                             listOf(
-                                Event.StateEvent(
+                                StateEvent(
                                     MemberEventContent(membership = Membership.JOIN),
                                     EventId("event2"),
                                     UserId("user", "server"),
@@ -901,12 +901,12 @@ class SyncApiClientTest {
                         ephemeral = Response.Rooms.JoinedRoom.Ephemeral(emptyList()), //TODO
                         accountData = Response.Rooms.RoomAccountData(
                             listOf(
-                                Event.RoomAccountDataEvent(
+                                RoomAccountDataEvent(
                                     FullyReadEventContent(EventId("event1")),
                                     RoomId("room1", "server")
                                 ),
-                                Event.RoomAccountDataEvent(
-                                    UnknownRoomAccountDataEventContent(
+                                RoomAccountDataEvent(
+                                    UnknownEventContent(
                                         JsonObject(mapOf("cool" to JsonPrimitive("trixnity"))),
                                         "org.example.mynamespace"
                                     ),
@@ -920,7 +920,7 @@ class SyncApiClientTest {
                     RoomId("room2", "Server") to Response.Rooms.LeftRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
-                                Event.MessageEvent(
+                                MessageEvent(
                                     RoomMessageEventContent.NoticeMessageEventContent("hi"),
                                     EventId("event4"),
                                     UserId("user", "server"),
@@ -931,7 +931,7 @@ class SyncApiClientTest {
                         ),
                         state = Response.Rooms.State(
                             listOf(
-                                Event.StateEvent(
+                                StateEvent(
                                     MemberEventContent(membership = Membership.JOIN),
                                     EventId("event5"),
                                     UserId("user", "server"),
@@ -947,7 +947,7 @@ class SyncApiClientTest {
                     RoomId("room3", "Server") to Response.Rooms.InvitedRoom(
                         Response.Rooms.InvitedRoom.InviteState(
                             listOf(
-                                Event.StrippedStateEvent(
+                                StrippedStateEvent(
                                     MemberEventContent(membership = Membership.INVITE),
                                     null,
                                     UserId("user", "server"),
@@ -985,25 +985,25 @@ class SyncApiClientTest {
 
         coroutineScope {
             val allEventsCount = MutableStateFlow(0)
-            matrixRestClient.sync.subscribeAllEvents { allEventsCount.update { it + 1 } }
+            matrixRestClient.sync.subscribeEachEvent { allEventsCount.update { it + 1 } }
 
             val messageEventsCount = MutableStateFlow(0)
-            matrixRestClient.sync.subscribe<RoomMessageEventContent> { messageEventsCount.update { it + 1 } }
+            matrixRestClient.sync.subscribeContent<RoomMessageEventContent> { messageEventsCount.update { it + 1 } }
 
             val memberEventsCount = MutableStateFlow(0)
-            matrixRestClient.sync.subscribe<MemberEventContent> { memberEventsCount.update { it + 1 } }
+            matrixRestClient.sync.subscribeContent<MemberEventContent> { memberEventsCount.update { it + 1 } }
 
             val presenceEventsCount = MutableStateFlow(0)
-            matrixRestClient.sync.subscribe<PresenceEventContent> { presenceEventsCount.update { it + 1 } }
+            matrixRestClient.sync.subscribeContent<PresenceEventContent> { presenceEventsCount.update { it + 1 } }
 
             val roomKeyEventsCount = MutableStateFlow(0)
-            matrixRestClient.sync.subscribe<RoomKeyEventContent> { roomKeyEventsCount.update { it + 1 } }
+            matrixRestClient.sync.subscribeContent<RoomKeyEventContent> { roomKeyEventsCount.update { it + 1 } }
 
             val globalAccountDataEventsCount = MutableStateFlow(0)
-            matrixRestClient.sync.subscribe<GlobalAccountDataEventContent> { globalAccountDataEventsCount.update { it + 1 } }
+            matrixRestClient.sync.subscribeContent<GlobalAccountDataEventContent> { globalAccountDataEventsCount.update { it + 1 } }
 
             val roomAccountDataEventsCount = MutableStateFlow(0)
-            matrixRestClient.sync.subscribe<RoomAccountDataEventContent> { roomAccountDataEventsCount.update { it + 1 } }
+            matrixRestClient.sync.subscribeContent<RoomAccountDataEventContent> { roomAccountDataEventsCount.update { it + 1 } }
 
             val currentBatchToken = MutableStateFlow<String?>(null)
             val sync = launch {
@@ -1024,7 +1024,7 @@ class SyncApiClientTest {
             assertEquals(1, presenceEventsCount.value)
             assertEquals(1, roomKeyEventsCount.value)
             assertEquals(1, globalAccountDataEventsCount.value)
-            assertEquals(2, roomAccountDataEventsCount.value)
+            assertEquals(1, roomAccountDataEventsCount.value)
 
             sync.cancel()
         }
@@ -1043,7 +1043,7 @@ class SyncApiClientTest {
                     RoomId("room", "Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
-                                Event.MessageEvent(
+                                MessageEvent(
                                     RoomMessageEventContent.TextMessageEventContent("hi"),
                                     EventId("event"),
                                     UserId("user", "server"),
@@ -1073,7 +1073,7 @@ class SyncApiClientTest {
         )
 
         val allEventsCount = MutableStateFlow(0)
-        matrixRestClient.sync.subscribeAllEvents { allEventsCount.update { it + 1 } }
+        matrixRestClient.sync.subscribeEachEvent { allEventsCount.update { it + 1 } }
 
         launch {
             matrixRestClient.sync.start(
@@ -1110,7 +1110,7 @@ class SyncApiClientTest {
                     RoomId("room", "Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
-                                Event.MessageEvent(
+                                MessageEvent(
                                     RoomMessageEventContent.TextMessageEventContent("hi"),
                                     EventId("event"),
                                     UserId("user", "server"),

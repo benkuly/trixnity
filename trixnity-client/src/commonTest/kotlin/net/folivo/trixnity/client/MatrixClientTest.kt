@@ -19,16 +19,18 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import net.folivo.trixnity.testutils.mockEngineFactory
 import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -39,11 +41,15 @@ class MatrixClientTest : ShouldSpec({
     timeout = 30_000
 
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
+    val mappings = createDefaultEventContentSerializerMappings()
 
     val serverResponse = Sync.Response(
         nextBatch = "nextBatch",
-        accountData = Sync.Response.GlobalAccountData(listOf(Event.GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap())))),
+        accountData = Sync.Response.GlobalAccountData(
+            listOf(
+                GlobalAccountDataEvent(DirectEventContent(mappings = emptyMap()))
+            )
+        ),
         deviceLists = Sync.Response.DeviceLists(emptySet(), emptySet()),
         oneTimeKeysCount = emptyMap(),
         presence = Sync.Response.Presence(emptyList()),
@@ -193,7 +199,7 @@ class MatrixClientTest : ShouldSpec({
                                                                 roomId to Sync.Response.Rooms.JoinedRoom(
                                                                     timeline = Sync.Response.Rooms.Timeline(
                                                                         events = listOf(
-                                                                            Event.StateEvent(
+                                                                            StateEvent(
                                                                                 MemberEventContent(membership = JOIN),
                                                                                 sender = userId,
                                                                                 id = EventId("event1"),
@@ -228,7 +234,7 @@ class MatrixClientTest : ShouldSpec({
                                                                 roomId to Sync.Response.Rooms.JoinedRoom(
                                                                     timeline = Sync.Response.Rooms.Timeline(
                                                                         events = listOf(
-                                                                            Event.StateEvent(
+                                                                            StateEvent(
                                                                                 MemberEventContent(
                                                                                     membership = JOIN,
                                                                                     displayName = "bob", // display name in the room != global display name
@@ -394,7 +400,7 @@ class MatrixClientTest : ShouldSpec({
                 mediaStore = InMemoryMediaStore(),
                 configuration = {
                     httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
-                        matrixJsonEndpoint( Logout()) {
+                        matrixJsonEndpoint(Logout()) {
                             logoutCalled = true
                         }
                     }

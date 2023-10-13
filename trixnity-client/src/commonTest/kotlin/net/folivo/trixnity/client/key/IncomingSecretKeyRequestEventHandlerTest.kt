@@ -15,13 +15,12 @@ import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredSecret
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -71,7 +70,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    val encryptedEvent = Event.ToDeviceEvent(
+    val encryptedEvent = ToDeviceEvent(
         EncryptedEventContent.OlmEncryptedEventContent(
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "")
@@ -100,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                         "secretUserSigningKey"
                     )
                 )
@@ -126,7 +125,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+            cut.processIncomingKeyRequests()
             sendToDeviceEvents shouldBe null
         }
         should("add request on request") {
@@ -143,7 +142,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+            cut.processIncomingKeyRequests()
             sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
         }
         should("remove request on request cancellation") {
@@ -173,7 +172,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             )
-            cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+            cut.processIncomingKeyRequests()
             sendToDeviceEvents shouldBe null
         }
     }
@@ -191,7 +190,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                         "secretUserSigningKey"
                     )
                 )
@@ -226,8 +225,8 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 )
-                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
-                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.processIncomingKeyRequests()
+                cut.processIncomingKeyRequests()
                 sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
             }
         }
@@ -256,8 +255,8 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 )
-                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
-                cut.processIncomingKeyRequests(SyncProcessingData(Sync.Response(""), listOf()))
+                cut.processIncomingKeyRequests()
+                cut.processIncomingKeyRequests()
                 sendToDeviceEvents shouldBe null
             }
         }

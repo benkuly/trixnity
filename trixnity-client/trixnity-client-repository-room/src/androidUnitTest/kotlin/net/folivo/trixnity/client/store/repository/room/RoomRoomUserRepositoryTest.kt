@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -32,7 +32,7 @@ class RoomRoomUserRepositoryTest {
         val key1 = RoomId("room1", "server")
         val key2 = RoomId("room2", "server")
         val user1 = RoomUser(
-            key1, UserId("alice", "server"), "ALIC", Event.StateEvent(
+            key1, UserId("alice", "server"), "ALIC", StateEvent(
                 MemberEventContent(membership = Membership.JOIN),
                 EventId("\$event1"),
                 UserId("alice", "server"),
@@ -42,7 +42,7 @@ class RoomRoomUserRepositoryTest {
             )
         )
         val user2 = RoomUser(
-            key1, UserId("bob", "server"), "BO", Event.StateEvent(
+            key1, UserId("bob", "server"), "BO", StateEvent(
                 MemberEventContent(membership = Membership.LEAVE),
                 EventId("\$event2"),
                 UserId("alice", "server"),
@@ -52,7 +52,7 @@ class RoomRoomUserRepositoryTest {
             )
         )
         val user3 = RoomUser(
-            key1, UserId("cedric", "server"), "CEDRIC", Event.StateEvent(
+            key1, UserId("cedric", "server"), "CEDRIC", StateEvent(
                 MemberEventContent(membership = Membership.JOIN),
                 EventId("\$event3"),
                 UserId("cedric", "server"),
@@ -77,7 +77,7 @@ class RoomRoomUserRepositoryTest {
     fun `Save and get by second key`() = runTest {
         val key = RoomId("room3", "server")
         val user = RoomUser(
-            key, UserId("alice2", "server"), "ALIC", Event.StateEvent(
+            key, UserId("alice2", "server"), "ALIC", StateEvent(
                 MemberEventContent(membership = Membership.JOIN),
                 EventId("\$event5"),
                 UserId("alice2", "server"),

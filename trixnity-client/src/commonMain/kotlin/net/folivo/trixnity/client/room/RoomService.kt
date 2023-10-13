@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.room
 import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -13,22 +12,27 @@ import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.eventIdOrNull
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
+import net.folivo.trixnity.core.subscribeAsFlow
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
@@ -176,12 +180,12 @@ interface RoomService {
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String = "",
-    ): Flow<Event<C>?>
+    ): Flow<StateBaseEvent<C>?>
 
     fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?>
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?>
 }
 
 class RoomServiceImpl(
@@ -519,31 +523,28 @@ class RoomServiceImpl(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
-        callbackFlow {
-            val subscriber: suspend (syncProcessingData: SyncProcessingData) -> Unit = { send(it) }
-            api.sync.afterSyncProcessing.subscribe(subscriber)
-            awaitClose { api.sync.afterSyncProcessing.unsubscribe(subscriber) }
-        }.buffer(syncResponseBufferSize).flatMapConcat { (syncResponse, _) ->
-            coroutineScope {
-                val timelineEvents =
-                    syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
-                            syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
-                timelineEvents.map {
-                    async {
-                        getTimelineEvent(it.roomId, it.id) {
-                            this.decryptionTimeout = decryptionTimeout
+        api.sync.subscribeAsFlow(Priority.AFTER_DEFAULT).map { it.syncResponse }
+            .buffer(syncResponseBufferSize).flatMapConcat { syncResponse ->
+                coroutineScope {
+                    val timelineEvents =
+                        syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
+                                syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
+                    timelineEvents.map {
+                        async {
+                            getTimelineEvent(it.roomId, it.id) {
+                                this.decryptionTimeout = decryptionTimeout
+                            }
                         }
-                    }
-                }.asFlow()
-                    .map { timelineEventFlow ->
-                        // we must wait until TimelineEvent is saved into store
-                        val notNullTimelineEvent = timelineEventFlow.await().filterNotNull().first()
-                        withTimeoutOrNull(decryptionTimeout) {
-                            timelineEventFlow.await().filterNotNull().first { it.content != null }
-                        } ?: notNullTimelineEvent
-                    }
+                    }.asFlow()
+                        .map { timelineEventFlow ->
+                            // we must wait until TimelineEvent is saved into store
+                            val notNullTimelineEvent = timelineEventFlow.await().filterNotNull().first()
+                            withTimeoutOrNull(decryptionTimeout) {
+                                timelineEventFlow.await().filterNotNull().first { it.content != null }
+                            } ?: notNullTimelineEvent
+                        }
+                }
             }
-        }
 
     override fun <T> getTimeline(
         roomId: RoomId,
@@ -576,7 +577,6 @@ class RoomServiceImpl(
                 content = content,
                 sentAt = null,
                 keepMediaInCache = keepMediaInCache,
-                mediaUploadProgress = MutableStateFlow(null)
             )
         }
         return transactionId
@@ -587,7 +587,7 @@ class RoomServiceImpl(
     }
 
     override suspend fun retrySendMessage(transactionId: String) {
-        roomOutboxMessageStore.update(transactionId) { it?.copy(retryCount = 0) }
+        roomOutboxMessageStore.update(transactionId) { it?.copy(sendError = null) }
     }
 
     override fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = roomStore.getAll()
@@ -621,14 +621,14 @@ class RoomServiceImpl(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String,
-    ): Flow<Event<C>?> {
+    ): Flow<StateBaseEvent<C>?> {
         return roomStateStore.getByStateKey(roomId, eventContentClass, stateKey)
     }
 
     override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> {
         return roomStateStore.get(roomId, eventContentClass)
     }
 }

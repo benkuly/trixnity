@@ -28,9 +28,9 @@ matrixRestClient.room.sendRoomEvent(
 Example 2: You can receive different type of events from sync.
 
 ```kotlin
-matrixRestClient.sync.subscribe<TextMessageEventContent> { println(it.content.body) }
-matrixRestClient.sync.subscribe<MemberEventContent> { println("${it.content.displayName} did ${it.content.membership}") }
-matrixRestClient.sync.subscribeAllEvents { println(it) }
+matrixRestClient.sync.subscribeContent<TextMessageEventContent> { println(it.content.body) }
+matrixRestClient.sync.subscribeContent<MemberEventContent> { println("${it.content.displayName} did ${it.content.membership}") }
+matrixRestClient.sync.subscribeEachEvent { println(it) }
 
 matrixRestClient.sync.start() // you need to start the sync to receive messages
 delay(30.seconds) // wait some time

@@ -10,7 +10,9 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -18,7 +20,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
@@ -100,7 +102,8 @@ class UserServiceImpl(
                             lazyMemberEventHandlers.forEach {
                                 it.handleLazyMemberEvents(chunk)
                             }
-                            chunk.forEach { event -> api.sync.emitEvent(event) }
+                            // TODO is there a nicer way? Maybe some sort of merged EventEmitter (including lazy members)
+                            api.sync.emit(SyncEvents(Sync.Response(""), chunk))
                             yield()
                         }
                         roomStore.update(roomId) { it?.copy(membersLoaded = true) }
@@ -220,7 +223,7 @@ class UserServiceImpl(
             val allowRedactOwnMessages by lazy { userPowerLevel >= sendRedactionEventPowerLevel }
             val allowRedactOtherMessages by lazy { userPowerLevel >= redactPowerLevelNeeded }
             val content = timelineEvent.content?.getOrNull()
-            content is MessageEventContent && content !is RedactedMessageEventContent &&
+            content is MessageEventContent && content !is RedactedEventContent &&
                     (isOwnMessage && allowRedactOwnMessages || allowRedactOtherMessages)
         }
     }

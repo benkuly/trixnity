@@ -21,6 +21,8 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -37,7 +39,6 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
     lateinit var scope: CoroutineScope
 
     lateinit var cut: RoomDisplayNameEventHandler
-    val ownUserId = UserId("own", "server")
     val user1 = UserId("user1", "server")
     val user2 = UserId("user2", "server")
     val user3 = UserId("user3", "server")
@@ -66,8 +67,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
         userId: UserId,
         displayName: String,
         membership: Membership
-    ): Event.StateEvent<MemberEventContent> {
-        return Event.StateEvent(
+    ): StateEvent<MemberEventContent> {
+        return StateEvent(
             MemberEventContent(
                 displayName = displayName,
                 membership = membership
@@ -84,8 +85,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
         i: Long,
         userId: UserId,
         name: String
-    ): Event.StateEvent<NameEventContent> {
-        return Event.StateEvent(
+    ): StateEvent<NameEventContent> {
+        return StateEvent(
             NameEventContent(name),
             EventId("\$event$i"),
             userId,
@@ -98,8 +99,8 @@ class RoomDisplayNameEventHandlerTest : ShouldSpec({
     fun canonicalAliasEvent(
         i: Long,
         userId: UserId, roomAliasId: RoomAliasId
-    ): Event.StateEvent<CanonicalAliasEventContent> {
-        return Event.StateEvent(
+    ): StateEvent<CanonicalAliasEventContent> {
+        return StateEvent(
             CanonicalAliasEventContent(roomAliasId),
             EventId("\$event$i"),
             userId,

@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 
 @Serializable
 internal class IndexedDBRoomAccountData(
@@ -18,13 +18,13 @@ internal class IndexedDBRoomAccountData(
     val type: String,
     val key: String,
     @Contextual
-    val value: Event.RoomAccountDataEvent<*>,
+    val value: RoomAccountDataEvent<*>,
 )
 
 internal class IndexedDBRoomAccountDataRepository(
     json: Json
 ) : RoomAccountDataRepository,
-    IndexedDBMapRepository<RoomAccountDataRepositoryKey, String, Event.RoomAccountDataEvent<*>, IndexedDBRoomAccountData>(
+    IndexedDBMapRepository<RoomAccountDataRepositoryKey, String, RoomAccountDataEvent<*>, IndexedDBRoomAccountData>(
         objectStoreName = objectStoreName,
         firstKeyIndexName = "roomId|type",
         firstKeySerializer = { arrayOf(it.roomId.full, it.type) },

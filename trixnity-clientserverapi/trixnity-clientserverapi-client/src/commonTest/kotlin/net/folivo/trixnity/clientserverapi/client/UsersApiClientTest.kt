@@ -212,10 +212,10 @@ class UsersApiClientTest {
                                   "messages":{
                                     "@alice:example.com":{
                                       "TLLBEANAAG":{
+                                        "algorithm":"m.megolm.v1.aes-sha2",
                                         "room_id":"!Cuyf34gef24t:localhost",
                                         "session_id":"X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
-                                        "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
-                                        "algorithm":"m.megolm.v1.aes-sha2"
+                                        "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."
                                       }
                                     }
                                   }

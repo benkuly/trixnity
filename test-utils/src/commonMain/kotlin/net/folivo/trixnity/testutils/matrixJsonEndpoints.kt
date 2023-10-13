@@ -38,7 +38,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
             try {
                 val requestString =
                     request.body.toByteArray().decodeToString().also { matrixEndpointLog.debug { "requestBody: $it" } }
-                val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json)
+                val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json, null)
                 val requestBody: REQUEST =
                     when {
                         REQUEST::class == Unit::class -> Unit as REQUEST
@@ -47,7 +47,7 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
                     }
 
                 val responseBody = handler(requestBody)
-                val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json)
+                val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json, responseBody)
                 val responseString =
                     when {
                         responseBody is Unit -> "{}"

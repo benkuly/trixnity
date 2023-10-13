@@ -15,6 +15,9 @@ import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.EphemeralEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
@@ -56,7 +59,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
             roomId,
             userId,
             userId.full,
-            event = Event.StateEvent(
+            event = StateEvent(
                 MemberEventContent(membership = Membership.JOIN),
                 EventId("event"),
                 UserId("user", "server"),
@@ -72,7 +75,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
         should("do nothing when the user in the receipt could not be found") {
             val existingRoomUser = roomUser(room, alice)
             roomUserStore.update(alice, room) { existingRoomUser }
-            val event = Event.EphemeralEvent(
+            val event = EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         EventId("eventId") to mapOf(
@@ -92,7 +95,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
         should("do nothing on unknown receipt events") {
             val existingRoomUser = roomUser(room, alice)
             roomUserStore.update(alice, room) { existingRoomUser }
-            val event = Event.EphemeralEvent(
+            val event = EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         EventId("eventId") to mapOf(
@@ -113,7 +116,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
             val eventId = EventId("eventId")
             val existingRoomUser = roomUser(room, alice)
             roomUserStore.update(alice, room) { existingRoomUser }
-            val event = Event.EphemeralEvent(
+            val event = EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         eventId to mapOf(
@@ -143,7 +146,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
             )
             roomUserStore.update(alice, room) { existingRoomUser }
             val eventId = EventId("eventId")
-            val event = Event.EphemeralEvent(
+            val event = EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         eventId to mapOf(

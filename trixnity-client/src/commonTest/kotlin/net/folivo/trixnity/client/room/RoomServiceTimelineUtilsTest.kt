@@ -19,8 +19,8 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -247,7 +247,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         }
         context("room upgrades") {
             val newRoom = RoomId("new", "server")
-            val tombstoneEvent = Event.StateEvent(
+            val tombstoneEvent = StateEvent(
                 TombstoneEventContent("upgrade", newRoom),
                 EventId("\$tombstone"),
                 sender,
@@ -255,7 +255,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 2000,
                 stateKey = "",
             )
-            val createEvent = Event.StateEvent(
+            val createEvent = StateEvent(
                 CreateEventContent(sender, predecessor = CreateEventContent.PreviousRoom(room, EventId("\$tombstone"))),
                 EventId("\$create"),
                 sender,
@@ -552,7 +552,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     )
                 }
             }
-            val result = async {
+            val result = async(start = CoroutineStart.UNDISPATCHED) {
                 cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).take(2).toList()
             }
             api.sync.startOnce(

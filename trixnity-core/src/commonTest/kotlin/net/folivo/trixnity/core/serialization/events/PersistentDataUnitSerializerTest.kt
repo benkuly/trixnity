@@ -12,9 +12,8 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUn
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV1.PersistentStateDataUnitV1
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3
-import net.folivo.trixnity.core.model.events.RedactedMessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedStateEventContent
-import net.folivo.trixnity.core.model.events.UnknownMessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
@@ -296,7 +295,7 @@ class PersistentDataUnitSerializerTest {
         """.trimIndent()
         jsonV3.decodeFromString(serializer, input) shouldBe PersistentMessageDataUnitV3(
             authEvents = listOf(),
-            content = UnknownMessageEventContent(buildJsonObject { put("dino", JsonPrimitive("unicorn")) }, "o"),
+            content = UnknownEventContent(buildJsonObject { put("dino", JsonPrimitive("unicorn")) }, "o"),
             depth = 12u,
             hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
             originTimestamp = 1404838188000,
@@ -311,7 +310,8 @@ class PersistentDataUnitSerializerTest {
             {
               "auth_events": [],
               "content": {
-                "reason": "spam"
+                "reason": "spam",
+                "redacts": "$1event"
               },
               "depth": 12,
               "hashes": {
@@ -319,7 +319,7 @@ class PersistentDataUnitSerializerTest {
               },
               "origin_server_ts": 1404838188000,
               "prev_events": [],
-              "redacts": "${'$'}1event",
+              "redacts": "$1event",
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
               "type": "m.room.redaction",
@@ -374,7 +374,7 @@ class PersistentDataUnitSerializerTest {
 
     private val redactedMessagePdu = PersistentMessageDataUnitV3(
         authEvents = listOf(),
-        content = RedactedMessageEventContent("m.room.message"),
+        content = RedactedEventContent("m.room.message"),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
         originTimestamp = 1404838188000,
@@ -409,7 +409,7 @@ class PersistentDataUnitSerializerTest {
               "room_id": "!UcYsUzyxTGDxLBEvLy:example.org",
               "sender": "@alice:example.com",
               "state_key": "@user:server",
-              "type": "m.room.avatar",
+              "type": "m.room.name",
               "unsigned": {
                 "age": 4612
               }
@@ -418,7 +418,7 @@ class PersistentDataUnitSerializerTest {
 
     private val redactedStatePdu = PersistentStateDataUnitV3(
         authEvents = listOf(),
-        content = RedactedStateEventContent("m.room.avatar"),
+        content = RedactedEventContent("m.room.name"),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
         originTimestamp = 1404838188000,

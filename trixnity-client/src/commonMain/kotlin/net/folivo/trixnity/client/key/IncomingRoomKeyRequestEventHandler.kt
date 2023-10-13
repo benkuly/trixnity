@@ -5,22 +5,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.ForwardedRoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -41,14 +37,9 @@ class IncomingRoomKeyRequestEventHandler(
     private val ownUserId = userInfo.userId
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests)
-        api.sync.subscribe(::handleIncomingKeyRequests)
-        api.sync.afterSyncProcessing.subscribe(::processIncomingKeyRequests)
-        scope.coroutineContext.job.invokeOnCompletion {
-            olmDecrypter.unsubscribe(::handleEncryptedIncomingKeyRequests)
-            api.sync.unsubscribe(::handleIncomingKeyRequests)
-            api.sync.afterSyncProcessing.unsubscribe(::processIncomingKeyRequests)
-        }
+        olmDecrypter.subscribe(::handleEncryptedIncomingKeyRequests).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEvent(subscriber = ::handleIncomingKeyRequests).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::processIncomingKeyRequests).unsubscribeOnCompletion(scope)
     }
 
     private val incomingRoomKeyRequests = MutableStateFlow<Set<RoomKeyRequestEventContent>>(setOf())
@@ -56,12 +47,12 @@ class IncomingRoomKeyRequestEventHandler(
     internal fun handleEncryptedIncomingKeyRequests(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is RoomKeyRequestEventContent) {
-            handleIncomingKeyRequests(Event.ToDeviceEvent(content, event.decrypted.sender))
+            handleIncomingKeyRequests(ToDeviceEvent(content, event.decrypted.sender))
         }
     }
 
-    internal fun handleIncomingKeyRequests(event: Event<RoomKeyRequestEventContent>) {
-        if (event is Event.ToDeviceEvent && event.sender == ownUserId) {
+    internal fun handleIncomingKeyRequests(event: ToDeviceEvent<RoomKeyRequestEventContent>) {
+        if (event.sender == ownUserId) {
             log.debug { "handle incoming room key requests" }
             val content = event.content
             when (content.action) {
@@ -72,7 +63,7 @@ class IncomingRoomKeyRequestEventHandler(
         }
     }
 
-    internal suspend fun processIncomingKeyRequests(syncProcessingData: SyncProcessingData) {
+    internal suspend fun processIncomingKeyRequests() {
         incomingRoomKeyRequests.value.forEach { request ->
             val requestingDeviceId = request.requestingDeviceId
             val senderTrustLevel = keyStore.getDeviceKey(ownUserId, requestingDeviceId).first()?.trustLevel

@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredSecret
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent

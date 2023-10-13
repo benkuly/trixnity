@@ -10,11 +10,11 @@ import net.folivo.trixnity.clientserverapi.model.server.GetVersions
 import net.folivo.trixnity.core.model.UserId
 
 suspend fun UserId.serverDiscovery(
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = { defaultTrixnityHttpClient(config=it) }
+    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient()
 ): Result<Url> = domain.serverDiscovery(httpClientFactory)
 
 suspend fun String.serverDiscovery(
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = { defaultTrixnityHttpClient(config=it) }
+    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient()
 ): Result<Url> = runCatching {
     val hostnameBaseUrl =
         when {
@@ -25,7 +25,7 @@ suspend fun String.serverDiscovery(
 }
 
 suspend fun Url.serverDiscovery(
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = { defaultTrixnityHttpClient(config=it) }
+    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient()
 ): Result<Url> = kotlin.runCatching {
     require(protocol == URLProtocol.HTTP || protocol == URLProtocol.HTTPS) { "protocol must be http or https" }
     val hostnameBaseUrl = Url(URLBuilder(protocol, host, port))

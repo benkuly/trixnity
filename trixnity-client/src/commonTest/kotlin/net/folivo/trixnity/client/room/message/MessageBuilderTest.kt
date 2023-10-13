@@ -15,6 +15,8 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.ReactionEventContent
@@ -44,7 +46,7 @@ class MessageBuilderTest : ShouldSpec({
             )
             returnGetTimelineEvent = flowOf(
                 TimelineEvent(
-                    event = Event.MessageEvent(
+                    event = MessageEvent(
                         TextMessageEventContent("dino\nunicorn"),
                         EventId("dino"),
                         UserId("sender", "server"),
@@ -63,7 +65,7 @@ class MessageBuilderTest : ShouldSpec({
 
     fun timelineEvent(eventId: EventId, relatesTo: RelatesTo? = null, mentions: Mentions? = null) =
         TimelineEvent(
-            event = Event.MessageEvent(
+            event = MessageEvent(
                 content = TextMessageEventContent("hi", relatesTo = relatesTo, mentions = mentions),
                 id = eventId,
                 sender = UserId("sender", "server"),
@@ -292,7 +294,7 @@ class MessageBuilderTest : ShouldSpec({
         should("create fallback text on reply to image") {
             roomService.returnGetTimelineEvent = flowOf(
                 TimelineEvent(
-                    event = Event.MessageEvent(
+                    event = MessageEvent(
                         ImageMessageEventContent(
                             body = "image.png",
                             url = "http://localhost/media/123456",

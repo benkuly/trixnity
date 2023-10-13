@@ -16,9 +16,9 @@ import net.folivo.trixnity.clientserverapi.model.server.WhoIs
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
@@ -28,7 +28,7 @@ class ServerRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
     private val json = createMatrixEventJson()
-    private val mapping = createEventContentSerializerMappings()
+    private val mapping = createDefaultEventContentSerializerMappings()
 
     @Mock
     lateinit var handlerMock: ServerApiHandler
@@ -134,7 +134,7 @@ class ServerRoutesTest : TestsWithMocks() {
                             results = listOf(
                                 Search.Response.ResultCategories.RoomEventsResult.Results(
                                     rank = 0.00424866,
-                                    result = Event.MessageEvent(
+                                    result = MessageEvent(
                                         RoomMessageEventContent.TextMessageEventContent("This is an example text message"),
                                         id = EventId("$144429830826TWwbB:localhost"),
                                         originTimestamp = 1432735824653,

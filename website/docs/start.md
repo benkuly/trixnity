@@ -30,7 +30,10 @@ You may also take a look into
 the [integration tests](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/integration-tests).
 
 For a messenger implementation you can take a look into the community
-project [smalk](https://gitlab.com/terrakok/smalk).
+project [Smalk](https://gitlab.com/terrakok/smalk).
+
+If you you just want to implement a messenger without having to dive to deep into trixnity-client and Matrix, consider
+using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 
 ## Snapshot builds
 

@@ -3,21 +3,22 @@ package net.folivo.trixnity.appservice
 import net.folivo.trixnity.applicationserviceapi.server.ApplicationServiceApiServerHandler
 import net.folivo.trixnity.appservice.ApplicationServiceRoomService.RoomExistingState
 import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState
-import net.folivo.trixnity.core.EventEmitterImpl
+import net.folivo.trixnity.core.ClientEventEmitterImpl
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 
 class DefaultApplicationServiceApiServerHandler(
     private val applicationServiceEventTxnService: ApplicationServiceEventTxnService,
     private val applicationServiceUserService: ApplicationServiceUserService,
     private val applicationServiceRoomService: ApplicationServiceRoomService,
-) : ApplicationServiceApiServerHandler, EventEmitterImpl() {
+) : ApplicationServiceApiServerHandler, ClientEventEmitterImpl<List<ClientEvent<*>>>() {
 
-    override suspend fun addTransaction(txnId: String, events: List<Event<*>>) {
+    override suspend fun addTransaction(txnId: String, events: List<RoomEvent<*>>) {
         when (applicationServiceEventTxnService.eventTnxProcessingState(txnId)) {
             ApplicationServiceEventTxnService.EventTnxProcessingState.NOT_PROCESSED -> {
-                events.forEach { emitEvent(it) }
+                emit(events)
                 applicationServiceEventTxnService.onEventTnxProcessed(txnId)
             }
 

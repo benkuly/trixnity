@@ -4,7 +4,7 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.relatesTo
 import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -17,7 +17,7 @@ suspend fun MessageBuilder.reply(
 
 @TrixnityDsl
 suspend fun MessageBuilder.reply(
-    event: Event.MessageEvent<*>,
+    event: MessageEvent<*>,
 ) = reply(event.id, event.content.relatesTo)
 
 /**

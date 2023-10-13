@@ -15,6 +15,7 @@ import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
@@ -46,13 +47,13 @@ class RoomStateStore(
             ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
     }
 
-    suspend fun save(event: Event<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
+    suspend fun save(event: StateBaseEvent<*>, skipWhenAlreadyPresent: Boolean = false) {
         val roomId = event.roomIdOrNull
         val stateKey = event.stateKeyOrNull
         if (roomId != null && stateKey != null) {
             val eventType = when (val content = event.content) {
-                is UnknownStateEventContent -> content.eventType
-                is RedactedStateEventContent -> content.eventType
+                is UnknownEventContent -> content.eventType
+                is RedactedEventContent -> content.eventType
                 else -> contentMappings.state.find { it.kClass.isInstance(event.content) }?.type
             }
                 ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
@@ -79,7 +80,7 @@ class RoomStateStore(
     fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> {
         val eventType = findType(eventContentClass)
         return roomStateCache.readByFirstKey(RoomStateRepositoryKey(roomId, eventType))
             .mapLatest { value ->
@@ -87,7 +88,7 @@ class RoomStateStore(
                     entry.value.map {
                         if (it?.content?.instanceOf(eventContentClass) == true) {
                             @Suppress("UNCHECKED_CAST")
-                            it as Event<C>
+                            it as StateBaseEvent<C>
                         } else null
                     }
                 }
@@ -98,7 +99,7 @@ class RoomStateStore(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String,
-    ): Flow<Event<C>?> {
+    ): Flow<StateBaseEvent<C>?> {
         val eventType = findType(eventContentClass)
         return roomStateCache.read(MapRepositoryCoroutinesCacheKey(RoomStateRepositoryKey(roomId, eventType), stateKey))
             .map { if (it?.content?.instanceOf(eventContentClass) == true) it else null }

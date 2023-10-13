@@ -2,7 +2,11 @@ package net.folivo.trixnity.client.mocks
 
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
+import net.folivo.trixnity.core.model.events.EventContent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -39,7 +43,7 @@ class OlmEncryptionServiceMock : OlmEncryptionService {
     }
 
     val returnDecryptMegolm = mutableListOf<() -> DecryptedMegolmEvent<*>>()
-    override suspend fun decryptMegolm(encryptedEvent: Event.RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
+    override suspend fun decryptMegolm(encryptedEvent: RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
         val returner =
             if (returnDecryptMegolm.size > 1) returnDecryptMegolm.removeFirst()
             else returnDecryptMegolm.first()

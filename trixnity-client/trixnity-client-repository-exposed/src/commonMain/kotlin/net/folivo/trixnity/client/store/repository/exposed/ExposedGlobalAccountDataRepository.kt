@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.store.repository.exposed
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
@@ -16,16 +16,16 @@ internal object ExposedGlobalAccountData : Table("global_account_data") {
 
 internal class ExposedGlobalAccountDataRepository(private val json: Json) : GlobalAccountDataRepository {
     @OptIn(ExperimentalSerializationApi::class)
-    private val serializer = json.serializersModule.getContextual(Event.GlobalAccountDataEvent::class)
+    private val serializer = json.serializersModule.getContextual(GlobalAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(firstKey: String): Map<String, Event.GlobalAccountDataEvent<*>> = withExposedRead {
+    override suspend fun get(firstKey: String): Map<String, GlobalAccountDataEvent<*>> = withExposedRead {
         ExposedGlobalAccountData.select { ExposedGlobalAccountData.type.eq(firstKey) }.associate {
             it[ExposedGlobalAccountData.key] to json.decodeFromString(serializer, it[ExposedGlobalAccountData.event])
         }
     }
 
-    override suspend fun get(firstKey: String, secondKey: String): Event.GlobalAccountDataEvent<*>? =
+    override suspend fun get(firstKey: String, secondKey: String): GlobalAccountDataEvent<*>? =
         withExposedRead {
             ExposedGlobalAccountData.select {
                 ExposedGlobalAccountData.type.eq(firstKey) and
@@ -38,7 +38,7 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
     override suspend fun save(
         firstKey: String,
         secondKey: String,
-        value: Event.GlobalAccountDataEvent<*>
+        value: GlobalAccountDataEvent<*>
     ): Unit = withExposedWrite {
         ExposedGlobalAccountData.replace {
             it[type] = firstKey

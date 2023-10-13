@@ -14,9 +14,10 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
@@ -1986,7 +1987,7 @@ class RoomsApiClientTest {
                     avatarUrl = "mxc://example.org/abcdef",
                     canonicalAlias = RoomAliasId("#general:example.org"),
                     childrenState = setOf(
-                        Event.StrippedStateEvent(
+                        StrippedStateEvent(
                             ChildEventContent(via = setOf("example.org")),
                             originTimestamp = 1629413349153,
                             sender = UserId("@alice:example.org"),

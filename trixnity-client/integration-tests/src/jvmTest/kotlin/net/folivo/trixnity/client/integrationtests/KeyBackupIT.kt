@@ -24,7 +24,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -82,7 +82,7 @@ class KeyBackupIT {
             val roomId = withClue("user1 invites user2, so user2 gets user1s keys") {
                 startedClient1.client.api.rooms.createRoom(
                     invite = setOf(startedClient2.client.userId),
-                    initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
+                    initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
             }
 

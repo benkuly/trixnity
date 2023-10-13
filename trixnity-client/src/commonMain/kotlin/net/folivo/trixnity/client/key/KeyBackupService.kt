@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
@@ -365,7 +365,7 @@ class KeyBackupServiceImpl(
             )
             keyStore.updateSecrets {
                 it + (SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    Event.GlobalAccountDataEvent(encryptedBackupKey),
+                    GlobalAccountDataEvent(encryptedBackupKey),
                     keyBackupPrivateKey
                 ))
             }

@@ -6,26 +6,22 @@ import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribe
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
@@ -48,16 +44,11 @@ class OutgoingSecretKeyRequestEventHandler(
     private val ownDeviceId = userInfo.deviceId
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer)
-        api.sync.afterSyncProcessing.subscribe(::cancelOldOutgoingKeyRequests)
-        api.sync.subscribe(::handleChangedSecrets)
+        olmDecrypter.subscribe(::handleOutgoingKeyRequestAnswer).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::cancelOldOutgoingKeyRequests).unsubscribeOnCompletion(scope)
+        api.sync.subscribeContent(subscriber = ::handleChangedSecrets).unsubscribeOnCompletion(scope)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
-        scope.coroutineContext.job.invokeOnCompletion {
-            olmDecrypter.unsubscribe(::handleOutgoingKeyRequestAnswer)
-            api.sync.afterSyncProcessing.unsubscribe(::cancelOldOutgoingKeyRequests)
-            api.sync.unsubscribe(::handleChangedSecrets)
-        }
     }
 
     internal suspend fun requestSecretKeys() {
@@ -181,7 +172,7 @@ class OutgoingSecretKeyRequestEventHandler(
     }
 
 
-    internal suspend fun cancelOldOutgoingKeyRequests(syncProcessingData: SyncProcessingData) {
+    internal suspend fun cancelOldOutgoingKeyRequests() {
         keyStore.allSecretKeyRequests.value.forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
                 it.cancelRequest()
@@ -189,7 +180,7 @@ class OutgoingSecretKeyRequestEventHandler(
         }
     }
 
-    internal suspend fun handleChangedSecrets(event: Event<out SecretEventContent>) {
+    internal suspend fun handleChangedSecrets(event: ClientEvent<out SecretEventContent>) {
         log.debug { "handle changed secrets" }
         val secretType =
             api.eventContentSerializerMappings.globalAccountData.find { event.content.instanceOf(it.kClass) }

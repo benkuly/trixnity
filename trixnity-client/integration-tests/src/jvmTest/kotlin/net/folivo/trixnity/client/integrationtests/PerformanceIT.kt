@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.store.repository.realm.createRealmRepositoriesModule
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -60,7 +60,7 @@ class PerformanceIT {
                 repeat(50) {
                     launch {
                         val roomId = prepareTestClient.client.api.rooms.createRoom(
-                            initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
+                            initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                         ).getOrThrow()
                         repeat(10) { i ->
                             prepareTestClient.client.room.sendMessage(roomId) {

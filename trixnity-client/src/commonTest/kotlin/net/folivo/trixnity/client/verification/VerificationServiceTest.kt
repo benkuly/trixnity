@@ -37,10 +37,12 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -339,7 +341,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 val timelineEvent = TimelineEvent(
-                    event = Event.MessageEvent(
+                    event = MessageEvent(
                         VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
                         eventId,
                         bobUserId,
@@ -356,7 +358,7 @@ private val body: ShouldSpec.() -> Unit = {
                 roomServiceMock.returnGetTimelineEvents = flowOf(
                     MutableStateFlow(
                         TimelineEvent(
-                            event = Event.MessageEvent(
+                            event = MessageEvent(
                                 VerificationCancelEventContent(
                                     Code.User, "user",
                                     transactionId = null,
@@ -640,7 +642,7 @@ private val body: ShouldSpec.() -> Unit = {
     context(VerificationServiceImpl::getActiveUserVerification.name) {
         should("skip timed out verifications") {
             val timelineEvent = TimelineEvent(
-                event = Event.MessageEvent(
+                event = MessageEvent(
                     VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
                     bobUserId,
@@ -658,7 +660,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("return cached verification") {
             val timelineEvent = TimelineEvent(
-                event = Event.MessageEvent(
+                event = MessageEvent(
                     VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
                     bobUserId,
@@ -678,7 +680,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("create verification from event") {
             val timelineEvent = TimelineEvent(
-                event = Event.MessageEvent(
+                event = MessageEvent(
                     VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
                     bobUserId,
@@ -698,7 +700,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("not create verification from own request event") {
             val timelineEvent = TimelineEvent(
-                event = Event.MessageEvent(
+                event = MessageEvent(
                     VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
                     eventId,
                     aliceUserId,

@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
@@ -20,37 +20,42 @@ import net.folivo.trixnity.core.serialization.canonicalJson
 private val log = KotlinLogging.logger {}
 
 class RoomAccountDataEventSerializer(
-    private val roomAccountDataEventContentSerializers: Set<SerializerMapping<out RoomAccountDataEventContent>>,
-) : KSerializer<Event.RoomAccountDataEvent<*>> {
+    private val roomAccountDataEventContentSerializers: Set<EventContentSerializerMapping<RoomAccountDataEventContent>>,
+) : KSerializer<RoomAccountDataEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("RoomAccountDataEventSerializer")
+    private val mappings = EventContentToEventSerializerMappings(
+        baseMapping = roomAccountDataEventContentSerializers,
+        eventDeserializer = { RoomAccountDataEvent.serializer(it.serializer) },
+        unknownEventSerializer = { RoomAccountDataEvent.serializer(UnknownEventContentSerializer(it)) },
+        typeField = null,
+    )
 
-    override fun deserialize(decoder: Decoder): Event.RoomAccountDataEvent<*> {
+    override fun deserialize(decoder: Decoder): RoomAccountDataEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val mappingType = roomAccountDataEventContentSerializers.firstOrNull { type.startsWith(it.type) }?.type
-        val contentSerializer = roomAccountDataEventContentSerializers.contentDeserializer(type)
+        val mappingType = roomAccountDataEventContentSerializers.find { type.startsWith(it.type) }?.type
+        val baseSerializer = mappings[mappingType ?: type]
         val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
         return decoder.json.tryDeserializeOrElse(
             AddFieldsSerializer(
-                Event.RoomAccountDataEvent.serializer(contentSerializer),
+                baseSerializer,
                 "key" to key
             ), jsonObj
         ) {
             log.warn(it) { "could not deserialize event: $jsonObj" }
-            Event.RoomAccountDataEvent.serializer(UnknownRoomAccountDataEventContentSerializer(type))
+            @Suppress("UNCHECKED_CAST")
+            RoomAccountDataEvent.serializer(UnknownEventContentSerializer(type)) as KSerializer<RoomAccountDataEvent<RoomAccountDataEventContent>>
         }
     }
 
-    override fun serialize(encoder: Encoder, value: Event.RoomAccountDataEvent<*>) {
+    override fun serialize(encoder: Encoder, value: RoomAccountDataEvent<*>) {
         require(encoder is JsonEncoder)
-        val (type, serializer) = roomAccountDataEventContentSerializers.contentSerializer(value.content)
-
+        val (type, baseSerializer) = mappings[value.content]
         val jsonElement = encoder.json.encodeToJsonElement(
-            @Suppress("UNCHECKED_CAST")
             (HideFieldsSerializer(
                 AddFieldsSerializer(
-                    Event.RoomAccountDataEvent.serializer(serializer) as KSerializer<Event.RoomAccountDataEvent<*>>,
+                    @Suppress("UNCHECKED_CAST") (baseSerializer as KSerializer<RoomAccountDataEvent<*>>),
                     "type" to type + value.key
                 ), "key"
             )), value

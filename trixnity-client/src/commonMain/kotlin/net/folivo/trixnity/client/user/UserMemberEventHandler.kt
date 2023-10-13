@@ -1,21 +1,27 @@
 package net.folivo.trixnity.client.user
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncProcessingData
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.events.stateKeyOrNull
+import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
@@ -27,27 +33,20 @@ class UserMemberEventHandler(
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.syncProcessing.subscribe(::setAllRoomUsers, 90)
-        api.sync.afterSyncProcessing.subscribe(::reloadProfile)
-        scope.coroutineContext.job.invokeOnCompletion {
-            api.sync.syncProcessing.unsubscribe(::setAllRoomUsers)
-            api.sync.afterSyncProcessing.unsubscribe(::reloadProfile)
-        }
+        api.sync.subscribeEventList(Priority.BEFORE_DEFAULT, ::setRoomUser).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT, ::reloadProfile).unsubscribeOnCompletion(scope)
     }
 
     private val reloadOwnProfile = MutableStateFlow(false)
 
-    internal suspend fun setAllRoomUsers(syncProcessingData: SyncProcessingData) {
-        setRoomUser(
-            syncProcessingData.allEvents.filterContent<MemberEventContent>().toList()
-        )
-    }
-
-    override suspend fun handleLazyMemberEvents(memberEvents: List<Event<MemberEventContent>>) {
+    override suspend fun handleLazyMemberEvents(memberEvents: List<StateEvent<MemberEventContent>>) {
         setRoomUser(memberEvents, skipWhenAlreadyPresent = true)
     }
 
-    internal suspend fun setRoomUser(events: List<Event<MemberEventContent>>, skipWhenAlreadyPresent: Boolean = false) {
+    internal suspend fun setRoomUser(
+        events: List<StateBaseEvent<MemberEventContent>>,
+        skipWhenAlreadyPresent: Boolean = false
+    ) {
         if (events.isNotEmpty()) {
             tm.writeTransaction {
                 events.groupBy { it.roomIdOrNull }.forEach { (roomId, eventsByRoomId) ->
@@ -148,7 +147,7 @@ class UserMemberEventHandler(
         }
     }
 
-    private suspend fun reloadProfile(syncProcessingData: SyncProcessingData) {
+    private suspend fun reloadProfile() {
         if (reloadOwnProfile.value) {
             reloadOwnProfile.value = false
 

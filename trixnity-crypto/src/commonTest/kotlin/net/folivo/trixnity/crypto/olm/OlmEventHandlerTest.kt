@@ -13,13 +13,15 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.clientserverapi.client.OlmKeysChange
-import net.folivo.trixnity.core.EventEmitterImpl
+import net.folivo.trixnity.core.ClientEventEmitterImpl
+import net.folivo.trixnity.core.Unsubscriber
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -52,13 +54,9 @@ class OlmEventHandlerTest : ShouldSpec({
 
         olmStoreMock.olmAccount.value = freeAfter(OlmAccount.create()) { it.pickle("") }
 
-        val eventEmitter: EventEmitterImpl = object : EventEmitterImpl() {}
+        val eventEmitter: ClientEventEmitterImpl<List<ClientEvent<*>>> = object : ClientEventEmitterImpl<List<ClientEvent<*>>>() {}
         val olmKeysChangeEmitter: OlmKeysChangeEmitter = object : OlmKeysChangeEmitter {
-            override fun subscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit) {
-                throw NotImplementedError()
-            }
-
-            override fun unsubscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit) {
+            override fun subscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit): Unsubscriber {
                 throw NotImplementedError()
             }
         }
@@ -191,7 +189,7 @@ class OlmEventHandlerTest : ShouldSpec({
             outboundSession.sessionKey,
             EncryptionAlgorithm.Megolm
         )
-        val encryptedEvent = Event.ToDeviceEvent(
+        val encryptedEvent = ToDeviceEvent(
             EncryptedEventContent.OlmEncryptedEventContent(
                 ciphertext = mapOf(),
                 senderKey = Key.Curve25519Key(null, "BOB_IDEN"),
@@ -230,7 +228,7 @@ class OlmEventHandlerTest : ShouldSpec({
 
         olmStoreMock.outboundMegolmSession[roomId] = StoredOutboundMegolmSession(roomId, pickled = "")
         cut.handleMemberEvents(
-            Event.StateEvent(
+            StateEvent(
                 MemberEventContent(membership = Membership.LEAVE),
                 EventId("\$event"),
                 alice,
@@ -243,7 +241,7 @@ class OlmEventHandlerTest : ShouldSpec({
 
         olmStoreMock.outboundMegolmSession[roomId] = StoredOutboundMegolmSession(roomId, pickled = "")
         cut.handleMemberEvents(
-            Event.StateEvent(
+            StateEvent(
                 MemberEventContent(membership = Membership.BAN),
                 EventId("\$event"),
                 alice,

@@ -20,9 +20,11 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.Joined
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event.*
-import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -34,7 +36,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
 import org.kodein.mock.tests.TestsWithMocks
@@ -44,7 +46,7 @@ class SyncRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
     private val json = createMatrixEventJson()
-    private val mapping = createEventContentSerializerMappings()
+    private val mapping = createDefaultEventContentSerializerMappings()
 
     @Mock
     lateinit var handlerMock: SyncApiHandler
@@ -84,7 +86,7 @@ class SyncRoutesTest : TestsWithMocks() {
                     accountData = GlobalAccountData(
                         listOf(
                             GlobalAccountDataEvent(
-                                content = UnknownGlobalAccountDataEventContent(
+                                content = UnknownEventContent(
                                     JsonObject(mapOf("custom_config_key" to JsonPrimitive("custom_config_value"))),
                                     eventType = "org.example.custom.config"
                                 ),
@@ -145,7 +147,7 @@ class SyncRoutesTest : TestsWithMocks() {
                                             stateKey = "@alice:example.org",
                                             roomId = RoomId("!726s6s6q:example.com")
                                         ),
-                                        MessageEvent(
+                                        ClientEvent.RoomEvent.MessageEvent(
                                             content = TextMessageEventContent(
                                                 body = "This is an example text message",
                                                 format = "org.matrix.custom.html",
@@ -176,7 +178,7 @@ class SyncRoutesTest : TestsWithMocks() {
                                 accountData = RoomAccountData(
                                     listOf(
                                         RoomAccountDataEvent(
-                                            content = UnknownRoomAccountDataEventContent(
+                                            content = UnknownEventContent(
                                                 JsonObject(mapOf("custom_config_key" to JsonPrimitive("custom_config_value"))),
                                                 eventType = "org.example.custom.config"
                                             ),

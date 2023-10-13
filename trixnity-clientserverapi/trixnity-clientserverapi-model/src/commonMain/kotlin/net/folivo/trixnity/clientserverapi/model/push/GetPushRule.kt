@@ -27,7 +27,8 @@ data class GetPushRule(
 ) : MatrixEndpoint<Unit, PushRule> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
+        json: Json,
+        value: PushRule?
     ): KSerializer<PushRule> {
         val serializer = when (kind) {
             PushRuleKind.OVERRIDE -> PushRule.Override.serializer()

@@ -7,8 +7,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.UnknownGlobalAccountDataEventContent
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -32,7 +32,7 @@ class RoomGlobalAccountDataRepositoryTest {
     fun `Save, get and delete`() = runTest {
         val key1 = "m.direct"
         val key2 = "org.example.mynamespace"
-        val accountDataEvent1 = Event.GlobalAccountDataEvent(
+        val accountDataEvent1 = GlobalAccountDataEvent(
             DirectEventContent(
                 mapOf(
                     UserId(
@@ -42,15 +42,15 @@ class RoomGlobalAccountDataRepositoryTest {
                 )
             ), ""
         )
-        val accountDataEvent2 = Event.GlobalAccountDataEvent(
-            UnknownGlobalAccountDataEventContent(
+        val accountDataEvent2 = GlobalAccountDataEvent(
+            UnknownEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
                 "org.example.mynamespace"
             ),
             ""
         )
-        val accountDataEvent3 = Event.GlobalAccountDataEvent(
-            UnknownGlobalAccountDataEventContent(
+        val accountDataEvent3 = GlobalAccountDataEvent(
+            UnknownEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
                 "org.example.mynamespace.2"
             ),
@@ -85,7 +85,7 @@ class RoomGlobalAccountDataRepositoryTest {
     @Test
     fun `Save and get by second key`() = runTest {
         val key = "m.secret_storage.key"
-        val accountDataEvent = Event.GlobalAccountDataEvent(
+        val accountDataEvent = GlobalAccountDataEvent(
             SecretKeyEventContent.AesHmacSha2Key("name"), "key"
         )
         repo.save(key, "key", accountDataEvent)

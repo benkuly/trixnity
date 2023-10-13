@@ -23,7 +23,9 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.eventIdOrNull
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
@@ -95,7 +97,7 @@ class TimelineEventIT {
         withTimeout(30_000) {
             val room = client1.api.rooms.createRoom(
                 invite = setOf(client2.userId),
-                initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
             client2.api.rooms.joinRoom(room).getOrThrow()
@@ -323,8 +325,8 @@ class TimelineEventIT {
     @Suppress("UNCHECKED_CAST")
     private fun TimelineEvent.removeUnsigned(): TimelineEvent? {
         return when (val event = event) {
-            is Event.MessageEvent -> copy(event = event.copy(unsigned = null))
-            is Event.StateEvent -> copy(event = (event as Event.StateEvent<Nothing>).copy(unsigned = null))
+            is MessageEvent -> copy(event = event.copy(unsigned = null))
+            is StateEvent -> copy(event = (event as StateEvent<Nothing>).copy(unsigned = null))
             else -> this
         }
     }
