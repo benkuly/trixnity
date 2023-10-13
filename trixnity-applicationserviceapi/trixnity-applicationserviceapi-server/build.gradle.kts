@@ -21,6 +21,7 @@ kotlin {
                 implementation(libs.ktor.server.contentNegotiation)
                 implementation(libs.ktor.server.resources)
                 implementation(libs.ktor.server.auth)
+                implementation(libs.ktor.serialization.kotlinx.json)
 
                 implementation(libs.oshai.logging)
             }

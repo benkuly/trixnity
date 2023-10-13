@@ -33,6 +33,7 @@ kotlin {
                 implementation(libs.ktor.server.testHost)
                 implementation(libs.ktor.server.resources)
                 implementation(libs.ktor.server.contentNegotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
 
                 implementation(libs.kotest.assertions.core)
             }

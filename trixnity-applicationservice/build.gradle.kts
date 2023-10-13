@@ -20,6 +20,7 @@ kotlin {
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.statusPages)
                 implementation(libs.ktor.server.contentNegotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
 
                 implementation(libs.benasher44.uuid)
 
