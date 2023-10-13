@@ -11,7 +11,7 @@ val ClientEvent<*>.stateKeyOrNull: String?
         else -> null
     }
 
-val ClientEvent<*>.eventIdOrNull: EventId?
+val ClientEvent<*>.idOrNull: EventId?
     get() = when (this) {
         is RoomEvent -> this.id
         else -> null

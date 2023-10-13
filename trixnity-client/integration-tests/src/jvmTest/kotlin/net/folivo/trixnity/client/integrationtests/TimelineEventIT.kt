@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
-import net.folivo.trixnity.core.model.events.eventIdOrNull
+import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -295,7 +295,7 @@ class TimelineEventIT {
             val timelineFromOldRoom =
                 client1.room.getTimeline(oldRoom).apply {
                     init(
-                        client1.room.getState<CreateEventContent>(oldRoom).first()?.eventIdOrNull.shouldNotBeNull(),
+                        client1.room.getState<CreateEventContent>(oldRoom).first()?.idOrNull.shouldNotBeNull(),
                         configAfter = { maxSize = 20 })
                 }
             val timelineFromNewRoom =

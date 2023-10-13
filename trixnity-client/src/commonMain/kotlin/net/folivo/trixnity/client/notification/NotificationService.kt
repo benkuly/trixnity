@@ -132,7 +132,7 @@ class NotificationServiceImpl(
         event: ClientEvent<*>,
         allRules: List<PushRule>,
     ): Notification? {
-        log.trace { "evaluate push rules for event: ${event.eventIdOrNull}" }
+        log.trace { "evaluate push rules for event: ${event.idOrNull}" }
         val eventJson = lazy {
             try {
                 when (event) {
@@ -165,11 +165,11 @@ class NotificationServiceImpl(
                         .all { matchPushCondition(event, eventJson, it) }
                 }
             }
-        log.trace { "event ${event.eventIdOrNull}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
+        log.trace { "event ${event.idOrNull}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
         return rule?.actions?.asFlow()
             ?.transform { pushAction ->
                 if (pushAction is PushAction.Notify) {
-                    log.debug { "notify for event ${event.eventIdOrNull} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
+                    log.debug { "notify for event ${event.idOrNull} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
                     emit(Notification(event))
                 }
             }?.firstOrNull()
