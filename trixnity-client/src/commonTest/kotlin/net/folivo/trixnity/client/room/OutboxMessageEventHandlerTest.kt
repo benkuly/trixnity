@@ -90,7 +90,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
 
             retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 cut.removeOldOutboxMessages()
-                roomOutboxMessageStore.getAll().value shouldContainExactly listOf(outbox1, outbox3)
+                roomOutboxMessageStore.getAll().flatten().first() shouldContainExactly listOf(outbox1, outbox3)
             }
         }
     }
@@ -135,7 +135,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             currentSyncState.value = SyncState.RUNNING
             mediaServiceMock.uploadMediaCalled.first { it == cacheUrl }
             retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboxMessages = roomOutboxMessageStore.getAll().value
+                val outboxMessages = roomOutboxMessageStore.getAll().flatten().first().toList()
                 outboxMessages shouldHaveSize 2
                 outboxMessages[0].sentAt shouldNotBe null
                 outboxMessages[1].sentAt shouldNotBe null
@@ -170,9 +170,9 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
             retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboxMessages = roomOutboxMessageStore.getAll().value
+                val outboxMessages = roomOutboxMessageStore.getAll().flatten().first()
                 outboxMessages shouldHaveSize 1
-                outboxMessages[0].sentAt shouldNotBe null
+                outboxMessages.first().sentAt shouldNotBe null
             }
             sendMessageEventCalled shouldBe true
             job.cancel()
@@ -199,9 +199,9 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
             retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboxMessages = roomOutboxMessageStore.getAll().value
+                val outboxMessages = roomOutboxMessageStore.getAll().flatten().first()
                 outboxMessages shouldHaveSize 1
-                outboxMessages[0].sentAt shouldNotBe null
+                outboxMessages.first().sentAt shouldNotBe null
             }
             job.cancel()
         }
@@ -227,9 +227,9 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
             retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboxMessages = roomOutboxMessageStore.getAll().value
+                val outboxMessages = roomOutboxMessageStore.getAll().flatten().first()
                 outboxMessages shouldHaveSize 1
-                outboxMessages[0].sentAt shouldBe null
+                outboxMessages.first().sentAt shouldBe null
             }
             job.cancel()
         }
@@ -259,14 +259,14 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
             retry(100, 200.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboxMessages = roomOutboxMessageStore.getAll().value
+                val outboxMessages = roomOutboxMessageStore.getAll().flatten().first()
                 outboxMessages shouldHaveSize 1
-                outboxMessages[0].sentAt shouldBe null
+                outboxMessages.first().sentAt shouldBe null
             }
             retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboxMessages = roomOutboxMessageStore.getAll().value
+                val outboxMessages = roomOutboxMessageStore.getAll().flatten().first()
                 outboxMessages shouldHaveSize 1
-                outboxMessages[0].sentAt shouldBe null
+                outboxMessages.first().sentAt shouldBe null
             }
             job.cancel()
         }

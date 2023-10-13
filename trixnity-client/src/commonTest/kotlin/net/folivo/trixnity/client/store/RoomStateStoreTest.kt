@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
+import net.folivo.trixnity.client.flattenNotNull
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
@@ -18,9 +19,7 @@ import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -124,7 +123,7 @@ class RoomStateStoreTest : ShouldSpec({
                         stateKey = "@bob:server"
                     )
                 )
-                cut.get<MemberEventContent>(roomId).flatten().first() shouldBe mapOf(
+                cut.get<MemberEventContent>(roomId).flattenNotNull().first() shouldBe mapOf(
                     "@user:server" to event1,
                 )
             }
@@ -137,7 +136,7 @@ class RoomStateStoreTest : ShouldSpec({
                     event1
                 )
                 val scope = CoroutineScope(Dispatchers.Default)
-                val result = cut.get<MemberEventContent>(roomId).flatten(filterNullValues = false)
+                val result = cut.get<MemberEventContent>(roomId).flatten()
                     .shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it?.size == 1 }
                 cut.save(

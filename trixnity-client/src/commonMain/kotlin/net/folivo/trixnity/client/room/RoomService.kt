@@ -174,7 +174,7 @@ interface RoomService {
         key: String = "",
     ): Flow<C?>
 
-    fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>>
+    fun getOutbox(): StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>>
 
     fun <C : StateEventContent> getState(
         roomId: RoomId,
@@ -615,7 +615,7 @@ class RoomServiceImpl(
             .map { it?.content }
     }
 
-    override fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = roomOutboxMessageStore.getAll()
+    override fun getOutbox(): StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>> = roomOutboxMessageStore.getAll()
 
     override fun <C : StateEventContent> getState(
         roomId: RoomId,
