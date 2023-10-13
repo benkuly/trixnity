@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.createDefaultModules
 import net.folivo.trixnity.client.room
+import net.folivo.trixnity.client.room.flatten
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
@@ -70,7 +71,7 @@ class PerformanceIT {
                     }
                 }
             }
-            prepareTestClient.client.room.getOutbox().first { outbox -> outbox.all { it.sentAt != null } }
+            prepareTestClient.client.room.getOutbox().flatten().first { outbox -> outbox.all { it.sentAt != null } }
             prepareTestClient.client.stop()
             suspend fun StartedClient.measureSyncProcessing() =
                 measureTime {

@@ -12,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import net.folivo.trixnity.client.room
+import net.folivo.trixnity.client.room.flatten
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.core.model.events.InitialStateEvent
@@ -72,7 +73,7 @@ class FallbackKeyIT {
             withClue("send encrypted message") {
                 startedClient2.client.room.sendMessage(roomId) { text("dino") }
                 delay(500.milliseconds)
-                startedClient2.client.room.getOutbox().first { outbox -> outbox.all { it.sentAt != null } }
+                startedClient2.client.room.getOutbox().flatten().first { outbox -> outbox.all { it.sentAt != null } }
                 startedClient2.client.cancelSync(true)
             }
 

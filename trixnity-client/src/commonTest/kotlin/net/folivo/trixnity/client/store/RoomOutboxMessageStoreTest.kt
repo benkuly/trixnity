@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.room.flatten
 import net.folivo.trixnity.client.store.repository.InMemoryRoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
@@ -41,19 +42,19 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
             cut.init()
 
             retry(10, 2_000.milliseconds, 30.milliseconds) {
-                cut.getAll().value shouldContainExactly listOf(message1, message2)
+                cut.getAll().flatten().first() shouldContainExactly listOf(message1, message2)
             }
         }
     }
     should("handle massive save and delete") {
         val job1 = launch {
-            cut.getAll().collect { outbox ->
+            cut.getAll().flatten().collect { outbox ->
                 outbox.forEach { cut.update(it.transactionId) { it?.copy(sentAt = Clock.System.now()) } }
                 delay(10)
             }
         }
         val job2 = launch {
-            cut.getAll().collect { outbox ->
+            cut.getAll().flatten().collect { outbox ->
                 outbox.forEach { cut.update(it.transactionId) { null } }
                 delay(10)
             }
@@ -63,7 +64,7 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
                 RoomOutboxMessage(i.toString(), RoomId("room", "server"), TextMessageEventContent(""))
             }
         }
-        cut.getAll().first { it.isEmpty() } // we get a timeout if this never succeeds
+        cut.getAll().flatten().first { it.isEmpty() } // we get a timeout if this never succeeds
         job1.cancel()
         job2.cancel()
     }
