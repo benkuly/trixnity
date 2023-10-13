@@ -47,7 +47,7 @@ internal class IndexedDBRoomOutboxMessageRepository(
             encoder.encodeJsonElement(
                 @Suppress("UNCHECKED_CAST")
                 encoder.json.encodeToJsonElement(
-                    IndexedDBRoomOutboxMessage.serializer(serializer as KSerializer<MessageEventContent>),
+                    IndexedDBRoomOutboxMessage.serializer(serializer),
                     value as IndexedDBRoomOutboxMessage<MessageEventContent>
                 ),
             )
