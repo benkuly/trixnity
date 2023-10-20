@@ -148,7 +148,6 @@ test:mac:
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
-  # TODO iosArm64Test not created by gradle
   script:
     - ./gradlew
       {iosSimulatorArm64,iosX64,macosArm64,macosX64}Test
