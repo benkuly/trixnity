@@ -117,7 +117,10 @@ build:mac:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew assemble --stacktrace
+    - ./gradlew
+      compileKotlin{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      compileTestKotlin{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      --stacktrace
 
 build:linux:
   stage: build
@@ -128,7 +131,12 @@ build:linux:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew assemble --stacktrace
+    - ./gradlew
+      compileKotlin{Jvm,Js,LinuxX64,MingwX64}
+      compileReleaseKotlinAndroid
+      compileTestKotlin{Jvm,Js,LinuxX64,MingwX64}
+      compileReleaseUnitTestKotlinAndroid
+      --stacktrace
 
 test:mac:
   stage: test
@@ -143,10 +151,7 @@ test:mac:
   # TODO iosArm64Test not created by gradle
   script:
     - ./gradlew
-      iosSimulatorArm64Test
-      iosX64Test
-      macosArm64Test
-      macosX64Test
+      {iosSimulatorArm64,iosX64,macosArm64,macosX64}Test
       --stacktrace
 
 test:linux:
@@ -163,10 +168,8 @@ test:linux:
   script:
     - ./gradlew
       jvmTest -x :trixnity-client:integration-tests:jvmTest
+      {js,linuxX64,mingwX64}Test
       testReleaseUnitTest
-      jsTest
-      linuxX64Test
-      mingwX64Test
       --stacktrace
 
 test:integration-test:
@@ -196,11 +199,7 @@ publish-snapshot:mac:
     - *if-main
   script:
     - ./gradlew
-      publishIosArm64PublicationToSnapshotRepository
-      publishIosSimulatorArm64PublicationToSnapshotRepository
-      publishIosX64PublicationToSnapshotRepository
-      publishMacosArm64PublicationToSnapshotRepository
-      publishMacosX64PublicationToSnapshotRepository
+      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToSnapshotRepository
       --stacktrace
 
 publish-snapshot:linux:
@@ -213,12 +212,7 @@ publish-snapshot:linux:
     - *if-main
   script:
     - ./gradlew
-      publishKotlinMultiplatformPublicationToSnapshotRepository
-      publishJvmPublicationToSnapshotRepository
-      publishAndroidReleasePublicationToSnapshotRepository
-      publishJsPublicationToSnapshotRepository
-      publishLinuxX64PublicationToSnapshotRepository
-      publishMingwX64PublicationToSnapshotRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToSnapshotRepository
       --stacktrace
 
 publish:create-nexus-staging-repo:
@@ -258,11 +252,7 @@ publish:mac:
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew
-      publishIosArm64PublicationToReleaseRepository
-      publishIosSimulatorArm64PublicationToReleaseRepository
-      publishIosX64PublicationToReleaseRepository
-      publishMacosArm64PublicationToReleaseRepository
-      publishMacosX64PublicationToReleaseRepository
+      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToReleaseRepository
       --stacktrace
 
 publish:linux:
@@ -277,10 +267,5 @@ publish:linux:
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew
-      publishKotlinMultiplatformPublicationToReleaseRepository
-      publishJvmPublicationToReleaseRepository
-      publishAndroidReleasePublicationToReleaseRepository
-      publishJsPublicationToReleaseRepository
-      publishLinuxX64PublicationToReleaseRepository
-      publishMingwX64PublicationToReleaseRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToReleaseRepository
       --stacktrace
