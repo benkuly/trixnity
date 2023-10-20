@@ -168,8 +168,7 @@ test:linux:
     - *if-merge-request
   script:
     - ./gradlew
-      {jvm,js,linuxX64,mingwX64}Test -x :trixnity-client:integration-tests:jvmTest
-      testReleaseUnitTest
+      {jvm,js,linuxX64,mingwX64,testReleaseUnit}Test -x :trixnity-client:integration-tests:jvmTest
       --stacktrace
 
 test:integration-test:
