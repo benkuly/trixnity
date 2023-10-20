@@ -166,8 +166,7 @@ test:linux:
     - *if-merge-request
   script:
     - ./gradlew
-      jvmTest -x :trixnity-client:integration-tests:jvmTest
-      {js,linuxX64,mingwX64}Test
+      {jvm,js,linuxX64,mingwX64}Test -x :trixnity-client:integration-tests:jvmTest
       testReleaseUnitTest
       --stacktrace
 
@@ -187,7 +186,9 @@ test:integration-test:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew :trixnity-client:integration-tests:jvmTest --stacktrace
+    - ./gradlew
+      :trixnity-client:integration-tests:jvmTest
+      --stacktrace
 
 publish-snapshot:mac:
   stage: publish-snapshot
