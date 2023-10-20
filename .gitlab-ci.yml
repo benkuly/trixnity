@@ -111,6 +111,7 @@ build-trixnity-build-linux-image:
 
 build:mac:
   stage: build
+  interruptible: true
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache-mac
@@ -124,6 +125,7 @@ build:mac:
 
 build:linux:
   stage: build
+  interruptible: true
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
@@ -140,6 +142,7 @@ build:linux:
 
 test:mac:
   stage: test
+  interruptible: true
   timeout: 1h
   needs: [ "build:mac" ]
   tags: [ "trixnity-mac-internal" ]
@@ -155,6 +158,7 @@ test:mac:
 
 test:linux:
   stage: test
+  interruptible: true
   timeout: 1h
   needs: [ "build:linux" ]
   tags: [ "saas-linux-large-amd64" ]
@@ -172,6 +176,7 @@ test:linux:
 
 test:integration-test:
   stage: test
+  interruptible: true
   timeout: 30m
   needs: [ "build:linux" ]
   tags: [ "saas-linux-medium-amd64" ]
