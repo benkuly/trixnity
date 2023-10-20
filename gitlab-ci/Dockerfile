@@ -1,9 +1,10 @@
 FROM ubuntu:20.04
 
 # make sure to update Versions.kt, when you change something here
-ARG ANDROID_CLI_TOOLS=8512546
-ARG ANDROID_PLATFORM=33
-ARG ANDROID_BUILD_TOOLS=33.0.0
+# for CLI_TOOLS version see https://developer.android.com/studio#cmdline-tools
+ARG ANDROID_CLI_TOOLS=10406996
+ARG ANDROID_PLATFORM=34
+ARG ANDROID_BUILD_TOOLS=34.0.0
 
 ENV ANDROID_HOME=/android
 
@@ -13,7 +14,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y apt-utils && \
     apt-get upgrade -y && \
-    apt-get install -y locales docker.io wget unzip libncurses5 libcurl4-openssl-dev openjdk-11-jdk-headless firefox
+    apt-get install -y locales docker.io wget unzip libncurses5 libcurl4-openssl-dev openjdk-11-jdk-headless openjdk-17-jdk-headless firefox
 
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
