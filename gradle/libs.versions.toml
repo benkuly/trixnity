@@ -2,7 +2,7 @@
 ### build ###
 kotlin = "1.9.20-RC" # https://github.com/JetBrains/kotlin/releases
 ksp = "1.9.20-RC-1.0.13" # https://github.com/google/ksp/releases
-dokka = "1.9.0" # https://github.com/Kotlin/dokka/releases
+dokka = "1.9.10" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.1.2" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.5.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 
@@ -29,7 +29,7 @@ exposed = "0.41.1" # https://github.com/JetBrains/Exposed/releases
 h2 = "2.2.224" # https://github.com/h2database/h2database/releases
 juulLabsIndexeddb = "0.6.0" # https://github.com/JuulLabs/indexeddb/releases
 realm = "1.11.1" # https://github.com/realm/realm-kotlin/tags
-androidxRoom = "2.5.2" # https://developer.android.com/jetpack/androidx/releases/room
+androidxRoom = "2.6.0" # https://developer.android.com/jetpack/androidx/releases/room
 
 ### logging ###
 oshaiKotlinLogging = "5.1.0" # https://github.com/oshai/kotlin-logging/releases

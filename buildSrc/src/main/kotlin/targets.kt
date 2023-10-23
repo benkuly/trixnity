@@ -59,20 +59,20 @@ fun KotlinMultiplatformExtension.addJsTarget(
         binaries.executable()
     }
 
-fun KotlinMultiplatformExtension.addNativeTargets(): Set<KotlinNativeTarget> =
-    addNativeDesktopTargets() + addNativeAppleTargets()
+fun KotlinMultiplatformExtension.addNativeTargets(configure: (KotlinNativeTarget.() -> Unit) = {}): Set<KotlinNativeTarget> =
+    addNativeDesktopTargets(configure) + addNativeAppleTargets(configure)
 
-fun KotlinMultiplatformExtension.addNativeDesktopTargets(): Set<KotlinNativeTarget> =
+fun KotlinMultiplatformExtension.addNativeDesktopTargets(configure: (KotlinNativeTarget.() -> Unit) = {}): Set<KotlinNativeTarget> =
     setOf(
-        linuxX64(),
-        mingwX64(),
+        linuxX64(configure),
+        mingwX64(configure),
     )
 
-fun KotlinMultiplatformExtension.addNativeAppleTargets(): Set<KotlinNativeTarget> =
+fun KotlinMultiplatformExtension.addNativeAppleTargets(configure: (KotlinNativeTarget.() -> Unit) = {}): Set<KotlinNativeTarget> =
     setOf(
-        macosX64(),
-        macosArm64(),
-        iosArm64(),
-        iosSimulatorArm64(),
-        iosX64(),
+        macosX64(configure),
+        macosArm64(configure),
+        iosArm64(configure),
+        iosSimulatorArm64(configure),
+        iosX64(configure),
     )
