@@ -113,16 +113,21 @@ build-trixnity-build-linux-image:
 
 build:mac:
   stage: build
+  interruptible: true
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache-mac
   rules:
     - *if-merge-request
   script:
-    - ./gradlew assemble --stacktrace
+    - ./gradlew
+      compileKotlin{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      compileTestKotlin{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      --stacktrace
 
 build:linux:
   stage: build
+  interruptible: true
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
@@ -130,10 +135,16 @@ build:linux:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew assemble --stacktrace
+    - ./gradlew
+      compileKotlin{Jvm,Js,LinuxX64,MingwX64}
+      compileReleaseKotlinAndroid
+      compileTestKotlin{Jvm,Js,LinuxX64,MingwX64}
+      compileReleaseUnitTestKotlinAndroid
+      --stacktrace
 
 test:mac:
   stage: test
+  interruptible: true
   timeout: 1h
   needs: [ "build:mac" ]
   tags: [ "trixnity-mac-internal" ]
@@ -142,17 +153,14 @@ test:mac:
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
-  # TODO iosArm64Test not created by gradle
   script:
     - ./gradlew
-      iosSimulatorArm64Test
-      iosX64Test
-      macosArm64Test
-      macosX64Test
+      {iosSimulatorArm64,iosX64,macosArm64,macosX64}Test
       --stacktrace
 
 test:linux:
   stage: test
+  interruptible: true
   timeout: 1h
   needs: [ "build:linux" ]
   tags: [ "saas-linux-large-amd64" ]
@@ -164,15 +172,13 @@ test:linux:
     - *if-merge-request
   script:
     - ./gradlew
-      jvmTest -x :trixnity-client:integration-tests:jvmTest
+      {jvm,js,linuxX64,mingwX64}Test -x :trixnity-client:integration-tests:jvmTest
       testReleaseUnitTest
-      jsTest
-      linuxX64Test
-      mingwX64Test
       --stacktrace
 
 test:integration-test:
   stage: test
+  interruptible: true
   timeout: 30m
   needs: [ "build:linux" ]
   tags: [ "saas-linux-medium-amd64" ]
@@ -187,7 +193,9 @@ test:integration-test:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew :trixnity-client:integration-tests:jvmTest --stacktrace
+    - ./gradlew
+      :trixnity-client:integration-tests:jvmTest
+      --stacktrace
 
 publish-snapshot:mac:
   stage: publish-snapshot
@@ -198,11 +206,7 @@ publish-snapshot:mac:
     - *if-main
   script:
     - ./gradlew
-      publishIosArm64PublicationToSnapshotRepository
-      publishIosSimulatorArm64PublicationToSnapshotRepository
-      publishIosX64PublicationToSnapshotRepository
-      publishMacosArm64PublicationToSnapshotRepository
-      publishMacosX64PublicationToSnapshotRepository
+      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToSnapshotRepository
       --stacktrace
 
 publish-snapshot:linux:
@@ -215,12 +219,7 @@ publish-snapshot:linux:
     - *if-main
   script:
     - ./gradlew
-      publishKotlinMultiplatformPublicationToSnapshotRepository
-      publishJvmPublicationToSnapshotRepository
-      publishAndroidReleasePublicationToSnapshotRepository
-      publishJsPublicationToSnapshotRepository
-      publishLinuxX64PublicationToSnapshotRepository
-      publishMingwX64PublicationToSnapshotRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToSnapshotRepository
       --stacktrace
 
 publish:create-nexus-staging-repo:
@@ -260,11 +259,7 @@ publish:mac:
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew
-      publishIosArm64PublicationToReleaseRepository
-      publishIosSimulatorArm64PublicationToReleaseRepository
-      publishIosX64PublicationToReleaseRepository
-      publishMacosArm64PublicationToReleaseRepository
-      publishMacosX64PublicationToReleaseRepository
+      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToReleaseRepository
       --stacktrace
 
 publish:linux:
@@ -279,10 +274,5 @@ publish:linux:
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew
-      publishKotlinMultiplatformPublicationToReleaseRepository
-      publishJvmPublicationToReleaseRepository
-      publishAndroidReleasePublicationToReleaseRepository
-      publishJsPublicationToReleaseRepository
-      publishLinuxX64PublicationToReleaseRepository
-      publishMingwX64PublicationToReleaseRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToReleaseRepository
       --stacktrace

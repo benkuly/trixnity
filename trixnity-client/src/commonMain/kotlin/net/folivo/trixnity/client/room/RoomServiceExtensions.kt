@@ -6,13 +6,12 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.Room
+import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -42,7 +41,7 @@ inline fun <reified C : StateEventContent> RoomService.getAllState(
 ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> = getAllState(roomId, C::class)
 
 /**
- * This collects all rooms, so when one room changes, a new room set gets emitted.
+ * This collects all rooms, so when one changes, a new set gets emitted.
  * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
  * the outer flow is throttled by default.
  */
@@ -74,6 +73,23 @@ fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(
                 } else true
             }.toSet()
         }
+
+/**
+ * This collects all outbox messages, so when one changes, a new set gets emitted.
+ * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
+ * the outer flow is throttled by default.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+fun StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>>.flatten(
+    throttle: Duration = 200.milliseconds,
+): Flow<Set<RoomOutboxMessage<*>>> =
+    transform {
+        emit(it)
+        delay(throttle)
+    }.flatMapLatest {
+        if (it.isEmpty()) flowOf(setOf())
+        else combine(it.values) { transform -> transform.filterNotNull().toSet() }
+    }
 
 /**
  * Converts a flow of timeline events into a flow of list of timeline events limited by [maxSize].

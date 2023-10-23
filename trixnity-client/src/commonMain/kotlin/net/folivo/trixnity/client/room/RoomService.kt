@@ -25,7 +25,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.eventIdOrNull
+import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
@@ -174,7 +174,7 @@ interface RoomService {
         key: String = "",
     ): Flow<C?>
 
-    fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>>
+    fun getOutbox(): StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>>
 
     fun <C : StateEventContent> getState(
         roomId: RoomId,
@@ -402,7 +402,7 @@ class RoomServiceImpl(
                         val successor: RoomEventIdPair? =
                             if (direction == FORWARDS && timelineEventSnapshotContent is TombstoneEventContent) {
                                 getState<CreateEventContent>(timelineEventSnapshotContent.replacementRoom).first()
-                                    ?.eventIdOrNull
+                                    ?.idOrNull
                                     ?.let { RoomEventIdPair(it, timelineEventSnapshotContent.replacementRoom) }
                             } else null
 
@@ -615,7 +615,7 @@ class RoomServiceImpl(
             .map { it?.content }
     }
 
-    override fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = roomOutboxMessageStore.getAll()
+    override fun getOutbox(): StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>> = roomOutboxMessageStore.getAll()
 
     override fun <C : StateEventContent> getState(
         roomId: RoomId,

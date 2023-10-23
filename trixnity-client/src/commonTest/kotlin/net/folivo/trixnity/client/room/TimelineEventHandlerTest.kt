@@ -21,7 +21,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -1570,7 +1569,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     1234,
                 )
             )
-            roomTimelineStore.getRelations(EventId("$1other"), room, RelationType.Reference).flatten().first()
+            roomTimelineStore.getRelations(EventId("$1other"), room, RelationType.Reference).flattenNotNull().first()
                 .shouldNotBeNull().shouldBeEmpty()
         }
     }

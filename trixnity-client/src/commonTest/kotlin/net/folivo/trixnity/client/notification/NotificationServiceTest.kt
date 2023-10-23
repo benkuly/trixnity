@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.eventIdOrNull
+import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.keys.Key
@@ -391,7 +391,7 @@ private val body: ShouldSpec.() -> Unit = {
                 globalAccountDataStore.save(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
 
                 assertSoftly(cut.getNotifications(0.seconds).first()) {
-                    event.eventIdOrNull shouldBe timelineEvent.eventId
+                    event.idOrNull shouldBe timelineEvent.eventId
                     event.content shouldBe timelineEvent.content?.getOrThrow()
                 }
             }
