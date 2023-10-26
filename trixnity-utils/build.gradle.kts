@@ -19,6 +19,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api("io.ktor:ktor-utils:${Versions.ktor}")
+                api("com.squareup.okio:okio:${Versions.okio}")
             }
         }
         val commonTest by getting {
