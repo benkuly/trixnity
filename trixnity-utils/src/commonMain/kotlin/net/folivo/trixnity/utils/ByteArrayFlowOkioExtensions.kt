@@ -1,6 +1,5 @@
 package net.folivo.trixnity.utils
 
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -12,10 +11,13 @@ suspend fun BufferedSink.write(content: ByteArrayFlow, coroutineContext: Corouti
         content.collect { write(it) }
     }
 
-suspend fun BufferedSource.readByteArrayFlow(coroutineContext: CoroutineContext = ioContext): ByteArrayFlow =
+typealias SourceFactory = suspend () -> Source
+
+fun ByteArrayFlow(coroutineContext: CoroutineContext = ioContext, sourceFactory: SourceFactory) =
     flow {
-        while (exhausted().not()) {
-            emit(readByteArray(BYTE_ARRAY_FLOW_CHUNK_SIZE.coerceAtMost(buffer.size)))
+        val source = sourceFactory().buffer()
+        while (source.exhausted().not()) {
+            emit(source.readByteArray(BYTE_ARRAY_FLOW_CHUNK_SIZE.coerceAtMost(source.buffer.size)))
         }
     }.flowOn(coroutineContext)
 
@@ -28,14 +30,9 @@ suspend fun FileSystem.write(
         sink(path).buffer().use { it.write(content) }
     }
 
-suspend fun FileSystem.readByteArrayFlow(
+fun FileSystem.readByteArrayFlow(
     path: Path,
     coroutineContext: CoroutineContext = ioContext,
 ): ByteArrayFlow? =
-    if (exists(path))
-        flow {
-            source(path).buffer().use { source -> // use only works wrapped into the flow
-                emitAll(source.readByteArrayFlow(coroutineContext))
-            }
-        }.flowOn(coroutineContext)
+    if (exists(path)) ByteArrayFlow(coroutineContext) { source(path) }
     else null

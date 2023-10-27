@@ -7,6 +7,9 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 
+/**
+ * The returned Flow can only be collected once!
+ */
 fun ByteReadChannel.toByteArrayFlow(): ByteArrayFlow = flow {
     while (isClosedForRead.not()) {
         emit(readRemaining(BYTE_ARRAY_FLOW_CHUNK_SIZE).readBytes())
