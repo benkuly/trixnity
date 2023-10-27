@@ -11,9 +11,7 @@ suspend fun BufferedSink.write(content: ByteArrayFlow, coroutineContext: Corouti
         content.collect { write(it) }
     }
 
-typealias SourceFactory = suspend () -> Source
-
-fun ByteArrayFlow(coroutineContext: CoroutineContext = ioContext, sourceFactory: SourceFactory) =
+fun byteArrayFlow(coroutineContext: CoroutineContext = ioContext, sourceFactory: suspend () -> Source) =
     flow {
         val source = sourceFactory().buffer()
         while (source.exhausted().not()) {
@@ -34,5 +32,5 @@ fun FileSystem.readByteArrayFlow(
     path: Path,
     coroutineContext: CoroutineContext = ioContext,
 ): ByteArrayFlow? =
-    if (exists(path)) ByteArrayFlow(coroutineContext) { source(path) }
+    if (exists(path)) byteArrayFlow(coroutineContext) { source(path) }
     else null
