@@ -103,7 +103,9 @@ build-trixnity-build-linux-image:
   services:
     - name: docker:dind
       command: [ "--tls=false" ]
-  when: manual
+  only:
+    changes:
+      - "gitlab-ci/Dockerfile"
   script:
     - docker build gitlab-ci/ -t $BUILD_LINUX_IMAGE_NAME
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -170,8 +172,7 @@ test:linux:
     - *if-merge-request
   script:
     - ./gradlew
-      {jvm,js,linuxX64,mingwX64}Test -x :trixnity-client:integration-tests:jvmTest
-      testReleaseUnitTest
+      {jvm,js,linuxX64,mingwX64,testReleaseUnit}Test -x :trixnity-client:integration-tests:jvmTest
       --stacktrace
 
 test:integration-test:

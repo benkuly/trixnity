@@ -37,9 +37,9 @@ object Versions {
     const val logback = "1.4.10" // https://github.com/qos-ch/logback/tags
 
     // make sure to update the build images, when you change a version here!
-    const val androidTargetSdk = 33
+    const val androidTargetSdk = 34
     const val androidMinSdk = 24
-    const val androidBuildTools = "33.0.0"
+    const val androidBuildTools = "34.0.0"
 }
 
 val JavaVersion.number: Int
