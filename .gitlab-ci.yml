@@ -4,12 +4,12 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "push"
 
 stages:
-  - website
   - prepare-build
   - build
   - test
   - publish-snapshot
   - publish
+  - website
 
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
