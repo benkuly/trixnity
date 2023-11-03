@@ -16,10 +16,10 @@ data class RoomUser(
     val userId: UserId,
     val name: String,
     val event: @Contextual StateBaseEvent<MemberEventContent>,
-    val receipts: Map<ReceiptType, RoomUserReceipt> = mapOf(),
+    val receipts: Map<ReceiptType, Receipt> = mapOf(),
 ) {
     @Serializable
-    data class RoomUserReceipt(
+    data class Receipt(
         val eventId: EventId,
         val receipt: ReceiptEventContent.Receipt
     )
