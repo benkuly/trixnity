@@ -14,8 +14,10 @@ suspend fun BufferedSink.write(content: ByteArrayFlow, coroutineContext: Corouti
 fun byteArrayFlow(coroutineContext: CoroutineContext = ioContext, sourceFactory: suspend () -> Source) =
     flow {
         val source = sourceFactory().buffer()
-        while (source.exhausted().not()) {
-            emit(source.readByteArray(BYTE_ARRAY_FLOW_CHUNK_SIZE.coerceAtMost(source.buffer.size)))
+        source.use {
+            while (source.exhausted().not()) {
+                emit(source.readByteArray(BYTE_ARRAY_FLOW_CHUNK_SIZE.coerceAtMost(source.buffer.size)))
+            }
         }
     }.flowOn(coroutineContext)
 
