@@ -23,6 +23,7 @@ fun createInMemoryRepositoriesModule() = module {
     singleOf<OutboundMegolmSessionRepository>(::InMemoryOutboundMegolmSessionRepository)
     singleOf<RoomRepository>(::InMemoryRoomRepository)
     singleOf<RoomUserRepository>(::InMemoryRoomUserRepository)
+    singleOf<RoomUserReceiptsRepository>(::InMemoryRoomUserReceiptsRepository)
     singleOf<RoomStateRepository>(::InMemoryRoomStateRepository)
     singleOf<TimelineEventRepository>(::InMemoryTimelineEventRepository)
     singleOf<TimelineEventRelationRepository>(::InMemoryTimelineEventRelationRepository)

@@ -92,6 +92,13 @@ class InMemoryRoomUserRepository : RoomUserRepository, InMemoryMapRepository<Roo
     }
 }
 
+class InMemoryRoomUserReceiptsRepository : RoomUserReceiptsRepository,
+    InMemoryMapRepository<RoomId, UserId, RoomUserReceipts>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { it - roomId }
+    }
+}
+
 class InMemoryRoomStateRepository : RoomStateRepository,
     InMemoryMapRepository<RoomStateRepositoryKey, String, ClientEvent.StateBaseEvent<*>>() {
     override suspend fun deleteByRoomId(roomId: RoomId) {

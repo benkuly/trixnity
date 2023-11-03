@@ -10,18 +10,15 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryRoomUserStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
-import net.folivo.trixnity.client.store.RoomUser
+import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.EphemeralEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.ReceiptType
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class ReceiptEventHandlerTest : ShouldSpec({
@@ -52,20 +49,11 @@ class ReceiptEventHandlerTest : ShouldSpec({
     fun roomUser(
         roomId: RoomId,
         userId: UserId,
-        receipts: Map<ReceiptType, RoomUser.Receipt> = mapOf()
-    ): RoomUser {
-        return RoomUser(
+        receipts: Map<ReceiptType, RoomUserReceipts.Receipt> = mapOf()
+    ): RoomUserReceipts {
+        return RoomUserReceipts(
             roomId,
             userId,
-            userId.full,
-            event = StateEvent(
-                MemberEventContent(membership = Membership.JOIN),
-                EventId("event"),
-                UserId("user", "server"),
-                roomId,
-                0L,
-                stateKey = ""
-            ),
             receipts = receipts,
         )
     }
@@ -73,7 +61,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
     context(ReceiptEventHandler::setReadReceipts.name) {
         should("do nothing when the user in the receipt could not be found") {
             val existingRoomUser = roomUser(room, alice)
-            roomUserStore.update(alice, room) { existingRoomUser }
+            roomUserStore.updateReceipts(alice, room) { existingRoomUser }
             val event = EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
@@ -93,7 +81,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
 
         should("do nothing on unknown receipt users") {
             val existingRoomUser = roomUser(room, alice)
-            roomUserStore.update(alice, room) { existingRoomUser }
+            roomUserStore.updateReceipts(alice, room) { existingRoomUser }
             val event = EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
@@ -116,8 +104,8 @@ class ReceiptEventHandlerTest : ShouldSpec({
             val eventId2 = EventId("eventId2")
             val aliceRoomUser = roomUser(room, alice)
             val bobRoomUser = roomUser(room, alice)
-            roomUserStore.update(alice, room) { aliceRoomUser }
-            roomUserStore.update(bob, room) { bobRoomUser }
+            roomUserStore.updateReceipts(alice, room) { aliceRoomUser }
+            roomUserStore.updateReceipts(bob, room) { bobRoomUser }
             val event = EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
@@ -141,23 +129,23 @@ class ReceiptEventHandlerTest : ShouldSpec({
             )
             cut.setReadReceipts(listOf(event))
 
-            roomUserStore.get(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
-                    RoomUser.Receipt(eventId2, Receipt(2L))
-            roomUserStore.get(bob, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
-                    RoomUser.Receipt(eventId1, Receipt(24L))
+            roomUserStore.getReceipts(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
+                    RoomUserReceipts.Receipt(eventId2, Receipt(2L))
+            roomUserStore.getReceipts(bob, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
+                    RoomUserReceipts.Receipt(eventId1, Receipt(24L))
         }
 
         should("replace the last read message of a user when a new last message is received") {
             val existingEventId = EventId("existingEvent")
             val existingRoomUser = roomUser(
                 room, alice, receipts = mapOf(
-                    ReceiptType.Read to RoomUser.Receipt(
+                    ReceiptType.Read to RoomUserReceipts.Receipt(
                         existingEventId,
                         Receipt(0)
                     )
                 )
             )
-            roomUserStore.update(alice, room) { existingRoomUser }
+            roomUserStore.updateReceipts(alice, room) { existingRoomUser }
             val eventId = EventId("eventId")
             val event = EphemeralEvent(
                 ReceiptEventContent(
@@ -172,8 +160,8 @@ class ReceiptEventHandlerTest : ShouldSpec({
                 roomId = room,
             )
             cut.setReadReceipts(listOf(event))
-            roomUserStore.get(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
-                    RoomUser.Receipt(eventId, Receipt(3L))
+            roomUserStore.getReceipts(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
+                    RoomUserReceipts.Receipt(eventId, Receipt(3L))
         }
     }
 })

@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.user
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import net.folivo.trixnity.client.store.RoomUser
+import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -36,20 +36,20 @@ class ReceiptEventHandler(
                         data class UserReceipt(
                             val userId: UserId,
                             val type: ReceiptType,
-                            val receipt: RoomUser.Receipt,
+                            val receipt: RoomUserReceipts.Receipt,
                         )
 
                         val flattenReceipts = receiptEvent.content.events.flatMap { (eventId, receiptsByType) ->
                             receiptsByType.flatMap { (type, receiptsByUser) ->
                                 receiptsByUser.map { (user, receipt) ->
-                                    UserReceipt(user, type, RoomUser.Receipt(eventId, receipt))
+                                    UserReceipt(user, type, RoomUserReceipts.Receipt(eventId, receipt))
                                 }
                             }
                         }
                         flattenReceipts.groupBy { it.userId }
                             .forEach { (userId, userReceipts) ->
                                 val receipts = userReceipts.groupBy { it.type }.mapValues { it.value.last().receipt }
-                                roomUserStore.update(userId, roomId) { oldRoomUser ->
+                                roomUserStore.updateReceipts(userId, roomId) { oldRoomUser ->
                                     oldRoomUser?.copy(
                                         receipts = oldRoomUser.receipts + receipts
                                     )

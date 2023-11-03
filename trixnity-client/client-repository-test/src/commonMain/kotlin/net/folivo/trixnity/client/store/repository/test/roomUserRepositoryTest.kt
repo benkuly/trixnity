@@ -69,4 +69,22 @@ fun ShouldSpec.roomUserRepositoryTest(diReceiver: () -> Koin) {
             cut.get(key1) shouldHaveSize 0
         }
     }
+    should("roomUserRepositoryTest: save and get by second key") {
+        val key = RoomId("room1", "server")
+        val user = RoomUser(
+            key, UserId("alice", "server"), "ALIC", StateEvent(
+                MemberEventContent(membership = Membership.JOIN),
+                EventId("\$event1"),
+                UserId("alice", "server"),
+                key,
+                1234,
+                stateKey = "@alice:server"
+            )
+        )
+
+        rtm.writeTransaction {
+            cut.save(key, user.userId, user)
+            cut.get(key, user.userId) shouldBe user
+        }
+    }
 }

@@ -26,12 +26,13 @@ import androidx.room.TypeConverters
         RoomRoom::class,
         RoomRoomState::class,
         RoomRoomUser::class,
+        RoomRoomUserReceipts::class,
         RoomSecretKeyRequest::class,
         RoomSecrets::class,
         RoomTimelineEventRelation::class,
         RoomTimelineEvent::class,
     ],
-    version = 1, // tick this value when any entity classes change
+    version = 2, // tick this value when any entity classes change
     exportSchema = true,
 )
 @TypeConverters(
@@ -63,6 +64,7 @@ internal abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun room(): RoomRoomDao
     abstract fun roomState(): RoomStateDao
     abstract fun roomUser(): RoomUserDao
+    abstract fun roomUserReceipts(): RoomUserReceiptsDao
     abstract fun secretKeyRequest(): SecretKeyRequestDao
     abstract fun secrets(): SecretsDao
     abstract fun timelineEventRelation(): TimelineEventRelationDao

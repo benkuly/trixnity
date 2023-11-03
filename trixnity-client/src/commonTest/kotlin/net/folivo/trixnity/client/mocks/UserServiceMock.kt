@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.RoomUser
+import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -30,6 +31,14 @@ class UserServiceMock : UserService {
 
 
     override fun getById(roomId: RoomId, userId: UserId): Flow<RoomUser?> {
+        throw NotImplementedError()
+    }
+
+    override fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>?> {
+        throw NotImplementedError()
+    }
+
+    override fun getReceiptsById(roomId: RoomId, userId: UserId): Flow<RoomUserReceipts?> {
         throw NotImplementedError()
     }
 
