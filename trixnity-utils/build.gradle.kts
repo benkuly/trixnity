@@ -16,7 +16,7 @@ kotlin {
             dependencies {
                 api(libs.ktor.utils)
                 api(libs.kotlinx.coroutines.core)
-                api(libs.okio.core)
+                api(libs.okio)
             }
         }
         commonTest {
