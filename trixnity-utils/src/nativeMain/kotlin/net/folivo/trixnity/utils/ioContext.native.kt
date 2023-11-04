@@ -1,9 +1,7 @@
-package net.folivo.trixnity.client.media.okio
+package net.folivo.trixnity.utils
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import okio.FileSystem
 import kotlin.coroutines.CoroutineContext
 
-internal actual val defaultFileSystem: FileSystem = FileSystem.SYSTEM
 internal actual val ioContext: CoroutineContext = Dispatchers.IO
