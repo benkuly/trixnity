@@ -31,7 +31,7 @@ class RoomUserStore(
             roomUserReceiptsRepository,
             tm,
             storeScope,
-            config.cacheExpireDurations.roomUser
+            config.cacheExpireDurations.roomUserReceipts
         ) { it.firstKey }
 
     override suspend fun clearCache() = deleteAll()

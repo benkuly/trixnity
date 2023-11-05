@@ -79,6 +79,7 @@ class MatrixClientConfiguration {
         val timelineEvent: Duration,
         val timelineEventRelation: Duration,
         val roomUser: Duration,
+        val roomUserReceipts: Duration
     ) {
         companion object {
             fun default(duration: Duration) =
@@ -97,6 +98,7 @@ class MatrixClientConfiguration {
                     timelineEvent = duration,
                     timelineEventRelation = duration,
                     roomUser = duration,
+                    roomUserReceipts = duration,
                 )
         }
     }
