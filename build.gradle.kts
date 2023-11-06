@@ -77,6 +77,7 @@ subprojects {
                         }
                     }
                     artifact(dokkaJar)
+                    signing.sign(this)
                 }
             }
         }
@@ -87,7 +88,6 @@ subprojects {
                 System.getenv("OSSRH_PGP_KEY"),
                 System.getenv("OSSRH_PGP_PASSWORD")
             )
-            sign(publishing.publications)
         }
     }
 }
