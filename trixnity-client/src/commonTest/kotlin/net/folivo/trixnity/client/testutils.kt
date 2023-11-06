@@ -108,6 +108,7 @@ suspend fun getInMemoryRoomStateStore(scope: CoroutineScope) = RoomStateStore(
 
 suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
     InMemoryRoomUserRepository(),
+    InMemoryRoomUserReceiptsRepository(),
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
     scope

@@ -19,10 +19,8 @@ import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.ForwardedRoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
@@ -39,6 +37,7 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class OutgoingRoomKeyRequestEventHandlerTest : ShouldSpec(body)
 
@@ -316,7 +315,7 @@ private val body: ShouldSpec.() -> Unit = {
                         sessionId,
                         EncryptionAlgorithm.Megolm,
                     )
-                ), setOf(aliceDevice), (Clock.System.now() - 1.days)
+                ), setOf(aliceDevice), (Clock.System.now() - 1.days - 1.seconds)
             )
             keyStore.addRoomKeyRequest(request1)
             keyStore.addRoomKeyRequest(request2)

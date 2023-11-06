@@ -37,6 +37,10 @@ interface UserService {
 
     fun getById(roomId: RoomId, userId: UserId): Flow<RoomUser?>
 
+    fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>?>
+
+    fun getReceiptsById(roomId: RoomId, userId: UserId): Flow<RoomUserReceipts?>
+
     fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Int>
     fun getPowerLevel(
         userId: UserId,
@@ -121,6 +125,14 @@ class UserServiceImpl(
 
     override fun getById(roomId: RoomId, userId: UserId): Flow<RoomUser?> {
         return roomUserStore.get(userId, roomId)
+    }
+
+    override fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>?> {
+        return roomUserStore.getAllReceipts(roomId)
+    }
+
+    override fun getReceiptsById(roomId: RoomId, userId: UserId): Flow<RoomUserReceipts?> {
+        return roomUserStore.getReceipts(userId, roomId)
     }
 
     override fun getPowerLevel(

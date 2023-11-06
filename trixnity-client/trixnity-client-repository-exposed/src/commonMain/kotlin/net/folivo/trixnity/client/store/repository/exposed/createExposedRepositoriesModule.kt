@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.store.repository.exposed
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -43,6 +42,7 @@ suspend fun createExposedRepositoriesModule(
             ExposedTimelineEvent,
             ExposedTimelineEventRelation,
             ExposedRoomUser,
+            ExposedRoomUserReceipts,
             ExposedMediaCacheMapping,
         )
         SchemaUtils.createMissingTablesAndColumns(*allTables)
@@ -68,6 +68,7 @@ suspend fun createExposedRepositoriesModule(
         singleOf(::ExposedOutboundMegolmSessionRepository) { bind<OutboundMegolmSessionRepository>() }
         singleOf(::ExposedRoomRepository) { bind<RoomRepository>() }
         singleOf(::ExposedRoomUserRepository) { bind<RoomUserRepository>() }
+        singleOf(::ExposedRoomUserReceiptsRepository) { bind<RoomUserReceiptsRepository>() }
         singleOf(::ExposedRoomStateRepository) { bind<RoomStateRepository>() }
         singleOf(::ExposedTimelineEventRepository) { bind<TimelineEventRepository>() }
         singleOf(::ExposedTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }

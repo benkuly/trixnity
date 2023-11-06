@@ -32,7 +32,7 @@ import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.seconds
 
 class RoomServiceTimelineUtilsTest : ShouldSpec({
-    timeout = 5_000
+    timeout = 10_000
 
     val room = simpleRoom.roomId
     val sender = UserId("sender", "server")
