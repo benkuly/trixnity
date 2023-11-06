@@ -93,7 +93,7 @@ subprojects {
     // Workaround for gradle issue: https://github.com/gradle/gradle/issues/26091
     val signingTasks = tasks.withType<Sign>()
     tasks.withType<AbstractPublishToMaven>().configureEach {
-        dependsOn(signingTasks)
+        mustRunAfter(signingTasks)
     }
 }
 
