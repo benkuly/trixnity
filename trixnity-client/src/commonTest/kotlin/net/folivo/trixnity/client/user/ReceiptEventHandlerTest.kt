@@ -79,15 +79,16 @@ class ReceiptEventHandlerTest : ShouldSpec({
             roomUserStore.getReceipts(alice, room).first() shouldBeSameInstanceAs existingRoomUser
         }
 
-        should("do nothing on unknown receipt users") {
+        should("do store receipts from unknown users") {
             val existingRoomUser = roomUserReceipts(room, alice)
+            val unknownUserId = UserId("unknownUser", "localhost")
             roomUserStore.updateReceipts(alice, room) { existingRoomUser }
             val event = EphemeralEvent(
                 ReceiptEventContent(
                     events = mapOf(
                         EventId("eventId") to mapOf(
                             ReceiptType.Unknown("awesome") to mapOf(
-                                UserId("unknownUser", "localhost") to Receipt(0L)
+                                unknownUserId to Receipt(0L)
                             )
                         )
                     )
@@ -96,7 +97,8 @@ class ReceiptEventHandlerTest : ShouldSpec({
             )
             cut.setReadReceipts(listOf(event))
 
-            roomUserStore.getReceipts(alice, room).first() shouldBeSameInstanceAs existingRoomUser
+            roomUserStore.getReceipts(unknownUserId, room).first()?.receipts shouldBe
+                    mapOf(ReceiptType.Unknown("awesome") to RoomUserReceipts.Receipt(EventId("eventId"), Receipt(0L)))
         }
 
         should("set the last read message for a user with no existing receipts in this room") {

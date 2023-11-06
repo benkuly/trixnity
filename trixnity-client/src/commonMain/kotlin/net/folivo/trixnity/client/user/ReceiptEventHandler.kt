@@ -49,10 +49,9 @@ class ReceiptEventHandler(
                         flattenReceipts.groupBy { it.userId }
                             .forEach { (userId, userReceipts) ->
                                 val receipts = userReceipts.groupBy { it.type }.mapValues { it.value.last().receipt }
-                                roomUserStore.updateReceipts(userId, roomId) { oldRoomUser ->
-                                    oldRoomUser?.copy(
-                                        receipts = oldRoomUser.receipts + receipts
-                                    )
+                                roomUserStore.updateReceipts(userId, roomId) { oldRoomUserReceipts ->
+                                    oldRoomUserReceipts?.copy(receipts = oldRoomUserReceipts.receipts + receipts)
+                                        ?: RoomUserReceipts(roomId, userId, receipts)
                                 }
                             }
                     }
