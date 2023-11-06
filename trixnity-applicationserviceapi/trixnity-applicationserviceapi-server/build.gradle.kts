@@ -1,13 +1,9 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
     jvmToolchain()
     addJvmTarget()
     linuxX64()
@@ -16,33 +12,31 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-api-server"))
                 api(project(":trixnity-applicationserviceapi:trixnity-applicationserviceapi-model"))
 
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
+                implementation(libs.ktor.server.core)
+                implementation(libs.ktor.server.contentNegotiation)
+                implementation(libs.ktor.server.resources)
+                implementation(libs.ktor.server.auth)
+                implementation(libs.ktor.serialization.kotlinx.json)
 
-                implementation("io.ktor:ktor-server-core:${Versions.ktor}")
-                implementation("io.ktor:ktor-server-content-negotiation:${Versions.ktor}")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:${Versions.ktor}")
-                implementation("io.ktor:ktor-server-resources:${Versions.ktor}")
-                implementation("io.ktor:ktor-server-auth:${Versions.ktor}")
-
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("io.ktor:ktor-server-test-host:${Versions.ktor}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
+                implementation(libs.ktor.server.testHost)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.logback.classic)
             }
         }
     }

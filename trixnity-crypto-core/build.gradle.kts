@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
@@ -7,10 +6,10 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.kotest)
 }
 
-val trixnityBinariesDirs = TrixnityBinariesDirs(project)
+val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
 
 class OpensslNativeTarget(
     val target: KonanTarget,
@@ -30,22 +29,13 @@ val opensslNativeTargetList = listOf(
     ),
 )
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default {
-        group("native") {
-            group("openssl") {
-                withLinux()
-                withMingw()
-            }
-        }
-    }
     jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
     addNativeAppleTargets()
 
-    val opensslNativeTargets = opensslNativeTargetList.mapNotNull { target ->
+    opensslNativeTargetList.onEach { target ->
         target.createTarget(this).apply {
             compilations {
                 "main" {
@@ -76,31 +66,65 @@ kotlin {
             languageSettings.optIn("kotlin.RequiresOptIn")
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-utils"))
 
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
             }
         }
 
-        val commonTest by getting {
+        val opensslMain by creating {
+            dependsOn(commonMain.get())
+        }
+        val linuxMain by creating {
+            dependsOn(opensslMain)
+        }
+        val linuxX64Main by getting {
+            dependsOn(linuxMain)
+        }
+        val mingwMain by creating {
+            dependsOn(opensslMain)
+        }
+        val mingwX64Main by getting {
+            dependsOn(mingwMain)
+        }
+
+        val appleMain by creating {
+            dependsOn(commonMain.get())
+        }
+        val macosX64Main by getting {
+            dependsOn(appleMain)
+        }
+        val macosArm64Main by getting {
+            dependsOn(appleMain)
+        }
+        val iosArm64Main by getting {
+            dependsOn(appleMain)
+        }
+        val iosSimulatorArm64Main by getting {
+            dependsOn(appleMain)
+        }
+        val iosX64Main by getting {
+            dependsOn(appleMain)
+        }
+
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("io.kotest:kotest-framework-engine:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.common)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotest.framework.engine)
+                implementation(libs.kotest.assertions.core)
 
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
+                implementation(libs.korlibs.krypto)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
-                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.kotest.runner.junit5)
+                implementation(libs.logback.classic)
             }
         }
     }

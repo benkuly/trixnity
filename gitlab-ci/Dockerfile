@@ -1,7 +1,6 @@
 FROM ubuntu:20.04
 
-# make sure to update Versions.kt, when you change something here
-# for CLI_TOOLS version see https://developer.android.com/studio#cmdline-tools
+# make sure to update libs.versions.toml, when you change something here
 ARG ANDROID_CLI_TOOLS=10406996
 ARG ANDROID_PLATFORM=34
 ARG ANDROID_BUILD_TOOLS=34.0.0

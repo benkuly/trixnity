@@ -40,7 +40,7 @@ sealed interface PushCondition {
         val value: JsonPrimitive
     ) : PushCondition
 
-    object ContainsDisplayName : PushCondition
+    data object ContainsDisplayName : PushCondition
 
     @Serializable
     data class RoomMemberCount(

@@ -1,13 +1,9 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
     jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir)
@@ -17,16 +13,16 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":trixnity-core"))
 
-                implementation("io.ktor:ktor-resources:${Versions.ktor}")
+                implementation(libs.ktor.resources)
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
             }

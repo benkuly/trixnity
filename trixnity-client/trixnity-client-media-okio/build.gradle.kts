@@ -1,13 +1,9 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
     jvmToolchain()
     addJvmTarget()
     addJsTarget(rootDir, browserEnabled = false)
@@ -17,32 +13,31 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 implementation(project(":trixnity-client"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
 
-                api("com.squareup.okio:okio:${Versions.okio}")
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                api(libs.okio)
+                implementation(libs.oshai.logging)
             }
         }
-        val jsMain by getting {
+        jsMain {
             dependencies {
-                implementation("com.squareup.okio:okio-nodefilesystem:${Versions.okio}")
+                implementation(libs.okio.nodefilesystem)
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("com.squareup.okio:okio-fakefilesystem:${Versions.okio}")
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.okio.fakefilesystem)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
-                implementation("io.kotest:kotest-runner-junit5:${Versions.kotest}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
+                implementation(libs.kotest.runner.junit5)
+                implementation(libs.logback.classic)
             }
         }
     }

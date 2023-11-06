@@ -29,7 +29,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object Master : ServerDefaultPushRules {
+    data object Master : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Override(
             ruleId = ".m.rule.master",
             default = true,
@@ -39,7 +39,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object SuppressNotice : ServerDefaultPushRules {
+    data object SuppressNotice : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Override(
             ruleId = ".m.rule.suppress_notices",
             default = true,
@@ -84,7 +84,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object MemberEvent : ServerDefaultPushRules {
+    data object MemberEvent : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Override(
             ruleId = ".m.rule.member_event",
             default = true,
@@ -121,7 +121,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object IsRoomMention : ServerDefaultPushRules {
+    data object IsRoomMention : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Override(
             ruleId = ".m.rule.is_room_mention",
             default = true,
@@ -142,7 +142,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object Tombstone : ServerDefaultPushRules {
+    data object Tombstone : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Override(
             ruleId = ".m.rule.tombstone",
             default = true,
@@ -164,7 +164,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object Reaction : ServerDefaultPushRules {
+    data object Reaction : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Override(
             ruleId = ".m.rule.reaction",
             default = true,
@@ -179,7 +179,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object ServerAcl : ServerDefaultPushRules {
+    data object ServerAcl : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Override(
             ruleId = ".m.rule.room.server_acl",
             default = true,
@@ -198,7 +198,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object Call : ServerDefaultPushRules {
+    data object Call : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Underride(
             ruleId = ".m.rule.call",
             default = true,
@@ -216,7 +216,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object EncryptedRoomOneToOne : ServerDefaultPushRules {
+    data object EncryptedRoomOneToOne : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Underride(
             ruleId = ".m.rule.encrypted_room_one_to_one",
             default = true,
@@ -235,7 +235,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object RoomOneToOne : ServerDefaultPushRules {
+    data object RoomOneToOne : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Underride(
             ruleId = ".m.rule.room_one_to_one",
             default = true,
@@ -254,7 +254,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object Message : ServerDefaultPushRules {
+    data object Message : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Underride(
             ruleId = ".m.rule.message",
             default = true,
@@ -271,7 +271,7 @@ sealed interface ServerDefaultPushRules {
         )
     }
 
-    object Encrypted : ServerDefaultPushRules {
+    data object Encrypted : ServerDefaultPushRules {
         override val rule: PushRule = PushRule.Underride(
             ruleId = ".m.rule.encrypted",
             default = true,
