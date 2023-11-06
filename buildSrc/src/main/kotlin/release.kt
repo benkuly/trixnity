@@ -9,6 +9,6 @@ fun checkSameReleaseVersion(version: String) {
 
 fun withVersionSuffix(version: String) = (version + when {
     isRelease -> ""
-    isCI -> "-SNAPSHOT"
+    isCI -> "-SNAPSHOT-" + System.getenv("CI_COMMIT_SHORT_SHA")
     else -> "-LOCAL"
 }).also { checkSameReleaseVersion(it) }

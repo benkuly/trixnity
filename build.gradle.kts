@@ -16,7 +16,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix("4.0.0")
+    version = "4.0.0"
 }
 
 subprojects {
@@ -43,16 +43,20 @@ subprojects {
                     }
                 }
                 maven {
+                    url = uri("${System.getenv("CI_API_V4_URL")}/projects/26519650/packages/maven")
                     name = "Snapshot"
-                    url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-                    credentials {
-                        username = System.getenv("OSSRH_USERNAME")
-                        password = System.getenv("OSSRH_PASSWORD")
+                    credentials(HttpHeaderCredentials::class) {
+                        name = "Job-Token"
+                        value = System.getenv("CI_JOB_TOKEN")
+                    }
+                    authentication {
+                        create("header", HttpHeaderAuthentication::class)
                     }
                 }
             }
             publications.configureEach {
                 if (this is MavenPublication) {
+                    version = withVersionSuffix(project.version as String)
                     pom {
                         name.set(project.name)
                         description.set("Multiplatform Kotlin SDK for matrix-protocol")
