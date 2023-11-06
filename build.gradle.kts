@@ -90,13 +90,13 @@ subprojects {
             sign(publishing.publications)
         }
     }
+    // Workaround for gradle issue: https://github.com/gradle/gradle/issues/26091
+    val signingTasks = tasks.withType<Sign>()
+    tasks.withType<AbstractPublishToMaven>().configureEach {
+        dependsOn(signingTasks)
+    }
 }
 
-// Workaround for gradle issue: https://github.com/gradle/gradle/issues/26091
-val signingTasks = tasks.withType<Sign>()
-tasks.withType<AbstractPublishToMaven>().configureEach {
-    dependsOn(signingTasks)
-}
 
 val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")
 val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${libs.versions.trixnityBinaries.get()}.zip")
