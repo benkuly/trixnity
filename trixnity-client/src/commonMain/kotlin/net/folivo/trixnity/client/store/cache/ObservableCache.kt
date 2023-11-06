@@ -89,9 +89,7 @@ internal open class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
         emitAll(
             updateAndGet(
                 key = key,
-                updater = null,
                 get = { store.get(key) },
-                persist = { },
             ).value
         )
     }
