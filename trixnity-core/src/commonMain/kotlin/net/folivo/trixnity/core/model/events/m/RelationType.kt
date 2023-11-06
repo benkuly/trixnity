@@ -12,26 +12,26 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface RelationType {
     val name: String
 
-    object Reference : RelationType {
+    data object Reference : RelationType {
         override val name = "m.reference"
     }
 
-    object Replace : RelationType {
+    data object Replace : RelationType {
         override val name = "m.replace"
     }
 
-    object Thread : RelationType {
+    data object Thread : RelationType {
         override val name = "m.thread"
     }
 
-    object Annotation : RelationType {
+    data object Annotation : RelationType {
         override val name: String = "m.annotation"
     }
 
     /**
      * This is an abstraction, it does not exist on this level in the matrix spec. Therefore, don't use it in Matrix Endpoints.
      */
-    object Reply : RelationType {
+    data object Reply : RelationType {
         override val name: String = "m.in_reply_to"
     }
 

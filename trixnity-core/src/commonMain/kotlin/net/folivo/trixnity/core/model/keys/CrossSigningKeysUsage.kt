@@ -12,15 +12,15 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface CrossSigningKeysUsage {
     val name: String
 
-    object MasterKey : CrossSigningKeysUsage {
+    data object MasterKey : CrossSigningKeysUsage {
         override val name = "master"
     }
 
-    object SelfSigningKey : CrossSigningKeysUsage {
+    data object SelfSigningKey : CrossSigningKeysUsage {
         override val name = "self_signing"
     }
 
-    object UserSigningKey : CrossSigningKeysUsage {
+    data object UserSigningKey : CrossSigningKeysUsage {
         override val name = "user_signing"
     }
 

@@ -17,7 +17,7 @@ sealed class RoomKeyBackupAlgorithm {
     }
 
     @Serializable(with = RoomKeyBackupV1Serializer::class)
-    object RoomKeyBackupV1 : RoomKeyBackupAlgorithm() {
+    data object RoomKeyBackupV1 : RoomKeyBackupAlgorithm() {
         override val name: String
             get() = "m.megolm_backup.v1.curve25519-aes-sha2"
     }
