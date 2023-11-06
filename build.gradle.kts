@@ -77,7 +77,6 @@ subprojects {
                         }
                     }
                     artifact(dokkaJar)
-                    signing.sign(this)
                 }
             }
         }
@@ -88,8 +87,15 @@ subprojects {
                 System.getenv("OSSRH_PGP_KEY"),
                 System.getenv("OSSRH_PGP_PASSWORD")
             )
+            sign(publishing.publications)
         }
     }
+}
+
+// Workaround for gradle issue: https://youtrack.jetbrains.com/issue/KT-46466
+val signingTasks = tasks.withType<Sign>()
+tasks.withType<AbstractPublishToMaven>().configureEach {
+    dependsOn(signingTasks)
 }
 
 val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")
