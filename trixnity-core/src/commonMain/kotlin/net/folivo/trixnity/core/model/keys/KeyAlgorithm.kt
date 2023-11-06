@@ -17,17 +17,17 @@ sealed class KeyAlgorithm {
     }
 
     @Serializable(with = Ed25519KeyAlgorithmSerializer::class)
-    object Ed25519 : KeyAlgorithm() {
+    data object Ed25519 : KeyAlgorithm() {
         override val name = "ed25519"
     }
 
     @Serializable(with = Curve25519KeyAlgorithmSerializer::class)
-    object Curve25519 : KeyAlgorithm() {
+    data object Curve25519 : KeyAlgorithm() {
         override val name = "curve25519"
     }
 
     @Serializable(with = SignedCurve25519KeyAlgorithmSerializer::class)
-    object SignedCurve25519 : KeyAlgorithm() {
+    data object SignedCurve25519 : KeyAlgorithm() {
         override val name = "signed_curve25519"
     }
 

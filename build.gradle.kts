@@ -1,44 +1,35 @@
 buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://www.jetbrains.com/intellij-repository/releases")
+    dependencies {
+        classpath(libs.kotlin.gradle.plugin.api)
     }
 }
 
 plugins {
     `maven-publish`
     signing
-    id("org.jetbrains.dokka") version Versions.dokka
-    id("io.kotest.multiplatform") version Versions.kotest apply false
-    id("com.google.devtools.ksp") version Versions.ksp apply false
-    id("io.realm.kotlin") version Versions.realm apply false
-    id("de.undercouch.download") version Versions.downloadGradlePlugin apply false
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.ksp).apply(false)
+    alias(libs.plugins.realm).apply(false)
+    alias(libs.plugins.download).apply(false)
+    alias(libs.plugins.kotest).apply(false)
 }
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix(Versions.trixnity)
-
-    repositories {
-        mavenCentral()
-        google()
-        mavenLocal()
-    }
-
-    apply(plugin = "org.jetbrains.dokka")
+    version = withVersionSuffix("4.0.0")
 }
 
 subprojects {
-    val dokkaJar by tasks.registering(Jar::class) {
-        dependsOn(tasks.dokkaHtml)
-        from(tasks.dokkaHtml.flatMap { it.outputDirectory })
-        archiveClassifier.set("javadoc")
-    }
-
     if (project.name.startsWith("trixnity-")) {
+        apply(plugin = "org.jetbrains.dokka")
         apply(plugin = "maven-publish")
         apply(plugin = "signing")
+
+        val dokkaJar by tasks.registering(Jar::class) {
+            dependsOn(tasks.dokkaHtml)
+            from(tasks.dokkaHtml.flatMap { it.outputDirectory })
+            archiveClassifier.set("javadoc")
+        }
 
         publishing {
             repositories {
@@ -95,19 +86,14 @@ subprojects {
             sign(publishing.publications)
         }
     }
-    tasks.withType<AbstractPublishToMaven>().configureEach {
-        onlyIf {
-            publication.artifactId.contains("dummy").not()
-        }
-    }
 }
 
-val tmpDir = buildDir.resolve("tmp")
-val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${Versions.trixnityBinaries}.zip")
-val trixnityBinariesDirs = TrixnityBinariesDirs(project)
+val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")
+val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${libs.versions.trixnityBinaries.get()}.zip")
+val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
 
 val downloadTrixnityBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
-    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${Versions.trixnityBinaries}/build.zip")
+    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${libs.versions.trixnityBinaries.get()}/build.zip")
     dest(trixnityBinariesZipDir)
     overwrite(false)
 }

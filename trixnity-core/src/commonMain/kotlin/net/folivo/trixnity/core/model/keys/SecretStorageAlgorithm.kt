@@ -11,7 +11,7 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface SecretStorageAlgorithm {
     val value: String
 
-    object AesHmacSha2 : SecretStorageAlgorithm {
+    data object AesHmacSha2 : SecretStorageAlgorithm {
         override val value = "m.secret_storage.v1.aes-hmac-sha2"
     }
 

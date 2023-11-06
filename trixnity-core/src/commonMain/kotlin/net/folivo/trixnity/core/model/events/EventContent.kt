@@ -27,7 +27,7 @@ interface GlobalAccountDataEventContent : EventContent
 interface RoomAccountDataEventContent : EventContent
 
 @Serializable
-object EmptyEventContent :
+data object EmptyEventContent :
     EventContent,
     RoomEventContent,
     MessageEventContent,

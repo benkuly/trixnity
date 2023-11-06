@@ -22,15 +22,15 @@ data class TagEventContent(
     interface TagName {
         val name: String
 
-        object Favourite : TagName {
+        data object Favourite : TagName {
             override val name: String = "m.favourite"
         }
 
-        object LowPriority : TagName {
+        data object LowPriority : TagName {
             override val name: String = "m.lowpriority"
         }
 
-        object ServerNotice : TagName {
+        data object ServerNotice : TagName {
             override val name: String = "m.server_notice"
         }
 

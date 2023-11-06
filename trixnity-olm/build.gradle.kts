@@ -1,20 +1,17 @@
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
-    id("de.undercouch.download")
     id("com.android.library")
+    alias(libs.plugins.download)
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
-val jvmProcessedResourcesDir = buildDir.resolve("processedResources").resolve("jvm").resolve("main")
-
-val trixnityBinariesDirs = TrixnityBinariesDirs(project)
+val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
 
 class OlmNativeTarget(
     val target: KonanTarget,
@@ -67,7 +64,7 @@ val installOlmToJvmResources by tasks.registering(Copy::class) {
     group = "olm"
     from(trixnityBinariesDirs.olmBinSharedDir)
     include("*/libolm.so", "*/olm.dll", "*/libolm.dylib")
-    into(jvmProcessedResourcesDir)
+    into(layout.buildDirectory.dir("processedResources/jvm/main"))
     dependsOn(trixnityBinariesTask)
 }
 
@@ -85,11 +82,10 @@ tasks.withType<ExternalNativeBuildTask> {
 
 android {
     namespace = "net.folivo.trixnity.olm"
-    compileSdk = Versions.androidTargetSdk
-    buildToolsVersion = Versions.androidBuildTools
+    compileSdk = libs.versions.androidTargetSdk.get().toInt()
+    buildToolsVersion = libs.versions.androidBuildTools.get()
     defaultConfig {
-        minSdk = Versions.androidMinSdk
-        targetSdk = Versions.androidTargetSdk
+        minSdk = libs.versions.androidMinSdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets.getByName("main") {
@@ -97,8 +93,8 @@ android {
         jniLibs.srcDirs(trixnityBinariesDirs.olmBinSharedAndroidDir)
     }
     compileOptions {
-        sourceCompatibility = Versions.kotlinJvmTarget
-        targetCompatibility = Versions.kotlinJvmTarget
+        sourceCompatibility = kotlinJvmTarget
+        targetCompatibility = kotlinJvmTarget
     }
     buildTypes {
         release {
@@ -117,15 +113,13 @@ tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).conf
     }
 }
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
     jvmToolchain()
     addJvmTarget()
     addAndroidTarget()
     addJsTarget(rootDir)
 
-    olmNativeTargetList.forEach { target ->
+    val nativeOlmTargets = olmNativeTargetList.mapNotNull { target ->
         target.createTarget(this).apply {
             compilations {
                 "main" {
@@ -149,50 +143,51 @@ kotlin {
             languageSettings.optIn("kotlin.RequiresOptIn")
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 implementation(project(":trixnity-crypto-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}")
-                implementation("io.ktor:ktor-utils:${Versions.ktor}")
-                implementation("com.soywiz.korlibs.krypto:krypto:${Versions.korlibs}")
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.ktor.utils)
+                implementation(libs.oshai.logging)
             }
         }
         val olmLibraryMain by creating {
-            dependsOn(commonMain)
+            dependsOn(commonMain.get())
         }
-        val jvmMain by getting {
+        jvmMain {
             dependsOn(olmLibraryMain)
             dependencies {
-                implementation("net.java.dev.jna:jna:${Versions.jna}")
+                implementation(libs.jna)
             }
         }
         val androidMain by getting {
             dependsOn(olmLibraryMain)
             kotlin.srcDirs("src/jvmMain/kotlin")
             dependencies {
-                api("net.java.dev.jna:jna:${Versions.jna}@aar")
+                api(libs.jna.get().toString() + "@aar")
             }
         }
-        val jsMain by getting {
+        jsMain {
             dependencies {
-                implementation(npm("@matrix-org/olm", Versions.olm, generateExternals = false))
+                implementation(npm("@matrix-org/olm", libs.versions.olm.get()))
             }
         }
-        val nativeMain by getting {
+        val nativeMain by creating {
             dependsOn(olmLibraryMain)
         }
-        val commonTest by getting {
+        nativeOlmTargets.forEach {
+            getByName(it.targetName + "Main").dependsOn(nativeMain)
+        }
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.kotlinxCoroutines}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.assertions.core)
             }
         }
         val androidUnitTest by getting { // TODO does not work
             dependencies {
-                implementation("androidx.test:runner:${Versions.androidxTestRunner}")
+                implementation(libs.androidx.test.runner)
             }
         }
     }

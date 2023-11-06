@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.utils
 
-import arrow.fx.coroutines.Schedule
-import arrow.fx.coroutines.retry
+import arrow.resilience.Schedule
+import arrow.resilience.retry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.api.client.retryOnRateLimit
@@ -9,10 +9,9 @@ import net.folivo.trixnity.client.utils.RetryLoopFlowState.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.ExperimentalTime
-
 
 enum class RetryLoopFlowState {
     RUN, PAUSE, STOP,
@@ -23,7 +22,6 @@ private interface RetryLoopFlowResult<T> {
     class Emit<T>(val value: T) : RetryLoopFlowResult<T>
 }
 
-@OptIn(ExperimentalTime::class)
 suspend fun <T> retryLoopFlow(
     requestedState: Flow<RetryLoopFlowState>,
     scheduleBase: Duration = 100.milliseconds,
@@ -38,10 +36,11 @@ suspend fun <T> retryLoopFlow(
         val stateJob = launch { requestedState.collectLatest { state.emit(it) } }
 
         val schedule = Schedule.exponential<Throwable>(scheduleBase, scheduleFactor)
-            .or(Schedule.spaced(scheduleLimit))
-            .and(Schedule.doWhile { state.first() == RUN })
-            .logInput {
-                if (it !is CancellationException) onError(it)
+//            .or(Schedule.spaced(scheduleLimit)) // works again in a future version of arrow
+            .or(Schedule.spaced(scheduleLimit), transform = ::Pair) { a, b -> minOf(a ?: ZERO, b ?: ZERO) }
+            .and(Schedule.doWhile { _, _ -> state.first() == RUN })
+            .log { input, _ ->
+                if (input !is CancellationException) onError(input)
             }
 
         while (currentCoroutineContext().isActive) {

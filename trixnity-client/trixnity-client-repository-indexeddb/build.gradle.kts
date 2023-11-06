@@ -1,14 +1,10 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    id("io.kotest.multiplatform")
+    alias(libs.plugins.kotest)
 }
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
     jvmToolchain()
     addJsTarget(rootDir, nodeJsEnabled = false)
 
@@ -16,21 +12,20 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val jsMain by getting {
+        jsMain {
             dependencies {
                 implementation(project(":trixnity-client"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
 
-                implementation("io.github.oshai:kotlin-logging:${Versions.kotlinLogging}")
+                implementation(libs.oshai.logging)
 
-                api("com.juul.indexeddb:core:${Versions.juulLabsIndexeddb}")
+                api(libs.juulLabs.indexeddb)
             }
         }
-        val jsTest by getting {
+        jsTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":trixnity-client:client-repository-test"))
-                implementation("com.benasher44:uuid:${Versions.uuid}")
+                implementation(libs.benasher44.uuid)
             }
         }
     }
