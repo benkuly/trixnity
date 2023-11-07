@@ -26,6 +26,6 @@ data class DeactivateAccount(
     @Serializable
     data class Response(
         @SerialName("id_server_unbind_result")
-        val idServerUnbindResult: IdServerUnbindResult,
+        val idServerUnbindResult: IdServerUnbindResult? = null,
     )
 }
