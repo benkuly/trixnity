@@ -1,4 +1,4 @@
-![Version](https://maven-badges.herokuapp.com/maven-central/net.folivo/trixnity-core/badge.svg)
+![Version](https://gitlab.com/trixnity/trixnity/-/badges/release.svg)
 
 # Trixnity - Multiplatform Matrix SDK
 
