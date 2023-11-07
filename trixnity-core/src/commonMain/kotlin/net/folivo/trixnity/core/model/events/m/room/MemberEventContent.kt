@@ -24,7 +24,9 @@ data class MemberEventContent(
     @SerialName("third_party_invite")
     val thirdPartyInvite: Invite? = null,
     @SerialName("reason")
-    val reason: String? = null
+    val reason: String? = null,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent {
     @Serializable
     data class Invite(

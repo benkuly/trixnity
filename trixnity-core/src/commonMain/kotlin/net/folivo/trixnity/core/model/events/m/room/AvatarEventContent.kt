@@ -12,5 +12,7 @@ data class AvatarEventContent(
     @SerialName("url")
     val url: String? = null,
     @SerialName("info")
-    val info: ImageInfo? = null
+    val info: ImageInfo? = null,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent

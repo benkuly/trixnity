@@ -15,4 +15,6 @@ data class ServerACLEventContent(
     val allowIpLiterals: Boolean = true,
     @SerialName("deny")
     val deny: Set<String> = setOf(),
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent
