@@ -1,4 +1,4 @@
-![Version](https://gitlab.com/trixnity/trixnity/-/badges/release.svg)
+![Version](https://gitlab.com/trixnity/trixnity/-/badges/release.svg?value_width=90)
 
 # Trixnity - Multiplatform Matrix SDK
 
