@@ -89,10 +89,19 @@ subprojects {
             sign(publishing.publications)
         }
     }
-    // Workaround for gradle issue: https://github.com/gradle/gradle/issues/26091
-    val signingTasks = tasks.withType<Sign>()
-    tasks.withType<AbstractPublishToMaven>().configureEach {
-        mustRunAfter(signingTasks)
+    // Workaround for gradle issue:
+    // https://github.com/gradle/gradle/issues/26132
+    // https://youtrack.jetbrains.com/issue/KT-61313/Kotlin-MPP-Gradle-Signing-plugin-Task-linkDebugTestLinuxX64-uses-this-output-of-task-signLinuxX64Publication
+    // https://github.com/gradle/gradle/issues/26091
+    // https://youtrack.jetbrains.com/issue/KT-46466/Kotlin-MPP-publishing-Gradle-7-disables-optimizations-because-of-task-dependencies
+    tasks.withType<Sign>().configureEach {
+        val pubName = name.removePrefix("sign").removeSuffix("Publication")
+        tasks.findByName("linkDebugTest$pubName")?.let {
+            mustRunAfter(it)
+        }
+        tasks.findByName("compileTestKotlin$pubName")?.let {
+            mustRunAfter(it)
+        }
     }
 }
 
