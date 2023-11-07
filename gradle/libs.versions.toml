@@ -18,7 +18,7 @@ jna = "5.13.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
 ktor = "2.3.5" # https://github.com/ktorio/ktor/releases
-koin = "3.5.1" # https://github.com/InsertKoinIO/koin/tags
+koin = "3.5.0" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.6.0" # https://square.github.io/okio/changelog/
 arrow = "1.2.1" # https://github.com/arrow-kt/arrow/releases
 korlibs = "4.0.10" # https://github.com/korlibs/korge/releases
