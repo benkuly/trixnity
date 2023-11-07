@@ -122,7 +122,9 @@ build:mac:
   script:
     - ./gradlew
       compileKotlin{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      link{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
       compileTestKotlin{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      linkDebugTest{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
       --stacktrace
 
 build:linux:
@@ -137,8 +139,10 @@ build:linux:
   script:
     - ./gradlew
       compileKotlin{Jvm,Js,LinuxX64,MingwX64}
+      link{LinuxX64,MingwX64}
       compileReleaseKotlinAndroid
       compileTestKotlin{Jvm,Js,LinuxX64,MingwX64}
+      linkDebugTest{LinuxX64,MingwX64}
       compileReleaseUnitTestKotlinAndroid
       --stacktrace
 
