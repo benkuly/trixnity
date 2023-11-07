@@ -16,7 +16,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = "4.0.0"
+    version = withVersionSuffix("4.0.0")
 }
 
 subprojects {
@@ -56,7 +56,6 @@ subprojects {
             }
             publications.configureEach {
                 if (this is MavenPublication) {
-                    version = withVersionSuffix(project.version as String)
                     pom {
                         name.set(project.name)
                         description.set("Multiplatform Kotlin SDK for matrix-protocol")
