@@ -15,4 +15,6 @@ data class RoomRuleEventContent(
     val reason: String,
     @SerialName("recommendation")
     val recommendation: String,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent

@@ -42,6 +42,8 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions")
         override val mentions: Mentions? = null,
+        @SerialName("external_url")
+        override val externalUrl: String? = null,
     ) : EncryptedEventContent {
         @SerialName("algorithm")
         override val algorithm: Megolm = Megolm
@@ -57,6 +59,8 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions")
         override val mentions: Mentions? = null,
+        @SerialName("external_url")
+        override val externalUrl: String? = null,
     ) : EncryptedEventContent {
         @SerialName("algorithm")
         override val algorithm: Olm = Olm
@@ -87,7 +91,9 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
 
     data class UnknownEncryptedEventContent(
         override val algorithm: Unknown,
-        val raw: JsonObject
+        val raw: JsonObject,
+        @SerialName("external_url")
+        override val externalUrl: String? = null,
     ) : EncryptedEventContent {
         override val relatesTo: RelatesTo? = null
         override val mentions: Mentions? = null

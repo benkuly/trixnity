@@ -582,6 +582,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory { addHandler { respondOk() } })
         val eventContent = object : StateEventContent {
             val banana: String = "yeah"
+            override val externalUrl = null
         }
 
         try {
@@ -638,6 +639,7 @@ class RoomsApiClientTest {
             val banana: String = "yeah"
             override val relatesTo = RelatesTo.Reference(EventId("$1event"))
             override val mentions: Mentions? = null
+            override val externalUrl: String? = null
         }
 
         try {

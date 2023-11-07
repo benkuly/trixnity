@@ -30,7 +30,9 @@ data class CreateEventContent(
     @SerialName("predecessor")
     val predecessor: PreviousRoom? = null,
     @SerialName("type")
-    val type: RoomType = RoomType.Room
+    val type: RoomType = RoomType.Room,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent {
     @Serializable
     data class PreviousRoom(

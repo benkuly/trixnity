@@ -41,5 +41,6 @@ sealed interface VerificationStartEventContent : VerificationStep {
         @SerialName("next_method")
         override val nextMethod: VerificationMethod? = null
         override val mentions: Mentions? = null
+        override val externalUrl: String? = null
     }
 }

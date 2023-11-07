@@ -24,6 +24,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 sealed interface RoomMessageEventContent : MessageEventContent {
     val body: String
 
+
     /**
      * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mnotice">matrix spec</a>
      */
@@ -34,6 +35,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.notice"
@@ -53,6 +55,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.text"
@@ -72,6 +75,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("formatted_body") val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.emote"
@@ -97,6 +101,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("file") override val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent, FileBasedMessageEventContent {
         @SerialName("msgtype")
         val type = "m.image"
@@ -118,6 +123,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("file") override val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent, FileBasedMessageEventContent {
         @SerialName("msgtype")
         val type = "m.file"
@@ -138,6 +144,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("file") override val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent, FileBasedMessageEventContent {
         @SerialName("msgtype")
         val type = "m.audio"
@@ -158,6 +165,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("file") override val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent, FileBasedMessageEventContent {
         @SerialName("msgtype")
         val type = "m.video"
@@ -175,6 +183,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("body") override val body: String = "Attempting verification request (m.key.verification.request). Apparently your client doesn't support this.",
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent, VerificationRequest {
         @SerialName("msgtype")
         val type = "m.key.verification.request"
@@ -190,6 +199,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         val raw: JsonObject,
         override val relatesTo: RelatesTo? = null,
         override val mentions: Mentions? = null,
+        override val externalUrl: String? = null,
     ) : RoomMessageEventContent
 }
 
@@ -217,9 +227,11 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                     jsonObj["m.relates_to"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
                 val mentions: Mentions? =
                     jsonObj["m.mentions"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
+                val externalUrl: String? =
+                    jsonObj["external_url"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
                 if (type == null) throw SerializationException("msgtype must not be null")
                 if (body == null) throw SerializationException("body must not be null")
-                UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo, mentions)
+                UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo, mentions, externalUrl)
             }
         }
     }

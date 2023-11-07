@@ -15,5 +15,6 @@ data class VerificationDoneEventContent(
     @SerialName("transaction_id")
     override val transactionId: String?,
 ) : VerificationStep {
+    override val externalUrl: String? = null
     override val mentions: Mentions? = null
 }

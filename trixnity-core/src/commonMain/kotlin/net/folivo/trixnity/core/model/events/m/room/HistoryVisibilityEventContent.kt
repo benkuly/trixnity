@@ -10,7 +10,9 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 @Serializable
 data class HistoryVisibilityEventContent(
     @SerialName("history_visibility")
-    val historyVisibility: HistoryVisibility
+    val historyVisibility: HistoryVisibility,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent {
     @Serializable
     enum class HistoryVisibility {
