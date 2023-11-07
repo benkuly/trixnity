@@ -29,6 +29,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class RoomServiceTimelineUtilsTest : ShouldSpec({
@@ -555,6 +556,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val result = async(start = CoroutineStart.UNDISPATCHED) {
                 cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).take(2).toList()
             }
+            delay(100.milliseconds)
             api.sync.startOnce(
                 getBatchToken = { "token1" },
                 setBatchToken = {},
