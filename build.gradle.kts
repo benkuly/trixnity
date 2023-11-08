@@ -100,7 +100,6 @@ subprojects {
     }
 }
 
-
 val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")
 val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${libs.versions.trixnityBinaries.get()}.zip")
 val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
