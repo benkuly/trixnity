@@ -17,7 +17,7 @@ trixnityBinaries = "1.0.0" # https://gitlab.com/trixnity/trixnity-binaries/-/rel
 jna = "5.13.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
-ktor = "2.3.5" # https://github.com/ktorio/ktor/releases
+ktor = "2.3.6" # https://github.com/ktorio/ktor/releases
 koin = "3.5.0" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.6.0" # https://square.github.io/okio/changelog/
 arrow = "1.2.1" # https://github.com/arrow-kt/arrow/releases
