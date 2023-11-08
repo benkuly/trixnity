@@ -6,7 +6,7 @@ fun withVersionSuffix(version: String) = (version + when {
         check(version == commitTagVersion.substringBefore("-")) {
             "version from code ($version) does not match commit tag version ($commitTagVersion)"
         }
-        commitTagVersion
+        commitTagVersion.substringAfter("-")
     }
 
     isCI -> "-SNAPSHOT-" + System.getenv("CI_COMMIT_SHORT_SHA")
