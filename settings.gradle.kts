@@ -43,15 +43,15 @@ buildCache {
 
 pluginManagement {
     repositories {
-        google()
-        gradlePluginPortal()
         mavenCentral()
+        gradlePluginPortal()
+        google()
     }
 }
 
 dependencyResolutionManagement {
     repositories {
-        google()
         mavenCentral()
+        google()
     }
 }
