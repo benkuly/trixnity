@@ -26,6 +26,7 @@ data class VerificationCancelEventContent(
     override val transactionId: String?,
 ) : VerificationStep {
     override val mentions: Mentions? = null
+    override val externalUrl: String? = null
 
     @Serializable(with = CodeSerializer::class)
     sealed interface Code {

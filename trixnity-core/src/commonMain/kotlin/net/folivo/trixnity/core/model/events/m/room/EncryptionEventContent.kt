@@ -16,4 +16,6 @@ data class EncryptionEventContent(
     val rotationPeriodMsgs: Long? = null,
     @SerialName("algorithm")
     val algorithm: EncryptionAlgorithm = EncryptionAlgorithm.Megolm,
-) : StateEventContent
+) : StateEventContent {
+    override val externalUrl: String? = null
+}

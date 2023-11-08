@@ -7,7 +7,12 @@ import net.folivo.trixnity.core.model.events.m.RelatesTo
 
 sealed interface EventContent
 
-sealed interface RoomEventContent : EventContent
+sealed interface RoomEventContent : EventContent {
+    /**
+     * @see <a href="https://spec.matrix.org/v1.8/application-service-api/#referencing-messages-from-a-third-party-network">matrix spec</a>
+     */
+    val externalUrl: String?
+}
 
 interface MessageEventContent : RoomEventContent {
     val relatesTo: RelatesTo?
@@ -39,6 +44,7 @@ data object EmptyEventContent :
     RoomAccountDataEventContent {
     override val relatesTo: RelatesTo? = null
     override val mentions: Mentions? = null
+    override val externalUrl: String? = null
 }
 
 data class UnknownEventContent(
@@ -56,4 +62,5 @@ data class UnknownEventContent(
     // is always null, because this class is the last fallback, when nothing can be deserialized
     override val relatesTo: RelatesTo? = null
     override val mentions: Mentions? = null
+    override val externalUrl: String? = null
 }

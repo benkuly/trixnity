@@ -33,7 +33,9 @@ data class PowerLevelsEventContent(
     @SerialName("users_default")
     val usersDefault: Int = 0,
     @SerialName("notifications")
-    val notifications: Notifications? = null
+    val notifications: Notifications? = null,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent {
     @Serializable
     data class Notifications(

@@ -10,7 +10,9 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 @Serializable
 data class GuestAccessEventContent(
     @SerialName("guest_access")
-    val guestAccess: GuestAccessType
+    val guestAccess: GuestAccessType,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent {
     @Serializable
     enum class GuestAccessType {
