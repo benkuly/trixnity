@@ -23,6 +23,8 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+
+.push-cache-linux: &push-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
     policy: push
     paths:
@@ -43,6 +45,8 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+
+.push-cache-mac: &push-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
     policy: push
     paths:
@@ -103,6 +107,7 @@ build:mac:
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache-mac
+    - *push-cache-mac
   rules:
     - *if-merge-request
   script:
@@ -119,6 +124,7 @@ build:linux:
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache-linux
+    - *push-cache-linux
   rules:
     - *if-merge-request
   script:
@@ -188,7 +194,7 @@ publish-snapshot:mac:
   stage: publish-snapshot
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *pull-cache-mac
+    - *cache-mac
   rules:
     - *if-main
   script:
@@ -201,7 +207,7 @@ publish-snapshot:linux:
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *pull-cache-linux
+    - *cache-linux
   rules:
     - *if-main
   script:
@@ -240,7 +246,7 @@ publish:mac:
   needs: [ "publish:create-nexus-staging-repo" ]
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *pull-cache-mac
+    - *cache-mac
   rules:
     - *if-release
   script:
@@ -255,7 +261,7 @@ publish:linux:
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *pull-cache-linux
+    - *cache-linux
   rules:
     - *if-release
   script:
