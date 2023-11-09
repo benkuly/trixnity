@@ -1,6 +1,6 @@
 val isCI = System.getenv("CI") != null
 val isRelease = System.getenv("CI_COMMIT_TAG")?.matches("^v\\d+.\\d+.\\d+.*".toRegex()) ?: false
-fun withVersionSuffix(version: String) = (version + when {
+fun withVersionSuffix(version: String) = when {
     isRelease -> {
         val commitTagVersion = System.getenv("CI_COMMIT_TAG").removePrefix("v")
         check(version == commitTagVersion.substringBefore("-")) {
@@ -9,6 +9,6 @@ fun withVersionSuffix(version: String) = (version + when {
         commitTagVersion
     }
 
-    isCI -> "-SNAPSHOT-" + System.getenv("CI_COMMIT_SHORT_SHA")
-    else -> "-LOCAL"
-})
+    isCI -> "$version-SNAPSHOT-" + System.getenv("CI_COMMIT_SHORT_SHA")
+    else -> "$version-LOCAL"
+}
