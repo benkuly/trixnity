@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client
 
 import io.ktor.client.*
-import net.folivo.trixnity.api.client.defaultTrixnityHttpClient
+import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -44,7 +44,7 @@ class MatrixClientConfiguration {
     /**
      * Set custom [HttpClient].
      */
-    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient()
+    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory()
 
     /**
      * Inject and override modules into Trixnity.
