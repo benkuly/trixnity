@@ -15,7 +15,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.api.client.MatrixApiClient
-import net.folivo.trixnity.api.client.defaultTrixnityHttpClient
+import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.clientserverapi.model.uia.*
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
@@ -31,7 +31,7 @@ class MatrixClientServerApiHttpClient(
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     accessToken: MutableStateFlow<String?>,
     private val onLogout: suspend (isSoft: Boolean) -> Unit = {},
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient(),
+    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
 ) : MatrixApiClient(
     eventContentSerializerMappings,
     json,

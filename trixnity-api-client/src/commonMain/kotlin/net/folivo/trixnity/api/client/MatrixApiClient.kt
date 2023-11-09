@@ -21,7 +21,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 open class MatrixApiClient(
     val contentMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     val json: Json = createMatrixEventJson(contentMappings),
-    httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClient(),
+    httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
 ) {
     val baseClient: HttpClient = httpClientFactory {
         install(ContentNegotiation) {
@@ -106,15 +106,3 @@ open class MatrixApiClient(
     }
 }
 
-fun defaultTrixnityHttpClient(
-    userAgent: String = "Trixnity",
-    config: HttpClientConfig<*>.() -> Unit = {},
-): ((HttpClientConfig<*>.() -> Unit) -> HttpClient) = { baseConfig ->
-    HttpClient {
-        baseConfig()
-        install(UserAgent) {
-            agent = userAgent
-        }
-        config()
-    }
-}
