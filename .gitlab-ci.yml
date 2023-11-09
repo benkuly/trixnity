@@ -210,9 +210,13 @@ publish-snapshot:linux:
     - *cache-linux
   rules:
     - *if-main
+  artifacts:
+    paths:
+      - website/static/api/
   script:
     - ./gradlew
       publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToSnapshotRepository
+      dokkaHtmlToWebsite
       --stacktrace
 
 publish:create-nexus-staging-repo:

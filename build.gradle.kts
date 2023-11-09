@@ -126,3 +126,10 @@ val extractTrixnityBinaries by tasks.registering(Copy::class) {
 val trixnityBinaries by tasks.registering {
     dependsOn(extractTrixnityBinaries)
 }
+
+val dokkaHtmlToWebsite by tasks.registering(Copy::class) {
+    from(layout.buildDirectory.dir("dokka/htmlMultiModule"))
+    into(layout.projectDirectory.dir("website/static/api"))
+    outputs.cacheIf { true }
+    dependsOn(":dokkaHtmlMultiModule")
+}

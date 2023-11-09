@@ -70,6 +70,11 @@ const config = {
             label: 'Documentation',
           },
           {
+            href: 'pathname:///api',
+            label: 'API',
+            position: 'left',
+          },
+          {
             href: 'https://gitlab.com/trixnity/trixnity',
             label: 'Repository',
             position: 'right',
@@ -85,6 +90,10 @@ const config = {
               {
                 label: 'Documentation',
                 to: '/docs',
+              },
+              {
+                label: 'API',
+                href: 'pathname:///api',
               },
             ],
           },
