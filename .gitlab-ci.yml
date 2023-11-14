@@ -93,9 +93,11 @@ build-trixnity-build-linux-image:
   services:
     - name: docker:dind
       command: [ "--tls=false" ]
-  only:
-    changes:
-      - "gitlab-ci/Dockerfile"
+  rules:
+    - changes:
+        paths:
+          - "gitlab-ci/Dockerfile"
+        compare_to: main
   script:
     - docker build gitlab-ci/ -t $BUILD_LINUX_IMAGE_NAME
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
