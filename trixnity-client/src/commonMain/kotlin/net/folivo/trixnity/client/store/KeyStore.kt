@@ -1,9 +1,11 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.*
@@ -62,19 +64,14 @@ class KeyStore(
         repository = secretKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
-        expireDuration = Duration.INFINITE
+        expireDuration = config.cacheExpireDurations.secretKeyRequest
     ) { it.content.requestId }
     private val roomKeyRequestCache = FullRepositoryObservableCache(
         repository = roomKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
-        expireDuration = Duration.INFINITE
+        expireDuration = config.cacheExpireDurations.roomKeyRequest
     ) { it.content.requestId }
-
-    override suspend fun init() {
-        secretKeyRequestCache.fillWithValuesFromRepository()
-        roomKeyRequestCache.fillWithValuesFromRepository()
-    }
 
     override suspend fun clearCache() {
         tm.writeTransaction {
@@ -173,14 +170,8 @@ class KeyStore(
     suspend fun deleteKeyChainLinksBySignedKey(userId: UserId, signedKey: Key.Ed25519Key) =
         tm.writeTransaction { keyChainLinkRepository.deleteBySignedKey(userId, signedKey) }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val allSecretKeyRequests = secretKeyRequestCache.values
-        .flatMapLatest {
-            if (it.isEmpty()) flowOf(arrayOf())
-            else combine(it.values) { transform -> transform }
-        }
-        .mapLatest { it.filterNotNull().toSet() }
-        .stateIn(storeScope, SharingStarted.Eagerly, setOf())
+    fun getAllSecretKeyRequestsFlow() = secretKeyRequestCache.readAll().flattenValues()
+    suspend fun getAllSecretKeyRequests() = getAllSecretKeyRequestsFlow().first()
 
     suspend fun addSecretKeyRequest(request: StoredSecretKeyRequest) {
         secretKeyRequestCache.write(request.content.requestId, request)
@@ -190,14 +181,8 @@ class KeyStore(
         secretKeyRequestCache.write(requestId, null)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val allRoomKeyRequests = roomKeyRequestCache.values
-        .flatMapLatest {
-            if (it.isEmpty()) flowOf(arrayOf())
-            else combine(it.values) { transform -> transform }
-        }
-        .mapLatest { it.filterNotNull().toSet() }
-        .stateIn(storeScope, SharingStarted.Eagerly, setOf())
+    fun getAllRoomKeyRequestsFlow() = roomKeyRequestCache.readAll().flattenValues()
+    suspend fun getAllRoomKeyRequests() = getAllRoomKeyRequestsFlow().first()
 
     suspend fun addRoomKeyRequest(request: StoredRoomKeyRequest) {
         roomKeyRequestCache.write(request.content.requestId, request)

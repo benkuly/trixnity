@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 
-interface KeysApiClient {
+interface KeyApiClient {
     /**
      * @see [SetKeys]
      */
@@ -181,10 +181,10 @@ interface KeysApiClient {
     ): Result<Unit>
 }
 
-class KeysApiClientImpl(
+class KeyApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
     private val json: Json
-) : KeysApiClient {
+) : KeyApiClient {
     override suspend fun setKeys(
         deviceKeys: SignedDeviceKeys?,
         oneTimeKeys: Keys?,

@@ -98,7 +98,7 @@ class UserServiceImpl(
                     val room = roomStore.get(roomId).first()
                     if (room?.membersLoaded != true) {
                         log.debug { "load members of room $roomId" }
-                        val memberEvents = api.rooms.getMembers(
+                        val memberEvents = api.room.getMembers(
                             roomId = roomId,
                             notMembership = LEAVE
                         ).getOrThrow()

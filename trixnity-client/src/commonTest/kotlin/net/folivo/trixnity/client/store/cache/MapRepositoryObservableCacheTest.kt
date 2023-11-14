@@ -260,18 +260,28 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
         }
         should("remove from cache when not used anymore") {
             cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 100.milliseconds)
-            val cache = cut.values.stateIn(cacheScope)
             val readScope1 = CoroutineScope(Dispatchers.Default)
             repository.save("firstKey", "secondKey1", "old1")
             cut.readByFirstKey(key = "firstKey").flatten().stateIn(readScope1).value shouldBe
                     mapOf("secondKey1" to "old1")
-            cache.first { it.isNotEmpty() }
             repository.save("firstKey", "secondKey1", "new1")
             readScope1.cancel()
             delay(200.milliseconds)
-            cache.first { it.isEmpty() }
             cut.readByFirstKey(key = "firstKey").flatten().first() shouldBe
                     mapOf("secondKey1" to "new1")
+        }
+        should("remove from cache when stale") {
+            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 100.milliseconds)
+            val readScope = CoroutineScope(Dispatchers.Default)
+            repository.save("firstKey", "secondKey1", "old1")
+            repository.save("firstKey", "secondKey2", "old2")
+            val byFirstKey = cut.readByFirstKey(key = "firstKey").map { it.keys }.stateIn(readScope)
+            byFirstKey.value shouldBe setOf("secondKey1", "secondKey2")
+            cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
+                null
+            }
+            delay(200.milliseconds)
+            byFirstKey.value shouldBe setOf("secondKey2")
         }
         should("handle parallel read and write") {
             repository = object : InMemoryMapRepository<String, String, String>() {
@@ -298,7 +308,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
     context("index") {
         should("has right subscription count") {
             val values =
-                ObservableMap<MapRepositoryCoroutinesCacheKey<String, String>, ObservableCacheValue<String?>>(cacheScope)
+                ConcurrentMap<MapRepositoryCoroutinesCacheKey<String, String>, ObservableCacheValue<String?>>()
             cut = MapRepositoryObservableCache(
                 repository = repository,
                 tm = tm,

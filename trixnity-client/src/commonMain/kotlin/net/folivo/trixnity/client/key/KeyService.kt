@@ -132,8 +132,8 @@ class KeyServiceImpl(
         }.first { globalAccountDataStore.get<SecretKeyEventContent>(key = it).first() == null }
         return KeyService.BootstrapCrossSigning(
             recoveryKey = encodeRecoveryKey(recoveryKey),
-            result = api.users.setAccountData(secretKeyEventContent, userInfo.userId, keyId)
-                .flatMapResult { api.users.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
+            result = api.user.setAccountData(secretKeyEventContent, userInfo.userId, keyId)
+                .flatMapResult { api.user.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
                 .flatMapResult {
                     val (masterSigningPrivateKey, masterSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
@@ -207,9 +207,9 @@ class KeyServiceImpl(
                             ),
                         )
                     }
-                    api.users.setAccountData(encryptedMasterSigningKey, userInfo.userId)
-                        .flatMapResult { api.users.setAccountData(encryptedUserSigningKey, userInfo.userId) }
-                        .flatMapResult { api.users.setAccountData(encryptedSelfSigningKey, userInfo.userId) }
+                    api.user.setAccountData(encryptedMasterSigningKey, userInfo.userId)
+                        .flatMapResult { api.user.setAccountData(encryptedUserSigningKey, userInfo.userId) }
+                        .flatMapResult { api.user.setAccountData(encryptedSelfSigningKey, userInfo.userId) }
                         .flatMapResult {
                             keyBackupService.bootstrapRoomKeyBackup(
                                 recoveryKey,
@@ -219,7 +219,7 @@ class KeyServiceImpl(
                             )
                         }
                         .flatMapResult {
-                            api.keys.setCrossSigningKeys(
+                            api.key.setCrossSigningKeys(
                                 masterKey = masterSigningKey,
                                 selfSigningKey = selfSigningKey,
                                 userSigningKey = userSigningKey

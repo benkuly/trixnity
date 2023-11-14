@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
@@ -107,8 +108,8 @@ class RoomListHandler(
     internal suspend fun deleteLeftRooms(syncEvents: SyncEvents) {
         val syncLeaveRooms = syncEvents.syncResponse.room?.leave?.keys
         if (syncLeaveRooms != null && config.deleteRoomsOnLeave) {
-            val existingLeaveRooms = roomStore.getAll().value
-                .filter { it.value.value?.membership == Membership.LEAVE }
+            val existingLeaveRooms = roomStore.getAll().first()
+                .filter { it.value.first()?.membership == Membership.LEAVE }
                 .keys
 
             if ((existingLeaveRooms - syncLeaveRooms).isNotEmpty()) {

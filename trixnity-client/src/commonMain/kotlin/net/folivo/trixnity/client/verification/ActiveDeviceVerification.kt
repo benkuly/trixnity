@@ -55,7 +55,7 @@ class ActiveDeviceVerification(
             else setOfNotNull(theirDeviceId)
 
         if (theirDeviceIds.isNotEmpty())
-            api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.associateWith {
+            api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.associateWith {
                 try {
                     olmEncryptionService.encryptOlm(step, theirUserId, it)
                 } catch (error: Exception) {
@@ -104,7 +104,7 @@ class ActiveDeviceVerification(
                     val cancelEvent =
                         VerificationCancelEventContent(Accepted, "accepted by other device", relatesTo, transactionId)
                     try {
-                        api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
+                        api.user.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
                             try {
                                 olmEncryptionService.encryptOlm(cancelEvent, theirUserId, it)
                             } catch (exception: Exception) {

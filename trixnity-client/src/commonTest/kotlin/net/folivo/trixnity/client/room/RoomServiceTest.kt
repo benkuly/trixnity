@@ -356,7 +356,7 @@ class RoomServiceTest : ShouldSpec({
                 contentBuilder = { _, _, _ -> content }
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboundMessages = roomOutboxMessageStore.getAll().flatten().first()
+                val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboundMessages shouldHaveSize 1
                 assertSoftly(outboundMessages.first()) {
                     roomId shouldBe room

@@ -88,7 +88,7 @@ interface RoomService {
      * directly (e.g. with `toList()`). This can work
      * like paging through the timeline. It also completes the flow, which is not the case, when both parameters are null.
      *
-     * To convert it to a flow of list, [flatten] can be used.
+     * To convert it to a flow of list, [flattenValues] can be used.
      */
     fun getTimelineEvents(
         roomId: RoomId,
@@ -100,7 +100,7 @@ interface RoomService {
     /**
      * Returns the last timeline events as flow.
      *
-     * To convert it to a flow of list, [flatten] can be used.
+     * To convert it to a flow of list, [flattenValues] can be used.
      *
      * @see [getTimelineEvents]
      */
@@ -157,9 +157,9 @@ interface RoomService {
     /**
      * Upgraded rooms ([Room.hasBeenReplaced]) should not be rendered.
      *
-     * [flatten] can be used to get rid of the nested flows.
+     * [flattenValues] can be used to get rid of the nested flows.
      */
-    fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>>
+    fun getAll(): Flow<Map<RoomId, Flow<Room?>>>
 
     fun getById(roomId: RoomId): Flow<Room?>
 
@@ -174,7 +174,7 @@ interface RoomService {
         key: String = "",
     ): Flow<C?>
 
-    fun getOutbox(): StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>>
+    fun getOutbox(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>>
 
     fun <C : StateEventContent> getState(
         roomId: RoomId,
@@ -590,7 +590,7 @@ class RoomServiceImpl(
         roomOutboxMessageStore.update(transactionId) { it?.copy(sendError = null) }
     }
 
-    override fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = roomStore.getAll()
+    override fun getAll(): Flow<Map<RoomId, Flow<Room?>>> = roomStore.getAll()
 
     override fun getById(roomId: RoomId): Flow<Room?> {
         return roomStore.get(roomId)
@@ -615,7 +615,7 @@ class RoomServiceImpl(
             .map { it?.content }
     }
 
-    override fun getOutbox(): StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>> = roomOutboxMessageStore.getAll()
+    override fun getOutbox(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>> = roomOutboxMessageStore.getAll()
 
     override fun <C : StateEventContent> getState(
         roomId: RoomId,

@@ -87,7 +87,8 @@ suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
 suspend fun getInMemoryRoomStore(scope: CoroutineScope) = RoomStore(
     InMemoryRoomRepository(),
     RepositoryTransactionManagerMock(),
-    scope
+    scope,
+    MatrixClientConfiguration(),
 ).apply { init() }
 
 suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineStore(
@@ -124,5 +125,6 @@ suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMapp
 suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutboxMessageStore(
     InMemoryRoomOutboxMessageRepository(),
     RepositoryTransactionManagerMock(),
-    scope
+    scope,
+    MatrixClientConfiguration(),
 ).apply { init() }

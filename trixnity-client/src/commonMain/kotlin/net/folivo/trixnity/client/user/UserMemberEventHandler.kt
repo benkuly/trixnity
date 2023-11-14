@@ -152,7 +152,7 @@ class UserMemberEventHandler(
             reloadOwnProfile.value = false
 
             accountStore.getAccount()?.userId?.let { userId ->
-                api.users.getProfile(userId)
+                api.user.getProfile(userId)
                     .onSuccess {
                         accountStore.updateAccount { account ->
                             account.copy(

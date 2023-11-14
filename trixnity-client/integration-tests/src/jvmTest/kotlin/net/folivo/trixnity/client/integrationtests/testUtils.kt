@@ -6,6 +6,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
@@ -22,7 +23,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 
 const val synapseVersion =
-    "v1.93.0" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
+    "v1.95.1" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
 
 fun synapseDocker() =
     GenericContainer<Nothing>(DockerImageName.parse("docker.io/matrixdotorg/synapse:$synapseVersion"))
@@ -31,8 +32,6 @@ fun synapseDocker() =
                 mapOf(
                     "VIRTUAL_HOST" to "localhost",
                     "VIRTUAL_PORT" to "8008",
-                    "SYNAPSE_SERVER_NAME" to "localhost",
-                    "SYNAPSE_REPORT_STATS" to "no",
                     "UID" to "1000",
                     "GID" to "1000"
                 )
@@ -43,11 +42,11 @@ fun synapseDocker() =
             withNetwork(Network.SHARED)
         }
 
-private const val password = "user$1passw0rd"
+private const val defaultPassword = "user$1passw0rd"
 
 suspend fun MatrixClientServerApiClient.register(
     username: String? = null,
-    password: String,
+    password: String = defaultPassword,
     deviceId: String? = null
 ): Result<MatrixClient.LoginInfo> {
     val registerStep = authentication.register(
@@ -83,12 +82,12 @@ suspend fun registerAndStartClient(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
-        getLoginInfo = { it.register(username, password, name) },
+        getLoginInfo = { it.register(username, defaultPassword, name) },
         configuration = configuration,
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
-    return StartedClient(client, password)
+    return StartedClient(client, defaultPassword)
 }
 
 suspend fun startClient(
@@ -101,7 +100,7 @@ suspend fun startClient(
     val client = MatrixClient.login(
         baseUrl = baseUrl,
         identifier = IdentifierType.User(username),
-        password = password,
+        password = defaultPassword,
         deviceId = name,
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
@@ -109,7 +108,7 @@ suspend fun startClient(
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
-    return StartedClient(client, password)
+    return StartedClient(client, defaultPassword)
 }
 
 suspend fun startClientFromStore(
@@ -125,5 +124,8 @@ suspend fun startClientFromStore(
     checkNotNull(client)
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
-    return StartedClient(client, password)
+    return StartedClient(client, defaultPassword)
 }
+
+suspend fun RoomService.waitForOutboxSent() =
+    getOutbox().flattenValues().first { outbox -> outbox.all { it.sentAt != null } }

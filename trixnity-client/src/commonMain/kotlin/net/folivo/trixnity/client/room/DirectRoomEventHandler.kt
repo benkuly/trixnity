@@ -95,7 +95,7 @@ class DirectRoomEventHandler(
         if (newDirectRooms != null && newDirectRooms != globalAccountDataStore.get<DirectEventContent>()
                 .first()?.content
         )
-            api.users.setAccountData(newDirectRooms, userInfo.userId)
+            api.user.setAccountData(newDirectRooms, userInfo.userId)
         setDirectRoomsEventContent.value = null
     }
 

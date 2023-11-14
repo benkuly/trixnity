@@ -8,10 +8,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room
-import net.folivo.trixnity.client.room.flatten
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -74,17 +74,17 @@ class OutboxIT {
     @Test
     fun shouldSendManyMessagesAndHaveEmptyOutboxAfterThat(): Unit = runBlocking {
         withTimeout(180_000) {
-            val room = client.api.rooms.createRoom().getOrThrow()
+            val room = client.api.room.createRoom().getOrThrow()
 
             repeat(30) {
                 client.room.sendMessage(room) { text("message $it") }
             }
 
-            client.room.getOutbox().flatten().first { outbox -> outbox.none { it.sentAt != null } }
+            client.room.getOutbox().flattenValues().first { outbox -> outbox.none { it.sentAt != null } }
             delay(20_000)
             client.room.sendMessage(room) { text("finish") }
             delay(1_000)
-            client.room.getOutbox().flatten().first { it.isEmpty() }
+            client.room.getOutbox().flattenValues().first { it.isEmpty() }
             delay(1_000)
             client.stop()
             delay(1_000) // let everything stop

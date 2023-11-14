@@ -10,9 +10,14 @@ listeners:
       - names: [ client, federation ]
         compress: false
 database:
-  name: sqlite3
+  name: psycopg2
   args:
-    database: ":memory:"
+    user: test
+    password: test
+    database: test
+    host: synapse-postgresql
+    cp_min: 5
+    cp_max: 10
 log_config: "/data/localhost.log.config"
 media_store_path: "/data/media_store"
 signing_key_path: "/data/localhost.signing.key"

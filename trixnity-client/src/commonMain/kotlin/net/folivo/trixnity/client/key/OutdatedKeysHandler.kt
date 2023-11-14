@@ -1,14 +1,11 @@
 package net.folivo.trixnity.client.key
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -74,15 +71,15 @@ class OutdatedKeysHandler(
         }
     }
 
-    internal suspend fun updateOutdatedKeys() {
+    internal suspend fun updateOutdatedKeys() = coroutineScope {
         val userIds = keyStore.getOutdatedKeys()
-        if (userIds.isEmpty()) return
+        if (userIds.isEmpty()) return@coroutineScope
         log.debug { "try update outdated keys of $userIds" }
-        val keysResponse = api.keys.getKeys(
+        val keysResponse = api.key.getKeys(
             deviceKeys = userIds.associateWith { emptySet() },
         ).getOrThrow()
 
-        val joinedEncryptedRooms = lazy { roomStore.encryptedJoinedRooms() }
+        val joinedEncryptedRooms = async(start = CoroutineStart.LAZY) { roomStore.encryptedJoinedRooms() }
         userIds.chunked(25).forEach { userIdChunk ->
             tm.writeTransaction {
                 userIdChunk.forEach { userId ->
@@ -126,6 +123,7 @@ class OutdatedKeysHandler(
             }
             yield()
         }
+        joinedEncryptedRooms.cancelAndJoin()
         log.debug { "finished update outdated keys of $userIds" }
     }
 
@@ -162,7 +160,7 @@ class OutdatedKeysHandler(
     private suspend fun handleOutdatedDeviceKeys(
         userId: UserId,
         devices: Map<String, SignedDeviceKeys>,
-        joinedEncryptedRooms: Lazy<List<RoomId>>
+        joinedEncryptedRooms: Deferred<List<RoomId>>
     ) {
         val oldDevices = keyStore.getDeviceKeys(userId).first().orEmpty()
         val newDevices = devices.filter { (deviceId, deviceKeys) ->
@@ -183,7 +181,7 @@ class OutdatedKeysHandler(
         // we can do this, because an outbound megolm session does only exist, when loadMembers has been called
         when {
             removedDevices.isNotEmpty() -> {
-                joinedEncryptedRooms.value
+                joinedEncryptedRooms.await()
                     .also {
                         if (it.isNotEmpty()) log.debug { "reset megolm sessions in rooms $it because of removed devices $removedDevices from $userId" }
                     }.forEach { roomId ->
@@ -192,7 +190,7 @@ class OutdatedKeysHandler(
             }
 
             addedDevices.isNotEmpty() -> {
-                joinedEncryptedRooms.value
+                joinedEncryptedRooms.await()
                     .filter { roomId ->
                         val allowedMemberships =
                             roomStateStore.getByStateKey<HistoryVisibilityEventContent>(roomId).first()

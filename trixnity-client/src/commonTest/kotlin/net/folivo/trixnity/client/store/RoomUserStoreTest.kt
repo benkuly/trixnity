@@ -77,7 +77,7 @@ class RoomUserStoreTest : ShouldSpec({
             roomUserRepository.save(roomId, aliceId, aliceUser)
             roomUserRepository.save(roomId, bobId, bobUser)
 
-            cut.getAll(roomId).flatten().first()?.values shouldContainExactly listOf(aliceUser, bobUser)
+            cut.getAll(roomId).flatten().first().values shouldContainExactly listOf(aliceUser, bobUser)
 
             scope.cancel()
         }

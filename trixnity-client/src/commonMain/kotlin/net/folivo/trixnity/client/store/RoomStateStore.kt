@@ -80,11 +80,11 @@ class RoomStateStore(
     fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         val eventType = findType(eventContentClass)
         return roomStateCache.readByFirstKey(RoomStateRepositoryKey(roomId, eventType))
             .mapLatest { value ->
-                value?.mapValues { entry ->
+                value.mapValues { entry ->
                     entry.value.map {
                         if (it?.content?.instanceOf(eventContentClass) == true) {
                             @Suppress("UNCHECKED_CAST")

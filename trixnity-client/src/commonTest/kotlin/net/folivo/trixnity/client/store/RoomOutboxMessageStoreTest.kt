@@ -6,8 +6,10 @@ import io.kotest.matchers.collections.shouldContainExactly
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.flatten
+import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
-import net.folivo.trixnity.client.room.flatten
 import net.folivo.trixnity.client.store.repository.InMemoryRoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
@@ -24,7 +26,12 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository()
-        cut = RoomOutboxMessageStore(roomOutboxMessageRepository, RepositoryTransactionManagerMock(), storeScope)
+        cut = RoomOutboxMessageStore(
+            roomOutboxMessageRepository,
+            RepositoryTransactionManagerMock(),
+            storeScope,
+            MatrixClientConfiguration()
+        )
     }
     afterTest {
         storeScope.cancel()
@@ -39,22 +46,20 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
             roomOutboxMessageRepository.save("t1", message1)
             roomOutboxMessageRepository.save("t2", message2)
 
-            cut.init()
-
             retry(10, 2_000.milliseconds, 30.milliseconds) {
-                cut.getAll().flatten().first() shouldContainExactly listOf(message1, message2)
+                cut.getAll().flattenValues().first() shouldContainExactly listOf(message1, message2)
             }
         }
     }
     should("handle massive save and delete") {
         val job1 = launch {
-            cut.getAll().flatten().collect { outbox ->
+            cut.getAll().flattenValues().collect { outbox ->
                 outbox.forEach { cut.update(it.transactionId) { it?.copy(sentAt = Clock.System.now()) } }
                 delay(10)
             }
         }
         val job2 = launch {
-            cut.getAll().flatten().collect { outbox ->
+            cut.getAll().flattenValues().collect { outbox ->
                 outbox.forEach { cut.update(it.transactionId) { null } }
                 delay(10)
             }
