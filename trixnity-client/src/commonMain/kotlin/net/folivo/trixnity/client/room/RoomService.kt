@@ -185,7 +185,7 @@ interface RoomService {
     fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?>
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>>
 }
 
 class RoomServiceImpl(
@@ -628,7 +628,7 @@ class RoomServiceImpl(
     override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         return roomStateStore.get(roomId, eventContentClass)
     }
 }

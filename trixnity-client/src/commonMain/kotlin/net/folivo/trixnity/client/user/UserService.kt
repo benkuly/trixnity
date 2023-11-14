@@ -33,11 +33,11 @@ interface UserService {
     val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
     suspend fun loadMembers(roomId: RoomId, wait: Boolean = true)
 
-    fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>?>
+    fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>>
 
     fun getById(roomId: RoomId, userId: UserId): Flow<RoomUser?>
 
-    fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>?>
+    fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>>
 
     fun getReceiptsById(roomId: RoomId, userId: UserId): Flow<RoomUserReceipts?>
 
@@ -119,7 +119,7 @@ class UserServiceImpl(
         if (wait) roomStore.get(roomId).first { it?.membersLoaded == true }
     }
 
-    override fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>?> {
+    override fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>> {
         return roomUserStore.getAll(roomId)
     }
 
@@ -127,7 +127,7 @@ class UserServiceImpl(
         return roomUserStore.get(userId, roomId)
     }
 
-    override fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>?> {
+    override fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>> {
         return roomUserStore.getAllReceipts(roomId)
     }
 
