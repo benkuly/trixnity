@@ -30,7 +30,9 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
             roomOutboxMessageRepository,
             RepositoryTransactionManagerMock(),
             storeScope,
-            MatrixClientConfiguration()
+            MatrixClientConfiguration().apply {
+                cacheExpireDurations = MatrixClientConfiguration.CacheExpireDurations.default(50.milliseconds)
+            }
         )
     }
     afterTest {

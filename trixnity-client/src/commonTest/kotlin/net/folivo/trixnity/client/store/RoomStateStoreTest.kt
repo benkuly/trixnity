@@ -138,7 +138,7 @@ class RoomStateStoreTest : ShouldSpec({
                 val scope = CoroutineScope(Dispatchers.Default)
                 val result = cut.get<MemberEventContent>(roomId).flatten()
                     .shareIn(scope, SharingStarted.Eagerly, 3)
-                result.first { it?.size == 1 }
+                result.first { it.size == 1 }
                 cut.save(
                     StateEvent(
                         UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
@@ -149,7 +149,7 @@ class RoomStateStoreTest : ShouldSpec({
                         stateKey = "@bob:server"
                     )
                 )
-                result.first { it?.size == 2 }
+                result.first { it.size == 2 }
                 result.replayCache shouldBe listOf(
                     mapOf("@user:server" to event1),
                     mapOf("@user:server" to event1, "@bob:server" to null)

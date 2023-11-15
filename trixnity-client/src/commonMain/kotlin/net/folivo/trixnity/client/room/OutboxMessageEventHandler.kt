@@ -76,12 +76,14 @@ class OutboxMessageEventHandler(
             val alreadyProcessedOutboxMessages = mutableSetOf<String>()
             outboxMessages
                 .map { outbox ->
-                    alreadyProcessedOutboxMessages.removeAll(alreadyProcessedOutboxMessages - outbox.keys)
+                    // we need to filterKeys twice, because input and output of flattenNotNull are not in sync, and we do not want to flatten unnecessary
                     outbox.filterKeys { !alreadyProcessedOutboxMessages.contains(it) }
                 }
                 .flattenNotNull()
                 .map { outbox ->
-                    outbox.filterValues { it.sentAt == null && it.sendError == null }.values
+                    alreadyProcessedOutboxMessages.removeAll(alreadyProcessedOutboxMessages - outbox.keys)
+                    outbox.filterKeys { !alreadyProcessedOutboxMessages.contains(it) }
+                        .filterValues { it.sentAt == null && it.sendError == null }.values
                         .also { alreadyProcessedOutboxMessages.addAll(outbox.keys) }
                 }
                 .collect { outboxMessages ->

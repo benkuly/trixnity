@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.room
 
-import io.kotest.assertions.nondeterministic.continually
-import io.kotest.assertions.nondeterministic.until
 import io.kotest.assertions.retry
+import io.kotest.assertions.timing.continually
+import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
@@ -194,7 +194,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                     SendEventResponse(EventId("event"))
                 }
             }
-            currentSyncState.value = SyncState.STARTED
+            currentSyncState.value = SyncState.RUNNING
 
             val job = launch(Dispatchers.Default) {
                 cut.processOutboxMessages(

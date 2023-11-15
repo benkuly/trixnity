@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -13,7 +12,6 @@ import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.store.repository.FullRepository
 import net.folivo.trixnity.client.store.repository.InMemoryFullRepository
 import net.folivo.trixnity.client.store.repository.NoOpRepositoryTransactionManager
-import kotlin.time.Duration.Companion.milliseconds
 
 class FullRepositoryObservableCacheTest : ShouldSpec({
     timeout = 5_000
@@ -51,8 +49,7 @@ class FullRepositoryObservableCacheTest : ShouldSpec({
             val all = cut.readAll().flatten().map { it.keys }.stateIn(readScope)
             all.value shouldBe setOf("key1", "key2")
             cut.write("key1") { null }
-            delay(200.milliseconds)
-            all.value shouldBe setOf("key2")
+            all.first { it == setOf("key2") }
         }
     }
 })
