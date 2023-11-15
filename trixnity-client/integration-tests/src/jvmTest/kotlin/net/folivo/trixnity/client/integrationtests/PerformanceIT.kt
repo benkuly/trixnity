@@ -164,6 +164,7 @@ class PerformanceIT {
 
             val sentMessages = MutableStateFlow(0)
             val answeredMessages = MutableStateFlow(0)
+            val totalEvents = MutableStateFlow(0)
 
             log.info { "start" }
 
@@ -222,6 +223,7 @@ class PerformanceIT {
                         decryptionTimeout = 10.seconds,
                         syncResponseBufferSize = 100
                     ).collect { timelineEvent ->
+                        totalEvents.value++
                         val content =
                             requireNotNull(timelineEvent.content?.getOrThrow()) { "content of $timelineEvent was null" }
                         if (content is RoomMessageEventContent.TextMessageEventContent && timelineEvent.sender != receivingClient.client.userId) {
@@ -271,16 +273,29 @@ class PerformanceIT {
             receivingClient.client.stop()
 
             val allMessagesCount = requestsCount * messagesPerRequestCount * 2
+            val allEventsCount = totalEvents.value * 2
             val messageThroughputPerSecond = allMessagesCount / measuredTime.inWholeSeconds
+            val eventsThroughputPerSecond = allEventsCount / measuredTime.inWholeSeconds
             val averageTimePerMessage = measuredTime / allMessagesCount
+            val averageTimePerEvent = measuredTime / allEventsCount
             println("################################")
-            println("parameters: requestsCount=$requestsCount parallelRequestsCount=$parallelRequestsCount messagesPerRequestCount=$messagesPerRequestCount allMessagesCount=$allMessagesCount")
+            println(
+                "parameters: requestsCount=$requestsCount " +
+                        "parallelRequestsCount=$parallelRequestsCount " +
+                        "messagesPerRequestCount=$messagesPerRequestCount " +
+                        "allMessagesCount=$allMessagesCount " +
+                        "allEventsCount=$allEventsCount"
+            )
             println("################################")
             println("measuredTime=$measuredTime")
+            println("################################")
+            println("eventsThroughputPerSecond=$eventsThroughputPerSecond")
             println("################################")
             println("messageThroughputPerSecond=$messageThroughputPerSecond")
             println("################################")
             println("averageTimePerMessage: $averageTimePerMessage")
+            println("################################")
+            println("averageTimePerEvent: $averageTimePerEvent")
             println("################################")
 
             synapse.stop()
