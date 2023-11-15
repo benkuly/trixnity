@@ -80,7 +80,7 @@ class KeyBackupIT {
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
             val roomId = withClue("user1 invites user2, so user2 gets user1s keys") {
-                startedClient1.client.api.rooms.createRoom(
+                startedClient1.client.api.room.createRoom(
                     invite = setOf(startedClient2.client.userId),
                     initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
@@ -88,7 +88,7 @@ class KeyBackupIT {
 
             withClue("join and wait for join") {
                 startedClient1.client.room.getById(roomId).first { it != null && it.membership == JOIN }
-                startedClient2.client.api.rooms.joinRoom(roomId).getOrThrow()
+                startedClient2.client.api.room.joinRoom(roomId).getOrThrow()
                 startedClient2.client.room.getById(roomId).first { it != null && it.membership == JOIN }
                 // we need to wait until the clients know the room is encrypted
                 startedClient1.client.room.getState<EncryptionEventContent>(roomId)

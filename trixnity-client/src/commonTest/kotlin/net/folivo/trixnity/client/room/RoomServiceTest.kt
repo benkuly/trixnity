@@ -356,7 +356,7 @@ class RoomServiceTest : ShouldSpec({
                 contentBuilder = { _, _, _ -> content }
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboundMessages = roomOutboxMessageStore.getAll().flatten().first()
+                val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboundMessages shouldHaveSize 1
                 assertSoftly(outboundMessages.first()) {
                     roomId shouldBe room
@@ -431,9 +431,9 @@ class RoomServiceTest : ShouldSpec({
             roomTimelineStore.get(EventId("2"), room).first() shouldBe null
 
             roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace)
-                .first()?.values?.firstOrNull()?.first() shouldBe null
+                .first().values.firstOrNull()?.first() shouldBe null
             roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace)
-                .first()?.values?.firstOrNull()?.first() shouldBe null
+                .first().values.firstOrNull()?.first() shouldBe null
 
             roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldBe null
             roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldBe null

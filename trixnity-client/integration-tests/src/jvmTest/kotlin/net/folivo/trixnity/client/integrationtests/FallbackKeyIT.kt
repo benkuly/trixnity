@@ -12,7 +12,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import net.folivo.trixnity.client.room
-import net.folivo.trixnity.client.room.flatten
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.core.model.events.InitialStateEvent
@@ -59,7 +58,7 @@ class FallbackKeyIT {
     @Test
     fun testFallbackKey(): Unit = runBlocking {
         withTimeout(90_000) {
-            val roomId = startedClient1.client.api.rooms.createRoom(
+            val roomId = startedClient1.client.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
             startedClient1.client.room.getAll().first { it.size == 1 }
@@ -73,7 +72,7 @@ class FallbackKeyIT {
             withClue("send encrypted message") {
                 startedClient2.client.room.sendMessage(roomId) { text("dino") }
                 delay(500.milliseconds)
-                startedClient2.client.room.getOutbox().flatten().first { outbox -> outbox.all { it.sentAt != null } }
+                startedClient2.client.room.waitForOutboxSent()
                 startedClient2.client.cancelSync(true)
             }
 
@@ -93,7 +92,7 @@ class FallbackKeyIT {
     }
 
     private suspend fun StartedClient.claimOneTimeKeysFrom(from: StartedClient) =
-        client.api.keys.claimKeys(
+        client.api.key.claimKeys(
             mapOf(from.client.userId to mapOf(from.client.deviceId to KeyAlgorithm.SignedCurve25519))
         ).getOrThrow().oneTimeKeys
 

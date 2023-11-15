@@ -25,7 +25,7 @@ class UserServiceMock : UserService {
         loadMembersCalled.value = roomId
     }
 
-    override fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>?> {
+    override fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>> {
         throw NotImplementedError()
     }
 
@@ -34,7 +34,7 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
-    override fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>?> {
+    override fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>> {
         throw NotImplementedError()
     }
 

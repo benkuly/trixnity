@@ -126,12 +126,12 @@ class CrossSigningIT {
                 }
             }
             withClue("user1 invites user3, so user3 gets user1s keys") {
-                val roomId = client1.api.rooms.createRoom(
+                val roomId = client1.api.room.createRoom(
                     invite = setOf(client3.userId),
                     initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
                 client1.room.getById(roomId).first { it != null }
-                client3.api.rooms.joinRoom(roomId).getOrThrow()
+                client3.api.room.joinRoom(roomId).getOrThrow()
                 client3.room.getById(roomId).first { it != null && it.membership == JOIN }
             }
 

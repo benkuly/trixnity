@@ -15,6 +15,7 @@ fun KotlinMultiplatformExtension.addJvmTarget(
         }
         testRuns["test"].executionTask.configure {
             enabled = testEnabled
+            maxHeapSize = "8g"
             if (useJUnitPlatform) useJUnitPlatform()
         }
     }

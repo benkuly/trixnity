@@ -27,6 +27,7 @@ benasher44Uuid = "0.8.1" # https://github.com/benasher44/uuid/releases
 ### databases ###
 exposed = "0.41.1" # https://github.com/JetBrains/Exposed/releases
 h2 = "2.2.224" # https://github.com/h2database/h2database/releases
+postgres = "42.6.0" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.6.0" # https://github.com/JuulLabs/indexeddb/releases
 realm = "1.11.1" # https://github.com/realm/realm-kotlin/tags
 androidxRoom = "2.6.0" # https://developer.android.com/jetpack/androidx/releases/room
@@ -105,6 +106,7 @@ exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "e
 realm-base = { module = "io.realm.kotlin:library-base", version.ref = "realm" }
 
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgres" }
 
 juulLabs-indexeddb = { module = "com.juul.indexeddb:core", version.ref = "juulLabsIndexeddb" }
 
@@ -131,6 +133,7 @@ mocKmp-testHelper = { module = "org.kodein.mock:mockmp-test-helper", version.ref
 
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testContainers" }
 testcontainers-junitJupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testContainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testContainers" }
 
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }

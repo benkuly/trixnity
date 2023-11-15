@@ -106,7 +106,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        val result = matrixRestClient.keys.setKeys(
+        val result = matrixRestClient.key.setKeys(
             deviceKeys = Signed(
                 DeviceKeys(
                     userId = UserId("alice", "example.com"),
@@ -262,7 +262,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getKeys(
+        matrixRestClient.key.getKeys(
             timeout = 10_000,
             deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
         ).getOrThrow() shouldBe GetKeys.Response(
@@ -415,7 +415,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getKeys(
+        matrixRestClient.key.getKeys(
             timeout = 10_000,
             deviceKeys = mapOf(UserId("alice", "example.com") to setOf()),
         ).getOrThrow() shouldBe GetKeys.Response(
@@ -476,7 +476,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        val result = matrixRestClient.keys.claimKeys(
+        val result = matrixRestClient.key.claimKeys(
             timeout = 10_000,
             oneTimeKeys = mapOf(UserId("alice", "example.com") to mapOf("JLAFKJWSCS" to SignedCurve25519))
         ).getOrThrow()
@@ -518,7 +518,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        val result = matrixRestClient.keys.getKeyChanges(
+        val result = matrixRestClient.key.getKeyChanges(
             from = "s72594_4483_1934",
             to = "s75689_5632_2435"
         ).getOrThrow()
@@ -591,7 +591,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.setCrossSigningKeys(
+        matrixRestClient.key.setCrossSigningKeys(
             masterKey = Signed(
                 CrossSigningKeys(
                     keys = keysOf(Ed25519Key("alice+base64+public+key", "alice+base64+public+key")),
@@ -712,7 +712,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        val result = matrixRestClient.keys.addSignatures(
+        val result = matrixRestClient.key.addSignatures(
             signedCrossSigningKeys = setOf(
                 Signed(
                     CrossSigningKeys(
@@ -813,7 +813,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getRoomKeys("1").getOrThrow()
+        matrixRestClient.key.getRoomKeys("1").getOrThrow()
             .shouldBe(
                 RoomsKeyBackup(
                     mapOf(
@@ -871,7 +871,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getRoomKeys("1", RoomId("!room:example.org"))
+        matrixRestClient.key.getRoomKeys("1", RoomId("!room:example.org"))
             .getOrThrow()
             .shouldBe(
                 RoomKeyBackup(
@@ -922,7 +922,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getRoomKeys(
+        matrixRestClient.key.getRoomKeys(
             "1", RoomId("!room:example.org"), "+ess/ionId1"
         ).getOrThrow()
             .shouldBe(
@@ -985,7 +985,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.setRoomKeys(
+        matrixRestClient.key.setRoomKeys(
             "1",
             RoomsKeyBackup(
                 mapOf(
@@ -1053,7 +1053,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.setRoomKeys(
+        matrixRestClient.key.setRoomKeys(
             "1",
             RoomId("!room:example.org"),
             RoomKeyBackup(
@@ -1114,7 +1114,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.setRoomKeys(
+        matrixRestClient.key.setRoomKeys(
             "1",
             RoomId("!room:example.org"),
             "+ess/ionId1",
@@ -1159,7 +1159,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.deleteRoomKeys("1").getOrThrow()
+        matrixRestClient.key.deleteRoomKeys("1").getOrThrow()
             .shouldBe(
                 DeleteRoomKeysResponse(count = 10, etag = "abcdefg")
             )
@@ -1190,7 +1190,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.deleteRoomKeys("1", RoomId("!room:example.org"))
+        matrixRestClient.key.deleteRoomKeys("1", RoomId("!room:example.org"))
             .getOrThrow()
             .shouldBe(
                 DeleteRoomKeysResponse(count = 10, etag = "abcdefg")
@@ -1222,7 +1222,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.deleteRoomKeys(
+        matrixRestClient.key.deleteRoomKeys(
             "1", RoomId("!room:example.org"), "+ess/ionId1"
         ).getOrThrow()
             .shouldBe(
@@ -1265,7 +1265,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getRoomKeysVersion().getOrThrow()
+        matrixRestClient.key.getRoomKeysVersion().getOrThrow()
             .shouldBe(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
@@ -1316,7 +1316,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.getRoomKeysVersion("1").getOrThrow()
+        matrixRestClient.key.getRoomKeysVersion("1").getOrThrow()
             .shouldBe(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
@@ -1370,7 +1370,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.setRoomKeysVersion(
+        matrixRestClient.key.setRoomKeysVersion(
             SetRoomKeyBackupVersionRequest.V1(
                 authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
                     publicKey = Curve25519Key(value = "abcdefg"),
@@ -1417,7 +1417,7 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.setRoomKeysVersion(
+        matrixRestClient.key.setRoomKeysVersion(
             SetRoomKeyBackupVersionRequest.V1(
                 authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
                     publicKey = Curve25519Key(value = "abcdefg"),
@@ -1451,6 +1451,6 @@ class KeysApiClientTest {
                 }
             },
         )
-        matrixRestClient.keys.deleteRoomKeysVersion("1").getOrThrow()
+        matrixRestClient.key.deleteRoomKeysVersion("1").getOrThrow()
     }
 }

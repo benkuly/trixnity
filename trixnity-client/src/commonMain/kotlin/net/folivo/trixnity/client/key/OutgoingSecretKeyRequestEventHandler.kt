@@ -54,7 +54,7 @@ class OutgoingSecretKeyRequestEventHandler(
     internal suspend fun requestSecretKeys() {
         val missingSecrets = SecretType.values()
             .subtract(keyStore.getSecrets().keys)
-            .subtract(keyStore.allSecretKeyRequests.value.mapNotNull { request ->
+            .subtract(keyStore.getAllSecretKeyRequests().mapNotNull { request ->
                 request.content.name?.let { SecretType.ofId(it) }
             }.toSet())
         if (missingSecrets.isEmpty()) {
@@ -78,7 +78,7 @@ class OutgoingSecretKeyRequestEventHandler(
             )
             log.debug { "send secret key request (${missingSecret.id}) to $receiverDeviceIds" }
             // TODO should be encrypted (because this is meta data)
-            api.users.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
+            api.user.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
                 .onSuccess {
                     keyStore.addSecretKeyRequest(
                         StoredSecretKeyRequest(request, receiverDeviceIds, Clock.System.now())
@@ -105,7 +105,7 @@ class OutgoingSecretKeyRequestEventHandler(
         if (event.decrypted.sender == ownUserId && content is SecretKeySendEventContent) {
             val requestId = content.requestId
             log.debug { "handle outgoing secret key request answer $requestId" }
-            if (keyStore.allSecretKeyRequests.value.none { it.content.requestId == requestId }) {
+            if (keyStore.getAllSecretKeyRequests().none { it.content.requestId == requestId }) {
                 log.warn { "received a secret key request, but we don't requested one with the id $requestId" }
                 return
             }
@@ -122,7 +122,7 @@ class OutgoingSecretKeyRequestEventHandler(
                 log.warn { "received a key from $senderDeviceId, but we don't trust that device ($senderTrustLevel)" }
                 return
             }
-            val request = keyStore.allSecretKeyRequests.value
+            val request = keyStore.getAllSecretKeyRequests()
                 .firstOrNull { it.content.requestId == requestId }
             if (request?.receiverDeviceIds?.contains(senderDeviceId) != true) {
                 log.warn { "received a key from $senderDeviceId, that we did not requested (or request is too old and we already deleted it)" }
@@ -146,7 +146,7 @@ class OutgoingSecretKeyRequestEventHandler(
                 }
 
                 SecretType.M_MEGOLM_BACKUP_V1 -> {
-                    api.keys.getRoomKeysVersion().map {
+                    api.key.getRoomKeysVersion().map {
                         keyBackupService.keyBackupCanBeTrusted(it, content.secret)
                     }.onFailure { log.warn { "could not retrieve key backup version" } }
                         .getOrElse { false }
@@ -173,7 +173,7 @@ class OutgoingSecretKeyRequestEventHandler(
 
 
     internal suspend fun cancelOldOutgoingKeyRequests() {
-        keyStore.allSecretKeyRequests.value.forEach {
+        keyStore.getAllSecretKeyRequests().forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
                 it.cancelRequest()
             }
@@ -188,7 +188,7 @@ class OutgoingSecretKeyRequestEventHandler(
         if (secretType != null) {
             val storedSecret = keyStore.getSecrets()[secretType]
             if (storedSecret?.event != event) {
-                keyStore.allSecretKeyRequests.value.filter { it.content.name == secretType.id }
+                keyStore.getAllSecretKeyRequests().filter { it.content.name == secretType.id }
                     .forEach { it.cancelRequest() }
                 keyStore.updateSecrets { it - secretType }
             }
@@ -200,7 +200,7 @@ class OutgoingSecretKeyRequestEventHandler(
         log.debug { "cancel outgoing secret key request to $cancelRequestTo" }
         if (cancelRequestTo.isNotEmpty()) {
             val cancelRequest = content.copy(action = KeyRequestAction.REQUEST_CANCELLATION)
-            api.users.sendToDevice( // TODO should be encrypted (because this is meta data)
+            api.user.sendToDevice( // TODO should be encrypted (because this is meta data)
                 mapOf(ownUserId to cancelRequestTo.associateWith { cancelRequest })
             ).getOrThrow()
         }

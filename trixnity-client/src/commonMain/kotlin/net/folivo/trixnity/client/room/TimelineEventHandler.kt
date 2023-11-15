@@ -161,7 +161,7 @@ class TimelineEventHandlerImpl(
                     insertNewEvents = true
                     log.debug { "fetch missing events before $startEventId" }
                     val destinationBatch = possiblyPreviousEvent?.gap?.batchAfter
-                    val response = api.rooms.getEvents(
+                    val response = api.room.getEvents(
                         roomId = roomId,
                         from = startGapBatchBefore,
                         to = destinationBatch,
@@ -187,7 +187,7 @@ class TimelineEventHandlerImpl(
                     insertNewEvents = true
                     log.debug { "fetch missing events after $startEventId" }
                     val destinationBatch = possiblyNextEvent?.gap?.batchBefore
-                    val response = api.rooms.getEvents(
+                    val response = api.room.getEvents(
                         roomId = roomId,
                         from = startGapBatchAfter,
                         to = destinationBatch,

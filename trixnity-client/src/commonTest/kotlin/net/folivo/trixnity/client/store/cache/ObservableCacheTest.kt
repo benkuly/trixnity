@@ -57,13 +57,14 @@ class ObservableCacheTest : ShouldSpec({
         }
         should("remove from cache when not used anymore") {
             cut = ObservableCache("", cacheStore, cacheScope, expireDuration = Duration.ZERO)
-            val cache = cut.values.stateIn(cacheScope)
             val readScope1 = CoroutineScope(Dispatchers.Default)
-            cacheStore.persist("key", "a new value")
-            cut.read(key = "key").stateIn(readScope1).value shouldBe "a new value"
-            cache.first { it.isNotEmpty() }
+            cacheStore.persist("key", "old value")
+            cut.read(key = "key").stateIn(readScope1).value shouldBe "old value"
+            cacheStore.persist("key", "new value")
+            cut.read(key = "key").first() shouldBe "old value"
             readScope1.cancel()
-            cache.first { it.isEmpty() }
+            delay(10)
+            cut.read(key = "key").first() shouldBe "new value"
         }
         should("remove from cache, when cache time expired") {
             cut = ObservableCache("", cacheStore, cacheScope, expireDuration = 20.milliseconds)
@@ -260,6 +261,24 @@ class ObservableCacheTest : ShouldSpec({
                 )
             }
         }
+        context("removeFromCacheOnNull enabled") {
+            should("remove from cache when value is null") {
+                val values = ConcurrentMap<String, ObservableCacheValue<String?>>()
+                cut = ObservableCache(
+                    "",
+                    cacheStore,
+                    cacheScope,
+                    expireDuration = 20.milliseconds,
+                    removeFromCacheOnNull = true,
+                    values = values
+                )
+                cacheStore.persist("key", "a new value")
+                cut.read(key = "key").first() shouldBe "a new value"
+                values.getAll().size shouldBe 1
+                cut.write("key", null)
+                values.getAll().size shouldBe 0
+            }
+        }
     }
     context("index") {
         class IndexedObservableCache(
@@ -276,9 +295,9 @@ class ObservableCacheTest : ShouldSpec({
                     onPut.value = key
                 }
 
-                var onRemove = MutableStateFlow<String?>(null)
-                override suspend fun onRemove(key: String) {
-                    onRemove.value = key
+                var onRemove = MutableStateFlow<Pair<String, Boolean>?>(null)
+                override suspend fun onRemove(key: String, stale: Boolean) {
+                    onRemove.value = key to stale
                 }
 
                 var onRemoveAllCalled = MutableStateFlow(false)
@@ -316,7 +335,7 @@ class ObservableCacheTest : ShouldSpec({
             indexedCut = IndexedObservableCache("", cacheStore, cacheScope, Duration.ZERO)
             indexedCut.write("key", "value")
             indexedCut.index.onPut.value shouldBe "key"
-            indexedCut.index.onRemove.first { it == "key" } shouldBe "key"
+            indexedCut.index.onRemove.first { it == "key" to false }
         }
         should("call onRemoveALl on clear") {
             indexedCut = IndexedObservableCache("", cacheStore, cacheScope, Duration.ZERO)
@@ -331,7 +350,14 @@ class ObservableCacheTest : ShouldSpec({
             delay(30)
             indexedCut.index.onRemove.value shouldBe null
             indexedCut.index.getSubscriptionCount.value = 0
-            indexedCut.index.onRemove.first { it == "key" } shouldBe "key"
+            indexedCut.index.onRemove.first { it == "key" to false }
+        }
+        should("allow remove from cache when index subscriptions > 0 but value==null") {
+            indexedCut = IndexedObservableCache("", cacheStore, cacheScope, Duration.ZERO)
+            indexedCut.index.getSubscriptionCount.value = 1
+            indexedCut.write("key", null)
+            delay(30)
+            indexedCut.index.onRemove.first { it == "key" to true }
         }
     }
 })

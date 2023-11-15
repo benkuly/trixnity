@@ -95,12 +95,12 @@ class TimelineEventIT {
     @Test
     fun shouldStartEncryptedRoomAndSendMessages(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(
+            val room = client1.api.room.createRoom(
                 invite = setOf(client2.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
 
             client1.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
             client2.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
@@ -141,9 +141,9 @@ class TimelineEventIT {
     @Test
     fun shouldHandleGappySyncsAndGetEventsFromEndOfTheTimeline(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
+            val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
             client2.stopSync(true)
@@ -192,9 +192,9 @@ class TimelineEventIT {
     @Test
     fun shouldHandleGappySyncsAndGetEventsFromStartOfTheTimeline(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
+            val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
             client2.stopSync(true)
@@ -229,9 +229,9 @@ class TimelineEventIT {
     @Test
     fun shouldHandleGappySyncsAndFillTimelineFromTheMiddle(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
+            val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
             client2.stopSync(true)
@@ -277,7 +277,7 @@ class TimelineEventIT {
     @Test
     fun shouldFollowRoomUpgrades(): Unit = runBlocking {
         withTimeout(30_000) {
-            val oldRoom = client1.api.rooms.createRoom(
+            val oldRoom = client1.api.room.createRoom(
                 invite = setOf(client2.userId),
                 roomVersion = "9"
             ).getOrThrow()
@@ -286,7 +286,7 @@ class TimelineEventIT {
                 timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
             }.first { it } // wait for sync
 
-            val newRoom = client1.api.rooms.upgradeRoom(oldRoom, "10").getOrThrow()
+            val newRoom = client1.api.room.upgradeRoom(oldRoom, "10").getOrThrow()
             client1.room.sendMessage(newRoom) { text("hi new") }
             client1.room.getLastTimelineEvent(newRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
                 timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }

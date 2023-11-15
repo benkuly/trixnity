@@ -1,16 +1,23 @@
 package net.folivo.trixnity.client
 
 import io.ktor.client.*
+import kotlinx.coroutines.CoroutineName
 import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class MatrixClientConfiguration {
+    /**
+     * Set a name for this instance. This is used to set a [CoroutineName] to the [CoroutineContext].
+     */
+    var name: String? = null
+
     /**
      * Sets the own bookmark to the latest messages sent by this client.
      */
@@ -79,7 +86,11 @@ class MatrixClientConfiguration {
         val timelineEvent: Duration,
         val timelineEventRelation: Duration,
         val roomUser: Duration,
-        val roomUserReceipts: Duration
+        val roomUserReceipts: Duration,
+        val secretKeyRequest: Duration,
+        val roomKeyRequest: Duration,
+        val roomOutboxMessage: Duration,
+        val room: Duration,
     ) {
         companion object {
             fun default(duration: Duration) =
@@ -99,6 +110,10 @@ class MatrixClientConfiguration {
                     timelineEventRelation = duration,
                     roomUser = duration,
                     roomUserReceipts = duration,
+                    secretKeyRequest = duration,
+                    roomKeyRequest = duration,
+                    roomOutboxMessage = duration / 2,
+                    room = duration * 10,
                 )
         }
     }

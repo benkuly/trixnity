@@ -2,12 +2,12 @@ package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
@@ -23,7 +23,8 @@ class RoomUpgradeHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeContent(subscriber = ::setRoomReplacedBy).unsubscribeOnCompletion(scope)
         api.sync.subscribeContent(subscriber = ::setRoomReplaces).unsubscribeOnCompletion(scope)
-        api.sync.subscribe(ClientEventEmitter.Priority.AFTER_DEFAULT, ::joinUpgradedRooms).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(ClientEventEmitter.Priority.AFTER_DEFAULT, ::joinUpgradedRooms)
+            .unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun setRoomReplacedBy(event: ClientEvent<TombstoneEventContent>) {
@@ -49,11 +50,11 @@ class RoomUpgradeHandler(
         if (configuration.autoJoinUpgradedRooms.not()) return
 
         val allRooms =
-            roomStore.getAll().value.mapValues { it.value.value }
+            roomStore.getAll().first().mapValues { it.value.first() }
         allRooms.values.filterNotNull().filter { it.membership == Membership.INVITE }.forEach { room ->
             val previousRoom = room.previousRoomId?.let { allRooms[it] }
             if (previousRoom?.nextRoomId == room.roomId && previousRoom.membership == Membership.JOIN) {
-                api.rooms.joinRoom(room.roomId).onFailure {
+                api.room.joinRoom(room.roomId).onFailure {
                     log.warn(it) { "Failed to automatically join upgraded room. It will be tried again after the next sync." }
                 }
             }

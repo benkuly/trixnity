@@ -19,12 +19,28 @@ interface MatrixClientServerApiClient {
     val authentication: AuthenticationApiClient
     val discovery: DiscoveryApiClient
     val server: ServerApiClient
-    val users: UsersApiClient
-    val rooms: RoomsApiClient
+    val user: UserApiClient
+
+    @Deprecated("changed to user", ReplaceWith("user"))
+    val users: UserApiClient
+        get() = user
+    val room: RoomApiClient
+
+    @Deprecated("changed to room", ReplaceWith("room"))
+    val rooms: RoomApiClient
+        get() = room
     val sync: SyncApiClient
-    val keys: KeysApiClient
+    val key: KeyApiClient
+
+    @Deprecated("changed to key", ReplaceWith("key"))
+    val keys: KeyApiClient
+        get() = key
     val media: MediaApiClient
-    val devices: DevicesApiClient
+    val device: DeviceApiClient
+
+    @Deprecated("changed to device", ReplaceWith("device"))
+    val devices: DeviceApiClient
+        get() = device
     val push: PushApiClient
 
     val eventContentSerializerMappings: EventContentSerializerMappings
@@ -55,11 +71,11 @@ class MatrixClientServerApiClientImpl(
     override val authentication = AuthenticationApiClientImpl(httpClient)
     override val discovery = DiscoveryApiClientImpl(httpClient)
     override val server = ServerApiClientImpl(httpClient)
-    override val users = UsersApiClientImpl(httpClient, eventContentSerializerMappings)
-    override val rooms = RoomsApiClientImpl(httpClient, eventContentSerializerMappings)
+    override val user = UserApiClientImpl(httpClient, eventContentSerializerMappings)
+    override val room = RoomApiClientImpl(httpClient, eventContentSerializerMappings)
     override val sync = SyncApiClientImpl(httpClient, syncLoopDelay, syncLoopErrorDelay)
-    override val keys = KeysApiClientImpl(httpClient, json)
+    override val key = KeyApiClientImpl(httpClient, json)
     override val media = MediaApiClientImpl(httpClient)
-    override val devices = DevicesApiClientImpl(httpClient)
+    override val device = DeviceApiClientImpl(httpClient)
     override val push = PushApiClientImpl(httpClient)
 }
