@@ -183,12 +183,11 @@ class UserMemberEventHandler(
         val memberships = setOf(Membership.JOIN, Membership.INVITE)
         return roomUserStore.getAll(roomId)
             .first()
-            ?.values?.asFlow()
-            ?.mapNotNull { it.first() }
-            ?.filter { memberships.contains(it.membership) }
-            ?.mapNotNull { user -> user.originalName?.let { user.userId to it } }
-            ?.toList()
-            ?.toMap()
-            .orEmpty()
+            .values.asFlow()
+            .mapNotNull { it.first() }
+            .filter { memberships.contains(it.membership) }
+            .mapNotNull { user -> user.originalName?.let { user.userId to it } }
+            .toList()
+            .toMap()
     }
 }

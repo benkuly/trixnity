@@ -83,7 +83,10 @@ suspend fun registerAndStartClient(
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
         getLoginInfo = { it.register(username, defaultPassword, name) },
-        configuration = configuration,
+        configuration = {
+            this.name = name
+            configuration()
+        },
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
@@ -104,7 +107,10 @@ suspend fun startClient(
         deviceId = name,
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
-        configuration = configuration,
+        configuration = {
+            this.name = name
+            configuration()
+        },
     ).getOrThrow()
     client.startSync()
     client.syncState.first { it == SyncState.RUNNING }
@@ -119,7 +125,10 @@ suspend fun startClientFromStore(
     val client = MatrixClient.fromStore(
         repositoriesModule = repositoriesModule,
         mediaStore = InMemoryMediaStore(),
-        configuration = configuration,
+        configuration = {
+            this.name = name
+            configuration()
+        },
     ).getOrThrow()
     checkNotNull(client)
     client.startSync()
