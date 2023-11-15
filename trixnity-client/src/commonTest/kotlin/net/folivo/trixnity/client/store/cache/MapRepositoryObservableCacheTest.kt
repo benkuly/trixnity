@@ -271,7 +271,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                     mapOf("secondKey1" to "new1")
         }
         should("remove from cache when stale") {
-            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 100.milliseconds)
+            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 50.milliseconds)
             val readScope = CoroutineScope(Dispatchers.Default)
             repository.save("firstKey", "secondKey1", "old1")
             repository.save("firstKey", "secondKey2", "old2")
