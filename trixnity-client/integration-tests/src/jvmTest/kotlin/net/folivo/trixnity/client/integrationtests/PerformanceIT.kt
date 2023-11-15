@@ -291,11 +291,11 @@ class PerformanceIT {
             println("################################")
             println("eventsThroughputPerSecond=$eventsThroughputPerSecond")
             println("################################")
+            println("averageTimePerEvent: $averageTimePerEvent")
+            println("################################")
             println("messageThroughputPerSecond=$messageThroughputPerSecond")
             println("################################")
             println("averageTimePerMessage: $averageTimePerMessage")
-            println("################################")
-            println("averageTimePerEvent: $averageTimePerEvent")
             println("################################")
 
             synapse.stop()
