@@ -34,9 +34,6 @@ class RoomStateEventHandler(
         if (events.isNotEmpty())
             tm.writeTransaction {
                 events.forEach {
-                    if (skipWhenAlreadyPresent) {
-                        roomStateStore
-                    }
                     roomStateStore.save(it, skipWhenAlreadyPresent)
                 }
             }

@@ -180,6 +180,7 @@ internal open class ObservableCacheBase<K, V>(
             }
             if (removeFromCacheOnNull && newValue == null) {
                 values.remove(key, true)
+                return null
             }
         }
         return result
