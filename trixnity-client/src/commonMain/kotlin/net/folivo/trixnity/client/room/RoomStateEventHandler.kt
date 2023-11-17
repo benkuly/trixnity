@@ -6,6 +6,7 @@ import net.folivo.trixnity.client.store.RoomStateStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
@@ -22,8 +23,9 @@ class RoomStateEventHandler(
     private val tm: RepositoryTransactionManager,
 ) : EventHandler, LazyMemberEventHandler {
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeEventList<StateEventContent, StateBaseEvent<StateEventContent>> { setState(it) }
-            .unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList<StateEventContent, StateBaseEvent<StateEventContent>>(Priority.STORE_EVENTS) {
+            setState(it)
+        }.unsubscribeOnCompletion(scope)
     }
 
     override suspend fun handleLazyMemberEvents(memberEvents: List<StateEvent<MemberEventContent>>) {

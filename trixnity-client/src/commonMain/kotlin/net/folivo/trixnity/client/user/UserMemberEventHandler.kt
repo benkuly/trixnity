@@ -33,7 +33,7 @@ class UserMemberEventHandler(
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeEventList(Priority.BEFORE_DEFAULT, ::setRoomUser).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList(Priority.STORE_EVENTS, ::setRoomUser).unsubscribeOnCompletion(scope)
         api.sync.subscribe(Priority.AFTER_DEFAULT, ::reloadProfile).unsubscribeOnCompletion(scope)
     }
 

@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
@@ -41,8 +42,7 @@ class OlmEventHandler(
         olmKeysChangeEmitter.subscribeOneTimeKeysCount(::handleOlmKeysChange).unsubscribeOnCompletion(scope)
         eventEmitter.subscribeEvent(subscriber = ::handleMemberEvents).unsubscribeOnCompletion(scope)
         eventEmitter.subscribeEvent(subscriber = ::handleHistoryVisibility).unsubscribeOnCompletion(scope)
-        eventEmitter.subscribeEventList(ClientEventEmitter.Priority.TO_DEVICE_EVENTS, ::handleOlmEvents)
-            .unsubscribeOnCompletion(scope)
+        eventEmitter.subscribeEventList(Priority.TO_DEVICE_EVENTS, ::handleOlmEvents).unsubscribeOnCompletion(scope)
         decrypter.subscribe(::handleOlmEncryptedRoomKeyEventContent).unsubscribeOnCompletion(scope)
         scope.launch {
             forgetOldFallbackKey()
