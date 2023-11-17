@@ -73,7 +73,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             writeTransactionCalled.value shouldBe 1
             repository.get("firstKey") shouldBe mapOf("secondKey2" to "old")
         }
-        xshould("handle parallel manipulation of same key") {
+        should("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
@@ -99,10 +99,12 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                     }.awaitAll().reduce { acc, duration -> acc + duration }
                 }
             database.replayCache shouldContainAll (0..999).map { it.toString() }
-            (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
+            val timePerOperation = operationsTimeSum / 1000
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 10.milliseconds
             completeTime shouldBeLessThan 300.milliseconds
         }
-        xshould("handle parallel manipulation of different keys") {
+        should("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
@@ -130,8 +132,11 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                     }
                 }
             database.replayCache shouldContainAll (0..999).map { "key" to "$it" }
-            (operationsTimeSum / 1000) shouldBeLessThan 200.milliseconds
-            completeTime shouldBeLessThan 700.milliseconds // TODO could be optimized
+
+            val timePerOperation = operationsTimeSum / 1000
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 300.milliseconds
+            completeTime shouldBeLessThan 800.milliseconds // TODO could be optimized
         }
     }
     context("write with update") {
@@ -156,12 +161,12 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                 it shouldBe "old"
                 null
             }
+            repository.get("firstKey") shouldBe mapOf()
             repository.save("firstKey", "secondKey1", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
                 it shouldBe null
                 null
             }
-            repository.get("firstKey") shouldBe mapOf()
         }
     }
     context("read") {

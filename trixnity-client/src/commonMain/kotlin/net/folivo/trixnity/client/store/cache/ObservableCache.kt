@@ -6,15 +6,30 @@ import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.folivo.trixnity.client.store.cache.ObservableCacheValue.CacheValue
+import kotlin.jvm.JvmInline
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger { }
 
 internal data class ObservableCacheValue<T>(
-    val value: MutableStateFlow<T>,
-    val resetExpireDuration: MutableSharedFlow<Unit>,
-)
+    val value: MutableStateFlow<CacheValue<T>> = MutableStateFlow(CacheValue.Init()),
+    val resetExpireDuration: MutableSharedFlow<Unit> = MutableSharedFlow(replay = 1, onBufferOverflow = DROP_OLDEST),
+) {
+    sealed interface CacheValue<T> {
+
+        class Init<T> : CacheValue<T>
+
+        @JvmInline
+        value class Value<T>(val value: T) : CacheValue<T>
+
+        fun valueOrNull() = when (this) {
+            is Init -> null
+            is Value -> value
+        }
+    }
+}
 
 /**
  * The actual source and sink of the data to be cached. This could be any database.
@@ -95,7 +110,7 @@ internal open class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
             updateAndGet(
                 key = key,
                 get = { store.get(key) },
-            )?.value ?: MutableStateFlow(null)
+            )
         )
     }
 
@@ -124,7 +139,6 @@ internal open class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
         updateAndGet(
             key = key,
             updater = { value },
-            get = { value },
             persist = { newValue ->
                 if (persistEnabled) store.persist(key, newValue).also { onPersist(newValue) }
             },
@@ -154,36 +168,28 @@ internal open class ObservableCacheBase<K, V>(
     protected suspend fun updateAndGet(
         key: K,
         updater: (suspend (oldValue: V?) -> V?)? = null,
-        get: (suspend () -> V?),
+        get: (suspend () -> V?)? = null,
         persist: (suspend (newValue: V?) -> Unit)? = null,
-    ): ObservableCacheValue<V?>? {
-        val result = values.update(key) { existingCacheValue ->
-            if (existingCacheValue == null) {
-                log.trace { "$name: no cache hit for key $key" }
-                val retrievedValue = get()
-                val newCacheValue = ObservableCacheValue(
-                    value = MutableStateFlow(retrievedValue),
-                    resetExpireDuration = MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = DROP_OLDEST)
-                        .also { it.emit(Unit) },
-                )
-                newCacheValue
-            } else {
-                existingCacheValue.resetExpireDuration.emit(Unit)
-                existingCacheValue
-            }
+    ): Flow<V?> {
+        val cacheEntry = values.update(key) {
+            it ?: ObservableCacheValue<V?>()
+                .also { log.trace { "$name: no cache hit for key $key" } }
         }
-        checkNotNull(result)
-        if (updater != null) {
-            val newValue = result.value.updateAndGet { oldValue ->
-                updater(oldValue)
-                    .also { if (persist != null) persist(it) }
+        checkNotNull(cacheEntry)
+        cacheEntry.resetExpireDuration.emit(Unit)
+        val newValue = cacheEntry.value.updateAndGet {
+            val oldValue = when (it) {
+                is CacheValue.Init -> get?.invoke()
+                is CacheValue.Value -> it.value
             }
-            if (removeFromCacheOnNull && newValue == null) {
-                values.remove(key, true)
-                return null
-            }
+            val newValue = if (updater != null) updater(oldValue) else oldValue
+            if (persist != null && (oldValue != newValue || get == null)) persist(newValue)
+            CacheValue.Value(newValue)
+        }.valueOrNull()
+        if (removeFromCacheOnNull && newValue == null) {
+            values.remove(key, true)
         }
-        return result
+        return cacheEntry.value.filterIsInstance<CacheValue.Value<V>>().map { it.value }
     }
 }
 
@@ -207,7 +213,7 @@ private class RemoverJobExecutingIndex<K, V>(
                     subscriptionCount to indexSubscriptionCount
                 }.collectLatest { (subscriptionCount, indexSubscriptionCount) ->
                     delay(expireDuration)
-                    val stale = value.value.value == null
+                    val stale = value.value.value.valueOrNull() == null
                     // indexSubscriptionCount currently means, that a collection of entries is subscribed.
                     // Therefore, it's okay to remove cache entries. The index would just update its list.
                     if (subscriptionCount == 0 && (stale || indexSubscriptionCount == 0)) {

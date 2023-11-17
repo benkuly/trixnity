@@ -136,7 +136,7 @@ class ObservableCacheTest : ShouldSpec({
             )
             cacheStore.get("key") shouldBe "updated value 2"
         }
-        should("also save unchanged value") { // TODO is there a way around it?
+        should("not save unchanged value") {
             cut.write(
                 key = "key",
                 updater = { "updated value" },
@@ -147,9 +147,9 @@ class ObservableCacheTest : ShouldSpec({
                 key = "key",
                 updater = { "updated value" },
             )
-            cacheStore.get("key") shouldBe "updated value"
+            cacheStore.get("key") shouldBe null
         }
-        xshould("handle parallel manipulation of same key") {
+        should("handle parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
@@ -172,10 +172,12 @@ class ObservableCacheTest : ShouldSpec({
                     }.awaitAll().reduce { acc, duration -> acc + duration }
                 }
             database.replayCache shouldContainAll (0..999).map { it.toString() }
-            (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
+            val timePerOperation = operationsTimeSum / 1000
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 10.milliseconds
             completeTime shouldBeLessThan 300.milliseconds
         }
-        xshould("handle parallel manipulation of different keys") {
+        should("handle parallel manipulation of different keys") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
@@ -198,7 +200,9 @@ class ObservableCacheTest : ShouldSpec({
                     }.awaitAll().reduce { acc, duration -> acc + duration }
                 }
             database.replayCache shouldContainAll (0..999).map { it.toString() }
-            (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
+            val timePerOperation = operationsTimeSum / 1000
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 10.milliseconds
             completeTime shouldBeLessThan 300.milliseconds
         }
         context("infinite cache not enabled") {
