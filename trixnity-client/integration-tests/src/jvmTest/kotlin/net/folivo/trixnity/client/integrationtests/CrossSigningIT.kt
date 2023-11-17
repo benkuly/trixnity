@@ -75,20 +75,26 @@ class CrossSigningIT {
             repositoriesModule = repositoriesModule1,
             mediaStore = InMemoryMediaStore(),
             getLoginInfo = { it.register("user1", password) }
-        ).getOrThrow()
+        ) {
+            name = "client1"
+        }.getOrThrow()
         client2 = MatrixClient.login(
             baseUrl = baseUrl,
             identifier = IdentifierType.User("user1"),
             password = password,
             repositoriesModule = repositoriesModule2,
             mediaStore = InMemoryMediaStore(),
-        ).getOrThrow()
+        ) {
+            name = "client2"
+        }.getOrThrow()
         client3 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule3,
             mediaStore = InMemoryMediaStore(),
             getLoginInfo = { it.register("user3", password) }
-        ).getOrThrow()
+        ) {
+            name = "client3"
+        }.getOrThrow()
         client1.startSync()
         client2.startSync()
         client3.startSync()

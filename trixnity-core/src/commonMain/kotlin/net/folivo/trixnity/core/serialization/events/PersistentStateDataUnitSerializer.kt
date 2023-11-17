@@ -8,8 +8,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV1.PersistentStateDataUnitV1
@@ -51,8 +51,8 @@ class PersistentStateDataUnitSerializer(
     override fun deserialize(decoder: Decoder): PersistentDataUnit.PersistentStateDataUnit<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val roomId = jsonObj["room_id"]?.jsonPrimitive?.content
+        val type = (jsonObj["type"] as? JsonPrimitive)?.content ?: throw SerializationException("type must not be null")
+        val roomId = (jsonObj["room_id"] as? JsonPrimitive)?.content
         requireNotNull(roomId)
         return when (val roomVersion = getRoomVersion(RoomId(roomId))) {
             "1", "2" -> decoder.json.decodeFromJsonElement(mappingV1[type], jsonObj)

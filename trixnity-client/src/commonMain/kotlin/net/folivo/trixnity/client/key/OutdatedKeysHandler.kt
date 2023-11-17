@@ -195,6 +195,7 @@ class OutdatedKeysHandler(
                         val allowedMemberships =
                             roomStateStore.getByStateKey<HistoryVisibilityEventContent>(roomId).first()
                                 ?.content?.historyVisibility.membershipsAllowedToReceiveKey
+                        // TODO should be optimized
                         roomStateStore.getByStateKey<MemberEventContent>(roomId, userId.full).first()
                             ?.content?.membership.let { allowedMemberships.contains(it) }
                     }.also {

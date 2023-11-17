@@ -210,7 +210,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
     override fun deserialize(decoder: Decoder): RoomMessageEventContent {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        return when (val type = jsonObj["msgtype"]?.jsonPrimitive?.content) {
+        return when (val type = (jsonObj["msgtype"] as? JsonPrimitive)?.content) {
             NoticeMessageEventContent.type -> decoder.json.decodeFromJsonElement<NoticeMessageEventContent>(jsonObj)
             TextMessageEventContent.type -> decoder.json.decodeFromJsonElement<TextMessageEventContent>(jsonObj)
             EmoteMessageEventContent.type -> decoder.json.decodeFromJsonElement<EmoteMessageEventContent>(jsonObj)
@@ -222,13 +222,13 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 decoder.json.decodeFromJsonElement<VerificationRequestMessageEventContent>(jsonObj)
 
             else -> {
-                val body = jsonObj["body"]?.jsonPrimitive?.content
+                val body = (jsonObj["body"] as? JsonPrimitive)?.content
                 val relatesTo: RelatesTo? =
-                    jsonObj["m.relates_to"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
+                    (jsonObj["m.relates_to"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 val mentions: Mentions? =
-                    jsonObj["m.mentions"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
+                    (jsonObj["m.mentions"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 val externalUrl: String? =
-                    jsonObj["external_url"]?.jsonObject?.let { decoder.json.decodeFromJsonElement(it) }
+                    (jsonObj["external_url"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 if (type == null) throw SerializationException("msgtype must not be null")
                 if (body == null) throw SerializationException("body must not be null")
                 UnknownRoomMessageEventContent(type, body, jsonObj, relatesTo, mentions, externalUrl)

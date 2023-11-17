@@ -106,7 +106,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         val replyTo: RelatesTo.ReplyTo? =
             jsonObject[RelationType.Reply.name]?.let { decoder.json.decodeFromJsonElement(it) }
         val relationType: RelationType? =
-            jsonObject["rel_type"]?.jsonPrimitive?.let { decoder.json.decodeFromJsonElement(it) }
+            (jsonObject["rel_type"] as? JsonPrimitive)?.let { decoder.json.decodeFromJsonElement(it) }
                 ?: replyTo?.let { RelationType.Reply }
         return try {
             when (relationType) {
@@ -118,7 +118,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
                 else -> {
                     RelatesTo.Unknown(
                         jsonObject,
-                        jsonObject["event_id"]?.jsonPrimitive?.content.let { EventId(it ?: "") },
+                        (jsonObject["event_id"] as? JsonPrimitive)?.content.let { EventId(it ?: "") },
                         relationType?.name.let { RelationType.Unknown(it ?: "") },
                         replyTo,
                     )
@@ -127,7 +127,7 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         } catch (e: Exception) {
             RelatesTo.Unknown(
                 jsonObject,
-                jsonObject["event_id"]?.jsonPrimitive?.content.let { EventId(it ?: "") },
+                EventId((jsonObject["event_id"] as? JsonPrimitive)?.content ?: ""),
                 relationType?.name.let { RelationType.Unknown(it ?: "") },
                 replyTo,
             )

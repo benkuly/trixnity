@@ -8,6 +8,7 @@ fun createEventSerializersModule(
     mappings: EventContentSerializerMappings,
 ): SerializersModule {
     val contextualMessageEventContentSerializer = ContextualMessageEventContentSerializer(mappings.message)
+    val contextualStateEventContentSerializer = ContextualStateEventContentSerializer(mappings.state)
     val messageEventSerializer = MessageEventSerializer(mappings.message)
     val stateEventSerializer = StateEventSerializer(mappings.state)
     val roomEventSerializer = RoomEventSerializer(messageEventSerializer, stateEventSerializer)
@@ -27,6 +28,7 @@ fun createEventSerializersModule(
     val eventTypeSerializer = EventTypeSerializer(mappings)
     return SerializersModule {
         contextual(contextualMessageEventContentSerializer)
+        contextual(contextualStateEventContentSerializer)
         contextual(roomEventSerializer)
         contextual(messageEventSerializer)
         contextual(stateEventSerializer)

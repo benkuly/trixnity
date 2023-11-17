@@ -35,9 +35,9 @@ object KeysSerializer : KSerializer<Keys> {
                     KeyAlgorithm.Ed25519 -> Key.Ed25519Key(keyId, it.value.jsonPrimitive.content)
                     KeyAlgorithm.Curve25519 -> Key.Curve25519Key(keyId, it.value.jsonPrimitive.content)
                     KeyAlgorithm.SignedCurve25519 -> {
-                        val value = it.value.jsonObject["key"]?.jsonPrimitive?.content
+                        val value = (it.value.jsonObject["key"] as? JsonPrimitive)?.content
                         val signatures = it.value.jsonObject["signatures"]
-                        val fallback = it.value.jsonObject["fallback"]?.jsonPrimitive?.booleanOrNull
+                        val fallback = (it.value.jsonObject["fallback"] as? JsonPrimitive)?.booleanOrNull
                         requireNotNull(value)
                         requireNotNull(signatures)
                         Key.SignedCurve25519Key(keyId, value, decoder.json.decodeFromJsonElement(signatures), fallback)
