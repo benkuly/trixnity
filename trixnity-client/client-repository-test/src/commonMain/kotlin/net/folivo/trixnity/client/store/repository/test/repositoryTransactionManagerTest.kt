@@ -130,13 +130,17 @@ fun ShouldSpec.repositoryTransactionManagerTest(
 
     val rollbackTestName = "repositoryTransactionManagerTest: rollback on exception"
     suspend fun rollbackTest() {
+        val thrownException = CancellationException("dino")
+        var catchedException: Exception? = null
         try {
             rtm.writeTransaction {
                 testWrite(0)
-                throw CancellationException("dino")
+                throw thrownException
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            catchedException = e
         }
+        catchedException shouldBe thrownException
         rtm.readTransaction {
             testRead(0)
         } shouldBe null
