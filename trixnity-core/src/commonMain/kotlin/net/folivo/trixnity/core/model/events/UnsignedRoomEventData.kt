@@ -21,11 +21,11 @@ sealed interface UnsignedRoomEventData {
     ) : UnsignedRoomEventData
 
     @Serializable
-    data class UnsignedStateEventData<C : StateEventContent>(
+    data class UnsignedStateEventData(
         @SerialName("age") override val age: Long? = null,
         @SerialName("redacted_because") override val redactedBecause: @Contextual MessageEvent<*>? = null,
         @SerialName("transaction_id") override val transactionId: String? = null,
-        @SerialName("prev_content") val previousContent: C? = null,
+        @SerialName("prev_content") val previousContent: @Contextual StateEventContent? = null,
         @SerialName("m.relations") override val relations: Relations? = null,
     ) : UnsignedRoomEventData
 }

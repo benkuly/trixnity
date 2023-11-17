@@ -33,7 +33,7 @@ class PersistentMessageDataUnitSerializer(
                     override fun transformDeserialize(element: JsonElement): JsonElement {
                         val jsonObject = element.jsonObject
                         val redacts = jsonObject["redacts"]
-                        val content = jsonObject["content"]?.jsonObject
+                        val content = jsonObject["content"] as? JsonObject
                         return if (redacts != null && content != null)
                             JsonObject(buildMap {
                                 putAll(jsonObject)
@@ -58,7 +58,7 @@ class PersistentMessageDataUnitSerializer(
                 object : JsonTransformingSerializer<PersistentMessageDataUnitV1<MessageEventContent>>(baseSerializer) {
                     override fun transformSerialize(element: JsonElement): JsonElement {
                         val jsonObject = element.jsonObject
-                        val redacts = jsonObject["content"]?.jsonObject?.get("redacts")
+                        val redacts = (jsonObject["content"] as? JsonObject)?.get("redacts")
                         return if (redacts != null)
                             JsonObject(buildMap {
                                 putAll(jsonObject)
@@ -81,7 +81,7 @@ class PersistentMessageDataUnitSerializer(
                     override fun transformDeserialize(element: JsonElement): JsonElement {
                         val jsonObject = element.jsonObject
                         val redacts = jsonObject["redacts"]
-                        val content = jsonObject["content"]?.jsonObject
+                        val content = jsonObject["content"] as? JsonObject
                         return if (redacts != null && content != null)
                             JsonObject(buildMap {
                                 putAll(jsonObject)
@@ -106,7 +106,7 @@ class PersistentMessageDataUnitSerializer(
                 object : JsonTransformingSerializer<PersistentMessageDataUnitV3<MessageEventContent>>(baseSerializer) {
                     override fun transformSerialize(element: JsonElement): JsonElement {
                         val jsonObject = element.jsonObject
-                        val redacts = jsonObject["content"]?.jsonObject?.get("redacts")
+                        val redacts = (jsonObject["content"] as? JsonObject)?.get("redacts")
                         return if (redacts != null)
                             JsonObject(buildMap {
                                 putAll(jsonObject)
@@ -124,8 +124,8 @@ class PersistentMessageDataUnitSerializer(
     override fun deserialize(decoder: Decoder): PersistentMessageDataUnit<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val roomId = jsonObj["room_id"]?.jsonPrimitive?.content
+        val type = (jsonObj["type"] as? JsonPrimitive)?.content ?: throw SerializationException("type must not be null")
+        val roomId = (jsonObj["room_id"] as? JsonPrimitive)?.content
         requireNotNull(roomId)
         return when (val roomVersion = getRoomVersion(RoomId(roomId))) {
             "1", "2" -> decoder.json.decodeFromJsonElement(mappingV1[type], jsonObj)
