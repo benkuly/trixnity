@@ -168,6 +168,14 @@ class RoomStateStoreTest : ShouldSpec({
                 )
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
             }
+            should("return matching content") {
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    "@user:server",
+                    event1
+                )
+                cut.getContentByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1.content
+            }
             should("prefer cache") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
