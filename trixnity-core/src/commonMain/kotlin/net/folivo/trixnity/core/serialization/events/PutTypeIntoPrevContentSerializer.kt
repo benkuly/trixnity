@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonTransformingSerializer
 import kotlinx.serialization.json.jsonObject
 
+// needed for ContextualStateEventContentSerializer to work
 internal class PutTypeIntoPrevContentSerializer<T : Any>(baseSerializer: KSerializer<T>) :
     JsonTransformingSerializer<T>(baseSerializer) {
     override fun transformDeserialize(element: JsonElement): JsonElement {
