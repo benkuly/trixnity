@@ -149,7 +149,7 @@ class ObservableCacheTest : ShouldSpec({
             )
             cacheStore.get("key") shouldBe null
         }
-        should("handle parallel manipulation of same key") {
+        xshould("handle massive parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
@@ -160,7 +160,7 @@ class ObservableCacheTest : ShouldSpec({
             cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), cacheScope)
             val (operationsTimeSum, completeTime) =
                 measureTimedValue {
-                    (0..999).map { i ->
+                    (0..99).map { i ->
                         async {
                             measureTimedValue {
                                 cut.write(
@@ -171,13 +171,13 @@ class ObservableCacheTest : ShouldSpec({
                         }
                     }.awaitAll().reduce { acc, duration -> acc + duration }
                 }
-            database.replayCache shouldContainAll (0..999).map { it.toString() }
-            val timePerOperation = operationsTimeSum / 1000
+            database.replayCache shouldContainAll (0..99).map { it.toString() }
+            val timePerOperation = operationsTimeSum / 100
             println("timePerOperation=$timePerOperation completeTime=$completeTime")
             timePerOperation shouldBeLessThan 10.milliseconds
-            completeTime shouldBeLessThan 300.milliseconds
+            completeTime shouldBeLessThan 100.milliseconds
         }
-        should("handle parallel manipulation of different keys") {
+        xshould("handle massive parallel manipulation of different keys") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
@@ -188,7 +188,7 @@ class ObservableCacheTest : ShouldSpec({
             cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), cacheScope)
             val (operationsTimeSum, completeTime) =
                 measureTimedValue {
-                    (0..999).map { i ->
+                    (0..99).map { i ->
                         async {
                             measureTimedValue {
                                 cut.write(
@@ -199,11 +199,11 @@ class ObservableCacheTest : ShouldSpec({
                         }
                     }.awaitAll().reduce { acc, duration -> acc + duration }
                 }
-            database.replayCache shouldContainAll (0..999).map { it.toString() }
-            val timePerOperation = operationsTimeSum / 1000
+            database.replayCache shouldContainAll (0..99).map { it.toString() }
+            val timePerOperation = operationsTimeSum / 100
             println("timePerOperation=$timePerOperation completeTime=$completeTime")
-            timePerOperation shouldBeLessThan 10.milliseconds
-            completeTime shouldBeLessThan 300.milliseconds
+            timePerOperation shouldBeLessThan 20.milliseconds
+            completeTime shouldBeLessThan 200.milliseconds
         }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {

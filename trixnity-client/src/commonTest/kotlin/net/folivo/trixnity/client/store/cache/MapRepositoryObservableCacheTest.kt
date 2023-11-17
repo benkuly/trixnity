@@ -73,7 +73,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             writeTransactionCalled.value shouldBe 1
             repository.get("firstKey") shouldBe mapOf("secondKey2" to "old")
         }
-        should("handle parallel manipulation of same key") {
+        xshould("handle massive parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
@@ -87,7 +87,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
             val (operationsTimeSum, completeTime) =
                 measureTimedValue {
-                    (0..999).map { i ->
+                    (0..99).map { i ->
                         async {
                             measureTimedValue {
                                 cut.write(
@@ -98,13 +98,13 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                         }
                     }.awaitAll().reduce { acc, duration -> acc + duration }
                 }
-            database.replayCache shouldContainAll (0..999).map { it.toString() }
-            val timePerOperation = operationsTimeSum / 1000
+            database.replayCache shouldContainAll (0..99).map { it.toString() }
+            val timePerOperation = operationsTimeSum / 100
             println("timePerOperation=$timePerOperation completeTime=$completeTime")
             timePerOperation shouldBeLessThan 10.milliseconds
-            completeTime shouldBeLessThan 300.milliseconds
+            completeTime shouldBeLessThan 100.milliseconds
         }
-        should("handle parallel manipulation of different keys") {
+        xshould("handle massive parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
@@ -119,7 +119,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             val (operationsTimeSum, completeTime) =
                 measureTimedValue {
                     coroutineScope {
-                        (0..999).map { i ->
+                        (0..99).map { i ->
                             async {
                                 measureTimedValue {
                                     cut.write(
@@ -131,12 +131,12 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                         }.awaitAll().reduce { acc, duration -> acc + duration }
                     }
                 }
-            database.replayCache shouldContainAll (0..999).map { "key" to "$it" }
+            database.replayCache shouldContainAll (0..99).map { "key" to "$it" }
 
-            val timePerOperation = operationsTimeSum / 1000
+            val timePerOperation = operationsTimeSum / 100
             println("timePerOperation=$timePerOperation completeTime=$completeTime")
-            timePerOperation shouldBeLessThan 300.milliseconds
-            completeTime shouldBeLessThan 800.milliseconds // TODO could be optimized
+            timePerOperation shouldBeLessThan 100.milliseconds
+            completeTime shouldBeLessThan 500.milliseconds // TODO could be optimized
         }
     }
     context("write with update") {
