@@ -186,10 +186,10 @@ internal open class ObservableCacheBase<K, V>(
             if (persist != null && (oldValue != newValue || get == null)) persist(newValue)
             CacheValue.Value(newValue)
         }.valueOrNull()
-        if (removeFromCacheOnNull && newValue == null) {
+        if (removeFromCacheOnNull && updater != null && newValue == null) {
             values.remove(key, true)
         }
-        return cacheEntry.value.filterIsInstance<CacheValue.Value<V>>().map { it.value }
+        return cacheEntry.value.filterIsInstance<CacheValue.Value<V?>>().map { it.value }
     }
 }
 
