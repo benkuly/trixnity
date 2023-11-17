@@ -22,7 +22,7 @@ class MessageEventSerializer(
                     override fun transformDeserialize(element: JsonElement): JsonElement {
                         val jsonObject = element.jsonObject
                         val redacts = jsonObject["redacts"]
-                        val content = jsonObject["content"]?.jsonObject
+                        val content = jsonObject["content"] as? JsonObject
                         return if (redacts != null && content != null)
                             JsonObject(buildMap {
                                 putAll(jsonObject)
@@ -47,7 +47,7 @@ class MessageEventSerializer(
                 object : JsonTransformingSerializer<MessageEvent<MessageEventContent>>(baseSerializer) {
                     override fun transformSerialize(element: JsonElement): JsonElement {
                         val jsonObject = element.jsonObject
-                        val redacts = jsonObject["content"]?.jsonObject?.get("redacts")
+                        val redacts = (jsonObject["content"] as? JsonObject)?.get("redacts")
                         return if (redacts != null)
                             JsonObject(buildMap {
                                 putAll(jsonObject)

@@ -53,7 +53,8 @@ class KeyMemberEventHandler(
                     }
 
                     Membership.JOIN, Membership.INVITE -> {
-                        if (event.unsigned?.previousContent?.membership != event.content.membership
+                        // TODO we should not rely on unsigned
+                        if ((event.unsigned?.previousContent as? MemberEventContent)?.membership != event.content.membership
                             && keyStore.getDeviceKeys(userId).first() == null
                         ) updateOutdatedKeys.add(userId)
                     }

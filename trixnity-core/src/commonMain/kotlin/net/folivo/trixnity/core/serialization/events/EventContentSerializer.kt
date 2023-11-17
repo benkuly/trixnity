@@ -113,7 +113,7 @@ internal class ContextualMessageEventContentSerializer(
     override fun deserialize(decoder: Decoder): MessageEventContent {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        val type = jsonObject["type"]?.jsonPrimitive?.content // this is a fallback (e.g. for RelatesTo)
+        val type = (jsonObject["type"] as? JsonPrimitive)?.content // this is a fallback (e.g. for RelatesTo)
             ?: throw SerializationException("type must not be null for deserializing MessageEventContent")
 
         val serializer = mappings.contentSerializer(type)
@@ -121,6 +121,29 @@ internal class ContextualMessageEventContentSerializer(
     }
 
     override fun serialize(encoder: Encoder, value: MessageEventContent) {
+        require(encoder is JsonEncoder)
+        val serializer = mappings.contentSerializer(value)
+        encoder.encodeJsonElement(canonicalJson(encoder.json.encodeToJsonElement(serializer, value)))
+    }
+}
+
+internal class ContextualStateEventContentSerializer(
+    private val mappings: Set<StateEventContentSerializerMapping>,
+) : KSerializer<StateEventContent> {
+    override val descriptor = buildClassSerialDescriptor("ContextualStateEventContentSerializer")
+
+    override fun deserialize(decoder: Decoder): StateEventContent {
+        require(decoder is JsonDecoder)
+        val jsonObject = decoder.decodeJsonElement().jsonObject
+        val type = (jsonObject["type"] as? JsonPrimitive)?.content // this is a fallback (e.g. for unsigned)
+            ?: throw SerializationException("type must not be null for deserializing StateEventContent")
+
+        val serializer = mappings.contentSerializer(type)
+
+        return decoder.json.decodeFromJsonElement(serializer, jsonObject)
+    }
+
+    override fun serialize(encoder: Encoder, value: StateEventContent) {
         require(encoder is JsonEncoder)
         val serializer = mappings.contentSerializer(value)
         encoder.encodeJsonElement(canonicalJson(encoder.json.encodeToJsonElement(serializer, value)))

@@ -9,8 +9,12 @@ class StateEventSerializer(
     "StateEvent",
     RoomEventContentToEventSerializerMappings(
         baseMapping = stateEventContentSerializers,
-        eventDeserializer = { StateEvent.serializer(it.serializer) },
-        unknownEventSerializer = { StateEvent.serializer(UnknownEventContentSerializer(it)) },
-        redactedEventSerializer = { StateEvent.serializer(RedactedEventContentSerializer(it)) },
+        eventDeserializer = { PutTypeIntoPrevContentSerializer(StateEvent.serializer(it.serializer)) },
+        unknownEventSerializer = {
+            PutTypeIntoPrevContentSerializer(StateEvent.serializer(UnknownEventContentSerializer(it)))
+        },
+        redactedEventSerializer = {
+            PutTypeIntoPrevContentSerializer(StateEvent.serializer(RedactedEventContentSerializer(it)))
+        },
     )
 )

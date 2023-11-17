@@ -9,8 +9,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
@@ -33,7 +33,7 @@ class RoomAccountDataEventSerializer(
     override fun deserialize(decoder: Decoder): RoomAccountDataEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
+        val type = (jsonObj["type"] as? JsonPrimitive)?.content ?: throw SerializationException("type must not be null")
         val mappingType = roomAccountDataEventContentSerializers.find { type.startsWith(it.type) }?.type
         val baseSerializer = mappings[mappingType ?: type]
         val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""

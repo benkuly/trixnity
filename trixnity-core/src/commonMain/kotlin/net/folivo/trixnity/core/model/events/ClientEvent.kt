@@ -40,7 +40,7 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
             @SerialName("sender") override val sender: UserId,
             @SerialName("room_id") override val roomId: RoomId,
             @SerialName("origin_server_ts") override val originTimestamp: Long,
-            @SerialName("unsigned") override val unsigned: UnsignedRoomEventData.UnsignedStateEventData<C>? = null,
+            @SerialName("unsigned") override val unsigned: UnsignedRoomEventData.UnsignedStateEventData? = null,
             @SerialName("state_key") override val stateKey: String,
         ) : RoomEvent<C>, StateBaseEvent<C>
     }
@@ -54,7 +54,7 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
         val sender: UserId
         val roomId: RoomId?
         val originTimestamp: Long?
-        val unsigned: UnsignedRoomEventData.UnsignedStateEventData<C>?
+        val unsigned: UnsignedRoomEventData.UnsignedStateEventData?
         val stateKey: String
     }
 
@@ -65,7 +65,7 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
         @SerialName("sender") override val sender: UserId,
         @SerialName("room_id") override val roomId: RoomId? = null,
         @SerialName("origin_server_ts") override val originTimestamp: Long? = null,
-        @SerialName("unsigned") override val unsigned: UnsignedRoomEventData.UnsignedStateEventData<C>? = null,
+        @SerialName("unsigned") override val unsigned: UnsignedRoomEventData.UnsignedStateEventData? = null,
         @SerialName("state_key") override val stateKey: String,
     ) : ClientEvent<C>, StateBaseEvent<C>
 
