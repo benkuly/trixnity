@@ -214,6 +214,7 @@ private class RemoverJobExecutingIndex<K, V>(
                 }.collectLatest { (subscriptionCount, indexSubscriptionCount) ->
                     delay(expireDuration)
                     val stale = value.value.value.valueOrNull() == null
+                    log.trace { "$name: remover job check for key $key (subscriptionCount=$subscriptionCount, indexSubscriptionCount=$indexSubscriptionCount, stale=$stale)" }
                     // indexSubscriptionCount currently means, that a collection of entries is subscribed.
                     // Therefore, it's okay to remove cache entries. The index would just update its list.
                     if (subscriptionCount == 0 && (stale || indexSubscriptionCount == 0)) {

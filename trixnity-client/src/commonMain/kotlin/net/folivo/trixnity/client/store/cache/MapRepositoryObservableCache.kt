@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.cache
 
-import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
@@ -20,18 +19,16 @@ private class MapRepositoryObservableIndex<K1, K2>(
     private val loadFromStore: suspend (key: K1) -> Unit,
 ) : ObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
     private data class MapRepositoryObservableMapIndexValue<K2>(
-        val keys: ConcurrentObservableSet<K2>,
+        val keys: ConcurrentObservableSet<K2> = ConcurrentObservableSet(),
         val fullyLoadedFromStore: Boolean = false,
-        val subscribers: MutableStateFlow<Set<String>> = MutableStateFlow(setOf()),
+        val subscribers: MutableStateFlow<Int> = MutableStateFlow(0),
     )
 
     private val values = ConcurrentMap<K1, MapRepositoryObservableMapIndexValue<K2>>()
 
     override suspend fun onPut(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
-        values.update(key.firstKey) { mapping ->
-            mapping?.also { it.keys.add(key.secondKey) }
-                ?: MapRepositoryObservableMapIndexValue(ConcurrentObservableSet(setOf(key.secondKey)))
-        }
+        values.update(key.firstKey) { it ?: MapRepositoryObservableMapIndexValue() }
+            ?.keys?.add(key.secondKey)
     }
 
     override suspend fun onRemove(key: MapRepositoryCoroutinesCacheKey<K1, K2>, stale: Boolean) {
@@ -40,7 +37,7 @@ private class MapRepositoryObservableIndex<K1, K2>(
                 mapping.keys.remove(key.secondKey)
                 when {
                     mapping.keys.size() == 0 -> null
-                    mapping.fullyLoadedFromStore -> mapping.copy(fullyLoadedFromStore = stale)
+                    mapping.fullyLoadedFromStore -> mapping.copy(fullyLoadedFromStore = mapping.fullyLoadedFromStore && stale)
                     else -> mapping
                 }
             } else mapping
@@ -54,10 +51,10 @@ private class MapRepositoryObservableIndex<K1, K2>(
     override suspend fun getSubscriptionCount(key: MapRepositoryCoroutinesCacheKey<K1, K2>): Flow<Int> =
         flow {
             val value = values.update(key.firstKey) {
-                it ?: MapRepositoryObservableMapIndexValue(ConcurrentObservableSet())
+                it ?: MapRepositoryObservableMapIndexValue()
             }
             checkNotNull(value)
-            emitAll(value.subscribers.map { it.size })
+            emitAll(value.subscribers)
         }
 
     fun getMapping(key: K1): Flow<Set<K2>> =
@@ -65,17 +62,14 @@ private class MapRepositoryObservableIndex<K1, K2>(
             val fullyLoadedFromStore = values.get(key)?.fullyLoadedFromStore
             if (fullyLoadedFromStore != true) loadFromStore(key)
             val value = values.update(key) {
-                it?.copy(fullyLoadedFromStore = true) ?: MapRepositoryObservableMapIndexValue(
-                    ConcurrentObservableSet(),
-                    fullyLoadedFromStore = true
-                )
+                it?.copy(fullyLoadedFromStore = true)
+                    ?: MapRepositoryObservableMapIndexValue(fullyLoadedFromStore = true)
             }
             checkNotNull(value)
-            val subscriberId = uuid4().toString()
             emitAll(
                 value.keys.values
-                    .onStart { value.subscribers.update { it + subscriberId } }
-                    .onCompletion { value.subscribers.update { it - subscriberId } }
+                    .onStart { value.subscribers.update { it + 1 } }
+                    .onCompletion { value.subscribers.update { it - 1 } }
             )
         }
 }
