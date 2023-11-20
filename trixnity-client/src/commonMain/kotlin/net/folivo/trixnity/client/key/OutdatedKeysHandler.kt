@@ -216,7 +216,7 @@ class OutdatedKeysHandler(
             val usersMasterKey = oldKeys?.find { it.value.signed.usage.contains(CrossSigningKeysUsage.MasterKey) }
             if (usersMasterKey != null) {
                 val notFullyCrossSigned =
-                    newDevices.any { it.value.trustLevel == KeySignatureTrustLevel.NotCrossSigned() }
+                    newDevices.any { it.value.trustLevel == KeySignatureTrustLevel.NotCrossSigned }
                 val oldMasterKeyTrustLevel = usersMasterKey.trustLevel
                 val newMasterKeyTrustLevel = when (oldMasterKeyTrustLevel) {
                     is KeySignatureTrustLevel.CrossSigned -> {
