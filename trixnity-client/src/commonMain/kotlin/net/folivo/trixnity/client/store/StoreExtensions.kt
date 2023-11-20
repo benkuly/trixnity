@@ -61,7 +61,7 @@ suspend fun RoomStateStore.membersCount(
 suspend fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
     getAll().first().values
         .map { it.first() }
-        .filter { it?.encryptionAlgorithm != null && it.membership == JOIN }
+        .filter { it?.encrypted == true && it.membership == JOIN }
         .mapNotNull { it?.roomId }
 
 fun RoomTimelineStore.getNext(

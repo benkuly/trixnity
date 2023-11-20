@@ -79,6 +79,7 @@ class DirectRoomEventHandler(
         }
     }
 
+    // TODO merge into RoomListHandler (performance reasons)
     internal suspend fun setDirectRoomProperties(directEvent: ClientEvent<DirectEventContent>) {
         val allDirectRooms = directEvent.content.mappings.entries
             .flatMap { entry -> entry.value?.map { it to entry.key }.orEmpty() }

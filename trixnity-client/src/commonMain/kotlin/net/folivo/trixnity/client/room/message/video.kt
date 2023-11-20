@@ -22,7 +22,7 @@ suspend fun MessageBuilder.video(
     val format: VideoInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
-    val isEncryptedRoom = roomService.getById(roomId).first()?.encryptionAlgorithm != null
+    val isEncryptedRoom = roomService.getById(roomId).first()?.encrypted == true
     if (isEncryptedRoom) {
         val (thumbnailFile, thumbnailInfo) = mediaService.prepareUploadEncryptedThumbnail(video, type)
             ?: Pair(null, null)

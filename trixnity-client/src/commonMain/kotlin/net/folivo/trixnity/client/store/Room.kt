@@ -7,7 +7,6 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 
 @Serializable
 data class Room(
@@ -20,10 +19,10 @@ data class Room(
     val lastRelevantEventId: EventId? = null,
     val lastRelevantEventTimestamp: Instant? = null,
     val unreadMessageCount: Long = 0,
-    val encryptionAlgorithm: EncryptionAlgorithm? = null,
+    val encrypted: Boolean = false,
     val membership: Membership = Membership.JOIN,
     val membersLoaded: Boolean = false,
-    val previousRoomId: RoomId? = null,
+    val previousRoomId: RoomId? = createEventContent?.predecessor?.roomId,
     val nextRoomId: RoomId? = null,
 )
 

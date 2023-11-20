@@ -7,7 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.getInMemoryAccountStore
+import net.folivo.trixnity.client.getInMemoryKeyStore
+import net.folivo.trixnity.client.getInMemoryOlmStore
+import net.folivo.trixnity.client.getInMemoryRoomStateStore
 import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
@@ -36,7 +39,6 @@ private val body: ShouldSpec.() -> Unit = {
             getInMemoryAccountStore(scope).apply { updateAccount { it.copy(olmPickleKey = "") } },
             getInMemoryOlmStore(scope),
             keyStore,
-            getInMemoryRoomStore(scope),
             getInMemoryRoomStateStore(scope),
             UserServiceMock(),
         )

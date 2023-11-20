@@ -20,7 +20,7 @@ suspend fun MessageBuilder.audio(
     val format: AudioInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
-    val isEncryptedRoom = roomService.getById(roomId).first()?.encryptionAlgorithm != null
+    val isEncryptedRoom = roomService.getById(roomId).first()?.encrypted == true
     if (isEncryptedRoom) {
         encryptedFile = mediaService.prepareUploadEncryptedMedia(audio)
         format = AudioInfo(

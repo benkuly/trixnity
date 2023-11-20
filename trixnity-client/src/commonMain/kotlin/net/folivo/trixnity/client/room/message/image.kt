@@ -21,7 +21,7 @@ suspend fun MessageBuilder.image(
     val format: ImageInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
-    val isEncryptedRoom = roomService.getById(roomId).first()?.encryptionAlgorithm != null
+    val isEncryptedRoom = roomService.getById(roomId).first()?.encrypted == true
     if (isEncryptedRoom) {
         val (thumbnailFile, thumbnailInfo) = mediaService.prepareUploadEncryptedThumbnail(image, type)
             ?: Pair(null, null)

@@ -49,7 +49,7 @@ class TimelineEventHandlerImpl(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeEvent(subscriber = ::redactTimelineEvent).unsubscribeOnCompletion(scope)
-        api.sync.subscribe(Priority.STORE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.STORE_TIMELINE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun handleSyncResponse(syncEvents: SyncEvents) = tm.writeTransaction {
