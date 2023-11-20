@@ -7,16 +7,14 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
-import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.events.roomIdOrNull
-import net.folivo.trixnity.core.model.events.senderOrNull
-import net.folivo.trixnity.core.model.events.stateKeyOrNull
+import net.folivo.trixnity.core.model.events.m.room.Membership.BAN
+import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 
 private val log = KotlinLogging.logger {}
 
@@ -29,19 +27,19 @@ class DirectRoomEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeContent(subscriber = ::setDirectRooms).unsubscribeOnCompletion(scope)
-        api.sync.subscribeContent(subscriber = ::setDirectEventContent).unsubscribeOnCompletion(scope)
-        api.sync.subscribe(Priority.AFTER_DEFAULT, ::handleDirectEventContent).unsubscribeOnCompletion(scope)
-        api.sync.subscribe(Priority.AFTER_DEFAULT, ::setDirectRoomsAfterSync).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList(subscriber = ::setNewDirectEventFromMemberEvent).unsubscribeOnCompletion(scope)
+        api.sync.subscribeContent(subscriber = ::setDirectRoomProperties).unsubscribeOnCompletion(scope)
     }
 
-    private val setDirectRoomsEventContent = MutableStateFlow<DirectEventContent?>(null)
+    internal suspend fun setNewDirectEventFromMemberEvent(events: List<StateEvent<MemberEventContent>>) {
+        val initialDirectEventContent = globalAccountDataStore.get<DirectEventContent>().first()?.content
+        val directEventContent = MutableStateFlow(initialDirectEventContent)
 
-    internal suspend fun setDirectRooms(event: ClientEvent<MemberEventContent>) {
-        val roomId = event.roomIdOrNull
-        val stateKey = event.stateKeyOrNull
-        val sender = event.senderOrNull
-        if (roomId != null && stateKey != null && sender != null) {
+        events.forEach { event ->
+            val currentDirectRooms = directEventContent.value
+            val roomId = event.roomId
+            val stateKey = event.stateKey
+            val sender = event.sender
             log.trace { "set direct room $roomId for $stateKey" }
             val userWithMembershipChange = UserId(stateKey)
             val directUser =
@@ -54,87 +52,54 @@ class DirectRoomEventHandler(
 
             if (directUser != userInfo.userId && event.content.isDirect == true) {
                 log.debug { "mark room $roomId as direct room with $directUser" }
-                val currentDirectRooms = setDirectRoomsEventContent.value
-                    ?: globalAccountDataStore.get<DirectEventContent>().first()?.content
                 val existingDirectRoomsWithUser = currentDirectRooms?.mappings?.get(directUser) ?: setOf()
-                val newDirectRooms =
+                directEventContent.value =
                     currentDirectRooms?.copy(currentDirectRooms.mappings + (directUser to (existingDirectRoomsWithUser + roomId)))
                         ?: DirectEventContent(mapOf(directUser to setOf(roomId)))
-                setDirectRoomsEventContent.value = newDirectRooms
             }
-            if (event.content.membership == Membership.LEAVE || event.content.membership == Membership.BAN) {
+            if ((event.content.membership == LEAVE || event.content.membership == BAN) && currentDirectRooms != null) {
                 if (directUser != userInfo.userId) {
                     log.debug { "unmark room $roomId as direct room with $directUser" }
-                    val currentDirectRooms = setDirectRoomsEventContent.value
-                        ?: globalAccountDataStore.get<DirectEventContent>().first()?.content
-                    if (currentDirectRooms != null) {
-                        val newDirectRooms = DirectEventContent(
-                            (currentDirectRooms.mappings + (directUser to (currentDirectRooms.mappings[directUser].orEmpty() - roomId)))
-                                .filterValues { it.isNullOrEmpty().not() }
-                        )
-                        setDirectRoomsEventContent.value = newDirectRooms
-                    }
+                    directEventContent.value = DirectEventContent(
+                        (currentDirectRooms.mappings + (directUser to (currentDirectRooms.mappings[directUser].orEmpty() - roomId)))
+                            .filterValues { it.isNullOrEmpty().not() }
+                    )
                 } else {
                     log.debug { "remove room $roomId from direct rooms, because we left it" }
-                    val currentDirectRooms = setDirectRoomsEventContent.value
-                        ?: globalAccountDataStore.get<DirectEventContent>().first()?.content
-                    if (currentDirectRooms != null) {
-                        val newDirectRooms = DirectEventContent(
-                            currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
-                                .filterValues { it.isNullOrEmpty().not() }
-                        )
-                        setDirectRoomsEventContent.value = newDirectRooms
-                    }
+                    directEventContent.value = DirectEventContent(
+                        currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
+                            .filterValues { it.isNullOrEmpty().not() }
+                    )
                 }
             }
         }
-    }
-
-    internal suspend fun setDirectRoomsAfterSync() {
-        val newDirectRooms = setDirectRoomsEventContent.value
-        if (newDirectRooms != null && newDirectRooms != globalAccountDataStore.get<DirectEventContent>()
-                .first()?.content
-        )
-            api.users.setAccountData(newDirectRooms, userInfo.userId)
-        setDirectRoomsEventContent.value = null
-    }
-
-    // because DirectEventContent could be set before any rooms are in store
-    private val directEventContent = MutableStateFlow<DirectEventContent?>(null)
-
-    internal fun setDirectEventContent(directEvent: ClientEvent<DirectEventContent>) {
-        directEventContent.value = directEvent.content
-    }
-
-    internal suspend fun handleDirectEventContent() {
-        val content = directEventContent.value
-        if (content != null) {
-            setRoomIsDirect(content)
-            setAvatarUrlForDirectRooms(content)
-            directEventContent.value = null
+        val finalNewDirectRooms = directEventContent.value
+        if (finalNewDirectRooms != null && finalNewDirectRooms != initialDirectEventContent) {
+            api.user.setAccountData(finalNewDirectRooms, userInfo.userId).getOrThrow()
         }
     }
 
-    internal suspend fun setRoomIsDirect(directEventContent: DirectEventContent) {
-        val allDirectRooms = directEventContent.mappings.entries.flatMap { (_, rooms) ->
-            rooms ?: emptySet()
-        }.toSet()
-        allDirectRooms.forEach { room -> roomStore.update(room) { oldRoom -> oldRoom?.copy(isDirect = true) } }
+    // TODO merge into RoomListHandler (performance reasons)
+    internal suspend fun setDirectRoomProperties(directEvent: ClientEvent<DirectEventContent>) {
+        val allDirectRooms = directEvent.content.mappings.entries
+            .flatMap { entry -> entry.value?.map { it to entry.key }.orEmpty() }
+            .groupBy { it.first }
+            .mapValues { entry -> entry.value.map { it.second } }
 
-        val allRooms = roomStore.getAll().first().keys
-        allRooms.subtract(allDirectRooms)
-            .forEach { room -> roomStore.update(room) { oldRoom -> oldRoom?.copy(isDirect = false) } }
-    }
-
-    internal suspend fun setAvatarUrlForDirectRooms(directEventContent: DirectEventContent) {
-        directEventContent.mappings.entries.forEach { (userId, rooms) ->
-            rooms?.forEach { room ->
-                if (roomStateStore.getByStateKey<AvatarEventContent>(room).first()?.content?.url.isNullOrEmpty()) {
-                    val avatarUrl =
-                        roomStateStore.getByStateKey<MemberEventContent>(room, stateKey = userId.full).first()
-                            ?.content?.avatarUrl
-                    roomStore.update(room) { oldRoom -> oldRoom?.copy(avatarUrl = avatarUrl?.ifEmpty { null }) }
-                }
+        roomStore.getAll().first().keys.map { room ->
+            val directUser = allDirectRooms[room]?.first()
+            val avatarUrl =
+                if (directUser != null && roomStateStore.getByStateKey<AvatarEventContent>(room)
+                        .first()?.content?.url.isNullOrEmpty()
+                )
+                    roomStateStore.getByStateKey<MemberEventContent>(room, stateKey = directUser.full).first()
+                        ?.content?.avatarUrl
+                else null
+            roomStore.update(room) { oldRoom ->
+                oldRoom?.copy(
+                    avatarUrl = avatarUrl?.ifEmpty { null } ?: oldRoom.avatarUrl,
+                    isDirect = directUser != null
+                )
             }
         }
     }

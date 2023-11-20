@@ -43,11 +43,14 @@ subprojects {
                     }
                 }
                 maven {
+                    url = uri("${System.getenv("CI_API_V4_URL")}/projects/26519650/packages/maven")
                     name = "Snapshot"
-                    url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-                    credentials {
-                        username = System.getenv("OSSRH_USERNAME")
-                        password = System.getenv("OSSRH_PASSWORD")
+                    credentials(HttpHeaderCredentials::class) {
+                        name = "Job-Token"
+                        value = System.getenv("CI_JOB_TOKEN")
+                    }
+                    authentication {
+                        create("header", HttpHeaderAuthentication::class)
                     }
                 }
             }
@@ -77,13 +80,22 @@ subprojects {
             }
         }
         signing {
-            isRequired = isCI
+            isRequired = isRelease
             useInMemoryPgpKeys(
                 System.getenv("OSSRH_PGP_KEY_ID"),
                 System.getenv("OSSRH_PGP_KEY"),
                 System.getenv("OSSRH_PGP_PASSWORD")
             )
             sign(publishing.publications)
+        }
+        // Workaround for gradle issue:
+        // https://github.com/gradle/gradle/issues/26132
+        // https://youtrack.jetbrains.com/issue/KT-61313/Kotlin-MPP-Gradle-Signing-plugin-Task-linkDebugTestLinuxX64-uses-this-output-of-task-signLinuxX64Publication
+        // https://github.com/gradle/gradle/issues/26091
+        // https://youtrack.jetbrains.com/issue/KT-46466/Kotlin-MPP-publishing-Gradle-7-disables-optimizations-because-of-task-dependencies
+        val signingTasks = tasks.withType<Sign>()
+        tasks.withType<AbstractPublishToMaven>().configureEach {
+            mustRunAfter(signingTasks)
         }
     }
 }
@@ -113,4 +125,11 @@ val extractTrixnityBinaries by tasks.registering(Copy::class) {
 
 val trixnityBinaries by tasks.registering {
     dependsOn(extractTrixnityBinaries)
+}
+
+val dokkaHtmlToWebsite by tasks.registering(Copy::class) {
+    from(layout.buildDirectory.dir("dokka/htmlMultiModule"))
+    into(layout.projectDirectory.dir("website/static/api"))
+    outputs.cacheIf { true }
+    dependsOn(":dokkaHtmlMultiModule")
 }

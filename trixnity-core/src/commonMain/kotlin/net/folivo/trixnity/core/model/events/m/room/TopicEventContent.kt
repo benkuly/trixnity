@@ -10,5 +10,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 @Serializable
 data class TopicEventContent(
     @SerialName("topic")
-    val topic: String
+    val topic: String,
+    @SerialName("external_url")
+    override val externalUrl: String? = null
 ) : StateEventContent

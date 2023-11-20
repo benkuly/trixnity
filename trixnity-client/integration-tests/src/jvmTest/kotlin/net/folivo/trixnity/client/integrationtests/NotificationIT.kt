@@ -68,7 +68,7 @@ class NotificationIT {
                 .scan(listOf<NotificationService.Notification>()) { old, new -> old + new }
                 .stateIn(scope)
 
-            val room = startedClient1.client.api.rooms.createRoom(
+            val room = startedClient1.client.api.room.createRoom(
                 invite = setOf(startedClient2.client.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
@@ -80,7 +80,7 @@ class NotificationIT {
             }
 
             startedClient2.client.room.getById(room).first { it?.membership == INVITE }
-            startedClient2.client.api.rooms.joinRoom(room).getOrThrow()
+            startedClient2.client.api.room.joinRoom(room).getOrThrow()
 
             startedClient1.client.room.sendMessage(room) { text("Hello ${startedClient2.client.userId.full}!") }
             withClue("second notification") {

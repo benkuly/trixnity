@@ -37,6 +37,7 @@ fun createRealmRepositoriesModule(
             RealmRoomOutboxMessage::class,
             RealmRoomState::class,
             RealmRoomUser::class,
+            RealmRoomUserReceipts::class,
             RealmSecretKeyRequest::class,
             RealmSecrets::class,
             RealmTimelineEvent::class,
@@ -69,6 +70,7 @@ fun createRealmRepositoriesModule(
         singleOf(::RealmOutboundMegolmSessionRepository) { bind<OutboundMegolmSessionRepository>() }
         singleOf(::RealmRoomRepository) { bind<RoomRepository>() }
         singleOf(::RealmRoomUserRepository) { bind<RoomUserRepository>() }
+        singleOf(::RealmRoomUserReceiptsRepository) { bind<RoomUserReceiptsRepository>() }
         singleOf(::RealmRoomStateRepository) { bind<RoomStateRepository>() }
         singleOf(::RealmTimelineEventRepository) { bind<TimelineEventRepository>() }
         singleOf(::RealmTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }

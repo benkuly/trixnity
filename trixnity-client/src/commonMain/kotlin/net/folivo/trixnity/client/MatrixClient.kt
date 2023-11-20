@@ -135,7 +135,7 @@ suspend fun MatrixClient.Companion.login(
                 initialDeviceDisplayName = initialDeviceDisplayName
             ).flatMap { login ->
                 api.accessToken.value = login.accessToken
-                api.users.getProfile(login.userId).map { profile ->
+                api.user.getProfile(login.userId).map { profile ->
                     LoginInfo(
                         userId = login.userId,
                         accessToken = login.accessToken,
@@ -206,7 +206,13 @@ suspend fun MatrixClient.Companion.loginWith(
     val handler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
     }
-    val coroutineScope = CoroutineScope(Dispatchers.Default + handler)
+
+    val coroutineScope =
+        CoroutineScope((Dispatchers.Default + handler).let {
+            val coroutineName = config.name?.let { name -> CoroutineName(name) }
+            if (coroutineName != null) it + coroutineName else it
+        }
+        )
     val koinApplication = koinApplication {
         modules(module {
             single { coroutineScope }
@@ -289,7 +295,7 @@ suspend fun MatrixClient.Companion.loginWith(
         eventHandlers = di.getAll(),
         coroutineScope = coroutineScope,
     )
-    api.keys.setKeys(deviceKeys = selfSignedDeviceKeys)
+    api.key.setKeys(deviceKeys = selfSignedDeviceKeys)
         .onFailure { matrixClient.deleteAll() }
         .getOrThrow()
     keyStore.updateOutdatedKeys { it + userId }
@@ -308,7 +314,11 @@ suspend fun MatrixClient.Companion.fromStore(
     val handler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
     }
-    val coroutineScope = CoroutineScope(Dispatchers.Default + handler)
+    val coroutineScope = CoroutineScope((Dispatchers.Default + handler).let {
+        val coroutineName = config.name?.let { name -> CoroutineName(name) }
+        if (coroutineName != null) it + coroutineName else it
+    }
+    )
     val koinApplication = koinApplication {
         modules(module {
             single { coroutineScope }
@@ -469,7 +479,7 @@ class MatrixClientImpl internal constructor(
                     flowOf(RUN),
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
-                    api.users.setFilter(userId, baseFilters)
+                    api.user.setFilter(userId, baseFilters)
                         .getOrThrow().also { log.debug { "set new filter for sync: $it" } }
                 }
                 accountStore.updateAccount { it.copy(filterId = newFilterId) }
@@ -480,7 +490,7 @@ class MatrixClientImpl internal constructor(
                     flowOf(RUN),
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
-                    api.users.setFilter(
+                    api.user.setFilter(
                         userId,
                         baseFilters.copy(presence = Filters.EventFilter(limit = 0))
                     ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
@@ -575,13 +585,13 @@ class MatrixClientImpl internal constructor(
     }
 
     override suspend fun setDisplayName(displayName: String?): Result<Unit> {
-        return api.users.setDisplayName(userId, displayName).map {
+        return api.user.setDisplayName(userId, displayName).map {
             accountStore.updateAccount { it.copy(displayName = displayName) }
         }
     }
 
     override suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit> {
-        return api.users.setAvatarUrl(userId, avatarUrl).map {
+        return api.user.setAvatarUrl(userId, avatarUrl).map {
             accountStore.updateAccount { it.copy(avatarUrl = avatarUrl) }
         }
     }

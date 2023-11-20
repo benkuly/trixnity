@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.folivo.trixnity.client.store.RoomUser
+import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -24,12 +25,20 @@ class UserServiceMock : UserService {
         loadMembersCalled.value = roomId
     }
 
-    override fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>?> {
+    override fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>> {
         throw NotImplementedError()
     }
 
 
     override fun getById(roomId: RoomId, userId: UserId): Flow<RoomUser?> {
+        throw NotImplementedError()
+    }
+
+    override fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>> {
+        throw NotImplementedError()
+    }
+
+    override fun getReceiptsById(roomId: RoomId, userId: UserId): Flow<RoomUserReceipts?> {
         throw NotImplementedError()
     }
 
@@ -69,11 +78,6 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
-    @Deprecated("use canSendEvent instead", ReplaceWith("canSendEvent(roomId, RoomMessageEventContent::class)"))
-    override fun canSendMessages(roomId: RoomId): Flow<Boolean> {
-        TODO("Not yet implemented")
-    }
-
     override fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean> {
         TODO("Not yet implemented")
     }
@@ -85,7 +89,7 @@ class UserServiceMock : UserService {
     override fun getPowerLevel(
         userId: UserId,
         powerLevelsEventContent: PowerLevelsEventContent?,
-        createEventContent: CreateEventContent?
+        createEventContent: CreateEventContent
     ): Int {
         throw NotImplementedError()
     }

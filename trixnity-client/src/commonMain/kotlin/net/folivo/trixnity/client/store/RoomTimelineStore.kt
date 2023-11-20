@@ -68,7 +68,7 @@ class RoomTimelineStore(
         relatedEventId: EventId,
         roomId: RoomId,
         relationType: RelationType,
-    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>?> =
+    ): Flow<Map<EventId, Flow<TimelineEventRelation?>>> =
         timelineEventRelationCache.readByFirstKey(
             TimelineEventRelationKey(relatedEventId, roomId, relationType)
         )

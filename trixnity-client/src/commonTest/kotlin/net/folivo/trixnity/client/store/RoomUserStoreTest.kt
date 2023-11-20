@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.store.repository.InMemoryRoomUserReceiptsRepository
 import net.folivo.trixnity.client.store.repository.InMemoryRoomUserRepository
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
 import net.folivo.trixnity.core.model.EventId
@@ -29,6 +30,7 @@ class RoomUserStoreTest : ShouldSpec({
         roomUserRepository = InMemoryRoomUserRepository()
         cut = RoomUserStore(
             roomUserRepository,
+            InMemoryRoomUserReceiptsRepository(),
             RepositoryTransactionManagerMock(),
             MatrixClientConfiguration(),
             storeScope
@@ -75,7 +77,7 @@ class RoomUserStoreTest : ShouldSpec({
             roomUserRepository.save(roomId, aliceId, aliceUser)
             roomUserRepository.save(roomId, bobId, bobUser)
 
-            cut.getAll(roomId).flatten().first()?.values shouldContainExactly listOf(aliceUser, bobUser)
+            cut.getAll(roomId).flatten().first().values shouldContainExactly listOf(aliceUser, bobUser)
 
             scope.cancel()
         }

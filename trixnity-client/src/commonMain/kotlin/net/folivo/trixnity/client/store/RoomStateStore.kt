@@ -14,8 +14,10 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
@@ -48,9 +50,9 @@ class RoomStateStore(
     }
 
     suspend fun save(event: StateBaseEvent<*>, skipWhenAlreadyPresent: Boolean = false) {
-        val roomId = event.roomIdOrNull
-        val stateKey = event.stateKeyOrNull
-        if (roomId != null && stateKey != null) {
+        val roomId = event.roomId
+        val stateKey = event.stateKey
+        if (roomId != null) {
             val eventType = when (val content = event.content) {
                 is UnknownEventContent -> content.eventType
                 is RedactedEventContent -> content.eventType
@@ -80,11 +82,11 @@ class RoomStateStore(
     fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         val eventType = findType(eventContentClass)
         return roomStateCache.readByFirstKey(RoomStateRepositoryKey(roomId, eventType))
             .mapLatest { value ->
-                value?.mapValues { entry ->
+                value.mapValues { entry ->
                     entry.value.map {
                         if (it?.content?.instanceOf(eventContentClass) == true) {
                             @Suppress("UNCHECKED_CAST")

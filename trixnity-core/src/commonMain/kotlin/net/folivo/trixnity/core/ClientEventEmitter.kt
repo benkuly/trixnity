@@ -22,13 +22,16 @@ interface ClientEventEmitter<T : List<ClientEvent<*>>> {
         const val FIRST = Int.MAX_VALUE
 
         const val ONE_TIME_KEYS = 24_000
-        const val DEVICE_LISTS = ONE_TIME_KEYS - 1
-        const val TO_DEVICE_EVENTS = DEVICE_LISTS - 1
-        const val ROOM_LIST = TO_DEVICE_EVENTS - 1
+        const val ROOM_LIST = ONE_TIME_KEYS - 1_000
+        const val DEVICE_LISTS = ROOM_LIST - 1_000
+        const val TO_DEVICE_EVENTS = DEVICE_LISTS - 1_000
+        const val STORE_EVENTS = TO_DEVICE_EVENTS - 1_000
+        const val STORE_TIMELINE_EVENTS = STORE_EVENTS - 1_000
+
 
         const val DEFAULT = 0
-        const val BEFORE_DEFAULT = DEFAULT + 1
-        const val AFTER_DEFAULT = DEFAULT - 1
+        const val BEFORE_DEFAULT = DEFAULT + 1_000
+        const val AFTER_DEFAULT = DEFAULT - 1_000
 
         const val LAST = Int.MIN_VALUE
     }
@@ -260,7 +263,9 @@ inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmi
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEventListAsFlow(priority: Int = Priority.DEFAULT): Flow<List<E>> =
+inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEventListAsFlow(
+    priority: Int = Priority.DEFAULT
+): Flow<List<E>> =
     callbackFlow {
         val unsubscribe = subscribeEventList<C, E>(priority) { send(it) }
         awaitClose { unsubscribe() }
@@ -284,10 +289,11 @@ fun ClientEventEmitter<*>.subscribeEachEventAsFlow(priority: Int = Priority.DEFA
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-fun <T : List<ClientEvent<*>>> ClientEventEmitter<T>.subscribeAsFlow(priority: Int = Priority.DEFAULT): Flow<T> = callbackFlow {
-    val unsubscribe = subscribe(priority) { send(it) }
-    awaitClose { unsubscribe() }
-}
+fun <T : List<ClientEvent<*>>> ClientEventEmitter<T>.subscribeAsFlow(priority: Int = Priority.DEFAULT): Flow<T> =
+    callbackFlow {
+        val unsubscribe = subscribe(priority) { send(it) }
+        awaitClose { unsubscribe() }
+    }
 
 /**
  * Subscribe with a flow.

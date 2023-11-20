@@ -15,26 +15,38 @@ import kotlin.reflect.KClass
 @Serializable
 data class PowerLevelsEventContent(
     @SerialName("ban")
-    val ban: Int = 50,
+    val ban: Int = BAN_DEFAULT,
     @SerialName("events")
     val events: Map<@Contextual EventType, Int> = emptyMap(),
     @SerialName("events_default")
-    val eventsDefault: Int = 0,
+    val eventsDefault: Int = EVENTS_DEFAULT,
     @SerialName("invite")
-    val invite: Int = 0,
+    val invite: Int = INVITE_DEFAULT,
     @SerialName("kick")
-    val kick: Int = 50,
+    val kick: Int = KICK_DEFAULT,
     @SerialName("redact")
-    val redact: Int = 50,
+    val redact: Int = REDACT_DEFAULT,
     @SerialName("state_default")
-    val stateDefault: Int = 50,
+    val stateDefault: Int = STATE_DEFAULT,
     @SerialName("users")
     val users: Map<UserId, Int> = emptyMap(),
     @SerialName("users_default")
-    val usersDefault: Int = 0,
+    val usersDefault: Int = USERS_DEFAULT,
     @SerialName("notifications")
-    val notifications: Notifications? = null
+    val notifications: Notifications? = null,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent {
+    companion object {
+        const val EVENTS_DEFAULT = 0
+        const val STATE_DEFAULT = 50
+        const val INVITE_DEFAULT = 0
+        const val KICK_DEFAULT = 50
+        const val BAN_DEFAULT = 50
+        const val REDACT_DEFAULT = 50
+        const val USERS_DEFAULT = 0
+    }
+
     @Serializable
     data class Notifications(
         @SerialName("room")

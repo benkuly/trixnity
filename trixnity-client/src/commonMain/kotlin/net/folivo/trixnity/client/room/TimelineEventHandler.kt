@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
-import net.folivo.trixnity.core.ClientEventEmitter
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -49,8 +49,7 @@ class TimelineEventHandlerImpl(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeEvent(subscriber = ::redactTimelineEvent).unsubscribeOnCompletion(scope)
-        api.sync.subscribe(ClientEventEmitter.Priority.BEFORE_DEFAULT, ::handleSyncResponse)
-            .unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.STORE_TIMELINE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun handleSyncResponse(syncEvents: SyncEvents) = tm.writeTransaction {
@@ -161,7 +160,7 @@ class TimelineEventHandlerImpl(
                     insertNewEvents = true
                     log.debug { "fetch missing events before $startEventId" }
                     val destinationBatch = possiblyPreviousEvent?.gap?.batchAfter
-                    val response = api.rooms.getEvents(
+                    val response = api.room.getEvents(
                         roomId = roomId,
                         from = startGapBatchBefore,
                         to = destinationBatch,
@@ -187,7 +186,7 @@ class TimelineEventHandlerImpl(
                     insertNewEvents = true
                     log.debug { "fetch missing events after $startEventId" }
                     val destinationBatch = possiblyNextEvent?.gap?.batchBefore
-                    val response = api.rooms.getEvents(
+                    val response = api.room.getEvents(
                         roomId = roomId,
                         from = startGapBatchAfter,
                         to = destinationBatch,

@@ -14,23 +14,22 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
-    private val cacheScope: CoroutineScope,
     private val keyMapper: (K) -> RoomId,
 ) : ObservableMapIndex<K> {
 
-    private val values = ObservableMap<RoomId, ObservableSet<K>>(cacheScope)
+    private val values = ConcurrentMap<RoomId, ConcurrentObservableSet<K>>()
 
     override suspend fun onPut(key: K) {
         val roomId = keyMapper(key)
         val mapping = checkNotNull(
             values.update(roomId) { mapping ->
-                mapping ?: ObservableSet(cacheScope)
+                mapping ?: ConcurrentObservableSet()
             }
         )
         mapping.add(key)
     }
 
-    override suspend fun onRemove(key: K) {
+    override suspend fun onRemove(key: K, stale: Boolean) {
         val roomId = keyMapper(key)
         values.update(roomId) { mapping ->
             mapping?.remove(key)
@@ -49,7 +48,7 @@ private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
     suspend fun getMapping(roomId: RoomId): Set<K> =
         checkNotNull(
             values.update(roomId) { mapping ->
-                mapping ?: ObservableSet(cacheScope)
+                mapping ?: ConcurrentObservableSet()
             }
         ).values.first()
 }
@@ -68,7 +67,7 @@ internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
 ) {
 
     private val roomIdIndex: DeleteByRoomIdRepositoryObservableMapIndex<K> =
-        DeleteByRoomIdRepositoryObservableMapIndex(cacheScope, keyMapper)
+        DeleteByRoomIdRepositoryObservableMapIndex(keyMapper)
 
     init {
         addIndex(roomIdIndex)
@@ -84,8 +83,6 @@ internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
                     updateAndGet(
                         key = it,
                         updater = { null },
-                        get = { null },
-                        persist = { },
                     )
                 }
             }
@@ -106,7 +103,7 @@ internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
     expireDuration = expireDuration,
 ) {
     private val roomIdIndex: DeleteByRoomIdRepositoryObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> =
-        DeleteByRoomIdRepositoryObservableMapIndex(cacheScope, keyMapper)
+        DeleteByRoomIdRepositoryObservableMapIndex(keyMapper)
 
     init {
         addIndex(roomIdIndex)
@@ -122,8 +119,6 @@ internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
                     updateAndGet(
                         key = it,
                         updater = { null },
-                        get = { null },
-                        persist = { },
                     )
                 }
             }

@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
@@ -25,7 +26,6 @@ class ClientOlmStore(
     private val accountStore: AccountStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val keyStore: KeyStore,
-    private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
     private val userService: UserService,
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
@@ -124,6 +124,6 @@ class ClientOlmStore(
         roomStateStore.getByStateKey<HistoryVisibilityEventContent>(roomId).first()?.content?.historyVisibility
 
     override suspend fun getRoomEncryptionAlgorithm(roomId: RoomId): EncryptionAlgorithm? =
-        roomStore.get(roomId).first()?.encryptionAlgorithm
+        roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first()?.content?.algorithm
 }
 

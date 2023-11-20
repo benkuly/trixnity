@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -20,7 +19,7 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
-): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> = get(roomId, C::class)
+): Flow<Map<String, Flow<StateBaseEvent<C>?>>> = get(roomId, C::class)
 
 inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
@@ -30,7 +29,7 @@ inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
 inline fun <reified C : StateEventContent> RoomStateStore.getContentByStateKey(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<C> = getByStateKey(roomId, C::class, stateKey).filterNotNull().map { it.content }
+): Flow<C?> = getByStateKey(roomId, C::class, stateKey).map { it?.content }
 
 inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,
@@ -46,8 +45,8 @@ suspend fun RoomStateStore.members(
     memberships: Set<Membership>,
 ): Set<UserId> =
     get<MemberEventContent>(roomId).first()
-        ?.filter { memberships.contains(it.value.first()?.content?.membership) }
-        ?.map { UserId(it.key) }?.toSet() ?: setOf()
+        .filter { memberships.contains(it.value.first()?.content?.membership) }
+        .map { UserId(it.key) }.toSet()
 
 suspend fun RoomStateStore.membersCount(
     roomId: RoomId,
@@ -56,13 +55,14 @@ suspend fun RoomStateStore.membersCount(
 ): Long {
     val allMemberships = moreMemberships.toList() + membership
     return get<MemberEventContent>(roomId).first()
-        ?.count { allMemberships.contains(it.value.first()?.content?.membership) }?.toLong() ?: 0
+        .count { allMemberships.contains(it.value.first()?.content?.membership) }.toLong()
 }
 
-fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
-    getAll().value.values
-        .filter { it.value?.encryptionAlgorithm != null && it.value?.membership == JOIN }
-        .mapNotNull { it.value?.roomId }
+suspend fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
+    getAll().first().values
+        .map { it.first() }
+        .filter { it?.encrypted == true && it.membership == JOIN }
+        .mapNotNull { it?.roomId }
 
 fun RoomTimelineStore.getNext(
     event: TimelineEvent,

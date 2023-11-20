@@ -20,7 +20,7 @@ suspend fun MessageBuilder.file(
     val format: FileInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
-    val isEncryptedRoom = roomService.getById(roomId).first()?.encryptionAlgorithm != null
+    val isEncryptedRoom = roomService.getById(roomId).first()?.encrypted == true
     if (isEncryptedRoom) {
         val (thumbnailFile, thumbnailInfo) = mediaService.prepareUploadEncryptedThumbnail(file, type)
             ?: Pair(null, null)

@@ -23,6 +23,8 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+
+.push-cache-linux: &push-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
     policy: push
     paths:
@@ -43,6 +45,8 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+
+.push-cache-mac: &push-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
     policy: push
     paths:
@@ -82,20 +86,6 @@ variables:
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-pages:
-  stage: website
-  image: node:lts
-  rules:
-    - *if-main
-  script:
-    - cd website
-    - yarn install
-    - yarn build
-    - mv ./build ../public
-  artifacts:
-    paths:
-      - public
-
 build-trixnity-build-linux-image:
   stage: prepare-build
   tags: [ "saas-linux-small-amd64" ]
@@ -103,9 +93,11 @@ build-trixnity-build-linux-image:
   services:
     - name: docker:dind
       command: [ "--tls=false" ]
-  only:
-    changes:
-      - "gitlab-ci/Dockerfile"
+  rules:
+    - changes:
+        paths:
+          - "gitlab-ci/Dockerfile"
+        compare_to: main
   script:
     - docker build gitlab-ci/ -t $BUILD_LINUX_IMAGE_NAME
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -117,12 +109,14 @@ build:mac:
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache-mac
+    - *push-cache-mac
   rules:
     - *if-merge-request
   script:
     - ./gradlew
       compileKotlin{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
       compileTestKotlin{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      linkDebugTest{IosX64,MacosX64}
       --stacktrace
 
 build:linux:
@@ -132,6 +126,7 @@ build:linux:
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache-linux
+    - *push-cache-linux
   rules:
     - *if-merge-request
   script:
@@ -139,6 +134,7 @@ build:linux:
       compileKotlin{Jvm,Js,LinuxX64,MingwX64}
       compileReleaseKotlinAndroid
       compileTestKotlin{Jvm,Js,LinuxX64,MingwX64}
+      linkDebugTest{LinuxX64,MingwX64}
       compileReleaseUnitTestKotlinAndroid
       --stacktrace
 
@@ -200,7 +196,7 @@ publish-snapshot:mac:
   stage: publish-snapshot
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *pull-cache-mac
+    - *cache-mac
   rules:
     - *if-main
   script:
@@ -213,12 +209,16 @@ publish-snapshot:linux:
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *pull-cache-linux
+    - *cache-linux
   rules:
     - *if-main
+  artifacts:
+    paths:
+      - website/static/api/
   script:
     - ./gradlew
       publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToSnapshotRepository
+      dokkaHtmlToWebsite
       --stacktrace
 
 publish:create-nexus-staging-repo:
@@ -252,7 +252,7 @@ publish:mac:
   needs: [ "publish:create-nexus-staging-repo" ]
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *pull-cache-mac
+    - *cache-mac
   rules:
     - *if-release
   script:
@@ -267,7 +267,7 @@ publish:linux:
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *pull-cache-linux
+    - *cache-linux
   rules:
     - *if-release
   script:
@@ -275,3 +275,17 @@ publish:linux:
     - ./gradlew
       publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToReleaseRepository
       --stacktrace
+
+pages:
+  stage: website
+  image: node:lts
+  rules:
+    - *if-main
+  script:
+    - cd website
+    - yarn install --force
+    - yarn build
+    - mv ./build ../public
+  artifacts:
+    paths:
+      - public

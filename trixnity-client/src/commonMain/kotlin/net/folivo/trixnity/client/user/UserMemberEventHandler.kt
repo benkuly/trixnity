@@ -33,7 +33,7 @@ class UserMemberEventHandler(
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeEventList(Priority.BEFORE_DEFAULT, ::setRoomUser).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList(Priority.STORE_EVENTS, ::setRoomUser).unsubscribeOnCompletion(scope)
         api.sync.subscribe(Priority.AFTER_DEFAULT, ::reloadProfile).unsubscribeOnCompletion(scope)
     }
 
@@ -152,7 +152,7 @@ class UserMemberEventHandler(
             reloadOwnProfile.value = false
 
             accountStore.getAccount()?.userId?.let { userId ->
-                api.users.getProfile(userId)
+                api.user.getProfile(userId)
                     .onSuccess {
                         accountStore.updateAccount { account ->
                             account.copy(
@@ -183,12 +183,11 @@ class UserMemberEventHandler(
         val memberships = setOf(Membership.JOIN, Membership.INVITE)
         return roomUserStore.getAll(roomId)
             .first()
-            ?.values?.asFlow()
-            ?.mapNotNull { it.first() }
-            ?.filter { memberships.contains(it.membership) }
-            ?.mapNotNull { user -> user.originalName?.let { user.userId to it } }
-            ?.toList()
-            ?.toMap()
-            .orEmpty()
+            .values.asFlow()
+            .mapNotNull { it.first() }
+            .filter { memberships.contains(it.membership) }
+            .mapNotNull { user -> user.originalName?.let { user.userId to it } }
+            .toList()
+            .toMap()
     }
 }

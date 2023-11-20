@@ -75,20 +75,26 @@ class CrossSigningIT {
             repositoriesModule = repositoriesModule1,
             mediaStore = InMemoryMediaStore(),
             getLoginInfo = { it.register("user1", password) }
-        ).getOrThrow()
+        ) {
+            name = "client1"
+        }.getOrThrow()
         client2 = MatrixClient.login(
             baseUrl = baseUrl,
             identifier = IdentifierType.User("user1"),
             password = password,
             repositoriesModule = repositoriesModule2,
             mediaStore = InMemoryMediaStore(),
-        ).getOrThrow()
+        ) {
+            name = "client2"
+        }.getOrThrow()
         client3 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule3,
             mediaStore = InMemoryMediaStore(),
             getLoginInfo = { it.register("user3", password) }
-        ).getOrThrow()
+        ) {
+            name = "client3"
+        }.getOrThrow()
         client1.startSync()
         client2.startSync()
         client3.startSync()
@@ -109,30 +115,37 @@ class CrossSigningIT {
     @Test
     fun testCrossSigning(): Unit = runBlocking {
         withTimeout(30_000) {
-            client1.verification.getSelfVerificationMethods()
-                .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
-                .first()
+            withClue("wait for client1 self verification to be NoCrossSigningEnabled") {
+                client1.verification.getSelfVerificationMethods()
+                    .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
+                    .first()
+            }
 
-            val bootstrap = client1.key.bootstrapCrossSigning()
-            withClue("bootstrap client1") {
-                bootstrap.result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.Step<Unit>>()
-                    .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.Success<Unit>>()
+
+            val bootstrap = withClue("bootstrap client1") {
+                client1.key.bootstrapCrossSigning().also {
+                    it.result.getOrThrow()
+                        .shouldBeInstanceOf<UIA.Step<Unit>>()
+                        .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password))
+                        .getOrThrow()
+                        .shouldBeInstanceOf<UIA.Success<Unit>>()
+                }
             }
             withClue("user1 invites user3, so user3 gets user1s keys") {
-                val roomId = client1.api.rooms.createRoom(
+                val roomId = client1.api.room.createRoom(
                     invite = setOf(client3.userId),
                     initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
                 client1.room.getById(roomId).first { it != null }
-                client3.api.rooms.joinRoom(roomId).getOrThrow()
+                client3.api.room.joinRoom(roomId).getOrThrow()
                 client3.room.getById(roomId).first { it != null && it.membership == JOIN }
             }
 
-            client1.verification.getSelfVerificationMethods()
-                .filterIsInstance<SelfVerificationMethods.AlreadyCrossSigned>()
-                .first()
+            withClue("wait for client1 self verification to be AlreadyCrossSigned") {
+                client1.verification.getSelfVerificationMethods()
+                    .filterIsInstance<SelfVerificationMethods.AlreadyCrossSigned>()
+                    .first()
+            }
 
             withClue("bootstrap client3") {
                 client3.key.bootstrapCrossSigning().result.getOrThrow()
@@ -268,28 +281,38 @@ class CrossSigningIT {
     @Test
     fun shouldAllowResetCrossSigning(): Unit = runBlocking {
         withTimeout(30_000) {
-            client1.verification.getSelfVerificationMethods()
-                .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
-                .first()
-
-            val bootstrap1 = client1.key.bootstrapCrossSigning()
-            withClue("bootstrap client1") {
-                bootstrap1.result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.Step<Unit>>()
-                    .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.Success<Unit>>()
-            }
-            val defaultSecret1 = client2.user.getAccountData<DefaultSecretKeyEventContent>().filterNotNull().first()
-
-            val bootstrap2 = client1.key.bootstrapCrossSigning()
-            withClue("reset cross signing by bootstrap client1 again") {
-                bootstrap2.result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.Step<Unit>>()
-                    .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password)).getOrThrow()
-                    .shouldBeInstanceOf<UIA.Success<Unit>>()
+            withClue("wait for client1 self verification to be NoCrossSigningEnabled") {
+                client1.verification.getSelfVerificationMethods()
+                    .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
+                    .first()
             }
 
-            client2.user.getAccountData<DefaultSecretKeyEventContent>().first { it != defaultSecret1 }
+            val bootstrap1 = withClue("bootstrap client1") {
+                client1.key.bootstrapCrossSigning().also {
+                    it.result.getOrThrow()
+                        .shouldBeInstanceOf<UIA.Step<Unit>>()
+                        .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password))
+                        .getOrThrow()
+                        .shouldBeInstanceOf<UIA.Success<Unit>>()
+                }
+            }
+            val defaultSecret1 = withClue("get account data DefaultSecretKeyEventContent") {
+                client2.user.getAccountData<DefaultSecretKeyEventContent>().filterNotNull().first()
+            }
+
+            val bootstrap2 = withClue("reset cross signing by bootstrap client1 again") {
+                client1.key.bootstrapCrossSigning().also {
+                    it.result.getOrThrow()
+                        .shouldBeInstanceOf<UIA.Step<Unit>>()
+                        .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password))
+                        .getOrThrow()
+                        .shouldBeInstanceOf<UIA.Success<Unit>>()
+                }
+            }
+
+            withClue("get account data DefaultSecretKeyEventContent and check it's not the same") {
+                client2.user.getAccountData<DefaultSecretKeyEventContent>().first { it != defaultSecret1 }
+            }
             withClue("self verification of client2") {
                 val client2VerificationMethods =
                     client2.verification.getSelfVerificationMethods()

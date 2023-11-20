@@ -58,6 +58,7 @@ fun ShouldSpec.repositoryTestSuite(
     roomRepositoryTest { di }
     roomStateRepositoryTest { di }
     roomUserRepositoryTest { di }
+    roomUserReceiptsRepositoryTest { di }
     secretKeyRequestRepositoryTest { di }
     secretsRepositoryTest { di }
     timelineEventRelationRepositoryTest { di }

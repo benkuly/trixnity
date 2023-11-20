@@ -79,7 +79,7 @@ class IncomingSecretKeyRequestEventHandler(
                         null
                     }
                     if (encryptedAnswer != null)
-                        api.users.sendToDevice(
+                        api.user.sendToDevice(
                             mapOf(ownUserId to mapOf(requestingDeviceId to encryptedAnswer))
                         ).getOrThrow()
                 } else log.info { "got a secret key request (${request.name}) from $requestingDeviceId, but we do not have that secret cached" }

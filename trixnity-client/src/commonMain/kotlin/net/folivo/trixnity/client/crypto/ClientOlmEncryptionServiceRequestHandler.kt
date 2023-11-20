@@ -10,8 +10,8 @@ import net.folivo.trixnity.crypto.olm.OlmEncryptionServiceRequestHandler
 class ClientOlmEncryptionServiceRequestHandler(private val api: MatrixClientServerApiClient) :
     OlmEncryptionServiceRequestHandler {
     override suspend fun claimKeys(oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>): Result<ClaimKeys.Response> =
-        api.keys.claimKeys(oneTimeKeys)
+        api.key.claimKeys(oneTimeKeys)
 
     override suspend fun <C : ToDeviceEventContent> sendToDevice(events: Map<UserId, Map<String, C>>): Result<Unit> =
-        api.users.sendToDevice(events)
+        api.user.sendToDevice(events)
 }

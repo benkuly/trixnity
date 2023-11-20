@@ -97,7 +97,7 @@ class IncomingRoomKeyRequestEventHandler(
                         null
                     }
                     if (encryptedAnswer != null)
-                        api.users.sendToDevice(
+                        api.user.sendToDevice(
                             mapOf(ownUserId to mapOf(requestingDeviceId to encryptedAnswer))
                         ).getOrThrow()
                 } else log.info { "got a room key request (${request}), but did not found a matching room key" }

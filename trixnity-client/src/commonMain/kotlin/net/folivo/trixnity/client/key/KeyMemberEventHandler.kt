@@ -13,7 +13,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
@@ -40,7 +39,7 @@ class KeyMemberEventHandler(
         val deleteDeviceKeys = mutableSetOf<UserId>()
         val updateOutdatedKeys = mutableSetOf<UserId>()
         events.forEach { event ->
-            if (roomStore.get(event.roomId).first()?.encryptionAlgorithm == EncryptionAlgorithm.Megolm) {
+            if (roomStore.get(event.roomId).first()?.encrypted == true) {
                 log.trace { "handle membership change in an encrypted room" }
                 val userId = UserId(event.stateKey)
                 when (event.content.membership) {
@@ -53,7 +52,8 @@ class KeyMemberEventHandler(
                     }
 
                     Membership.JOIN, Membership.INVITE -> {
-                        if (event.unsigned?.previousContent?.membership != event.content.membership
+                        // TODO we should not rely on unsigned
+                        if ((event.unsigned?.previousContent as? MemberEventContent)?.membership != event.content.membership
                             && keyStore.getDeviceKeys(userId).first() == null
                         ) updateOutdatedKeys.add(userId)
                     }

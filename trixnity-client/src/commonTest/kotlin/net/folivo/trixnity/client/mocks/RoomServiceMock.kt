@@ -146,7 +146,7 @@ class RoomServiceMock : RoomService {
     override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         throw NotImplementedError()
     }
 }

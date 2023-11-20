@@ -19,10 +19,8 @@ import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.ForwardedRoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
@@ -39,6 +37,7 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class OutgoingRoomKeyRequestEventHandlerTest : ShouldSpec(body)
 
@@ -126,7 +125,7 @@ private val body: ShouldSpec.() -> Unit = {
                 ), receiverDeviceIds, Clock.System.now()
             )
         )
-        keyStore.allRoomKeyRequests.first { it.size == 1 }
+        keyStore.getAllRoomKeyRequestsFlow().first { it.size == 1 }
     }
     context(OutgoingRoomKeyRequestEventHandlerImpl::handleOutgoingKeyRequestAnswer.name) {
         val aliceDevice2Key = Key.Ed25519Key(aliceDevice, "aliceDevice2KeyValue")
@@ -219,7 +218,7 @@ private val body: ShouldSpec.() -> Unit = {
                 "requestId",
                 null
             )
-            keyStore.allRoomKeyRequests.first { it.isEmpty() }
+            keyStore.getAllRoomKeyRequestsFlow().first { it.isEmpty() }
         }
         should("ignore room key with lesser index") {
             setDeviceKeys(true)
@@ -316,15 +315,15 @@ private val body: ShouldSpec.() -> Unit = {
                         sessionId,
                         EncryptionAlgorithm.Megolm,
                     )
-                ), setOf(aliceDevice), (Clock.System.now() - 1.days)
+                ), setOf(aliceDevice), (Clock.System.now() - 1.days - 1.seconds)
             )
             keyStore.addRoomKeyRequest(request1)
             keyStore.addRoomKeyRequest(request2)
-            keyStore.allRoomKeyRequests.first { it.size == 2 }
+            keyStore.getAllRoomKeyRequestsFlow().first { it.size == 2 }
 
             cut.cancelOldOutgoingKeyRequests()
 
-            keyStore.allRoomKeyRequests.first { it.size == 1 } shouldBe setOf(request1)
+            keyStore.getAllRoomKeyRequestsFlow().first { it.size == 1 } shouldBe setOf(request1)
             sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldBe
                     RoomKeyRequestEventContent(
                         KeyRequestAction.REQUEST_CANCELLATION, // <- important!
@@ -367,7 +366,8 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("send requests to verified devices") {
             val result = async { cut.requestRoomKeys(room, sessionId) }
-            val storedRequest = keyStore.allRoomKeyRequests.first { it.isNotEmpty() }.firstOrNull().shouldNotBeNull()
+            val storedRequest =
+                keyStore.getAllRoomKeyRequestsFlow().first { it.isNotEmpty() }.firstOrNull().shouldNotBeNull()
             storedRequest.receiverDeviceIds shouldBe setOf(aliceDevice2)
             storedRequest.createdAt.shouldBeLessThanOrEqualTo(Clock.System.now())
 
@@ -392,14 +392,14 @@ private val body: ShouldSpec.() -> Unit = {
             assertRequest(requestToAlice2)
 
             keyStore.deleteRoomKeyRequest(storedRequest.content.requestId)
-            keyStore.allRoomKeyRequests.first { it.isEmpty() }
+            keyStore.getAllRoomKeyRequestsFlow().first { it.isEmpty() }
             result.await()
         }
         should("ignore when there is no verified device to send request to") {
             keyStore.updateDeviceKeys(alice) { null }
             cut.requestRoomKeys(room, sessionId)
             sendToDeviceEvents shouldBe null
-            keyStore.allRoomKeyRequests.first { it.isEmpty() }
+            keyStore.getAllRoomKeyRequestsFlow().first { it.isEmpty() }
         }
         should("not create new request when there is already one") {
             setRequest(setOf(aliceDevice))
@@ -407,7 +407,7 @@ private val body: ShouldSpec.() -> Unit = {
             delay(500.milliseconds)
             result.isActive shouldBe true
             keyStore.deleteRoomKeyRequest("requestId")
-            keyStore.allRoomKeyRequests.first { it.isEmpty() }
+            keyStore.getAllRoomKeyRequestsFlow().first { it.isEmpty() }
             sendToDeviceEvents shouldBe null
             result.await()
         }

@@ -51,8 +51,9 @@ class RealmRepositoryTransactionManager(private val realm: Realm) : RepositoryTr
                 runBlocking(RealmWriteTransaction(this) + RealmReadTransaction(this)) {
                     block()
                 }
-            } catch (_: Exception) {
+            } catch (exception: Exception) {
                 cancelWrite()
+                throw exception
             }
         }
     }

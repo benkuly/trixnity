@@ -1,8 +1,6 @@
 package net.folivo.trixnity.client.store.cache
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -10,24 +8,11 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-internal class ObservableMap<K, V>(
-    coroutineScope: CoroutineScope
-) {
+internal class ConcurrentMap<K, V> {
     private val valuesMutex = Mutex()
     private val _values = mutableMapOf<K, V>()
 
     val indexes = MutableStateFlow(listOf<ObservableMapIndex<K>>())
-
-    private val changeSignal = MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-
-    init {
-        changeSignal.tryEmit(Unit)
-    }
-
-    val values = changeSignal
-        .conflate()
-        .map { valuesMutex.withLock { _values.toMap() } }
-        .shareIn(coroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
 
     sealed interface CompareAndSetResult {
         object TryAgain : CompareAndSetResult
@@ -63,6 +48,22 @@ internal class ObservableMap<K, V>(
         contract {
             callsInPlace(updater, InvocationKind.AT_LEAST_ONCE)
         }
+        return internalUpdate(key, updater = updater)
+    }
+
+    suspend fun remove(key: K, stale: Boolean = false) {
+        internalUpdate(key, stale) { null }
+    }
+
+    @OptIn(ExperimentalContracts::class)
+    private suspend fun internalUpdate(
+        key: K,
+        stale: Boolean = false,
+        updater: suspend (V?) -> V?,
+    ): V? {
+        contract {
+            callsInPlace(updater, InvocationKind.AT_LEAST_ONCE)
+        }
         // inspired by [MutableStateFlow::update]
         while (true) {
             val oldValue = get(key)
@@ -74,13 +75,11 @@ internal class ObservableMap<K, V>(
                 }
 
                 is CompareAndSetResult.OnPut -> {
-                    changeSignal.emit(Unit)
                     indexes.value.forEach { index -> index.onPut(key) }
                 }
 
                 is CompareAndSetResult.OnRemove -> {
-                    changeSignal.emit(Unit)
-                    indexes.value.forEach { index -> index.onRemove(key) }
+                    indexes.value.forEach { index -> index.onRemove(key, stale) }
                 }
             }
             if (compareAndSetResult !is CompareAndSetResult.TryAgain) {
@@ -99,7 +98,6 @@ internal class ObservableMap<K, V>(
 
     suspend fun removeAll() = valuesMutex.withLock {
         _values.clear()
-        changeSignal.emit(Unit)
         indexes.value.forEach { index -> index.onRemoveAll() }
     }
 

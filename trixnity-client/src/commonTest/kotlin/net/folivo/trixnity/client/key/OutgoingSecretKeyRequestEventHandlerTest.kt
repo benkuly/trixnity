@@ -29,11 +29,9 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
@@ -55,6 +53,7 @@ import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class OutgoingSecretKeyRequestEventHandlerTest : ShouldSpec(body)
 
@@ -128,7 +127,7 @@ private val body: ShouldSpec.() -> Unit = {
                     ), receiverDeviceIds, Clock.System.now()
                 )
             )
-            keyStore.allSecretKeyRequests.first { it.size == 1 }
+            keyStore.getAllSecretKeyRequestsFlow().first { it.size == 1 }
         }
 
         suspend fun setCrossSigningKeys(publicKey: String) {
@@ -402,15 +401,15 @@ private val body: ShouldSpec.() -> Unit = {
                     KeyRequestAction.REQUEST,
                     "OWN_ALICE_DEVICE",
                     "requestId2"
-                ), setOf(aliceDevice), (Clock.System.now() - 1.days)
+                ), setOf(aliceDevice), (Clock.System.now() - 1.days - 1.seconds)
             )
             keyStore.addSecretKeyRequest(request1)
             keyStore.addSecretKeyRequest(request2)
-            keyStore.allSecretKeyRequests.first { it.size == 2 }
+            keyStore.getAllSecretKeyRequestsFlow().first { it.size == 2 }
 
             cut.cancelOldOutgoingKeyRequests()
 
-            keyStore.allSecretKeyRequests.first { it.size == 1 } shouldBe setOf(request1)
+            keyStore.getAllSecretKeyRequestsFlow().first { it.size == 1 } shouldBe setOf(request1)
             sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldBe SecretKeyRequestEventContent(
                 SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
                 KeyRequestAction.REQUEST_CANCELLATION,
@@ -470,7 +469,7 @@ private val body: ShouldSpec.() -> Unit = {
                     ), setOf("DEVICE_2"), Clock.System.now()
                 )
             )
-            keyStore.allSecretKeyRequests.first { it.size == 1 }
+            keyStore.getAllSecretKeyRequestsFlow().first { it.size == 1 }
             keyStore.updateDeviceKeys(alice) {
                 mapOf(
                     "DEVICE_1" to StoredDeviceKeys(
@@ -493,7 +492,7 @@ private val body: ShouldSpec.() -> Unit = {
                 this.requestingDeviceId shouldBe aliceDevice
                 this.requestId shouldNot beEmpty()
             }
-            keyStore.allSecretKeyRequests.first { it.size == 2 } shouldHaveSize 2
+            keyStore.getAllSecretKeyRequestsFlow().first { it.size == 2 } shouldHaveSize 2
         }
     }
     context(OutgoingSecretKeyRequestEventHandler::requestSecretKeysWhenCrossSigned.name) {
@@ -547,7 +546,7 @@ private val body: ShouldSpec.() -> Unit = {
                     ), setOf("DEVICE_2"), Clock.System.now()
                 )
             )
-            keyStore.allSecretKeyRequests.first { it.size == 1 }
+            keyStore.getAllSecretKeyRequestsFlow().first { it.size == 1 }
         }
         should("do nothing when secret is not allowed to cache") {
             val crossSigningPrivateKeys = mapOf(

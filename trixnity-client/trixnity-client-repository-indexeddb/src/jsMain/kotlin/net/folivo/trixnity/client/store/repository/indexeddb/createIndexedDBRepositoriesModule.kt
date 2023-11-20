@@ -39,6 +39,7 @@ suspend fun createIndexedDBRepositoriesModule(
         singleOf(::IndexedDBRoomRepository) { bind<RoomRepository>() }
         singleOf(::IndexedDBRoomStateRepository) { bind<RoomStateRepository>() }
         singleOf(::IndexedDBRoomUserRepository) { bind<RoomUserRepository>() }
+        singleOf(::IndexedDBRoomUserReceiptsRepository) { bind<RoomUserReceiptsRepository>() }
         singleOf(::IndexedDBSecretKeyRequestRepository) { bind<SecretKeyRequestRepository>() }
         singleOf(::IndexedDBSecretsRepository) { bind<SecretsRepository>() }
         singleOf(::IndexedDBTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }
@@ -67,6 +68,7 @@ internal val allStoreNames = arrayOf(
     IndexedDBRoomRepository.objectStoreName,
     IndexedDBRoomStateRepository.objectStoreName,
     IndexedDBRoomUserRepository.objectStoreName,
+    IndexedDBRoomUserReceiptsRepository.objectStoreName,
     IndexedDBSecretKeyRequestRepository.objectStoreName,
     IndexedDBSecretsRepository.objectStoreName,
     IndexedDBTimelineEventRelationRepository.objectStoreName,
@@ -74,7 +76,7 @@ internal val allStoreNames = arrayOf(
 )
 
 internal suspend fun createDatabase(databaseName: String) =
-    openDatabase(databaseName, 1) { database, oldVersion, _ ->
+    openDatabase(databaseName, 2) { database, oldVersion, _ ->
         IndexedDBAccountRepository.apply { migrate(database, oldVersion) }
         IndexedDBCrossSigningKeysRepository.apply { migrate(database, oldVersion) }
         IndexedDBDeviceKeysRepository.apply { migrate(database, oldVersion) }
@@ -95,6 +97,7 @@ internal suspend fun createDatabase(databaseName: String) =
         IndexedDBRoomRepository.apply { migrate(database, oldVersion) }
         IndexedDBRoomStateRepository.apply { migrate(database, oldVersion) }
         IndexedDBRoomUserRepository.apply { migrate(database, oldVersion) }
+        IndexedDBRoomUserReceiptsRepository.apply { migrate(database, oldVersion) }
         IndexedDBSecretKeyRequestRepository.apply { migrate(database, oldVersion) }
         IndexedDBSecretsRepository.apply { migrate(database, oldVersion) }
         IndexedDBTimelineEventRelationRepository.apply { migrate(database, oldVersion) }

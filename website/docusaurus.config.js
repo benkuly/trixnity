@@ -1,8 +1,9 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const {themes} = require('prism-react-renderer');
+const lightTheme = themes.github;
+const darkTheme = themes.dracula;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -69,6 +70,11 @@ const config = {
             label: 'Documentation',
           },
           {
+            href: 'pathname:///api',
+            label: 'API',
+            position: 'left',
+          },
+          {
             href: 'https://gitlab.com/trixnity/trixnity',
             label: 'Repository',
             position: 'right',
@@ -84,6 +90,10 @@ const config = {
               {
                 label: 'Documentation',
                 to: '/docs',
+              },
+              {
+                label: 'API',
+                href: 'pathname:///api',
               },
             ],
           },
@@ -109,8 +119,8 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} Trixnity`,
       },
       prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
+        theme: lightTheme,
+        darkTheme: darkTheme,
         additionalLanguages: ['kotlin'],
       },
     }),

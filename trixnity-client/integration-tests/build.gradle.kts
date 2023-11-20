@@ -23,6 +23,7 @@ kotlin {
                 implementation(libs.kotest.common)
                 implementation(libs.kotest.assertions.core)
                 implementation(libs.benasher44.uuid)
+                implementation(libs.oshai.logging)
             }
         }
         jvmTest {
@@ -30,9 +31,11 @@ kotlin {
                 implementation(libs.ktor.client.java)
                 implementation(libs.ktor.client.logging)
                 implementation(libs.testcontainers)
+                implementation(libs.testcontainers.postgresql)
                 implementation(libs.testcontainers.junitJupiter)
-                implementation(libs.logback.classic)
                 implementation(libs.h2)
+                implementation(libs.postgresql)
+                implementation(libs.logback.classic)
             }
         }
     }

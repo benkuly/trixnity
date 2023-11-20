@@ -27,15 +27,12 @@ import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent.HistoryVisibility
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 import net.folivo.trixnity.crypto.sign.VerifyResult
@@ -458,13 +455,13 @@ private val body: ShouldSpec.() -> Unit = {
                 val room2 = RoomId("room2", "server")
                 val room3 = RoomId("room3", "server")
                 roomStore.update(room1) {
-                    simpleRoom.copy(roomId = room1, encryptionAlgorithm = Megolm)
+                    simpleRoom.copy(roomId = room1, encrypted = true)
                 }
                 roomStore.update(room2) {
-                    simpleRoom.copy(roomId = room2, encryptionAlgorithm = Megolm)
+                    simpleRoom.copy(roomId = room2, encrypted = true)
                 }
                 roomStore.update(room3) {
-                    simpleRoom.copy(roomId = room3, encryptionAlgorithm = Megolm)
+                    simpleRoom.copy(roomId = room3, encrypted = true)
                 }
                 listOf(
                     // room1
@@ -557,7 +554,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 val room1 = RoomId("room1", "server")
                 roomStore.update(room1) {
-                    simpleRoom.copy(roomId = room1, encryptionAlgorithm = Megolm)
+                    simpleRoom.copy(roomId = room1, encrypted = true)
                 }
                 olmCryptoStore.updateOutboundMegolmSession(room1) { StoredOutboundMegolmSession(room1, pickled = "") }
 

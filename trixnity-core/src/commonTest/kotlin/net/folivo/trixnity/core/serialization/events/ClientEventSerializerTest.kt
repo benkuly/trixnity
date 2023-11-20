@@ -1,5 +1,6 @@
 package net.folivo.trixnity.core.serialization.events
 
+import io.kotest.matchers.shouldBe
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
@@ -251,6 +252,43 @@ class ClientEventSerializerTest {
     }
 
     @Test
+    fun shouldSerializeMessageEventWithExternalUrl() {
+        val content = MessageEvent(
+            RoomMessageEventContent.TextMessageEventContent(
+                "hello",
+                externalUrl = "http://some-external-url.test"
+            ),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
+            UnsignedMessageEventData(),
+        )
+        val expectedResult = """
+        {
+            "content":{
+                "body":"hello",
+                "external_url": "http://some-external-url.test",
+                "msgtype":"m.text"
+            },
+            "event_id":"$143273582443PhrSn",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "sender":"@example:example.org",
+            "type":"m.room.message",
+            "unsigned":{}
+        }
+    """.trimToFlatJson()
+        val result = json.encodeToString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+            ),
+            content
+        )
+        assertEquals(expectedResult, result)
+    }
+
+    @Test
     fun shouldDeserializeMessageEvent() {
         val input = """
         {
@@ -395,6 +433,43 @@ class ClientEventSerializerTest {
                         put("event_id", JsonPrimitive(24))
                         put("rel_type", JsonPrimitive("something"))
                     }, EventId("24"), RelationType.Unknown("something"), null)
+                ),
+                EventId("$143273582443PhrSn"),
+                UserId("example", "example.org"),
+                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                1432735824653,
+                UnsignedMessageEventData(1234)
+            ), result
+        )
+    }
+
+    @Test
+    fun shouldDeserializeMessageEventWithExternalUrl() {
+        val input = """
+        {
+            "content":{
+                "msgtype":"m.text",
+                "body":"hello",
+                "external_url": "http://some-external-url.test"
+            },
+            "event_id":"$143273582443PhrSn",
+            "sender":"@example:example.org",
+            "origin_server_ts":1432735824653,
+            "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
+            "unsigned":{"age":1234},
+            "type":"m.room.message"
+        }
+    """.trimToFlatJson()
+        val result = json.decodeFromString(
+            MessageEventSerializer(
+                DefaultEventContentSerializerMappings.message,
+            ), input
+        )
+        assertEquals(
+            MessageEvent(
+                RoomMessageEventContent.TextMessageEventContent(
+                    body = "hello",
+                    externalUrl = "http://some-external-url.test"
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
@@ -744,6 +819,157 @@ class ClientEventSerializerTest {
             content
         )
         assertEquals(expectedResult, result)
+    }
+
+    @Test
+    fun shouldDeserializeRedactedUnsignedDataInStateEvent() {
+        val input = """
+        {
+            "content": {
+                "name": "name"
+            },
+            "event_id": "${'$'}143273582443PhrSn",
+            "origin_server_ts": 1432735824653,
+            "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+            "sender": "@example:example.org",
+            "state_key": "",
+            "type": "m.room.name",
+            "unsigned": {
+                "prev_content": {}
+            }
+        }
+    """.trimToFlatJson()
+        val result = json.decodeFromString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+            ),
+            input
+        )
+        result shouldBe StateEvent(
+            NameEventContent("name"),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
+            UnsignedStateEventData(
+                previousContent = RedactedEventContent("m.room.name")
+            ),
+            "",
+        )
+    }
+
+    @Test
+    fun shouldSerializeRedactedUnsignedDataInStateEvent() {
+        val input = StateEvent(
+            NameEventContent("name"),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
+            UnsignedStateEventData(
+                previousContent = RedactedEventContent("m.room.name")
+            ),
+            "",
+        )
+        val output = """
+        {
+            "content": {
+                "name": "name"
+            },
+            "event_id": "${'$'}143273582443PhrSn",
+            "origin_server_ts": 1432735824653,
+            "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+            "sender": "@example:example.org",
+            "state_key": "",
+            "type": "m.room.name",
+            "unsigned": {
+                "prev_content": {}
+            }
+        }
+    """.trimToFlatJson()
+        val result = json.encodeToString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+            ),
+            input
+        )
+        result shouldBe output
+    }
+
+    @Test
+    fun shouldDeserializeRedactedStateEvent() {
+        val input = """
+        {
+            "content": {},
+            "event_id": "${'$'}143273582443PhrSn",
+            "origin_server_ts": 1432735824653,
+            "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+            "sender": "@example:example.org",
+            "state_key": "",
+            "type": "m.room.name",
+            "unsigned": {
+                "prev_content": {
+                    "name": "prev"
+                }
+            }
+        }
+    """.trimToFlatJson()
+        val result = json.decodeFromString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+            ),
+            input
+        )
+        result shouldBe
+                StateEvent(
+                    RedactedEventContent("m.room.name"),
+                    EventId("$143273582443PhrSn"),
+                    UserId("example", "example.org"),
+                    RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                    1432735824653,
+                    UnsignedStateEventData(
+                        previousContent = NameEventContent("prev")
+                    ),
+                    "",
+                )
+    }
+
+    @Test
+    fun shouldSerializeRedactedStateEvent() {
+        val input = StateEvent(
+            RedactedEventContent("m.room.name"),
+            EventId("$143273582443PhrSn"),
+            UserId("example", "example.org"),
+            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            1432735824653,
+            UnsignedStateEventData(
+                previousContent = NameEventContent("prev")
+            ),
+            "",
+        )
+        val output = """
+        {
+            "content": {},
+            "event_id": "${'$'}143273582443PhrSn",
+            "origin_server_ts": 1432735824653,
+            "room_id": "!jEsUZKDJdhlrceRyVU:example.org",
+            "sender": "@example:example.org",
+            "state_key": "",
+            "type": "m.room.name",
+            "unsigned": {
+                "prev_content": {
+                    "name": "prev"
+                }
+            }
+        }
+    """.trimToFlatJson()
+        val result = json.encodeToString(
+            StateEventSerializer(
+                DefaultEventContentSerializerMappings.state,
+            ),
+            input
+        )
+        result shouldBe output
     }
 
     @Test
