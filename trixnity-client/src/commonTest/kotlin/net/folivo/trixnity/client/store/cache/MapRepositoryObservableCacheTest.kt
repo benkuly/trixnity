@@ -280,6 +280,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                     mapOf("secondKey1" to "old1")
             repository.save("firstKey", "secondKey1", "new1")
             readScope1.cancel()
+            delay(50.milliseconds)
             testCoroutineScheduler.advanceTimeBy(100.milliseconds)
             cut.readByFirstKey(key = "firstKey").flatten().first() shouldBe
                     mapOf("secondKey1" to "new1")
@@ -291,10 +292,9 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             repository.save("firstKey", "secondKey2", "old2")
             val byFirstKey = cut.readByFirstKey(key = "firstKey").map { it.keys }.stateIn(readScope)
             byFirstKey.value shouldBe setOf("secondKey1", "secondKey2")
-            cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
-                null
-            }
+            cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) { null }
             testCoroutineScheduler.advanceTimeBy(100.milliseconds)
+            delay(50.milliseconds)
             byFirstKey.value shouldBe setOf("secondKey2")
         }
         should("handle parallel read and write") {
