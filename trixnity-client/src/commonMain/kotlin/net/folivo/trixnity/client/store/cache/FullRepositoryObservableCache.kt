@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.cache
 
-import com.benasher44.uuid.uuid4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.repository.FullRepository
@@ -13,7 +12,7 @@ private class FullRepositoryObservableCacheIndex<K>(
 ) : ObservableMapIndex<K> {
 
     private val allKeys = ConcurrentObservableSet<K>()
-    private val subscribers = MutableStateFlow(setOf<String>())
+    private val subscribers = MutableStateFlow(0)
     private val fullyLoadedFromRepository = MutableStateFlow(false)
     override suspend fun onPut(key: K) {
         allKeys.add(key)
@@ -28,17 +27,16 @@ private class FullRepositoryObservableCacheIndex<K>(
         allKeys.removeAll()
     }
 
-    override suspend fun getSubscriptionCount(key: K): Flow<Int> = subscribers.map { it.size }
+    override suspend fun getSubscriptionCount(key: K): Flow<Int> = subscribers
 
     fun getAllKeys(): Flow<Set<K>> = flow {
         if (!fullyLoadedFromRepository.value) {
             loadFromStore()
             fullyLoadedFromRepository.value = true
         }
-        val subscriberId = uuid4().toString()
         emitAll(allKeys.values
-            .onStart { subscribers.update { it + subscriberId } }
-            .onCompletion { subscribers.update { it - subscriberId } }
+            .onStart { subscribers.update { it + 1 } }
+            .onCompletion { subscribers.update { it - 1 } }
         )
     }
 }

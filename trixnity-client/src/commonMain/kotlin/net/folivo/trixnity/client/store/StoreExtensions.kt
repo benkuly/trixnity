@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -30,7 +29,7 @@ inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
 inline fun <reified C : StateEventContent> RoomStateStore.getContentByStateKey(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<C> = getByStateKey(roomId, C::class, stateKey).filterNotNull().map { it.content }
+): Flow<C?> = getByStateKey(roomId, C::class, stateKey).map { it?.content }
 
 inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,

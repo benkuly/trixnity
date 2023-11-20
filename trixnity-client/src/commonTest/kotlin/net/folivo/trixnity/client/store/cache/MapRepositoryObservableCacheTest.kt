@@ -7,6 +7,9 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.TestDispatcher
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.store.repository.InMemoryMapRepository
 import net.folivo.trixnity.client.store.repository.MapRepository
@@ -18,8 +21,10 @@ import kotlin.time.measureTimedValue
 @OptIn(ExperimentalTime::class)
 class MapRepositoryObservableCacheTest : ShouldSpec({
     timeout = 5_000
-    lateinit var repository: MapRepository<String, String, String>
+    lateinit var testCoroutineScheduler: TestCoroutineScheduler
+    lateinit var testDispatcher: TestDispatcher
     lateinit var cacheScope: CoroutineScope
+    lateinit var repository: MapRepository<String, String, String>
     lateinit var cut: MapRepositoryObservableCache<String, String, String>
     val readTransactionCalled = MutableStateFlow(0)
     val writeTransactionCalled = MutableStateFlow(0)
@@ -35,7 +40,9 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
     }
 
     beforeTest {
-        cacheScope = CoroutineScope(Dispatchers.Default)
+        testDispatcher = StandardTestDispatcher()
+        testCoroutineScheduler = testDispatcher.scheduler
+        cacheScope = CoroutineScope(testDispatcher)
         readTransactionCalled.value = 0
         writeTransactionCalled.value = 0
         repository = object : InMemoryMapRepository<String, String, String>() {
@@ -44,6 +51,8 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
         cut = MapRepositoryObservableCache(repository, tm, cacheScope)
     }
     afterTest {
+        testCoroutineScheduler.cancel()
+        testDispatcher.cancel()
         cacheScope.cancel()
     }
 
@@ -73,7 +82,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             writeTransactionCalled.value shouldBe 1
             repository.get("firstKey") shouldBe mapOf("secondKey2" to "old")
         }
-        xshould("handle parallel manipulation of same key") {
+        should("handle massive parallel manipulation of same key") {
             val database = MutableSharedFlow<String?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
@@ -87,7 +96,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, cacheScope)
             val (operationsTimeSum, completeTime) =
                 measureTimedValue {
-                    (0..999).map { i ->
+                    (0..99).map { i ->
                         async {
                             measureTimedValue {
                                 cut.write(
@@ -98,11 +107,13 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                         }
                     }.awaitAll().reduce { acc, duration -> acc + duration }
                 }
-            database.replayCache shouldContainAll (0..999).map { it.toString() }
-            (operationsTimeSum / 1000) shouldBeLessThan 10.milliseconds
-            completeTime shouldBeLessThan 300.milliseconds
+            database.replayCache shouldContainAll (0..99).map { it.toString() }
+            val timePerOperation = operationsTimeSum / 100
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 10.milliseconds
+            completeTime shouldBeLessThan 100.milliseconds
         }
-        xshould("handle parallel manipulation of different keys") {
+        should("handle massive parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
 
             class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
@@ -117,7 +128,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             val (operationsTimeSum, completeTime) =
                 measureTimedValue {
                     coroutineScope {
-                        (0..999).map { i ->
+                        (0..99).map { i ->
                             async {
                                 measureTimedValue {
                                     cut.write(
@@ -129,9 +140,12 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                         }.awaitAll().reduce { acc, duration -> acc + duration }
                     }
                 }
-            database.replayCache shouldContainAll (0..999).map { "key" to "$it" }
-            (operationsTimeSum / 1000) shouldBeLessThan 200.milliseconds
-            completeTime shouldBeLessThan 700.milliseconds // TODO could be optimized
+            database.replayCache shouldContainAll (0..99).map { "key" to "$it" }
+
+            val timePerOperation = operationsTimeSum / 100
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 10.milliseconds
+            completeTime shouldBeLessThan 100.milliseconds
         }
     }
     context("write with update") {
@@ -156,12 +170,12 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                 it shouldBe "old"
                 null
             }
+            repository.get("firstKey") shouldBe mapOf()
             repository.save("firstKey", "secondKey1", "old")
             cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
                 it shouldBe null
                 null
             }
-            repository.get("firstKey") shouldBe mapOf()
         }
     }
     context("read") {
@@ -190,7 +204,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             )
         }
         should("load from database, when cache values removed") {
-            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 100.milliseconds)
+            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 50.milliseconds)
             repository.save("firstKey", "secondKey1", "old1")
             repository.save("firstKey", "secondKey2", "old2")
             val stopCollectReadByFirstKey = MutableStateFlow(false)
@@ -205,8 +219,8 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                     .collect()
             }
             stopCollectReadByFirstKey.first { it }
-            collectReadByFirstKey.cancel()
-            delay(500.milliseconds)
+            collectReadByFirstKey.cancelAndJoin()
+            testCoroutineScheduler.advanceTimeBy(100.milliseconds)
             repository.save("firstKey", "secondKey1", "new1")
             repository.save("firstKey", "secondKey2", "new2")
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
@@ -219,7 +233,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             repository.save("firstKey", "secondKey1", "old1")
             repository.save("firstKey", "secondKey2", "old2")
             cut.read(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")).first() shouldBe "old1"
-            delay(50.milliseconds)
+            testCoroutineScheduler.advanceUntilIdle()
             readTransactionCalled.value = 0
             cut.readByFirstKey("firstKey").flatten().first() shouldBe mapOf(
                 "secondKey1" to "old1",
@@ -259,14 +273,15 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             )
         }
         should("remove from cache when not used anymore") {
-            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 100.milliseconds)
+            cut = MapRepositoryObservableCache(repository, tm, cacheScope, expireDuration = 50.milliseconds)
             val readScope1 = CoroutineScope(Dispatchers.Default)
             repository.save("firstKey", "secondKey1", "old1")
             cut.readByFirstKey(key = "firstKey").flatten().stateIn(readScope1).value shouldBe
                     mapOf("secondKey1" to "old1")
             repository.save("firstKey", "secondKey1", "new1")
             readScope1.cancel()
-            delay(200.milliseconds)
+            delay(50.milliseconds)
+            testCoroutineScheduler.advanceTimeBy(100.milliseconds)
             cut.readByFirstKey(key = "firstKey").flatten().first() shouldBe
                     mapOf("secondKey1" to "new1")
         }
@@ -277,10 +292,9 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             repository.save("firstKey", "secondKey2", "old2")
             val byFirstKey = cut.readByFirstKey(key = "firstKey").map { it.keys }.stateIn(readScope)
             byFirstKey.value shouldBe setOf("secondKey1", "secondKey2")
-            cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) {
-                null
-            }
-            delay(200.milliseconds)
+            cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondKey1")) { null }
+            testCoroutineScheduler.advanceTimeBy(100.milliseconds)
+            delay(50.milliseconds)
             byFirstKey.value shouldBe setOf("secondKey2")
         }
         should("handle parallel read and write") {
@@ -313,12 +327,12 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
                 repository = repository,
                 tm = tm,
                 cacheScope = cacheScope,
-                expireDuration = 100.milliseconds,
+                expireDuration = 50.milliseconds,
                 values = values
             )
             val subscriptionCountScope = CoroutineScope(Dispatchers.Default)
             val subscriptionCount1 =
-                values.getIndexSubscriptionCount(MapRepositoryCoroutinesCacheKey("firstKey", "secondsKey1"))
+                values.getIndexSubscriptionCount(MapRepositoryCoroutinesCacheKey("firstKey1", "secondsKey1"))
                     .stateIn(subscriptionCountScope)
             val subscriptionCount2 =
                 values.getIndexSubscriptionCount(MapRepositoryCoroutinesCacheKey("firstKey2", "secondsKey1"))
@@ -326,12 +340,13 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             subscriptionCount1.value shouldBe 0
             subscriptionCount2.value shouldBe 0
 
-            cut.write(MapRepositoryCoroutinesCacheKey("firstKey", "secondsKey1"), "value")
+            cut.write(MapRepositoryCoroutinesCacheKey("firstKey1", "secondsKey1"), "value")
             subscriptionCount1.value shouldBe 0
             subscriptionCount2.value shouldBe 0
 
             val readByFirstKeyScope = CoroutineScope(Dispatchers.Default)
-            cut.readByFirstKey("firstKey").flatten().stateIn(readByFirstKeyScope)
+
+            cut.readByFirstKey("firstKey1").flatten().stateIn(readByFirstKeyScope)
             delay(50.milliseconds)
             subscriptionCount1.value shouldBe 1
             subscriptionCount2.value shouldBe 0
@@ -340,6 +355,8 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             delay(50.milliseconds)
             subscriptionCount1.value shouldBe 0
             subscriptionCount2.value shouldBe 0
+
+            subscriptionCountScope.cancel()
         }
     }
 })

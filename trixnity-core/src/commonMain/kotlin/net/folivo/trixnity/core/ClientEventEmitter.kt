@@ -263,7 +263,9 @@ inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmi
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEventListAsFlow(priority: Int = Priority.DEFAULT): Flow<List<E>> =
+inline fun <reified C : EventContent, reified E : ClientEvent<C>> ClientEventEmitter<*>.subscribeEventListAsFlow(
+    priority: Int = Priority.DEFAULT
+): Flow<List<E>> =
     callbackFlow {
         val unsubscribe = subscribeEventList<C, E>(priority) { send(it) }
         awaitClose { unsubscribe() }
@@ -287,10 +289,11 @@ fun ClientEventEmitter<*>.subscribeEachEventAsFlow(priority: Int = Priority.DEFA
  * If you want, that exceptions are passed to the sync loop (so sync is cancelled on an error),
  * you should use [subscribeContent] and unsubscribe.
  */
-fun <T : List<ClientEvent<*>>> ClientEventEmitter<T>.subscribeAsFlow(priority: Int = Priority.DEFAULT): Flow<T> = callbackFlow {
-    val unsubscribe = subscribe(priority) { send(it) }
-    awaitClose { unsubscribe() }
-}
+fun <T : List<ClientEvent<*>>> ClientEventEmitter<T>.subscribeAsFlow(priority: Int = Priority.DEFAULT): Flow<T> =
+    callbackFlow {
+        val unsubscribe = subscribe(priority) { send(it) }
+        awaitClose { unsubscribe() }
+    }
 
 /**
  * Subscribe with a flow.

@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store.repository.test
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
@@ -124,6 +125,30 @@ fun ShouldSpec.roomStateRepositoryTest(diReceiver: () -> Koin) {
             cut.get(key1) shouldHaveSize 0
             cut.get(key2) shouldBe mapOf("" to state2)
             cut.get(key3) shouldHaveSize 0
+        }
+    }
+    should("roomStateRepositoryTest: handle massive operations") {
+        val iterations = 5_000
+        rtm.writeTransaction {
+            repeat(iterations) { i ->
+                val state = StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("$1event"),
+                    UserId("user$i", "server"),
+                    RoomId("room$i", "server"),
+                    1234,
+                    stateKey = "@user$i:server"
+                )
+                cut.save(RoomStateRepositoryKey(RoomId("room$i", "server"), "m.room.member"), i.toString(), state)
+            }
+        }
+        rtm.readTransaction {
+            repeat(iterations) { i ->
+                cut.get(
+                    RoomStateRepositoryKey(RoomId("room$i", "server"), "m.room.member"),
+                    i.toString()
+                ) shouldNotBe null
+            }
         }
     }
 }
