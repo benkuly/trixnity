@@ -83,8 +83,6 @@ internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
                     updateAndGet(
                         key = it,
                         updater = { null },
-                        get = { null },
-                        persist = { },
                     )
                 }
             }
@@ -121,8 +119,6 @@ internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
                     updateAndGet(
                         key = it,
                         updater = { null },
-                        get = { null },
-                        persist = { },
                     )
                 }
             }

@@ -34,7 +34,7 @@ class RoomListHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(Priority.ROOM_LIST, ::updateRoomList).unsubscribeOnCompletion(scope)
-        api.sync.subscribe(Priority.AFTER_DEFAULT - 24_000, ::deleteLeftRooms).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.AFTER_DEFAULT - 1, ::deleteLeftRooms).unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun updateRoomList(syncEvents: SyncEvents) = tm.writeTransaction {

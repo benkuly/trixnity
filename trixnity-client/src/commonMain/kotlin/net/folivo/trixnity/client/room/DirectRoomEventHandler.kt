@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
-import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
@@ -28,9 +27,8 @@ class DirectRoomEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeEventList(Priority.AFTER_DEFAULT, ::setNewDirectEventFromMemberEvent)
-            .unsubscribeOnCompletion(scope)
-        api.sync.subscribeContent(Priority.AFTER_DEFAULT, ::setDirectRoomProperties).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList(subscriber = ::setNewDirectEventFromMemberEvent).unsubscribeOnCompletion(scope)
+        api.sync.subscribeContent(subscriber = ::setDirectRoomProperties).unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun setNewDirectEventFromMemberEvent(events: List<StateEvent<MemberEventContent>>) {

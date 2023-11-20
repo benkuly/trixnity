@@ -78,11 +78,6 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
-    @Deprecated("use canSendEvent instead", ReplaceWith("canSendEvent(roomId, RoomMessageEventContent::class)"))
-    override fun canSendMessages(roomId: RoomId): Flow<Boolean> {
-        TODO("Not yet implemented")
-    }
-
     override fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean> {
         TODO("Not yet implemented")
     }
@@ -94,7 +89,7 @@ class UserServiceMock : UserService {
     override fun getPowerLevel(
         userId: UserId,
         powerLevelsEventContent: PowerLevelsEventContent?,
-        createEventContent: CreateEventContent?
+        createEventContent: CreateEventContent
     ): Int {
         throw NotImplementedError()
     }
