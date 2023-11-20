@@ -37,12 +37,10 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -461,7 +459,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned()
+                        KeySignatureTrustLevel.NotCrossSigned
                     )
                 )
             }
@@ -483,7 +481,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned()
+                        KeySignatureTrustLevel.NotCrossSigned
                     )
                 )
             }
@@ -495,7 +493,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned()
+                        KeySignatureTrustLevel.NotCrossSigned
                     )
                 )
             }
@@ -541,7 +539,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned()
+                        KeySignatureTrustLevel.NotCrossSigned
                     ),
                     "DEV2" to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, "DEV2", setOf(), keysOf()), null),
@@ -573,7 +571,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned()
+                        KeySignatureTrustLevel.NotCrossSigned
                     )
                 )
             }
@@ -600,7 +598,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned()
+                        KeySignatureTrustLevel.NotCrossSigned
                     )
                 )
             }
@@ -628,7 +626,7 @@ private val body: ShouldSpec.() -> Unit = {
                 mapOf(
                     aliceDeviceId to StoredDeviceKeys(
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.NotCrossSigned()
+                        KeySignatureTrustLevel.NotCrossSigned
                     )
                 )
             }

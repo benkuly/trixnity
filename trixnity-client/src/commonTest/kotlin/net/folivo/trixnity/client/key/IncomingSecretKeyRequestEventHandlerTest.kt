@@ -262,8 +262,8 @@ private val body: ShouldSpec.() -> Unit = {
         }
         notAnswerRequest(KeySignatureTrustLevel.Valid(false))
         notAnswerRequest(KeySignatureTrustLevel.CrossSigned(false))
-        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned())
-        notAnswerRequest(KeySignatureTrustLevel.Blocked())
+        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned)
+        notAnswerRequest(KeySignatureTrustLevel.Blocked)
         notAnswerRequest(KeySignatureTrustLevel.Invalid("reason"))
     }
 }
