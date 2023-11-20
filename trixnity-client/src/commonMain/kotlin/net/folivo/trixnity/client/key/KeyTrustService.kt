@@ -176,11 +176,11 @@ class KeyTrustServiceImpl(
         return when {
             keyVerificationState is KeyVerificationState.Verified && isMasterKey -> CrossSigned(true)
             keyVerificationState is KeyVerificationState.Verified && (masterKey == null) -> Valid(true)
-            keyVerificationState is KeyVerificationState.Blocked -> Blocked()
+            keyVerificationState is KeyVerificationState.Blocked -> Blocked
             else -> searchSignaturesForTrustLevel(userId, verifySignedObject, signedKey, signatures)
                 ?: when {
                     isMasterKey -> CrossSigned(false)
-                    else -> if (masterKey == null) Valid(false) else NotCrossSigned()
+                    else -> if (masterKey == null) Valid(false) else NotCrossSigned
                 }
         }
     }
@@ -213,7 +213,7 @@ class KeyTrustServiceImpl(
                             } == VerifyResult.Valid
                         if (isValid) when (crossSigningKey.getVerificationState()) {
                             is KeyVerificationState.Verified -> CrossSigned(true)
-                            is KeyVerificationState.Blocked -> Blocked()
+                            is KeyVerificationState.Blocked -> Blocked
                             else -> {
                                 searchSignaturesForTrustLevel(
                                     signingUserId,
@@ -239,7 +239,7 @@ class KeyTrustServiceImpl(
                             } == VerifyResult.Valid
                         if (isValid) when (deviceKey.getVerificationState()) {
                             is KeyVerificationState.Verified -> CrossSigned(true)
-                            is KeyVerificationState.Blocked -> Blocked()
+                            is KeyVerificationState.Blocked -> Blocked
                             else -> searchSignaturesForTrustLevel(
                                 signedUserId,
                                 { signService.verify(deviceKey, it) },
@@ -261,7 +261,7 @@ class KeyTrustServiceImpl(
         return when {
             states.any { it is CrossSigned && it.verified } -> CrossSigned(true)
             states.any { it is CrossSigned && !it.verified } -> CrossSigned(false)
-            states.contains(Blocked()) -> Blocked()
+            states.contains(Blocked) -> Blocked
             else -> null
         }
     }

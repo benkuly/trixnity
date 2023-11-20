@@ -18,14 +18,11 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -72,7 +69,7 @@ private val body: ShouldSpec.() -> Unit = {
     context(KeyMemberEventHandler::updateDeviceKeysFromChangedMembership.name) {
         val room = RoomId("room", "server")
         beforeTest {
-            roomStore.update(room) { simpleRoom.copy(roomId = room, encryptionAlgorithm = EncryptionAlgorithm.Megolm) }
+            roomStore.update(room) { simpleRoom.copy(roomId = room, encrypted = true) }
         }
         should("ignore unencrypted rooms") {
             val room2 = RoomId("roo2", "server")
@@ -126,10 +123,7 @@ private val body: ShouldSpec.() -> Unit = {
             val otherRoom = RoomId("otherRoom", "server")
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             roomStore.update(otherRoom) {
-                simpleRoom.copy(
-                    roomId = otherRoom,
-                    encryptionAlgorithm = EncryptionAlgorithm.Megolm
-                )
+                simpleRoom.copy(roomId = otherRoom, encrypted = true)
             }
             delay(500)
             roomStateStore.save(
