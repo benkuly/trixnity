@@ -22,13 +22,16 @@ interface ClientEventEmitter<T : List<ClientEvent<*>>> {
         const val FIRST = Int.MAX_VALUE
 
         const val ONE_TIME_KEYS = 24_000
-        const val DEVICE_LISTS = ONE_TIME_KEYS - 1
-        const val TO_DEVICE_EVENTS = DEVICE_LISTS - 1
-        const val ROOM_LIST = TO_DEVICE_EVENTS - 1
+        const val ROOM_LIST = ONE_TIME_KEYS - 1_000
+        const val DEVICE_LISTS = ROOM_LIST - 1_000
+        const val TO_DEVICE_EVENTS = DEVICE_LISTS - 1_000
+        const val STORE_EVENTS = TO_DEVICE_EVENTS - 1_000
+        const val STORE_TIMELINE_EVENTS = STORE_EVENTS - 1_000
+
 
         const val DEFAULT = 0
-        const val BEFORE_DEFAULT = DEFAULT + 1
-        const val AFTER_DEFAULT = DEFAULT - 1
+        const val BEFORE_DEFAULT = DEFAULT + 1_000
+        const val AFTER_DEFAULT = DEFAULT - 1_000
 
         const val LAST = Int.MIN_VALUE
     }

@@ -33,7 +33,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -102,8 +101,8 @@ class TimelineEventIT {
             client2.room.getById(room).first { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
 
-            client1.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
-            client2.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
+            client1.room.getById(room).first { it?.encrypted == true }
+            client2.room.getById(room).first { it?.encrypted == true }
 
             client1.room.sendMessage(room) { text("Hello!") }
             client2.room.sendMessage(room) { text("Hello to you, too!") }
