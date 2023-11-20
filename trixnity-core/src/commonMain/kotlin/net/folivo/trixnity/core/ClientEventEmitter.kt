@@ -23,10 +23,10 @@ interface ClientEventEmitter<T : List<ClientEvent<*>>> {
 
         const val ONE_TIME_KEYS = 24_000
         const val ROOM_LIST = ONE_TIME_KEYS - 1_000
-        const val DEVICE_LISTS = ROOM_LIST - 1_000
+        const val STORE_EVENTS = ROOM_LIST
+        const val DEVICE_LISTS = STORE_EVENTS - 1_000
         const val TO_DEVICE_EVENTS = DEVICE_LISTS - 1_000
-        const val STORE_EVENTS = TO_DEVICE_EVENTS - 1_000
-        const val STORE_TIMELINE_EVENTS = STORE_EVENTS - 1_000
+        const val STORE_TIMELINE_EVENTS = TO_DEVICE_EVENTS - 1_000
 
 
         const val DEFAULT = 0

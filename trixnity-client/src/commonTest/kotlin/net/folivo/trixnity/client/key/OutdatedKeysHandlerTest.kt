@@ -529,8 +529,8 @@ private val body: ShouldSpec.() -> Unit = {
                 olmCryptoStore.getOutboundMegolmSession(room2) should beNull() // there is no session
                 olmCryptoStore.getOutboundMegolmSession(room3)?.newDevices.shouldNotBeNull().shouldContainExactly(
                     mapOf(
-                        alice to setOf(aliceDevice1, aliceDevice2),
-                        cedric to setOf(cedricDevice), // was already present
+                        alice to setOf(aliceDevice1, aliceDevice2), // aliceDevice1 was already present
+                        cedric to setOf(cedricDevice), // cedricDevice was already present
                     )
                 )
             }
@@ -570,7 +570,7 @@ private val body: ShouldSpec.() -> Unit = {
                             KeySignatureTrustLevel.CrossSigned(false) to false,
                         ) { (levelBefore, expectedVerified) ->
                             keyTrustServiceMock.returnCalculateDeviceKeysTrustLevel =
-                                KeySignatureTrustLevel.NotCrossSigned()
+                                KeySignatureTrustLevel.NotCrossSigned
                             apiConfig.endpoints {
                                 matrixJsonEndpoint(GetKeys()) {
                                     GetKeys.Response(
@@ -608,9 +608,9 @@ private val body: ShouldSpec.() -> Unit = {
                             KeySignatureTrustLevel.Valid(true),
                             KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true),
                             KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(false),
-                            KeySignatureTrustLevel.NotCrossSigned(),
+                            KeySignatureTrustLevel.NotCrossSigned,
                             KeySignatureTrustLevel.Invalid(""),
-                            KeySignatureTrustLevel.Blocked()
+                            KeySignatureTrustLevel.Blocked
                         ) { levelBefore ->
                             apiConfig.endpoints {
                                 matrixJsonEndpoint(GetKeys()) {

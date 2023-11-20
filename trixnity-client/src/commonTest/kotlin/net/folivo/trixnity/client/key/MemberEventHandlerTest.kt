@@ -165,7 +165,8 @@ private val body: ShouldSpec.() -> Unit = {
             )
             keyStore.getDeviceKeys(alice) shouldNot beNull()
         }
-        should("ignore join without real change (already join)") {
+        should("ignore join when key already tracked") {
+            keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
                 listOf(
                     StateEvent(

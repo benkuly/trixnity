@@ -101,6 +101,14 @@ class InMemoryRoomUserReceiptsRepository : RoomUserReceiptsRepository,
 
 class InMemoryRoomStateRepository : RoomStateRepository,
     InMemoryMapRepository<RoomStateRepositoryKey, String, ClientEvent.StateBaseEvent<*>>() {
+    override suspend fun getByRooms(
+        roomIds: Set<RoomId>,
+        type: String,
+        stateKey: String
+    ): List<ClientEvent.StateBaseEvent<*>> =
+        content.value.filterKeys { roomIds.contains(it.roomId) && it.type == type }
+            .values.flatMap { entry -> entry.filterKeys { it == stateKey }.values }
+
     override suspend fun deleteByRoomId(roomId: RoomId) {
         content.update { value -> value.filterKeys { it.roomId != roomId } }
     }

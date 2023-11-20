@@ -22,8 +22,8 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import kotlin.reflect.KClass
 
 class RoomStateStore(
-    roomStateRepository: RoomStateRepository,
-    tm: RepositoryTransactionManager,
+    private val roomStateRepository: RoomStateRepository,
+    private val tm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
@@ -106,5 +106,16 @@ class RoomStateStore(
         return roomStateCache.read(MapRepositoryCoroutinesCacheKey(RoomStateRepositoryKey(roomId, eventType), stateKey))
             .map { if (it?.content?.instanceOf(eventContentClass) == true) it else null }
             .filterIsInstance()
+    }
+
+    suspend fun <C : StateEventContent> getByRooms(
+        roomIds: Set<RoomId>,
+        eventContentClass: KClass<C>,
+        stateKey: String,
+    ): List<StateBaseEvent<C>> {
+        val eventType = findType(eventContentClass)
+        return tm.readTransaction { roomStateRepository.getByRooms(roomIds, eventType, stateKey) }
+            .mapNotNull { if (it.content.instanceOf(eventContentClass)) it else null }
+            .filterIsInstance<StateBaseEvent<C>>()
     }
 }

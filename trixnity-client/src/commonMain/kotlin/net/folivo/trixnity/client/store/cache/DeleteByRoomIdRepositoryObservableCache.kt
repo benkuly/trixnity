@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.store.repository.MapDeleteByRoomIdRepository
-import net.folivo.trixnity.client.store.repository.MinimalDeleteByRoomIdRepository
+import net.folivo.trixnity.client.store.repository.DeleteByRoomIdMapRepository
+import net.folivo.trixnity.client.store.repository.DeleteByRoomIdMinimalRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration
@@ -54,7 +54,7 @@ private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
 }
 
 internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
-    private val repository: MinimalDeleteByRoomIdRepository<K, V>,
+    private val repository: DeleteByRoomIdMinimalRepository<K, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
@@ -91,7 +91,7 @@ internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
 }
 
 internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
-    private val repository: MapDeleteByRoomIdRepository<K1, K2, V>,
+    private val repository: DeleteByRoomIdMapRepository<K1, K2, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,

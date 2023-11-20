@@ -21,9 +21,7 @@ import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.clientserverapi.model.keys.AddSignatures
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -257,7 +255,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.saveKeyVerificationState(
                     Ed25519Key("AAAAAA", "edKeyValue"), Verified("edKeyValue")
                 )
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
             }
             should("be ${Valid::class.simpleName} + verified, when key is verified") {
                 keyStore.saveKeyVerificationState(
@@ -275,7 +273,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.saveKeyVerificationState(
                     Ed25519Key("AAAAAA", "edKeyValue"), KeyVerificationState.Blocked("edKeyValue")
                 )
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked
             }
             should("be ${Valid::class.simpleName}, when there is no master key") {
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Valid(false)
@@ -295,7 +293,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
             }
         }
         context("with master key but only self signing key chain: BOB_DEVICE <- BOB_DEVICE") {
@@ -347,7 +345,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
             should("be ${NotCrossSigned::class.simpleName}") {
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
             }
         }
         context("with key chain: BOB_DEVICE <- BOB_SSK <- BOB_MSK <- ALICE_USK <- ALICE_MSK <- ALICE_DEVICE") {
@@ -452,7 +450,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.saveKeyVerificationState(
                     Ed25519Key(bobDevice, "..."), KeyVerificationState.Blocked("...")
                 )
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked
             }
         }
         context("with key chain: BOB_DEVICE <- BOB_SSK <- BOB_MSK") {

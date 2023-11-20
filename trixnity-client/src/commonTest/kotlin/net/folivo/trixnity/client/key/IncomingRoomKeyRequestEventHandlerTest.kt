@@ -18,10 +18,8 @@ import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
@@ -315,8 +313,8 @@ private val body: ShouldSpec.() -> Unit = {
         }
         notAnswerRequest(KeySignatureTrustLevel.Valid(false))
         notAnswerRequest(KeySignatureTrustLevel.CrossSigned(false))
-        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned())
-        notAnswerRequest(KeySignatureTrustLevel.Blocked())
+        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned)
+        notAnswerRequest(KeySignatureTrustLevel.Blocked)
         notAnswerRequest(KeySignatureTrustLevel.Invalid("reason"))
     }
 }
