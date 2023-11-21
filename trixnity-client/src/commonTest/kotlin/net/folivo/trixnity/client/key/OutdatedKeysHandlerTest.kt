@@ -364,13 +364,17 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(OutdatedKeysHandler::updateDeviceKeysFromChangedEncryption.name) {
+        val room = RoomId("room", "server")
+        beforeTest {
+            roomStore.update(room) { simpleRoom.copy(roomId = room, encrypted = true, membersLoaded = true) }
+        }
         should("mark users as outdated dependent on history visibility") {
             listOf(
                 StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("\$event1"),
                     alice,
-                    RoomId("room", "server"),
+                    room,
                     1234,
                     stateKey = alice.full
                 ),
@@ -378,7 +382,7 @@ private val body: ShouldSpec.() -> Unit = {
                     MemberEventContent(membership = Membership.INVITE),
                     EventId("\$event2"),
                     bob,
-                    RoomId("room", "server"),
+                    room,
                     1234,
                     stateKey = bob.full
                 ),
@@ -389,7 +393,7 @@ private val body: ShouldSpec.() -> Unit = {
                         EncryptionEventContent(),
                         EventId("\$event3"),
                         bob,
-                        RoomId("room", "server"),
+                        room,
                         1234,
                         stateKey = ""
                     ),
@@ -406,7 +410,7 @@ private val body: ShouldSpec.() -> Unit = {
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("\$event1"),
                     alice,
-                    RoomId("room", "server"),
+                    room,
                     1234,
                     stateKey = alice.full
                 ),
@@ -414,7 +418,7 @@ private val body: ShouldSpec.() -> Unit = {
                     MemberEventContent(membership = Membership.INVITE),
                     EventId("\$event2"),
                     bob,
-                    RoomId("room", "server"),
+                    room,
                     1234,
                     stateKey = bob.full
                 ),
@@ -425,7 +429,7 @@ private val body: ShouldSpec.() -> Unit = {
                         EncryptionEventContent(),
                         EventId("\$event3"),
                         bob,
-                        RoomId("room", "server"),
+                        room,
                         1234,
                         stateKey = ""
                     ),
@@ -440,7 +444,7 @@ private val body: ShouldSpec.() -> Unit = {
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("\$event1"),
                     alice,
-                    RoomId("room", "server"),
+                    room,
                     1234,
                     stateKey = alice.full
                 ),
@@ -451,7 +455,34 @@ private val body: ShouldSpec.() -> Unit = {
                         EncryptionEventContent(),
                         EventId("\$event3"),
                         bob,
-                        RoomId("room", "server"),
+                        room,
+                        1234,
+                        stateKey = ""
+                    ),
+                ),
+                SyncState.INITIAL_SYNC
+            )
+            keyStore.getOutdatedKeysFlow().first().shouldBeEmpty()
+        }
+        should("do nothing when members not loaded") {
+            roomStore.update(room) { simpleRoom.copy(encrypted = true, membersLoaded = false) }
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    room,
+                    1234,
+                    stateKey = alice.full
+                ),
+            ).forEach { roomStateStore.save(it) }
+            cut.updateDeviceKeysFromChangedEncryption(
+                listOf(
+                    StateEvent(
+                        EncryptionEventContent(),
+                        EventId("\$event3"),
+                        bob,
+                        room,
                         1234,
                         stateKey = ""
                     ),
