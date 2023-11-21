@@ -5,16 +5,20 @@ import io.kotest.assertions.until.fixed
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
@@ -24,10 +28,13 @@ import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent.HistoryVisibility
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -47,6 +54,18 @@ private val body: ShouldSpec.() -> Unit = {
     timeout = 15_000
 
     val alice = UserId("alice", "server")
+    val bob = UserId("bob", "server")
+    val aliceDevice = "ALICEDEVICE"
+    val bobDevice = "BOBDEVICE"
+    val aliceKeys = StoredDeviceKeys(
+        Signed(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), mapOf()),
+        KeySignatureTrustLevel.Valid(false)
+    )
+    val bobKeys = StoredDeviceKeys(
+        Signed(DeviceKeys(bob, bobDevice, setOf(), keysOf()), mapOf()),
+        KeySignatureTrustLevel.Valid(false)
+    )
+
     lateinit var scope: CoroutineScope
     lateinit var keyStore: KeyStore
     lateinit var olmCryptoStore: OlmCryptoStore
@@ -92,7 +111,356 @@ private val body: ShouldSpec.() -> Unit = {
     afterTest {
         scope.cancel()
     }
+    context(OutdatedKeysHandler::handleDeviceLists.name) {
+        context("device key is tracked") {
+            should("add changed devices to outdated keys") {
+                keyStore.updateOutdatedKeys { setOf(alice) }
+                keyStore.updateDeviceKeys(bob) { mapOf() }
+                cut.handleDeviceLists(Sync.Response.DeviceLists(changed = setOf(bob)), SyncState.RUNNING)
+                keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice, bob)
+            }
+            should("remove key when user left") {
+                keyStore.updateOutdatedKeys { setOf(alice, bob) }
+                keyStore.updateDeviceKeys(alice) { mapOf() }
+                cut.handleDeviceLists(Sync.Response.DeviceLists(left = setOf(alice)), SyncState.RUNNING)
+                keyStore.getDeviceKeys(alice).first() should beNull()
+                keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(bob)
+            }
+        }
+        context("device key is not tracked") {
+            should("not add changed devices to outdated keys") {
+                keyStore.updateOutdatedKeys { setOf(alice) }
+                cut.handleDeviceLists(Sync.Response.DeviceLists(changed = setOf(bob)), SyncState.RUNNING)
+                keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice)
+            }
+        }
+        should("do nothing on initial sync") {
+            keyStore.updateOutdatedKeys { setOf(alice) }
+            keyStore.updateDeviceKeys(alice) { mapOf() }
+            keyStore.updateDeviceKeys(bob) { mapOf() }
+            cut.handleDeviceLists(
+                Sync.Response.DeviceLists(changed = setOf(bob), left = setOf(alice)),
+                SyncState.INITIAL_SYNC
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice)
+        }
+    }
+    context(OutdatedKeysHandler::updateDeviceKeysFromChangedMembership.name) {
+        val room = RoomId("room", "server")
+        beforeTest {
+            roomStore.update(room) { simpleRoom.copy(roomId = room, encrypted = true) }
+        }
+        should("ignore unencrypted rooms") {
+            val room2 = RoomId("roo2", "server")
+            roomStore.update(room2) { simpleRoom.copy(roomId = room2) }
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room2,
+                        1234,
+                        stateKey = alice.full
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
+        }
+        should("remove device keys on leave or ban of the last encrypted room") {
+            keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.LEAVE),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getDeviceKeys(alice).first() should beNull()
 
+            keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.BAN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getDeviceKeys(alice).first() should beNull()
+        }
+        should("not remove device keys on leave or ban when there are more rooms") {
+            val otherRoom = RoomId("otherRoom", "server")
+            keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            roomStore.update(otherRoom) {
+                simpleRoom.copy(roomId = otherRoom, encrypted = true)
+            }
+            delay(500)
+            roomStateStore.save(
+                StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event"),
+                    alice,
+                    otherRoom,
+                    1234,
+                    stateKey = alice.full
+                )
+            )
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.LEAVE),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getDeviceKeys(alice) shouldNot beNull()
+
+            keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.BAN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getDeviceKeys(alice) shouldNot beNull()
+        }
+        should("ignore join when key already tracked") {
+            keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                        unsigned = UnsignedRoomEventData.UnsignedStateEventData(
+                            previousContent = MemberEventContent(membership = Membership.JOIN)
+                        )
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
+        }
+        should("not mark keys as outdated when not members loaded or loading") {
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first().shouldBeEmpty()
+        }
+        should("mark keys as outdated when members loaded") {
+            roomStore.update(room) { simpleRoom.copy(roomId = room, encrypted = true, membersLoaded = true) }
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldContain alice
+        }
+        should("mark keys as outdated when members loading") {
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                    )
+                ),
+                isLoadingMembers = true,
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldContain alice
+        }
+        should("not mark keys as outdated when join, but keys are already tracked") {
+            keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                    )
+                ),
+                false,
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
+        }
+        should("do nothing on initial sync") {
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        EventId("\$event"),
+                        alice,
+                        room,
+                        1234,
+                        stateKey = alice.full,
+                    )
+                ),
+                isLoadingMembers = true,
+                SyncState.INITIAL_SYNC
+            )
+            keyStore.getOutdatedKeysFlow().first().shouldBeEmpty()
+        }
+    }
+    context(OutdatedKeysHandler::updateDeviceKeysFromChangedEncryption.name) {
+        should("mark users as outdated dependent on history visibility") {
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+                StateEvent(
+                    MemberEventContent(membership = Membership.INVITE),
+                    EventId("\$event2"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = bob.full
+                ),
+            ).forEach { roomStateStore.save(it) }
+            cut.updateDeviceKeysFromChangedEncryption(
+                listOf(
+                    StateEvent(
+                        EncryptionEventContent(),
+                        EventId("\$event3"),
+                        bob,
+                        RoomId("room", "server"),
+                        1234,
+                        stateKey = ""
+                    ),
+                ),
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice)
+        }
+        should("not mark joined or invited users as outdated, when keys already tracked") {
+            keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
+            keyStore.updateDeviceKeys(bob) { mapOf(bobDevice to bobKeys) }
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+                StateEvent(
+                    MemberEventContent(membership = Membership.INVITE),
+                    EventId("\$event2"),
+                    bob,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = bob.full
+                ),
+            ).forEach { roomStateStore.save(it) }
+            cut.updateDeviceKeysFromChangedEncryption(
+                listOf(
+                    StateEvent(
+                        EncryptionEventContent(),
+                        EventId("\$event3"),
+                        bob,
+                        RoomId("room", "server"),
+                        1234,
+                        stateKey = ""
+                    ),
+                ),
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
+        }
+        should("do nothing on initial sync") {
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = Membership.JOIN),
+                    EventId("\$event1"),
+                    alice,
+                    RoomId("room", "server"),
+                    1234,
+                    stateKey = alice.full
+                ),
+            ).forEach { roomStateStore.save(it) }
+            cut.updateDeviceKeysFromChangedEncryption(
+                listOf(
+                    StateEvent(
+                        EncryptionEventContent(),
+                        EventId("\$event3"),
+                        bob,
+                        RoomId("room", "server"),
+                        1234,
+                        stateKey = ""
+                    ),
+                ),
+                SyncState.INITIAL_SYNC
+            )
+            keyStore.getOutdatedKeysFlow().first().shouldBeEmpty()
+        }
+    }
     context(OutdatedKeysHandler::updateOutdatedKeys.name) {
         val cedric = UserId("cedric", "server")
         val cedricDevice = "CEDRIC_DEVICE"

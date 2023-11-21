@@ -10,19 +10,26 @@ import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.PAUSE
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
 import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.olm.membershipsAllowedToReceiveKey
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.VerifyResult
@@ -41,12 +48,122 @@ class OutdatedKeysHandler(
     private val keyTrustService: KeyTrustService,
     private val currentSyncState: CurrentSyncState,
     private val tm: RepositoryTransactionManager,
-) : EventHandler {
+) : EventHandler, LazyMemberEventHandler {
     private val syncProcessingRunning = MutableStateFlow(false)
     private val normalLoopRunning = MutableStateFlow(false)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
+        api.sync.subscribe(Priority.DEVICE_LISTS) {
+            handleDeviceLists(it.syncResponse.deviceLists, api.sync.currentSyncState.value)
+        }
+            .unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList {
+            updateDeviceKeysFromChangedMembership(it, isLoadingMembers = false, api.sync.currentSyncState.value)
+        }
+            .unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList { updateDeviceKeysFromChangedEncryption(it, api.sync.currentSyncState.value) }
+            .unsubscribeOnCompletion(scope)
         scope.launch(start = CoroutineStart.UNDISPATCHED) { updateLoop() }
+    }
+
+    override suspend fun handleLazyMemberEvents(memberEvents: List<ClientEvent.RoomEvent.StateEvent<MemberEventContent>>) {
+        updateDeviceKeysFromChangedMembership(memberEvents, isLoadingMembers = true, api.sync.currentSyncState.value)
+    }
+
+    internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) =
+        tm.writeTransaction {
+            if (syncState != SyncState.INITIAL_SYNC) {
+                val startTrackingKeys = deviceList?.changed?.filter { keyStore.isTracked(it) }?.toSet().orEmpty()
+                val stopTrackingKeys = deviceList?.left.orEmpty()
+
+                changeTrackingKeys(
+                    start = startTrackingKeys,
+                    stop = stopTrackingKeys,
+                    reason = "device list"
+                )
+            }
+        }
+
+    internal suspend fun updateDeviceKeysFromChangedMembership(
+        events: List<ClientEvent.RoomEvent.StateEvent<MemberEventContent>>,
+        isLoadingMembers: Boolean,
+        syncState: SyncState,
+    ) = coroutineScope {
+        if (syncState != SyncState.INITIAL_SYNC) {
+            val startTrackingKeys = mutableSetOf<UserId>()
+            val stopTrackingKeys = mutableSetOf<UserId>()
+            val joinedEncryptedRooms = async(start = CoroutineStart.LAZY) { roomStore.encryptedJoinedRooms() }
+
+            events.forEach { event ->
+                val room = roomStore.get(event.roomId).first()
+                if (room?.encrypted == true) {
+                    log.trace { "update keys from changed membership (event=$event)" }
+                    val userId = UserId(event.stateKey)
+                    val allowedMemberships =
+                        roomStateStore.getByStateKey<HistoryVisibilityEventContent>(event.roomId)
+                            .first()?.content?.historyVisibility
+                            .membershipsAllowedToReceiveKey
+                    if (allowedMemberships.contains(event.content.membership)) {
+                        if ((isLoadingMembers || room.membersLoaded) && !keyStore.isTracked(userId)) {
+                            startTrackingKeys.add(userId)
+                        }
+                    } else {
+                        if (keyStore.isTracked(userId)) {
+                            val isActiveMemberOfAnyOtherEncryptedRoom =
+                                roomStateStore.getByRooms<MemberEventContent>(joinedEncryptedRooms.await(), userId.full)
+                                    .any {
+                                        val membership = it.content.membership
+                                        membership == Membership.JOIN || membership == Membership.INVITE
+                                    }
+                            if (!isActiveMemberOfAnyOtherEncryptedRoom) {
+                                stopTrackingKeys.add(userId)
+                            }
+                        }
+                    }
+                }
+            }
+            changeTrackingKeys(
+                start = startTrackingKeys,
+                stop = stopTrackingKeys,
+                reason = "member event"
+            )
+            joinedEncryptedRooms.cancelAndJoin()
+        }
+    }
+
+    internal suspend fun updateDeviceKeysFromChangedEncryption(
+        events: List<ClientEvent.RoomEvent.StateEvent<EncryptionEventContent>>,
+        syncState: SyncState
+    ) {
+        if (syncState != SyncState.INITIAL_SYNC) {
+            log.trace { "update keys from changed encryption" }
+            val startTrackingKeys = events.flatMap { event ->
+                val allowedMemberships =
+                    roomStateStore.getByStateKey<HistoryVisibilityEventContent>(event.roomId)
+                        .first()?.content?.historyVisibility
+                        .membershipsAllowedToReceiveKey
+                roomStateStore.members(event.roomId, allowedMemberships)
+            }.toSet()
+                .filterNot { keyStore.isTracked(it) }.toSet()
+            changeTrackingKeys(
+                start = startTrackingKeys,
+                stop = emptySet(),
+                reason = "encryption event"
+            )
+        }
+    }
+
+    private suspend fun changeTrackingKeys(start: Set<UserId>, stop: Set<UserId>, reason: String) {
+        if (start.isNotEmpty() || stop.isNotEmpty()) {
+            tm.writeTransaction {
+                log.debug { "change tracking keys because of $reason (start=$start stop=$stop)" }
+                keyStore.updateOutdatedKeys { it + start - stop }
+                stop.forEach { userId ->
+                    keyStore.deleteDeviceKeys(userId)
+                    keyStore.deleteCrossSigningKeys(userId)
+                }
+            }
+        }
     }
 
     private val loopSyncStates = setOf(SyncState.STARTED, SyncState.INITIAL_SYNC, SyncState.RUNNING)
