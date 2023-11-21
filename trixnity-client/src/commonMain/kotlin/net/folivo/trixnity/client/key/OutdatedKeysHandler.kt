@@ -157,6 +157,8 @@ class OutdatedKeysHandler(
         }
     }
 
+    //TODO we should also listen to HistoryVisibilityEventContent changes, which becomes important for MSC3061
+
     private suspend fun changeTrackingKeys(start: Set<UserId>, stop: Set<UserId>, reason: String) {
         if (start.isNotEmpty() || stop.isNotEmpty()) {
             tm.writeTransaction {
