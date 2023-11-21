@@ -52,7 +52,7 @@ class OutgoingSecretKeyRequestEventHandler(
     }
 
     internal suspend fun requestSecretKeys() {
-        val missingSecrets = SecretType.values()
+        val missingSecrets = SecretType.entries
             .subtract(keyStore.getSecrets().keys)
             .subtract(keyStore.getAllSecretKeyRequests().mapNotNull { request ->
                 request.content.name?.let { SecretType.ofId(it) }

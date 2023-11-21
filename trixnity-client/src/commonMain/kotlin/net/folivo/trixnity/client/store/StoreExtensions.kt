@@ -78,9 +78,6 @@ fun RoomTimelineStore.getNext(
 suspend fun RoomTimelineStore.getPrevious(event: TimelineEvent): TimelineEvent? =
     event.previousEventId?.let { get(it, event.roomId) }?.first()
 
-suspend fun KeyStore.isTracked(userId: UserId): Boolean =
-    getDeviceKeys(userId).first() != null
-
 suspend fun OlmCryptoStore.waitForInboundMegolmSession(
     roomId: RoomId,
     sessionId: String,

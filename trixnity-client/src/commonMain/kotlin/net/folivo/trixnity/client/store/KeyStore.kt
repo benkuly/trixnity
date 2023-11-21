@@ -1,11 +1,10 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenValues
+import net.folivo.trixnity.client.key.waitForUpdateOutdatedKey
 import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.*
@@ -106,7 +105,17 @@ class KeyStore(
 
     fun getDeviceKeys(
         userId: UserId,
-    ): Flow<Map<String, StoredDeviceKeys>?> = deviceKeysCache.read(userId)
+        fetchIfMissing: Boolean = false,
+    ): Flow<Map<String, StoredDeviceKeys>?> =
+        if (fetchIfMissing) flow {
+            val keys = deviceKeysCache.read(userId).first()
+            if (keys == null) {
+                updateOutdatedKeys { it + userId }
+                waitForUpdateOutdatedKey(userId)
+            }
+            emitAll(deviceKeysCache.read(userId))
+        }
+        else deviceKeysCache.read(userId)
 
     suspend fun updateDeviceKeys(
         userId: UserId,
@@ -122,7 +131,17 @@ class KeyStore(
 
     fun getCrossSigningKeys(
         userId: UserId,
-    ): Flow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.read(userId)
+        fetchIfMissing: Boolean = false,
+    ): Flow<Set<StoredCrossSigningKeys>?> =
+        if (fetchIfMissing) flow {
+            val keys = crossSigningKeysCache.read(userId).first()
+            if (keys == null) {
+                updateOutdatedKeys { it + userId }
+                waitForUpdateOutdatedKey(userId)
+            }
+            emitAll(crossSigningKeysCache.read(userId))
+        }
+        else crossSigningKeysCache.read(userId)
 
     suspend fun updateCrossSigningKeys(
         userId: UserId,
