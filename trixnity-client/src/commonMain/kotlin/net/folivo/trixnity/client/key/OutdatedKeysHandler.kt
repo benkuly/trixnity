@@ -405,4 +405,7 @@ class OutdatedKeysHandler(
             else -> null
         }
     }
+
+    private suspend fun KeyStore.isTracked(userId: UserId): Boolean =
+        getDeviceKeys(userId).first() != null
 }

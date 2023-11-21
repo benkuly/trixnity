@@ -362,7 +362,6 @@ class ActiveSasVerificationMethod private constructor(
                     }
                 }.contains(false)
             if (!containsMismatchedMac) {
-                // FIXME wait for M_CROSS_SIGNING_SELF_SIGNING on own device verification
                 keyTrustService.trustAndSignKeys(keysToMac.toSet(), theirUserId)
                 sendVerificationStep(VerificationDoneEventContent(relatesTo, transactionId))
             } else {

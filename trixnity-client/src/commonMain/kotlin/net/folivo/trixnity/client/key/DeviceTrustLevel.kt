@@ -31,4 +31,9 @@ sealed interface DeviceTrustLevel {
      * The trust level could not be calculated.
      */
     data class Invalid(val reason: String) : DeviceTrustLevel
+
+    /**
+     * There are no stored cross signing keys of this user yet.
+     */
+    object Unknown : DeviceTrustLevel
 }
