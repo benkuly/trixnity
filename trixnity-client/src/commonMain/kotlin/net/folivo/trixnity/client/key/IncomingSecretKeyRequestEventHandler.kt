@@ -9,8 +9,9 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
-import net.folivo.trixnity.core.EventEmitter.Priority
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
@@ -41,12 +42,12 @@ class IncomingSecretKeyRequestEventHandler(
     internal fun handleEncryptedIncomingKeyRequests(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is SecretKeyRequestEventContent) {
-            handleIncomingKeyRequests(Event.ToDeviceEvent(content, event.decrypted.sender))
+            handleIncomingKeyRequests(ToDeviceEvent(content, event.decrypted.sender))
         }
     }
 
-    internal fun handleIncomingKeyRequests(event: Event<SecretKeyRequestEventContent>) {
-        if (event is Event.ToDeviceEvent && event.sender == ownUserId) {
+    internal fun handleIncomingKeyRequests(event: ClientEvent<SecretKeyRequestEventContent>) {
+        if (event is ToDeviceEvent && event.sender == ownUserId) {
             log.debug { "handle incoming secret key requests" }
             val content = event.content
             when (content.action) {
@@ -78,7 +79,7 @@ class IncomingSecretKeyRequestEventHandler(
                         null
                     }
                     if (encryptedAnswer != null)
-                        api.users.sendToDevice(
+                        api.user.sendToDevice(
                             mapOf(ownUserId to mapOf(requestingDeviceId to encryptedAnswer))
                         ).getOrThrow()
                 } else log.info { "got a secret key request (${request.name}) from $requestingDeviceId, but we do not have that secret cached" }

@@ -14,9 +14,10 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.Event.StateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
@@ -69,7 +70,7 @@ class RoomsApiClientTest {
             },
             baseUrl = Url("https://matrix.host"),
         )
-        matrixRestClient.rooms.getEvent(
+        matrixRestClient.room.getEvent(
             RoomId("room", "server"),
             EventId("\$event"),
             asUserId = UserId("user", "server")
@@ -106,7 +107,7 @@ class RoomsApiClientTest {
                 }
             },
         )
-        val result: Event<*> = matrixRestClient.rooms.getEvent(
+        val result: Event<*> = matrixRestClient.room.getEvent(
             RoomId("room", "server"),
             EventId("\$event")
         ).getOrThrow()
@@ -132,7 +133,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.getStateEvent<NameEventContent>(
+        val result = matrixRestClient.room.getStateEvent<NameEventContent>(
             roomId = RoomId("room", "server"),
         ).getOrThrow()
         assertEquals(NameEventContent::class, result::class)
@@ -179,7 +180,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.getState(RoomId("room", "server")).getOrThrow().toList()
+        val result = matrixRestClient.room.getState(RoomId("room", "server")).getOrThrow().toList()
         assertEquals(2, result.size)
         assertEquals(NameEventContent::class, result[0].content::class)
         assertEquals(MemberEventContent::class, result[1].content::class)
@@ -225,7 +226,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.getMembers(
+        val result = matrixRestClient.room.getMembers(
             roomId = RoomId("room", "server"),
             at = "someAt",
             membership = Membership.JOIN
@@ -266,7 +267,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.getJoinedMembers(RoomId("room", "server")).getOrThrow()
+        val result = matrixRestClient.room.getJoinedMembers(RoomId("room", "server")).getOrThrow()
         assertEquals(response, result)
     }
 
@@ -311,7 +312,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.getEvents(
+        val result = matrixRestClient.room.getEvents(
             roomId = RoomId("room", "server"),
             from = "from",
             dir = GetEvents.Direction.FORWARDS,
@@ -356,7 +357,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getRelations(
+        matrixRestClient.room.getRelations(
             roomId = RoomId("room", "server"),
             eventId = EventId("$1event"),
             from = "from",
@@ -412,7 +413,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getRelations(
+        matrixRestClient.room.getRelations(
             roomId = RoomId("room", "server"),
             eventId = EventId("$1event"),
             relationType = RelationType.Reference,
@@ -469,7 +470,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getRelationsByType<RoomMessageEventContent>(
+        matrixRestClient.room.getRelationsByType<RoomMessageEventContent>(
             roomId = RoomId("room", "server"),
             eventId = EventId("$1event"),
             relationType = RelationType.Reference,
@@ -525,7 +526,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getThreads(
+        matrixRestClient.room.getThreads(
             roomId = RoomId("room", "server"),
             from = "from",
             include = GetThreads.Include.ALL,
@@ -566,7 +567,7 @@ class RoomsApiClientTest {
             })
         val eventContent = NameEventContent("name")
 
-        val result = matrixRestClient.rooms.sendStateEvent(
+        val result = matrixRestClient.room.sendStateEvent(
             roomId = RoomId("room", "server"),
             eventContent = eventContent,
             stateKey = "someStateKey"
@@ -581,10 +582,11 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory { addHandler { respondOk() } })
         val eventContent = object : StateEventContent {
             val banana: String = "yeah"
+            override val externalUrl = null
         }
 
         try {
-            matrixRestClient.rooms.sendStateEvent(
+            matrixRestClient.room.sendStateEvent(
                 roomId = RoomId("room", "server"),
                 eventContent = eventContent,
                 stateKey = "someStateKey"
@@ -620,7 +622,7 @@ class RoomsApiClientTest {
                 }
             })
         val eventContent = TextMessageEventContent("someBody")
-        val result = matrixRestClient.rooms.sendMessageEvent(
+        val result = matrixRestClient.room.sendMessageEvent(
             roomId = RoomId("room", "server"),
             eventContent = eventContent,
             txnId = "someTxnId"
@@ -637,10 +639,11 @@ class RoomsApiClientTest {
             val banana: String = "yeah"
             override val relatesTo = RelatesTo.Reference(EventId("$1event"))
             override val mentions: Mentions? = null
+            override val externalUrl: String? = null
         }
 
         try {
-            matrixRestClient.rooms.sendMessageEvent(
+            matrixRestClient.room.sendMessageEvent(
                 roomId = RoomId("room", "server"),
                 eventContent = eventContent
             ).getOrThrow()
@@ -671,7 +674,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.redactEvent(
+        val result = matrixRestClient.room.redactEvent(
             roomId = RoomId("room", "server"),
             eventId = EventId("\$eventToRedact"),
             reason = "someReason",
@@ -712,7 +715,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.createRoom(
+        val result = matrixRestClient.room.createRoom(
             visibility = DirectoryVisibility.PRIVATE,
             invite = setOf(UserId("user1", "server")),
             isDirect = true,
@@ -748,7 +751,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setRoomAlias(
+        matrixRestClient.room.setRoomAlias(
             roomId = RoomId("room", "server"),
             roomAliasId = RoomAliasId("unicorns", "server")
         ).getOrThrow()
@@ -776,7 +779,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.getRoomAlias(RoomAliasId("unicorns", "server")).getOrThrow()
+        val result = matrixRestClient.room.getRoomAlias(RoomAliasId("unicorns", "server")).getOrThrow()
         assertEquals(response, result)
     }
 
@@ -806,7 +809,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getRoomAliases(RoomId("room", "server")).getOrThrow() shouldBe setOf(
+        matrixRestClient.room.getRoomAliases(RoomId("room", "server")).getOrThrow() shouldBe setOf(
             RoomAliasId("#somewhere:example.com"),
             RoomAliasId("#another:example.com"),
             RoomAliasId("#hat_trick:example.com")
@@ -831,7 +834,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.deleteRoomAlias(RoomAliasId("unicorns", "server")).getOrThrow()
+        matrixRestClient.room.deleteRoomAlias(RoomAliasId("unicorns", "server")).getOrThrow()
     }
 
     @Test
@@ -857,7 +860,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.getJoinedRooms().getOrThrow().toSet()
+        val result = matrixRestClient.room.getJoinedRooms().getOrThrow().toSet()
         assertTrue { result.containsAll(setOf(RoomId("room1", "server"), RoomId("room2", "server"))) }
     }
 
@@ -880,7 +883,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.inviteUser(RoomId("room", "server"), UserId("user", "server")).getOrThrow()
+        matrixRestClient.room.inviteUser(RoomId("room", "server"), UserId("user", "server")).getOrThrow()
     }
 
     @Test
@@ -902,7 +905,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.kickUser(RoomId("room", "server"), UserId("user", "server"))
+        matrixRestClient.room.kickUser(RoomId("room", "server"), UserId("user", "server"))
     }
 
     @Test
@@ -924,7 +927,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.banUser(RoomId("room", "server"), UserId("user", "server"))
+        matrixRestClient.room.banUser(RoomId("room", "server"), UserId("user", "server"))
     }
 
     @Test
@@ -946,7 +949,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.unbanUser(RoomId("room", "server"), UserId("user", "server"))
+        matrixRestClient.room.unbanUser(RoomId("room", "server"), UserId("user", "server"))
     }
 
     @Test
@@ -984,7 +987,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.joinRoom(
+        val result = matrixRestClient.room.joinRoom(
             roomId = RoomId("room", "server"),
             serverNames = setOf("server1.com", "server2.com"),
             thirdPartySigned = Signed(
@@ -1037,7 +1040,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.joinRoom(
+        val result = matrixRestClient.room.joinRoom(
             roomAliasId = RoomAliasId("alias", "server"),
             serverNames = setOf("server1.com", "server2.com"),
             thirdPartySigned = Signed(
@@ -1081,7 +1084,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.knockRoom(
+        val result = matrixRestClient.room.knockRoom(
             roomId = RoomId("room", "server"),
             serverNames = setOf("server1.com", "server2.com"),
             reason = "reason"
@@ -1115,7 +1118,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.rooms.knockRoom(
+        val result = matrixRestClient.room.knockRoom(
             roomAliasId = RoomAliasId("alias", "server"),
             serverNames = setOf("server1.com", "server2.com"),
             reason = "reason"
@@ -1141,7 +1144,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.leaveRoom(RoomId("room", "server")).getOrThrow()
+        matrixRestClient.room.leaveRoom(RoomId("room", "server")).getOrThrow()
     }
 
     @Test
@@ -1162,7 +1165,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.forgetRoom(RoomId("room", "server"))
+        matrixRestClient.room.forgetRoom(RoomId("room", "server"))
     }
 
     @Test
@@ -1184,7 +1187,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setReceipt(RoomId("room", "server"), EventId("\$event")).getOrThrow()
+        matrixRestClient.room.setReceipt(RoomId("room", "server"), EventId("\$event")).getOrThrow()
     }
 
     @Test
@@ -1213,7 +1216,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setReadMarkers(RoomId("room", "server"), EventId("$1event"), EventId("$2event"))
+        matrixRestClient.room.setReadMarkers(RoomId("room", "server"), EventId("$1event"), EventId("$2event"))
             .getOrThrow()
     }
 
@@ -1235,7 +1238,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getAccountData<FullyReadEventContent>(
+        matrixRestClient.room.getAccountData<FullyReadEventContent>(
             RoomId("room", "server"),
             UserId("alice", "example.com")
         ).getOrThrow().shouldBe(
@@ -1261,7 +1264,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getAccountData<FullyReadEventContent>(
+        matrixRestClient.room.getAccountData<FullyReadEventContent>(
             RoomId("room", "server"),
             UserId("alice", "example.com"),
             key = "key"
@@ -1292,7 +1295,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setAccountData(
+        matrixRestClient.room.setAccountData(
             FullyReadEventContent(EventId("$1event")),
             RoomId("room", "server"),
             UserId("alice", "example.com")
@@ -1321,7 +1324,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setAccountData(
+        matrixRestClient.room.setAccountData(
             FullyReadEventContent(EventId("$1event")),
             RoomId("room", "server"),
             UserId("alice", "example.com"),
@@ -1351,7 +1354,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setTyping(
+        matrixRestClient.room.setTyping(
             RoomId("room", "server"),
             UserId("alice", "example.com"),
             typing = true,
@@ -1381,7 +1384,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getDirectoryVisibility(RoomId("room", "server"))
+        matrixRestClient.room.getDirectoryVisibility(RoomId("room", "server"))
             .getOrThrow() shouldBe DirectoryVisibility.PUBLIC
     }
 
@@ -1404,7 +1407,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setDirectoryVisibility(
+        matrixRestClient.room.setDirectoryVisibility(
             roomId = RoomId("room", "server"),
             visibility = DirectoryVisibility.PUBLIC
         ).getOrThrow()
@@ -1446,7 +1449,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getPublicRooms(limit = 5, server = "example", since = "since")
+        matrixRestClient.room.getPublicRooms(limit = 5, server = "example", since = "since")
             .getOrThrow() shouldBe GetPublicRoomsResponse(
             chunk = listOf(
                 GetPublicRoomsResponse.PublicRoomsChunk(
@@ -1512,7 +1515,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getPublicRooms(
+        matrixRestClient.room.getPublicRooms(
             limit = 10,
             server = "example",
             since = null,
@@ -1568,7 +1571,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getTags(UserId("user", "server"), RoomId("room", "server"))
+        matrixRestClient.room.getTags(UserId("user", "server"), RoomId("room", "server"))
             .getOrThrow() shouldBe TagEventContent(
             mapOf(
                 TagEventContent.TagName.Favourite to TagEventContent.Tag(0.1),
@@ -1597,7 +1600,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.setTag(
+        matrixRestClient.room.setTag(
             UserId("user", "server"), RoomId("room", "server"), "m.dino",
             TagEventContent.Tag(0.25)
         ).getOrThrow()
@@ -1621,7 +1624,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.deleteTag(UserId("user", "server"), RoomId("room", "server"), "m.dino").getOrThrow()
+        matrixRestClient.room.deleteTag(UserId("user", "server"), RoomId("room", "server"), "m.dino").getOrThrow()
     }
 
     @Test
@@ -1747,7 +1750,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getEventContext(
+        matrixRestClient.room.getEventContext(
             roomId = RoomId("room", "server"),
             eventId = EventId("event"),
             filter = "filter",
@@ -1893,7 +1896,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.reportEvent(
+        matrixRestClient.room.reportEvent(
             roomId = RoomId("room", "server"),
             eventId = EventId("\$eventToRedact"),
             reason = "someReason",
@@ -1920,7 +1923,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.upgradeRoom(RoomId("room", "server"), "2")
+        matrixRestClient.room.upgradeRoom(RoomId("room", "server"), "2")
             .getOrThrow() shouldBe RoomId("nextRoom", "server")
     }
 
@@ -1973,7 +1976,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.getHierarchy(
+        matrixRestClient.room.getHierarchy(
             roomId = RoomId("room", "server"),
             from = "from",
             limit = 10,
@@ -1986,7 +1989,7 @@ class RoomsApiClientTest {
                     avatarUrl = "mxc://example.org/abcdef",
                     canonicalAlias = RoomAliasId("#general:example.org"),
                     childrenState = setOf(
-                        Event.StrippedStateEvent(
+                        StrippedStateEvent(
                             ChildEventContent(via = setOf("example.org")),
                             originTimestamp = 1629413349153,
                             sender = UserId("@alice:example.org"),
@@ -2029,7 +2032,7 @@ class RoomsApiClientTest {
                     )
                 }
             })
-        matrixRestClient.rooms.timestampToEvent(
+        matrixRestClient.room.timestampToEvent(
             roomId = RoomId("room", "server"),
             timestamp = 24,
             dir = TimestampToEvent.Direction.FORWARDS,

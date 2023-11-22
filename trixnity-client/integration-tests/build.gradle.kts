@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
@@ -6,9 +5,7 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
     jvmToolchain()
     addJvmTarget(testEnabled = (isCI && HostManager.hostIsMac).not())
 
@@ -16,27 +13,29 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
-        val commonMain by getting {}
-        val commonTest by getting {
+        commonMain {}
+        commonTest {
             dependencies {
                 implementation(project(":trixnity-client"))
                 implementation(project(":trixnity-client:trixnity-client-repository-exposed"))
                 implementation(project(":trixnity-client:trixnity-client-repository-realm"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.kotlinxCoroutines}")
                 implementation(kotlin("test"))
-                implementation("io.kotest:kotest-common:${Versions.kotest}")
-                implementation("io.kotest:kotest-assertions-core:${Versions.kotest}")
-                implementation("com.benasher44:uuid:${Versions.uuid}")
+                implementation(libs.kotest.common)
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.benasher44.uuid)
+                implementation(libs.oshai.logging)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
-                implementation("io.ktor:ktor-client-java:${Versions.ktor}")
-                implementation("io.ktor:ktor-client-logging:${Versions.ktor}")
-                implementation("org.testcontainers:testcontainers:${Versions.testContainers}")
-                implementation("org.testcontainers:junit-jupiter:${Versions.testContainers}")
-                implementation("ch.qos.logback:logback-classic:${Versions.logback}")
-                implementation("com.h2database:h2:${Versions.h2}")
+                implementation(libs.ktor.client.java)
+                implementation(libs.ktor.client.logging)
+                implementation(libs.testcontainers)
+                implementation(libs.testcontainers.postgresql)
+                implementation(libs.testcontainers.junitJupiter)
+                implementation(libs.h2)
+                implementation(libs.postgresql)
+                implementation(libs.logback.classic)
             }
         }
     }

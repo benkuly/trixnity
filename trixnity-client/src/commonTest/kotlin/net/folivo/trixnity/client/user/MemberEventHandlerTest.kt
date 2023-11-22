@@ -16,6 +16,8 @@ import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -52,7 +54,7 @@ class MemberEventHandlerTest : ShouldSpec({
         val user2 = UserId("user2", "server")
         val user3 = UserId("user3", "server")
         val user4 = UserId("user4", "server")
-        val user1Event = Event.StateEvent(
+        val user1Event = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("\$event1"),
             UserId("sender", "server"),
@@ -60,7 +62,7 @@ class MemberEventHandlerTest : ShouldSpec({
             1234,
             stateKey = user1.full
         )
-        val user2Event = Event.StateEvent(
+        val user2Event = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("\$event2"),
             UserId("sender", "server"),
@@ -68,7 +70,7 @@ class MemberEventHandlerTest : ShouldSpec({
             1234,
             stateKey = user2.full
         )
-        val user3Event = Event.StateEvent(
+        val user3Event = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("\$event3"),
             UserId("sender", "server"),
@@ -83,7 +85,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     roomId,
                     user4,
                     "U1 (@user4:server)",
-                    Event.StateEvent(
+                    StateEvent(
                         MemberEventContent(displayName = "U1", membership = Membership.BAN),
                         EventId("\$event4"),
                         UserId("sender", "server"),

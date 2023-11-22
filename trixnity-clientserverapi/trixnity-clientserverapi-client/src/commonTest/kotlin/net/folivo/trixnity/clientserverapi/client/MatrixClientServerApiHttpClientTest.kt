@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
@@ -36,7 +36,7 @@ import kotlin.test.assertEquals
 class MatrixClientServerApiHttpClientTest {
 
     private val json = createMatrixEventJson()
-    private val mappings = createEventContentSerializerMappings()
+    private val mappings = createDefaultEventContentSerializerMappings()
 
     @Serializable
     @Resource("/path/{pathParam}")

@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 
 internal class RealmRoomState : RealmObject {
     @PrimaryKey
@@ -27,28 +27,40 @@ internal class RealmRoomStateRepository(
     private val json: Json,
 ) : RoomStateRepository {
     @OptIn(ExperimentalSerializationApi::class)
-    private val serializer = json.serializersModule.getContextual(Event::class)
+    private val serializer = json.serializersModule.getContextual(StateBaseEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(firstKey: RoomStateRepositoryKey): Map<String, Event<*>> = withRealmRead {
-        findByKey(firstKey).copyFromRealm().associate {
-            it.stateKey to json.decodeFromString(serializer, it.event)
-        }
-    }
-
-    override suspend fun deleteByRoomId(roomId: RoomId) = withRealmWrite {
-        val existing = query<RealmRoomState>("roomId == $0", roomId.full).find()
-        delete(existing)
-    }
-
-    override suspend fun get(firstKey: RoomStateRepositoryKey, secondKey: String): Event<*>? =
+    override suspend fun get(firstKey: RoomStateRepositoryKey, secondKey: String): StateBaseEvent<*>? =
         withRealmRead {
             findByKeys(firstKey, secondKey).find()?.copyFromRealm()?.let {
                 json.decodeFromString(serializer, it.event)
             }
         }
 
-    override suspend fun save(firstKey: RoomStateRepositoryKey, secondKey: String, value: Event<*>): Unit =
+    override suspend fun get(firstKey: RoomStateRepositoryKey): Map<String, StateBaseEvent<*>> = withRealmRead {
+        findByKey(firstKey).copyFromRealm().associate {
+            it.stateKey to json.decodeFromString(serializer, it.event)
+        }
+    }
+
+    override suspend fun getByRooms(roomIds: Set<RoomId>, type: String, stateKey: String): List<StateBaseEvent<*>> =
+        withRealmRead {
+            query<RealmRoomState>(
+                "roomId IN $0 && type == $1 && stateKey == $2",
+                roomIds.map { it.full },
+                type,
+                stateKey
+            ).find().copyFromRealm().map {
+                json.decodeFromString(serializer, it.event)
+            }
+        }
+
+    override suspend fun deleteByRoomId(roomId: RoomId) = withRealmWrite {
+        val existing = query<RealmRoomState>("roomId == $0", roomId.full).find()
+        delete(existing)
+    }
+
+    override suspend fun save(firstKey: RoomStateRepositoryKey, secondKey: String, value: StateBaseEvent<*>): Unit =
         withRealmWrite {
             copyToRealm(
                 RealmRoomState().apply {

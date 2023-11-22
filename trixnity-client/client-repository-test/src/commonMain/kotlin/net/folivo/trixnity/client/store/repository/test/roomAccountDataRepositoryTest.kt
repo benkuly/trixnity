@@ -5,13 +5,13 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RoomAccountDataRepositoryKey
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
-import net.folivo.trixnity.core.model.events.UnknownRoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import org.koin.core.Koin
 
@@ -31,7 +31,7 @@ fun ShouldSpec.roomAccountDataRepositoryTest(diReceiver: () -> Koin) {
         val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
         val accountDataEvent1 = RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, "")
         val accountDataEvent2 = RoomAccountDataEvent(
-            UnknownRoomAccountDataEventContent(
+            UnknownEventContent(
                 JsonObject(mapOf("value" to JsonPrimitive("unicorn"))),
                 "org.example.mynamespace"
             ),

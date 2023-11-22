@@ -14,4 +14,6 @@ data class TombstoneEventContent(
     val body: String,
     @SerialName("replacement_room")
     val replacementRoom: RoomId,
+    @SerialName("external_url")
+    override val externalUrl: String? = null
 ) : StateEventContent

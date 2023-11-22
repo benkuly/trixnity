@@ -6,7 +6,8 @@ import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
@@ -54,7 +55,7 @@ class ActiveDeviceVerification(
             else setOfNotNull(theirDeviceId)
 
         if (theirDeviceIds.isNotEmpty())
-            api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.associateWith {
+            api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.associateWith {
                 try {
                     olmEncryptionService.encryptOlm(step, theirUserId, it)
                 } catch (error: Exception) {
@@ -83,8 +84,8 @@ class ActiveDeviceVerification(
         }
     }
 
-    private suspend fun handleVerificationStepEvents(event: Event<VerificationStep>) {
-        if (event is Event.ToDeviceEvent) handleVerificationStepEvent(event.content, event.sender)
+    private suspend fun handleVerificationStepEvents(event: ClientEvent<VerificationStep>) {
+        if (event is ToDeviceEvent) handleVerificationStepEvent(event.content, event.sender)
     }
 
     private suspend fun handleOlmDecryptedVerificationRequestEvents(event: DecryptedOlmEventContainer) {
@@ -103,7 +104,7 @@ class ActiveDeviceVerification(
                     val cancelEvent =
                         VerificationCancelEventContent(Accepted, "accepted by other device", relatesTo, transactionId)
                     try {
-                        api.users.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
+                        api.user.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
                             try {
                                 olmEncryptionService.encryptOlm(cancelEvent, theirUserId, it)
                             } catch (exception: Exception) {

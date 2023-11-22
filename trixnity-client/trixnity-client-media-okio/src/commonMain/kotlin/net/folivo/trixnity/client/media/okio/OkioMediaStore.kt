@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.readByteArrayFlow
+import net.folivo.trixnity.utils.write
 import okio.ByteString.Companion.toByteString
 import okio.FileSystem
 import okio.Path
@@ -15,7 +17,7 @@ import kotlin.coroutines.CoroutineContext
 class OkioMediaStore(
     private val basePath: Path,
     private val fileSystem: FileSystem = defaultFileSystem,
-    private val coroutineContext: CoroutineContext = defaultContext,
+    private val coroutineContext: CoroutineContext = ioContext,
 ) : MediaStore {
 
     private val downloadsPath = basePath.resolve("downloads")
@@ -60,7 +62,7 @@ class OkioMediaStore(
         // It may happen, that a download is aborted.
         // Saving into downloadsPath first, prevents [getMedia] to find that broken file.
         try {
-            fileSystem.writeByteFlow(downloadsPath.resolveUrl(url), content, coroutineContext)
+            fileSystem.write(downloadsPath.resolveUrl(url), content, coroutineContext)
         } catch (throwable: Throwable) {
             fileSystem.delete(downloadsPath.resolveUrl(url))
             throw throwable
@@ -71,7 +73,7 @@ class OkioMediaStore(
     }
 
     override suspend fun getMedia(url: String): ByteArrayFlow? = basePathLock.withLock(url) {
-        fileSystem.readByteFlow(basePath.resolveUrl(url), coroutineContext)
+        fileSystem.readByteArrayFlow(basePath.resolveUrl(url), coroutineContext)
     }
 
     override suspend fun deleteMedia(url: String) = withContext(coroutineContext) {
@@ -88,4 +90,4 @@ class OkioMediaStore(
 }
 
 internal expect val defaultFileSystem: FileSystem
-internal expect val defaultContext: CoroutineContext
+internal expect val ioContext: CoroutineContext

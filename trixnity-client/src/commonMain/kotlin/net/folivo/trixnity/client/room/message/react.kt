@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.utils.TrixnityDsl
@@ -15,7 +15,7 @@ fun MessageBuilder.react(
 
 @TrixnityDsl
 fun MessageBuilder.react(
-    event: Event.MessageEvent<*>,
+    event: MessageEvent<*>,
     key: String,
 ) = react(event.id, key)
 

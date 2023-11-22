@@ -26,4 +26,6 @@ data class SasAcceptEventContent(
     override val transactionId: String?,
 ) : VerificationStep {
     override val mentions: Mentions? = null
+    override val externalUrl: String? = null
+
 }

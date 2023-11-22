@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentStateDataUnit
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.keys.Signed
@@ -28,8 +28,9 @@ data class SendKnock(
     @OptIn(ExperimentalSerializationApi::class)
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
-    ): KSerializer<Signed<PersistentStateDataUnit<MemberEventContent>, String>> {
+        json: Json,
+        value: Signed<PersistentStateDataUnit<MemberEventContent>, String>?
+    ): KSerializer<Signed<PersistentStateDataUnit<MemberEventContent>, String>>? {
         @Suppress("UNCHECKED_CAST")
         val serializer = requireNotNull(json.serializersModule.getContextual(PersistentStateDataUnit::class))
                 as KSerializer<PersistentStateDataUnit<MemberEventContent>>
@@ -39,6 +40,6 @@ data class SendKnock(
     @Serializable
     data class Response(
         @SerialName("knock_room_state")
-        val knockRoomState: List<@Contextual Event.StrippedStateEvent<*>>,
+        val knockRoomState: List<@Contextual StrippedStateEvent<*>>,
     )
 }

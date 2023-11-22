@@ -6,11 +6,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.key.get
 import net.folivo.trixnity.client.key.getDeviceKey
-import net.folivo.trixnity.client.key.waitForUpdateOutdatedKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
@@ -25,41 +25,20 @@ class ClientOlmStore(
     private val accountStore: AccountStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val keyStore: KeyStore,
-    private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
     private val userService: UserService,
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
 
-    private suspend fun getLocalCurve25519Key(userId: UserId, deviceId: String) =
-        keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Curve25519Key>()
-
     override suspend fun findCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? =
-        getLocalCurve25519Key(userId, deviceId) ?: run {
-            keyStore.updateOutdatedKeys { it + userId }
-            keyStore.waitForUpdateOutdatedKey(userId)
-            getLocalCurve25519Key(userId, deviceId)
-        }
+        keyStore.getDeviceKey(userId, deviceId, fetchIfMissing = true).first()?.value?.get<Key.Curve25519Key>()
 
-    private suspend fun getLocalEd25519Key(userId: UserId, deviceId: String) =
-        keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Ed25519Key>()
 
     override suspend fun findEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? =
-        getLocalEd25519Key(userId, deviceId) ?: run {
-            keyStore.updateOutdatedKeys { it + userId }
-            keyStore.waitForUpdateOutdatedKey(userId)
-            getLocalEd25519Key(userId, deviceId)
-        }
-
-    private suspend fun getLocalDeviceKeys(userId: UserId, senderKey: Key.Curve25519Key) =
-        keyStore.getDeviceKeys(userId).first()?.values?.map { it.value.signed }
-            ?.find { it.keys.keys.any { key -> key.value == senderKey.value } }
+        keyStore.getDeviceKey(userId, deviceId, fetchIfMissing = true).first()?.value?.get<Key.Ed25519Key>()
 
     override suspend fun findDeviceKeys(userId: UserId, senderKey: Key.Curve25519Key): DeviceKeys? =
-        getLocalDeviceKeys(userId, senderKey) ?: run {
-            keyStore.updateOutdatedKeys { it + userId }
-            keyStore.waitForUpdateOutdatedKey(userId)
-            getLocalDeviceKeys(userId, senderKey)
-        }
+        keyStore.getDeviceKeys(userId, fetchIfMissing = true).first()?.values?.map { it.value.signed }
+            ?.find { it.keys.keys.any { key -> key.value == senderKey.value } }
 
 
     override suspend fun updateOlmSessions(
@@ -114,9 +93,8 @@ class ClientOlmStore(
     override suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>> {
         userService.loadMembers(roomId)
         val members = roomStateStore.members(roomId, memberships)
-        keyStore.waitForUpdateOutdatedKey(members)
         return members.mapNotNull { userId ->
-            keyStore.getDeviceKeys(userId).first()?.let { userId to it.keys }
+            keyStore.getDeviceKeys(userId, fetchIfMissing = true).first()?.let { userId to it.keys }
         }.toMap()
     }
 
@@ -124,6 +102,6 @@ class ClientOlmStore(
         roomStateStore.getByStateKey<HistoryVisibilityEventContent>(roomId).first()?.content?.historyVisibility
 
     override suspend fun getRoomEncryptionAlgorithm(roomId: RoomId): EncryptionAlgorithm? =
-        roomStore.get(roomId).first()?.encryptionAlgorithm
+        roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first()?.content?.algorithm
 }
 

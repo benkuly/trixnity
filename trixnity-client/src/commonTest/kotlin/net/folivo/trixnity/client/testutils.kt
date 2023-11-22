@@ -11,12 +11,14 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
+
+fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.replace(": ", ":").trim() }
 
 val simpleRoom = Room(RoomId("room", "server"), lastEventId = EventId("\$event"))
 val simpleUserInfo =
@@ -24,7 +26,7 @@ val simpleUserInfo =
 
 fun mockMatrixClientServerApiClient(
     json: Json = createMatrixEventJson(),
-    contentMappings: EventContentSerializerMappings = createEventContentSerializerMappings(),
+    contentMappings: EventContentSerializerMappings = createDefaultEventContentSerializerMappings(),
 ): Pair<MatrixClientServerApiClientImpl, PortableMockEngineConfig> {
     val config = PortableMockEngineConfig()
     val api = MatrixClientServerApiClientImpl(
@@ -85,7 +87,8 @@ suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
 suspend fun getInMemoryRoomStore(scope: CoroutineScope) = RoomStore(
     InMemoryRoomRepository(),
     RepositoryTransactionManagerMock(),
-    scope
+    scope,
+    MatrixClientConfiguration(),
 ).apply { init() }
 
 suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineStore(
@@ -106,6 +109,7 @@ suspend fun getInMemoryRoomStateStore(scope: CoroutineScope) = RoomStateStore(
 
 suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
     InMemoryRoomUserRepository(),
+    InMemoryRoomUserReceiptsRepository(),
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
     scope
@@ -121,5 +125,6 @@ suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMapp
 suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutboxMessageStore(
     InMemoryRoomOutboxMessageRepository(),
     RepositoryTransactionManagerMock(),
-    scope
+    scope,
+    MatrixClientConfiguration(),
 ).apply { init() }

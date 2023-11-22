@@ -38,5 +38,6 @@ using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 ## Snapshot builds
 
 Snapshot are published on each commit to main.
-Add `https://oss.sonatype.org/content/repositories/snapshots` to your
-maven repositories and append `-SNAPSHOT` to the current Trixnity version.
+Add `https://gitlab.com/api/v4/projects/26519650/packages/maven` to your
+maven repositories and append `-SNAPSHOT-COMMIT_SHORT_SHA` to the current Trixnity version. You can find
+the `COMMIT_SHORT_SHA` [here](https://gitlab.com/trixnity/trixnity/-/commits/main).

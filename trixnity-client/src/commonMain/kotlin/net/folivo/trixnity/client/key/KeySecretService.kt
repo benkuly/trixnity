@@ -31,7 +31,7 @@ class KeySecretServiceImpl(
         keyId: String,
         keyInfo: SecretKeyEventContent,
     ) {
-        val decryptedSecrets = SecretType.values()
+        val decryptedSecrets = SecretType.entries
             .subtract(keyStore.getSecrets().keys)
             .mapNotNull { allowedSecret ->
                 val event = allowedSecret.getEncryptedSecret(globalAccountDataStore).first()

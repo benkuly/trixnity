@@ -18,6 +18,8 @@ data class ThirdPartyInviteEventContent(
     val publicKey: Key.Ed25519Key,
     @SerialName("public_keys")
     val publicKeys: List<PublicKey>? = null,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent {
     @Serializable
     data class PublicKey(

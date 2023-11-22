@@ -11,13 +11,18 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
-import net.folivo.trixnity.core.EventEmitter
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
-import net.folivo.trixnity.core.subscribeContent
+import net.folivo.trixnity.core.subscribeEvent
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
@@ -43,8 +48,8 @@ class TimelineEventHandlerImpl(
     }
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeContent(subscriber = ::redactTimelineEvent).unsubscribeOnCompletion(scope)
-        api.sync.subscribe(EventEmitter.Priority.BEFORE_DEFAULT, ::handleSyncResponse).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEvent(subscriber = ::redactTimelineEvent).unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.STORE_TIMELINE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun handleSyncResponse(syncEvents: SyncEvents) = tm.writeTransaction {
@@ -82,7 +87,7 @@ class TimelineEventHandlerImpl(
 
     internal suspend fun addEventsToTimelineAtEnd(
         roomId: RoomId,
-        newEvents: List<Event.RoomEvent<*>>?,
+        newEvents: List<RoomEvent<*>>?,
         previousBatch: String?,
         nextBatch: String,
         hasGapBefore: Boolean
@@ -138,11 +143,11 @@ class TimelineEventHandlerImpl(
                 val previousToken: String?
                 val previousHasGap: Boolean
                 val previousEvent: EventId?
-                val previousEventChunk: List<Event.RoomEvent<*>>?
+                val previousEventChunk: List<RoomEvent<*>>?
                 val nextToken: String?
                 val nextHasGap: Boolean
                 val nextEvent: EventId?
-                val nextEventChunk: List<Event.RoomEvent<*>>?
+                val nextEventChunk: List<RoomEvent<*>>?
 
                 var insertNewEvents = false
 
@@ -155,7 +160,7 @@ class TimelineEventHandlerImpl(
                     insertNewEvents = true
                     log.debug { "fetch missing events before $startEventId" }
                     val destinationBatch = possiblyPreviousEvent?.gap?.batchAfter
-                    val response = api.rooms.getEvents(
+                    val response = api.room.getEvents(
                         roomId = roomId,
                         from = startGapBatchBefore,
                         to = destinationBatch,
@@ -181,7 +186,7 @@ class TimelineEventHandlerImpl(
                     insertNewEvents = true
                     log.debug { "fetch missing events after $startEventId" }
                     val destinationBatch = possiblyNextEvent?.gap?.batchBefore
-                    val response = api.rooms.getEvents(
+                    val response = api.room.getEvents(
                         roomId = roomId,
                         from = startGapBatchAfter,
                         to = destinationBatch,
@@ -221,7 +226,7 @@ class TimelineEventHandlerImpl(
                                 val content = event.content
                                 if (content is RedactionEventContent) {
                                     @Suppress("UNCHECKED_CAST")
-                                    redactTimelineEvent(event as Event<RedactionEventContent>)
+                                    redactTimelineEvent(event as RoomEvent<RedactionEventContent>)
                                 }
                             }
                             list
@@ -231,8 +236,8 @@ class TimelineEventHandlerImpl(
         }
     }
 
-    internal suspend fun setLastEventId(event: Event<*>) {
-        if (event is Event.RoomEvent) {
+    internal suspend fun setLastEventId(event: ClientEvent<*>) {
+        if (event is RoomEvent) {
             roomStore.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(lastEventId = event.id)
                     ?: Room(roomId = event.roomId, lastEventId = event.id)
@@ -240,22 +245,22 @@ class TimelineEventHandlerImpl(
         }
     }
 
-    internal suspend fun redactTimelineEvent(redactionEvent: Event<RedactionEventContent>) {
-        if (redactionEvent is Event.MessageEvent) {
+    internal suspend fun redactTimelineEvent(redactionEvent: RoomEvent<RedactionEventContent>) {
+        if (redactionEvent is MessageEvent) {
             val roomId = redactionEvent.roomId
             log.debug { "redact event with id ${redactionEvent.content.redacts} in room $roomId" }
             roomTimelineStore.update(redactionEvent.content.redacts, roomId) { oldTimelineEvent ->
                 if (oldTimelineEvent != null) {
                     when (val oldEvent = oldTimelineEvent.event) {
-                        is Event.MessageEvent -> {
+                        is MessageEvent -> {
                             redactRelation(oldEvent)
                             val eventType =
                                 api.eventContentSerializerMappings.message
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
                                     ?: "UNKNOWN"
-                            val newContent = RedactedMessageEventContent(eventType)
+                            val newContent = RedactedEventContent(eventType)
                             oldTimelineEvent.copy(
-                                event = Event.MessageEvent(
+                                event = MessageEvent(
                                     newContent,
                                     oldEvent.id,
                                     oldEvent.sender,
@@ -269,14 +274,14 @@ class TimelineEventHandlerImpl(
                             )
                         }
 
-                        is Event.StateEvent -> {
+                        is RoomEvent.StateEvent -> {
                             val eventType =
                                 api.eventContentSerializerMappings.state
                                     .find { it.kClass.isInstance(oldEvent.content) }?.type
                                     ?: "UNKNOWN"
-                            val newContent = RedactedStateEventContent(eventType)
+                            val newContent = RedactedEventContent(eventType)
                             oldTimelineEvent.copy(
-                                event = Event.StateEvent(
+                                event = RoomEvent.StateEvent(
                                     // TODO should keep some fields and change state: https://spec.matrix.org/v1.7/rooms/v9/#redactions
                                     newContent,
                                     oldEvent.id,
@@ -298,28 +303,26 @@ class TimelineEventHandlerImpl(
     }
 
     private suspend fun List<TimelineEvent>.alsoAddRelationFromTimelineEvents() = also { events ->
-        events.asFlow().map { it.event }.filterIsInstance<Event.MessageEvent<MessageEventContent>>()
+        events.asFlow().map { it.event }.filterIsInstance<MessageEvent<MessageEventContent>>()
             .collect(::addRelation)
     }
 
-    internal suspend fun addRelation(event: Event<MessageEventContent>) {
-        if (event is Event.MessageEvent) {
-            val relatesTo = event.content.relatesTo
-            if (relatesTo != null) {
-                log.debug { "add relation to ${relatesTo.eventId}" }
-                roomTimelineStore.addRelation(
-                    TimelineEventRelation(
-                        roomId = event.roomId,
-                        eventId = event.id,
-                        relationType = relatesTo.relationType,
-                        relatedEventId = relatesTo.eventId,
-                    )
+    internal suspend fun addRelation(event: MessageEvent<MessageEventContent>) {
+        val relatesTo = event.content.relatesTo
+        if (relatesTo != null) {
+            log.debug { "add relation to ${relatesTo.eventId}" }
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    roomId = event.roomId,
+                    eventId = event.id,
+                    relationType = relatesTo.relationType,
+                    relatedEventId = relatesTo.eventId,
                 )
-            }
+            )
         }
     }
 
-    internal suspend fun redactRelation(redactedEvent: Event.MessageEvent<*>) {
+    internal suspend fun redactRelation(redactedEvent: MessageEvent<*>) {
         val relatesTo = redactedEvent.content.relatesTo
         if (relatesTo != null) {
             log.debug { "delete relation from ${redactedEvent.id}" }

@@ -18,8 +18,9 @@ import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -69,7 +70,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope.cancel()
     }
 
-    val encryptedEvent = Event.ToDeviceEvent(
+    val encryptedEvent = ToDeviceEvent(
         EncryptedEventContent.OlmEncryptedEventContent(
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "")
@@ -98,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                         "secretUserSigningKey"
                     )
                 )
@@ -189,7 +190,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
                         "secretUserSigningKey"
                     )
                 )
@@ -261,8 +262,8 @@ private val body: ShouldSpec.() -> Unit = {
         }
         notAnswerRequest(KeySignatureTrustLevel.Valid(false))
         notAnswerRequest(KeySignatureTrustLevel.CrossSigned(false))
-        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned())
-        notAnswerRequest(KeySignatureTrustLevel.Blocked())
+        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned)
+        notAnswerRequest(KeySignatureTrustLevel.Blocked)
         notAnswerRequest(KeySignatureTrustLevel.Invalid("reason"))
     }
 }

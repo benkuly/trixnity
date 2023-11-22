@@ -5,7 +5,6 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.resources.*
-import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
 import kotlinx.serialization.KSerializer
@@ -17,14 +16,14 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.test.Test
 
 class MatrixEndpointRouteTest {
     private val json = createMatrixEventJson()
-    private val contentMappings = createEventContentSerializerMappings()
+    private val contentMappings = createDefaultEventContentSerializerMappings()
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -134,7 +133,8 @@ class MatrixEndpointRouteTest {
 
         override fun requestSerializerBuilder(
             mappings: EventContentSerializerMappings,
-            json: Json
+            json: Json,
+            value: Request?
         ): KSerializer<Request> {
             return object : KSerializer<Request> {
                 override val descriptor = buildClassSerialDescriptor("customRequestSerializer")
@@ -154,7 +154,8 @@ class MatrixEndpointRouteTest {
 
         override fun responseSerializerBuilder(
             mappings: EventContentSerializerMappings,
-            json: Json
+            json: Json,
+            value: Response?
         ): KSerializer<Response> {
             return object : KSerializer<Response> {
                 override val descriptor = buildClassSerialDescriptor("customResponseSerializer")

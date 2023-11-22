@@ -2,7 +2,8 @@ package net.folivo.trixnity.clientserverapi.server
 
 import net.folivo.trixnity.api.server.MatrixEndpointContext
 import net.folivo.trixnity.clientserverapi.model.rooms.*
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -12,7 +13,7 @@ interface RoomsApiHandler {
     /**
      * @see [GetEvent]
      */
-    suspend fun getEvent(context: MatrixEndpointContext<GetEvent, Unit, Event<*>>): Event<*>
+    suspend fun getEvent(context: MatrixEndpointContext<GetEvent, Unit, RoomEvent<*>>): RoomEvent<*>
 
     /**
      * @see [GetStateEvent]
@@ -22,7 +23,7 @@ interface RoomsApiHandler {
     /**
      * @see [GetState]
      */
-    suspend fun getState(context: MatrixEndpointContext<GetState, Unit, List<Event.StateEvent<*>>>): List<Event.StateEvent<*>>
+    suspend fun getState(context: MatrixEndpointContext<GetState, Unit, List<StateEvent<*>>>): List<StateEvent<*>>
 
     /**
      * @see [GetMembers]

@@ -21,9 +21,9 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -356,7 +356,7 @@ class RoomServiceTest : ShouldSpec({
                 contentBuilder = { _, _, _ -> content }
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
-                val outboundMessages = roomOutboxMessageStore.getAll().value
+                val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboundMessages shouldHaveSize 1
                 assertSoftly(outboundMessages.first()) {
                     roomId shouldBe room
@@ -396,7 +396,7 @@ class RoomServiceTest : ShouldSpec({
             roomTimelineStore.addRelation(timelineEventRelation(room, 2))
 
             fun stateEvent(roomId: RoomId, i: Int) =
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
                     EventId("$i"),
                     UserId("sender", "server"),
@@ -408,7 +408,7 @@ class RoomServiceTest : ShouldSpec({
             roomStateStore.save(stateEvent(room, 2))
 
             fun roomAccountDataEvent(roomId: RoomId, i: Int) =
-                Event.RoomAccountDataEvent(
+                RoomAccountDataEvent(
                     FullyReadEventContent(EventId("$i")),
                     roomId,
                     key = "$i",
@@ -431,9 +431,9 @@ class RoomServiceTest : ShouldSpec({
             roomTimelineStore.get(EventId("2"), room).first() shouldBe null
 
             roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace)
-                .first()?.values?.firstOrNull()?.first() shouldBe null
+                .first().values.firstOrNull()?.first() shouldBe null
             roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace)
-                .first()?.values?.firstOrNull()?.first() shouldBe null
+                .first().values.firstOrNull()?.first() shouldBe null
 
             roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldBe null
             roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldBe null

@@ -19,8 +19,8 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -29,10 +29,11 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class RoomServiceTimelineUtilsTest : ShouldSpec({
-    timeout = 5_000
+    timeout = 10_000
 
     val room = simpleRoom.roomId
     val sender = UserId("sender", "server")
@@ -247,7 +248,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         }
         context("room upgrades") {
             val newRoom = RoomId("new", "server")
-            val tombstoneEvent = Event.StateEvent(
+            val tombstoneEvent = StateEvent(
                 TombstoneEventContent("upgrade", newRoom),
                 EventId("\$tombstone"),
                 sender,
@@ -255,7 +256,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 2000,
                 stateKey = "",
             )
-            val createEvent = Event.StateEvent(
+            val createEvent = StateEvent(
                 CreateEventContent(sender, predecessor = CreateEventContent.PreviousRoom(room, EventId("\$tombstone"))),
                 EventId("\$create"),
                 sender,
@@ -555,6 +556,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val result = async(start = CoroutineStart.UNDISPATCHED) {
                 cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).take(2).toList()
             }
+            delay(100.milliseconds)
             api.sync.startOnce(
                 getBatchToken = { "token1" },
                 setBatchToken = {},

@@ -1,15 +1,16 @@
 package net.folivo.trixnity.client.store.repository.test
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
@@ -85,7 +86,50 @@ fun ShouldSpec.roomStateRepositoryTest(diReceiver: () -> Koin) {
             cut.get(key, "@cedric:server") shouldBe event
         }
     }
+    should("roomStateRepositoryTest: getByRoomIds") {
+        val key1 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.member")
+        val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")
+        val key3 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.member")
+        val state1 = StateEvent(
+            MemberEventContent(membership = Membership.JOIN),
+            EventId("$1event"),
+            UserId("alice", "server"),
+            RoomId("room1", "server"),
+            1234,
+            stateKey = "@alice:server"
+        )
+        val state2 = StateEvent(
+            NameEventContent("room name"),
+            EventId("$2event"),
+            UserId("bob", "server"),
+            RoomId("room2", "server"),
+            originTimestamp = 24,
+            stateKey = ""
+        )
+        val state3 = StateEvent(
+            MemberEventContent(membership = Membership.INVITE),
+            EventId("$1event"),
+            UserId("alice", "server"),
+            RoomId("room2", "server"),
+            1234,
+            stateKey = "@alice:server"
+        )
 
+        rtm.writeTransaction {
+            cut.save(key1, "@alice:server", state1)
+            cut.save(key2, "@bob:server", state2)
+            cut.save(key3, "@alice:server", state3)
+            cut.getByRooms(
+                setOf(RoomId("room2", "server")),
+                "m.room.member", "@alice:server"
+            ) shouldContainExactly setOf(state3)
+            cut.getByRooms(
+                setOf(RoomId("room1", "server"), RoomId("room2", "server")),
+                "m.room.member",
+                "@alice:server"
+            ) shouldContainExactly setOf(state1, state3)
+        }
+    }
     should("roomStateRepositoryTest: deleteByRoomId") {
         val key1 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.member")
         val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")

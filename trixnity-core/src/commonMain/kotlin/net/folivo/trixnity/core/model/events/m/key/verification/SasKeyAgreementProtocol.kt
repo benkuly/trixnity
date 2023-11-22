@@ -12,7 +12,7 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface SasKeyAgreementProtocol {
     val name: String
 
-    object Curve25519HkdfSha256 : SasKeyAgreementProtocol {
+    data object Curve25519HkdfSha256 : SasKeyAgreementProtocol {
         override val name: String = "curve25519-hkdf-sha256"
     }
 

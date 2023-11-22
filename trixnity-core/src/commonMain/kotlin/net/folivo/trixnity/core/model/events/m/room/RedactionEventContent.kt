@@ -16,6 +16,8 @@ data class RedactionEventContent(
     val redacts: EventId,
     @SerialName("reason")
     val reason: String? = null,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : MessageEventContent {
     @SerialName("m.relates_to")
     override val relatesTo: RelatesTo? = null

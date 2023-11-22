@@ -3,40 +3,40 @@ package net.folivo.trixnity.core.model.events
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.*
 
-val Event<*>.stateKeyOrNull: String?
+val ClientEvent<*>.stateKeyOrNull: String?
     get() = when (this) {
-        is Event.StateEvent -> this.stateKey
-        is Event.StrippedStateEvent -> this.stateKey
+        is StateBaseEvent -> this.stateKey
         else -> null
     }
 
-val Event<*>.eventIdOrNull: EventId?
+val ClientEvent<*>.idOrNull: EventId?
     get() = when (this) {
-        is Event.RoomEvent -> this.id
+        is RoomEvent -> this.id
         else -> null
     }
 
-val Event<*>.originTimestampOrNull: Long?
+val ClientEvent<*>.originTimestampOrNull: Long?
     get() = when (this) {
-        is Event.RoomEvent -> this.originTimestamp
+        is RoomEvent -> this.originTimestamp
         else -> null
     }
 
-val Event<*>.roomIdOrNull: RoomId?
+val ClientEvent<*>.roomIdOrNull: RoomId?
     get() = when (this) {
-        is Event.RoomEvent -> this.roomId
-        is Event.StrippedStateEvent -> this.roomId
-        is Event.RoomAccountDataEvent -> this.roomId
-        is Event.EphemeralEvent -> this.roomId
+        is RoomEvent -> this.roomId
+        is StrippedStateEvent -> this.roomId
+        is RoomAccountDataEvent -> this.roomId
+        is EphemeralEvent -> this.roomId
         else -> null
     }
 
-val Event<*>.senderOrNull: UserId?
+val ClientEvent<*>.senderOrNull: UserId?
     get() = when (this) {
-        is Event.RoomEvent -> this.sender
-        is Event.StrippedStateEvent -> this.sender
-        is Event.ToDeviceEvent -> this.sender
-        is Event.EphemeralEvent -> this.sender
+        is RoomEvent -> this.sender
+        is StrippedStateEvent -> this.sender
+        is ToDeviceEvent -> this.sender
+        is EphemeralEvent -> this.sender
         else -> null
     }

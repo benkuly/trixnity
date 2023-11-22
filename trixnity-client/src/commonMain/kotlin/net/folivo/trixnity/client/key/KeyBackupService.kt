@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
@@ -104,7 +104,7 @@ class KeyBackupServiceImpl(
 
     private suspend fun updateKeyBackupVersion(privateKey: String?) {
         log.debug { "check key backup version" }
-        val currentVersion = api.keys.getRoomKeysVersion().getOrThrow().let { currentVersion ->
+        val currentVersion = api.key.getRoomKeysVersion().getOrThrow().let { currentVersion ->
             if (currentVersion is GetRoomKeysBackupVersionResponse.V1) {
                 val deviceSignature =
                     signService.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
@@ -113,7 +113,7 @@ class KeyBackupServiceImpl(
                         currentVersion.authData.signatures[ownUserId]?.none { it == deviceSignature } == true
                     ) {
                         log.info { "sign key backup" }
-                        api.keys.setRoomKeysVersion(
+                        api.key.setRoomKeysVersion(
                             SetRoomKeyBackupVersionRequest.V1(
                                 authData = with(currentVersion.authData) {
                                     val ownUsersSignatures = signatures[ownUserId].orEmpty()
@@ -130,7 +130,7 @@ class KeyBackupServiceImpl(
                     log.info { "reset key backup and remove own signature from it" }
                     // when the private key does not match it's likely, that the key backup has been changed
                     if (currentVersion.authData.signatures[ownUserId]?.any { it.keyId == ownDeviceId } == true)
-                        api.keys.setRoomKeysVersion(
+                        api.key.setRoomKeysVersion(
                             SetRoomKeyBackupVersionRequest.V1(
                                 authData = with(currentVersion.authData) {
                                     val ownUsersSignatures =
@@ -183,7 +183,7 @@ class KeyBackupServiceImpl(
                     if (version != null) {
                         log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
                         val encryptedSessionData =
-                            api.keys.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
+                            api.key.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
                         require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
                         val privateKey = keyStore.getSecrets()[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
                         val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
@@ -277,7 +277,7 @@ class KeyBackupServiceImpl(
                     val version = version.value
                     if (version != null && notBackedUpInboundMegolmSessions.isNotEmpty()) {
                         log.debug { "upload room keys to key backup" }
-                        api.keys.setRoomKeys(version.version, RoomsKeyBackup(
+                        api.key.setRoomKeys(version.version, RoomsKeyBackup(
                             notBackedUpInboundMegolmSessions.values.groupBy { it.roomId }
                                 .mapValues { roomEntries ->
                                     RoomKeyBackup(roomEntries.value.associate { session ->
@@ -340,7 +340,7 @@ class KeyBackupServiceImpl(
         masterSigningPublicKey: String,
     ): Result<Unit> {
         val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
-        return api.keys.setRoomKeysVersion(
+        return api.key.setRoomKeysVersion(
             SetRoomKeyBackupVersionRequest.V1(
                 authData = with(
                     RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Key.Curve25519Key(null, keyBackupPublicKey))
@@ -365,11 +365,11 @@ class KeyBackupServiceImpl(
             )
             keyStore.updateSecrets {
                 it + (SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    Event.GlobalAccountDataEvent(encryptedBackupKey),
+                    GlobalAccountDataEvent(encryptedBackupKey),
                     keyBackupPrivateKey
                 ))
             }
-            api.users.setAccountData(encryptedBackupKey, ownUserId)
+            api.user.setAccountData(encryptedBackupKey, ownUserId)
         }
     }
 }

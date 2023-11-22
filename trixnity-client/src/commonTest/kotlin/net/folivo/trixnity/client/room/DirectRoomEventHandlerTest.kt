@@ -16,7 +16,8 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -59,10 +60,10 @@ class DirectRoomEventHandlerTest : ShouldSpec({
         scope.cancel()
     }
 
-    context(DirectRoomEventHandler::setDirectRooms.name) {
+    context(DirectRoomEventHandler::setNewDirectEventFromMemberEvent.name) {
         val otherRoom = RoomId("other", "server")
         context("membership is direct") {
-            val event = Event.StateEvent(
+            val event = StateEvent(
                 MemberEventContent(membership = Membership.JOIN, isDirect = true),
                 EventId("$123"),
                 sender = bob,
@@ -73,7 +74,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
             context("there are direct rooms with that user") {
                 beforeTest {
                     globalAccountDataStore.save(
-                        Event.GlobalAccountDataEvent(DirectEventContent(mapOf(alice to setOf(otherRoom))))
+                        GlobalAccountDataEvent(DirectEventContent(mapOf(alice to setOf(otherRoom))))
                     )
                 }
                 should("add direct room") {
@@ -84,15 +85,14 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             setDirectCalled = true
                         }
                     }
-                    cut.setDirectRooms(event)
-                    cut.setDirectRoomsAfterSync()
+                    cut.setNewDirectEventFromMemberEvent(listOf(event))
                     setDirectCalled shouldBe true
                 }
             }
             context("there are no direct rooms with that user") {
                 beforeTest {
                     globalAccountDataStore.save(
-                        Event.GlobalAccountDataEvent(
+                        GlobalAccountDataEvent(
                             DirectEventContent(
                                 mapOf(UserId("nobody", "server") to setOf(otherRoom))
                             )
@@ -112,8 +112,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             setDirectCalled = true
                         }
                     }
-                    cut.setDirectRooms(event)
-                    cut.setDirectRoomsAfterSync()
+                    cut.setNewDirectEventFromMemberEvent(listOf(event))
                     setDirectCalled shouldBe true
                 }
                 should("add multiple direct rooms") {
@@ -131,20 +130,19 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             setDirectCalled = true
                         }
                     }
-                    cut.setDirectRooms(event)
-                    cut.setDirectRooms(
-                        Event.StateEvent(
-                            MemberEventContent(membership = Membership.JOIN, isDirect = true),
-                            EventId("$123"),
-                            sender = bob,
-                            yetAnotherRoom,
-                            1234,
-                            stateKey = UserId("other", "server").full
+                    cut.setNewDirectEventFromMemberEvent(
+                        listOf(
+                            event,
+                            StateEvent(
+                                MemberEventContent(membership = Membership.JOIN, isDirect = true),
+                                EventId("$123"),
+                                sender = bob,
+                                yetAnotherRoom,
+                                1234,
+                                stateKey = UserId("other", "server").full
+                            )
                         )
                     )
-                    cut.setDirectRoomsAfterSync()
-                    // ensure, that cache is cleared
-                    cut.setDirectRoomsAfterSync()
                     setDirectCalled shouldBe true
                 }
             }
@@ -157,13 +155,12 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             setDirectCalled = true
                         }
                     }
-                    cut.setDirectRooms(event)
-                    cut.setDirectRoomsAfterSync()
+                    cut.setNewDirectEventFromMemberEvent(listOf(event))
                     setDirectCalled shouldBe true
                 }
             }
             context("we are the invitee of a direct room") {
-                val joinEvent = Event.StateEvent(
+                val joinEvent = StateEvent(
                     MemberEventContent(membership = Membership.JOIN, isDirect = true),
                     EventId("$123"),
                     sender = alice,
@@ -179,13 +176,12 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             setDirectCalled = true
                         }
                     }
-                    cut.setDirectRooms(joinEvent)
-                    cut.setDirectRoomsAfterSync()
+                    cut.setNewDirectEventFromMemberEvent(listOf(joinEvent))
                     setDirectCalled shouldBe true
                 }
             }
             context("we invite to a direct room") {
-                val joinEvent = Event.StateEvent(
+                val joinEvent = StateEvent(
                     MemberEventContent(membership = Membership.JOIN, isDirect = true),
                     EventId("$123"),
                     sender = bob,
@@ -201,13 +197,12 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             setDirectCalled = true
                         }
                     }
-                    cut.setDirectRooms(joinEvent)
-                    cut.setDirectRoomsAfterSync()
+                    cut.setNewDirectEventFromMemberEvent(listOf(joinEvent))
                     setDirectCalled shouldBe true
                 }
             }
             context("invitation is from our own to our own") {
-                val joinEvent = Event.StateEvent(
+                val joinEvent = StateEvent(
                     MemberEventContent(membership = Membership.JOIN, isDirect = true),
                     EventId("$123"),
                     sender = bob,
@@ -223,12 +218,12 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             setDirectCalled = true
                         }
                     }
-                    cut.setDirectRooms(joinEvent)
+                    cut.setNewDirectEventFromMemberEvent(listOf(joinEvent))
                     setDirectCalled shouldBe false
                 }
             }
             context("invitation does not affect us") {
-                val joinEvent = Event.StateEvent(
+                val joinEvent = StateEvent(
                     MemberEventContent(membership = Membership.JOIN, isDirect = true),
                     EventId("$123"),
                     sender = alice,
@@ -244,7 +239,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                             setDirectCalled = true
                         }
                     }
-                    cut.setDirectRooms(joinEvent)
+                    cut.setNewDirectEventFromMemberEvent(listOf(joinEvent))
                     setDirectCalled shouldBe false
                 }
             }
@@ -252,7 +247,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
         context("own membership is leave or ban") {
             beforeTest {
                 globalAccountDataStore.save(
-                    Event.GlobalAccountDataEvent(
+                    GlobalAccountDataEvent(
                         DirectEventContent(
                             mapOf(
                                 UserId("1", "server") to setOf(room),
@@ -263,7 +258,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
             }
             should("remove direct room on leave") {
-                val event = Event.StateEvent(
+                val event = StateEvent(
                     MemberEventContent(membership = Membership.LEAVE),
                     EventId("$123"),
                     bob,
@@ -282,12 +277,11 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         setDirectCalled = true
                     }
                 }
-                cut.setDirectRooms(event)
-                cut.setDirectRoomsAfterSync()
+                cut.setNewDirectEventFromMemberEvent(listOf(event))
                 setDirectCalled shouldBe true
             }
             should("remove direct room on ban") {
-                val event = Event.StateEvent(
+                val event = StateEvent(
                     MemberEventContent(membership = Membership.BAN),
                     EventId("$123"),
                     bob,
@@ -306,15 +300,14 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         setDirectCalled = true
                     }
                 }
-                cut.setDirectRooms(event)
-                cut.setDirectRoomsAfterSync()
+                cut.setNewDirectEventFromMemberEvent(listOf(event))
                 setDirectCalled shouldBe true
             }
         }
         context("others membership is leave or ban") {
             beforeTest {
                 globalAccountDataStore.save(
-                    Event.GlobalAccountDataEvent(
+                    GlobalAccountDataEvent(
                         DirectEventContent(
                             mapOf(
                                 alice to setOf(room),
@@ -325,7 +318,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
             }
             should("remove direct room on leave") {
-                val event = Event.StateEvent(
+                val event = StateEvent(
                     MemberEventContent(membership = Membership.LEAVE),
                     EventId("$123"),
                     alice,
@@ -340,12 +333,11 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         setDirectCalled = true
                     }
                 }
-                cut.setDirectRooms(event)
-                cut.setDirectRoomsAfterSync()
+                cut.setNewDirectEventFromMemberEvent(listOf(event))
                 setDirectCalled shouldBe true
             }
             should("remove direct room on ban") {
-                val event = Event.StateEvent(
+                val event = StateEvent(
                     MemberEventContent(membership = Membership.BAN),
                     EventId("$123"),
                     bob,
@@ -360,13 +352,12 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                         setDirectCalled = true
                     }
                 }
-                cut.setDirectRooms(event)
-                cut.setDirectRoomsAfterSync()
+                cut.setNewDirectEventFromMemberEvent(listOf(event))
                 setDirectCalled shouldBe true
             }
         }
     }
-    context(DirectRoomEventHandler::setRoomIsDirect.name) {
+    context(DirectRoomEventHandler::setDirectRoomProperties.name) {
         should("set the room to direct == 'true' when a DirectEventContent is found for the room") {
             roomStore.update(room) { Room(room, isDirect = false) }
             val eventContent = DirectEventContent(
@@ -376,7 +367,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
             )
             roomStore.getAll().first { it.size == 1 }
 
-            cut.setRoomIsDirect(eventContent)
+            cut.setDirectRoomProperties(GlobalAccountDataEvent(eventContent))
 
             roomStore.get(room).first()?.isDirect shouldBe true
         }
@@ -392,17 +383,15 @@ class DirectRoomEventHandlerTest : ShouldSpec({
             )
             roomStore.getAll().first { it.size == 2 }
 
-            cut.setRoomIsDirect(eventContent)
+            cut.setDirectRoomProperties(GlobalAccountDataEvent(eventContent))
 
             roomStore.get(room1).first()?.isDirect shouldBe false
             roomStore.get(room2).first()?.isDirect shouldBe true
         }
-    }
-    context(DirectRoomEventHandler::setAvatarUrlForDirectRooms.name) {
         should("set the avatar URL to a member's avatar URL") {
             roomStore.update(room) { Room(room, avatarUrl = null) }
             roomStateStore.save(
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent("mxc://localhost/abcdef", membership = Membership.JOIN),
                     EventId("1"),
                     bob,
@@ -420,15 +409,14 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
             )
 
-            cut.setAvatarUrlForDirectRooms(eventContent)
+            cut.setDirectRoomProperties(GlobalAccountDataEvent(eventContent))
 
             roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/abcdef"
         }
-
         should("when the avatar URL is explicitly set use it instead of member's avatar URL") {
             roomStore.update(room) { Room(room, avatarUrl = "mxc://localhost/123456") }
             roomStateStore.save(
-                Event.StateEvent(
+                StateEvent(
                     MemberEventContent("mxc://localhost/abcdef", membership = Membership.JOIN),
                     EventId("1"),
                     bob,
@@ -438,7 +426,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
             )
             roomStateStore.save(
-                Event.StateEvent(
+                StateEvent(
                     AvatarEventContent("mxc://localhost/123456"),
                     EventId("1"),
                     bob,
@@ -456,7 +444,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 )
             )
 
-            cut.setAvatarUrlForDirectRooms(eventContent)
+            cut.setDirectRoomProperties(GlobalAccountDataEvent(eventContent))
 
             roomStore.get(room).first()?.avatarUrl shouldBe "mxc://localhost/123456"
         }

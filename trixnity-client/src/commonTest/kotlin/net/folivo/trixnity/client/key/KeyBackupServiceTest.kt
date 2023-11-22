@@ -32,7 +32,7 @@ import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
@@ -40,7 +40,7 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData.RoomKeyBackupV1AuthData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -68,7 +68,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     lateinit var olmSignMock: SignServiceMock
     val json = createMatrixEventJson()
-    val mappings = createEventContentSerializerMappings()
+    val mappings = createDefaultEventContentSerializerMappings()
     lateinit var cut: KeyBackupServiceImpl
 
     lateinit var validKeyBackupPrivateKey: String
@@ -120,7 +120,7 @@ private val body: ShouldSpec.() -> Unit = {
         keyStore.updateSecrets {
             mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                    GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
                     keyBackupPrivateKey
                 )
             )
@@ -167,7 +167,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                        GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
                         validKeyBackupPrivateKey
                     )
                 )
@@ -176,7 +176,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore.updateSecrets {
                 mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
-                        Event.GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf("" to JsonPrimitive("something")))),
+                        GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf("" to JsonPrimitive("something")))),
                         validKeyBackupPrivateKey
                     )
                 )
@@ -194,7 +194,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.updateSecrets {
                     mapOf(
                         M_MEGOLM_BACKUP_V1 to StoredSecret(
-                            Event.GlobalAccountDataEvent(
+                            GlobalAccountDataEvent(
                                 MegolmBackupV1EventContent(mapOf())
                             ), validKeyBackupPrivateKey
                         )
@@ -226,7 +226,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.updateSecrets {
                     mapOf(
                         M_MEGOLM_BACKUP_V1 to StoredSecret(
-                            Event.GlobalAccountDataEvent(
+                            GlobalAccountDataEvent(
                                 MegolmBackupV1EventContent(mapOf())
                             ), validKeyBackupPrivateKey
                         )
@@ -260,7 +260,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.updateSecrets {
                     mapOf(
                         M_MEGOLM_BACKUP_V1 to StoredSecret(
-                            Event.GlobalAccountDataEvent(
+                            GlobalAccountDataEvent(
                                 MegolmBackupV1EventContent(mapOf())
                             ), validKeyBackupPrivateKey
                         )
@@ -270,7 +270,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.updateSecrets {
                     mapOf(
                         M_MEGOLM_BACKUP_V1 to StoredSecret(
-                            Event.GlobalAccountDataEvent(
+                            GlobalAccountDataEvent(
                                 MegolmBackupV1EventContent(mapOf())
                             ), "invalidPri"
                         )

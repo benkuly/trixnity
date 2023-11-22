@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
@@ -96,7 +96,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                     pickled = pickledSession
                 )
             }
-            keyStore.allRoomKeyRequests.first()
+            keyStore.getAllRoomKeyRequests()
                 .find { request -> request.content.body?.roomId == content.roomId && request.content.body?.sessionId == content.sessionId }
                 ?.cancelRequest()
         }
@@ -104,7 +104,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
 
 
     internal suspend fun cancelOldOutgoingKeyRequests() {
-        keyStore.allRoomKeyRequests.value.forEach {
+        keyStore.getAllRoomKeyRequests().forEach {
             if ((it.createdAt + 1.days) < Clock.System.now()) {
                 it.cancelRequest()
             }
@@ -116,7 +116,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
         log.debug { "cancel outgoing room key request to $cancelRequestTo" }
         if (cancelRequestTo.isNotEmpty()) {
             val cancelRequest = content.copy(action = KeyRequestAction.REQUEST_CANCELLATION, body = null)
-            api.users.sendToDevice( // TODO should be encrypted (because this is meta data)
+            api.user.sendToDevice( // TODO should be encrypted (because this is meta data)
                 mapOf(ownUserId to cancelRequestTo.associateWith { cancelRequest })
             ).getOrThrow()
         }
@@ -127,7 +127,9 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
         roomId: RoomId,
         sessionId: String,
     ) {
-        if (keyStore.allRoomKeyRequests.value.none { it.content.body?.roomId == roomId && it.content.body?.sessionId == sessionId }) {
+        if (keyStore.getAllRoomKeyRequests()
+                .none { it.content.body?.roomId == roomId && it.content.body?.sessionId == sessionId }
+        ) {
             currentSyncState.retryWhenSyncIs(
                 SyncState.RUNNING,
                 onError = { log.warn(it) { "failed request room keys" } },
@@ -152,7 +154,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                 )
                 log.debug { "send room key request (roomId=$roomId, sessionId=$sessionId) to $receiverDeviceIds" }
                 // TODO should be encrypted (because this is meta data)
-                api.users.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
+                api.user.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
                     .onSuccess {
                         keyStore.addRoomKeyRequest(
                             StoredRoomKeyRequest(request, receiverDeviceIds, Clock.System.now())
@@ -160,7 +162,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                     }.getOrThrow()
             }
         }
-        keyStore.allRoomKeyRequests
+        keyStore.getAllRoomKeyRequestsFlow()
             .first { requests -> requests.none { it.content.body?.roomId == roomId && it.content.body?.sessionId == sessionId } }
     }
 }

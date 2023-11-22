@@ -4,12 +4,12 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "push"
 
 stages:
-  - website
   - prepare-build
   - build
   - test
   - publish-snapshot
   - publish
+  - website
 
 variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
@@ -23,6 +23,8 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+
+.push-cache-linux: &push-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
     policy: push
     paths:
@@ -43,6 +45,8 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+
+.push-cache-mac: &push-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
     policy: push
     paths:
@@ -82,20 +86,6 @@ variables:
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-pages:
-  stage: website
-  image: node:lts
-  rules:
-    - *if-main
-  script:
-    - cd website
-    - yarn install
-    - yarn build
-    - mv ./build ../public
-  artifacts:
-    paths:
-      - public
-
 build-trixnity-build-linux-image:
   stage: prepare-build
   tags: [ "saas-linux-small-amd64" ]
@@ -103,7 +93,11 @@ build-trixnity-build-linux-image:
   services:
     - name: docker:dind
       command: [ "--tls=false" ]
-  when: manual
+  rules:
+    - changes:
+        paths:
+          - "gitlab-ci/Dockerfile"
+        compare_to: main
   script:
     - docker build gitlab-ci/ -t $BUILD_LINUX_IMAGE_NAME
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -111,27 +105,42 @@ build-trixnity-build-linux-image:
 
 build:mac:
   stage: build
+  interruptible: true
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache-mac
+    - *push-cache-mac
   rules:
     - *if-merge-request
   script:
-    - ./gradlew assemble --stacktrace
+    - ./gradlew
+      compileKotlin{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      compileTestKotlin{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
+      linkDebugTest{IosX64,MacosX64}
+      --stacktrace
 
 build:linux:
   stage: build
+  interruptible: true
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache-linux
+    - *push-cache-linux
   rules:
     - *if-merge-request
   script:
-    - ./gradlew assemble --stacktrace
+    - ./gradlew
+      compileKotlin{Jvm,Js,LinuxX64,MingwX64}
+      compileReleaseKotlinAndroid
+      compileTestKotlin{Jvm,Js,LinuxX64,MingwX64}
+      linkDebugTest{LinuxX64,MingwX64}
+      compileReleaseUnitTestKotlinAndroid
+      --stacktrace
 
 test:mac:
   stage: test
+  interruptible: true
   timeout: 1h
   needs: [ "build:mac" ]
   tags: [ "trixnity-mac-internal" ]
@@ -140,17 +149,14 @@ test:mac:
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
-  # TODO iosArm64Test not created by gradle
   script:
     - ./gradlew
-      iosSimulatorArm64Test
-      iosX64Test
-      macosArm64Test
-      macosX64Test
+      {iosSimulatorArm64,iosX64,macosArm64,macosX64}Test
       --stacktrace
 
 test:linux:
   stage: test
+  interruptible: true
   timeout: 1h
   needs: [ "build:linux" ]
   tags: [ "saas-linux-large-amd64" ]
@@ -162,15 +168,12 @@ test:linux:
     - *if-merge-request
   script:
     - ./gradlew
-      jvmTest -x :trixnity-client:integration-tests:jvmTest
-      testReleaseUnitTest
-      jsTest
-      linuxX64Test
-      mingwX64Test
+      {jvm,js,linuxX64,mingwX64,testReleaseUnit}Test -x :trixnity-client:integration-tests:jvmTest
       --stacktrace
 
 test:integration-test:
   stage: test
+  interruptible: true
   timeout: 30m
   needs: [ "build:linux" ]
   tags: [ "saas-linux-medium-amd64" ]
@@ -185,22 +188,20 @@ test:integration-test:
   rules:
     - *if-merge-request
   script:
-    - ./gradlew :trixnity-client:integration-tests:jvmTest --stacktrace
+    - ./gradlew
+      :trixnity-client:integration-tests:jvmTest
+      --stacktrace
 
 publish-snapshot:mac:
   stage: publish-snapshot
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *pull-cache-mac
+    - *cache-mac
   rules:
     - *if-main
   script:
     - ./gradlew
-      publishIosArm64PublicationToSnapshotRepository
-      publishIosSimulatorArm64PublicationToSnapshotRepository
-      publishIosX64PublicationToSnapshotRepository
-      publishMacosArm64PublicationToSnapshotRepository
-      publishMacosX64PublicationToSnapshotRepository
+      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToSnapshotRepository
       --stacktrace
 
 publish-snapshot:linux:
@@ -208,17 +209,16 @@ publish-snapshot:linux:
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *pull-cache-linux
+    - *cache-linux
   rules:
     - *if-main
+  artifacts:
+    paths:
+      - website/static/api/
   script:
     - ./gradlew
-      publishKotlinMultiplatformPublicationToSnapshotRepository
-      publishJvmPublicationToSnapshotRepository
-      publishAndroidReleasePublicationToSnapshotRepository
-      publishJsPublicationToSnapshotRepository
-      publishLinuxX64PublicationToSnapshotRepository
-      publishMingwX64PublicationToSnapshotRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToSnapshotRepository
+      dokkaHtmlToWebsite
       --stacktrace
 
 publish:create-nexus-staging-repo:
@@ -252,17 +252,13 @@ publish:mac:
   needs: [ "publish:create-nexus-staging-repo" ]
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *pull-cache-mac
+    - *cache-mac
   rules:
     - *if-release
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew
-      publishIosArm64PublicationToReleaseRepository
-      publishIosSimulatorArm64PublicationToReleaseRepository
-      publishIosX64PublicationToReleaseRepository
-      publishMacosArm64PublicationToReleaseRepository
-      publishMacosX64PublicationToReleaseRepository
+      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToReleaseRepository
       --stacktrace
 
 publish:linux:
@@ -271,16 +267,25 @@ publish:linux:
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *pull-cache-linux
+    - *cache-linux
   rules:
     - *if-release
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew
-      publishKotlinMultiplatformPublicationToReleaseRepository
-      publishJvmPublicationToReleaseRepository
-      publishAndroidReleasePublicationToReleaseRepository
-      publishJsPublicationToReleaseRepository
-      publishLinuxX64PublicationToReleaseRepository
-      publishMingwX64PublicationToReleaseRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToReleaseRepository
       --stacktrace
+
+pages:
+  stage: website
+  image: node:lts
+  rules:
+    - *if-main
+  script:
+    - cd website
+    - yarn install --force
+    - yarn build
+    - mv ./build ../public
+  artifacts:
+    paths:
+      - public

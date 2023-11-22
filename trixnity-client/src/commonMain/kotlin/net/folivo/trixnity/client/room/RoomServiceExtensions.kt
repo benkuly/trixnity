@@ -3,20 +3,15 @@ package net.folivo.trixnity.client.room
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
 import kotlin.jvm.JvmName
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * @see RoomService.getTimeline
@@ -33,45 +28,11 @@ inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
 inline fun <reified C : StateEventContent> RoomService.getState(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<Event<C>?> = getState(roomId, C::class, stateKey)
+): Flow<StateBaseEvent<C>?> = getState(roomId, C::class, stateKey)
 
 inline fun <reified C : StateEventContent> RoomService.getAllState(
     roomId: RoomId,
-): Flow<Map<String, Flow<Event<C>?>>?> = getAllState(roomId, C::class)
-
-/**
- * This collects all rooms, so when one room changes, a new room set gets emitted.
- * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
- * the outer flow is throttled by default.
- */
-@OptIn(ExperimentalCoroutinesApi::class)
-fun StateFlow<Map<RoomId, StateFlow<Room?>>>.flatten(
-    throttle: Duration = 200.milliseconds,
-    filterUpgradedRooms: Boolean = true,
-): Flow<Set<Room>> =
-    transform {
-        emit(it)
-        delay(throttle)
-    }
-        .flatMapLatest {
-            if (it.isEmpty()) flowOf(listOf())
-            else combine(it.values) { transform -> transform.filterNotNull() }
-        }
-        .map { rooms ->
-            rooms.filter { room ->
-                if (filterUpgradedRooms) {
-                    val foundReplacementRoom =
-                        room.nextRoomId?.let { nextRoomId ->
-                            rooms.any {
-                                it.roomId == nextRoomId
-                                        && it.previousRoomId == room.roomId
-                                        && it.membership == Membership.JOIN
-                            }
-                        } == true
-                    foundReplacementRoom.not()
-                } else true
-            }.toSet()
-        }
+): Flow<Map<String, Flow<StateBaseEvent<C>?>>?> = getAllState(roomId, C::class)
 
 /**
  * Converts a flow of timeline events into a flow of list of timeline events limited by [maxSize].
@@ -96,7 +57,7 @@ fun Flow<Flow<TimelineEvent>>.toFlowList(
     }
 
 /**
- * Converts a flow of flow of timeline events into a flow of list of timeline events limited by [maxSize].
+ * Converts a flow of flows of timeline event into a flow of list of timeline events limited by [maxSize].
  *
  * ```
  * Input: (E) -> (E) -> (E) -> delay e. g. due to fetching new events -> (E)

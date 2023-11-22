@@ -13,6 +13,8 @@ import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
@@ -62,7 +64,7 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
             senderKey, Key.Ed25519Key(null, "ed"), session, room, 1, hasBeenBackedUp = false, isTrusted = false,
             forwardingCurve25519KeyChain = listOf(), pickled = "pickle"
         )
-        val encryptedEvent = Event.MessageEvent(
+        val encryptedEvent = MessageEvent(
             EncryptedEventContent.MegolmEncryptedEventContent("cipher cipher", sessionId = session),
             EventId("$1event"),
             alice,
@@ -73,7 +75,7 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
             DecryptedMegolmEvent(RoomMessageEventContent.TextMessageEventContent("decrypted"), room)
         should("return null when unsupported") {
             cut.decrypt(
-                Event.MessageEvent(
+                MessageEvent(
                     RoomMessageEventContent.TextMessageEventContent("unsupported"),
                     EventId("$1event"),
                     alice,

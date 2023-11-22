@@ -14,7 +14,8 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -131,8 +132,8 @@ class KeyServiceImpl(
         }.first { globalAccountDataStore.get<SecretKeyEventContent>(key = it).first() == null }
         return KeyService.BootstrapCrossSigning(
             recoveryKey = encodeRecoveryKey(recoveryKey),
-            result = api.users.setAccountData(secretKeyEventContent, userInfo.userId, keyId)
-                .flatMapResult { api.users.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
+            result = api.user.setAccountData(secretKeyEventContent, userInfo.userId, keyId)
+                .flatMapResult { api.user.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
                 .flatMapResult {
                     val (masterSigningPrivateKey, masterSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
@@ -197,18 +198,18 @@ class KeyServiceImpl(
                     keyStore.updateSecrets {
                         mapOf(
                             SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                                Event.GlobalAccountDataEvent(encryptedSelfSigningKey),
+                                GlobalAccountDataEvent(encryptedSelfSigningKey),
                                 selfSigningPrivateKey
                             ),
                             SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                                Event.GlobalAccountDataEvent(encryptedUserSigningKey),
+                                GlobalAccountDataEvent(encryptedUserSigningKey),
                                 userSigningPrivateKey
                             ),
                         )
                     }
-                    api.users.setAccountData(encryptedMasterSigningKey, userInfo.userId)
-                        .flatMapResult { api.users.setAccountData(encryptedUserSigningKey, userInfo.userId) }
-                        .flatMapResult { api.users.setAccountData(encryptedSelfSigningKey, userInfo.userId) }
+                    api.user.setAccountData(encryptedMasterSigningKey, userInfo.userId)
+                        .flatMapResult { api.user.setAccountData(encryptedUserSigningKey, userInfo.userId) }
+                        .flatMapResult { api.user.setAccountData(encryptedSelfSigningKey, userInfo.userId) }
                         .flatMapResult {
                             keyBackupService.bootstrapRoomKeyBackup(
                                 recoveryKey,
@@ -218,7 +219,7 @@ class KeyServiceImpl(
                             )
                         }
                         .flatMapResult {
-                            api.keys.setCrossSigningKeys(
+                            api.key.setCrossSigningKeys(
                                 masterKey = masterSigningKey,
                                 selfSigningKey = selfSigningKey,
                                 userSigningKey = userSigningKey
@@ -227,7 +228,6 @@ class KeyServiceImpl(
                 }.mapCatching { uiaFlow ->
                     uiaFlow.injectOnSuccessIntoUIA {
                         keyStore.updateOutdatedKeys { oldOutdatedKeys -> oldOutdatedKeys + userInfo.userId }
-                        log.debug { "wait for outdated keys" }
                         keyStore.waitForUpdateOutdatedKey(userInfo.userId)
                         val masterKey =
                             keyStore.getCrossSigningKey(userInfo.userId, MasterKey)?.value?.signed?.get<Ed25519Key>()
@@ -279,14 +279,15 @@ class KeyServiceImpl(
         userId: UserId,
         deviceId: String,
     ): Flow<DeviceTrustLevel> {
-        return keyStore.getDeviceKey(userId, deviceId).map { deviceKeys ->
+        return keyStore.getDeviceKey(userId, deviceId, fetchIfMissing = true).map { deviceKeys ->
             when (val trustLevel = deviceKeys?.trustLevel) {
                 is Valid -> DeviceTrustLevel.Valid(trustLevel.verified)
                 is CrossSigned -> DeviceTrustLevel.CrossSigned(trustLevel.verified)
                 is NotCrossSigned -> DeviceTrustLevel.NotCrossSigned
                 is Blocked -> DeviceTrustLevel.Blocked
                 is Invalid -> DeviceTrustLevel.Invalid(trustLevel.reason)
-                is NotAllDeviceKeysCrossSigned, null -> DeviceTrustLevel.Invalid("could not determine trust level of device key: $deviceKeys")
+                is NotAllDeviceKeysCrossSigned -> DeviceTrustLevel.Invalid("could not determine trust level of device key: $deviceKeys")
+                null -> DeviceTrustLevel.Unknown
             }
         }
     }
@@ -299,10 +300,10 @@ class KeyServiceImpl(
         roomService.getTimelineEvent(roomId, eventId).flatMapLatest { timelineEvent ->
             val event = timelineEvent?.event
             val content = event?.content
-            if (event is Event.MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
+            if (event is MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
                 combine(
                     olmCryptoStore.getInboundMegolmSession(content.sessionId, event.roomId),
-                    keyStore.getDeviceKeys(event.sender)
+                    keyStore.getDeviceKeys(event.sender, fetchIfMissing = true)
                 ) { megolmSession, deviceKeys ->
                     when {
                         megolmSession == null || deviceKeys == null -> flowOf(DeviceTrustLevel.Invalid("could not find session or device key"))
@@ -322,7 +323,7 @@ class KeyServiceImpl(
     override fun getTrustLevel(
         userId: UserId,
     ): Flow<UserTrustLevel> {
-        return keyStore.getCrossSigningKeys(userId)
+        return keyStore.getCrossSigningKeys(userId, fetchIfMissing = true)
             .map { keys -> keys?.firstOrNull { it.value.signed.usage.contains(MasterKey) } }
             .map { crossSigningKeys ->
                 when (val trustLevel = crossSigningKeys?.trustLevel) {
@@ -340,7 +341,7 @@ class KeyServiceImpl(
     override fun getDeviceKeys(
         userId: UserId,
     ): Flow<List<DeviceKeys>?> {
-        return keyStore.getDeviceKeys(userId).map {
+        return keyStore.getDeviceKeys(userId, fetchIfMissing = true).map {
             it?.values?.map { storedKeys -> storedKeys.value.signed }
         }
     }
@@ -348,7 +349,7 @@ class KeyServiceImpl(
     override fun getCrossSigningKeys(
         userId: UserId,
     ): Flow<List<CrossSigningKeys>?> {
-        return keyStore.getCrossSigningKeys(userId).map {
+        return keyStore.getCrossSigningKeys(userId, fetchIfMissing = true).map {
             it?.map { storedKeys -> storedKeys.value.signed }
         }
     }

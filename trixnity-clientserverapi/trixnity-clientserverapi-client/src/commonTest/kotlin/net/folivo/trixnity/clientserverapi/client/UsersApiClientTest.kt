@@ -43,7 +43,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.setDisplayName(UserId("user", "server"), "someDisplayName")
+        matrixRestClient.user.setDisplayName(UserId("user", "server"), "someDisplayName")
     }
 
     @Test
@@ -61,7 +61,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        assertEquals("someDisplayName", matrixRestClient.users.getDisplayName(UserId("user", "server")).getOrThrow())
+        assertEquals("someDisplayName", matrixRestClient.user.getDisplayName(UserId("user", "server")).getOrThrow())
     }
 
     @Test
@@ -83,7 +83,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.setAvatarUrl(UserId("user", "server"), "mxc://localhost/123456")
+        matrixRestClient.user.setAvatarUrl(UserId("user", "server"), "mxc://localhost/123456")
     }
 
     @Test
@@ -103,7 +103,7 @@ class UsersApiClientTest {
             })
         assertEquals(
             "mxc://localhost/123456",
-            matrixRestClient.users.getAvatarUrl(UserId("user", "server")).getOrThrow()
+            matrixRestClient.user.getAvatarUrl(UserId("user", "server")).getOrThrow()
         )
     }
 
@@ -124,7 +124,7 @@ class UsersApiClientTest {
             })
         assertEquals(
             GetProfile.Response("someDisplayName", "mxc://localhost/123456"),
-            matrixRestClient.users.getProfile(UserId("user", "server")).getOrThrow()
+            matrixRestClient.user.getProfile(UserId("user", "server")).getOrThrow()
         )
     }
 
@@ -145,7 +145,7 @@ class UsersApiClientTest {
             })
         assertEquals(
             GetProfile.Response(null, null),
-            matrixRestClient.users.getProfile(UserId("user", "server")).getOrThrow()
+            matrixRestClient.user.getProfile(UserId("user", "server")).getOrThrow()
         )
     }
 
@@ -170,7 +170,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.setPresence(
+        matrixRestClient.user.setPresence(
             UserId("@user:server"), Presence.ONLINE, "I am here."
         ).getOrThrow()
     }
@@ -195,7 +195,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.users.getPresence(UserId("@user:server")).getOrThrow()
+        val result = matrixRestClient.user.getPresence(UserId("@user:server")).getOrThrow()
         assertEquals(PresenceEventContent(Presence.UNAVAILABLE, lastActiveAgo = 420845), result)
     }
 
@@ -212,10 +212,10 @@ class UsersApiClientTest {
                                   "messages":{
                                     "@alice:example.com":{
                                       "TLLBEANAAG":{
+                                        "algorithm":"m.megolm.v1.aes-sha2",
                                         "room_id":"!Cuyf34gef24t:localhost",
                                         "session_id":"X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
-                                        "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
-                                        "algorithm":"m.megolm.v1.aes-sha2"
+                                        "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."
                                       }
                                     }
                                   }
@@ -228,7 +228,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.sendToDevice(
+        matrixRestClient.user.sendToDevice(
             mapOf(
                 UserId("@alice:example.com") to mapOf(
                     "TLLBEANAAG" to RoomKeyEventContent(
@@ -267,7 +267,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        val response = matrixRestClient.users.setFilter(
+        val response = matrixRestClient.user.setFilter(
             UserId("dino", "server"),
             Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true)))
         ).getOrThrow()
@@ -297,7 +297,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        val response = matrixRestClient.users.getFilter(UserId("dino", "server"), "0").getOrThrow()
+        val response = matrixRestClient.user.getFilter(UserId("dino", "server"), "0").getOrThrow()
         assertEquals(
             Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true))),
             response
@@ -322,7 +322,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.getAccountData<DirectEventContent>(UserId("alice", "example.com")).getOrThrow()
+        matrixRestClient.user.getAccountData<DirectEventContent>(UserId("alice", "example.com")).getOrThrow()
             .shouldBe(
                 DirectEventContent(
                     mapOf(
@@ -350,7 +350,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.getAccountData<SecretKeyEventContent>(
+        matrixRestClient.user.getAccountData<SecretKeyEventContent>(
             UserId("alice", "example.com"), key = "key1"
         ).getOrThrow().shouldBe(SecretKeyEventContent.AesHmacSha2Key("name"))
     }
@@ -377,7 +377,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.setAccountData(
+        matrixRestClient.user.setAccountData(
             DirectEventContent(
                 mapOf(
                     UserId("bob", "server") to setOf(RoomId("someRoom", "server"))
@@ -409,7 +409,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.setAccountData(
+        matrixRestClient.user.setAccountData(
             SecretKeyEventContent.AesHmacSha2Key("name"),
             UserId("alice", "example.com"),
             key = "key1"
@@ -442,7 +442,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.users.searchUsers("bob", "de", 20).getOrThrow() shouldBe
+        matrixRestClient.user.searchUsers("bob", "de", 20).getOrThrow() shouldBe
                 SearchUsers.Response(
                     limited = true,
                     results = listOf(

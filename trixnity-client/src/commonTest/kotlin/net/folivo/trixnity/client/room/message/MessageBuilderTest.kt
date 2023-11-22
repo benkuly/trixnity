@@ -15,13 +15,12 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.utils.toByteArrayFlow
 
 class MessageBuilderTest : ShouldSpec({
@@ -34,17 +33,12 @@ class MessageBuilderTest : ShouldSpec({
     beforeTest {
         roomService = RoomServiceMock().apply {
             rooms.value = mapOf(
-                encryptedRoom to MutableStateFlow(
-                    Room(
-                        encryptedRoom,
-                        encryptionAlgorithm = EncryptionAlgorithm.Megolm
-                    )
-                ),
+                encryptedRoom to MutableStateFlow(Room(encryptedRoom, encrypted = true)),
                 unencryptedRoom to MutableStateFlow(Room(unencryptedRoom)),
             )
             returnGetTimelineEvent = flowOf(
                 TimelineEvent(
-                    event = Event.MessageEvent(
+                    event = MessageEvent(
                         TextMessageEventContent("dino\nunicorn"),
                         EventId("dino"),
                         UserId("sender", "server"),
@@ -63,7 +57,7 @@ class MessageBuilderTest : ShouldSpec({
 
     fun timelineEvent(eventId: EventId, relatesTo: RelatesTo? = null, mentions: Mentions? = null) =
         TimelineEvent(
-            event = Event.MessageEvent(
+            event = MessageEvent(
                 content = TextMessageEventContent("hi", relatesTo = relatesTo, mentions = mentions),
                 id = eventId,
                 sender = UserId("sender", "server"),
@@ -292,7 +286,7 @@ class MessageBuilderTest : ShouldSpec({
         should("create fallback text on reply to image") {
             roomService.returnGetTimelineEvent = flowOf(
                 TimelineEvent(
-                    event = Event.MessageEvent(
+                    event = MessageEvent(
                         ImageMessageEventContent(
                             body = "image.png",
                             url = "http://localhost/media/123456",

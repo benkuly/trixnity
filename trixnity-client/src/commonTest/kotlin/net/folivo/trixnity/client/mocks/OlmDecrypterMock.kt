@@ -3,6 +3,8 @@ package net.folivo.trixnity.client.mocks
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.core.Unsubscriber
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventSubscriber
@@ -19,7 +21,7 @@ class OlmDecrypterMock : OlmDecrypter {
     }
 
 
-    override suspend fun handleOlmEvent(event: Event.ToDeviceEvent<EncryptedEventContent.OlmEncryptedEventContent>) {
+    override suspend fun handleOlmEvent(event: ToDeviceEvent<EncryptedEventContent.OlmEncryptedEventContent>) {
         NotImplementedError()
     }
 }

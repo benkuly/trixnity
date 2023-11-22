@@ -4,42 +4,11 @@ import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-
-@Deprecated(
-    "use stateKeyOrNull instead",
-    ReplaceWith("this.stateKeyOrNull", "net.folivo.trixnity.core.model.events.stateKeyOrNull")
-)
-fun Event<*>?.getStateKey(): String? = this?.stateKeyOrNull
-
-@Deprecated(
-    "use eventIdOrNull instead",
-    ReplaceWith("this.eventIdOrNull", "net.folivo.trixnity.core.model.events.eventIdOrNull")
-)
-fun Event<*>?.getEventId(): EventId? = this?.eventIdOrNull
-
-@Deprecated(
-    "use originTimestampOrNull instead",
-    ReplaceWith("this.originTimestampOrNull", "net.folivo.trixnity.core.model.events.originTimestampOrNull")
-)
-fun Event<*>?.getOriginTimestamp(): Long? = this?.originTimestampOrNull
-
-@Deprecated(
-    "use roomIdOrNull instead",
-    ReplaceWith("this.roomIdOrNull", "net.folivo.trixnity.core.model.events.roomIdOrNull")
-)
-fun Event<*>?.getRoomId(): RoomId? = this?.roomIdOrNull
-
-@Deprecated(
-    "use senderOrNull instead",
-    ReplaceWith("this.senderOrNull", "net.folivo.trixnity.core.model.events.senderOrNull")
-)
-fun Event<*>?.getSender(): UserId? = this?.senderOrNull
 
 fun String.toMxcUri(): Url =
     Url(this).also { require(it.protocol.name == "mxc") { "uri protocol was not mxc" } }
@@ -49,26 +18,88 @@ fun String.toMxcUri(): Url =
  * the outer flow is throttled by default.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-fun <K, V> Flow<Map<K, Flow<V?>>?>.flatten(
-    filterNullValues: Boolean = true,
+fun <K, V> Flow<Map<K, Flow<V?>>>.flatten(
     throttle: Duration = 200.milliseconds,
-): Flow<Map<K, V?>?> =
-    conflate()
-        .transform {
-            emit(it)
-            delay(throttle)
-        }
-        .flatMapLatest { map ->
-            if (map == null) flowOf(null)
-            else if (map.isEmpty()) flowOf(emptyMap())
-            else {
-                val innerFlowsWithKey = map.map { entry -> entry.value.map { entry.key to it } }
-                combine(innerFlowsWithKey) { innerFlowsWithKeyArray ->
-                    innerFlowsWithKeyArray.toMap()
-                        .let {
-                            if (filterNullValues) it.filterValues { value -> value != null }
-                            else it
-                        }
-                }
+): Flow<Map<K, V?>> =
+    transform {
+        emit(it)
+        delay(throttle)
+    }.flatMapLatest { map ->
+        if (map.isEmpty()) flowOf(emptyMap())
+        else {
+            val innerFlowsWithKey = map.map { entry -> entry.value.map { entry.key to it } }
+            combine(innerFlowsWithKey) { innerFlowsWithKeyArray ->
+                innerFlowsWithKeyArray.toMap()
             }
         }
+    }.conflate()
+
+/**
+ * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
+ * the outer flow is throttled by default.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+fun <K, V> Flow<Map<K, Flow<V?>>>.flattenNotNull(
+    throttle: Duration = 200.milliseconds,
+): Flow<Map<K, V>> =
+    transform {
+        emit(it)
+        delay(throttle)
+    }.flatMapLatest { map ->
+        if (map.isEmpty()) flowOf(emptyMap())
+        else {
+            val innerFlowsWithKey =
+                map.map { entry -> entry.value.map { if (it == null) null else entry.key to it } }
+            combine(innerFlowsWithKey) { innerFlowsWithKeyArray ->
+                innerFlowsWithKeyArray.filterNotNull().toMap()
+            }
+        }
+    }.conflate()
+
+/**
+ * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
+ * the outer flow is throttled by default.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+inline fun <K, reified V> Flow<Map<K, Flow<V?>>>.flattenValues(
+    throttle: Duration = 200.milliseconds,
+): Flow<List<V>> =
+    transform {
+        emit(it)
+        delay(throttle)
+    }.flatMapLatest { map ->
+        if (map.isEmpty()) flowOf(listOf())
+        else combine(map.values) { transform -> transform.filterNotNull() }
+    }.conflate()
+
+/**
+ * This collects all rooms, so when one changes, a new set gets emitted.
+ * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
+ * the outer flow is throttled by default.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+fun Flow<Map<RoomId, Flow<Room?>>>.flattenValues(
+    throttle: Duration = 200.milliseconds,
+    filterUpgradedRooms: Boolean = true,
+): Flow<Set<Room>> =
+    transform {
+        emit(it)
+        delay(throttle)
+    }.flatMapLatest {
+        if (it.isEmpty()) flowOf(listOf())
+        else combine(it.values) { transform -> transform.filterNotNull() }
+    }.conflate().map { rooms ->
+        rooms.filter { room ->
+            if (filterUpgradedRooms) {
+                val foundReplacementRoom =
+                    room.nextRoomId?.let { nextRoomId ->
+                        rooms.any {
+                            it.roomId == nextRoomId
+                                    && it.previousRoomId == room.roomId
+                                    && it.membership == Membership.JOIN
+                        }
+                    } == true
+                foundReplacementRoom.not()
+            } else true
+        }.toSet()
+    }

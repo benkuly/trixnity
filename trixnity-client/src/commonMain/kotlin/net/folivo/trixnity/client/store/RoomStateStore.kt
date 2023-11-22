@@ -14,13 +14,16 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
 class RoomStateStore(
-    roomStateRepository: RoomStateRepository,
-    tm: RepositoryTransactionManager,
+    private val roomStateRepository: RoomStateRepository,
+    private val tm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     config: MatrixClientConfiguration,
     storeScope: CoroutineScope,
@@ -46,13 +49,13 @@ class RoomStateStore(
             ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
     }
 
-    suspend fun save(event: Event<out StateEventContent>, skipWhenAlreadyPresent: Boolean = false) {
-        val roomId = event.roomIdOrNull
-        val stateKey = event.stateKeyOrNull
-        if (roomId != null && stateKey != null) {
+    suspend fun save(event: StateBaseEvent<*>, skipWhenAlreadyPresent: Boolean = false) {
+        val roomId = event.roomId
+        val stateKey = event.stateKey
+        if (roomId != null) {
             val eventType = when (val content = event.content) {
-                is UnknownStateEventContent -> content.eventType
-                is RedactedStateEventContent -> content.eventType
+                is UnknownEventContent -> content.eventType
+                is RedactedEventContent -> content.eventType
                 else -> contentMappings.state.find { it.kClass.isInstance(event.content) }?.type
             }
                 ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
@@ -79,15 +82,15 @@ class RoomStateStore(
     fun <C : StateEventContent> get(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         val eventType = findType(eventContentClass)
         return roomStateCache.readByFirstKey(RoomStateRepositoryKey(roomId, eventType))
             .mapLatest { value ->
-                value?.mapValues { entry ->
+                value.mapValues { entry ->
                     entry.value.map {
                         if (it?.content?.instanceOf(eventContentClass) == true) {
                             @Suppress("UNCHECKED_CAST")
-                            it as Event<C>
+                            it as StateBaseEvent<C>
                         } else null
                     }
                 }
@@ -98,10 +101,21 @@ class RoomStateStore(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String,
-    ): Flow<Event<C>?> {
+    ): Flow<StateBaseEvent<C>?> {
         val eventType = findType(eventContentClass)
         return roomStateCache.read(MapRepositoryCoroutinesCacheKey(RoomStateRepositoryKey(roomId, eventType), stateKey))
             .map { if (it?.content?.instanceOf(eventContentClass) == true) it else null }
             .filterIsInstance()
+    }
+
+    suspend fun <C : StateEventContent> getByRooms(
+        roomIds: Set<RoomId>,
+        eventContentClass: KClass<C>,
+        stateKey: String,
+    ): List<StateBaseEvent<C>> {
+        val eventType = findType(eventContentClass)
+        return tm.readTransaction { roomStateRepository.getByRooms(roomIds, eventType, stateKey) }
+            .mapNotNull { if (it.content.instanceOf(eventContentClass)) it else null }
+            .filterIsInstance<StateBaseEvent<C>>()
     }
 }

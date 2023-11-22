@@ -40,6 +40,7 @@ class RepositoryTestSuite : ShouldSpec({
             singleOf(::IndexedDBRoomRepository) { bind<RoomRepository>() }
             singleOf(::IndexedDBRoomStateRepository) { bind<RoomStateRepository>() }
             singleOf(::IndexedDBRoomUserRepository) { bind<RoomUserRepository>() }
+            singleOf(::IndexedDBRoomUserReceiptsRepository) { bind<RoomUserReceiptsRepository>() }
             singleOf(::IndexedDBSecretKeyRequestRepository) { bind<SecretKeyRequestRepository>() }
             singleOf(::IndexedDBSecretsRepository) { bind<SecretsRepository>() }
             singleOf(::IndexedDBTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }

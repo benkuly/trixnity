@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.StateEventContentSerializer
+import net.folivo.trixnity.core.serialization.events.contentSerializer
 
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#get_matrixclientv3roomsroomidstateeventtypestatekey">matrix spec</a>
@@ -28,6 +28,8 @@ data class GetStateEvent(
 ) : MatrixEndpoint<Unit, StateEventContent> {
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
-    ): KSerializer<StateEventContent> = StateEventContentSerializer(mappings.state, type)
+        json: Json,
+        value: StateEventContent?
+    ): KSerializer<StateEventContent> =
+        mappings.state.contentSerializer(type, value)
 }

@@ -4,12 +4,12 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 
 @Serializable
 data class TimelineEvent(
-    val event: @Contextual RoomEvent<*>,
+    val event: @Contextual ClientEvent.RoomEvent<*>,
     /**
      * - event is not encrypted -> original content
      * - event is encrypted

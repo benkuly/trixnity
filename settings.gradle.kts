@@ -41,6 +41,17 @@ buildCache {
     }
 }
 
-//plugins { // TODO gradle 8
-//    id("org.gradle.toolchains.foojay-resolver-convention") version "0.4.0"
-//}
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        google()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google()
+    }
+}

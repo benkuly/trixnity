@@ -12,15 +12,15 @@ import kotlinx.serialization.encoding.Encoder
 abstract class ReceiptType {
     abstract val name: String
 
-    object Read : ReceiptType() {
+    data object Read : ReceiptType() {
         override val name = "m.read"
     }
 
-    object PrivateRead : ReceiptType() {
+    data object PrivateRead : ReceiptType() {
         override val name = "m.read.private"
     }
 
-    object FullyRead : ReceiptType() {
+    data object FullyRead : ReceiptType() {
         override val name = "m.fully_read"
     }
 

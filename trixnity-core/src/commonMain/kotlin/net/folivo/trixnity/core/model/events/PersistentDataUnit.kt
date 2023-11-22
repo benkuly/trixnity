@@ -13,9 +13,7 @@ import net.folivo.trixnity.core.model.UserId
 /**
  * @see <a href="https://spec.matrix.org/v1.7/rooms/">matrix spec</a>
  */
-sealed interface PersistentDataUnit<C : EventContent> {
-    val content: C
-
+sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
     data class UnknownPersistentDataUnit(
         override val content: EmptyEventContent,
         val type: String,

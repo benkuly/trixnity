@@ -14,7 +14,7 @@ import net.folivo.trixnity.clientserverapi.model.users.SetDisplayName
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
@@ -24,7 +24,7 @@ import kotlin.test.Test
 class ApplicationServiceUserServiceTest {
 
     private val json = createMatrixEventJson()
-    private val mappings = createEventContentSerializerMappings()
+    private val mappings = createDefaultEventContentSerializerMappings()
     private val userId = UserId("user", "server")
 
     @Test

@@ -27,7 +27,8 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
@@ -135,10 +136,10 @@ class VerificationServiceImpl(
         }
     }
 
-    private suspend fun handleDeviceVerificationRequestEvents(event: Event<VerificationRequestEventContent>) {
+    private suspend fun handleDeviceVerificationRequestEvents(event: ClientEvent<VerificationRequestEventContent>) {
         val content = event.content
         when (event) {
-            is Event.ToDeviceEvent -> {
+            is ToDeviceEvent -> {
                 if (isVerificationRequestActive(content.timestamp)) {
                     log.info { "got new device verification request from ${event.sender}" }
                     if (_activeDeviceVerification.value != null) {
@@ -223,6 +224,8 @@ class VerificationServiceImpl(
                     }
                 }
             }
+
+            else -> {}
         }
     }
 
@@ -257,7 +260,7 @@ class VerificationServiceImpl(
         val request = VerificationRequestEventContent(
             ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), uuid4().toString()
         )
-        api.users.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
+        api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
             try {
                 olmEncryptionService.encryptOlm(request, theirUserId, it)
             } catch (error: Exception) {
@@ -291,11 +294,11 @@ class VerificationServiceImpl(
         val roomId =
             globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.get(theirUserId)
                 ?.firstOrNull()
-                ?: api.rooms.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
+                ?: api.room.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
         val sendContent = possiblyEncryptEvent(request, roomId)
             .onFailure { log.debug { "could not encrypt verification request. will be send unencrypted. Reason: ${it.message}" } }
             .getOrNull() ?: request
-        val eventId = api.rooms.sendMessageEvent(roomId, sendContent).getOrThrow()
+        val eventId = api.room.sendMessageEvent(roomId, sendContent).getOrThrow()
         ActiveUserVerification(
             request = request,
             requestIsFromOurOwn = true,

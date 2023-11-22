@@ -6,6 +6,9 @@ import io.kotest.matchers.collections.shouldContainExactly
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomRepository
 import net.folivo.trixnity.client.store.repository.RoomRepository
@@ -21,7 +24,7 @@ class RoomStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         roomRepository = InMemoryRoomRepository()
-        cut = RoomStore(roomRepository, RepositoryTransactionManagerMock(), storeScope)
+        cut = RoomStore(roomRepository, RepositoryTransactionManagerMock(), storeScope, MatrixClientConfiguration())
     }
     afterTest {
         storeScope.cancel()
@@ -35,10 +38,8 @@ class RoomStoreTest : ShouldSpec({
             roomRepository.save(room1.roomId, room1)
             roomRepository.save(room2.roomId, room2)
 
-            cut.init()
-
             retry(10, 2_000.milliseconds, 30.milliseconds) {
-                cut.getAll().value.values.map { it.value } shouldContainExactly listOf(room1, room2)
+                cut.getAll().flattenValues().first() shouldContainExactly listOf(room1, room2)
             }
         }
     }

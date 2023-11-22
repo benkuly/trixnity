@@ -11,5 +11,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 @Serializable
 data class PinnedEventsEventContent(
     @SerialName("pinned")
-    val pinned: List<EventId> = listOf()
+    val pinned: List<EventId> = listOf(),
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent

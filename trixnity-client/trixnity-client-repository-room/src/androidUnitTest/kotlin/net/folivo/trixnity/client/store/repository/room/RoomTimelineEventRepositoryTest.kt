@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.repository.TimelineEventKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.junit.Before
@@ -31,7 +31,7 @@ class RoomTimelineEventRepositoryTest {
         val key1 = TimelineEventKey(EventId("\$event1"), RoomId("room1", "server"))
         val key2 = TimelineEventKey(EventId("\$event2"), RoomId("room1", "server"))
         val event1 = TimelineEvent(
-            Event.MessageEvent(
+            MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event1"),
                 UserId("sender", "server"),
@@ -45,7 +45,7 @@ class RoomTimelineEventRepositoryTest {
             gap = TimelineEvent.Gap.GapBefore("batch")
         )
         val event2 = TimelineEvent(
-            Event.MessageEvent(
+            MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
@@ -76,7 +76,7 @@ class RoomTimelineEventRepositoryTest {
         val key2 = TimelineEventKey(EventId("\$event2"), RoomId("room2", "server"))
         val key3 = TimelineEventKey(EventId("\$event3"), RoomId("room1", "server"))
         val event1 = TimelineEvent(
-            Event.MessageEvent(
+            MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event1"),
                 UserId("sender", "server"),
@@ -88,7 +88,7 @@ class RoomTimelineEventRepositoryTest {
             gap = TimelineEvent.Gap.GapBefore("batch")
         )
         val event2 = TimelineEvent(
-            Event.MessageEvent(
+            MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
@@ -100,7 +100,7 @@ class RoomTimelineEventRepositoryTest {
             gap = null
         )
         val event3 = TimelineEvent(
-            Event.MessageEvent(
+            MessageEvent(
                 RoomMessageEventContent.TextMessageEventContent("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),

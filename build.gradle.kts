@@ -1,44 +1,35 @@
 buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://www.jetbrains.com/intellij-repository/releases")
+    dependencies {
+        classpath(libs.kotlin.gradle.plugin.api)
     }
 }
 
 plugins {
     `maven-publish`
     signing
-    id("org.jetbrains.dokka") version Versions.dokka
-    id("io.kotest.multiplatform") version Versions.kotest apply false
-    id("com.google.devtools.ksp") version Versions.ksp apply false
-    id("io.realm.kotlin") version Versions.realm apply false
-    id("de.undercouch.download") version Versions.downloadGradlePlugin apply false
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.ksp).apply(false)
+    alias(libs.plugins.realm).apply(false)
+    alias(libs.plugins.download).apply(false)
+    alias(libs.plugins.kotest).apply(false)
 }
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix(Versions.trixnity)
-
-    repositories {
-        mavenCentral()
-        google()
-        mavenLocal()
-    }
-
-    apply(plugin = "org.jetbrains.dokka")
+    version = withVersionSuffix("4.0.0")
 }
 
 subprojects {
-    val dokkaJar by tasks.registering(Jar::class) {
-        dependsOn(tasks.dokkaHtml)
-        from(tasks.dokkaHtml.flatMap { it.outputDirectory })
-        archiveClassifier.set("javadoc")
-    }
-
     if (project.name.startsWith("trixnity-")) {
+        apply(plugin = "org.jetbrains.dokka")
         apply(plugin = "maven-publish")
         apply(plugin = "signing")
+
+        val dokkaJar by tasks.registering(Jar::class) {
+            dependsOn(tasks.dokkaHtml)
+            from(tasks.dokkaHtml.flatMap { it.outputDirectory })
+            archiveClassifier.set("javadoc")
+        }
 
         publishing {
             repositories {
@@ -52,11 +43,14 @@ subprojects {
                     }
                 }
                 maven {
+                    url = uri("${System.getenv("CI_API_V4_URL")}/projects/26519650/packages/maven")
                     name = "Snapshot"
-                    url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-                    credentials {
-                        username = System.getenv("OSSRH_USERNAME")
-                        password = System.getenv("OSSRH_PASSWORD")
+                    credentials(HttpHeaderCredentials::class) {
+                        name = "Job-Token"
+                        value = System.getenv("CI_JOB_TOKEN")
+                    }
+                    authentication {
+                        create("header", HttpHeaderAuthentication::class)
                     }
                 }
             }
@@ -86,7 +80,7 @@ subprojects {
             }
         }
         signing {
-            isRequired = isCI
+            isRequired = isRelease
             useInMemoryPgpKeys(
                 System.getenv("OSSRH_PGP_KEY_ID"),
                 System.getenv("OSSRH_PGP_KEY"),
@@ -94,20 +88,24 @@ subprojects {
             )
             sign(publishing.publications)
         }
-    }
-    tasks.withType<AbstractPublishToMaven>().configureEach {
-        onlyIf {
-            publication.artifactId.contains("dummy").not()
+        // Workaround for gradle issue:
+        // https://github.com/gradle/gradle/issues/26132
+        // https://youtrack.jetbrains.com/issue/KT-61313/Kotlin-MPP-Gradle-Signing-plugin-Task-linkDebugTestLinuxX64-uses-this-output-of-task-signLinuxX64Publication
+        // https://github.com/gradle/gradle/issues/26091
+        // https://youtrack.jetbrains.com/issue/KT-46466/Kotlin-MPP-publishing-Gradle-7-disables-optimizations-because-of-task-dependencies
+        val signingTasks = tasks.withType<Sign>()
+        tasks.withType<AbstractPublishToMaven>().configureEach {
+            mustRunAfter(signingTasks)
         }
     }
 }
 
-val tmpDir = buildDir.resolve("tmp")
-val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${Versions.trixnityBinaries}.zip")
-val trixnityBinariesDirs = TrixnityBinariesDirs(project)
+val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")
+val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${libs.versions.trixnityBinaries.get()}.zip")
+val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
 
 val downloadTrixnityBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
-    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${Versions.trixnityBinaries}/build.zip")
+    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${libs.versions.trixnityBinaries.get()}/build.zip")
     dest(trixnityBinariesZipDir)
     overwrite(false)
 }
@@ -127,4 +125,11 @@ val extractTrixnityBinaries by tasks.registering(Copy::class) {
 
 val trixnityBinaries by tasks.registering {
     dependsOn(extractTrixnityBinaries)
+}
+
+val dokkaHtmlToWebsite by tasks.registering(Copy::class) {
+    from(layout.buildDirectory.dir("dokka/htmlMultiModule"))
+    into(layout.projectDirectory.dir("website/static/api"))
+    outputs.cacheIf { true }
+    dependsOn(":dokkaHtmlMultiModule")
 }

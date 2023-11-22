@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.MessageEventContentSerializer
+import net.folivo.trixnity.core.serialization.events.contentSerializer
 
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid">matrix spec</a>
@@ -29,8 +29,9 @@ data class SendMessageEvent(
 ) : MatrixEndpoint<MessageEventContent, SendEventResponse> {
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
+        json: Json,
+        value: MessageEventContent?
     ): KSerializer<MessageEventContent> {
-        return MessageEventContentSerializer(mappings.message, type)
+        return mappings.message.contentSerializer(type, value)
     }
 }

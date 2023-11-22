@@ -9,17 +9,18 @@ import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.events.stateKeyOrNull
 import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.subscribeContentList
+import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
@@ -32,17 +33,20 @@ class UserMemberEventHandler(
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeContentList(Priority.BEFORE_DEFAULT, ::setRoomUser).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList(Priority.STORE_EVENTS, ::setRoomUser).unsubscribeOnCompletion(scope)
         api.sync.subscribe(Priority.AFTER_DEFAULT, ::reloadProfile).unsubscribeOnCompletion(scope)
     }
 
     private val reloadOwnProfile = MutableStateFlow(false)
 
-    override suspend fun handleLazyMemberEvents(memberEvents: List<Event<MemberEventContent>>) {
+    override suspend fun handleLazyMemberEvents(memberEvents: List<StateEvent<MemberEventContent>>) {
         setRoomUser(memberEvents, skipWhenAlreadyPresent = true)
     }
 
-    internal suspend fun setRoomUser(events: List<Event<MemberEventContent>>, skipWhenAlreadyPresent: Boolean = false) {
+    internal suspend fun setRoomUser(
+        events: List<StateBaseEvent<MemberEventContent>>,
+        skipWhenAlreadyPresent: Boolean = false
+    ) {
         if (events.isNotEmpty()) {
             tm.writeTransaction {
                 events.groupBy { it.roomIdOrNull }.forEach { (roomId, eventsByRoomId) ->
@@ -148,7 +152,7 @@ class UserMemberEventHandler(
             reloadOwnProfile.value = false
 
             accountStore.getAccount()?.userId?.let { userId ->
-                api.users.getProfile(userId)
+                api.user.getProfile(userId)
                     .onSuccess {
                         accountStore.updateAccount { account ->
                             account.copy(
@@ -179,12 +183,11 @@ class UserMemberEventHandler(
         val memberships = setOf(Membership.JOIN, Membership.INVITE)
         return roomUserStore.getAll(roomId)
             .first()
-            ?.values?.asFlow()
-            ?.mapNotNull { it.first() }
-            ?.filter { memberships.contains(it.membership) }
-            ?.mapNotNull { user -> user.originalName?.let { user.userId to it } }
-            ?.toList()
-            ?.toMap()
-            .orEmpty()
+            .values.asFlow()
+            .mapNotNull { it.first() }
+            .filter { memberships.contains(it.membership) }
+            .mapNotNull { user -> user.originalName?.let { user.userId to it } }
+            .toList()
+            .toMap()
     }
 }

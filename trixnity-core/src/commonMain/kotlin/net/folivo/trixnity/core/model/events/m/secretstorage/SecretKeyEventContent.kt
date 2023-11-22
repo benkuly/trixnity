@@ -65,7 +65,7 @@ object SecretKeyEventContentSerializer : KSerializer<SecretKeyEventContent> {
     override fun deserialize(decoder: Decoder): SecretKeyEventContent {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        val algorithm = jsonObject["algorithm"]?.jsonPrimitive
+        val algorithm = jsonObject["algorithm"] as? JsonPrimitive
         return when (algorithm?.content) {
             SecretStorageAlgorithm.AesHmacSha2.value -> decoder.json.decodeFromJsonElement<AesHmacSha2Key>(jsonObject)
             else -> SecretKeyEventContent.Unknown(jsonObject)
@@ -89,7 +89,7 @@ object SecretStorageKeyPassphraseSerializer : KSerializer<AesHmacSha2Key.SecretS
         require(decoder is JsonDecoder)
         val jsonElement = decoder.decodeJsonElement().jsonObject
         return try {
-            when (jsonElement["algorithm"]?.jsonPrimitive?.content) {
+            when ((jsonElement["algorithm"] as? JsonPrimitive)?.content) {
                 "m.pbkdf2" -> decoder.json.decodeFromJsonElement<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>(
                     jsonElement
                 )

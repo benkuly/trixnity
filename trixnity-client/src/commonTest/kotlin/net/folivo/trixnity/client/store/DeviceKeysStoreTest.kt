@@ -12,7 +12,7 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -72,7 +72,7 @@ class DeviceKeysStoreTest : ShouldSpec({
             secretsRepository.save(
                 1, mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                     )
                 )
             )
@@ -86,38 +86,37 @@ class DeviceKeysStoreTest : ShouldSpec({
                 setOf("DEV1", "DEV2"),
                 Instant.fromEpochMilliseconds(1234)
             )
+
             secretKeyRequestRepository.save("1", storedSecretKeyRequest)
             roomKeyRequestRepository.save("1", storedRoomKeyRequest)
-
-            cut.init()
 
             cut.getOutdatedKeysFlow().first() shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))
             cut.getSecrets() shouldBe mapOf(
                 SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+                    GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                 )
             )
-            cut.allSecretKeyRequests.first { it.isNotEmpty() }
-            cut.allSecretKeyRequests.value shouldBe listOf(storedSecretKeyRequest)
+            cut.getAllSecretKeyRequestsFlow().first { it.isNotEmpty() }
+            cut.getAllSecretKeyRequestsFlow().first() shouldBe listOf(storedSecretKeyRequest)
 
-            cut.allRoomKeyRequests.first { it.isNotEmpty() }
-            cut.allRoomKeyRequests.value shouldBe listOf(storedRoomKeyRequest)
+            cut.getAllRoomKeyRequestsFlow().first { it.isNotEmpty() }
+            cut.getAllRoomKeyRequestsFlow().first() shouldBe listOf(storedRoomKeyRequest)
         }
         should("start job, which saves changes to database") {
-            cut.init()
-
             cut.updateOutdatedKeys { setOf(UserId("alice", "server"), UserId("bob", "server")) }
-            cut.updateSecrets {  mapOf(
-                SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                    Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+            cut.updateSecrets {
+                mapOf(
+                    SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+                    )
                 )
-            )}
+            }
 
             eventually(5.seconds) {
                 outdatedKeysRepository.get(1) shouldBe setOf(UserId("alice", "server"), UserId("bob", "server"))
                 secretsRepository.get(1) shouldBe mapOf(
                     SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        Event.GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
+                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())), "s"
                     )
                 )
             }

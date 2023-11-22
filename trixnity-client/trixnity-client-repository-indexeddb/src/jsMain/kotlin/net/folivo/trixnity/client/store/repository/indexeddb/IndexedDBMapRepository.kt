@@ -37,7 +37,7 @@ internal abstract class IndexedDBMapRepository<K1, K2, V, R : Any>(
     val json: Json
 ) : MapRepository<K1, K2, V>, IndexedDBRepository(objectStoreName) {
 
-    private fun keyOf(keys: Array<String>) =
+    protected fun keyOf(keys: Array<String>) =
         Key(keys.first(), *keys.drop(1).toTypedArray())
 
     override suspend fun get(firstKey: K1): Map<K2, V> = withIndexedDBRead { store ->

@@ -7,10 +7,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV1.PersistentMessageDataUnitV1
@@ -18,44 +15,121 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUn
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentMessageDataUnit
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
-import net.folivo.trixnity.core.serialization.HideFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
 private val log = KotlinLogging.logger {}
 
 class PersistentMessageDataUnitSerializer(
-    private val messageEventContentSerializers: Set<SerializerMapping<out MessageEventContent>>,
-    private val messageEventContentSerializer: MessageEventContentSerializer,
+    messageEventContentSerializers: Set<EventContentSerializerMapping<MessageEventContent>>,
     private val getRoomVersion: (RoomId) -> String,
 ) : KSerializer<PersistentMessageDataUnit<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentMessageDataUnitSerializer")
+    private val mappingV1 = RoomEventContentToEventSerializerMappings(
+        baseMapping = messageEventContentSerializers,
+        eventDeserializer = {
+            val baseSerializer = PersistentMessageDataUnitV1.serializer(it.serializer)
+            if (it.kClass == RedactionEventContent::class)
+                object : JsonTransformingSerializer<PersistentMessageDataUnitV1<MessageEventContent>>(baseSerializer) {
+                    override fun transformDeserialize(element: JsonElement): JsonElement {
+                        val jsonObject = element.jsonObject
+                        val redacts = jsonObject["redacts"]
+                        val content = jsonObject["content"] as? JsonObject
+                        return if (redacts != null && content != null)
+                            JsonObject(buildMap {
+                                putAll(jsonObject)
+                                put("content", JsonObject(
+                                    buildMap {
+                                        putAll(content)
+                                        put("redacts", redacts)
+                                    }
+                                ))
+                            })
+                        else element
+                    }
+                }
+            else baseSerializer
+        },
+        eventSerializer = {
+            val baseSerializer = AddFieldsSerializer(
+                PersistentMessageDataUnitV1.serializer(it.serializer),
+                "type" to it.type
+            )
+            if (it.kClass == RedactionEventContent::class)
+                object : JsonTransformingSerializer<PersistentMessageDataUnitV1<MessageEventContent>>(baseSerializer) {
+                    override fun transformSerialize(element: JsonElement): JsonElement {
+                        val jsonObject = element.jsonObject
+                        val redacts = (jsonObject["content"] as? JsonObject)?.get("redacts")
+                        return if (redacts != null)
+                            JsonObject(buildMap {
+                                putAll(jsonObject)
+                                put("redacts", redacts)
+                            })
+                        else element
+                    }
+                }
+            else baseSerializer
+        },
+        unknownEventSerializer = { PersistentMessageDataUnitV1.serializer(UnknownEventContentSerializer(it)) },
+        redactedEventSerializer = { PersistentMessageDataUnitV1.serializer(RedactedEventContentSerializer(it)) },
+    )
+    private val mappingV3 = RoomEventContentToEventSerializerMappings(
+        baseMapping = messageEventContentSerializers,
+        eventDeserializer = {
+            val baseSerializer = PersistentMessageDataUnitV3.serializer(it.serializer)
+            if (it.kClass == RedactionEventContent::class)
+                object : JsonTransformingSerializer<PersistentMessageDataUnitV3<MessageEventContent>>(baseSerializer) {
+                    override fun transformDeserialize(element: JsonElement): JsonElement {
+                        val jsonObject = element.jsonObject
+                        val redacts = jsonObject["redacts"]
+                        val content = jsonObject["content"] as? JsonObject
+                        return if (redacts != null && content != null)
+                            JsonObject(buildMap {
+                                putAll(jsonObject)
+                                put("content", JsonObject(
+                                    buildMap {
+                                        putAll(content)
+                                        put("redacts", redacts)
+                                    }
+                                ))
+                            })
+                        else element
+                    }
+                }
+            else baseSerializer
+        },
+        eventSerializer = {
+            val baseSerializer = AddFieldsSerializer(
+                PersistentMessageDataUnitV3.serializer(it.serializer),
+                "type" to it.type
+            )
+            if (it.kClass == RedactionEventContent::class)
+                object : JsonTransformingSerializer<PersistentMessageDataUnitV3<MessageEventContent>>(baseSerializer) {
+                    override fun transformSerialize(element: JsonElement): JsonElement {
+                        val jsonObject = element.jsonObject
+                        val redacts = (jsonObject["content"] as? JsonObject)?.get("redacts")
+                        return if (redacts != null)
+                            JsonObject(buildMap {
+                                putAll(jsonObject)
+                                put("redacts", redacts)
+                            })
+                        else element
+                    }
+                }
+            else baseSerializer
+        },
+        unknownEventSerializer = { PersistentMessageDataUnitV3.serializer(UnknownEventContentSerializer(it)) },
+        redactedEventSerializer = { PersistentMessageDataUnitV3.serializer(RedactedEventContentSerializer(it)) },
+    )
 
     override fun deserialize(decoder: Decoder): PersistentMessageDataUnit<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
-        val type = jsonObj["type"]?.jsonPrimitive?.content ?: throw SerializationException("type must not be null")
-        val redacts = jsonObj["redacts"]?.jsonPrimitive?.content // TODO hopefully a new spec removes this hack
-        val contentSerializer = MessageEventContentSerializer(messageEventContentSerializers, type)
-        val roomId = jsonObj["room_id"]?.jsonPrimitive?.content
+        val type = (jsonObj["type"] as? JsonPrimitive)?.content ?: throw SerializationException("type must not be null")
+        val roomId = (jsonObj["room_id"] as? JsonPrimitive)?.content
         requireNotNull(roomId)
         return when (val roomVersion = getRoomVersion(RoomId(roomId))) {
-            "1", "2" -> {
-                decoder.json.decodeFromJsonElement(
-                    PersistentMessageDataUnitV1.serializer(
-                        if (redacts == null) contentSerializer
-                        else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
-                    ), jsonObj
-                )
-            }
-
-            "3", "4", "5", "6", "7", "8", "9" -> {
-                decoder.json.decodeFromJsonElement(
-                    PersistentMessageDataUnitV3.serializer(
-                        if (redacts == null) contentSerializer
-                        else AddFieldsSerializer(contentSerializer, "redacts" to redacts)
-                    ), jsonObj
-                )
-            }
+            "1", "2" -> decoder.json.decodeFromJsonElement(mappingV1[type], jsonObj)
+            "3", "4", "5", "6", "7", "8", "9" -> decoder.json.decodeFromJsonElement(mappingV3[type], jsonObj)
 
             else -> throw SerializationException("room version $roomVersion not supported")
         }
@@ -64,32 +138,21 @@ class PersistentMessageDataUnitSerializer(
     override fun serialize(encoder: Encoder, value: PersistentMessageDataUnit<*>) {
         require(encoder is JsonEncoder)
         val content = value.content
-        val type = messageEventContentSerializers.contentType(content)
-
-        val addFields = mutableListOf("type" to type)
-        if (content is RedactionEventContent) addFields.add("redacts" to content.redacts.full)
-        val contentSerializer =
-            if (content is RedactionEventContent)
-                HideFieldsSerializer(messageEventContentSerializer, "redacts")
-            else messageEventContentSerializer
-
         val jsonElement =
             when (value) {
-                is PersistentMessageDataUnitV1 -> encoder.json.encodeToJsonElement(
+                is PersistentMessageDataUnitV1 ->
                     @Suppress("UNCHECKED_CAST")
-                    (AddFieldsSerializer(
-                        PersistentMessageDataUnitV1.serializer(contentSerializer) as KSerializer<PersistentMessageDataUnitV1<*>>,
-                        *addFields.toTypedArray()
-                    )), value
-                )
+                    encoder.json.encodeToJsonElement(
+                        mappingV1[content].serializer as KSerializer<PersistentMessageDataUnitV1<*>>,
+                        value
+                    )
 
-                is PersistentMessageDataUnitV3 -> encoder.json.encodeToJsonElement(
+                is PersistentMessageDataUnitV3 ->
                     @Suppress("UNCHECKED_CAST")
-                    (AddFieldsSerializer(
-                        PersistentMessageDataUnitV3.serializer(contentSerializer) as KSerializer<PersistentMessageDataUnitV3<*>>,
-                        *addFields.toTypedArray()
-                    )), value
-                )
+                    encoder.json.encodeToJsonElement(
+                        mappingV3[content].serializer as KSerializer<PersistentMessageDataUnitV3<*>>,
+                        value
+                    )
             }
         encoder.encodeJsonElement(canonicalJson(jsonElement))
     }

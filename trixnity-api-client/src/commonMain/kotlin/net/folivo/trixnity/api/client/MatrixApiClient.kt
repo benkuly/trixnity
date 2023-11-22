@@ -21,7 +21,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 open class MatrixApiClient(
     val contentMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     val json: Json = createMatrixEventJson(contentMappings),
-    httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = { defaultTrixnityHttpClient(config = it) },
+    httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
 ) {
     val baseClient: HttpClient = httpClientFactory {
         install(ContentNegotiation) {
@@ -77,7 +77,7 @@ open class MatrixApiClient(
         requestBody: REQUEST,
         requestBuilder: HttpRequestBuilder.() -> Unit = {}
     ): RESPONSE {
-        val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json)
+        val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json, requestBody)
         val response = baseClient.request(endpoint) {
             val endpointHttpMethod =
                 serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<HttpMethod>().firstOrNull()
@@ -95,7 +95,7 @@ open class MatrixApiClient(
             }
             requestBuilder()
         }
-        val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json)
+        val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json, null)
         val forceJson =
             serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<ForceJson>().isNotEmpty()
         return when {
@@ -106,10 +106,3 @@ open class MatrixApiClient(
     }
 }
 
-fun defaultTrixnityHttpClient(userAgent: String = "Trixnity", config: HttpClientConfig<*>.() -> Unit) =
-    HttpClient {
-        config(this)
-        install(UserAgent) {
-            agent = userAgent
-        }
-    }

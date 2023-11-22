@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.key.OutgoingRoomKeyRequestEventHandler
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.waitForInboundMegolmSession
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.crypto.olm.DecryptionException
@@ -23,7 +23,7 @@ class MegolmRoomEventDecryptionService(
     private val outgoingRoomKeyRequestEventHandler: OutgoingRoomKeyRequestEventHandler,
     private val olmEncryptionService: OlmEncryptionService
 ) : RoomEventDecryptionService {
-    override suspend fun decrypt(event: Event.RoomEvent<*>): Result<RoomEventContent>? {
+    override suspend fun decrypt(event: RoomEvent<*>): Result<RoomEventContent>? {
         val content = event.content
         val roomId = event.roomId
         val eventId = event.id
@@ -36,7 +36,7 @@ class MegolmRoomEventDecryptionService(
             }
             log.trace { "try to decrypt event $eventId in $roomId" }
             @Suppress("UNCHECKED_CAST")
-            val encryptedEvent = event as Event.RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>
+            val encryptedEvent = event as RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>
 
             val decryptEventAttempt = event.decryptCatching()
             val exception = decryptEventAttempt.exceptionOrNull()
@@ -58,7 +58,7 @@ class MegolmRoomEventDecryptionService(
         } else null
     }
 
-    private suspend fun Event.RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>.decryptCatching(): Result<RoomEventContent> =
+    private suspend fun RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>.decryptCatching(): Result<RoomEventContent> =
         kotlin.runCatching { olmEncryptionService.decryptMegolm(this).content }
 
     private suspend fun waitForInboundMegolmSessionAndRequest(

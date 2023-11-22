@@ -16,12 +16,16 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
-import net.folivo.trixnity.core.EventEmitter.Priority
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
-import net.folivo.trixnity.core.model.events.Event.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
@@ -84,7 +88,7 @@ interface RoomService {
      * directly (e.g. with `toList()`). This can work
      * like paging through the timeline. It also completes the flow, which is not the case, when both parameters are null.
      *
-     * To convert it to a flow of list, [flatten] can be used.
+     * To convert it to a flow of list, [flattenValues] can be used.
      */
     fun getTimelineEvents(
         roomId: RoomId,
@@ -96,7 +100,7 @@ interface RoomService {
     /**
      * Returns the last timeline events as flow.
      *
-     * To convert it to a flow of list, [flatten] can be used.
+     * To convert it to a flow of list, [flattenValues] can be used.
      *
      * @see [getTimelineEvents]
      */
@@ -153,9 +157,9 @@ interface RoomService {
     /**
      * Upgraded rooms ([Room.hasBeenReplaced]) should not be rendered.
      *
-     * [flatten] can be used to get rid of the nested flows.
+     * [flattenValues] can be used to get rid of the nested flows.
      */
-    fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>>
+    fun getAll(): Flow<Map<RoomId, Flow<Room?>>>
 
     fun getById(roomId: RoomId): Flow<Room?>
 
@@ -170,18 +174,18 @@ interface RoomService {
         key: String = "",
     ): Flow<C?>
 
-    fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>>
+    fun getOutbox(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>>
 
     fun <C : StateEventContent> getState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String = "",
-    ): Flow<Event<C>?>
+    ): Flow<StateBaseEvent<C>?>
 
     fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?>
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>>
 }
 
 class RoomServiceImpl(
@@ -398,7 +402,7 @@ class RoomServiceImpl(
                         val successor: RoomEventIdPair? =
                             if (direction == FORWARDS && timelineEventSnapshotContent is TombstoneEventContent) {
                                 getState<CreateEventContent>(timelineEventSnapshotContent.replacementRoom).first()
-                                    ?.eventIdOrNull
+                                    ?.idOrNull
                                     ?.let { RoomEventIdPair(it, timelineEventSnapshotContent.replacementRoom) }
                             } else null
 
@@ -573,7 +577,6 @@ class RoomServiceImpl(
                 content = content,
                 sentAt = null,
                 keepMediaInCache = keepMediaInCache,
-                mediaUploadProgress = MutableStateFlow(null)
             )
         }
         return transactionId
@@ -584,10 +587,10 @@ class RoomServiceImpl(
     }
 
     override suspend fun retrySendMessage(transactionId: String) {
-        roomOutboxMessageStore.update(transactionId) { it?.copy(retryCount = 0) }
+        roomOutboxMessageStore.update(transactionId) { it?.copy(sendError = null) }
     }
 
-    override fun getAll(): StateFlow<Map<RoomId, StateFlow<Room?>>> = roomStore.getAll()
+    override fun getAll(): Flow<Map<RoomId, Flow<Room?>>> = roomStore.getAll()
 
     override fun getById(roomId: RoomId): Flow<Room?> {
         return roomStore.get(roomId)
@@ -612,20 +615,20 @@ class RoomServiceImpl(
             .map { it?.content }
     }
 
-    override fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> = roomOutboxMessageStore.getAll()
+    override fun getOutbox(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>> = roomOutboxMessageStore.getAll()
 
     override fun <C : StateEventContent> getState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String,
-    ): Flow<Event<C>?> {
+    ): Flow<StateBaseEvent<C>?> {
         return roomStateStore.getByStateKey(roomId, eventContentClass, stateKey)
     }
 
     override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         return roomStateStore.get(roomId, eventContentClass)
     }
 }

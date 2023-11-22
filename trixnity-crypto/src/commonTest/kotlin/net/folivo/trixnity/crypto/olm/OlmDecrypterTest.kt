@@ -4,8 +4,8 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
@@ -34,7 +34,7 @@ class OlmDecrypterTest : ShouldSpec({
 
 
     should("catch DecryptionException") {
-        val event = Event.ToDeviceEvent(
+        val event = ToDeviceEvent(
             EncryptedEventContent.OlmEncryptedEventContent(
                 mapOf(), Key.Curve25519Key(null, "")
             ),
@@ -47,7 +47,7 @@ class OlmDecrypterTest : ShouldSpec({
         subscriberReceived shouldHaveSize 0
     }
     should("catch KeyException") {
-        val event = Event.ToDeviceEvent(
+        val event = ToDeviceEvent(
             EncryptedEventContent.OlmEncryptedEventContent(
                 mapOf(), Key.Curve25519Key(null, "")
             ),
@@ -60,7 +60,7 @@ class OlmDecrypterTest : ShouldSpec({
         subscriberReceived shouldHaveSize 0
     }
     should("catch OlmLibraryException") {
-        val event = Event.ToDeviceEvent(
+        val event = ToDeviceEvent(
             EncryptedEventContent.OlmEncryptedEventContent(
                 mapOf(), Key.Curve25519Key(null, "")
             ),
@@ -73,7 +73,7 @@ class OlmDecrypterTest : ShouldSpec({
         subscriberReceived shouldHaveSize 0
     }
     should("emit decrypted events") {
-        val event = Event.ToDeviceEvent(
+        val event = ToDeviceEvent(
             EncryptedEventContent.OlmEncryptedEventContent(
                 mapOf(), Key.Curve25519Key(null, "")
             ),

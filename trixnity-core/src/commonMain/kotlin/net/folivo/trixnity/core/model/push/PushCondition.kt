@@ -40,7 +40,7 @@ sealed interface PushCondition {
         val value: JsonPrimitive
     ) : PushCondition
 
-    object ContainsDisplayName : PushCondition
+    data object ContainsDisplayName : PushCondition
 
     @Serializable
     data class RoomMemberCount(
@@ -66,7 +66,7 @@ object PushConditionSerializer : KSerializer<PushCondition> {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
         return try {
-            when (jsonObject["kind"]?.jsonPrimitive?.content) {
+            when ((jsonObject["kind"] as? JsonPrimitive)?.content) {
                 "event_match" -> decoder.json.decodeFromJsonElement<PushCondition.EventMatch>(jsonObject)
                 "event_property_is" -> decoder.json.decodeFromJsonElement<PushCondition.EventPropertyIs>(jsonObject)
                 "event_property_contains" ->

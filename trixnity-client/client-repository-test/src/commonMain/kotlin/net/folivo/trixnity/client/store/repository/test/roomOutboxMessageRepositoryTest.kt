@@ -6,8 +6,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.store.RoomOutboxMessage
-import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
@@ -34,14 +34,14 @@ fun ShouldSpec.roomOutboxMessageRepositoryTest(diReceiver: () -> Koin) {
             cut.save(key2, message2)
             val get1 = cut.get(key1)
             get1.shouldNotBeNull()
-            get1 shouldBe message1.copy(mediaUploadProgress = get1.mediaUploadProgress)
+            get1 shouldBe message1
             val get2 = cut.get(key2)
             get2.shouldNotBeNull()
-            get2 shouldBe message2.copy(mediaUploadProgress = get2.mediaUploadProgress)
+            get2 shouldBe message2
             cut.save(key2, message2Copy)
             val get2Copy = cut.get(key2)
             get2Copy.shouldNotBeNull()
-            get2Copy shouldBe message2Copy.copy(mediaUploadProgress = get2Copy.mediaUploadProgress)
+            get2Copy shouldBe message2Copy
             cut.delete(key1)
             cut.get(key1) shouldBe null
         }

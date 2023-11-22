@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 /**
@@ -24,12 +24,13 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 data class GetState(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<Unit, List<Event.StateEvent<*>>> {
+) : MatrixEndpoint<Unit, List<StateEvent<*>>> {
     @OptIn(ExperimentalSerializationApi::class)
     override fun responseSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
-    ): KSerializer<List<Event.StateEvent<*>>> {
-        return ListSerializer(requireNotNull(json.serializersModule.getContextual(Event.StateEvent::class)))
+        json: Json,
+        value: List<StateEvent<*>>?
+    ): KSerializer<List<StateEvent<*>>>? {
+        return ListSerializer(requireNotNull(json.serializersModule.getContextual(StateEvent::class)))
     }
 }

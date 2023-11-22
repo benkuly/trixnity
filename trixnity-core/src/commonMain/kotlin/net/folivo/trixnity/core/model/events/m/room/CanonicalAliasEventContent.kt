@@ -13,5 +13,7 @@ data class CanonicalAliasEventContent(
     @SerialName("alias")
     val alias: RoomAliasId? = null,
     @SerialName("alt_aliases")
-    val aliases: Set<RoomAliasId>? = null
+    val aliases: Set<RoomAliasId>? = null,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent

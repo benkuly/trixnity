@@ -25,28 +25,35 @@ enable_registration_without_verification: true
 macaroon_secret_key: "Mt5JGQEpCPS~atJD,-2kX5QqG*NHW^lSCz+0w,o9Y:QGu7F2MY"
 
 rc_message:
-  per_second: 1000
-  burst_count: 10000
+  per_second: 100000
+  burst_count: 1000000
 rc_registration:
-  per_second: 1000
-  burst_count: 10000
+  per_second: 100000
+  burst_count: 1000000
+rc_joins:
+  local:
+    per_second: 100000
+    burst_count: 1000000
+  remote:
+    per_second: 100000
+    burst_count: 1000000
 rc_joins_per_room:
-  per_second: 1000
-  burst_count: 10000
+  per_second: 100000
+  burst_count: 1000000
 rc_invites:
   per_room:
-    per_second: 1000
-    burst_count: 10000
+    per_second: 100000
+    burst_count: 1000000
   per_user:
-    per_second: 1000
-    burst_count: 10000
+    per_second: 100000
+    burst_count: 1000000
   per_issuer:
-    per_second: 1000
-    burst_count: 10000
+    per_second: 100000
+    burst_count: 1000000
 rc_login:
   address:
-    per_second: 1000
-    burst_count: 10000
+    per_second: 100000
+    burst_count: 1000000
   account:
-    per_second: 1000
-    burst_count: 10000
+    per_second: 100000
+    burst_count: 1000000

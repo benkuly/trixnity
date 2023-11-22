@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
+import net.folivo.trixnity.client.flattenNotNull
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
@@ -18,8 +19,8 @@ import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.UnknownStateEventContent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -48,7 +49,7 @@ class RoomStateStoreTest : ShouldSpec({
     }
 
     val roomId = RoomId("room", "server")
-    val event1 = Event.StateEvent(
+    val event1 = StateEvent(
         MemberEventContent(membership = LEAVE),
         EventId("\$event"),
         UserId("alice", "server"),
@@ -56,7 +57,7 @@ class RoomStateStoreTest : ShouldSpec({
         1234,
         stateKey = "@user:server"
     )
-    val event2 = Event.StateEvent(
+    val event2 = StateEvent(
         MemberEventContent(membership = JOIN),
         EventId("\$event"),
         UserId("alice", "server"),
@@ -113,8 +114,8 @@ class RoomStateStoreTest : ShouldSpec({
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
                     "@bob:server",
-                    Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                    StateEvent(
+                        UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
                         roomId,
@@ -122,7 +123,7 @@ class RoomStateStoreTest : ShouldSpec({
                         stateKey = "@bob:server"
                     )
                 )
-                cut.get<MemberEventContent>(roomId).flatten().first() shouldBe mapOf(
+                cut.get<MemberEventContent>(roomId).flattenNotNull().first() shouldBe mapOf(
                     "@user:server" to event1,
                 )
             }
@@ -135,12 +136,12 @@ class RoomStateStoreTest : ShouldSpec({
                     event1
                 )
                 val scope = CoroutineScope(Dispatchers.Default)
-                val result = cut.get<MemberEventContent>(roomId).flatten(filterNullValues = false)
+                val result = cut.get<MemberEventContent>(roomId).flatten()
                     .shareIn(scope, SharingStarted.Eagerly, 3)
-                result.first { it?.size == 1 }
+                result.first { it.size == 1 }
                 cut.save(
-                    Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                    StateEvent(
+                        UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
                         roomId,
@@ -148,7 +149,7 @@ class RoomStateStoreTest : ShouldSpec({
                         stateKey = "@bob:server"
                     )
                 )
-                result.first { it?.size == 2 }
+                result.first { it.size == 2 }
                 result.replayCache shouldBe listOf(
                     mapOf("@user:server" to event1),
                     mapOf("@user:server" to event1, "@bob:server" to null)
@@ -167,6 +168,14 @@ class RoomStateStoreTest : ShouldSpec({
                 )
                 cut.getByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1
             }
+            should("return matching content") {
+                roomStateRepository.save(
+                    RoomStateRepositoryKey(roomId, "m.room.member"),
+                    "@user:server",
+                    event1
+                )
+                cut.getContentByStateKey<MemberEventContent>(roomId, "@user:server").first() shouldBe event1.content
+            }
             should("prefer cache") {
                 roomStateRepository.save(
                     RoomStateRepositoryKey(roomId, "m.room.member"),
@@ -183,8 +192,8 @@ class RoomStateStoreTest : ShouldSpec({
             }
             should("ignore unknown state event") {
                 cut.save(
-                    Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                    StateEvent(
+                        UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
                         roomId,
@@ -204,8 +213,8 @@ class RoomStateStoreTest : ShouldSpec({
                     .shareIn(scope, SharingStarted.Eagerly, 3)
                 result.first { it != null }
                 cut.save(
-                    Event.StateEvent(
-                        UnknownStateEventContent(JsonObject(mapOf()), "m.room.member"),
+                    StateEvent(
+                        UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
                         EventId("\$event"),
                         UserId("alice", "server"),
                         roomId,
@@ -220,7 +229,7 @@ class RoomStateStoreTest : ShouldSpec({
         }
         should("return empty event contents") {
             val event =
-                Event.StateEvent(
+                StateEvent(
                     AvatarEventContent(),
                     EventId("\$event"),
                     UserId("alice", "server"),

@@ -21,7 +21,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.UserIdSerializer
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.contentDeserializer
+import net.folivo.trixnity.core.serialization.events.contentSerializer
 
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#put_matrixclientv3sendtodeviceeventtypetxnid">matrix spec</a>
@@ -36,10 +36,11 @@ data class SendToDevice(
 ) : MatrixEndpoint<SendToDevice.Request, Unit> {
     override fun requestSerializerBuilder(
         mappings: EventContentSerializerMappings,
-        json: Json
+        json: Json,
+        value: Request?
     ): KSerializer<Request> {
-        @Suppress("UNCHECKED_CAST")
-        val baseSerializer = mappings.toDevice.contentDeserializer(type) as KSerializer<ToDeviceEventContent>
+        val baseSerializer =
+            mappings.toDevice.contentSerializer(type, value?.messages?.values?.firstOrNull()?.values?.firstOrNull())
         return SendToDeviceRequestSerializer(baseSerializer)
     }
 
@@ -78,5 +79,4 @@ class SendToDeviceRequestSerializer(baseSerializer: KSerializer<ToDeviceEventCon
             )
         )
     }
-
 }

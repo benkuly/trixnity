@@ -32,16 +32,7 @@ sealed interface KeySignatureTrustLevel {
      */
     @Serializable
     @SerialName("not_cross_signed")
-    // TODO make it an object in kotlin >= 1.8 (does not compile on Kotlin/JS < 1.8)
-    class NotCrossSigned : KeySignatureTrustLevel {
-        override fun equals(other: Any?): Boolean {
-            return other != null && other::class == this::class
-        }
-
-        override fun hashCode(): Int {
-            return "KeySignatureTrustLevel.NotCrossSigned".hashCode()
-        }
-    }
+    data object NotCrossSigned : KeySignatureTrustLevel
 
     /**
      * Not all keys are signed by the master key.
@@ -56,16 +47,7 @@ sealed interface KeySignatureTrustLevel {
      */
     @Serializable
     @SerialName("blocked")
-    // TODO make it an object in kotlin >= 1.8 (does not compile on Kotlin/JS < 1.8)
-    class Blocked : KeySignatureTrustLevel {
-        override fun equals(other: Any?): Boolean {
-            return other != null && other::class == this::class
-        }
-
-        override fun hashCode(): Int {
-            return "KeySignatureTrustLevel.Blocked".hashCode()
-        }
-    }
+    data object Blocked : KeySignatureTrustLevel
 
     /**
      * The trust level could not be calculated.

@@ -46,7 +46,7 @@ class LogoutIT {
                 }
             }
 
-            val deleteStep = startedClient1.client.api.devices.deleteDevice("client2").getOrThrow()
+            val deleteStep = startedClient1.client.api.device.deleteDevice("client2").getOrThrow()
             deleteStep.shouldBeInstanceOf<UIA.Step<Unit>>()
                 .authenticate(Password(User("user1"), startedClient1.password)).getOrThrow()
                 .shouldBeInstanceOf<UIA.Success<Unit>>()

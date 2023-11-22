@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
@@ -115,7 +115,7 @@ class SignServiceTest : ShouldSpec({
         result1 shouldBe result2
     }
     should("sign and return signed object") {
-        val event = Event.StateEvent(
+        val event = StateEvent(
             NameEventContent("room name"),
             EventId("\$eventId"),
             UserId("their", "server"),
@@ -137,7 +137,7 @@ class SignServiceTest : ShouldSpec({
         }
     }
     should("ignore unsigned field") {
-        val event1 = Event.StateEvent(
+        val event1 = StateEvent(
             NameEventContent("room name"),
             EventId("\$eventId"),
             UserId("their", "server"),
@@ -145,7 +145,7 @@ class SignServiceTest : ShouldSpec({
             originTimestamp = 24,
             stateKey = ""
         )
-        val event2 = Event.StateEvent(
+        val event2 = StateEvent(
             NameEventContent("room name"),
             EventId("\$eventId"),
             UserId("their", "server"),
@@ -168,7 +168,7 @@ class SignServiceTest : ShouldSpec({
     }
     should("verify and return valid") {
         val signedObject = aliceSigningAccountSignService.sign(
-            Event.StateEvent(
+            StateEvent(
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
@@ -185,7 +185,7 @@ class SignServiceTest : ShouldSpec({
     }
     should("verify and return MissingSignature, when no key found") {
         val signedObject = aliceSigningAccountSignService.sign(
-            Event.StateEvent(
+            StateEvent(
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
@@ -199,7 +199,7 @@ class SignServiceTest : ShouldSpec({
     }
     should("verify and return MissingSignature when no signature found for sigining keys") {
         val signedObject = aliceSigningAccountSignService.sign(
-            Event.StateEvent(
+            StateEvent(
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
@@ -226,7 +226,7 @@ class SignServiceTest : ShouldSpec({
     }
     should("return invalid") {
         val signedObject = Signed(
-            Event.StateEvent(
+            StateEvent(
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),

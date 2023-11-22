@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
@@ -42,7 +41,7 @@ internal class ExposedRoomOutboxMessageRepository(
             it[transactionId] = key
             @Suppress("UNCHECKED_CAST")
             it[ExposedRoomOutboxMessage.value] = json.encodeToString(
-                RoomOutboxMessage.serializer(mapping.serializer as KSerializer<MessageEventContent>),
+                RoomOutboxMessage.serializer(mapping.serializer),
                 value as RoomOutboxMessage<MessageEventContent>
             )
             it[contentType] = mapping.type

@@ -13,7 +13,7 @@ import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.RelationType
@@ -131,7 +131,7 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    override fun getOutbox(): StateFlow<List<RoomOutboxMessage<*>>> {
+    override fun getOutbox(): StateFlow<Map<String, StateFlow<RoomOutboxMessage<*>?>>> {
         throw NotImplementedError()
     }
 
@@ -139,14 +139,14 @@ class RoomServiceMock : RoomService {
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String
-    ): Flow<Event<C>?> {
+    ): Flow<StateBaseEvent<C>?> {
         throw NotImplementedError()
     }
 
     override fun <C : StateEventContent> getAllState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
-    ): Flow<Map<String, Flow<Event<C>?>>?> {
+    ): Flow<Map<String, Flow<StateBaseEvent<C>?>>> {
         throw NotImplementedError()
     }
 }

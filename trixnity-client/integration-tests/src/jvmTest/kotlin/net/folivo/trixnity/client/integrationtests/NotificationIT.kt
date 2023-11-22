@@ -15,8 +15,8 @@ import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.InitialStateEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
@@ -68,19 +68,19 @@ class NotificationIT {
                 .scan(listOf<NotificationService.Notification>()) { old, new -> old + new }
                 .stateIn(scope)
 
-            val room = startedClient1.client.api.rooms.createRoom(
+            val room = startedClient1.client.api.room.createRoom(
                 invite = setOf(startedClient2.client.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
 
             withClue("first notification") {
                 notifications.first { it.size == 1 }.getOrNull(0).shouldNotBeNull()
-                    .event.shouldBeInstanceOf<Event.StrippedStateEvent<*>>()
+                    .event.shouldBeInstanceOf<StrippedStateEvent<*>>()
                     .content.shouldBeInstanceOf<MemberEventContent>().displayName shouldBe "user2"
             }
 
             startedClient2.client.room.getById(room).first { it?.membership == INVITE }
-            startedClient2.client.api.rooms.joinRoom(room).getOrThrow()
+            startedClient2.client.api.room.joinRoom(room).getOrThrow()
 
             startedClient1.client.room.sendMessage(room) { text("Hello ${startedClient2.client.userId.full}!") }
             withClue("second notification") {

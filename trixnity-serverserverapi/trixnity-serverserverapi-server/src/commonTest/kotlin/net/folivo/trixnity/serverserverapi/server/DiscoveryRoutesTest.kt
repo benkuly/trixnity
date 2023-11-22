@@ -14,7 +14,7 @@ import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
-import net.folivo.trixnity.core.serialization.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
 import net.folivo.trixnity.serverserverapi.model.discovery.*
 import org.kodein.mock.Mock
@@ -25,7 +25,7 @@ class DiscoveryRoutesTest : TestsWithMocks() {
     override fun setUpMocks() = injectMocks(mocker)
 
     private val json = createMatrixDataUnitJson({ "3" })
-    private val mapping = createEventContentSerializerMappings()
+    private val mapping = createDefaultEventContentSerializerMappings()
 
     @Mock
     lateinit var handlerMock: DiscoveryApiHandler

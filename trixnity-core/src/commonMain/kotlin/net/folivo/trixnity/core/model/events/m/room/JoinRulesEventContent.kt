@@ -20,7 +20,9 @@ data class JoinRulesEventContent(
     @SerialName("join_rule")
     val joinRule: JoinRule,
     @SerialName("allow")
-    val allow: Set<AllowCondition>? = null
+    val allow: Set<AllowCondition>? = null,
+    @SerialName("external_url")
+    override val externalUrl: String? = null,
 ) : StateEventContent {
     @Serializable(with = JoinRuleSerializer::class)
     sealed interface JoinRule {

@@ -18,7 +18,7 @@ interface ApplicationServiceRoomService {
 
     suspend fun createManagedRoom(roomAlias: RoomAliasId) {
         val createRoomParameter = getCreateRoomParameter(roomAlias)
-        val roomId = matrixClientServerApiClient.rooms.createRoom(
+        val roomId = matrixClientServerApiClient.room.createRoom(
             roomAliasId = roomAlias,
             visibility = createRoomParameter.visibility,
             name = createRoomParameter.name,

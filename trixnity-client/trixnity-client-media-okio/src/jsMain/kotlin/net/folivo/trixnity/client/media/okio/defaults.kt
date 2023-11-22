@@ -6,4 +6,4 @@ import okio.NodeJsFileSystem
 import kotlin.coroutines.CoroutineContext
 
 internal actual val defaultFileSystem: FileSystem = NodeJsFileSystem
-internal actual val defaultContext: CoroutineContext = Dispatchers.Default
+internal actual val ioContext: CoroutineContext = Dispatchers.Default

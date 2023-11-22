@@ -27,7 +27,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -84,15 +84,15 @@ class KeySharingIT {
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
             val roomId = withClue("user1 invites user2, so user2 gets user1s keys") {
-                startedClient1.client.api.rooms.createRoom(
+                startedClient1.client.api.room.createRoom(
                     invite = setOf(startedClient2.client.userId),
-                    initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
+                    initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
             }
 
             withClue("join and wait for join") {
                 startedClient1.client.room.getById(roomId).first { it != null && it.membership == JOIN }
-                startedClient2.client.api.rooms.joinRoom(roomId).getOrThrow()
+                startedClient2.client.api.room.joinRoom(roomId).getOrThrow()
                 startedClient2.client.room.getById(roomId).first { it != null && it.membership == JOIN }
                 // we need to wait until the clients know the room is encrypted
                 startedClient1.client.room.getState<EncryptionEventContent>(roomId)

@@ -23,15 +23,16 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.eventIdOrNull
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.InitialStateEvent
+import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -93,15 +94,15 @@ class TimelineEventIT {
     @Test
     fun shouldStartEncryptedRoomAndSendMessages(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(
+            val room = client1.api.room.createRoom(
                 invite = setOf(client2.userId),
-                initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), ""))
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
 
-            client1.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
-            client2.room.getById(room).first { it?.encryptionAlgorithm == EncryptionAlgorithm.Megolm }
+            client1.room.getById(room).first { it?.encrypted == true }
+            client2.room.getById(room).first { it?.encrypted == true }
 
             client1.room.sendMessage(room) { text("Hello!") }
             client2.room.sendMessage(room) { text("Hello to you, too!") }
@@ -139,9 +140,9 @@ class TimelineEventIT {
     @Test
     fun shouldHandleGappySyncsAndGetEventsFromEndOfTheTimeline(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
+            val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
             client2.stopSync(true)
@@ -190,9 +191,9 @@ class TimelineEventIT {
     @Test
     fun shouldHandleGappySyncsAndGetEventsFromStartOfTheTimeline(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
+            val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
             client2.stopSync(true)
@@ -227,9 +228,9 @@ class TimelineEventIT {
     @Test
     fun shouldHandleGappySyncsAndFillTimelineFromTheMiddle(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(invite = setOf(client2.userId)).getOrThrow()
+            val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
             client2.stopSync(true)
@@ -275,7 +276,7 @@ class TimelineEventIT {
     @Test
     fun shouldFollowRoomUpgrades(): Unit = runBlocking {
         withTimeout(30_000) {
-            val oldRoom = client1.api.rooms.createRoom(
+            val oldRoom = client1.api.room.createRoom(
                 invite = setOf(client2.userId),
                 roomVersion = "9"
             ).getOrThrow()
@@ -284,7 +285,7 @@ class TimelineEventIT {
                 timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
             }.first { it } // wait for sync
 
-            val newRoom = client1.api.rooms.upgradeRoom(oldRoom, "10").getOrThrow()
+            val newRoom = client1.api.room.upgradeRoom(oldRoom, "10").getOrThrow()
             client1.room.sendMessage(newRoom) { text("hi new") }
             client1.room.getLastTimelineEvent(newRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
                 timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
@@ -293,7 +294,7 @@ class TimelineEventIT {
             val timelineFromOldRoom =
                 client1.room.getTimeline(oldRoom).apply {
                     init(
-                        client1.room.getState<CreateEventContent>(oldRoom).first()?.eventIdOrNull.shouldNotBeNull(),
+                        client1.room.getState<CreateEventContent>(oldRoom).first()?.idOrNull.shouldNotBeNull(),
                         configAfter = { maxSize = 20 })
                 }
             val timelineFromNewRoom =
@@ -323,8 +324,8 @@ class TimelineEventIT {
     @Suppress("UNCHECKED_CAST")
     private fun TimelineEvent.removeUnsigned(): TimelineEvent? {
         return when (val event = event) {
-            is Event.MessageEvent -> copy(event = event.copy(unsigned = null))
-            is Event.StateEvent -> copy(event = (event as Event.StateEvent<Nothing>).copy(unsigned = null))
+            is MessageEvent -> copy(event = event.copy(unsigned = null))
+            is StateEvent -> copy(event = (event as StateEvent<Nothing>).copy(unsigned = null))
             else -> this
         }
     }

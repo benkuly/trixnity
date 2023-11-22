@@ -15,7 +15,7 @@ import net.folivo.trixnity.client.store.membership
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.user
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -80,13 +80,13 @@ class UsersIT {
     @Test
     fun shouldHaveUsersInRoom(): Unit = runBlocking {
         withTimeout(30_000) {
-            val room = client1.api.rooms.createRoom(
+            val room = client1.api.room.createRoom(
                 invite = setOf(client2.userId),
-                initialState = listOf(Event.InitialStateEvent(content = EncryptionEventContent(), "")),
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), "")),
                 isDirect = true,
             ).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
-            client2.api.rooms.joinRoom(room).getOrThrow()
+            client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
             client1.user.getById(room, client2.userId).first { it?.membership == JOIN }

@@ -11,9 +11,11 @@ internal open class MinimalRepositoryObservableCache<K, V>(
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
+    values: ConcurrentMap<K, ObservableCacheValue<V?>> = ConcurrentMap(),
 ) : ObservableCache<K, V, ObservableCacheStore<K, V>>(
     name = repository::class.simpleName ?: repository::class.toString(),
     store = MinimalRepositoryObservableCacheStore(repository, tm),
     cacheScope = cacheScope,
-    expireDuration = expireDuration
+    expireDuration = expireDuration,
+    values = values,
 )

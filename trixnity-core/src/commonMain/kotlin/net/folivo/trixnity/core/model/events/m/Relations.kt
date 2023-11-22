@@ -8,7 +8,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 
 typealias Relations = @Serializable(with = RelationsSerializer::class) Map<RelationType, ServerAggregation>
 
@@ -42,7 +42,7 @@ sealed interface ServerAggregation {
 
     @Serializable
     data class Thread(
-        @SerialName("latest_event") val latestEvent: @Contextual Event<*>,
+        @SerialName("latest_event") val latestEvent: @Contextual RoomEvent<*>,
         @SerialName("count") val count: Long,
         @SerialName("current_user_participated") val currentUserParticipated: Boolean,
     ) : ServerAggregation {

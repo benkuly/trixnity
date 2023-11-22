@@ -5,4 +5,4 @@ import okio.FileSystem
 import kotlin.coroutines.CoroutineContext
 
 internal actual val defaultFileSystem: FileSystem = FileSystem.SYSTEM
-internal actual val defaultContext: CoroutineContext = Dispatchers.IO
+internal actual val ioContext: CoroutineContext = Dispatchers.IO

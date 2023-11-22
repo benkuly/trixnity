@@ -33,7 +33,7 @@ interface ApplicationServiceUserService {
         }
         val displayName = getRegisterUserParameter(userId).displayName
         if (displayName != null) {
-            matrixClientServerApiClient.users.setDisplayName(
+            matrixClientServerApiClient.user.setDisplayName(
                 userId,
                 displayName,
                 asUserId = userId

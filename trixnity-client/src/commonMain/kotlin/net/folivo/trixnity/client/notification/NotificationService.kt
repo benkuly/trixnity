@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.notification
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.client.CurrentSyncState
@@ -11,9 +12,11 @@ import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.core.EventEmitter
+import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -30,7 +33,7 @@ private val log = KotlinLogging.logger { }
 
 interface NotificationService {
     data class Notification(
-        val event: Event<*>
+        val event: ClientEvent<*>
     )
 
     fun getNotifications(
@@ -59,7 +62,8 @@ class NotificationServiceImpl(
         syncResponseBufferSize: Int,
     ): Flow<Notification> = channelFlow {
         currentSyncState.first { it == SyncState.STARTED || it == SyncState.RUNNING }
-        val syncResponseFlow = api.sync.subscribeAsFlow(EventEmitter.Priority.AFTER_DEFAULT).map { it.syncResponse }
+        val syncResponseFlow =
+            api.sync.subscribeAsFlow(ClientEventEmitter.Priority.AFTER_DEFAULT).map { it.syncResponse }
 
         val pushRules =
             globalAccountDataStore.get<PushRulesEventContent>().map { event ->
@@ -72,7 +76,7 @@ class NotificationServiceImpl(
                             globalRuleSet.content.orEmpty()
                 } ?: listOf()
             }.stateIn(this)
-        val inviteEvents = syncResponseFlow
+        val inviteEventsFlow = syncResponseFlow
             .map { syncResponse ->
                 syncResponse.room?.invite?.values?.flatMap { inviteRoom ->
                     inviteRoom.inviteState?.events.orEmpty()
@@ -80,17 +84,19 @@ class NotificationServiceImpl(
             }.filterNotNull()
             .flattenConcat()
 
-        val timelineEvents =
+        val timelineEventsFlow =
             room.getTimelineEventsFromNowOn(decryptionTimeout, syncResponseBufferSize)
                 .map { extractDecryptedEvent(it) }
                 .filterNotNull()
                 .filter {
-                    when (it) {
-                        is Event.RoomEvent -> it.sender != userInfo.userId
-                        else -> true
-                    }
+                    it.sender != userInfo.userId
                 }
-        merge(inviteEvents, timelineEvents)
+        launch {
+            timelineEventsFlow.map {
+
+            }
+        }
+        merge(inviteEventsFlow, timelineEventsFlow)
             .map {
                 evaluatePushRules(
                     event = it,
@@ -100,14 +106,14 @@ class NotificationServiceImpl(
             .collect { send(it) }
     }.buffer(0)
 
-    private fun extractDecryptedEvent(timelineEvent: TimelineEvent): Event<*>? {
+    private fun extractDecryptedEvent(timelineEvent: TimelineEvent): RoomEvent<*>? {
         val originalEvent = timelineEvent.event
         val content = timelineEvent.content?.getOrNull()
         return when {
             timelineEvent.isEncrypted.not() -> originalEvent
             content == null -> null
-            originalEvent is Event.MessageEvent && content is MessageEventContent ->
-                Event.MessageEvent(
+            originalEvent is RoomEvent.MessageEvent<*> && content is MessageEventContent ->
+                RoomEvent.MessageEvent(
                     content = content,
                     id = originalEvent.id,
                     sender = originalEvent.sender,
@@ -116,24 +122,32 @@ class NotificationServiceImpl(
                     unsigned = originalEvent.unsigned
                 )
 
-            originalEvent is Event.StateEvent && content is StateEventContent -> originalEvent
+            originalEvent is RoomEvent.StateEvent<*> && content is StateEventContent -> originalEvent
             else -> null
         }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     private suspend fun evaluatePushRules(
-        event: Event<*>,
+        event: ClientEvent<*>,
         allRules: List<PushRule>,
     ): Notification? {
-        log.trace { "evaluate push rules for event: ${event.eventIdOrNull}" }
+        log.trace { "evaluate push rules for event: ${event.idOrNull}" }
         val eventJson = lazy {
             try {
-                json.serializersModule.getContextual(Event::class)?.let {
-                    json.encodeToJsonElement(it, event)
-                }?.jsonObject
+                when (event) {
+                    is RoomEvent -> json.serializersModule.getContextual(RoomEvent::class)?.let {
+                        json.encodeToJsonElement(it, event)
+                    }?.jsonObject
+
+                    is StrippedStateEvent -> json.serializersModule.getContextual(StrippedStateEvent::class)?.let {
+                        json.encodeToJsonElement(it, event)
+                    }?.jsonObject
+
+                    else -> throw IllegalStateException("event did have unexpected type ${event::class}")
+                }
             } catch (exception: Exception) {
-                log.warn { "could not serialize event" }
+                log.warn(exception) { "could not serialize event" }
                 null
             }
         }
@@ -151,18 +165,18 @@ class NotificationServiceImpl(
                         .all { matchPushCondition(event, eventJson, it) }
                 }
             }
-        log.trace { "event ${event.eventIdOrNull}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
+        log.trace { "event ${event.idOrNull}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
         return rule?.actions?.asFlow()
             ?.transform { pushAction ->
                 if (pushAction is PushAction.Notify) {
-                    log.debug { "notify for event ${event.eventIdOrNull} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
+                    log.debug { "notify for event ${event.idOrNull} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
                     emit(Notification(event))
                 }
             }?.firstOrNull()
     }
 
     private suspend fun matchPushCondition(
-        event: Event<*>,
+        event: ClientEvent<*>,
         eventJson: Lazy<JsonObject?>,
         pushCondition: PushCondition
     ): Boolean {
@@ -199,7 +213,7 @@ class NotificationServiceImpl(
 
             is PushCondition.EventMatch -> {
                 val propertyValue =
-                    getEventProperty(event, eventJson, pushCondition.key)?.jsonPrimitiveOrNull?.contentOrNull
+                    getEventProperty(eventJson, pushCondition.key)?.jsonPrimitiveOrNull?.contentOrNull
                 if (propertyValue == null) {
                     log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
                     false
@@ -209,7 +223,7 @@ class NotificationServiceImpl(
             }
 
             is PushCondition.EventPropertyIs -> {
-                val propertyValue = getEventProperty(event, eventJson, pushCondition.key)?.jsonPrimitiveOrNull
+                val propertyValue = getEventProperty(eventJson, pushCondition.key)?.jsonPrimitiveOrNull
                 if (propertyValue == null) {
                     log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
                     false
@@ -219,7 +233,7 @@ class NotificationServiceImpl(
             }
 
             is PushCondition.EventPropertyContains -> {
-                val propertyValue = getEventProperty(event, eventJson, pushCondition.key)?.jsonArrayOrNull
+                val propertyValue = getEventProperty(eventJson, pushCondition.key)?.jsonArrayOrNull
                 if (propertyValue == null) {
                     log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
                     false
@@ -232,7 +246,7 @@ class NotificationServiceImpl(
         }
     }
 
-    private fun bodyContainsPattern(event: Event<*>, pattern: String): Boolean {
+    private fun bodyContainsPattern(event: ClientEvent<*>, pattern: String): Boolean {
         val content = event.content
         return if (content is TextMessageEventContent) {
             pattern.matrixGlobToRegExp().containsMatchIn(content.body)
@@ -240,7 +254,6 @@ class NotificationServiceImpl(
     }
 
     private fun getEventProperty(
-        event: Event<*>,
         initialEventJson: Lazy<JsonObject?>,
         key: String
     ): JsonElement? {
@@ -251,7 +264,7 @@ class NotificationServiceImpl(
             }
             eventJson
         } catch (exc: Exception) {
-            log.warn(exc) { "could not find event property for key $key in event $event" }
+            log.warn(exc) { "could not find event property for key $key in event ${initialEventJson.value}" }
             null
         }
     }

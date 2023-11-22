@@ -11,8 +11,8 @@ import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
-import net.folivo.trixnity.core.EventEmitter.Priority
-import net.folivo.trixnity.core.model.events.Event
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.ForwardedRoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
@@ -47,11 +47,11 @@ class IncomingRoomKeyRequestEventHandler(
     internal fun handleEncryptedIncomingKeyRequests(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
         if (event.decrypted.sender == ownUserId && content is RoomKeyRequestEventContent) {
-            handleIncomingKeyRequests(Event.ToDeviceEvent(content, event.decrypted.sender))
+            handleIncomingKeyRequests(ToDeviceEvent(content, event.decrypted.sender))
         }
     }
 
-    internal fun handleIncomingKeyRequests(event: Event.ToDeviceEvent<RoomKeyRequestEventContent>) {
+    internal fun handleIncomingKeyRequests(event: ToDeviceEvent<RoomKeyRequestEventContent>) {
         if (event.sender == ownUserId) {
             log.debug { "handle incoming room key requests" }
             val content = event.content
@@ -97,7 +97,7 @@ class IncomingRoomKeyRequestEventHandler(
                         null
                     }
                     if (encryptedAnswer != null)
-                        api.users.sendToDevice(
+                        api.user.sendToDevice(
                             mapOf(ownUserId to mapOf(requestingDeviceId to encryptedAnswer))
                         ).getOrThrow()
                 } else log.info { "got a room key request (${request}), but did not found a matching room key" }

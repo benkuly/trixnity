@@ -3,15 +3,12 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.Event.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event.RoomAccountDataEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.*
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
@@ -22,17 +19,22 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 inline fun <reified C : StateEventContent> RoomStateStore.get(
     roomId: RoomId,
-): Flow<Map<String, Flow<Event<C>?>>?> = get(roomId, C::class)
+): Flow<Map<String, Flow<StateBaseEvent<C>?>>> = get(roomId, C::class)
 
 inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<Event<C>?> = getByStateKey(roomId, C::class, stateKey)
+): Flow<StateBaseEvent<C>?> = getByStateKey(roomId, C::class, stateKey)
+
+suspend inline fun <reified C : StateEventContent> RoomStateStore.getByRooms(
+    roomIds: Set<RoomId>,
+    stateKey: String = "",
+): List<StateBaseEvent<C>> = getByRooms(roomIds, C::class, stateKey)
 
 inline fun <reified C : StateEventContent> RoomStateStore.getContentByStateKey(
     roomId: RoomId,
     stateKey: String = "",
-): Flow<C> = getByStateKey(roomId, C::class, stateKey).filterNotNull().map { it.content }
+): Flow<C?> = getByStateKey(roomId, C::class, stateKey).map { it?.content }
 
 inline fun <reified C : RoomAccountDataEventContent> RoomAccountDataStore.get(
     roomId: RoomId,
@@ -43,39 +45,38 @@ inline fun <reified C : GlobalAccountDataEventContent> GlobalAccountDataStore.ge
     key: String = "",
 ): Flow<GlobalAccountDataEvent<C>?> = get(C::class, key)
 
-suspend inline fun RoomStateStore.members(
+suspend fun RoomStateStore.members(
     roomId: RoomId,
     memberships: Set<Membership>,
 ): Set<UserId> =
     get<MemberEventContent>(roomId).first()
-        ?.filter { memberships.contains(it.value.first()?.content?.membership) }
-        ?.map { UserId(it.key) }?.toSet() ?: setOf()
+        .filter { memberships.contains(it.value.first()?.content?.membership) }
+        .map { UserId(it.key) }.toSet()
 
-suspend inline fun RoomStateStore.membersCount(
+suspend fun RoomStateStore.membersCount(
     roomId: RoomId,
     membership: Membership,
     vararg moreMemberships: Membership
 ): Long {
     val allMemberships = moreMemberships.toList() + membership
     return get<MemberEventContent>(roomId).first()
-        ?.count { allMemberships.contains(it.value.first()?.content?.membership) }?.toLong() ?: 0
+        .count { allMemberships.contains(it.value.first()?.content?.membership) }.toLong()
 }
 
-fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
-    getAll().value.values
-        .filter { it.value?.encryptionAlgorithm != null && it.value?.membership == JOIN }
-        .mapNotNull { it.value?.roomId }
+suspend fun RoomStore.encryptedJoinedRooms(): Set<RoomId> =
+    getAll().first().values
+        .map { it.first() }
+        .filter { it?.encrypted == true && it.membership == JOIN }
+        .mapNotNull { it?.roomId }
+        .toSet()
 
-inline fun RoomTimelineStore.getNext(
+fun RoomTimelineStore.getNext(
     event: TimelineEvent,
 ): Flow<TimelineEvent?>? =
     event.nextEventId?.let { get(it, event.roomId) }
 
-suspend inline fun RoomTimelineStore.getPrevious(event: TimelineEvent): TimelineEvent? =
+suspend fun RoomTimelineStore.getPrevious(event: TimelineEvent): TimelineEvent? =
     event.previousEventId?.let { get(it, event.roomId) }?.first()
-
-suspend inline fun KeyStore.isTracked(userId: UserId): Boolean =
-    getDeviceKeys(userId).first() != null
 
 suspend fun OlmCryptoStore.waitForInboundMegolmSession(
     roomId: RoomId,

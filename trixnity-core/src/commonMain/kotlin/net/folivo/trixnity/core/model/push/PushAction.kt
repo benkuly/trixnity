@@ -15,7 +15,7 @@ import kotlinx.serialization.json.*
 sealed interface PushAction {
     val name: String?
 
-    object Notify : PushAction {
+    data object Notify : PushAction {
         override val name = "notify"
     }
 
@@ -45,8 +45,8 @@ object PushActionSerializer : KSerializer<PushAction> {
                 else -> PushAction.Unknown(name, json)
             }
 
-            is JsonObject -> when (val name = json["set_tweak"]?.jsonPrimitive?.content) {
-                "sound" -> PushAction.SetSoundTweak(json["value"]?.jsonPrimitive?.content)
+            is JsonObject -> when (val name = (json["set_tweak"] as? JsonPrimitive)?.content) {
+                "sound" -> PushAction.SetSoundTweak((json["value"] as? JsonPrimitive)?.content)
                 "highlight" -> PushAction.SetHighlightTweak(json["value"]?.let { decoder.json.decodeFromJsonElement(it) })
                 else -> PushAction.Unknown(name, json)
             }
