@@ -119,7 +119,7 @@ abstract class ActiveVerificationImpl(
                 }
 
                 is VerificationDoneEventContent -> {
-                    if (currentState is Start || currentState is PartlyDone)
+                    if (currentState is Start || currentState is WaitForDone)
                         onDone(isOurOwn)
                     else cancelUnexpectedMessage(currentState)
                 }
@@ -204,8 +204,8 @@ abstract class ActiveVerificationImpl(
     private fun onDone(isOurOwn: Boolean) {
         val oldState = mutableState.value
         val newState =
-            if (oldState is PartlyDone && (isOurOwn && !oldState.isOurOwn || !isOurOwn && oldState.isOurOwn)) Done
-            else PartlyDone(isOurOwn)
+            if (oldState is WaitForDone && (isOurOwn && !oldState.isOurOwn || !isOurOwn && oldState.isOurOwn)) Done
+            else WaitForDone(isOurOwn)
         mutableState.value = newState
     }
 

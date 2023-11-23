@@ -291,11 +291,11 @@ class KeyTrustServiceImpl(
                 updateTrustLevelOfKey(userId, key)
                 try {
                     if (userId == userInfo.userId && deviceKey.get<Ed25519Key>() == key) {
-                        log.info { "sign own accounts device with own self signing key" }
                         signService.sign(deviceKey, signWithSecret(M_CROSS_SIGNING_SELF_SIGNING))
+                            .also { log.info { "signed own accounts device with own self signing key" } }
                     } else null
                 } catch (error: Exception) {
-                    log.warn { "could not sign key $key: ${error.message}" }
+                    log.warn { "could not sign device key $key with self signing key: ${error.message}" }
                     null
                 }
             } else null
@@ -306,20 +306,25 @@ class KeyTrustServiceImpl(
                 keyStore.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value))
                 updateTrustLevelOfKey(userId, key)
                 if (crossSigningKey.usage.contains(MasterKey)) {
-                    try {
-                        if (crossSigningKey.get<Ed25519Key>() == key) {
-                            if (userId == userInfo.userId) {
-                                log.info { "sign own master key with own device key" }
+                    if (crossSigningKey.get<Ed25519Key>() == key) {
+                        if (userId == userInfo.userId) {
+                            try {
                                 signService.sign(crossSigningKey, SignWith.DeviceKey)
-                            } else {
-                                log.info { "sign other users master key with own user signing key" }
-                                signService.sign(crossSigningKey, signWithSecret(M_CROSS_SIGNING_USER_SIGNING))
+                                    .also { log.info { "signed own master key with own device key" } }
+                            } catch (error: Exception) {
+                                log.warn { "could not sign own master key $key with device key: ${error.message}" }
+                                null
                             }
-                        } else null
-                    } catch (error: Exception) {
-                        log.warn { "could not sign key $key: ${error.message}" }
-                        null
-                    }
+                        } else {
+                            try {
+                                signService.sign(crossSigningKey, signWithSecret(M_CROSS_SIGNING_USER_SIGNING))
+                                    .also { log.info { "signed other users master key with own user signing key" } }
+                            } catch (error: Exception) {
+                                log.warn { "could not sign other users master key $key with user signing key: ${error.message}" }
+                                null
+                            }
+                        }
+                    } else null
                 } else null
             } else null
         }
