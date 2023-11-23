@@ -1,10 +1,13 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.clientserverapi.model.users.GetProfile
@@ -302,6 +305,7 @@ class UsersApiClientTest {
 
     @Test
     fun shouldSendToDeviceWhenDifferentEvents() = runTest {
+        val endpointsCalled = MutableStateFlow(setOf<String>())
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(false) {
@@ -309,6 +313,7 @@ class UsersApiClientTest {
                     request.method shouldBe HttpMethod.Put
                     when {
                         request.url.fullPath.startsWith("/_matrix/client/v3/sendToDevice/m.room_key/") -> {
+                            endpointsCalled.update { it + "m.room_key" }
                             request.body.toByteArray().decodeToString() shouldBe """
                                 {
                                   "messages":{
@@ -326,6 +331,7 @@ class UsersApiClientTest {
                         }
 
                         request.url.fullPath.startsWith("/_matrix/client/v3/sendToDevice/m.room.encrypted/") -> {
+                            endpointsCalled.update { it + "m.room.encrypted" }
                             request.body.toByteArray().decodeToString() shouldBe """
                                 {
                                     "messages":{
@@ -371,6 +377,7 @@ class UsersApiClientTest {
                 )
             ),
         ).getOrThrow()
+        endpointsCalled.value shouldHaveSize 2
     }
 
     @Test
