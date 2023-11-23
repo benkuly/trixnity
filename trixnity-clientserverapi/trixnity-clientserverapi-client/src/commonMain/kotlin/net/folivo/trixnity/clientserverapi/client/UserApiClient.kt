@@ -3,6 +3,9 @@ package net.folivo.trixnity.clientserverapi.client
 import com.benasher44.uuid.uuid4
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.util.reflect.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.clientserverapi.model.users.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
@@ -75,7 +78,7 @@ interface UserApiClient {
     /**
      * @see [SendToDevice]
      */
-    suspend fun <C : ToDeviceEventContent> sendToDevice(
+    suspend fun <C : ToDeviceEventContent> sendToDeviceUnsafe(
         events: Map<UserId, Map<String, C>>,
         transactionId: String = uuid4().toString(),
         asUserId: UserId? = null
@@ -84,10 +87,21 @@ interface UserApiClient {
     /**
      * @see [SendToDevice]
      */
-    suspend fun sendToDevice(
+    suspend fun sendToDeviceUnsafe(
         type: String,
         events: Map<UserId, Map<String, ToDeviceEventContent>>,
         transactionId: String = uuid4().toString(),
+        asUserId: UserId? = null
+    ): Result<Unit>
+
+    /**
+     * This splits [events] into multiple requests, when they have a different type
+     * (for example a mix of encrypted and unencrypted events).
+     *
+     * @see [SendToDevice]
+     */
+    suspend fun sendToDevice(
+        events: Map<UserId, Map<String, ToDeviceEventContent>>,
         asUserId: UserId? = null
     ): Result<Unit>
 
@@ -189,24 +203,60 @@ class UserApiClientImpl(
         httpClient.request(SetPresence(userId, asUserId), SetPresence.Request(presence, statusMessage))
 
 
-    override suspend fun <C : ToDeviceEventContent> sendToDevice(
+    override suspend fun <C : ToDeviceEventContent> sendToDeviceUnsafe(
         events: Map<UserId, Map<String, C>>,
         transactionId: String,
         asUserId: UserId?
     ): Result<Unit> {
         val firstEventForType = events.entries.firstOrNull()?.value?.entries?.firstOrNull()?.value
-            ?: throw IllegalArgumentException("you need to send at least on event")
+        requireNotNull(firstEventForType) { "you need to send at least on event" }
+        require(events.flatMap { it.value.values }
+            .all { it.instanceOf(firstEventForType::class) }) { "all events must be of the same type" }
         val type = contentMappings.toDevice.contentType(firstEventForType)
-        return sendToDevice(type, events, transactionId, asUserId)
+        return sendToDeviceUnsafe(type, events, transactionId, asUserId)
     }
 
-    override suspend fun sendToDevice(
+    override suspend fun sendToDeviceUnsafe(
         type: String,
         events: Map<UserId, Map<String, ToDeviceEventContent>>,
         transactionId: String,
         asUserId: UserId?
     ): Result<Unit> =
         httpClient.request(SendToDevice(type, transactionId, asUserId), SendToDevice.Request(events))
+
+    override suspend fun sendToDevice(
+        events: Map<UserId, Map<String, ToDeviceEventContent>>,
+        asUserId: UserId?,
+    ): Result<Unit> = runCatching {
+        data class FlatEntry(
+            val userId: UserId,
+            val deviceId: String,
+            val event: ToDeviceEventContent,
+        )
+
+        val flatEvents = events.flatMap { (userId, deviceEvents) ->
+            deviceEvents.map { (deviceId, deviceEvent) ->
+                FlatEntry(userId, deviceId, deviceEvent)
+            }
+        }
+        if (flatEvents.isNotEmpty()) {
+            val eventsByType = flatEvents
+                .groupBy { it.event::class }
+                .mapValues { (_, flatEntryByUserId) ->
+                    flatEntryByUserId.groupBy { it.userId }
+                        .mapValues { (_, flatEntryByDeviceId) ->
+                            flatEntryByDeviceId.associate { it.deviceId to it.event }
+                        }
+                }
+            coroutineScope {
+                eventsByType.values.forEach {
+                    launch {
+                        sendToDeviceUnsafe(it, asUserId = asUserId).getOrThrow()
+                    }
+                }
+            }
+        }
+    }
 
     override suspend fun getFilter(
         userId: UserId,
