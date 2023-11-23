@@ -111,8 +111,8 @@ class KeyStore(
             val keys = deviceKeysCache.read(userId).first()
             if (keys == null) {
                 updateOutdatedKeys { it + userId }
-                waitForUpdateOutdatedKey(userId)
             }
+            waitForUpdateOutdatedKey(userId)
             emitAll(deviceKeysCache.read(userId))
         }
         else deviceKeysCache.read(userId)
@@ -137,8 +137,8 @@ class KeyStore(
             val keys = crossSigningKeysCache.read(userId).first()
             if (keys == null) {
                 updateOutdatedKeys { it + userId }
-                waitForUpdateOutdatedKey(userId)
             }
+            waitForUpdateOutdatedKey(userId)
             emitAll(crossSigningKeysCache.read(userId))
         }
         else crossSigningKeysCache.read(userId)
