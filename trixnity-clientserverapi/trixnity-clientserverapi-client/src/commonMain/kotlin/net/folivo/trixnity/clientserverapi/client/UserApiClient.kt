@@ -239,18 +239,20 @@ class UserApiClientImpl(
                 FlatEntry(userId, deviceId, deviceEvent)
             }
         }
-        val eventsByType = flatEvents
-            .groupBy { it.event::class }
-            .mapValues { (_, flatEntryByUserId) ->
-                flatEntryByUserId.groupBy { it.userId }
-                    .mapValues { (_, flatEntryByDeviceId) ->
-                        flatEntryByDeviceId.associate { it.deviceId to it.event }
+        if (flatEvents.isNotEmpty()) {
+            val eventsByType = flatEvents
+                .groupBy { it.event::class }
+                .mapValues { (_, flatEntryByUserId) ->
+                    flatEntryByUserId.groupBy { it.userId }
+                        .mapValues { (_, flatEntryByDeviceId) ->
+                            flatEntryByDeviceId.associate { it.deviceId to it.event }
+                        }
+                }
+            coroutineScope {
+                eventsByType.values.forEach {
+                    launch {
+                        sendToDeviceUnsafe(it, asUserId = asUserId).getOrThrow()
                     }
-            }
-        coroutineScope {
-            eventsByType.values.forEach {
-                launch {
-                    sendToDeviceUnsafe(it, asUserId = asUserId).getOrThrow()
                 }
             }
         }

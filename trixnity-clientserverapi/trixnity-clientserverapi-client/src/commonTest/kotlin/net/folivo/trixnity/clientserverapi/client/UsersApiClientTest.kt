@@ -291,7 +291,17 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSendToDevice() = runTest {
+    fun shouldSendToDeviceWhenNoEvent() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory { })
+        matrixRestClient.user.sendToDevice(
+            mapOf(UserId("@alice:example.com") to mapOf()),
+        )
+    }
+
+    @Test
+    fun shouldSendToDeviceWhenDifferentEvents() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory(false) {
