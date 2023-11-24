@@ -166,7 +166,6 @@ class OlmEncryptionServiceImpl(
                 )
             ),
             senderKey = ownCurve25519Key,
-            relatesTo = relatesToForEncryptedEvent(content)
         ).also { log.trace { "encrypted event: $it" } }
     }
 
@@ -269,11 +268,7 @@ class OlmEncryptionServiceImpl(
 
             val serializer = json.serializersModule.getContextual(DecryptedOlmEvent::class)
             requireNotNull(serializer)
-            val decryptedEvent =
-                json.decodeFromJsonElement(
-                    serializer,
-                    addRelatesToToDecryptedEvent(decryptionResult, encryptedContent.relatesTo)
-                )
+            val decryptedEvent = json.decodeFromString(serializer, decryptionResult)
 
 
             if (decryptedEvent.sender != senderId) throw DecryptionException.ValidationFailed("sender did not match")

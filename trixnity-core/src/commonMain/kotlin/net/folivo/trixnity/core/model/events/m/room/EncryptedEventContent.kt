@@ -6,24 +6,22 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.*
+import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.*
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 
 /**
  * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroomencrypted">matrix spec</a>
  */
-@Serializable(with = EncryptedEventContentSerializer::class)
-sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventContent {
+sealed interface EncryptedEventContent {
     val algorithm: EncryptionAlgorithm
 
     @Serializable
@@ -44,7 +42,7 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         override val mentions: Mentions? = null,
         @SerialName("external_url")
         override val externalUrl: String? = null,
-    ) : EncryptedEventContent {
+    ) : EncryptedEventContent, MessageEventContent {
         @SerialName("algorithm")
         override val algorithm: Megolm = Megolm
     }
@@ -55,13 +53,7 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
         val ciphertext: Map<String, CiphertextInfo>,
         @SerialName("sender_key")
         val senderKey: Curve25519Key,
-        @SerialName("m.relates_to")
-        override val relatesTo: RelatesTo? = null,
-        @SerialName("m.mentions")
-        override val mentions: Mentions? = null,
-        @SerialName("external_url")
-        override val externalUrl: String? = null,
-    ) : EncryptedEventContent {
+    ) : EncryptedEventContent, ToDeviceEventContent {
         @SerialName("algorithm")
         override val algorithm: Olm = Olm
 
@@ -87,43 +79,6 @@ sealed interface EncryptedEventContent : MessageEventContent, ToDeviceEventConte
                 }
             }
         }
-    }
-
-    data class UnknownEncryptedEventContent(
-        override val algorithm: Unknown,
-        val raw: JsonObject,
-        @SerialName("external_url")
-        override val externalUrl: String? = null,
-    ) : EncryptedEventContent {
-        override val relatesTo: RelatesTo? = null
-        override val mentions: Mentions? = null
-    }
-}
-
-object EncryptedEventContentSerializer : KSerializer<EncryptedEventContent> {
-
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EncryptedEventContentSerializer")
-
-    override fun deserialize(decoder: Decoder): EncryptedEventContent {
-        require(decoder is JsonDecoder)
-        val jsonObj = decoder.decodeJsonElement().jsonObject
-        return when (val algorithm = decoder.json.decodeFromJsonElement<EncryptionAlgorithm>(
-            jsonObj["algorithm"] ?: JsonPrimitive("unknown")
-        )) {
-            Olm -> decoder.json.decodeFromJsonElement<OlmEncryptedEventContent>(jsonObj)
-            Megolm -> decoder.json.decodeFromJsonElement<MegolmEncryptedEventContent>(jsonObj)
-            is Unknown -> UnknownEncryptedEventContent(algorithm, jsonObj)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: EncryptedEventContent) {
-        require(encoder is JsonEncoder)
-        val jsonElement = when (value) {
-            is OlmEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
-            is MegolmEncryptedEventContent -> encoder.json.encodeToJsonElement(value)
-            is UnknownEncryptedEventContent -> value.raw
-        }
-        encoder.encodeJsonElement(jsonElement)
     }
 }
 
