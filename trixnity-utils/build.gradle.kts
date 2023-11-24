@@ -17,6 +17,7 @@ kotlin {
                 api(libs.ktor.utils)
                 api(libs.kotlinx.coroutines.core)
                 api(libs.okio)
+                implementation(libs.oshai.logging)
             }
         }
         commonTest {
