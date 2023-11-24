@@ -6,7 +6,7 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
+import org.jetbrains.exposed.sql.upsert
 import org.jetbrains.exposed.sql.select
 
 internal object ExposedOlmForgetFallbackKeyAfter : LongIdTable("olm_forget_fallback_key_after") {
@@ -21,7 +21,7 @@ internal class ExposedOlmForgetFallbackKeyAfterRepository : OlmForgetFallbackKey
     }
 
     override suspend fun save(key: Long, value: Instant): Unit = withExposedWrite {
-        ExposedOlmForgetFallbackKeyAfter.replace {
+        ExposedOlmForgetFallbackKeyAfter.upsert {
             it[ExposedOlmForgetFallbackKeyAfter.id] = key
             it[ExposedOlmForgetFallbackKeyAfter.value] = value.toEpochMilliseconds()
         }

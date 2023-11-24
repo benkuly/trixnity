@@ -25,7 +25,7 @@ internal class ExposedCrossSigningKeysRepository(private val json: Json) : Cross
     }
 
     override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>): Unit = withExposedWrite {
-        ExposedCrossSigningKeys.replace {
+        ExposedCrossSigningKeys.upsert {
             it[userId] = key.full
             it[ExposedCrossSigningKeys.value] = json.encodeToString(value)
         }

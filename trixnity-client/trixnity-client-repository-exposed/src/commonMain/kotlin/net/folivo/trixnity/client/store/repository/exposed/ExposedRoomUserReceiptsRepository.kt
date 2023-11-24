@@ -30,7 +30,7 @@ internal class ExposedRoomUserReceiptsRepository(private val json: Json) : RoomU
 
     override suspend fun save(firstKey: RoomId, secondKey: UserId, value: RoomUserReceipts): Unit =
         withExposedWrite {
-            ExposedRoomUserReceipts.replace {
+            ExposedRoomUserReceipts.upsert {
                 it[roomId] = firstKey.full
                 it[userId] = secondKey.full
                 it[ExposedRoomUserReceipts.value] = json.encodeToString(value)

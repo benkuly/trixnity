@@ -59,7 +59,7 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
 
     override suspend fun save(firstKey: RoomStateRepositoryKey, secondKey: String, value: StateBaseEvent<*>): Unit =
         withExposedWrite {
-            ExposedRoomState.replace {
+            ExposedRoomState.upsert {
                 it[roomId] = firstKey.roomId.full
                 it[type] = firstKey.type
                 it[stateKey] = secondKey

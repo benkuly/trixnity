@@ -52,7 +52,7 @@ internal class ExposedInboundMegolmSessionRepository(private val json: Json) : I
 
     override suspend fun save(key: InboundMegolmSessionRepositoryKey, value: StoredInboundMegolmSession): Unit =
         withExposedWrite {
-            ExposedInboundMegolmSession.replace {
+            ExposedInboundMegolmSession.upsert {
                 it[senderKey] = value.senderKey.value
                 it[sessionId] = value.sessionId
                 it[roomId] = value.roomId.full
