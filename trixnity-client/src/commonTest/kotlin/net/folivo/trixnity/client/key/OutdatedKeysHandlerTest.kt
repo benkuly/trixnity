@@ -29,6 +29,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -100,6 +101,7 @@ private val body: ShouldSpec.() -> Unit = {
             signServiceMock,
             keyTrustServiceMock,
             CurrentSyncState(currentSyncState),
+            UserInfo(UserId("us", "server"), "ourDevice", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             RepositoryTransactionManagerMock(),
         )
         cut.startInCoroutineScope(scope)
@@ -143,6 +145,13 @@ private val body: ShouldSpec.() -> Unit = {
                 SyncState.INITIAL_SYNC
             )
             keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(alice)
+        }
+        should("always handle own keys") {
+            cut.handleDeviceLists(
+                Sync.Response.DeviceLists(changed = setOf(UserId("us", "server"), bob)),
+                SyncState.INITIAL_SYNC
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(UserId("us", "server"))
         }
     }
     context(OutdatedKeysHandler::updateDeviceKeysFromChangedMembership.name) {
