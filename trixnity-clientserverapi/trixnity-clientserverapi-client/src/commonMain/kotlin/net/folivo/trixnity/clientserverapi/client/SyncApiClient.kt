@@ -19,6 +19,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.Presence
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.ZERO
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
@@ -66,7 +69,7 @@ enum class SyncState {
 
 interface SyncApiClient : ClientEventEmitter<SyncEvents> {
     /**
-     * This is the plain sync request. If you want to subscribe to events and ore, use [start] or [startOnce].
+     * This is the plain sync request. If you want to subscribe to events and more, use [start] or [startOnce].
      *
      * @see [Sync]
      */
@@ -75,7 +78,7 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
         since: String? = null,
         fullState: Boolean = false,
         setPresence: Presence? = null,
-        timeout: Long = 0,
+        timeout: Duration = ZERO,
         asUserId: UserId? = null
     ): Result<Sync.Response>
 
@@ -86,7 +89,7 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
         setPresence: Presence? = null,
         getBatchToken: suspend () -> String?,
         setBatchToken: suspend (String) -> Unit,
-        timeout: Long = 30000,
+        timeout: Duration = 30.seconds,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId? = null,
         wait: Boolean = false,
@@ -98,7 +101,7 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
         setPresence: Presence? = null,
         getBatchToken: suspend () -> String?,
         setBatchToken: suspend (String) -> Unit,
-        timeout: Long = 0,
+        timeout: Duration = ZERO,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId? = null,
         runOnce: suspend (Sync.Response) -> T,
@@ -113,7 +116,7 @@ suspend fun SyncApiClient.start(
     setPresence: Presence? = null,
     getBatchToken: suspend () -> String?,
     setBatchToken: suspend (String) -> Unit,
-    timeout: Long = 30000,
+    timeout: Duration = 30.seconds,
     asUserId: UserId? = null,
     wait: Boolean = false,
     scope: CoroutineScope,
@@ -124,7 +127,7 @@ suspend fun <T> SyncApiClient.startOnce(
     setPresence: Presence? = null,
     getBatchToken: suspend () -> String?,
     setBatchToken: suspend (String) -> Unit,
-    timeout: Long = 0,
+    timeout: Duration = 30.seconds,
     asUserId: UserId? = null,
     runOnce: suspend (Sync.Response) -> T,
 ): Result<T> = startOnce(filter, setPresence, getBatchToken, setBatchToken, timeout, { it() }, asUserId, runOnce)
@@ -134,7 +137,7 @@ suspend fun SyncApiClient.startOnce(
     setPresence: Presence? = null,
     getBatchToken: suspend () -> String?,
     setBatchToken: suspend (String) -> Unit,
-    timeout: Long = 0,
+    timeout: Duration = ZERO,
     withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
     asUserId: UserId? = null,
 ): Result<Unit> =
@@ -161,14 +164,14 @@ class SyncApiClientImpl(
         since: String?,
         fullState: Boolean,
         setPresence: Presence?,
-        timeout: Long,
+        timeout: Duration,
         asUserId: UserId?
     ): Result<Sync.Response> =
         httpClient.request(
-            Sync(filter, if (fullState) fullState else null, setPresence, since, timeout, asUserId),
+            Sync(filter, if (fullState) fullState else null, setPresence, since, timeout.inWholeMilliseconds, asUserId),
         ) {
             timeout {
-                requestTimeoutMillis = if (timeout == 0L) 300_000 else timeout + 5000
+                requestTimeoutMillis = (if (timeout == ZERO) 5.minutes else timeout + 10.seconds).inWholeMilliseconds
             }
         }
 
@@ -183,11 +186,12 @@ class SyncApiClientImpl(
         filter: String?,
         setPresence: Presence?,
         getBatchToken: suspend () -> String?,
-        setBatchToken: suspend (String) -> Unit, timeout: Long,
+        setBatchToken: suspend (String) -> Unit,
+        timeout: Duration,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
         wait: Boolean,
-        scope: CoroutineScope,
+        scope: CoroutineScope
     ) {
         stop(wait = true)
         startStopMutex.withLock {
@@ -206,7 +210,7 @@ class SyncApiClientImpl(
                                     setBatchToken = setBatchToken,
                                     filter = filter,
                                     setPresence = setPresence,
-                                    timeout = if (_currentSyncState.value == STARTED) 0 else timeout,
+                                    timeout = if (_currentSyncState.value == STARTED) ZERO else timeout,
                                     withTransaction = withTransaction,
                                     asUserId = asUserId
                                 )
@@ -246,10 +250,10 @@ class SyncApiClientImpl(
         setPresence: Presence?,
         getBatchToken: suspend () -> String?,
         setBatchToken: suspend (String) -> Unit,
-        timeout: Long,
+        timeout: Duration,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
-        runOnce: suspend (Sync.Response) -> T,
+        runOnce: suspend (Sync.Response) -> T
     ): Result<T> = kotlin.runCatching {
         stop(wait = true)
         syncMutex.withLock {
@@ -273,7 +277,7 @@ class SyncApiClientImpl(
         setBatchToken: suspend (String) -> Unit,
         filter: String?,
         setPresence: Presence?,
-        timeout: Long,
+        timeout: Duration,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         asUserId: UserId?,
     ): Sync.Response {
@@ -284,7 +288,7 @@ class SyncApiClientImpl(
                 setPresence = setPresence,
                 fullState = false,
                 since = batchToken,
-                timeout = if (batchToken == null) 0L else timeout,
+                timeout = if (batchToken == null) ZERO else timeout,
                 asUserId = asUserId
             ).getOrThrow()
         }

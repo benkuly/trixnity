@@ -30,14 +30,14 @@ class ClientOlmStore(
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
 
     override suspend fun findCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? =
-        keyStore.getDeviceKey(userId, deviceId, fetchIfMissing = true).first()?.value?.get<Key.Curve25519Key>()
+        keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Curve25519Key>()
 
 
     override suspend fun findEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? =
-        keyStore.getDeviceKey(userId, deviceId, fetchIfMissing = true).first()?.value?.get<Key.Ed25519Key>()
+        keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Ed25519Key>()
 
     override suspend fun findDeviceKeys(userId: UserId, senderKey: Key.Curve25519Key): DeviceKeys? =
-        keyStore.getDeviceKeys(userId, fetchIfMissing = true).first()?.values?.map { it.value.signed }
+        keyStore.getDeviceKeys(userId).first()?.values?.map { it.value.signed }
             ?.find { it.keys.keys.any { key -> key.value == senderKey.value } }
 
 
@@ -94,7 +94,7 @@ class ClientOlmStore(
         userService.loadMembers(roomId)
         val members = roomStateStore.members(roomId, memberships)
         return members.mapNotNull { userId ->
-            keyStore.getDeviceKeys(userId, fetchIfMissing = true).first()?.let { userId to it.keys }
+            keyStore.getDeviceKeys(userId).first()?.let { userId to it.keys }
         }.toMap()
     }
 
