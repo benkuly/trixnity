@@ -9,7 +9,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
@@ -118,11 +117,9 @@ class CrossSigningIT {
         withTimeout(30_000) {
             withClue("wait for client1 self verification to be NoCrossSigningEnabled") {
                 client1.verification.getSelfVerificationMethods()
-                    .onEach { println(it) } // FIXME remove
                     .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
                     .first()
             }
-
 
             val bootstrap = withClue("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {

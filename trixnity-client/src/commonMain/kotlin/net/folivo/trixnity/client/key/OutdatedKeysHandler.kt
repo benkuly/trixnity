@@ -226,7 +226,7 @@ class OutdatedKeysHandler(
 
         userIds.chunked(25).forEach { userIdChunk ->
             tm.writeTransaction {
-                coroutineScope {
+                withContext(KeyStore.SkipOutdatedKeys) {
                     userIdChunk.forEach { userId ->
                         launch {
                             keysResponse.masterKeys?.get(userId)?.let { masterKey ->

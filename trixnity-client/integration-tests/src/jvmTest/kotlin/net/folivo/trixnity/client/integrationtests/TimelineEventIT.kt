@@ -28,7 +28,6 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -70,13 +69,17 @@ class TimelineEventIT {
             repositoriesModule = repositoriesModule1,
             mediaStore = InMemoryMediaStore(),
             getLoginInfo = { it.register("user1", password) }
-        ).getOrThrow()
+        ) {
+            name = "client1"
+        }.getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStore = InMemoryMediaStore(),
             getLoginInfo = { it.register("user2", password) }
-        ).getOrThrow()
+        ) {
+            name = "client2"
+        }.getOrThrow()
         client1.startSync()
         client2.startSync()
         client1.syncState.first { it == SyncState.RUNNING }
@@ -98,42 +101,25 @@ class TimelineEventIT {
                 invite = setOf(client2.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
+            client1.room.sendMessage(room) { text("Hello!") }
+            client1.room.getById(room).first { it?.encrypted == true }
+            client1.room.waitForOutboxSent()
+
+            val collectMessages = async {
+                client2.room.getTimelineEventsFromNowOn()
+                    .filter { it.roomId == room }
+                    .filter { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+                    .take(3)
+            }
+
             client2.room.getById(room).first { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
-
-            client1.room.getById(room).first { it?.encrypted == true }
             client2.room.getById(room).first { it?.encrypted == true }
 
-            client1.room.sendMessage(room) { text("Hello!") }
             client2.room.sendMessage(room) { text("Hello to you, too!") }
             client1.room.sendMessage(room) { text("How are you?") }
 
-            val decryptedMessages = mutableSetOf<EventId>()
-
-            client2.room.getLastTimelineEvent(room)
-                .filterNotNull()
-                .takeWhile { decryptedMessages.size < 3 }
-                .collectLatest { lastTimelineEvent ->
-                    var currentTimelineEvent: Flow<TimelineEvent?> = lastTimelineEvent
-                    while (currentCoroutineContext().isActive && decryptedMessages.size < 3) {
-                        val currentTimelineEventValue = currentTimelineEvent
-                            .filterNotNull()
-                            .filter { it.event.content !is EncryptedEventContent || it.content?.isSuccess == true }
-                            .first()
-
-                        if (currentTimelineEventValue.event.content is EncryptedEventContent) {
-                            decryptedMessages.add(currentTimelineEventValue.eventId)
-                        }
-
-                        currentTimelineEvent = currentTimelineEvent
-                            .filterNotNull()
-                            .map { client2.room.getPreviousTimelineEvent(it) }
-                            .filterNotNull()
-                            .first()
-                    }
-                    // we write a message to escape the collect latest
-                    client2.room.sendMessage(room) { text("Fine!") }
-                }
+            collectMessages.await()
         }
     }
 
@@ -195,9 +181,7 @@ class TimelineEventIT {
             client2.room.getById(room).first { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
-
-            client2.stopSync(true)
-
+            client2.cancelSync(true)
             (0..29).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
                 delay(50) // give it time to sync back
@@ -233,7 +217,7 @@ class TimelineEventIT {
             client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
-            client2.stopSync(true)
+            client2.cancelSync(true)
 
             (0..29).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
