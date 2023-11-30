@@ -29,6 +29,7 @@ import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import kotlin.time.Duration
 
 private val log = KotlinLogging.logger {}
 
@@ -84,11 +85,11 @@ interface MatrixClient {
 
     suspend fun startSync(presence: Presence? = Presence.ONLINE)
 
-    suspend fun syncOnce(presence: Presence? = Presence.OFFLINE, timeout: Long = 0L): Result<Unit>
+    suspend fun syncOnce(presence: Presence? = Presence.OFFLINE, timeout: Duration = Duration.ZERO): Result<Unit>
 
     suspend fun <T> syncOnce(
         presence: Presence? = Presence.OFFLINE,
-        timeout: Long = 0L,
+        timeout: Duration = Duration.ZERO,
         runOnce: suspend (Sync.Response) -> T
     ): Result<T>
 
@@ -293,6 +294,7 @@ suspend fun MatrixClient.Companion.loginWith(
         mediaStore = di.get(),
         mediaCacheMappingStore = di.get(),
         eventHandlers = di.getAll(),
+        config = config,
         coroutineScope = coroutineScope,
     )
     api.key.setKeys(deviceKeys = selfSignedDeviceKeys)
@@ -383,6 +385,7 @@ suspend fun MatrixClient.Companion.fromStore(
                 mediaStore = di.get(),
                 mediaCacheMappingStore = di.get(),
                 eventHandlers = di.getAll(),
+                config = config,
                 coroutineScope = coroutineScope,
             ).also {
                 log.trace { "finished creating MatrixClient" }
@@ -417,6 +420,7 @@ class MatrixClientImpl internal constructor(
     private val mediaStore: MediaStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
+    private val config: MatrixClientConfiguration,
     private val coroutineScope: CoroutineScope,
 ) : MatrixClient {
     private val started = MutableStateFlow(false)
@@ -537,6 +541,7 @@ class MatrixClientImpl internal constructor(
     override suspend fun startSync(presence: Presence?) {
         started.first { it }
         api.sync.start(
+            timeout = config.syncLoopTimeout,
             filter = checkNotNull(accountStore.getAccount()?.filterId),
             setPresence = presence,
             getBatchToken = { accountStore.getAccount()?.syncBatchToken },
@@ -545,12 +550,12 @@ class MatrixClientImpl internal constructor(
         )
     }
 
-    override suspend fun syncOnce(presence: Presence?, timeout: Long): Result<Unit> =
+    override suspend fun syncOnce(presence: Presence?, timeout: Duration): Result<Unit> =
         syncOnce(presence = presence, timeout = timeout) { }
 
     override suspend fun <T> syncOnce(
         presence: Presence?,
-        timeout: Long,
+        timeout: Duration,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T> {
         started.first { it }

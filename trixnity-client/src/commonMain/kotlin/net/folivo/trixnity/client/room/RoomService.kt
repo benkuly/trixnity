@@ -271,7 +271,6 @@ class RoomServiceImpl(
                                     direction = BACKWARDS,
                                     config = {
                                         apply(cfg)
-                                        decryptionTimeout = ZERO
                                     }
                                 ).map { it.first() }.firstOrNull { it.eventId == eventId }
                                     .also { log.trace { "getTimelineEvent: found TimelineEvent $eventId" } }

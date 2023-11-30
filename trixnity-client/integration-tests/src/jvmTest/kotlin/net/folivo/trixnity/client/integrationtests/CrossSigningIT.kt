@@ -121,7 +121,6 @@ class CrossSigningIT {
                     .first()
             }
 
-
             val bootstrap = withClue("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()

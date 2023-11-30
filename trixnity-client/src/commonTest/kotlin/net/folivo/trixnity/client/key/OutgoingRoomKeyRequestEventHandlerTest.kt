@@ -129,6 +129,7 @@ private val body: ShouldSpec.() -> Unit = {
         keyStore.getAllRoomKeyRequestsFlow().first { it.size == 1 }
     }
     context(OutgoingRoomKeyRequestEventHandlerImpl::handleOutgoingKeyRequestAnswer.name) {
+        clearOutdatedKeys { keyStore }
         val aliceDevice2Key = Key.Ed25519Key(aliceDevice, "aliceDevice2KeyValue")
         suspend fun setDeviceKeys(trusted: Boolean) {
             keyStore.updateDeviceKeys(alice) {
@@ -335,6 +336,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(OutgoingRoomKeyRequestEventHandler::requestRoomKeys.name) {
+        clearOutdatedKeys { keyStore }
         val aliceDevice2 = "ALICEDEVICE_2"
         val aliceDevice3 = "ALICEDEVICE_3"
         var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null

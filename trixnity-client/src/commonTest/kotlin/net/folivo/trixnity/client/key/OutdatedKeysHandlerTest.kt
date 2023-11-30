@@ -15,10 +15,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
@@ -125,8 +122,10 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.updateOutdatedKeys { setOf(alice, bob) }
                 keyStore.updateDeviceKeys(alice) { mapOf() }
                 cut.handleDeviceLists(Sync.Response.DeviceLists(left = setOf(alice)), SyncState.RUNNING)
-                keyStore.getDeviceKeys(alice).first() should beNull()
-                keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(bob)
+                withContext(KeyStore.SkipOutdatedKeys) {
+                    keyStore.getDeviceKeys(alice).first() should beNull()
+                    keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(bob)
+                }
             }
         }
         context("device key is not tracked") {
@@ -194,7 +193,9 @@ private val body: ShouldSpec.() -> Unit = {
                 false,
                 SyncState.RUNNING
             )
-            keyStore.getDeviceKeys(alice).first() should beNull()
+            withContext(KeyStore.SkipOutdatedKeys) {
+                keyStore.getDeviceKeys(alice).first() should beNull()
+            }
 
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
@@ -211,7 +212,9 @@ private val body: ShouldSpec.() -> Unit = {
                 false,
                 SyncState.RUNNING
             )
-            keyStore.getDeviceKeys(alice).first() should beNull()
+            withContext(KeyStore.SkipOutdatedKeys) {
+                keyStore.getDeviceKeys(alice).first() should beNull()
+            }
         }
         should("not remove device keys on leave or ban when there are more rooms") {
             val otherRoom = RoomId("otherRoom", "server")
@@ -244,7 +247,9 @@ private val body: ShouldSpec.() -> Unit = {
                 false,
                 SyncState.RUNNING
             )
-            keyStore.getDeviceKeys(alice) shouldNot beNull()
+            withContext(KeyStore.SkipOutdatedKeys) {
+                keyStore.getDeviceKeys(alice) shouldNot beNull()
+            }
 
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             cut.updateDeviceKeysFromChangedMembership(
@@ -261,7 +266,9 @@ private val body: ShouldSpec.() -> Unit = {
                 false,
                 SyncState.RUNNING
             )
-            keyStore.getDeviceKeys(alice) shouldNot beNull()
+            withContext(KeyStore.SkipOutdatedKeys) {
+                keyStore.getDeviceKeys(alice) shouldNot beNull()
+            }
         }
         should("ignore join when key already tracked") {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }

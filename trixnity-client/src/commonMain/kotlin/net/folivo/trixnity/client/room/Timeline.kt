@@ -15,7 +15,6 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration.Companion.INFINITE
-import kotlin.time.Duration.Companion.ZERO
 
 private val log = KotlinLogging.logger { }
 
@@ -190,7 +189,6 @@ abstract class TimelineBase<T>(
                 internalState.update { it.copy(isInitialized = false) }
                 val newEvents = internalInit(startFrom,
                     configStart = {
-                        decryptionTimeout = ZERO
                         fetchTimeout = INFINITE
                         fetchSize = 100
                     },

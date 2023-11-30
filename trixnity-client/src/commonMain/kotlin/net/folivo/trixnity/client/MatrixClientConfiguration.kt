@@ -44,6 +44,11 @@ class MatrixClientConfiguration {
     var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes)
 
     /**
+     * The timeout for the normal sync loop.
+     */
+    var syncLoopTimeout: Duration = 30.seconds
+
+    /**
      * Set custom delays for the sync loop.
      */
     var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default()
