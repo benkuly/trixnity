@@ -4,6 +4,7 @@ import io.ktor.client.*
 import kotlinx.coroutines.CoroutineName
 import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.client.store.Room
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
@@ -17,6 +18,11 @@ class MatrixClientConfiguration {
      * Set a name for this instance. This is used to set a [CoroutineName] to the [CoroutineContext].
      */
     var name: String? = null
+
+    /**
+     * Allow to save [TimelineEvent]s unencrypted.
+     */
+    var storeTimelineEventContentUnencrypted: Boolean = true
 
     /**
      * Sets the own bookmark to the latest messages sent by this client.

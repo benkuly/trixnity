@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.CurrentSyncState
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
@@ -200,6 +201,7 @@ class RoomServiceImpl(
     private val mediaService: MediaService,
     private val userInfo: UserInfo,
     private val timelineEventHandler: TimelineEventHandler,
+    private val config: MatrixClientConfiguration,
     typingEventHandler: TypingEventHandler,
     private val currentSyncState: CurrentSyncState,
     private val scope: CoroutineScope,
@@ -300,7 +302,7 @@ class RoomServiceImpl(
                             roomTimelineStore.update(
                                 eventId,
                                 roomId,
-                                persistIntoRepository = false
+                                persistIntoRepository = this@RoomServiceImpl.config.storeTimelineEventContentUnencrypted
                             ) { oldEvent ->
                                 // we check here again, because an event could be redacted at the same time
                                 if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
