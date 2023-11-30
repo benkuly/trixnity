@@ -4,8 +4,6 @@ import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
@@ -224,9 +222,9 @@ class RoomServiceImpl(
     private fun TimelineEvent.canBeDecrypted(): Boolean =
         this.event is MessageEvent
                 && this.event.isEncrypted
-                && this.content == null
+                && (this.content == null || this.content.exceptionOrNull() is TimelineEventContentError.DecryptionTimeout)
 
-    private val getTimelineEventMutex = MutableStateFlow<Map<Pair<EventId, RoomId>, Mutex>>(mapOf())
+    private val getTimelineEventMutex = KeyedMutex<Pair<EventId, RoomId>>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTimelineEvent(
@@ -262,12 +260,7 @@ class RoomServiceImpl(
             }
             .also { timelineEventFlow ->
                 launch {
-                    val key = eventId to roomId
-                    val mutex = getTimelineEventMutex.updateAndGet {
-                        if (it.containsKey(key)) it else it + (key to Mutex())
-                    }[key]
-                    checkNotNull(mutex)
-                    mutex.withLock {
+                    getTimelineEventMutex.withLock(eventId to roomId) {
                         val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(cfg.fetchTimeout) {
                             val lastEventId = roomStore.get(roomId).first()?.lastEventId
                             if (lastEventId != null) {
@@ -310,7 +303,6 @@ class RoomServiceImpl(
                                 else oldEvent
                             }
                         }
-                        getTimelineEventMutex.update { it - key }
                     }
                 }
             }

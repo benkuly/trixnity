@@ -230,10 +230,9 @@ class RoomServiceTest : ShouldSpec({
                 val expectedDecryptedEvent = TextMessageEventContent("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = Result.success(expectedDecryptedEvent)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                (0..99).map { i ->
+                (1..300).map {
                     async {
                         cut.getTimelineEvent(room, eventId)
-                            .onEach { "$i ${it?.content == null} " }
                             .first { it?.content?.getOrNull() != null }
                     }
                 }.awaitAll()
@@ -243,10 +242,17 @@ class RoomServiceTest : ShouldSpec({
                 roomEventDecryptionServiceMock.decryptDelay = 10.seconds
                 roomEventDecryptionServiceMock.returnDecrypt = null
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = async { cut.getTimelineEvent(room, eventId) { decryptionTimeout = ZERO }.first() }
-                // await would suspend infinite, when there is INFINITE timeout, because the coroutine spawned within async would wait for megolm keys
-                result.await() shouldBe encryptedTimelineEvent
-                result.job.children.count() shouldBe 0
+                val result = async { cut.getTimelineEvent(room, eventId) { decryptionTimeout = ZERO }.collect() }
+                result.job.children.count() shouldBe 0 // there are no decryption jobs
+                result.cancel()
+            }
+            should("retry on decryption timeout") {
+                roomEventDecryptionServiceMock.decryptDelay = 10.seconds
+                roomEventDecryptionServiceMock.returnDecrypt = null
+                roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
+                cut.getTimelineEvent(room, eventId) { decryptionTimeout = 50.milliseconds }.first()
+                cut.getTimelineEvent(room, eventId) { decryptionTimeout = 50.milliseconds }.first()
+                roomEventDecryptionServiceMock.decryptCounter shouldBe 2
             }
             should("handle error") {
                 roomEventDecryptionServiceMock.returnDecrypt =
