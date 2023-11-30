@@ -131,7 +131,7 @@ class TimelineEventIT {
             client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
-            client2.stopSync(true)
+            client2.cancelSync(true)
 
             (0..29).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }

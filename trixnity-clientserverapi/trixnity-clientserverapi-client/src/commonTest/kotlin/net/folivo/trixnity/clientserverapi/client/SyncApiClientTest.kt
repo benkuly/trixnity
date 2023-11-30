@@ -273,7 +273,7 @@ class SyncApiClientTest {
             fullState = true,
             setPresence = Presence.ONLINE,
             since = "someSince",
-            timeout = 1234
+            timeout = 1234.milliseconds
         ).getOrThrow()
         assertEquals("s72595_4483_1934", result.nextBatch)
         assertEquals(1, result.presence?.events?.size)
@@ -318,7 +318,7 @@ class SyncApiClientTest {
             fullState = true,
             setPresence = Presence.ONLINE,
             since = "someSince",
-            timeout = 200
+            timeout = 200.milliseconds
         )
     }
 
@@ -381,7 +381,7 @@ class SyncApiClientTest {
                 getBatchToken = { currentBatchToken.value },
                 setBatchToken = { currentBatchToken.value = it },
                 scope = this,
-                timeout = 30_000
+                timeout = 30_000.milliseconds
             )
         }
         syncResponses.take(3).collect()
@@ -452,7 +452,7 @@ class SyncApiClientTest {
                 getBatchToken = { currentBatchToken.value },
                 setBatchToken = { currentBatchToken.value = it },
                 scope = this,
-                timeout = 30_000
+                timeout = 30_000.milliseconds
             )
         }
         syncResponses.take(3).collect()
@@ -511,7 +511,7 @@ class SyncApiClientTest {
                 getBatchToken = { currentBatchToken.value },
                 setBatchToken = { currentBatchToken.value = it },
                 scope = this,
-                timeout = 300
+                timeout = 300.milliseconds
             )
         }
         matrixRestClient.sync.currentSyncState.first { it == TIMEOUT }
@@ -583,7 +583,7 @@ class SyncApiClientTest {
                 getBatchToken = { currentBatchToken.value },
                 setBatchToken = { currentBatchToken.value = it },
                 scope = this,
-                timeout = 100
+                timeout = 100.milliseconds
             )
         }
         matrixRestClient.sync.currentSyncState.first { it == RUNNING }
@@ -689,7 +689,7 @@ class SyncApiClientTest {
             })
         val job = launch {
             matrixRestClient.sync.start(
-                timeout = 100,
+                timeout = 100.milliseconds,
                 getBatchToken = { "a" },
                 setBatchToken = {},
                 scope = this
@@ -771,7 +771,7 @@ class SyncApiClientTest {
                 getBatchToken = { currentBatchToken.value },
                 setBatchToken = { currentBatchToken.value = it },
                 scope = this,
-                timeout = 30_000
+                timeout = 30_000.milliseconds
             )
         }
         syncResponses.take(3).collect()
@@ -835,7 +835,7 @@ class SyncApiClientTest {
                 getBatchToken = { currentBatchToken.value },
                 setBatchToken = { currentBatchToken.value = it },
                 scope = this,
-                timeout = 0
+                timeout = 0.milliseconds
             )
         }
         syncResponses.take(3).collect()
@@ -1139,7 +1139,7 @@ class SyncApiClientTest {
         val allEventsCount = MutableStateFlow(0)
         launch(Dispatchers.Default) {
             matrixClientServerApiClient.sync.startOnce(
-                timeout = 0L,
+                timeout = 0.milliseconds,
                 getBatchToken = { "" },
                 setBatchToken = {},
             ) {
@@ -1149,7 +1149,7 @@ class SyncApiClientTest {
         }
         launch(Dispatchers.Default) {
             matrixClientServerApiClient.sync.startOnce(
-                timeout = 0L,
+                timeout = 0.milliseconds,
                 getBatchToken = { "" },
                 setBatchToken = {},
             ) {

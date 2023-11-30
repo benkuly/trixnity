@@ -14,10 +14,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
-import net.folivo.trixnity.client.getInMemoryKeyStore
-import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
@@ -450,6 +447,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(VerificationServiceImpl::getSelfVerificationMethods.name) {
+        clearOutdatedKeys { keyStore }
         beforeTest {
             currentSyncState.value = SyncState.RUNNING
         }

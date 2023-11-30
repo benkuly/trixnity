@@ -114,6 +114,7 @@ class KeyStore(
     private suspend fun waitForUpdateOutdatedKey(user: UserId) {
         log.debug { "wait for outdated keys of $user" }
         getOutdatedKeysFlow().first { !it.contains(user) }
+        log.trace { "finished wait for outdated keys of $user" }
     }
 
     fun getDeviceKeys(

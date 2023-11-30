@@ -72,31 +72,32 @@ class OutdatedKeysHandler(
         updateDeviceKeysFromChangedMembership(memberEvents, isLoadingMembers = true, api.sync.currentSyncState.value)
     }
 
-    internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) {
-        // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
-        if (syncState != SyncState.INITIAL_SYNC) {
-            val startTrackingKeys = deviceList?.changed?.filter { keyStore.isTracked(it) }?.toSet().orEmpty()
-            val stopTrackingKeys = deviceList?.left.orEmpty()
+    internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) =
+        withContext(KeyStore.SkipOutdatedKeys) {
+            // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
+            if (syncState != SyncState.INITIAL_SYNC) {
+                val startTrackingKeys = deviceList?.changed?.filter { keyStore.isTracked(it) }?.toSet().orEmpty()
+                val stopTrackingKeys = deviceList?.left.orEmpty()
 
-            trackKeys(
-                start = startTrackingKeys,
-                stop = stopTrackingKeys,
-                reason = "device list"
-            )
-        } else if (deviceList?.changed?.contains(userInfo.userId) == true) {
-            trackKeys(
-                start = setOf(userInfo.userId),
-                stop = setOf(),
-                reason = "device list"
-            )
+                trackKeys(
+                    start = startTrackingKeys,
+                    stop = stopTrackingKeys,
+                    reason = "device list"
+                )
+            } else if (deviceList?.changed?.contains(userInfo.userId) == true) {
+                trackKeys(
+                    start = setOf(userInfo.userId),
+                    stop = setOf(),
+                    reason = "device list"
+                )
+            }
         }
-    }
 
     internal suspend fun updateDeviceKeysFromChangedMembership(
         events: List<ClientEvent.RoomEvent.StateEvent<MemberEventContent>>,
         isLoadingMembers: Boolean,
         syncState: SyncState,
-    ) = coroutineScope {
+    ) = withContext(KeyStore.SkipOutdatedKeys) {
         // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
         if (syncState != SyncState.INITIAL_SYNC) {
             val startTrackingKeys = mutableSetOf<UserId>()
@@ -143,7 +144,7 @@ class OutdatedKeysHandler(
     internal suspend fun updateDeviceKeysFromChangedEncryption(
         events: List<ClientEvent.RoomEvent.StateEvent<EncryptionEventContent>>,
         syncState: SyncState
-    ) {
+    ) = withContext(KeyStore.SkipOutdatedKeys) {
         // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
         if (syncState != SyncState.INITIAL_SYNC) {
             log.trace { "update keys from changed encryption" }
