@@ -18,6 +18,7 @@ import net.folivo.trixnity.client.room.getTimelineEventsAround
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.isEncrypted
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
@@ -28,7 +29,6 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -118,10 +118,10 @@ class TimelineEventIT {
                     while (currentCoroutineContext().isActive && decryptedMessages.size < 3) {
                         val currentTimelineEventValue = currentTimelineEvent
                             .filterNotNull()
-                            .filter { it.event.content !is EncryptedEventContent || it.content?.isSuccess == true }
+                            .filter { !it.event.isEncrypted || it.content?.isSuccess == true }
                             .first()
 
-                        if (currentTimelineEventValue.event.content is EncryptedEventContent) {
+                        if (currentTimelineEventValue.event.isEncrypted) {
                             decryptedMessages.add(currentTimelineEventValue.eventId)
                         }
 

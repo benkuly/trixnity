@@ -19,18 +19,19 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
-import net.folivo.trixnity.client.mocks.PossiblyEncryptEventMock
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
+import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -43,8 +44,9 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
     timeout = 30_000
 
     val room = simpleRoom.roomId
+    lateinit var roomStore: RoomStore
     lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
-    lateinit var possiblyEncryptEventMock: PossiblyEncryptEventMock
+    lateinit var roomEventDecryptionServiceMock: RoomEventEncryptionServiceMock
     lateinit var mediaServiceMock: MediaServiceMock
     lateinit var scope: CoroutineScope
     lateinit var currentSyncState: MutableStateFlow<SyncState>
@@ -56,17 +58,21 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         currentSyncState = MutableStateFlow(SyncState.RUNNING)
+        roomStore = getInMemoryRoomStore(scope)
+        roomStore.update(room) { simpleRoom }
         roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
-        possiblyEncryptEventMock = PossiblyEncryptEventMock()
-        possiblyEncryptEventMock.returnEncryptMegolm = { it }
+        roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock(useInput = true)
         mediaServiceMock = MediaServiceMock()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         cut = OutboxMessageEventHandler(
-            MatrixClientConfiguration(),
+            MatrixClientConfiguration().apply {
+                deleteSentOutboxMessageDelay = 10.seconds
+            },
             api,
-            possiblyEncryptEventMock,
+            listOf(roomEventDecryptionServiceMock),
             mediaServiceMock,
+            roomStore,
             roomOutboxMessageStore,
             defaultOutboxMessageMediaUploaderMappings,
             CurrentSyncState(currentSyncState),
@@ -82,7 +88,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         should("remove old outbox messages") {
             val content = RoomMessageEventContent.TextMessageEventContent("")
             val outbox1 = RoomOutboxMessage("transaction1", room, content)
-            val outbox2 = RoomOutboxMessage("transaction2", room, content, Clock.System.now() - 10.seconds)
+            val outbox2 = RoomOutboxMessage("transaction2", room, content, Clock.System.now() - 11.seconds)
             val outbox3 = RoomOutboxMessage("transaction3", room, content, Clock.System.now())
 
             roomOutboxMessageStore.update(outbox1.transactionId) { outbox1 }
@@ -150,7 +156,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
             roomOutboxMessageStore.update(message.transactionId) { message }
             val megolmEventContent =
-                EncryptedEventContent.MegolmEncryptedEventContent(
+                MegolmEncryptedMessageEventContent(
                     "cipher",
                     Key.Curve25519Key(null, "key"),
                     "device",
@@ -166,7 +172,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                     SendEventResponse(EventId("event"))
                 }
             }
-            possiblyEncryptEventMock.returnEncryptMegolm = { megolmEventContent }
+            roomEventDecryptionServiceMock.returnEncrypt = Result.success(megolmEventContent)
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 

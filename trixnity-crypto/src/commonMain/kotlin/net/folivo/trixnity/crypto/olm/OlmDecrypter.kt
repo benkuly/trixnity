@@ -1,18 +1,17 @@
 package net.folivo.trixnity.crypto.olm
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.core.Unsubscriber
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.Event
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
-
-private val log = KotlinLogging.logger {}
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 
 data class DecryptedOlmEventContainer(
-    val encrypted: Event<OlmEncryptedEventContent>,
+    val encrypted: Event<OlmEncryptedToDeviceEventContent>,
     val decrypted: DecryptedOlmEvent<*>
 )
 
@@ -21,7 +20,7 @@ typealias DecryptedOlmEventSubscriber = suspend (DecryptedOlmEventContainer) -> 
 interface OlmDecrypter {
     fun subscribe(eventSubscriber: DecryptedOlmEventSubscriber): Unsubscriber
 
-    suspend fun handleOlmEvent(event: ToDeviceEvent<OlmEncryptedEventContent>)
+    suspend fun handleOlmEvents(events: List<ToDeviceEvent<OlmEncryptedToDeviceEventContent>>)
 }
 
 class OlmDecrypterImpl(
@@ -38,14 +37,20 @@ class OlmDecrypterImpl(
     }
 
 
-    override suspend fun handleOlmEvent(event: ToDeviceEvent<OlmEncryptedEventContent>) {
-        val decryptedEvent = try {
-            olmEncryptionService.decryptOlm(event.content, event.sender)
-        } catch (e: Exception) {
-            log.error(e) { "could not decrypt $event" }
-            null
+    override suspend fun handleOlmEvents(events: List<ToDeviceEvent<OlmEncryptedToDeviceEventContent>>) =
+        coroutineScope {
+            events.groupBy { it.sender to it.content.senderKey }
+                .forEach { (_, events) ->
+                    launch {
+                        events.forEach { event ->
+                            val decryptedEvent = olmEncryptionService.decryptOlm(event).getOrNull()
+                            if (decryptedEvent != null) {
+                                eventSubscribers.value.forEach {
+                                    it(DecryptedOlmEventContainer(event, decryptedEvent))
+                                }
+                            }
+                        }
+                    }
+                }
         }
-        if (decryptedEvent != null)
-            eventSubscribers.value.forEach { it(DecryptedOlmEventContainer(event, decryptedEvent)) }
-    }
 }

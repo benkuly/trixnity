@@ -34,6 +34,11 @@ class MatrixClientConfiguration {
     var deleteRoomsOnLeave: Boolean = true
 
     /**
+     * Set the delay, after which a sent outbox message is deleted. The delay is checked each time a sync is received.
+     */
+    var deleteSentOutboxMessageDelay: Duration = 10.seconds
+
+    /**
      * Specifies how long values are kept in the cache when not used by anyone.
      */
     var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes)

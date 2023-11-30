@@ -8,7 +8,9 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.flattenValues
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.reply
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.membership
@@ -16,6 +18,7 @@ import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesMod
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.store.repository.realm.createRealmRepositoriesModule
 import net.folivo.trixnity.client.store.sender
+import net.folivo.trixnity.client.user
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.InitialStateEvent
@@ -51,31 +54,29 @@ class PerformanceIT {
                 port = synapse.firstMappedPort
             ).build()
             val prepareTestClient =
-                registerAndStartClient("client1", "user1", baseUrl, createInMemoryRepositoriesModule())
+                registerAndStartClient("prepare", "user1", baseUrl, createInMemoryRepositoriesModule())
             val exposedClient = startClient(
-                "client2", "user1", baseUrl,
+                "exposed", "user1", baseUrl,
                 repositoriesModule = createExposedRepositoriesModule(newDatabase()),
-            ) {
-                modules = createDefaultModules()
-            }
+            )
             val realmClient = startClient(
-                "client3", "user1", baseUrl,
+                "realm", "user1", baseUrl,
                 repositoriesModule = createRealmRepositoriesModule {
                     inMemory()
                     directory("build/test-db/${uuid4()}")
                 },
-            ) {
-                modules = createDefaultModules()
-            }
+            )
 
             exposedClient.client.cancelSync(true)
             realmClient.client.cancelSync(true)
+
             withContext(Dispatchers.Default.limitedParallelism(20)) {
                 repeat(50) {
                     launch {
                         val roomId = prepareTestClient.client.api.room.createRoom(
                             initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                         ).getOrThrow()
+                        prepareTestClient.client.room.getById(roomId).filterNotNull().first()
                         repeat(10) { i ->
                             prepareTestClient.client.room.sendMessage(roomId) {
                                 text(i.toString())

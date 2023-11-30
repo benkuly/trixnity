@@ -6,14 +6,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
 import net.folivo.trixnity.client.flattenNotNull
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
@@ -21,6 +22,7 @@ import net.folivo.trixnity.client.room.outbox.findUploaderOrFallback
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessage.SendError
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
+import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -29,15 +31,16 @@ import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribeOnCompletion
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger {}
 
 class OutboxMessageEventHandler(
     private val config: MatrixClientConfiguration,
     private val api: MatrixClientServerApiClient,
-    private val possiblyEncryptEvent: PossiblyEncryptEvent,
+    private val roomEventEncryptionServices: List<RoomEventEncryptionService>,
     private val mediaService: MediaService,
+    private val roomStore: RoomStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val outboxMessageMediaUploaderMappings: OutboxMessageMediaUploaderMappings,
     private val currentSyncState: CurrentSyncState,
@@ -53,7 +56,7 @@ class OutboxMessageEventHandler(
         val outboxMessages = roomOutboxMessageStore.getAll().first().mapNotNull { it.value.first() }
         val removeOutboxMessages = outboxMessages.mapNotNull {
             // a sync means, that the message must have been received. we just give the ui a bit time to update.
-            val deleteBeforeTimestamp = Clock.System.now() - 5.seconds
+            val deleteBeforeTimestamp = Clock.System.now() - config.deleteSentOutboxMessageDelay
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
                 log.debug { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
                 it.transactionId
@@ -91,6 +94,7 @@ class OutboxMessageEventHandler(
                         coroutineScope {
                             outboxMessagesGroupedByRoom.forEach { (roomId, outboxMessagesInRoom) ->
                                 launch {
+                                    withTimeoutOrNull(1.minutes) { roomStore.get(roomId).filterNotNull().first() }
                                     for (outboxMessage in outboxMessagesInRoom) {
                                         log.trace { "send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
                                         val originalContent = outboxMessage.content
@@ -117,11 +121,33 @@ class OutboxMessageEventHandler(
                                             }
                                             continue
                                         }
+                                        val contentResult = roomEventEncryptionServices.firstNotNullOfOrNull {
+                                            it.encrypt(uploadedContent, roomId)
+                                        }
+
+                                        val content = when {
+                                            contentResult == null -> {
+                                                log.warn { "cannot send message, because encryption algorithm not supported" }
+                                                roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                                                    it?.copy(sendError = SendError.EncryptionAlgorithmNotSupported)
+                                                }
+                                                continue
+                                            }
+
+                                            contentResult.isFailure -> {
+                                                log.warn(contentResult.exceptionOrNull()) { "cannot send message" }
+                                                roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                                                    it?.copy(sendError = SendError.EncryptionError(contentResult.exceptionOrNull()?.message))
+                                                }
+                                                continue
+                                            }
+
+                                            else -> contentResult.getOrThrow()
+                                        }
                                         val eventId = try {
-                                            log.debug { "encrypt and send event into $roomId" }
-                                            val content = possiblyEncryptEvent(uploadedContent, roomId).getOrThrow()
+                                            log.debug { "send event into $roomId" }
                                             api.room.sendMessageEvent(roomId, content, outboxMessage.transactionId)
-                                                .getOrThrow()
+                                                .getOrThrow() // TODO fold as soon as continue is supported in inline lambdas
                                         } catch (exception: MatrixServerException) {
                                             val sendError = when (exception.statusCode) {
                                                 HttpStatusCode.Forbidden -> SendError.NoEventPermission
@@ -134,7 +160,9 @@ class OutboxMessageEventHandler(
                                             }
                                             continue
                                         }
-                                        roomOutboxMessageStore.update(outboxMessage.transactionId) { it?.copy(sentAt = Clock.System.now()) }
+                                        roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                                            it?.copy(sentAt = Clock.System.now(), eventId = eventId)
+                                        }
                                         if (config.setOwnMessagesAsFullyRead) {
                                             try {
                                                 api.room.setReadMarkers(roomId, eventId, eventId).getOrThrow()

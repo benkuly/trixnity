@@ -12,6 +12,6 @@ class ClientOlmEncryptionServiceRequestHandler(private val api: MatrixClientServ
     override suspend fun claimKeys(oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>): Result<ClaimKeys.Response> =
         api.key.claimKeys(oneTimeKeys)
 
-    override suspend fun <C : ToDeviceEventContent> sendToDevice(events: Map<UserId, Map<String, C>>): Result<Unit> =
+    override suspend fun sendToDevice(events: Map<UserId, Map<String, ToDeviceEventContent>>): Result<Unit> =
         api.user.sendToDevice(events)
 }

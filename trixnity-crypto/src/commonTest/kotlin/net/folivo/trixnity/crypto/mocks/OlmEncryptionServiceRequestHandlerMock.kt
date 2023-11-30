@@ -16,7 +16,7 @@ class OlmEncryptionServiceRequestHandlerMock : OlmEncryptionServiceRequestHandle
 
     val sendToDeviceParams = mutableListOf<Map<UserId, Map<String, ToDeviceEventContent>>>()
     var sendToDevice: Result<Unit>? = null
-    override suspend fun <C : ToDeviceEventContent> sendToDevice(events: Map<UserId, Map<String, C>>): Result<Unit> {
+    override suspend fun sendToDevice(events: Map<UserId, Map<String, ToDeviceEventContent>>): Result<Unit> {
         sendToDeviceParams.add(events)
         return sendToDevice ?: Result.success(Unit)
     }

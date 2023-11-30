@@ -29,13 +29,13 @@ fun createKeyModule() = module {
     }
     single<EventHandler>(named<OutgoingSecretKeyRequestEventHandler>()) {
         OutgoingSecretKeyRequestEventHandler(
-            get(),
-            get(),
-            get(),
-            get(named<KeyBackupService>()),
-            get(),
-            get(),
-            get()
+            userInfo = get(),
+            api = get(),
+            olmDecrypter = get(),
+            keyBackupService = get(named<KeyBackupService>()),
+            keyStore = get(),
+            globalAccountDataStore = get(),
+            currentSyncState = get()
         )
     }
     singleOf(::KeySecretServiceImpl) { bind<KeySecretService>() }
@@ -46,6 +46,16 @@ fun createKeyModule() = module {
         named<KeyBackupService>()
     }
     single<KeyService> {
-        KeyServiceImpl(get(), get(), get(), get(), get(), get(), get(named<KeyBackupService>()), get(), get())
+        KeyServiceImpl(
+            userInfo = get(),
+            keyStore = get(),
+            olmCryptoStore = get(),
+            globalAccountDataStore = get(),
+            roomService = get(),
+            signService = get(),
+            keyBackupService = get(named<KeyBackupService>()),
+            keyTrustService = get(),
+            api = get()
+        )
     }
 }

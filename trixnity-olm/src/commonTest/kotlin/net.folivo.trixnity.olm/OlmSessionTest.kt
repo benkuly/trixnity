@@ -3,11 +3,9 @@ package net.folivo.trixnity.olm
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class OlmSessionTest {
 
     @Test
@@ -55,6 +53,65 @@ class OlmSessionTest {
                     val message3 = aliceSession.encrypt("You are so cool!")
 
                     bobSession.decrypt(message3) shouldBe "You are so cool!"
+                }
+            }
+        }
+    }
+
+    @Test
+    fun encryptIndependentOrder() = runTest {
+        freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
+            val bobIdentityKey = bobAccount.identityKeys.curve25519
+            bobAccount.generateOneTimeKeys(1)
+            val bobOneTimeKey = bobAccount.oneTimeKeys.curve25519.values.first()
+
+            freeAfter(OlmSession.createOutbound(aliceAccount, bobIdentityKey, bobOneTimeKey)) { aliceSession ->
+                val fromAlice1 = aliceSession.encrypt("from alice 1")
+                val fromAlice2 = aliceSession.encrypt("from alice 2")
+                aliceSession.hasReceivedMessage shouldBe false
+
+                freeAfter(OlmSession.createInbound(bobAccount, fromAlice1.cipherText)) { bobSession ->
+                    bobSession.decrypt(fromAlice1) shouldBe "from alice 1"
+                    bobSession.decrypt(fromAlice2) shouldBe "from alice 2"
+
+                    val fromAlice3 = aliceSession.encrypt("from alice 3")
+                    val fromBob1 = bobSession.encrypt("from bob 1")
+
+                    bobSession.decrypt(fromAlice3) shouldBe "from alice 3"
+                    aliceSession.decrypt(fromBob1) shouldBe "from bob 1"
+                }
+            }
+        }
+    }
+
+    @Test
+    fun acceptLostMessageAndWrongOrder() = runTest {
+        freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
+            val bobIdentityKey = bobAccount.identityKeys.curve25519
+            bobAccount.generateOneTimeKeys(1)
+            val bobOneTimeKey = bobAccount.oneTimeKeys.curve25519.values.first()
+
+            freeAfter(OlmSession.createOutbound(aliceAccount, bobIdentityKey, bobOneTimeKey)) { aliceSession ->
+                val fromAlice1 = aliceSession.encrypt("from alice 1")
+                aliceSession.hasReceivedMessage shouldBe false
+
+                freeAfter(OlmSession.createInbound(bobAccount, fromAlice1.cipherText)) { bobSession ->
+                    bobSession.decrypt(fromAlice1) shouldBe "from alice 1"
+
+                    val fromAlice2 = aliceSession.encrypt("from alice 2")
+                    aliceSession.encrypt("from alice 3") // lost
+                    aliceSession.encrypt("from alice 4") // lost
+                    val fromAlice5 = aliceSession.encrypt("from alice 5")
+
+                    bobSession.decrypt(fromAlice5) shouldBe "from alice 5" // wrong order
+                    bobSession.decrypt(fromAlice2) shouldBe "from alice 2"
+
+                    val fromBob1 = bobSession.encrypt("from bob 1")
+                    bobSession.encrypt("from bob 2")// lost
+                    bobSession.encrypt("from bob 3")// lost
+                    val fromBob4 = bobSession.encrypt("from bob 4")
+                    aliceSession.decrypt(fromBob4) shouldBe "from bob 4" // wrong order
+                    aliceSession.decrypt(fromBob1) shouldBe "from bob 1"
                 }
             }
         }

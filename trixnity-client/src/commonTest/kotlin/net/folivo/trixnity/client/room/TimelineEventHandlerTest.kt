@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -25,7 +26,7 @@ import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
@@ -33,7 +34,6 @@ import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.crypto.olm.DecryptionException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 
@@ -112,7 +112,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event2,
-                            content = Result.failure(DecryptionException.ValidationFailed("")),
+                            content = Result.failure(TimelineEventContentError.DecryptionTimeout),
                             roomId = room,
                             eventId = event2.id,
                             previousEventId = event1.id,
@@ -173,7 +173,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         ),
                         TimelineEvent(
                             event = event2,
-                            content = Result.failure(DecryptionException.ValidationFailed("")),
+                            content = Result.failure(TimelineEventContentError.DecryptionTimeout),
                             roomId = room,
                             eventId = event2.id,
                             previousEventId = event1.id,
@@ -234,7 +234,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 )
                 val timelineEvent2 = TimelineEvent(
                     event = event2,
-                    content = Result.failure(DecryptionException.ValidationFailed("")),
+                    content = Result.failure(TimelineEventContentError.DecryptionTimeout),
                     roomId = room,
                     eventId = event2.id,
                     previousEventId = event1.id,
@@ -533,7 +533,12 @@ class TimelineEventHandlerTest : ShouldSpec({
                 val eventId2 = EventId("\$event2")
                 val eventId3 = EventId("\$event3")
                 val encryptedEvent1 = MessageEvent(
-                    MegolmEncryptedEventContent("foobar", Key.Curve25519Key(value = "key"), "deviceId", "sessionId"),
+                    MegolmEncryptedMessageEventContent(
+                        "foobar",
+                        Key.Curve25519Key(value = "key"),
+                        "deviceId",
+                        "sessionId"
+                    ),
                     eventId1,
                     UserId("sender", "server"),
                     room,
@@ -541,7 +546,12 @@ class TimelineEventHandlerTest : ShouldSpec({
                     UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transactionId1")
                 )
                 val encryptedEvent2 = MessageEvent(
-                    MegolmEncryptedEventContent("barfoo", Key.Curve25519Key(value = "key"), "deviceId", "sessionId"),
+                    MegolmEncryptedMessageEventContent(
+                        "barfoo",
+                        Key.Curve25519Key(value = "key"),
+                        "deviceId",
+                        "sessionId"
+                    ),
                     eventId2,
                     UserId("other", "server"),
                     room,
@@ -549,7 +559,12 @@ class TimelineEventHandlerTest : ShouldSpec({
                     UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transactionId2")
                 )
                 val encryptedEvent3 = MessageEvent(
-                    MegolmEncryptedEventContent("foo", Key.Curve25519Key(value = "key"), "deviceId", "sessionId"),
+                    MegolmEncryptedMessageEventContent(
+                        "foo",
+                        Key.Curve25519Key(value = "key"),
+                        "deviceId",
+                        "sessionId"
+                    ),
                     eventId3,
                     UserId("sender", "server"),
                     room,

@@ -9,7 +9,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
@@ -118,7 +117,6 @@ class CrossSigningIT {
         withTimeout(30_000) {
             withClue("wait for client1 self verification to be NoCrossSigningEnabled") {
                 client1.verification.getSelfVerificationMethods()
-                    .onEach { println(it) } // FIXME remove
                     .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
                     .first()
             }
@@ -289,7 +287,7 @@ class CrossSigningIT {
                     .first()
             }
 
-            val bootstrap1 = withClue("bootstrap client1") {
+            withClue("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Step<Unit>>()
@@ -324,8 +322,11 @@ class CrossSigningIT {
                 client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().size shouldBe 1
                 client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().first()
                     .verify(bootstrap2.recoveryKey).getOrThrow()
-                client2.verification.getSelfVerificationMethods()
-                    .first { it == SelfVerificationMethods.AlreadyCrossSigned }
+
+                withClue("wait for client2 self verification to be AlreadyCrossSigned") {
+                    client2.verification.getSelfVerificationMethods()
+                        .first { it == SelfVerificationMethods.AlreadyCrossSigned }
+                }
             }
         }
     }
