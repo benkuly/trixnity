@@ -9,6 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
+// TODO split into two serializers (so no .copy(keyId=null) anymore)
 @Serializable(with = KeysSerializer::class)
 data class Keys(
     val keys: Set<Key>

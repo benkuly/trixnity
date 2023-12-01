@@ -4,12 +4,11 @@ import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
@@ -20,12 +19,9 @@ import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
@@ -33,6 +29,7 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import net.folivo.trixnity.core.subscribeAsFlow
+import net.folivo.trixnity.utils.*
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
@@ -196,7 +193,7 @@ class RoomServiceImpl(
     private val roomAccountDataStore: RoomAccountDataStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
-    private val roomEventDecryptionServices: List<RoomEventDecryptionService>,
+    private val roomEventEncryptionServices: List<RoomEventEncryptionService>,
     private val mediaService: MediaService,
     private val userInfo: UserInfo,
     private val timelineEventHandler: TimelineEventHandler,
@@ -225,9 +222,9 @@ class RoomServiceImpl(
     private fun TimelineEvent.canBeDecrypted(): Boolean =
         this.event is MessageEvent
                 && this.event.isEncrypted
-                && this.content == null
+                && (this.content == null || this.content.exceptionOrNull() is TimelineEventContentError.DecryptionTimeout)
 
-    private val getTimelineEventMutex = MutableStateFlow<Map<Pair<EventId, RoomId>, Mutex>>(mapOf())
+    private val getTimelineEventMutex = KeyedMutex<Pair<EventId, RoomId>>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTimelineEvent(
@@ -247,18 +244,13 @@ class RoomServiceImpl(
                                 .map { replacedByTimelineEvent ->
                                     val newContent =
                                         replacedByTimelineEvent?.content
-                                            ?.map { content ->
-                                                if (content is MessageEventContent) {
+                                            ?.mapCatching { content ->
+                                                val newContent = if (content is MessageEventContent) {
                                                     val relatesTo = content.relatesTo
                                                     if (relatesTo is RelatesTo.Replace) relatesTo.newContent
                                                     else null
                                                 } else null
-                                            }
-                                            ?.mapCatching {
-                                                if (it == null) {
-                                                    log.warn { "getTimelineEvent: could not find replacing event content for $eventId in $roomId" }
-                                                    throw IllegalStateException("replacing event did not contain replace")
-                                                } else it
+                                                newContent ?: throw TimelineEventContentError.NoContent
                                             } ?: timelineEvent.content
                                     timelineEvent.copy(content = newContent)
                                 }
@@ -268,12 +260,7 @@ class RoomServiceImpl(
             }
             .also { timelineEventFlow ->
                 launch {
-                    val key = eventId to roomId
-                    val mutex = getTimelineEventMutex.updateAndGet {
-                        if (it.containsKey(key)) it else it + (key to Mutex())
-                    }[key]
-                    checkNotNull(mutex)
-                    mutex.withLock {
+                    getTimelineEventMutex.withLock(eventId to roomId) {
                         val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(cfg.fetchTimeout) {
                             val lastEventId = roomStore.get(roomId).first()?.lastEventId
                             if (lastEventId != null) {
@@ -293,10 +280,18 @@ class RoomServiceImpl(
                             log.warn { "getTimelineEvent: could not find TimelineEvent $eventId in store or by fetching (timeout=${cfg.fetchTimeout})" }
                         if (timelineEvent?.canBeDecrypted() == true) {
                             log.trace { "getTimelineEvent: try decrypt ${timelineEvent.eventId}" }
-                            val decryptedEventContent = withTimeoutOrNull(cfg.decryptionTimeout) {
-                                roomEventDecryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
-                                    ?: Result.failure(TimelineEventDecryptionFailed.AlgorithmNotSupported)
-                            } ?: Result.failure(TimelineEventDecryptionFailed.Timeout)
+                            val decryptedEventContent =
+                                withTimeoutOrNull(cfg.decryptionTimeout) {
+                                    val decryptionResult =
+                                        roomEventEncryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
+                                    if (decryptionResult != null) {
+                                        try {
+                                            Result.success(decryptionResult.getOrThrow())
+                                        } catch (exception: Exception) {
+                                            Result.failure(TimelineEventContentError.DecryptionError(exception))
+                                        }
+                                    } else Result.failure(TimelineEventContentError.DecryptionAlgorithmNotSupported)
+                                } ?: Result.failure(TimelineEventContentError.DecryptionTimeout)
                             roomTimelineStore.update(
                                 eventId,
                                 roomId,
@@ -307,7 +302,6 @@ class RoomServiceImpl(
                                 else oldEvent
                             }
                         }
-                        getTimelineEventMutex.update { it - key }
                     }
                 }
             }
@@ -567,7 +561,7 @@ class RoomServiceImpl(
         builder: suspend MessageBuilder.() -> Unit
     ): String {
         val content = MessageBuilder(roomId, this, mediaService, userInfo.userId).build(builder)
-        requireNotNull(content)
+        requireNotNull(content) { "you must add some sort of content for sending a message" }
         val transactionId = uuid4().toString()
         roomOutboxMessageStore.update(transactionId) {
             RoomOutboxMessage(

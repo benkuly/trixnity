@@ -74,7 +74,7 @@ class IncomingRoomKeyRequestEventHandler(
                     olmStore.getInboundMegolmSession(requestBody.sessionId, requestBody.roomId).first()
                 if (foundInboundMegolmSession != null) {
                     log.info { "send incoming room key request answer (${request.requestId}) to device $requestingDeviceId" }
-                    val encryptedAnswer = try {
+                    val encryptedAnswer =
                         olmEncryptionService.encryptOlm(
                             ForwardedRoomKeyEventContent(
                                 roomId = foundInboundMegolmSession.roomId,
@@ -91,11 +91,7 @@ class IncomingRoomKeyRequestEventHandler(
                                 algorithm = EncryptionAlgorithm.Megolm,
                             ),
                             ownUserId, requestingDeviceId
-                        )
-                    } catch (exception: Exception) {
-                        log.warn(exception) { "could not encrypt answer for room key request (${request}) to device $requestingDeviceId" }
-                        null
-                    }
+                        ).getOrNull()
                     if (encryptedAnswer != null)
                         api.user.sendToDevice(
                             mapOf(ownUserId to mapOf(requestingDeviceId to encryptedAnswer))

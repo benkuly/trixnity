@@ -8,18 +8,17 @@ import org.koin.dsl.module
 fun createVerificationModule() = module {
     single {
         VerificationServiceImpl(
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
+            userInfo = get(),
+            api = get(),
+            keyStore = get(),
+            globalAccountDataStore = get(),
+            olmDecrypter = get(),
+            olmEncryptionService = get(),
+            roomService = get(),
+            keyService = get(),
+            keyTrustService = get(),
+            keySecretService = get(),
+            currentSyncState = get(),
         )
     }.apply {
         bind<VerificationService>()

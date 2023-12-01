@@ -10,8 +10,8 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 
 @Serializable
@@ -20,6 +20,7 @@ data class RoomOutboxMessage<T : MessageEventContent>(
     val roomId: RoomId,
     val content: T,
     val sentAt: Instant? = null,
+    val eventId: EventId? = null,
     val sendError: SendError? = null,
     val keepMediaInCache: Boolean = true,
 ) {
@@ -61,12 +62,31 @@ data class RoomOutboxMessage<T : MessageEventContent>(
         ) : SendError
 
         /**
-         * The [EventContent] is not supported. You must register a media uploader for it.
+         * There was a failure in encrypting the event.
          */
+        @Serializable
+        @SerialName("encryption_error")
+        data class EncryptionError(val reason: String? = null) : SendError
+
+        /**
+         * The encryption algorithm is not supported.
+         */
+        @Serializable
+        @SerialName("encryption_algorithm_not_supported")
+        data object EncryptionAlgorithmNotSupported : SendError
+
+        /**
+         * The room does not exist locally. You should wait that a created room exist locally before sending messages.
+         */
+        @Serializable
+        @SerialName("room_not_found_locally")
+        data object RoomDataNotFoundLocally : SendError
+
         @Serializable
         @SerialName("unknown")
         data class Unknown(
-            val errorResponse: @Serializable(with = ErrorResponseSerializer::class) ErrorResponse
+            val errorResponse: @Serializable(with = ErrorResponseSerializer::class) ErrorResponse? = null,
+            val message: String? = null,
         ) : SendError
     }
 }

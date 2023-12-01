@@ -20,8 +20,8 @@ import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
+import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
@@ -29,11 +29,12 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService.EncryptOlmError
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -137,6 +138,10 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             keyTrust = KeyTrustServiceMock(),
             keyStore = keyStore,
         )
+        val encrypted = OlmEncryptedToDeviceEventContent(
+            ciphertext = mapOf(),
+            senderKey = Curve25519Key(null, "key")
+        )
         cut.startLifecycle(this)
         cut.cancel()
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
@@ -161,7 +166,12 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         val cancelEvent = VerificationCancelEventContent(User, "u", null, "t")
         olmDecrypterMock.eventSubscribers.first().first()(
             DecryptedOlmEventContainer(
-                ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bob),
+                ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
+                        mapOf(),
+                        Curve25519Key(null, "")
+                    ), bob
+                ),
                 DecryptedOlmEvent(cancelEvent, bob, keysOf(), alice, keysOf())
             )
         )
@@ -169,11 +179,11 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
     should("send verification step and encrypt it") {
-        val encrypted = OlmEncryptedEventContent(
+        val encrypted = OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
             senderKey = Curve25519Key(null, "key")
         )
-        olmEncryptionServiceMock.returnEncryptOlm = { encrypted }
+        olmEncryptionServiceMock.returnEncryptOlm = Result.success(encrypted)
 
         var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
         apiConfig.endpoints {
@@ -200,7 +210,8 @@ class ActiveDeviceVerificationTest : ShouldSpec({
                 sendToDeviceEvents = it.messages
             }
         }
-        olmEncryptionServiceMock.returnEncryptOlm = { throw OlmLibraryException(message = "hu") }
+        olmEncryptionServiceMock.returnEncryptOlm =
+            Result.failure(EncryptOlmError.OlmLibraryError(OlmLibraryException(message = "hu")))
         createCut()
         cut.startLifecycle(this)
         cut.cancel()
@@ -233,11 +244,11 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         ).getOrThrow()
     }
     should("stop lifecycle, when timed out") {
-        val encrypted = OlmEncryptedEventContent(
+        val encrypted = OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
             senderKey = Curve25519Key(null, "key")
         )
-        olmEncryptionServiceMock.returnEncryptOlm = { encrypted }
+        olmEncryptionServiceMock.returnEncryptOlm = Result.success(encrypted)
         apiConfig.endpoints {
             matrixJsonEndpoint(
                 SendToDevice("m.room.encrypted", "*"),
@@ -267,7 +278,8 @@ class ActiveDeviceVerificationTest : ShouldSpec({
                 sendToDeviceEvents = it.messages
             }
         }
-        olmEncryptionServiceMock.returnEncryptOlm = { throw OlmLibraryException(message = "hu") }
+        olmEncryptionServiceMock.returnEncryptOlm =
+            Result.failure(EncryptOlmError.OlmLibraryError(OlmLibraryException(message = "hu")))
         cut = ActiveDeviceVerification(
             request = VerificationRequestEventContent(
                 aliceDevice,

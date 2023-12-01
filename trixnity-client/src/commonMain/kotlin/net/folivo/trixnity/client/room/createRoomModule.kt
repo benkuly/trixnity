@@ -19,9 +19,18 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<DirectRoomEventHandler>()
     }
-    singleOf(::OutboxMessageEventHandler) {
-        bind<EventHandler>()
-        named<OutboxMessageEventHandler>()
+    single<EventHandler>(named<OutboxMessageEventHandler>()) {
+        OutboxMessageEventHandler(
+            config = get(),
+            api = get(),
+            roomEventEncryptionServices = getAll(),
+            mediaService = get(),
+            roomStore = get(),
+            roomOutboxMessageStore = get(),
+            outboxMessageMediaUploaderMappings = get(),
+            currentSyncState = get(),
+            tm = get()
+        )
     }
     singleOf(::RoomAccountDataEventHandler) {
         bind<EventHandler>()
@@ -52,30 +61,37 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<TimelineEventHandlerImpl>()
     }
-    single<RoomEventDecryptionService>(named<MegolmRoomEventDecryptionService>()) {
-        MegolmRoomEventDecryptionService(
-            get(),
-            get(named<KeyBackupService>()),
-            get(named<OutgoingRoomKeyRequestEventHandler>()),
-            get()
+    single<RoomEventEncryptionService>(named<MegolmRoomEventEncryptionService>()) {
+        MegolmRoomEventEncryptionService(
+            roomStore = get(),
+            userService = get(),
+            roomStateStore = get(),
+            olmCryptoStore = get(),
+            keyBackupService = get(named<KeyBackupService>()),
+            outgoingRoomKeyRequestEventHandler = get(named<OutgoingRoomKeyRequestEventHandler>()),
+            olmEncryptionService = get(),
         )
+    }
+    singleOf(::UnencryptedRoomEventEncryptionService) {
+        bind<RoomEventEncryptionService>()
+        named<UnencryptedRoomEventEncryptionService>()
     }
     single<RoomService> {
         RoomServiceImpl(
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            getAll(),
-            get(),
-            get(),
-            get(named<TimelineEventHandlerImpl>()),
-            get(named<TypingEventHandler>()),
-            get(),
-            get(),
+            api = get(),
+            roomStore = get(),
+            roomUserStore = get(),
+            roomStateStore = get(),
+            roomAccountDataStore = get(),
+            roomTimelineStore = get(),
+            roomOutboxMessageStore = get(),
+            roomEventEncryptionServices = getAll(),
+            mediaService = get(),
+            userInfo = get(),
+            timelineEventHandler = get(named<TimelineEventHandlerImpl>()),
+            typingEventHandler = get(named<TypingEventHandler>()),
+            currentSyncState = get(),
+            scope = get(),
         )
     }
 }

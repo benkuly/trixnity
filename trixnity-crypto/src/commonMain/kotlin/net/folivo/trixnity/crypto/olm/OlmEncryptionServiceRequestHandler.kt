@@ -10,7 +10,7 @@ interface OlmEncryptionServiceRequestHandler {
         oneTimeKeys: Map<UserId, Map<String, KeyAlgorithm>>,
     ): Result<ClaimKeys.Response>
 
-    suspend fun <C : ToDeviceEventContent> sendToDevice(
-        events: Map<UserId, Map<String, C>>,
+    suspend fun sendToDevice(
+        events: Map<UserId, Map<String, ToDeviceEventContent>>,
     ): Result<Unit>
 }

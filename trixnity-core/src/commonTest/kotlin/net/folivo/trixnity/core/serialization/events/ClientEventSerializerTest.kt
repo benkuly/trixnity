@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedState
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.room.*
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -209,7 +210,7 @@ class ClientEventSerializerTest {
     @Test
     fun shouldSerializeMessageEventWithRelatesToAndDontCopyNewContentWhenEncrypted() {
         val content = MessageEvent(
-            EncryptedEventContent.MegolmEncryptedEventContent(
+            MegolmEncryptedMessageEventContent(
                 "ciphercipher",
                 sessionId = "sessionId",
                 relatesTo = RelatesTo.Replace(
@@ -1117,7 +1118,7 @@ class ClientEventSerializerTest {
     @Test
     fun shouldSerializeEncryptedEventWithRelatesTo() {
         val input = MessageEvent(
-            EncryptedEventContent.MegolmEncryptedEventContent(
+            MegolmEncryptedMessageEventContent(
                 ciphertext = "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
                 senderKey = Key.Curve25519Key(null, "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
                 deviceId = "GNAHNGTKNL",
@@ -1193,7 +1194,7 @@ class ClientEventSerializerTest {
         val result = json.decodeFromString(serializer, input)
         assertEquals(
             MessageEvent(
-                EncryptedEventContent.MegolmEncryptedEventContent(
+                MegolmEncryptedMessageEventContent(
                     ciphertext = "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
                     senderKey = Key.Curve25519Key(null, "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
                     deviceId = "GNAHNGTKNL",

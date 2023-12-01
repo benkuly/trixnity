@@ -187,6 +187,7 @@ internal open class ObservableCacheBase<K, V>(
             CacheValue.Value(newValue)
         }.valueOrNull()
         if (removeFromCacheOnNull && updater != null && newValue == null) {
+            log.trace { "$name: remove value from cache with key $key because it is stale and is allowed to remove (will never be not-null again)" }
             values.remove(key, true)
         }
         return cacheEntry.value.filterIsInstance<CacheValue.Value<V?>>().map { it.value }

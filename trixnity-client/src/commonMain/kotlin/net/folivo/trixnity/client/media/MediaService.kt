@@ -22,7 +22,6 @@ import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.decryptAes256Ctr
 import net.folivo.trixnity.crypto.core.encryptAes256Ctr
 import net.folivo.trixnity.crypto.core.sha256
-import net.folivo.trixnity.crypto.olm.DecryptionException
 import net.folivo.trixnity.utils.*
 
 private val log = KotlinLogging.logger {}
@@ -105,9 +104,10 @@ class MediaServiceImpl(
                         api.media.download(uri, progress = progress).saveMedia(uri, saveToCache) {
                             val sha256ByteFlow = sha256()
                             sha256ByteFlow.onCompletion {
-                                if (sha256ByteFlow.hash.value != sha256Hash) {
+                                val expectedHash = sha256ByteFlow.hash.value
+                                if (expectedHash != sha256Hash) {
                                     mediaStore.deleteMedia(uri)
-                                    throw DecryptionException.ValidationFailed("could not validate media due to different hashes. Our hash: ${sha256ByteFlow.hash.value}, their hash: $sha256Hash")
+                                    throw MediaValidationException(expectedHash, sha256Hash)
                                 }
                             }
                         }
@@ -136,7 +136,7 @@ class MediaServiceImpl(
         saveToCache: Boolean
     ): Result<ByteArrayFlow> = kotlin.runCatching {
         val originalHash = encryptedFile.hashes["sha256"]
-            ?: throw DecryptionException.ValidationFailed("missing hash for media")
+            ?: throw MediaValidationException(null, null)
         val media = getMedia(encryptedFile.url, saveToCache, originalHash, progress).getOrThrow()
         media.decryptAes256Ctr(
             initialisationVector = encryptedFile.initialisationVector.decodeUnpaddedBase64Bytes(),

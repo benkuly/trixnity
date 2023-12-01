@@ -9,15 +9,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
-import net.folivo.trixnity.client.mocks.RoomEventDecryptionServiceMock
+import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.ReactionEventContent
@@ -39,7 +37,7 @@ class TimelineEventAggregationTest : ShouldSpec({
     lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
     lateinit var scope: CoroutineScope
     lateinit var mediaServiceMock: MediaServiceMock
-    lateinit var roomEventDecryptionServiceMock: RoomEventDecryptionServiceMock
+    lateinit var roomEventDecryptionServiceMock: RoomEventEncryptionServiceMock
     val json = createMatrixEventJson()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
@@ -55,7 +53,7 @@ class TimelineEventAggregationTest : ShouldSpec({
         roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
 
         mediaServiceMock = MediaServiceMock()
-        roomEventDecryptionServiceMock = RoomEventDecryptionServiceMock()
+        roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock()
         val (api, _) = mockMatrixClientServerApiClient(json)
         cut = RoomServiceImpl(
             api,
