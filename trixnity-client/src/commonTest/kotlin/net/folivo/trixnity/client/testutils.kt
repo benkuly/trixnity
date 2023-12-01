@@ -23,7 +23,8 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
 
-fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.replace(": ", ":").trim() }
+fun String.trimToFlatJson() =
+    this.trimIndent().lines().filter { it.isNotEmpty() }.joinToString("") { it.replace(": ", ":").trim() }
 
 val simpleRoom = Room(RoomId("room", "server"), lastEventId = EventId("\$event"))
 val simpleUserInfo =

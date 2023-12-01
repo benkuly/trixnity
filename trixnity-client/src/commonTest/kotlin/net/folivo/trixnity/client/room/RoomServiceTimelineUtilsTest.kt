@@ -76,6 +76,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             mediaServiceMock,
             simpleUserInfo,
             timelineEventHandlerMock,
+            MatrixClientConfiguration(),
             TypingEventHandler(api),
             CurrentSyncState(currentSyncState),
             scope

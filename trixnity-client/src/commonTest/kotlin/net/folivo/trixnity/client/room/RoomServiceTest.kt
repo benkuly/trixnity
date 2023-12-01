@@ -80,6 +80,7 @@ class RoomServiceTest : ShouldSpec({
             mediaServiceMock,
             simpleUserInfo,
             TimelineEventHandlerMock(),
+            MatrixClientConfiguration(),
             TypingEventHandler(api),
             CurrentSyncState(currentSyncState),
             scope

@@ -38,39 +38,41 @@ class EventContentSerializer<T : EventContent>(
 }
 
 // TODO hopefully a new spec removes the m.new_content (m.replace) hack
-class MessageEventContentSerializer<T : MessageEventContent>(
+class MessageEventContentSerializer(
     private val type: String,
-    baseSerializer: KSerializer<T>,
-) : KSerializer<T> {
+    baseSerializer: KSerializer<out MessageEventContent>,
+) : KSerializer<MessageEventContent> {
     override val descriptor = buildClassSerialDescriptor("MessageEventContentSerializer-$type")
 
-    private val serializer = NewContentToRelatesToSerializer(type, baseSerializer)
+    @Suppress("UNCHECKED_CAST")
+    private val serializer = NewContentToRelatesToSerializer(type, baseSerializer as KSerializer<MessageEventContent>)
 
-    override fun deserialize(decoder: Decoder): T {
+    override fun deserialize(decoder: Decoder): MessageEventContent {
         require(decoder is JsonDecoder)
         return decoder.json.tryDeserializeOrElse(
             serializer,
             decoder.decodeJsonElement(),
-            {
-                @Suppress("UNCHECKED_CAST")
-                RedactedEventContentSerializer(type) as KSerializer<out T>
-            },
+            { RedactedEventContentSerializer(type) },
         ) {
             log.warn(it) { "could not deserialize event content of type $type" }
-            @Suppress("UNCHECKED_CAST")
-            UnknownEventContentSerializer(type) as KSerializer<out T>
+            UnknownEventContentSerializer(type)
         }
     }
 
-    override fun serialize(encoder: Encoder, value: T) {
+    override fun serialize(encoder: Encoder, value: MessageEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(canonicalJson(encoder.json.encodeToJsonElement(serializer, value)))
+        @Suppress("UNCHECKED_CAST")
+        encoder.encodeJsonElement(
+            canonicalJson(
+                encoder.json.encodeToJsonElement(serializer as KSerializer<MessageEventContent>, value)
+            )
+        )
     }
 
-    class NewContentToRelatesToSerializer<T : MessageEventContent>(
+    class NewContentToRelatesToSerializer(
         val type: String,
-        baseSerializer: KSerializer<T>
-    ) : JsonTransformingSerializer<T>(baseSerializer) {
+        baseSerializer: KSerializer<MessageEventContent>
+    ) : JsonTransformingSerializer<MessageEventContent>(baseSerializer) {
         override fun transformDeserialize(element: JsonElement): JsonElement {
             if (element !is JsonObject) return element
             val newContent = element["m.new_content"] ?: return element
@@ -150,30 +152,31 @@ internal class ContextualStateEventContentSerializer(
     }
 }
 
-class StateEventContentSerializer<T : StateEventContent>(
+class StateEventContentSerializer(
     private val type: String,
-    private val baseSerializer: KSerializer<T>,
-) : KSerializer<T> {
+    private val baseSerializer: KSerializer<out StateEventContent>,
+) : KSerializer<StateEventContent> {
     override val descriptor = buildClassSerialDescriptor("StateEventContentSerializer-$type")
 
-    override fun deserialize(decoder: Decoder): T {
+    override fun deserialize(decoder: Decoder): StateEventContent {
         require(decoder is JsonDecoder)
         return decoder.json.tryDeserializeOrElse(
             baseSerializer,
             decoder.decodeJsonElement(),
-            {
-                @Suppress("UNCHECKED_CAST")
-                RedactedEventContentSerializer(type) as KSerializer<out T>
-            },
+            { RedactedEventContentSerializer(type) },
         ) {
             log.warn(it) { "could not deserialize event content of type $type" }
-            @Suppress("UNCHECKED_CAST")
-            UnknownEventContentSerializer(type) as KSerializer<out T>
+            UnknownEventContentSerializer(type)
         }
     }
 
-    override fun serialize(encoder: Encoder, value: T) {
+    override fun serialize(encoder: Encoder, value: StateEventContent) {
         require(encoder is JsonEncoder)
-        encoder.encodeJsonElement(canonicalJson(encoder.json.encodeToJsonElement(baseSerializer, value)))
+        @Suppress("UNCHECKED_CAST")
+        encoder.encodeJsonElement(
+            canonicalJson(
+                encoder.json.encodeToJsonElement(baseSerializer as KSerializer<StateEventContent>, value)
+            )
+        )
     }
 }

@@ -1,6 +1,7 @@
 package net.folivo.trixnity.crypto.olm
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DateTimeUnit.Companion.MILLISECOND
@@ -181,7 +182,7 @@ class OlmEncryptionServiceImpl(
         userId: UserId,
         deviceId: String,
         forceNewSession: Boolean,
-    ): Result<OlmEncryptedToDeviceEventContent> = runCatching {
+    ): Result<OlmEncryptedToDeviceEventContent> = runCatchingCancellationAware {
         val identityKey = store.findCurve25519Key(userId, deviceId)
             ?: throw EncryptOlmError.KeyNotFound(KeyAlgorithm.Curve25519)
         val signingKey = store.findEd25519Key(userId, deviceId)
@@ -304,7 +305,7 @@ class OlmEncryptionServiceImpl(
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun decryptOlm(
         event: ClientEvent.ToDeviceEvent<OlmEncryptedToDeviceEventContent>,
-    ): Result<DecryptedOlmEvent<*>> = runCatching {
+    ): Result<DecryptedOlmEvent<*>> = runCatchingCancellationAware {
         log.debug { "start decrypt olm event $event" }
         val encryptedContent = event.content
         val userId = event.sender
@@ -464,7 +465,7 @@ class OlmEncryptionServiceImpl(
         content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
-    ): Result<MegolmEncryptedMessageEventContent> = runCatching {
+    ): Result<MegolmEncryptedMessageEventContent> = runCatchingCancellationAware {
         val rotationPeriodMs = settings.rotationPeriodMs
         val rotationPeriodMsgs = settings.rotationPeriodMsgs
 
@@ -588,7 +589,7 @@ class OlmEncryptionServiceImpl(
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun decryptMegolm(
         encryptedEvent: RoomEvent<MegolmEncryptedMessageEventContent>
-    ): Result<DecryptedMegolmEvent<*>> = runCatching {
+    ): Result<DecryptedMegolmEvent<*>> = runCatchingCancellationAware {
         val roomId = encryptedEvent.roomId
         val encryptedContent = encryptedEvent.content
         val sessionId = encryptedContent.sessionId
@@ -656,5 +657,14 @@ class OlmEncryptionServiceImpl(
             if (relatesTo is RelatesTo.Replace) relatesTo.copy(newContent = null)
             else relatesTo
         } else null
+
+    private inline fun <T, R> T.runCatchingCancellationAware(block: T.() -> R): Result<R> {
+        return try {
+            Result.success(block())
+        } catch (e: Throwable) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
 }
 
