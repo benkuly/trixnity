@@ -2,7 +2,9 @@ package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import net.folivo.trixnity.client.key.KeyBackupService
 import net.folivo.trixnity.client.key.OutgoingRoomKeyRequestEventHandler
 import net.folivo.trixnity.client.store.*
@@ -16,6 +18,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
@@ -33,7 +36,9 @@ class MegolmRoomEventEncryptionService(
         roomId: RoomId,
     ): Result<MessageEventContent>? {
         if (roomStore.get(roomId).first()?.encrypted != true) return null
-        val encryptionEventContent = roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first()?.content
+        val encryptionEventContent = withTimeoutOrNull(30.seconds) {
+            roomStateStore.getByStateKey<EncryptionEventContent>(roomId).filterNotNull().first().content
+        }
         if (encryptionEventContent?.algorithm != EncryptionAlgorithm.Megolm) return null
         if (content is ReactionEventContent) return Result.success(content)
 
@@ -48,7 +53,9 @@ class MegolmRoomEventEncryptionService(
         val eventId = event.id
 
         if (roomStore.get(roomId).first()?.encrypted != true) return null
-        val encryptionEventContent = roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first()?.content
+        val encryptionEventContent = withTimeoutOrNull(30.seconds) {
+            roomStateStore.getByStateKey<EncryptionEventContent>(roomId).filterNotNull().first().content
+        }
         if (encryptionEventContent?.algorithm != EncryptionAlgorithm.Megolm) return null
         if (content !is MegolmEncryptedMessageEventContent) return null
 

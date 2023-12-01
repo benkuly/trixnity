@@ -76,7 +76,6 @@ class PerformanceIT {
                         val roomId = prepareTestClient.client.api.room.createRoom(
                             initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                         ).getOrThrow()
-                        prepareTestClient.client.room.getById(roomId).filterNotNull().first()
                         repeat(10) { i ->
                             prepareTestClient.client.room.sendMessage(roomId) {
                                 text(i.toString())

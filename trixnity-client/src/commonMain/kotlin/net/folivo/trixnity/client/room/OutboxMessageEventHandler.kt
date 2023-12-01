@@ -31,7 +31,7 @@ import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribeOnCompletion
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
@@ -94,9 +94,19 @@ class OutboxMessageEventHandler(
                         coroutineScope {
                             outboxMessagesGroupedByRoom.forEach { (roomId, outboxMessagesInRoom) ->
                                 launch {
-                                    withTimeoutOrNull(1.minutes) { roomStore.get(roomId).filterNotNull().first() }
+                                    val roomDataNotFoundLocally = withTimeoutOrNull(30.seconds) {
+                                        // RoomEventEncryptionService may need this
+                                        roomStore.get(roomId).filterNotNull().first()
+                                    } == null
                                     for (outboxMessage in outboxMessagesInRoom) {
                                         log.trace { "send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
+                                        if (roomDataNotFoundLocally) {
+                                            log.warn { "cannot send message, because room not found locally" }
+                                            roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                                                it?.copy(sendError = SendError.RoomDataNotFoundLocally)
+                                            }
+                                            continue
+                                        }
                                         val originalContent = outboxMessage.content
                                         val uploader =
                                             outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)
