@@ -82,13 +82,17 @@ data class TimelineEvent(
     }
 
     sealed interface TimelineEventContentError {
-        data object DecryptionTimeout : TimelineEventContentError, RuntimeException()
-        data object DecryptionAlgorithmNotSupported : TimelineEventContentError, RuntimeException()
+        data object DecryptionTimeout : TimelineEventContentError,
+            RuntimeException("timeout while decrypting TimelineEvent")
+
+        data object DecryptionAlgorithmNotSupported : TimelineEventContentError,
+            RuntimeException("algorithm not supported for decrypting event")
+
         data class DecryptionError(
             val error: Throwable,
-        ) : TimelineEventContentError, RuntimeException(error)
+        ) : TimelineEventContentError, RuntimeException("error while decrypting TimelineEvent", error)
 
-        data object NoContent : TimelineEventContentError, RuntimeException()
+        data object NoContent : TimelineEventContentError, RuntimeException("no content found to replace TimelineEvent")
     }
 }
 
