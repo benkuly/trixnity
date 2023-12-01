@@ -17,6 +17,14 @@ class MessageBuilder(
 ) {
     var contentBuilder: suspend (relatesTo: RelatesTo?, mentions: Mentions?, newContentMentions: Mentions?) -> MessageEventContent? =
         { _, _, _ -> null }
+
+    /**
+     * This allows to set a [contentBuilder], that does not consider [RelatesTo] or [Mentions].
+     */
+    fun content(content: MessageEventContent) {
+        contentBuilder = { _, _, _ -> content }
+    }
+
     var relatesTo: RelatesTo? = null
     var mentions: Mentions? = Mentions() // empty to enable general m.mentions feature, even if there is no mention
 

@@ -24,7 +24,7 @@ data class TimelineEvent(
      * - event is encrypted
      *     - not yet decrypted -> null
      *     - successfully decrypted -> Result.Success
-     *     - failure in decryption -> Result.Failure
+     *     - failure in decryption -> Result.Failure (contains TimelineEventContentError)
      *
      *  The content may be replaced by another event.
      */
@@ -79,6 +79,16 @@ data class TimelineEvent(
 
         fun removeGapBefore() = batchAfter?.let { GapAfter(it) }
         fun removeGapAfter() = batchBefore?.let { GapBefore(it) }
+    }
+
+    sealed interface TimelineEventContentError {
+        data object DecryptionTimeout : TimelineEventContentError, RuntimeException()
+        data object DecryptionAlgorithmNotSupported : TimelineEventContentError, RuntimeException()
+        data class DecryptionError(
+            val error: Throwable,
+        ) : TimelineEventContentError, RuntimeException(error)
+
+        data object NoContent : TimelineEventContentError, RuntimeException()
     }
 }
 

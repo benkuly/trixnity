@@ -7,7 +7,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
-import net.folivo.trixnity.client.mocks.RoomEventDecryptionServiceMock
+import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -22,7 +22,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import net.folivo.trixnity.core.model.keys.Key
@@ -47,7 +47,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var mediaServiceMock: MediaServiceMock
-    lateinit var roomEventDecryptionServiceMock: RoomEventDecryptionServiceMock
+    lateinit var roomEventDecryptionServiceMock: RoomEventEncryptionServiceMock
     lateinit var timelineEventHandlerMock: TimelineEventHandlerMock
     val json = createMatrixEventJson()
     val currentSyncState = MutableStateFlow(SyncState.RUNNING)
@@ -64,7 +64,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
 
         mediaServiceMock = MediaServiceMock()
-        roomEventDecryptionServiceMock = RoomEventDecryptionServiceMock(true)
+        roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock(true)
         timelineEventHandlerMock = TimelineEventHandlerMock()
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
@@ -86,9 +86,9 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         scope.cancel()
     }
 
-    fun encryptedEvent(i: Long = 24): MessageEvent<MegolmEncryptedEventContent> {
+    fun encryptedEvent(i: Long = 24): MessageEvent<MegolmEncryptedMessageEventContent> {
         return MessageEvent(
-            MegolmEncryptedEventContent(
+            MegolmEncryptedMessageEventContent(
                 ciphertext = "cipher $i",
                 deviceId = "deviceId",
                 sessionId = "senderId",

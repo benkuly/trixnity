@@ -18,8 +18,8 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key
@@ -277,7 +277,7 @@ class UsersApiClientTest {
                             sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
                             algorithm = Megolm
                         ),
-                        "ABLBEANAAG" to EncryptedEventContent.OlmEncryptedEventContent(
+                        "ABLBEANAAG" to OlmEncryptedToDeviceEventContent(
                             ciphertext = mapOf(
                                 "abc" to CiphertextInfo(
                                     "body",
@@ -365,7 +365,7 @@ class UsersApiClientTest {
                         sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
                         algorithm = Megolm
                     ),
-                    "ABLBEANAAG" to EncryptedEventContent.OlmEncryptedEventContent(
+                    "ABLBEANAAG" to OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
                             "abc" to CiphertextInfo(
                                 "body",

@@ -13,9 +13,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
-import net.folivo.trixnity.client.mocks.RoomEventDecryptionServiceMock
+import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.core.model.EventId
@@ -29,14 +30,14 @@ import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.ServerAggregation
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.crypto.olm.DecryptionException
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
@@ -54,7 +55,7 @@ class RoomServiceTest : ShouldSpec({
     lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
     lateinit var scope: CoroutineScope
     lateinit var mediaServiceMock: MediaServiceMock
-    lateinit var roomEventDecryptionServiceMock: RoomEventDecryptionServiceMock
+    lateinit var roomEventDecryptionServiceMock: RoomEventEncryptionServiceMock
     val json = createMatrixEventJson()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
@@ -70,7 +71,7 @@ class RoomServiceTest : ShouldSpec({
         roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
 
         mediaServiceMock = MediaServiceMock()
-        roomEventDecryptionServiceMock = RoomEventDecryptionServiceMock()
+        roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock()
         val (api, _) = mockMatrixClientServerApiClient(json)
         cut = RoomServiceImpl(
             api,
@@ -115,7 +116,7 @@ class RoomServiceTest : ShouldSpec({
         val eventId = EventId("\$event1")
         val session = "SESSION"
         val senderKey = Key.Curve25519Key(null, "senderKey")
-        val encryptedEventContent = MegolmEncryptedEventContent(
+        val encryptedEventContent = MegolmEncryptedMessageEventContent(
             "ciphertext", senderKey, "SENDER", session
         )
         val encryptedTimelineEvent = TimelineEvent(
@@ -190,7 +191,7 @@ class RoomServiceTest : ShouldSpec({
                         content = Result.success(TextMessageEventContent("hi"))
                     ),
                     "with encryption error" to encryptedTimelineEvent.copy(
-                        content = Result.failure(DecryptionException.ValidationFailed(""))
+                        content = Result.failure(TimelineEventContentError.DecryptionTimeout)
                     ),
                     "without RoomEvent" to encryptedTimelineEvent.copy(
                         event = nameEvent(24)
@@ -215,7 +216,7 @@ class RoomServiceTest : ShouldSpec({
         context("event can be decrypted") {
             should("decrypt event") {
                 val expectedDecryptedEvent = TextMessageEventContent("decrypted")
-                roomEventDecryptionServiceMock.returnDecrypt = { Result.success(expectedDecryptedEvent) }
+                roomEventDecryptionServiceMock.returnDecrypt = Result.success(expectedDecryptedEvent)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
                 val result = cut.getTimelineEvent(room, eventId)
                     .first { it?.content?.getOrNull() != null }
@@ -227,38 +228,43 @@ class RoomServiceTest : ShouldSpec({
             }
             should("decrypt event only once") {
                 val expectedDecryptedEvent = TextMessageEventContent("decrypted")
-                roomEventDecryptionServiceMock.returnDecrypt = { Result.success(expectedDecryptedEvent) }
+                roomEventDecryptionServiceMock.returnDecrypt = Result.success(expectedDecryptedEvent)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                (0..99).map { i ->
+                (1..300).map {
                     async {
                         cut.getTimelineEvent(room, eventId)
-                            .onEach { "$i ${it?.content == null} " }
                             .first { it?.content?.getOrNull() != null }
                     }
                 }.awaitAll()
                 roomEventDecryptionServiceMock.decryptCounter shouldBe 1
             }
             should("timeout when decryption takes too long") {
-                roomEventDecryptionServiceMock.returnDecrypt = {
-                    delay(10.seconds)
-                    null
-                }
+                roomEventDecryptionServiceMock.decryptDelay = 10.seconds
+                roomEventDecryptionServiceMock.returnDecrypt = null
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = async { cut.getTimelineEvent(room, eventId) { decryptionTimeout = ZERO }.first() }
-                // await would suspend infinite, when there is INFINITE timeout, because the coroutine spawned within async would wait for megolm keys
-                result.await() shouldBe encryptedTimelineEvent
-                result.job.children.count() shouldBe 0
+                val result = async { cut.getTimelineEvent(room, eventId) { decryptionTimeout = ZERO }.collect() }
+                result.job.children.count() shouldBe 0 // there are no decryption jobs
+                result.cancel()
+            }
+            should("retry on decryption timeout") {
+                roomEventDecryptionServiceMock.decryptDelay = 10.seconds
+                roomEventDecryptionServiceMock.returnDecrypt = null
+                roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
+                cut.getTimelineEvent(room, eventId) { decryptionTimeout = 50.milliseconds }.first()
+                cut.getTimelineEvent(room, eventId) { decryptionTimeout = 50.milliseconds }.first()
+                roomEventDecryptionServiceMock.decryptCounter shouldBe 2
             }
             should("handle error") {
                 roomEventDecryptionServiceMock.returnDecrypt =
-                    { Result.failure(DecryptionException.ValidationFailed("")) }
+                    Result.failure(OlmEncryptionService.DecryptMegolmError.MegolmKeyUnknownMessageIndex)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
                 val result = cut.getTimelineEvent(room, eventId)
                     .first { it?.content?.isFailure == true }
                 assertSoftly(result) {
                     assertNotNull(this)
                     event shouldBe encryptedTimelineEvent.event
-                    content?.exceptionOrNull() shouldBe DecryptionException.ValidationFailed("")
+                    content?.exceptionOrNull() shouldBe
+                            TimelineEventContentError.DecryptionError(OlmEncryptionService.DecryptMegolmError.MegolmKeyUnknownMessageIndex)
                 }
             }
         }

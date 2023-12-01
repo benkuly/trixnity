@@ -3,11 +3,13 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 import java.io.File
 
 fun KotlinMultiplatformExtension.addJvmTarget(
     useJUnitPlatform: Boolean = true,
-    testEnabled: Boolean = true
+    testEnabled: Boolean = true,
+    testConfig: KotlinJvmTest.() -> Unit = {},
 ): KotlinJvmTarget =
     jvm {
         compilations.all {
@@ -15,8 +17,8 @@ fun KotlinMultiplatformExtension.addJvmTarget(
         }
         testRuns["test"].executionTask.configure {
             enabled = testEnabled
-            maxHeapSize = "8g"
             if (useJUnitPlatform) useJUnitPlatform()
+            testConfig()
         }
     }
 

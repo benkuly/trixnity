@@ -2,17 +2,13 @@ package net.folivo.trixnity.client.verification
 
 import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
 import net.folivo.trixnity.client.key.KeySecretService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.KeyTrustService
@@ -81,12 +77,12 @@ interface VerificationService {
          * Cross signing can be bootstrapped.
          * Bootstrapping can be done with [KeyService::bootstrapCrossSigning][net.folivo.trixnity.client.key.KeyServiceImpl.bootstrapCrossSigning].
          */
-        object NoCrossSigningEnabled : SelfVerificationMethods
+        data object NoCrossSigningEnabled : SelfVerificationMethods
 
         /**
          * No self verification needed.
          */
-        object AlreadyCrossSigned : SelfVerificationMethods
+        data object AlreadyCrossSigned : SelfVerificationMethods
 
         /**
          * If empty: no other device & no key backup -> consider new bootstrapping of cross signing
@@ -104,7 +100,6 @@ interface VerificationService {
 class VerificationServiceImpl(
     userInfo: UserInfo,
     private val api: MatrixClientServerApiClient,
-    private val possiblyEncryptEvent: PossiblyEncryptEvent,
     private val keyStore: KeyStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val olmDecrypter: OlmDecrypter,
@@ -261,12 +256,7 @@ class VerificationServiceImpl(
             ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), uuid4().toString()
         )
         api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
-            try {
-                olmEncryptionService.encryptOlm(request, theirUserId, it)
-            } catch (error: Exception) {
-                log.debug { "could not encrypt verification request. will be send unencrypted. Reason: ${error.message}" }
-                request
-            }
+            olmEncryptionService.encryptOlm(request, theirUserId, it).getOrNull() ?: request
         })).getOrThrow()
         ActiveDeviceVerification(
             request = request,
@@ -286,36 +276,41 @@ class VerificationServiceImpl(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun createUserVerificationRequest(
         theirUserId: UserId
     ): Result<ActiveUserVerification> = kotlin.runCatching {
-        log.info { "create new user verification request to $theirUserId" }
-        val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
-        val roomId =
-            globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.get(theirUserId)
-                ?.firstOrNull()
-                ?: api.room.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
-        val sendContent = possiblyEncryptEvent(request, roomId)
-            .onFailure { log.debug { "could not encrypt verification request. will be send unencrypted. Reason: ${it.message}" } }
-            .getOrNull() ?: request
-        val eventId = api.room.sendMessageEvent(roomId, sendContent).getOrThrow()
-        ActiveUserVerification(
-            request = request,
-            requestIsFromOurOwn = true,
-            requestEventId = eventId,
-            requestTimestamp = Clock.System.now().toEpochMilliseconds(),
-            ownUserId = ownUserId,
-            ownDeviceId = ownDeviceId,
-            theirUserId = theirUserId,
-            theirInitialDeviceId = null,
-            roomId = roomId,
-            supportedMethods = supportedMethods,
-            api = api,
-            keyStore = keyStore,
-            room = roomService,
-            keyTrust = keyTrustService,
-            possiblyEncryptEvent = possiblyEncryptEvent,
-        ).also { auv -> activeUserVerifications.update { it + auv } }
+        coroutineScope {
+            log.info { "create new user verification request to $theirUserId" }
+            val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
+            val roomId =
+                globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.get(theirUserId)
+                    ?.firstOrNull()
+                    ?: api.room.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
+            val transactionId = roomService.sendMessage(roomId) {
+                content(request)
+            }
+            val eventId = roomService.getOutbox()
+                .flatMapLatest { it[transactionId] ?: flowOf(null) }
+                .mapNotNull { it?.eventId }
+                .first()
+            ActiveUserVerification(
+                request = request,
+                requestIsFromOurOwn = true,
+                requestEventId = eventId,
+                requestTimestamp = Clock.System.now().toEpochMilliseconds(),
+                ownUserId = ownUserId,
+                ownDeviceId = ownDeviceId,
+                theirUserId = theirUserId,
+                theirInitialDeviceId = null,
+                roomId = roomId,
+                supportedMethods = supportedMethods,
+                json = api.json,
+                keyStore = keyStore,
+                room = roomService,
+                keyTrust = keyTrustService,
+            ).also { auv -> activeUserVerifications.update { it + auv } }
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -431,11 +426,10 @@ class VerificationServiceImpl(
                             theirInitialDeviceId = request.fromDevice,
                             roomId = timelineEvent.roomId,
                             supportedMethods = supportedMethods,
-                            api = api,
+                            json = api.json,
                             keyStore = keyStore,
                             room = roomService,
                             keyTrust = keyTrustService,
-                            possiblyEncryptEvent = possiblyEncryptEvent,
                         ).also { auv -> activeUserVerifications.update { it + auv } }
                     } else null
                 }

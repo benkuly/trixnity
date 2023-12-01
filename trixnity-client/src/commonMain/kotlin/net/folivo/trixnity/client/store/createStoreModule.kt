@@ -7,7 +7,21 @@ import org.koin.dsl.module
 fun createStoreModule() = module {
     singleOf(::AccountStore)
     singleOf(::GlobalAccountDataStore)
-    single { KeyStore(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single {
+        KeyStore(
+            outdatedKeysRepository = get(),
+            deviceKeysRepository = get(),
+            crossSigningKeysRepository = get(),
+            keyVerificationStateRepository = get(),
+            keyChainLinkRepository = get(),
+            secretsRepository = get(),
+            secretKeyRequestRepository = get(),
+            roomKeyRequestRepository = get(),
+            tm = get(),
+            config = get(),
+            storeScope = get()
+        )
+    }
     singleOf(::MediaCacheMappingStore)
     singleOf(::OlmCryptoStore)
     singleOf(::RoomAccountDataStore)
