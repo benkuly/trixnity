@@ -107,6 +107,9 @@ class KeyStore(
             updater(it ?: mapOf())
         }
 
+    /**
+     * This prevents deadlocks when no parallel write transactions are allowed, but a second transaction is needed to update outdated keys.
+     */
     object SkipOutdatedKeys : CoroutineContext.Element, CoroutineContext.Key<SkipOutdatedKeys> {
         override val key: CoroutineContext.Key<*> = this
     }

@@ -20,8 +20,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
-import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
@@ -99,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyTrustServiceMock,
             CurrentSyncState(currentSyncState),
             UserInfo(UserId("us", "server"), "ourDevice", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
-            RepositoryTransactionManagerMock(),
+            TransactionManagerMock(),
         )
         cut.startInCoroutineScope(scope)
         keyTrustServiceMock.returnCalculateCrossSigningKeysTrustLevel = KeySignatureTrustLevel.CrossSigned(false)

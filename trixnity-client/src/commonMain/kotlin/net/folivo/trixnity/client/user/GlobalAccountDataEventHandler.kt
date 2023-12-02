@@ -2,7 +2,7 @@ package net.folivo.trixnity.client.user
 
 import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.unsubscribeOnCompletion
 class GlobalAccountDataEventHandler(
     private val api: MatrixClientServerApiClient,
     private val globalAccountDataStore: GlobalAccountDataStore,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {

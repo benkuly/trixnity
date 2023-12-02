@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.PAUSE
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
@@ -49,7 +48,7 @@ class OutdatedKeysHandler(
     private val keyTrustService: KeyTrustService,
     private val currentSyncState: CurrentSyncState,
     private val userInfo: UserInfo,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
 ) : EventHandler, LazyMemberEventHandler {
     private val syncProcessingRunning = MutableStateFlow(false)
     private val normalLoopRunning = MutableStateFlow(false)
@@ -227,55 +226,54 @@ class OutdatedKeysHandler(
 
         userIds.chunked(25).forEach { userIdChunk ->
             tm.writeTransaction {
-                withContext(KeyStore.SkipOutdatedKeys) {
-                    userIdChunk.forEach { userId ->
-                        launch {
-                            keysResponse.masterKeys?.get(userId)?.let { masterKey ->
-                                handleOutdatedCrossSigningKey(
-                                    userId = userId,
-                                    crossSigningKey = masterKey,
-                                    usage = CrossSigningKeysUsage.MasterKey,
-                                    signingKeyForVerification = masterKey.getSelfSigningKey(),
-                                    signingOptional = true
-                                )
-                            }
-                            keysResponse.selfSigningKeys?.get(userId)?.let { selfSigningKey ->
-                                handleOutdatedCrossSigningKey(
-                                    userId = userId,
-                                    crossSigningKey = selfSigningKey,
-                                    usage = CrossSigningKeysUsage.SelfSigningKey,
-                                    signingKeyForVerification = keyStore.getCrossSigningKey(
-                                        userId,
-                                        CrossSigningKeysUsage.MasterKey
-                                    )?.value?.signed?.get()
-                                )
-                            }
-                            keysResponse.userSigningKeys?.get(userId)?.let { userSigningKey ->
-                                handleOutdatedCrossSigningKey(
-                                    userId = userId,
-                                    crossSigningKey = userSigningKey,
-                                    usage = CrossSigningKeysUsage.UserSigningKey,
-                                    signingKeyForVerification = keyStore.getCrossSigningKey(
-                                        userId,
-                                        CrossSigningKeysUsage.MasterKey
-                                    )?.value?.signed?.get()
-                                )
-                            }
-                            keysResponse.deviceKeys?.get(userId)?.let { devices ->
-                                handleOutdatedDeviceKeys(
-                                    userId = userId,
-                                    devices = devices,
-                                    getJoinedEncryptedRooms = joinedEncryptedRooms,
-                                    getMembershipsAllowedToReceiveKey = membershipsAllowedToReceiveKey
-                                )
-                            }
-                            // indicate, that we fetched the keys of the user
-                            keyStore.updateCrossSigningKeys(userId) { it ?: setOf() }
-                            keyStore.updateDeviceKeys(userId) { it ?: mapOf() }
-
-                            log.debug { "updated outdated keys of $userId" }
-                            keyStore.updateOutdatedKeys { it - userId }
+                userIdChunk.forEach { userId ->
+                    launch {
+                        println(currentCoroutineContext()[KeyStore.SkipOutdatedKeys] != null)
+                        keysResponse.masterKeys?.get(userId)?.let { masterKey ->
+                            handleOutdatedCrossSigningKey(
+                                userId = userId,
+                                crossSigningKey = masterKey,
+                                usage = CrossSigningKeysUsage.MasterKey,
+                                signingKeyForVerification = masterKey.getSelfSigningKey(),
+                                signingOptional = true
+                            )
                         }
+                        keysResponse.selfSigningKeys?.get(userId)?.let { selfSigningKey ->
+                            handleOutdatedCrossSigningKey(
+                                userId = userId,
+                                crossSigningKey = selfSigningKey,
+                                usage = CrossSigningKeysUsage.SelfSigningKey,
+                                signingKeyForVerification = keyStore.getCrossSigningKey(
+                                    userId,
+                                    CrossSigningKeysUsage.MasterKey
+                                )?.value?.signed?.get()
+                            )
+                        }
+                        keysResponse.userSigningKeys?.get(userId)?.let { userSigningKey ->
+                            handleOutdatedCrossSigningKey(
+                                userId = userId,
+                                crossSigningKey = userSigningKey,
+                                usage = CrossSigningKeysUsage.UserSigningKey,
+                                signingKeyForVerification = keyStore.getCrossSigningKey(
+                                    userId,
+                                    CrossSigningKeysUsage.MasterKey
+                                )?.value?.signed?.get()
+                            )
+                        }
+                        keysResponse.deviceKeys?.get(userId)?.let { devices ->
+                            handleOutdatedDeviceKeys(
+                                userId = userId,
+                                devices = devices,
+                                getJoinedEncryptedRooms = joinedEncryptedRooms,
+                                getMembershipsAllowedToReceiveKey = membershipsAllowedToReceiveKey
+                            )
+                        }
+                        // indicate, that we fetched the keys of the user
+                        keyStore.updateCrossSigningKeys(userId) { it ?: setOf() }
+                        keyStore.updateDeviceKeys(userId) { it ?: mapOf() }
+
+                        log.debug { "updated outdated keys of $userId" }
+                        keyStore.updateOutdatedKeys { it - userId }
                     }
                 }
             }

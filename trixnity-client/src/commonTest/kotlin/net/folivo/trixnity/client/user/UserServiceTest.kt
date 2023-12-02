@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -19,10 +19,9 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EventType
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -99,7 +98,7 @@ class UserServiceTest : ShouldSpec({
                 Key.Curve25519Key(value = "")
             ),
             DefaultEventContentSerializerMappings,
-            RepositoryTransactionManagerMock(),
+            TransactionManagerMock(),
             scope = scope
         )
 

@@ -23,7 +23,7 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessage.SendError
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.client.store.RoomStore
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -44,7 +44,7 @@ class OutboxMessageEventHandler(
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val outboxMessageMediaUploaderMappings: OutboxMessageMediaUploaderMappings,
     private val currentSyncState: CurrentSyncState,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
