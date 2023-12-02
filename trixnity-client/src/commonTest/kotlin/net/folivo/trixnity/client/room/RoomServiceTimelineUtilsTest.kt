@@ -107,24 +107,18 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     val event3 = encryptedEvent(3)
     val timelineEvent1 = TimelineEvent(
         event = event1,
-        roomId = room,
-        eventId = event1.id,
         previousEventId = null,
         nextEventId = event2.id,
         gap = TimelineEvent.Gap.GapBefore("1")
     )
     val timelineEvent2 = TimelineEvent(
         event = event2,
-        roomId = room,
-        eventId = event2.id,
         previousEventId = event1.id,
         nextEventId = event3.id,
         gap = null
     )
     val timelineEvent3 = TimelineEvent(
         event = event3,
-        roomId = room,
-        eventId = event3.id,
         previousEventId = event2.id,
         nextEventId = null,
         gap = TimelineEvent.Gap.GapAfter("3")
@@ -162,8 +156,6 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val event0 = encryptedEvent(0)
             val timelineEvent0 = TimelineEvent(
                 event = event0,
-                roomId = room,
-                eventId = event0.id,
                 previousEventId = event1.id,
                 nextEventId = event2.id,
                 gap = null
@@ -267,14 +259,12 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             )
             val tombstoneTimelineEvent = TimelineEvent(
                 event = tombstoneEvent,
-                roomId = room,
                 previousEventId = event2.id,
                 nextEventId = null,
                 gap = TimelineEvent.Gap.GapAfter("3")
             )
             val createTimelineEvent = TimelineEvent(
                 event = createEvent,
-                roomId = newRoom,
                 previousEventId = null,
                 nextEventId = event3.id,
                 gap = null
@@ -285,7 +275,10 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 tombstoneTimelineEvent,
                 // new room
                 createTimelineEvent,
-                timelineEvent3.copy(roomId = newRoom, previousEventId = createTimelineEvent.eventId),
+                timelineEvent3.copy(
+                    event = event3.copy(roomId = newRoom),
+                    previousEventId = createTimelineEvent.eventId
+                ),
             )
             beforeTest {
                 roomTimelineStore.addAll(timeline)
@@ -332,16 +325,12 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             val newTimelineEvent1 = timelineEvent1.copy(gap = null)
             val newTimelineEvent3 = TimelineEvent(
                 event = newEvent3,
-                roomId = room,
-                eventId = newEvent3.id,
                 previousEventId = event2.id,
                 nextEventId = event4.id,
                 gap = null
             )
             val timelineEvent4 = TimelineEvent(
                 event = event4,
-                roomId = room,
-                eventId = event4.id,
                 previousEventId = newEvent3.id,
                 nextEventId = null,
                 gap = null
@@ -523,7 +512,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             roomTimelineStore.addAll(
                 listOf(
                     timelineEvent1,
-                    timelineEvent1.copy(eventId = event10.id, roomId = RoomId("other", "server"))
+                    timelineEvent1.copy(event = event1.copy(id = event10.id, roomId = RoomId("other", "server")))
                 )
             )
             apiConfig.endpoints {

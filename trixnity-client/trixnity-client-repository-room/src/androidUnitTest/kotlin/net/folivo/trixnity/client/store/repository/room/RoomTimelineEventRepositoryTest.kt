@@ -2,7 +2,10 @@ package net.folivo.trixnity.client.store.repository.room
 
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.TimelineEventSerializer
 import net.folivo.trixnity.client.store.repository.TimelineEventKey
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -10,6 +13,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,7 +27,14 @@ class RoomTimelineEventRepositoryTest {
     @Before
     fun before() {
         db = buildTestDatabase()
-        repo = RoomTimelineEventRepository(db, createMatrixEventJson())
+        repo = RoomTimelineEventRepository(db, createMatrixEventJson(customModule = SerializersModule {
+            contextual(
+                TimelineEventSerializer(
+                    DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
+                    true
+                )
+            )
+        }))
     }
 
     @Test
@@ -38,8 +49,6 @@ class RoomTimelineEventRepositoryTest {
                 RoomId("room1", "server"),
                 1234
             ),
-            roomId = RoomId("room1", "server"),
-            eventId = EventId("\$event1"),
             previousEventId = null,
             nextEventId = null,
             gap = TimelineEvent.Gap.GapBefore("batch")
@@ -52,8 +61,6 @@ class RoomTimelineEventRepositoryTest {
                 RoomId("room1", "server"),
                 1234
             ),
-            roomId = RoomId("room2", "server"),
-            eventId = EventId("\$event2"),
             previousEventId = null,
             nextEventId = null,
             gap = null

@@ -346,8 +346,6 @@ private val body: ShouldSpec.() -> Unit = {
                         roomId,
                         Clock.System.now().toEpochMilliseconds()
                     ),
-                    eventId = eventId,
-                    roomId = roomId,
                     previousEventId = null,
                     nextEventId = nextEventId,
                     gap = null
@@ -367,8 +365,6 @@ private val body: ShouldSpec.() -> Unit = {
                                 roomId,
                                 Clock.System.now().toEpochMilliseconds()
                             ),
-                            eventId = eventId,
-                            roomId = roomId,
                             previousEventId = null,
                             nextEventId = nextEventId,
                             gap = null
@@ -657,8 +653,6 @@ private val body: ShouldSpec.() -> Unit = {
                     roomId,
                     1234
                 ),
-                eventId = eventId,
-                roomId = roomId,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null
@@ -675,8 +669,6 @@ private val body: ShouldSpec.() -> Unit = {
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
-                eventId = eventId,
-                roomId = roomId,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null
@@ -695,8 +687,6 @@ private val body: ShouldSpec.() -> Unit = {
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
-                eventId = eventId,
-                roomId = roomId,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null
@@ -715,8 +705,6 @@ private val body: ShouldSpec.() -> Unit = {
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
-                eventId = eventId,
-                roomId = roomId,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null

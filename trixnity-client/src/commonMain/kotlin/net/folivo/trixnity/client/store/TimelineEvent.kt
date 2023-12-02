@@ -7,7 +7,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.RoomEventContent
@@ -16,11 +15,8 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.core.serialization.events.RedactedEventContentSerializer
 import net.folivo.trixnity.core.serialization.events.UnknownEventContentSerializer
 
-typealias TimelineEventContentResult = Result<RoomEventContent>
-
-@Serializable
 data class TimelineEvent(
-    val event: @Contextual ClientEvent.RoomEvent<*>,
+    val event: ClientEvent.RoomEvent<*>,
     /**
      * - event is not encrypted -> original content
      * - event is encrypted
@@ -30,11 +26,7 @@ data class TimelineEvent(
      *
      *  The content may be replaced by another event.
      */
-    @Contextual
-    val content: TimelineEventContentResult? = if (event.isEncrypted) null else Result.success(event.content),
-
-    val roomId: RoomId = event.roomId,
-    val eventId: EventId = event.id,
+    val content: Result<RoomEventContent>? = if (event.isEncrypted) null else Result.success(event.content),
 
     val previousEventId: EventId?,
     val nextEventId: EventId?,
@@ -99,64 +91,117 @@ data class TimelineEvent(
 }
 
 
-// FIXME put into json
-class TimelineEventContentResultSerializer(
+class TimelineEventSerializer(
     private val mappings: Set<EventContentSerializerMapping<out RoomEventContent>>,
     private val storeTimelineEventContentUnencrypted: Boolean,
-) : KSerializer<TimelineEventContentResult> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("TimelineEventResultSerializer")
+) : KSerializer<TimelineEvent> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("TimelineEventSerializer")
 
     private val contentDeserializers: Map<String, KSerializer<out RoomEventContent>> by lazy {
         mappings.associate { it.type to it.serializer }
     }
 
-    override fun deserialize(decoder: Decoder): TimelineEventContentResult {
+    @OptIn(ExperimentalSerializationApi::class)
+    override fun deserialize(decoder: Decoder): TimelineEvent {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        val type = checkNotNull(jsonObject["type"]).jsonPrimitive.content
-        val serializer = contentDeserializers[type] ?: UnknownEventContentSerializer(type)
-        val content = checkNotNull(jsonObject["value"])
-        return Result.success(decoder.json.decodeFromJsonElement(serializer, content))
+        val event: ClientEvent.RoomEvent<*> = checkNotNull(jsonObject["event"]).jsonObject.let {
+            val serializer = decoder.json.serializersModule.getContextual(ClientEvent.RoomEvent::class)
+            checkNotNull(serializer)
+            decoder.json.decodeFromJsonElement(serializer, it)
+        }
+        val content: Result<RoomEventContent>? = (jsonObject["content"] as? JsonObject)?.let {
+            val type = checkNotNull(it["type"]).jsonPrimitive.content
+            val serializer = contentDeserializers[type] ?: UnknownEventContentSerializer(type)
+            val value = checkNotNull(it["value"])
+            Result.success(decoder.json.decodeFromJsonElement(serializer, value))
+        }
+        val previousEventId: EventId? = jsonObject["previousEventId"]?.let {
+            decoder.json.decodeFromJsonElement(it)
+        }
+        val nextEventId: EventId? = jsonObject["nextEventId"]?.let {
+            decoder.json.decodeFromJsonElement(it)
+        }
+        val gap: TimelineEvent.Gap? = jsonObject["gap"]?.let {
+            decoder.json.decodeFromJsonElement(it)
+        }
+        return if (content != null) {
+            TimelineEvent(
+                event = event,
+                content = content,
+                previousEventId = previousEventId,
+                nextEventId = nextEventId,
+                gap = gap
+            )
+        } else {
+            TimelineEvent(
+                event = event,
+                previousEventId = previousEventId,
+                nextEventId = nextEventId,
+                gap = gap
+            )
+        }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    override fun serialize(encoder: Encoder, value: TimelineEventContentResult) {
+    override fun serialize(encoder: Encoder, value: TimelineEvent) {
         require(encoder is JsonEncoder)
-        val content = value.getOrNull()
-        if (!storeTimelineEventContentUnencrypted || content == null) {
-            encoder.encodeNull()
-        } else {
-            var type: String? = null
-            var serializer: KSerializer<out RoomEventContent>? = null
-            val mapping = mappings.firstOrNull { it.kClass.isInstance(content) }
-            when {
-                mapping != null -> {
-                    type = mapping.type
-                    serializer = mapping.serializer
-                }
-
-                content is RedactedEventContent -> {
-                    type = content.eventType
-                    serializer = RedactedEventContentSerializer(type)
-                }
-
-                content is UnknownEventContent -> {
-                    type = content.eventType
-                    serializer = UnknownEventContentSerializer(type)
-                }
-            }
-            if (type == null || serializer == null) {
-                encoder.encodeNull()
+        val event: JsonElement = value.event.let {
+            val serializer = encoder.json.serializersModule.getContextual(ClientEvent.RoomEvent::class)
+            checkNotNull(serializer)
+            encoder.json.encodeToJsonElement(serializer, it)
+        }
+        val content: JsonObject? = value.content?.getOrNull()?.let { content ->
+            if (!storeTimelineEventContentUnencrypted || !value.isEncrypted) {
+                null
             } else {
-                @Suppress("UNCHECKED_CAST")
-                val jsonValue = encoder.json.encodeToJsonElement(serializer as KSerializer<RoomEventContent>, content)
-                encoder.encodeJsonElement(
+                var type: String? = null
+                var serializer: KSerializer<out RoomEventContent>? = null
+                val mapping = mappings.firstOrNull { it.kClass.isInstance(content) }
+                when {
+                    mapping != null -> {
+                        type = mapping.type
+                        serializer = mapping.serializer
+                    }
+
+                    content is RedactedEventContent -> {
+                        type = content.eventType
+                        serializer = RedactedEventContentSerializer(type)
+                    }
+
+                    content is UnknownEventContent -> {
+                        type = content.eventType
+                        serializer = UnknownEventContentSerializer(type)
+                    }
+                }
+                if (type == null || serializer == null) {
+                    null
+                } else {
+                    @Suppress("UNCHECKED_CAST")
+                    val jsonValue =
+                        encoder.json.encodeToJsonElement(serializer as KSerializer<RoomEventContent>, content)
                     JsonObject(buildMap {
                         put("type", JsonPrimitive(type))
                         put("value", jsonValue)
                     })
-                )
+                }
             }
         }
+        val previousEventId: JsonElement? = value.previousEventId?.let {
+            encoder.json.encodeToJsonElement(it)
+        }
+        val nextEventId: JsonElement? = value.nextEventId?.let {
+            encoder.json.encodeToJsonElement(it)
+        }
+        val gap: JsonElement? = value.gap?.let {
+            encoder.json.encodeToJsonElement(it)
+        }
+        encoder.encodeJsonElement(JsonObject(buildMap {
+            put("event", event)
+            if (content != null) put("content", content)
+            if (previousEventId != null) put("previousEventId", previousEventId)
+            if (nextEventId != null) put("nextEventId", nextEventId)
+            if (gap != null) put("gap", gap)
+        }))
     }
 }

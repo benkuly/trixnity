@@ -6,12 +6,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
 class TimelineTest : ShouldSpec({

@@ -13,6 +13,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
@@ -20,18 +21,18 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 
-class TimelineEventContentResultSerializerTest : ShouldSpec({
+class TimelineEventSerializerTest : ShouldSpec({
     timeout = 10_000
     val json = createMatrixEventJson(customModule = SerializersModule {
         contextual(
-            TimelineEventContentResultSerializer(
+            TimelineEventSerializer(
                 DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
                 true
             )
         )
     })
 
-    fun timelineEvent(content: TimelineEventContentResult?) =
+    fun timelineEvent(content: Result<RoomEventContent>?) =
         TimelineEvent(
             event = ClientEvent.RoomEvent.MessageEvent(
                 MegolmEncryptedMessageEventContent(ciphertext = "cipher", sessionId = "sessionId"),
@@ -59,10 +60,8 @@ class TimelineEventContentResultSerializerTest : ShouldSpec({
             "room_id":"!room:server",
             "sender":"@sender:server",
             "type":"m.room.encrypted"
-          },
-          ${if (contentJson == null) "" else """"content":$contentJson,"""}
-          "roomId":"!room:server",
-          "eventId":"${'$'}1event"
+          }
+          ${if (contentJson == null) "" else ""","content":$contentJson"""}
         }
     """.trimToFlatJson()
 
@@ -123,7 +122,7 @@ class TimelineEventContentResultSerializerTest : ShouldSpec({
     }
     context("failure") {
         val result = timelineEvent(Result.failure(TimelineEvent.TimelineEventContentError.DecryptionTimeout))
-        val resultJson = timelineEventJson("""null""")
+        val resultJson = timelineEventJson(null)
         should("serialize") {
             json.encodeToString(result) shouldBe resultJson
         }
@@ -141,14 +140,14 @@ class TimelineEventContentResultSerializerTest : ShouldSpec({
     context("disabled") {
         val disabledJson = createMatrixEventJson(customModule = SerializersModule {
             contextual(
-                TimelineEventContentResultSerializer(
+                TimelineEventSerializer(
                     DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
                     false
                 )
             )
         })
         val result = timelineEvent(Result.success(RoomMessageEventContent.TextMessageEventContent("hi")))
-        val resultJson = timelineEventJson("null")
+        val resultJson = timelineEventJson(null)
         should("serialize") {
             disabledJson.encodeToString(result) shouldBe resultJson
         }

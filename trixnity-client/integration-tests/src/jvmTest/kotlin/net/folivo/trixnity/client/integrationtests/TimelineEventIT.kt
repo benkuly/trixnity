@@ -4,7 +4,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
@@ -20,7 +19,9 @@ import net.folivo.trixnity.client.room.getTimelineEventsAround
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
@@ -163,9 +164,10 @@ class TimelineEventIT {
                 val value = text("value")
             }
             newSuspendedTransaction(Dispatchers.IO, database) {
-                exposedTimelineEvent.select {
+                val result = exposedTimelineEvent.select {
                     exposedTimelineEvent.eventId.eq(eventId.full) and exposedTimelineEvent.roomId.eq(room.full)
-                }.firstOrNull()?.get(exposedTimelineEvent.value).shouldContain("dino")
+                }.firstOrNull()?.get(exposedTimelineEvent.value).shouldNotBeNull()
+                "dino".toRegex().findAll(result).count() shouldBe 1
             }
         }
     }
