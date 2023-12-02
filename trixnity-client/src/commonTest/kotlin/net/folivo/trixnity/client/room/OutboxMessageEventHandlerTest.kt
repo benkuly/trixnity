@@ -19,8 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
-import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
@@ -76,7 +76,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             roomOutboxMessageStore,
             defaultOutboxMessageMediaUploaderMappings,
             CurrentSyncState(currentSyncState),
-            RepositoryTransactionManagerMock(),
+            TransactionManagerMock(),
         )
     }
 

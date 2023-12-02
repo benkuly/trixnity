@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.client.store.RoomStateStore
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
@@ -20,7 +20,7 @@ private val log = KotlinLogging.logger { }
 class RoomStateEventHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStateStore: RoomStateStore,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
 ) : EventHandler, LazyMemberEventHandler {
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeEventList<StateEventContent, StateBaseEvent<StateEventContent>>(Priority.STORE_EVENTS) {

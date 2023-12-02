@@ -7,7 +7,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -85,7 +84,7 @@ class UserServiceImpl(
     private val currentSyncState: CurrentSyncState,
     userInfo: UserInfo,
     private val mappings: EventContentSerializerMappings,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
     private val scope: CoroutineScope,
 ) : UserService {
 
