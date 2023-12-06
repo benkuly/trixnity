@@ -10,7 +10,7 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
+import org.jetbrains.exposed.sql.upsert
 import org.jetbrains.exposed.sql.select
 
 internal object ExposedSecrets : LongIdTable("secrets") {
@@ -25,7 +25,7 @@ internal class ExposedSecretsRepository(private val json: Json) : SecretsReposit
     }
 
     override suspend fun save(key: Long, value: Map<SecretType, StoredSecret>): Unit = withExposedWrite {
-        ExposedSecrets.replace {
+        ExposedSecrets.upsert {
             it[id] = key
             it[ExposedSecrets.value] = json.encodeToString(value)
         }

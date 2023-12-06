@@ -22,7 +22,7 @@ internal class ExposedOlmSessionRepository(private val json: Json) : OlmSessionR
     }
 
     override suspend fun save(key: Key.Curve25519Key, value: Set<StoredOlmSession>): Unit = withExposedWrite {
-        ExposedOlmSession.replace {
+        ExposedOlmSession.upsert {
             it[senderKey] = key.value
             it[ExposedOlmSession.value] = json.encodeToString(value)
         }

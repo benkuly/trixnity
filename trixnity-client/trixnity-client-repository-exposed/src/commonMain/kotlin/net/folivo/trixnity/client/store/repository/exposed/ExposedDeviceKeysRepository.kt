@@ -25,7 +25,7 @@ internal class ExposedDeviceKeysRepository(private val json: Json) : DeviceKeysR
     }
 
     override suspend fun save(key: UserId, value: Map<String, StoredDeviceKeys>): Unit = withExposedWrite {
-        ExposedDeviceKeys.replace {
+        ExposedDeviceKeys.upsert {
             it[userId] = key.full
             it[ExposedDeviceKeys.value] = json.encodeToString(value)
         }

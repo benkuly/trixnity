@@ -27,7 +27,7 @@ class ExposedRoomKeyRequestRepository(private val json: Json) : RoomKeyRequestRe
     }
 
     override suspend fun save(key: String, value: StoredRoomKeyRequest): Unit = withExposedWrite {
-        ExposedRoomKeyRequest.replace {
+        ExposedRoomKeyRequest.upsert {
             it[id] = key
             it[ExposedRoomKeyRequest.value] = json.encodeToString(value)
         }

@@ -7,8 +7,8 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.upsert
 
 internal object ExposedAccount : LongIdTable("account") {
     val olmPickleKey = text("olm_pickle_key").nullable()
@@ -42,7 +42,7 @@ internal class ExposedAccountRepository : AccountRepository {
     }
 
     override suspend fun save(key: Long, value: Account): Unit = withExposedWrite {
-        ExposedAccount.replace {
+        ExposedAccount.upsert {
             it[id] = key
             it[olmPickleKey] = value.olmPickleKey
             it[baseUrl] = value.baseUrl?.toString()

@@ -21,7 +21,7 @@ internal object ExposedKeyChainLink : Table("key_chain_link") {
 
 internal class ExposedKeyChainLinkRepository : KeyChainLinkRepository {
     override suspend fun save(keyChainLink: KeyChainLink): Unit = withExposedWrite {
-        ExposedKeyChainLink.replace {
+        ExposedKeyChainLink.upsert {
             it[signingUserId] = keyChainLink.signingUserId.full
             it[signingKeyId] = keyChainLink.signingKey.keyId ?: ""
             it[signingKeyValue] = keyChainLink.signingKey.value

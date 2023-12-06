@@ -27,7 +27,7 @@ class ExposedSecretKeyRequestRepository(private val json: Json) : SecretKeyReque
     }
 
     override suspend fun save(key: String, value: StoredSecretKeyRequest): Unit = withExposedWrite {
-        ExposedSecretKeyRequest.replace {
+        ExposedSecretKeyRequest.upsert {
             it[id] = key
             it[ExposedSecretKeyRequest.value] = json.encodeToString(value)
         }

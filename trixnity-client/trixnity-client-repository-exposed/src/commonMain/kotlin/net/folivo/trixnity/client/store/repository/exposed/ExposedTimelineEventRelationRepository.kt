@@ -63,7 +63,7 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
         secondKey: EventId,
         value: TimelineEventRelation
     ): Unit = withExposedWrite {
-        ExposedTimelineEventRelation.replace {
+        ExposedTimelineEventRelation.upsert {
             it[ExposedTimelineEventRelation.eventId] = value.eventId.full
             it[ExposedTimelineEventRelation.roomId] = value.roomId.full
             it[ExposedTimelineEventRelation.relationType] = value.relationType.name

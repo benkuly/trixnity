@@ -30,7 +30,7 @@ internal class ExposedTimelineEventRepository(private val json: Json) : Timeline
     }
 
     override suspend fun save(key: TimelineEventKey, value: TimelineEvent): Unit = withExposedWrite {
-        ExposedTimelineEvent.replace {
+        ExposedTimelineEvent.upsert {
             it[eventId] = key.eventId.full
             it[roomId] = key.roomId.full
             it[ExposedTimelineEvent.value] = json.encodeToString(value)

@@ -26,7 +26,7 @@ internal class ExposedMediaCacheMappingRepository : MediaCacheMappingRepository 
     }
 
     override suspend fun save(key: String, value: MediaCacheMapping): Unit = withExposedWrite {
-        ExposedMediaCacheMapping.replace {
+        ExposedMediaCacheMapping.upsert {
             it[cacheUri] = key
             it[mxcUri] = value.mxcUri
             it[size] = value.size

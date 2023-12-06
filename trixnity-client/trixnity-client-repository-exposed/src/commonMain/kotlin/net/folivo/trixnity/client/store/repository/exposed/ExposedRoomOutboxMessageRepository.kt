@@ -37,7 +37,7 @@ internal class ExposedRoomOutboxMessageRepository(
     override suspend fun save(key: String, value: RoomOutboxMessage<*>): Unit = withExposedWrite {
         val mapping = mappings.message.find { it.kClass.isInstance(value.content) }
         requireNotNull(mapping)
-        ExposedRoomOutboxMessage.replace {
+        ExposedRoomOutboxMessage.upsert {
             it[transactionId] = key
             @Suppress("UNCHECKED_CAST")
             it[ExposedRoomOutboxMessage.value] = json.encodeToString(
