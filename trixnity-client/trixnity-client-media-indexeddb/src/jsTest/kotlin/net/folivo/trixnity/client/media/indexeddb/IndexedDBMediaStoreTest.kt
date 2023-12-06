@@ -5,7 +5,6 @@ import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -14,8 +13,8 @@ import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
 import org.khronos.webgl.Uint8Array
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class IndexedDBMediaStoreTest {
 
     private lateinit var cut: IndexedDBMediaStore
@@ -36,7 +35,7 @@ class IndexedDBMediaStoreTest {
 
     private fun test(
         testBody: suspend TestScope.() -> Unit
-    ): TestResult = runTest(dispatchTimeoutMs = 5_000) {
+    ): TestResult = runTest(timeout = 5_000.milliseconds) {
         beforeTest()
         testBody()
         afterTest()

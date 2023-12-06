@@ -2,40 +2,36 @@ package net.folivo.trixnity.crypto.mocks
 
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
-import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
-import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.EventContent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
 class OlmEncryptionServiceMock : OlmEncryptionService {
     override suspend fun encryptOlm(
         content: EventContent,
-        receiverId: UserId,
+        userId: UserId,
         deviceId: String,
         forceNewSession: Boolean
-    ): EncryptedEventContent.OlmEncryptedEventContent {
-        TODO("Not yet implemented")
+    ): Result<OlmEncryptedToDeviceEventContent> {
+        throw NotImplementedError()
     }
 
-    lateinit var decryptOlm: (() -> DecryptedOlmEvent<*>)
-    override suspend fun decryptOlm(
-        encryptedContent: EncryptedEventContent.OlmEncryptedEventContent,
-        senderId: UserId
-    ): DecryptedOlmEvent<*> = decryptOlm()
+    var decryptOlm: Result<DecryptedOlmEvent<*>>? = null
+    override suspend fun decryptOlm(event: ClientEvent.ToDeviceEvent<OlmEncryptedToDeviceEventContent>): Result<DecryptedOlmEvent<*>> =
+        decryptOlm ?: throw NotImplementedError()
 
     override suspend fun encryptMegolm(
         content: MessageEventContent,
         roomId: RoomId,
         settings: EncryptionEventContent
-    ): EncryptedEventContent.MegolmEncryptedEventContent {
-        TODO("Not yet implemented")
+    ): Result<MegolmEncryptedMessageEventContent> {
+        throw NotImplementedError()
     }
 
-    override suspend fun decryptMegolm(encryptedEvent: RoomEvent<EncryptedEventContent.MegolmEncryptedEventContent>): DecryptedMegolmEvent<*> {
-        TODO("Not yet implemented")
+    override suspend fun decryptMegolm(encryptedEvent: RoomEvent<MegolmEncryptedMessageEventContent>): Result<DecryptedMegolmEvent<*>> {
+        throw NotImplementedError()
     }
 }

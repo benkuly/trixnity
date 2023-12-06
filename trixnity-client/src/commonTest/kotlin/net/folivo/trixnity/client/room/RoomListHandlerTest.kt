@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -50,7 +50,7 @@ class RoomListHandlerTest : ShouldSpec({
             api,
             roomStore,
             roomServiceMock,
-            RepositoryTransactionManagerMock(),
+            TransactionManagerMock(),
             config,
         )
     }

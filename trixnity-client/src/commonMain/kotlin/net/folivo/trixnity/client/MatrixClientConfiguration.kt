@@ -4,6 +4,7 @@ import io.ktor.client.*
 import kotlinx.coroutines.CoroutineName
 import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.client.store.Room
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
@@ -17,6 +18,11 @@ class MatrixClientConfiguration {
      * Set a name for this instance. This is used to set a [CoroutineName] to the [CoroutineContext].
      */
     var name: String? = null
+
+    /**
+     * Allow to save [TimelineEvent]s unencrypted.
+     */
+    var storeTimelineEventContentUnencrypted: Boolean = true
 
     /**
      * Sets the own bookmark to the latest messages sent by this client.
@@ -34,9 +40,19 @@ class MatrixClientConfiguration {
     var deleteRoomsOnLeave: Boolean = true
 
     /**
+     * Set the delay, after which a sent outbox message is deleted. The delay is checked each time a sync is received.
+     */
+    var deleteSentOutboxMessageDelay: Duration = 10.seconds
+
+    /**
      * Specifies how long values are kept in the cache when not used by anyone.
      */
     var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes)
+
+    /**
+     * The timeout for the normal sync loop.
+     */
+    var syncLoopTimeout: Duration = 30.seconds
 
     /**
      * Set custom delays for the sync loop.

@@ -1,5 +1,7 @@
 package net.folivo.trixnity.client.store
 
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
@@ -7,6 +9,20 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.replace
 
+val TimelineEvent.eventId: EventId
+    get() = event.id
+
+val TimelineEvent.roomId: RoomId
+    get() = event.roomId
+
+val TimelineEvent.sender: UserId
+    get() = event.sender
+
+val TimelineEvent.originTimestamp: Long
+    get() = event.originTimestamp
+
+val TimelineEvent.unsigned: UnsignedRoomEventData?
+    get() = event.unsigned
 val TimelineEvent.isEncrypted: Boolean
     get() = event.isEncrypted
 
@@ -32,12 +48,3 @@ val TimelineEvent.relatesTo: RelatesTo?
                 content.relatesTo
             } else null
         } else null
-
-val TimelineEvent.sender: UserId
-    get() = event.sender
-
-val TimelineEvent.originTimestamp: Long
-    get() = event.originTimestamp
-
-val TimelineEvent.unsigned: UnsignedRoomEventData?
-    get() = event.unsigned

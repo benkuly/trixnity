@@ -7,13 +7,12 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.crypto.PossiblyEncryptEvent
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveUserVerification.VerificationStepSearchResult.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -38,8 +37,7 @@ class ActiveUserVerification(
     theirInitialDeviceId: String?,
     val roomId: RoomId,
     supportedMethods: Set<VerificationMethod>,
-    private val api: MatrixClientServerApiClient,
-    private val possiblyEncryptEvent: PossiblyEncryptEvent,
+    json: Json,
     keyStore: KeyStore,
     private val room: RoomService,
     keyTrust: KeyTrustService,
@@ -56,14 +54,11 @@ class ActiveUserVerification(
     null,
     keyStore,
     keyTrust,
-    api.json,
+    json,
 ) {
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }
-        val sendContent = possiblyEncryptEvent(step, roomId)
-            .onFailure { log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${it.message}" } }
-            .getOrNull() ?: step
-        api.room.sendMessageEvent(roomId, sendContent).getOrThrow()
+        room.sendMessage(roomId) { content(step) }
     }
 
     private sealed interface VerificationStepSearchResult {

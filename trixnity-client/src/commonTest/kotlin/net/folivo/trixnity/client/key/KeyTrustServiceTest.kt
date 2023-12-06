@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
+import net.folivo.trixnity.client.clearOutdatedKeys
 import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -166,6 +167,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(KeyTrustServiceImpl::updateTrustLevelOfKeyChainSignedBy.name) {
+        clearOutdatedKeys { keyStore }
         val aliceSigningKey1 = Ed25519Key(aliceDevice, "signingValue1")
         val aliceSigningKey2 = Ed25519Key("OTHER_ALICE", "signingValue2")
         val bobSignedKey = Ed25519Key(bobDevice, "signedValue")
@@ -224,6 +226,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context("calculateTrustLevel") {
+        clearOutdatedKeys { keyStore }
         context("without key chain") {
             val deviceKeys = Signed<DeviceKeys, UserId>(
                 DeviceKeys(

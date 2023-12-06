@@ -10,7 +10,7 @@ import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.getInMemoryRoomStateStore
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStateStore
@@ -19,10 +19,8 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -52,7 +50,7 @@ class RoomAvatarUrlEventHandlerTest : ShouldSpec({
             UserInfo(alice, "", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             mockMatrixClientServerApiClient(json).first,
             roomStore, roomStateStore, globalAccountDataStore,
-            RepositoryTransactionManagerMock(),
+            TransactionManagerMock(),
         )
     }
 

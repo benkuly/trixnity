@@ -2,7 +2,6 @@ package net.folivo.trixnity.crypto.olm
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -11,11 +10,10 @@ import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
@@ -40,7 +38,7 @@ class OlmEventHandler(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         olmKeysChangeEmitter.subscribeOneTimeKeysCount(::handleOlmKeysChange).unsubscribeOnCompletion(scope)
-        eventEmitter.subscribeEvent(subscriber = ::handleMemberEvents).unsubscribeOnCompletion(scope)
+        eventEmitter.subscribeEventList(subscriber = ::handleMemberEvents).unsubscribeOnCompletion(scope)
         eventEmitter.subscribeEvent(subscriber = ::handleHistoryVisibility).unsubscribeOnCompletion(scope)
         eventEmitter.subscribeEventList(Priority.TO_DEVICE_EVENTS, ::handleOlmEvents).unsubscribeOnCompletion(scope)
         decrypter.subscribe(::handleOlmEncryptedRoomKeyEventContent).unsubscribeOnCompletion(scope)
@@ -49,13 +47,8 @@ class OlmEventHandler(
         }
     }
 
-    internal suspend fun handleOlmEvents(events: List<ToDeviceEvent<EncryptedEventContent.OlmEncryptedEventContent>>) =
-        coroutineScope {
-            events.groupBy { it.sender }
-                .forEach { (_, events) ->
-                    launch { events.forEach { event -> decrypter.handleOlmEvent(event) } }
-                }
-        }
+    internal suspend fun handleOlmEvents(events: List<ToDeviceEvent<OlmEncryptedToDeviceEventContent>>) =
+        decrypter.handleOlmEvents(events)
 
     internal suspend fun forgetOldFallbackKey() {
         store.getForgetFallbackKeyAfter().collect { forgetFallbackKeyAfter ->
@@ -157,18 +150,20 @@ class OlmEventHandler(
         }
     }
 
-    internal suspend fun handleMemberEvents(event: StateEvent<MemberEventContent>) {
-        if (store.getRoomEncryptionAlgorithm(event.roomId) == Megolm) {
-            when (event.content.membership) {
-                Membership.LEAVE, Membership.BAN -> {
-                    log.debug { "remove outbound megolm session" }
-                    store.updateOutboundMegolmSession(event.roomId) { null }
-                }
-
-                else -> {
+    internal suspend fun handleMemberEvents(events: List<StateEvent<MemberEventContent>>) {
+        events
+            .filter {
+                when (it.content.membership) {
+                    Membership.LEAVE, Membership.BAN -> true
+                    else -> false
                 }
             }
-        }
+            .map { it.roomId }
+            .toSet()
+            .forEach { roomId ->
+                log.debug { "reset megolm session, because LEAVE or BAN received" }
+                store.updateOutboundMegolmSession(roomId) { null }
+            }
     }
 
     internal suspend fun handleHistoryVisibility(event: StateEvent<HistoryVisibilityEventContent>) {

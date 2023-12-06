@@ -7,7 +7,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
@@ -29,7 +28,7 @@ class UserMemberEventHandler(
     private val api: MatrixClientServerApiClient,
     private val accountStore: AccountStore,
     private val roomUserStore: RoomUserStore,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
 ) : EventHandler, LazyMemberEventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {

@@ -20,7 +20,7 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     messageOf("m.room.message", RoomMessageEventContentSerializer)
     messageOf<ReactionEventContent>("m.reaction")
     messageOf<RedactionEventContent>("m.room.redaction")
-    messageOf("m.room.encrypted", EncryptedEventContentSerializer)
+    messageOf("m.room.encrypted", EncryptedMessageEventContentSerializer)
     messageOf<VerificationStartEventContent>("m.key.verification.start")
     messageOf<VerificationReadyEventContent>("m.key.verification.ready")
     messageOf<VerificationDoneEventContent>("m.key.verification.done")
@@ -54,7 +54,7 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     ephemeralOf<TypingEventContent>("m.typing")
     ephemeralOf<ReceiptEventContent>("m.receipt")
 
-    toDeviceOf("m.room.encrypted", EncryptedEventContentSerializer)
+    toDeviceOf("m.room.encrypted", EncryptedToDeviceEventContentSerializer)
     toDeviceOf<RoomKeyEventContent>("m.room_key")
     toDeviceOf<RoomKeyRequestEventContent>("m.room_key_request")
     toDeviceOf<ForwardedRoomKeyEventContent>("m.forwarded_room_key")

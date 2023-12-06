@@ -9,7 +9,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.getInMemoryRoomUserStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.core.model.EventId
@@ -38,7 +38,7 @@ class ReceiptEventHandlerTest : ShouldSpec({
         cut = ReceiptEventHandler(
             mockMatrixClientServerApiClient(json).first,
             roomUserStore,
-            RepositoryTransactionManagerMock(),
+            TransactionManagerMock(),
         )
     }
 

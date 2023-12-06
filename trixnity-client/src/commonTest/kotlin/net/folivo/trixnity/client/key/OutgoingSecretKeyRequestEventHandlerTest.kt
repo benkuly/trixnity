@@ -38,7 +38,8 @@ import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.keys.*
@@ -96,7 +97,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     val encryptedEvent = ToDeviceEvent(
-        EncryptedEventContent.OlmEncryptedEventContent(
+        OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "")
         ), bob

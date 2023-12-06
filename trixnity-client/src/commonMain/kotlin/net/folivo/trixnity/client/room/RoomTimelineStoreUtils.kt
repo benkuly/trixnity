@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.RoomTimelineStore
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
@@ -76,8 +77,6 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                 previousEventChunk.lastIndex -> {
                     TimelineEvent(
                         event = event,
-                        roomId = roomId,
-                        eventId = event.id,
                         previousEventId = previousEvent,
                         nextEventId = if (index == 0) startEvent.eventId
                         else previousEventChunk.getOrNull(index - 1)?.id,
@@ -88,8 +87,6 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                 0 -> {
                     TimelineEvent(
                         event = event,
-                        roomId = roomId,
-                        eventId = event.id,
                         previousEventId = previousEventChunk.getOrNull(1)?.id,
                         nextEventId = startEvent.eventId,
                         gap = null
@@ -99,8 +96,6 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                 else -> {
                     TimelineEvent(
                         event = event,
-                        roomId = roomId,
-                        eventId = event.id,
                         previousEventId = previousEventChunk.getOrNull(index + 1)?.id,
                         nextEventId = previousEventChunk.getOrNull(index - 1)?.id,
                         gap = null
@@ -118,8 +113,6 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                 nextEventChunk.lastIndex -> {
                     TimelineEvent(
                         event = event,
-                        roomId = roomId,
-                        eventId = event.id,
                         previousEventId = if (index == 0) startEvent.eventId
                         else nextEventChunk.getOrNull(index - 1)?.id,
                         nextEventId = nextEvent,
@@ -130,8 +123,6 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                 0 -> {
                     TimelineEvent(
                         event = event,
-                        roomId = roomId,
-                        eventId = event.id,
                         previousEventId = startEvent.eventId,
                         nextEventId = nextEventChunk.getOrNull(1)?.id,
                         gap = null
@@ -141,8 +132,6 @@ internal suspend fun RoomTimelineStore.addEventsToTimeline(
                 else -> {
                     TimelineEvent(
                         event = event,
-                        roomId = roomId,
-                        eventId = event.id,
                         previousEventId = nextEventChunk.getOrNull(index - 1)?.id,
                         nextEventId = nextEventChunk.getOrNull(index + 1)?.id,
                         gap = null

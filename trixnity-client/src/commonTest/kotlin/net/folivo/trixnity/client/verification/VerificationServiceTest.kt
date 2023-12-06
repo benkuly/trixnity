@@ -8,16 +8,14 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
-import net.folivo.trixnity.client.getInMemoryKeyStore
-import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
@@ -48,7 +46,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
@@ -56,6 +54,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -81,7 +80,6 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var globalAccountDataStore: GlobalAccountDataStore
     lateinit var olmDecrypterMock: OlmDecrypterMock
     lateinit var olmEncryptionServiceMock: OlmEncryptionServiceMock
-    lateinit var possiblyEncryptEventMock: PossiblyEncryptEventMock
     lateinit var roomServiceMock: RoomServiceMock
     lateinit var keyServiceMock: KeyServiceMock
     lateinit var keyTrustServiceMock: KeyTrustServiceMock
@@ -95,7 +93,6 @@ private val body: ShouldSpec.() -> Unit = {
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
-        possiblyEncryptEventMock = PossiblyEncryptEventMock()
         olmDecrypterMock = OlmDecrypterMock()
         olmEncryptionServiceMock = OlmEncryptionServiceMock()
         roomServiceMock = RoomServiceMock()
@@ -106,14 +103,17 @@ private val body: ShouldSpec.() -> Unit = {
         apiConfig = newApiConfig
         api = newApi
         cut = VerificationServiceImpl(
-            UserInfo(aliceUserId, aliceDeviceId, Key.Ed25519Key(null, ""), Curve25519Key(null, "")),
-            api,
-            possiblyEncryptEventMock,
-            keyStore, globalAccountDataStore,
-            olmDecrypterMock,
-            olmEncryptionServiceMock,
-            roomServiceMock, keyServiceMock, keyTrustServiceMock, keySecretServiceMock,
-            CurrentSyncState(currentSyncState)
+            userInfo = UserInfo(aliceUserId, aliceDeviceId, Key.Ed25519Key(null, ""), Curve25519Key(null, "")),
+            api = api,
+            keyStore = keyStore,
+            globalAccountDataStore = globalAccountDataStore,
+            olmDecrypter = olmDecrypterMock,
+            olmEncryptionService = olmEncryptionServiceMock,
+            roomService = roomServiceMock,
+            keyService = keyServiceMock,
+            keyTrustService = keyTrustServiceMock,
+            keySecretService = keySecretServiceMock,
+            currentSyncState = CurrentSyncState(currentSyncState)
         )
         cut.startInCoroutineScope(scope)
     }
@@ -214,7 +214,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
-                        ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
@@ -229,7 +229,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
-                        ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
@@ -257,13 +257,13 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
-                        ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request1, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
-                        ToDeviceEvent(OlmEncryptedEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
                         DecryptedOlmEvent(request2, aliceUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
@@ -346,8 +346,6 @@ private val body: ShouldSpec.() -> Unit = {
                         roomId,
                         Clock.System.now().toEpochMilliseconds()
                     ),
-                    eventId = eventId,
-                    roomId = roomId,
                     previousEventId = null,
                     nextEventId = nextEventId,
                     gap = null
@@ -367,8 +365,6 @@ private val body: ShouldSpec.() -> Unit = {
                                 roomId,
                                 Clock.System.now().toEpochMilliseconds()
                             ),
-                            eventId = eventId,
-                            roomId = roomId,
                             previousEventId = null,
                             nextEventId = nextEventId,
                             gap = null
@@ -394,7 +390,8 @@ private val body: ShouldSpec.() -> Unit = {
                     sendToDeviceEvents = it.messages
                 }
             }
-            olmEncryptionServiceMock.returnEncryptOlm = { throw OlmLibraryException(message = "dino") }
+            olmEncryptionServiceMock.returnEncryptOlm =
+                Result.failure(OlmEncryptionService.EncryptOlmError.OlmLibraryError(OlmLibraryException("dino")))
             val createdVerification = cut.createDeviceVerificationRequest(bobUserId, setOf(bobDeviceId)).getOrThrow()
             val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
             createdVerification shouldBe activeDeviceVerification
@@ -408,48 +405,57 @@ private val body: ShouldSpec.() -> Unit = {
     context(VerificationServiceImpl::createUserVerificationRequest.name) {
         context("no direct room with user exists") {
             should("create room and send request into it") {
-                var sendMessageEventCalled = false
+                var createRoomCalled = false
                 apiConfig.endpoints {
                     matrixJsonEndpoint(CreateRoom()) {
+                        createRoomCalled = true
                         it.invite shouldBe setOf(bobUserId)
                         it.isDirect shouldBe true
                         CreateRoom.Response(roomId)
                     }
-                    matrixJsonEndpoint(
-                        SendMessageEvent(roomId, "m.room.message", "*"),
-                    ) {
-                        it shouldBe VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas))
-                        sendMessageEventCalled = true
-                        SendEventResponse(EventId("$1event"))
-                    }
                 }
-                possiblyEncryptEventMock.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
-                cut.createUserVerificationRequest(bobUserId).getOrThrow()
-                sendMessageEventCalled shouldBe true
+                val result = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
+                val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
+                roomServiceMock.outbox.value =
+                    mapOf(
+                        "1" to flowOf(
+                            RoomOutboxMessage(
+                                transactionId = "1",
+                                roomId = roomId,
+                                content = message,
+                                eventId = EventId("bla"),
+                            )
+                        )
+                    )
+
+                result.await()
+                createRoomCalled shouldBe true
             }
         }
         context("direct room with user exists") {
             should("send request to existing room") {
-                var sendMessageEventCalled = false
-                apiConfig.endpoints {
-                    matrixJsonEndpoint(
-                        SendMessageEvent(roomId, "m.room.message", "*"),
-                    ) {
-                        it shouldBe VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas))
-                        sendMessageEventCalled = true
-                        SendEventResponse(EventId("$1event"))
-                    }
-                }
-                possiblyEncryptEventMock.returnEncryptMegolm = { throw OlmLibraryException(message = "dino") }
                 globalAccountDataStore.save(
                     GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
                 )
-                cut.createUserVerificationRequest(bobUserId).getOrThrow()
-                sendMessageEventCalled shouldBe true
+                val result = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
+                val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
+                roomServiceMock.outbox.value =
+                    mapOf(
+                        "1" to flowOf(
+                            RoomOutboxMessage(
+                                transactionId = "1",
+                                roomId = roomId,
+                                content = message,
+                                eventId = EventId("bla"),
+                            )
+                        )
+                    )
+                result.await()
             }
         }
     }
     context(VerificationServiceImpl::getSelfVerificationMethods.name) {
+        clearOutdatedKeys { keyStore }
         beforeTest {
             currentSyncState.value = SyncState.RUNNING
         }
@@ -647,8 +653,6 @@ private val body: ShouldSpec.() -> Unit = {
                     roomId,
                     1234
                 ),
-                eventId = eventId,
-                roomId = roomId,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null
@@ -665,8 +669,6 @@ private val body: ShouldSpec.() -> Unit = {
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
-                eventId = eventId,
-                roomId = roomId,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null
@@ -685,8 +687,6 @@ private val body: ShouldSpec.() -> Unit = {
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
-                eventId = eventId,
-                roomId = roomId,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null
@@ -705,8 +705,6 @@ private val body: ShouldSpec.() -> Unit = {
                     roomId,
                     Clock.System.now().toEpochMilliseconds()
                 ),
-                eventId = eventId,
-                roomId = roomId,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null

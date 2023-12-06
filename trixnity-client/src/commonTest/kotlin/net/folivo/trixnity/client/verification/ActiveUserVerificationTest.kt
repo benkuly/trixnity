@@ -1,7 +1,9 @@
 package net.folivo.trixnity.client.verification
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -12,17 +14,12 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.getInMemoryKeyStore
-import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
-import net.folivo.trixnity.client.mocks.PossiblyEncryptEventMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Undefined
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
-import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
-import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -33,14 +30,11 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.User
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.MegolmEncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.olm.OlmLibraryException
-import net.folivo.trixnity.testutils.PortableMockEngineConfig
-import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.minutes
 
 class ActiveUserVerificationTest : ShouldSpec({
@@ -54,22 +48,15 @@ class ActiveUserVerificationTest : ShouldSpec({
     val roomId = RoomId("room", "server")
     val relatesTo = RelatesTo.Reference(event)
 
-    lateinit var apiConfig: PortableMockEngineConfig
-    lateinit var api: MatrixClientServerApiClientImpl
     val json = createMatrixEventJson()
     lateinit var roomServiceMock: RoomServiceMock
-    lateinit var possiblyEncryptEventMock: PossiblyEncryptEventMock
     lateinit var keyStore: KeyStore
     lateinit var scope: CoroutineScope
 
     lateinit var cut: ActiveUserVerification
 
     beforeTest {
-        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
-        apiConfig = newApiConfig
-        api = newApi
         roomServiceMock = RoomServiceMock()
-        possiblyEncryptEventMock = PossiblyEncryptEventMock()
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
     }
@@ -89,8 +76,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             theirInitialDeviceId = null,
             roomId = roomId,
             supportedMethods = setOf(Sas),
-            api = api,
-            possiblyEncryptEvent = possiblyEncryptEventMock,
+            json = json,
             keyStore = keyStore,
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
@@ -105,8 +91,6 @@ class ActiveUserVerificationTest : ShouldSpec({
             roomId,
             1
         ),
-        roomId = roomId,
-        eventId = EventId("e"),
         previousEventId = null,
         nextEventId = null,
         gap = null
@@ -122,7 +106,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         TextMessageEventContent("hi"),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -132,7 +115,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         VerificationCancelEventContent(MismatchedSas, "", relatesTo, null),
                         EventId("$2"), alice, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -147,7 +129,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         ),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -157,7 +138,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         cancelEvent,
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             )
@@ -172,10 +152,14 @@ class ActiveUserVerificationTest : ShouldSpec({
         val cancelFlow = MutableStateFlow(
             TimelineEvent(
                 event = MessageEvent(
-                    MegolmEncryptedEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                    MegolmEncryptedMessageEventContent(
+                        "cipher",
+                        Curve25519Key(null, ""),
+                        bobDevice,
+                        "session"
+                    ),
                     EventId("$2"), bob, roomId, 1234
                 ),
-                roomId = roomId, eventId = event,
                 previousEventId = null, nextEventId = null, gap = null
             )
         )
@@ -184,29 +168,27 @@ class ActiveUserVerificationTest : ShouldSpec({
             MutableStateFlow( // ignore event, that is no VerificationStep
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(TextMessageEventContent("hi")),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
             MutableStateFlow( // ignore own event
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
                         EventId("$2"), alice, roomId, 1234
                     ),
                     content = Result.success(VerificationCancelEventContent(MismatchedSas, "", relatesTo, null)),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
             MutableStateFlow( // ignore event with other relates to
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(
@@ -217,7 +199,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                             null
                         )
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -228,50 +209,22 @@ class ActiveUserVerificationTest : ShouldSpec({
         delay(500)
         cancelFlow.value = TimelineEvent(
             event = MessageEvent(
-                MegolmEncryptedEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
                 EventId("$2"), bob, roomId, 1234
             ),
             content = Result.success(cancelEvent),
-            roomId = roomId, eventId = event,
             previousEventId = null, nextEventId = null, gap = null
         )
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
-    should("send verification step and encrypt it") {
+    should("send verification step") {
         roomServiceMock.returnGetTimelineEvent = flowOf()
-        var sendMessageCalled = false
-        val encrypted = MegolmEncryptedEventContent("", Curve25519Key(null, ""), "", "")
-        apiConfig.endpoints {
-            matrixJsonEndpoint(SendMessageEvent(roomId, "m.room.encrypted", "*")) {
-                it shouldBe encrypted
-                sendMessageCalled = true
-                SendEventResponse(EventId("event"))
-            }
-        }
-        possiblyEncryptEventMock.returnEncryptMegolm = { encrypted }
         createCut()
         cut.startLifecycle(this)
         cut.cancel()
-        sendMessageCalled shouldBe true
-    }
-    should("send verification step and use unencrypted when encrypt failed") {
-        roomServiceMock.returnGetTimelineEvent = flowOf()
-        var sendMessageCalled = false
-        apiConfig.endpoints {
-            matrixJsonEndpoint(
-                SendMessageEvent(roomId, "m.key.verification.cancel", "*"),
-            ) {
-                it shouldBe VerificationCancelEventContent(User, "user cancelled verification", relatesTo, null)
-                sendMessageCalled = true
-                SendEventResponse(EventId("event"))
-            }
-        }
-        possiblyEncryptEventMock.returnEncryptMegolm = { throw OlmLibraryException(message = "hu") }
-        createCut()
-        cut.startLifecycle(this)
-        cut.cancel()
-        sendMessageCalled shouldBe true
+        roomServiceMock.sentMessages.value.shouldNotBeEmpty().first().second
+            .shouldBeInstanceOf<VerificationCancelEventContent>()
     }
     should("stop lifecycle, when cancelled") {
         roomServiceMock.returnGetTimelineEvent = MutableStateFlow(requestTimelineEvent)
@@ -282,7 +235,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         VerificationCancelEventContent(User, "r", relatesTo, null),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             )
@@ -308,7 +260,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         ),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             )
@@ -324,8 +275,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             theirInitialDeviceId = null,
             roomId = roomId,
             supportedMethods = setOf(Sas),
-            api = api,
-            possiblyEncryptEvent = possiblyEncryptEventMock,
+            json = json,
             keyStore = keyStore,
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
@@ -347,7 +297,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         ),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             )
@@ -363,8 +312,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             theirInitialDeviceId = null,
             roomId = roomId,
             supportedMethods = setOf(Sas),
-            api = api,
-            possiblyEncryptEvent = possiblyEncryptEventMock,
+            json = json,
             keyStore = keyStore,
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),

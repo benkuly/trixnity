@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.PAUSE
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
@@ -19,6 +18,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
@@ -47,7 +47,8 @@ class OutdatedKeysHandler(
     private val signService: SignService,
     private val keyTrustService: KeyTrustService,
     private val currentSyncState: CurrentSyncState,
-    private val tm: RepositoryTransactionManager,
+    private val userInfo: UserInfo,
+    private val tm: TransactionManager,
 ) : EventHandler, LazyMemberEventHandler {
     private val syncProcessingRunning = MutableStateFlow(false)
     private val normalLoopRunning = MutableStateFlow(false)
@@ -70,25 +71,32 @@ class OutdatedKeysHandler(
         updateDeviceKeysFromChangedMembership(memberEvents, isLoadingMembers = true, api.sync.currentSyncState.value)
     }
 
-    internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) {
-        // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
-        if (syncState != SyncState.INITIAL_SYNC) {
-            val startTrackingKeys = deviceList?.changed?.filter { keyStore.isTracked(it) }?.toSet().orEmpty()
-            val stopTrackingKeys = deviceList?.left.orEmpty()
+    internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) =
+        withContext(KeyStore.SkipOutdatedKeys) {
+            // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
+            if (syncState != SyncState.INITIAL_SYNC) {
+                val startTrackingKeys = deviceList?.changed?.filter { keyStore.isTracked(it) }?.toSet().orEmpty()
+                val stopTrackingKeys = deviceList?.left.orEmpty()
 
-            changeTrackingKeys(
-                start = startTrackingKeys,
-                stop = stopTrackingKeys,
-                reason = "device list"
-            )
+                trackKeys(
+                    start = startTrackingKeys,
+                    stop = stopTrackingKeys,
+                    reason = "device list"
+                )
+            } else if (deviceList?.changed?.contains(userInfo.userId) == true) {
+                trackKeys(
+                    start = setOf(userInfo.userId),
+                    stop = setOf(),
+                    reason = "device list"
+                )
+            }
         }
-    }
 
     internal suspend fun updateDeviceKeysFromChangedMembership(
         events: List<ClientEvent.RoomEvent.StateEvent<MemberEventContent>>,
         isLoadingMembers: Boolean,
         syncState: SyncState,
-    ) = coroutineScope {
+    ) = withContext(KeyStore.SkipOutdatedKeys) {
         // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
         if (syncState != SyncState.INITIAL_SYNC) {
             val startTrackingKeys = mutableSetOf<UserId>()
@@ -123,7 +131,7 @@ class OutdatedKeysHandler(
                     }
                 }
             }
-            changeTrackingKeys(
+            trackKeys(
                 start = startTrackingKeys,
                 stop = stopTrackingKeys,
                 reason = "member event"
@@ -135,7 +143,7 @@ class OutdatedKeysHandler(
     internal suspend fun updateDeviceKeysFromChangedEncryption(
         events: List<ClientEvent.RoomEvent.StateEvent<EncryptionEventContent>>,
         syncState: SyncState
-    ) {
+    ) = withContext(KeyStore.SkipOutdatedKeys) {
         // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
         if (syncState != SyncState.INITIAL_SYNC) {
             log.trace { "update keys from changed encryption" }
@@ -149,7 +157,7 @@ class OutdatedKeysHandler(
                 } else emptySet()
             }.toSet()
                 .filterNot { keyStore.isTracked(it) }.toSet()
-            changeTrackingKeys(
+            trackKeys(
                 start = startTrackingKeys,
                 stop = emptySet(),
                 reason = "encryption event"
@@ -159,7 +167,7 @@ class OutdatedKeysHandler(
 
     //TODO we should also listen to HistoryVisibilityEventContent changes, which becomes important for MSC3061
 
-    private suspend fun changeTrackingKeys(start: Set<UserId>, stop: Set<UserId>, reason: String) {
+    private suspend fun trackKeys(start: Set<UserId>, stop: Set<UserId>, reason: String) {
         if (start.isNotEmpty() || stop.isNotEmpty()) {
             tm.writeTransaction {
                 log.debug { "change tracking keys because of $reason (start=$start stop=$stop)" }
@@ -218,55 +226,54 @@ class OutdatedKeysHandler(
 
         userIds.chunked(25).forEach { userIdChunk ->
             tm.writeTransaction {
-                coroutineScope {
-                    userIdChunk.forEach { userId ->
-                        launch {
-                            keysResponse.masterKeys?.get(userId)?.let { masterKey ->
-                                handleOutdatedCrossSigningKey(
-                                    userId = userId,
-                                    crossSigningKey = masterKey,
-                                    usage = CrossSigningKeysUsage.MasterKey,
-                                    signingKeyForVerification = masterKey.getSelfSigningKey(),
-                                    signingOptional = true
-                                )
-                            }
-                            keysResponse.selfSigningKeys?.get(userId)?.let { selfSigningKey ->
-                                handleOutdatedCrossSigningKey(
-                                    userId = userId,
-                                    crossSigningKey = selfSigningKey,
-                                    usage = CrossSigningKeysUsage.SelfSigningKey,
-                                    signingKeyForVerification = keyStore.getCrossSigningKey(
-                                        userId,
-                                        CrossSigningKeysUsage.MasterKey
-                                    )?.value?.signed?.get()
-                                )
-                            }
-                            keysResponse.userSigningKeys?.get(userId)?.let { userSigningKey ->
-                                handleOutdatedCrossSigningKey(
-                                    userId = userId,
-                                    crossSigningKey = userSigningKey,
-                                    usage = CrossSigningKeysUsage.UserSigningKey,
-                                    signingKeyForVerification = keyStore.getCrossSigningKey(
-                                        userId,
-                                        CrossSigningKeysUsage.MasterKey
-                                    )?.value?.signed?.get()
-                                )
-                            }
-                            keysResponse.deviceKeys?.get(userId)?.let { devices ->
-                                handleOutdatedDeviceKeys(
-                                    userId = userId,
-                                    devices = devices,
-                                    getJoinedEncryptedRooms = joinedEncryptedRooms,
-                                    getMembershipsAllowedToReceiveKey = membershipsAllowedToReceiveKey
-                                )
-                            }
-                            // indicate, that we fetched the keys of the user
-                            keyStore.updateCrossSigningKeys(userId) { it ?: setOf() }
-                            keyStore.updateDeviceKeys(userId) { it ?: mapOf() }
-
-                            log.debug { "updated outdated keys of $userId" }
-                            keyStore.updateOutdatedKeys { it - userId }
+                userIdChunk.forEach { userId ->
+                    launch {
+                        println(currentCoroutineContext()[KeyStore.SkipOutdatedKeys] != null)
+                        keysResponse.masterKeys?.get(userId)?.let { masterKey ->
+                            handleOutdatedCrossSigningKey(
+                                userId = userId,
+                                crossSigningKey = masterKey,
+                                usage = CrossSigningKeysUsage.MasterKey,
+                                signingKeyForVerification = masterKey.getSelfSigningKey(),
+                                signingOptional = true
+                            )
                         }
+                        keysResponse.selfSigningKeys?.get(userId)?.let { selfSigningKey ->
+                            handleOutdatedCrossSigningKey(
+                                userId = userId,
+                                crossSigningKey = selfSigningKey,
+                                usage = CrossSigningKeysUsage.SelfSigningKey,
+                                signingKeyForVerification = keyStore.getCrossSigningKey(
+                                    userId,
+                                    CrossSigningKeysUsage.MasterKey
+                                )?.value?.signed?.get()
+                            )
+                        }
+                        keysResponse.userSigningKeys?.get(userId)?.let { userSigningKey ->
+                            handleOutdatedCrossSigningKey(
+                                userId = userId,
+                                crossSigningKey = userSigningKey,
+                                usage = CrossSigningKeysUsage.UserSigningKey,
+                                signingKeyForVerification = keyStore.getCrossSigningKey(
+                                    userId,
+                                    CrossSigningKeysUsage.MasterKey
+                                )?.value?.signed?.get()
+                            )
+                        }
+                        keysResponse.deviceKeys?.get(userId)?.let { devices ->
+                            handleOutdatedDeviceKeys(
+                                userId = userId,
+                                devices = devices,
+                                getJoinedEncryptedRooms = joinedEncryptedRooms,
+                                getMembershipsAllowedToReceiveKey = membershipsAllowedToReceiveKey
+                            )
+                        }
+                        // indicate, that we fetched the keys of the user
+                        keyStore.updateCrossSigningKeys(userId) { it ?: setOf() }
+                        keyStore.updateDeviceKeys(userId) { it ?: mapOf() }
+
+                        log.debug { "updated outdated keys of $userId" }
+                        keyStore.updateOutdatedKeys { it - userId }
                     }
                 }
             }

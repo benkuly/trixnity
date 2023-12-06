@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.measureTimedValue
 
 class ObservableCacheTest : ShouldSpec({
-    timeout = 10_000
+    timeout = 5_000
 
     lateinit var testCoroutineScheduler: TestCoroutineScheduler
     lateinit var testDispatcher: TestDispatcher
@@ -50,6 +50,12 @@ class ObservableCacheTest : ShouldSpec({
         )
         readFlow.first { it == "newValue" }
         readScope.cancel()
+    }
+    should("fill value with write while read is active") {
+        val readResult = async { cut.read("key").filterNotNull().first() }
+        testCoroutineScheduler.advanceUntilIdle()
+        cut.write("key", "value")
+        readResult.await() shouldBe "value"
     }
     context("read") {
         should("read value from repository and update cache") {
