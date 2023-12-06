@@ -1,11 +1,10 @@
 package net.folivo.trixnity.client.store.repository.test
 
 import io.kotest.core.spec.style.ShouldSpec
-import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.createDefaultEventContentSerializerMappingsModule
+import net.folivo.trixnity.client.createDefaultMatrixJsonModule
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
@@ -16,12 +15,6 @@ fun ShouldSpec.repositoryTestSuite(
     customRepositoryTransactionManager: suspend () -> RepositoryTransactionManager? = { null },
     repositoriesModuleBuilder: suspend () -> Module
 ) {
-    val mappings = DefaultEventContentSerializerMappings
-    val json = createMatrixEventJson()
-    val jsonModule = module {
-        single<EventContentSerializerMappings> { mappings }
-        single<Json> { json }
-    }
     lateinit var di: Koin
 
     beforeTest {
@@ -30,7 +23,11 @@ fun ShouldSpec.repositoryTestSuite(
             modules(
                 listOf(
                     repositoriesModule,
-                    jsonModule
+                    module {
+                        single { MatrixClientConfiguration() }
+                    },
+                    createDefaultEventContentSerializerMappingsModule(),
+                    createDefaultMatrixJsonModule()
                 )
             )
         }.koin

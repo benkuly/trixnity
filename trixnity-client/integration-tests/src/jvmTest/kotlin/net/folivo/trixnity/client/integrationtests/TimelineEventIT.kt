@@ -4,6 +4,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -18,8 +19,9 @@ import net.folivo.trixnity.client.room.getTimelineEventsAround
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.isEncrypted
+import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
@@ -34,6 +36,10 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -47,14 +53,15 @@ class TimelineEventIT {
     private lateinit var client2: MatrixClient
     private lateinit var database1: Database
     private lateinit var database2: Database
+    private lateinit var baseUrl: Url
+    val password = "user$1passw0rd"
 
     @Container
     val synapseDocker = synapseDocker()
 
     @BeforeTest
     fun beforeEach(): Unit = runBlocking {
-        val password = "user$1passw0rd"
-        val baseUrl = URLBuilder(
+        baseUrl = URLBuilder(
             protocol = URLProtocol.HTTP,
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
@@ -121,6 +128,87 @@ class TimelineEventIT {
             client1.room.sendMessage(room) { text("How are you?") }
 
             collectMessages.await()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun shouldSaveUnencryptedTimelineEvent(): Unit = runBlocking {
+        withTimeout(180_000) {
+            val database = newDatabase()
+            val client = MatrixClient.loginWith(
+                baseUrl = baseUrl,
+                repositoriesModule = createExposedRepositoriesModule(database),
+                mediaStore = InMemoryMediaStore(),
+                getLoginInfo = { it.register("user", password) }
+            ) {
+                storeTimelineEventContentUnencrypted = true
+            }.getOrThrow()
+            client.startSync()
+            val room = client.api.room.createRoom(
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
+            ).getOrThrow()
+            client.room.sendMessage(room) { text("dino") }
+
+            val eventId = client.room.getLastTimelineEvent(room).flatMapLatest { it ?: flowOf(null) }
+                .first { it?.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+                ?.eventId
+                .shouldNotBeNull()
+
+            client.stop()
+
+            val exposedTimelineEvent = object : Table("room_timeline_event") {
+                val roomId = varchar("room_id", length = 255)
+                val eventId = varchar("event_id", length = 255)
+                override val primaryKey = PrimaryKey(roomId, this.eventId)
+                val value = text("value")
+            }
+            newSuspendedTransaction(Dispatchers.IO, database) {
+                val result = exposedTimelineEvent.select {
+                    exposedTimelineEvent.eventId.eq(eventId.full) and exposedTimelineEvent.roomId.eq(room.full)
+                }.firstOrNull()?.get(exposedTimelineEvent.value).shouldNotBeNull()
+                "dino".toRegex().findAll(result).count() shouldBe 1
+            }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun shouldNotSaveUnencryptedTimelineEvent(): Unit = runBlocking {
+        withTimeout(180_000) {
+            val database = newDatabase()
+            val client = MatrixClient.loginWith(
+                baseUrl = baseUrl,
+                repositoriesModule = createExposedRepositoriesModule(database),
+                mediaStore = InMemoryMediaStore(),
+                getLoginInfo = { it.register("user", password) }
+            ) {
+                storeTimelineEventContentUnencrypted = false
+            }.getOrThrow()
+            client.startSync()
+            val room = client.api.room.createRoom(
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
+            ).getOrThrow()
+            client.room.sendMessage(room) { text("dino") }
+
+            val eventId = client.room.getLastTimelineEvent(room).flatMapLatest { it ?: flowOf(null) }
+                .first { it?.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+                ?.eventId
+                .shouldNotBeNull()
+
+            client.stop()
+
+            val exposedTimelineEvent = object : Table("room_timeline_event") {
+                val roomId = varchar("room_id", length = 255)
+                val eventId = varchar("event_id", length = 255)
+                override val primaryKey = PrimaryKey(roomId, this.eventId)
+                val value = text("value")
+            }
+            newSuspendedTransaction(Dispatchers.IO, database) {
+                exposedTimelineEvent.select {
+                    exposedTimelineEvent.eventId.eq(eventId.full) and exposedTimelineEvent.roomId.eq(room.full)
+                }.firstOrNull()?.get(exposedTimelineEvent.value).shouldNotContain("dino")
+            }
         }
     }
 

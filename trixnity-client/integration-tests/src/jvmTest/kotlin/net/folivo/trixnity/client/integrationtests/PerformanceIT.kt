@@ -17,6 +17,7 @@ import net.folivo.trixnity.client.store.membership
 import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.store.repository.realm.createRealmRepositoriesModule
+import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.client.user
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl

@@ -2,12 +2,12 @@ package net.folivo.trixnity.client.room
 
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
+import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
 fun plainEvent(

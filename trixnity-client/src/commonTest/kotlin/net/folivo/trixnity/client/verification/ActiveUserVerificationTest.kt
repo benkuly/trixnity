@@ -91,8 +91,6 @@ class ActiveUserVerificationTest : ShouldSpec({
             roomId,
             1
         ),
-        roomId = roomId,
-        eventId = EventId("e"),
         previousEventId = null,
         nextEventId = null,
         gap = null
@@ -108,7 +106,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         TextMessageEventContent("hi"),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -118,7 +115,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         VerificationCancelEventContent(MismatchedSas, "", relatesTo, null),
                         EventId("$2"), alice, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -133,7 +129,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         ),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -143,7 +138,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         cancelEvent,
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             )
@@ -166,7 +160,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                     ),
                     EventId("$2"), bob, roomId, 1234
                 ),
-                roomId = roomId, eventId = event,
                 previousEventId = null, nextEventId = null, gap = null
             )
         )
@@ -179,7 +172,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(TextMessageEventContent("hi")),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -190,7 +182,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         EventId("$2"), alice, roomId, 1234
                     ),
                     content = Result.success(VerificationCancelEventContent(MismatchedSas, "", relatesTo, null)),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -208,7 +199,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                             null
                         )
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -223,7 +213,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                 EventId("$2"), bob, roomId, 1234
             ),
             content = Result.success(cancelEvent),
-            roomId = roomId, eventId = event,
             previousEventId = null, nextEventId = null, gap = null
         )
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
@@ -246,7 +235,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         VerificationCancelEventContent(User, "r", relatesTo, null),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             )
@@ -272,7 +260,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         ),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             )
@@ -310,7 +297,6 @@ class ActiveUserVerificationTest : ShouldSpec({
                         ),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    roomId = roomId, eventId = event,
                     previousEventId = null, nextEventId = null, gap = null
                 )
             )

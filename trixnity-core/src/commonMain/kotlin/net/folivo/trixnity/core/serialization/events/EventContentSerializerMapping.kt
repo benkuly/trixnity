@@ -30,9 +30,7 @@ class MessageEventContentSerializerMapping(
     override val kClass: KClass<out MessageEventContent>,
     serializer: KSerializer<out MessageEventContent>,
 ) : EventContentSerializerMapping<MessageEventContent> {
-    override val serializer: KSerializer<MessageEventContent> =
-        @Suppress("UNCHECKED_CAST")
-        MessageEventContentSerializer(type, serializer as KSerializer<MessageEventContent>)
+    override val serializer: KSerializer<MessageEventContent> = MessageEventContentSerializer(type, serializer)
 
     override fun toString(): String =
         "MessageEventContentSerializerMapping(type=$type, kClass=$kClass, serializer=$serializer)"
@@ -43,9 +41,7 @@ class StateEventContentSerializerMapping(
     override val kClass: KClass<out StateEventContent>,
     serializer: KSerializer<out StateEventContent>,
 ) : EventContentSerializerMapping<StateEventContent> {
-    override val serializer: KSerializer<StateEventContent> =
-        @Suppress("UNCHECKED_CAST")
-        StateEventContentSerializer(type, serializer as KSerializer<StateEventContent>)
+    override val serializer: KSerializer<StateEventContent> = StateEventContentSerializer(type, serializer)
 
     override fun toString(): String =
         "StateEventContentSerializerMapping(type=$type, kClass=$kClass, serializer=$serializer)"

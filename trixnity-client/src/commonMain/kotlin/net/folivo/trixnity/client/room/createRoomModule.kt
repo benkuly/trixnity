@@ -92,6 +92,7 @@ fun createRoomModule() = module {
             typingEventHandler = get(named<TypingEventHandler>()),
             currentSyncState = get(),
             scope = get(),
+            config = get(),
         )
     }
 }

@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.eventId
+import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.EmoteMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.getFormattedBody

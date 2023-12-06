@@ -80,6 +80,7 @@ class RoomServiceTest : ShouldSpec({
             mediaServiceMock,
             simpleUserInfo,
             TimelineEventHandlerMock(),
+            MatrixClientConfiguration(),
             TypingEventHandler(api),
             CurrentSyncState(currentSyncState),
             scope
@@ -122,13 +123,11 @@ class RoomServiceTest : ShouldSpec({
         val encryptedTimelineEvent = TimelineEvent(
             event = MessageEvent(
                 encryptedEventContent,
-                EventId("\$event1"),
+                eventId,
                 UserId("sender", "server"),
                 room,
                 1
             ),
-            roomId = room,
-            eventId = eventId,
             previousEventId = null,
             nextEventId = null,
             gap = null
@@ -156,8 +155,6 @@ class RoomServiceTest : ShouldSpec({
                                 room,
                                 0
                             ),
-                            roomId = room,
-                            eventId = lastEventId,
                             previousEventId = null,
                             nextEventId = null,
                             gap = TimelineEvent.Gap.GapBefore("start")
@@ -194,10 +191,10 @@ class RoomServiceTest : ShouldSpec({
                         content = Result.failure(TimelineEventContentError.DecryptionTimeout)
                     ),
                     "without RoomEvent" to encryptedTimelineEvent.copy(
-                        event = nameEvent(24)
+                        event = nameEvent(1)
                     ),
                     "without MegolmEncryptedEventContent" to encryptedTimelineEvent.copy(
-                        event = textEvent(48)
+                        event = textEvent(1)
                     )
                 )
             ) { timelineEvent ->
@@ -334,8 +331,6 @@ class RoomServiceTest : ShouldSpec({
             val event2Timeline = TimelineEvent(
                 event = event2,
                 content = null,
-                roomId = room,
-                eventId = event2.id,
                 previousEventId = null,
                 nextEventId = null,
                 gap = null

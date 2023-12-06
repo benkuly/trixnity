@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformLatest
+import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.relatesTo
 import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.core.model.EventId

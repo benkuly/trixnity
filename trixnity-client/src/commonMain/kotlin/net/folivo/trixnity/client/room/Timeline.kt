@@ -9,6 +9,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.isFirst
 import net.folivo.trixnity.client.store.isLast
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents

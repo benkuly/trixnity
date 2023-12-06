@@ -104,8 +104,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = event1,
                             content = null,
-                            roomId = room,
-                            eventId = event1.id,
                             previousEventId = null,
                             nextEventId = event2.id,
                             gap = null
@@ -113,8 +111,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = event2,
                             content = Result.failure(TimelineEventContentError.DecryptionTimeout),
-                            roomId = room,
-                            eventId = event2.id,
                             previousEventId = event1.id,
                             nextEventId = event3.id,
                             gap = null
@@ -122,8 +118,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = event3,
                             content = null,
-                            roomId = room,
-                            eventId = event3.id,
                             previousEventId = event3.id,
                             nextEventId = null,
                             gap = null
@@ -165,8 +159,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = event1,
                             content = null,
-                            roomId = room,
-                            eventId = event1.id,
                             previousEventId = null,
                             nextEventId = event2.id,
                             gap = null
@@ -174,8 +166,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = event2,
                             content = Result.failure(TimelineEventContentError.DecryptionTimeout),
-                            roomId = room,
-                            eventId = event2.id,
                             previousEventId = event1.id,
                             nextEventId = event3.id,
                             gap = null
@@ -183,8 +173,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                         TimelineEvent(
                             event = event3,
                             content = null,
-                            roomId = room,
-                            eventId = event3.id,
                             previousEventId = event3.id,
                             nextEventId = null,
                             gap = null
@@ -226,8 +214,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 val timelineEvent1 = TimelineEvent(
                     event = event1,
                     content = null,
-                    roomId = room,
-                    eventId = event1.id,
                     previousEventId = null,
                     nextEventId = event2.id,
                     gap = null
@@ -235,8 +221,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                 val timelineEvent2 = TimelineEvent(
                     event = event2,
                     content = Result.failure(TimelineEventContentError.DecryptionTimeout),
-                    roomId = room,
-                    eventId = event2.id,
                     previousEventId = event1.id,
                     nextEventId = null,
                     gap = null
