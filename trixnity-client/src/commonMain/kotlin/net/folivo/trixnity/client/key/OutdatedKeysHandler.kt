@@ -228,7 +228,6 @@ class OutdatedKeysHandler(
             tm.writeTransaction {
                 userIdChunk.forEach { userId ->
                     launch {
-                        println(currentCoroutineContext()[KeyStore.SkipOutdatedKeys] != null)
                         keysResponse.masterKeys?.get(userId)?.let { masterKey ->
                             handleOutdatedCrossSigningKey(
                                 userId = userId,
