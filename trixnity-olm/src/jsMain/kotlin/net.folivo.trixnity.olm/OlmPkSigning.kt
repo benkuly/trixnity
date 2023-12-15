@@ -1,8 +1,8 @@
 package net.folivo.trixnity.olm
 
+import js.typedarrays.toUint8Array
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
-import org.khronos.webgl.Uint8Array
 
 actual class OlmPkSigning private constructor(
     internal actual val ptr: OlmPkSigningPointer,
@@ -13,9 +13,9 @@ actual class OlmPkSigning private constructor(
         actual suspend fun create(privateKey: String?): OlmPkSigning {
             initOlm()
             val ptr: PkSigning = rethrow { js("new Olm.PkSigning()") }.unsafeCast<OlmPkSigningPointer>()
-            val newPrivateKey = privateKey?.decodeUnpaddedBase64Bytes()?.unsafeCast<Uint8Array>() ?: ptr.generate_seed()
+            val newPrivateKey = privateKey?.decodeUnpaddedBase64Bytes()?.toUint8Array() ?: ptr.generate_seed()
             val publicKey = rethrow { ptr.init_with_seed(newPrivateKey) }
-            return OlmPkSigning(ptr, newPrivateKey.unsafeCast<ByteArray>().encodeUnpaddedBase64(), publicKey)
+            return OlmPkSigning(ptr, newPrivateKey.toByteArray().encodeUnpaddedBase64(), publicKey)
         }
     }
 

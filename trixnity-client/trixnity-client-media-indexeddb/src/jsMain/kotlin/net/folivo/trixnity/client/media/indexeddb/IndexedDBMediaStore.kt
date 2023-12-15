@@ -3,11 +3,11 @@ package net.folivo.trixnity.client.media.indexeddb
 import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
+import js.typedarrays.toUint8Array
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
-import org.khronos.webgl.Uint8Array
 
 class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaStore {
     companion object {
@@ -26,7 +26,7 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
     }
 
     override suspend fun addMedia(url: String, content: ByteArrayFlow) {
-        val value = content.toByteArray().unsafeCast<Uint8Array>()
+        val value = content.toByteArray().toUint8Array()
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store.put(value, Key(url))

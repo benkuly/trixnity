@@ -10,7 +10,7 @@
 
 package net.folivo.trixnity.olm
 
-import org.khronos.webgl.Uint8Array
+import js.typedarrays.Uint8Array
 
 external class Account {
     fun free()

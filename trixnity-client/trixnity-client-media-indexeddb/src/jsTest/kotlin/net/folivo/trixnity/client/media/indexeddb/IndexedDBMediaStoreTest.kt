@@ -5,13 +5,13 @@ import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
 import io.kotest.matchers.shouldBe
+import js.typedarrays.toUint8Array
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.MEDIA_OBJECT_STORE_NAME
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
-import org.khronos.webgl.Uint8Array
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -53,8 +53,8 @@ class IndexedDBMediaStoreTest {
     fun shouldDeleteAll() = test {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.put(ByteArray(0).unsafeCast<Uint8Array>(), Key(file1))
-            store.put(ByteArray(0).unsafeCast<Uint8Array>(), Key(file2))
+            store.put(ByteArray(0).toUint8Array(), Key(file1))
+            store.put(ByteArray(0).toUint8Array(), Key(file2))
         }
         database.transaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
@@ -81,7 +81,7 @@ class IndexedDBMediaStoreTest {
     fun shouldGetMedia() = test {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.put("hi".encodeToByteArray().unsafeCast<Uint8Array>(), Key(file1))
+            store.put("hi".encodeToByteArray().toUint8Array(), Key(file1))
         }
         cut.getMedia(file1)?.toByteArray()?.decodeToString() shouldBe "hi"
     }
@@ -95,7 +95,7 @@ class IndexedDBMediaStoreTest {
     fun shouldDeleteMedia() = test {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.put("hi".encodeToByteArray().unsafeCast<Uint8Array>(), Key(file1))
+            store.put("hi".encodeToByteArray().toUint8Array(), Key(file1))
         }
         cut.deleteMedia(file1)
         database.transaction(MEDIA_OBJECT_STORE_NAME) {
@@ -114,7 +114,7 @@ class IndexedDBMediaStoreTest {
     fun shouldChangeMediaUrl() = test {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
-            store.put("hi".encodeToByteArray().unsafeCast<Uint8Array>(), Key(file1))
+            store.put("hi".encodeToByteArray().toUint8Array(), Key(file1))
         }
         cut.changeMediaUrl(file1, file2)
         database.transaction(MEDIA_OBJECT_STORE_NAME) {
