@@ -70,9 +70,14 @@ data class MatrixClientConfiguration(
     var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
 
     /**
-     * Inject and override modules into Trixnity.
+     * Inject and override modules into Trixnity. You should always apply [createDefaultTrixnityModules] first.
+     *
+     * For example:
+     * ```kotlin
+     * modules = createDefaultTrixnityModules() + customModule
+     * ```
      */
-    var modules: List<Module> = createDefaultModules(),
+    var modules: List<Module> = createDefaultTrixnityModules(),
 ) {
     data class SyncLoopDelays(
         val syncLoopDelay: Duration,

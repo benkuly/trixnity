@@ -8,7 +8,7 @@ The client can be customized via dependency injection:
 
 ```kotlin
 matrixClient.login(...){
-    modules = createDefaultModules() + customModule
+    modules = createDefaultTrixnityModules() + customModule
 }
 ```
 

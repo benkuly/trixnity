@@ -48,7 +48,7 @@ fun createDefaultMatrixJsonModule() = module {
     }
 }
 
-fun createDefaultModules() = listOf(
+fun createDefaultTrixnityModules() = listOf(
     createDefaultEventContentSerializerMappingsModule(),
     createDefaultOutboxMessageMediaUploaderMappingsModule(),
     createDefaultMatrixJsonModule(),
@@ -61,6 +61,9 @@ fun createDefaultModules() = listOf(
     createMediaModule(),
     createNotificationModule(),
 )
+
+@Deprecated("use createDefaultTrixnityModules instead", ReplaceWith("createDefaultTrixnityModules()"))
+fun createDefaultModules() = createDefaultTrixnityModules()
 
 val MatrixClient.room
     get() = di.get<RoomService>()
