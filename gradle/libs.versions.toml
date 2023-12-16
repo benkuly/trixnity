@@ -2,6 +2,7 @@
 ### build ###
 kotlin = "1.9.21" # https://github.com/JetBrains/kotlin/releases
 ksp = "1.9.21-1.0.15" # https://github.com/google/ksp/releases
+kotlinWrappers = "1.0.0-pre.666" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "1.9.10" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.1.4" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.5.0" # https://github.com/michel-kraemer/gradle-download-task/releases
@@ -55,6 +56,9 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
 kotlin-gradle-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
+kotlin-wrappers-bom = { module = "org.jetbrains.kotlin-wrappers:kotlin-wrappers-bom", version.ref = "kotlinWrappers" }
+kotlin-wrappers-browser = { module = "org.jetbrains.kotlin-wrappers:kotlin-browser" }
+kotlin-wrappers-node = { module = "org.jetbrains.kotlin-wrappers:kotlin-node" }
 
 ### kotlinx ###
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }

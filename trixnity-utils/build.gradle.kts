@@ -20,6 +20,12 @@ kotlin {
                 implementation(libs.oshai.logging)
             }
         }
+        jsMain {
+            dependencies {
+                api(project.dependencies.platform(libs.kotlin.wrappers.bom))
+                api(libs.kotlin.wrappers.browser)
+            }
+        }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))

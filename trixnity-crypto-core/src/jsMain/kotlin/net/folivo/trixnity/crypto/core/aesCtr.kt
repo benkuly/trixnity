@@ -1,13 +1,15 @@
 package net.folivo.trixnity.crypto.core
 
 import createCipheriv
-import crypto
 import io.ktor.util.*
-import kotlinx.coroutines.await
+import js.core.jso
+import js.promise.await
+import js.typedarrays.Uint8Array
+import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.flow
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.toByteArray
-import kotlin.js.json
+import web.crypto.*
 
 actual fun ByteArrayFlow.encryptAes256Ctr(
     key: ByteArray,
@@ -17,31 +19,37 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
         flow {// TODO should be streaming!
             val crypto = crypto.subtle
             val aesKey = crypto.importKey(
-                "raw",
-                key.toInt8Array().buffer,
-                json("name" to "AES-CTR"),
-                false,
-                arrayOf("encrypt", "decrypt"),
+                format = KeyFormat.raw,
+                keyData = key.toUint8Array(),
+                algorithm = jso<AesKeyAlgorithm> { name = "AES-CTR" },
+                extractable = false,
+                keyUsages = arrayOf(KeyUsage.encrypt, KeyUsage.decrypt),
             ).await()
-            val result = crypto.encrypt(
-                json(
-                    "name" to "AES-CTR",
-                    "counter" to initialisationVector.toInt8Array().buffer,
-                    "length" to 64,
-                ),
-                aesKey,
-                filterNotEmpty().toByteArray().toInt8Array().buffer,
-            ).await().toByteArray()
+            val result = Uint8Array(
+                crypto.encrypt(
+                    algorithm = jso<AesCtrParams> {
+                        name = "AES-CTR"
+                        counter = initialisationVector.toUint8Array()
+                        length = 64
+                    },
+                    key = aesKey,
+                    data = filterNotEmpty().toByteArray().toUint8Array(),
+                ).await()
+            ).toByteArray()
             emit(result)
         }.filterNotEmpty()
     } else {
         flow {
             val cipher =
-                createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
+                createCipheriv(
+                    algorithm = "aes-256-ctr",
+                    key = key.toUint8Array(),
+                    iv = initialisationVector.toUint8Array()
+                )
             filterNotEmpty().collect { input ->
-                emit(cipher.update(input.toInt8Array()).toByteArray())
+                emit(Uint8Array(cipher.update(input.toUint8Array())).toByteArray())
             }
-            emit(cipher.final().toByteArray())
+            emit(Uint8Array(cipher.final()).toByteArray())
         }.filterNotEmpty()
     }
 }
@@ -55,21 +63,23 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
             try {
                 val crypto = crypto.subtle
                 val aesKey = crypto.importKey(
-                    "raw",
-                    key.toInt8Array().buffer,
-                    json("name" to "AES-CTR"),
-                    false,
-                    arrayOf("encrypt", "decrypt"),
+                    format = KeyFormat.raw,
+                    keyData = key.toUint8Array(),
+                    algorithm = jso<AesKeyAlgorithm> { name = "AES-CTR" },
+                    extractable = false,
+                    keyUsages = arrayOf(KeyUsage.encrypt, KeyUsage.decrypt),
                 ).await()
-                val result = crypto.decrypt(
-                    json(
-                        "name" to "AES-CTR",
-                        "counter" to initialisationVector.toInt8Array().buffer,
-                        "length" to 64,
-                    ),
-                    aesKey,
-                    filterNotEmpty().toByteArray().toInt8Array().buffer,
-                ).await().toByteArray()
+                val result = Uint8Array(
+                    crypto.decrypt(
+                        algorithm = jso<AesCtrParams> {
+                            name = "AES-CTR"
+                            counter = initialisationVector.toUint8Array()
+                            length = 64
+                        },
+                        key = aesKey,
+                        data = filterNotEmpty().toByteArray().toUint8Array(),
+                    ).await()
+                ).toByteArray()
                 emit(result)
             } catch (exception: Throwable) {
                 throw AesDecryptionException(exception)
@@ -79,11 +89,15 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
         flow {
             try {
                 val decipher =
-                    createCipheriv("aes-256-ctr", key.toInt8Array(), initialisationVector.toInt8Array())
+                    createCipheriv(
+                        algorithm = "aes-256-ctr",
+                        key = key.toUint8Array(),
+                        iv = initialisationVector.toUint8Array()
+                    )
                 filterNotEmpty().collect { input ->
-                    emit(decipher.update(input.toInt8Array()).toByteArray())
+                    emit(Uint8Array(decipher.update(input.toUint8Array())).toByteArray())
                 }
-                emit(decipher.final().toByteArray())
+                emit(Uint8Array(decipher.final()).toByteArray())
             } catch (exception: Throwable) {
                 throw AesDecryptionException(exception)
             }

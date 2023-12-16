@@ -1,8 +1,8 @@
 package net.folivo.trixnity.olm
 
+import js.typedarrays.toUint8Array
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
-import org.khronos.webgl.Uint8Array
 
 actual class OlmPkDecryption private constructor(
     internal actual val ptr: OlmPkDecryptionPointer,
@@ -13,7 +13,7 @@ actual class OlmPkDecryption private constructor(
             initOlm()
             val ptr: PkDecryption = rethrow { js("new Olm.PkDecryption()") }.unsafeCast<OlmPkDecryptionPointer>()
             val publicKey = rethrow {
-                privateKey?.let { ptr.init_with_private_key(it.decodeUnpaddedBase64Bytes().unsafeCast<Uint8Array>()) }
+                privateKey?.let { ptr.init_with_private_key(it.decodeUnpaddedBase64Bytes().toUint8Array()) }
                     ?: ptr.generate_key()
             }
             return OlmPkDecryption(ptr, publicKey)
@@ -26,7 +26,7 @@ actual class OlmPkDecryption private constructor(
         }
     }
 
-    actual val privateKey: String = rethrow { ptr.get_private_key() }.unsafeCast<ByteArray>().encodeUnpaddedBase64()
+    actual val privateKey: String = rethrow { ptr.get_private_key() }.toByteArray().encodeUnpaddedBase64()
 
     actual override fun free() = ptr.free()
 
