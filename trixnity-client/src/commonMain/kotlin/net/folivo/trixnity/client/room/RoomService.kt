@@ -189,13 +189,13 @@ interface RoomService {
 class RoomServiceImpl(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
-    private val roomUserStore: RoomUserStore,
     private val roomStateStore: RoomStateStore,
     private val roomAccountDataStore: RoomAccountDataStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val roomEventEncryptionServices: List<RoomEventEncryptionService>,
     private val mediaService: MediaService,
+    private val forgetRoomService: ForgetRoomService,
     private val userInfo: UserInfo,
     private val timelineEventHandler: TimelineEventHandler,
     private val config: MatrixClientConfiguration,
@@ -591,15 +591,7 @@ class RoomServiceImpl(
         return roomStore.get(roomId)
     }
 
-    override suspend fun forgetRoom(roomId: RoomId) {
-        if (roomStore.get(roomId).first()?.membership == Membership.LEAVE) {
-            roomStore.delete(roomId)
-            roomTimelineStore.deleteByRoomId(roomId)
-            roomStateStore.deleteByRoomId(roomId)
-            roomAccountDataStore.deleteByRoomId(roomId)
-            roomUserStore.deleteByRoomId(roomId)
-        }
-    }
+    override suspend fun forgetRoom(roomId: RoomId) = forgetRoomService(roomId)
 
     override fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,

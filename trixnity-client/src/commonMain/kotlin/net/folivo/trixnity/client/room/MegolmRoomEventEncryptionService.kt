@@ -8,7 +8,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import net.folivo.trixnity.client.key.KeyBackupService
 import net.folivo.trixnity.client.key.OutgoingRoomKeyRequestEventHandler
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.LoadMembersService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
@@ -24,7 +24,7 @@ private val log = KotlinLogging.logger {}
 
 class MegolmRoomEventEncryptionService(
     private val roomStore: RoomStore,
-    private val userService: UserService,
+    private val loadMembersService: LoadMembersService,
     private val roomStateStore: RoomStateStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val keyBackupService: KeyBackupService,
@@ -35,14 +35,15 @@ class MegolmRoomEventEncryptionService(
         content: MessageEventContent,
         roomId: RoomId,
     ): Result<MessageEventContent>? {
-        if (roomStore.get(roomId).first()?.encrypted != true) return null
+        if (roomStore.get(roomId).first() == null) log.warn { "could not find $roomId in local data, waiting started" }
+        if (!roomStore.get(roomId).filterNotNull().first().encrypted) return null
         val encryptionEventContent = withTimeoutOrNull(30.seconds) {
             roomStateStore.getByStateKey<EncryptionEventContent>(roomId).filterNotNull().first().content
         }
         if (encryptionEventContent?.algorithm != EncryptionAlgorithm.Megolm) return null
         if (content is ReactionEventContent) return Result.success(content)
 
-        userService.loadMembers(roomId)
+        loadMembersService(roomId, wait = true)
 
         return olmEncryptionService.encryptMegolm(content, roomId, encryptionEventContent)
     }
@@ -52,7 +53,8 @@ class MegolmRoomEventEncryptionService(
         val roomId = event.roomId
         val eventId = event.id
 
-        if (roomStore.get(roomId).first()?.encrypted != true) return null
+        if (roomStore.get(roomId).first() == null) log.warn { "could not find $roomId in local data, waiting started" }
+        if (!roomStore.get(roomId).filterNotNull().first().encrypted) return null
         val encryptionEventContent = withTimeoutOrNull(30.seconds) {
             roomStateStore.getByStateKey<EncryptionEventContent>(roomId).filterNotNull().first().content
         }

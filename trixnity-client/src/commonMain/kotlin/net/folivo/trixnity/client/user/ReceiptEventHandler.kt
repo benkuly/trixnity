@@ -29,7 +29,7 @@ class ReceiptEventHandler(
 
     internal suspend fun setReadReceipts(receiptEvents: List<ClientEvent<ReceiptEventContent>>) {
         if (receiptEvents.isNotEmpty())
-            tm.writeTransaction {
+            tm.transaction {
                 receiptEvents.forEach { receiptEvent ->
                     receiptEvent.roomIdOrNull?.let { roomId ->
                         log.debug { "set read receipts of room $roomId" }

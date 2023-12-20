@@ -12,7 +12,8 @@ data class OlmMessage(
             fun of(value: Int): OlmMessageType {
                 return when (value) {
                     0 -> INITIAL_PRE_KEY
-                    else -> ORDINARY
+                    1 -> ORDINARY
+                    else -> throw IllegalArgumentException("only 0 and 1 is allowed")
                 }
             }
         }

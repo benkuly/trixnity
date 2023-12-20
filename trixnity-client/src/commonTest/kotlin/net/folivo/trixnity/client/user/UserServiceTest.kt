@@ -1,8 +1,6 @@
 package net.folivo.trixnity.client.user
 
-import io.kotest.assertions.timing.continually
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,29 +9,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EventType
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
-import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
-import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import kotlin.time.Duration.Companion.milliseconds
 
 class UserServiceTest : ShouldSpec({
     timeout = 30_000
@@ -84,22 +75,17 @@ class UserServiceTest : ShouldSpec({
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomTimelineStore = getInMemoryRoomTimelineStore(scope)
         cut = UserServiceImpl(
-            roomUserStore,
-            roomStore,
-            roomStateStore,
-            roomTimelineStore,
-            globalAccountDataStore,
-            api,
-            PresenceEventHandler(api),
-            listOf(),
-            CurrentSyncState(currentSyncState),
+            roomUserStore = roomUserStore,
+            roomStateStore = roomStateStore,
+            roomTimelineStore = roomTimelineStore,
+            globalAccountDataStore = globalAccountDataStore,
+            loadMembersService = { _, _ -> },
+            presenceEventHandler = PresenceEventHandler(api),
             userInfo = UserInfo(
                 me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(value = ""),
                 Key.Curve25519Key(value = "")
             ),
-            DefaultEventContentSerializerMappings,
-            TransactionManagerMock(),
-            scope = scope
+            mappings = DefaultEventContentSerializerMappings,
         )
 
         beforeTest { // some defaults
@@ -110,51 +96,6 @@ class UserServiceTest : ShouldSpec({
 
     afterTest {
         scope.cancel()
-    }
-
-    context(UserServiceImpl::loadMembers.name) {
-        should("do nothing when members already loaded") {
-            val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = true)
-            roomStore.update(roomId) { storedRoom }
-            cut.loadMembers(roomId)
-            continually(500.milliseconds) {
-                roomStore.get(roomId).first() shouldBe storedRoom
-            }
-        }
-        should("load members") {
-            val aliceEvent = StateEvent(
-                MemberEventContent(membership = JOIN),
-                EventId("\$event1"),
-                alice,
-                roomId,
-                1234,
-                stateKey = alice.full
-            )
-            val bobEvent = StateEvent(
-                MemberEventContent(membership = JOIN),
-                EventId("\$event2"),
-                bob,
-                roomId,
-                1234,
-                stateKey = bob.full
-            )
-            apiConfig.endpoints {
-                matrixJsonEndpoint(GetMembers(roomId, notMembership = LEAVE)) {
-                    GetMembers.Response(
-                        setOf(aliceEvent, bobEvent)
-                    )
-                }
-            }
-            val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
-            roomStore.update(roomId) { storedRoom }
-            val newMemberEvents = mutableListOf<Event<MemberEventContent>>()
-            api.sync.subscribeContent<MemberEventContent> {
-                newMemberEvents += it
-            }
-            cut.loadMembers(roomId)
-            roomStore.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
-            newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
-        }
     }
 
     context("getPowerLevel") {

@@ -98,7 +98,8 @@ class OlmEventHandler(
                                 Curve25519Key(keyId = it.key, value = it.value, fallback = true)
                             )
                         }.toSet())
-                            .also { store.updateForgetFallbackKeyAfter { it ?: (Clock.System.now() + 1.hours) } }
+                            // we can forget the old fallback key, when we had to generate a new one
+                            .also { store.updateForgetFallbackKeyAfter { Clock.System.now() + 1.hours } }
                     } else null
 
                 if (newOneTimeKeys != null || newFallbackKeys != null) {

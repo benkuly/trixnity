@@ -56,16 +56,21 @@ class TimelineEventAggregationTest : ShouldSpec({
         roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock()
         val (api, _) = mockMatrixClientServerApiClient(json)
         cut = RoomServiceImpl(
-            api,
-            roomStore, roomUserStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
-            listOf(roomEventDecryptionServiceMock),
-            mediaServiceMock,
-            simpleUserInfo,
-            TimelineEventHandlerMock(),
-            MatrixClientConfiguration(),
-            TypingEventHandler(api),
-            CurrentSyncState(currentSyncState),
-            scope
+            api = api,
+            roomStore = roomStore,
+            roomStateStore = roomStateStore,
+            roomAccountDataStore = roomAccountDataStore,
+            roomTimelineStore = roomTimelineStore,
+            roomOutboxMessageStore = roomOutboxMessageStore,
+            roomEventEncryptionServices = listOf(roomEventDecryptionServiceMock),
+            mediaService = mediaServiceMock,
+            forgetRoomService = {},
+            userInfo = simpleUserInfo,
+            timelineEventHandler = TimelineEventHandlerMock(),
+            config = MatrixClientConfiguration(),
+            typingEventHandler = TypingEventHandler(api),
+            currentSyncState = CurrentSyncState(currentSyncState),
+            scope = scope
         )
     }
 

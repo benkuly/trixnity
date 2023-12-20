@@ -70,16 +70,21 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         api = newApi
         apiConfig = newApiConfig
         cut = RoomServiceImpl(
-            api,
-            roomStore, roomUserStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
-            listOf(roomEventDecryptionServiceMock),
-            mediaServiceMock,
-            simpleUserInfo,
-            timelineEventHandlerMock,
-            MatrixClientConfiguration(),
-            TypingEventHandler(api),
-            CurrentSyncState(currentSyncState),
-            scope
+            api = api,
+            roomStore = roomStore,
+            roomStateStore = roomStateStore,
+            roomAccountDataStore = roomAccountDataStore,
+            roomTimelineStore = roomTimelineStore,
+            roomOutboxMessageStore = roomOutboxMessageStore,
+            roomEventEncryptionServices = listOf(roomEventDecryptionServiceMock),
+            mediaService = mediaServiceMock,
+            forgetRoomService = { },
+            userInfo = simpleUserInfo,
+            timelineEventHandler = timelineEventHandlerMock,
+            config = MatrixClientConfiguration(),
+            typingEventHandler = TypingEventHandler(api),
+            currentSyncState = CurrentSyncState(currentSyncState),
+            scope = scope
         )
     }
 

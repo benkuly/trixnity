@@ -61,10 +61,13 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<TimelineEventHandlerImpl>()
     }
+    singleOf(::ForgetRoomServiceImpl) {
+        bind<ForgetRoomService>()
+    }
     single<RoomEventEncryptionService>(named<MegolmRoomEventEncryptionService>()) {
         MegolmRoomEventEncryptionService(
             roomStore = get(),
-            userService = get(),
+            loadMembersService = get(),
             roomStateStore = get(),
             olmCryptoStore = get(),
             keyBackupService = get(named<KeyBackupService>()),
@@ -80,12 +83,12 @@ fun createRoomModule() = module {
         RoomServiceImpl(
             api = get(),
             roomStore = get(),
-            roomUserStore = get(),
             roomStateStore = get(),
             roomAccountDataStore = get(),
             roomTimelineStore = get(),
             roomOutboxMessageStore = get(),
             roomEventEncryptionServices = getAll(),
+            forgetRoomService = get(),
             mediaService = get(),
             userInfo = get(),
             timelineEventHandler = get(named<TimelineEventHandlerImpl>()),

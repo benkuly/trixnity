@@ -51,7 +51,7 @@ class TimelineEventHandlerImpl(
         api.sync.subscribe(Priority.STORE_TIMELINE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun handleSyncResponse(syncEvents: SyncEvents) = tm.writeTransaction {
+    internal suspend fun handleSyncResponse(syncEvents: SyncEvents) = tm.transaction {
         val syncResponse = syncEvents.syncResponse
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
@@ -135,10 +135,10 @@ class TimelineEventHandlerImpl(
         limit: Long
     ): Result<Unit> = timelineMutex.withLock(roomId) {
         kotlin.runCatching {
-            tm.writeTransaction {
+            tm.transaction {
                 val isLastEventId = roomStore.get(roomId).first()?.lastEventId == startEventId
 
-                val startEvent = roomTimelineStore.get(startEventId, roomId).first() ?: return@writeTransaction
+                val startEvent = roomTimelineStore.get(startEventId, roomId).first() ?: return@transaction
                 val previousToken: String?
                 val previousHasGap: Boolean
                 val previousEvent: EventId?

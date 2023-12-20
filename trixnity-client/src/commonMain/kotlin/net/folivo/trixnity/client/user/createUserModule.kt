@@ -25,21 +25,25 @@ fun createUserModule() = module {
         bind<EventHandler>()
         named<GlobalAccountDataEventHandler>()
     }
+    single<LoadMembersService> {
+        LoadMembersServiceImpl(
+            roomStore = get(),
+            lazyMemberEventHandlers = getAll(),
+            currentSyncState = get(),
+            api = get(),
+            scope = get(),
+        )
+    }
     single<UserService> {
         UserServiceImpl(
             roomUserStore = get(),
-            roomStore = get(),
             roomStateStore = get(),
             roomTimelineStore = get(),
             globalAccountDataStore = get(),
-            api = get(),
+            loadMembersService = get(),
             presenceEventHandler = get(named<PresenceEventHandler>()),
-            lazyMemberEventHandlers = getAll(),
-            currentSyncState = get(),
             userInfo = get(),
             mappings = get(),
-            tm = get(),
-            scope = get(),
         )
     }
 }
