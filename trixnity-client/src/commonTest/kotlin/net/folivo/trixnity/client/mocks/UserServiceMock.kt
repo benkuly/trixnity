@@ -79,10 +79,10 @@ class UserServiceMock : UserService {
     }
 
     override fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean> {
-        TODO("Not yet implemented")
+        throw NotImplementedError()
     }
 
-    override fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Int> {
+    override fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Long> {
         throw NotImplementedError()
     }
 
@@ -90,14 +90,14 @@ class UserServiceMock : UserService {
         userId: UserId,
         powerLevelsEventContent: PowerLevelsEventContent?,
         createEventContent: CreateEventContent
-    ): Int {
+    ): Long {
         throw NotImplementedError()
     }
 
     override fun canSetPowerLevelToMax(
         roomId: RoomId,
         userId: UserId
-    ): Flow<Int?> {
+    ): Flow<Long?> {
         throw NotImplementedError()
     }
 

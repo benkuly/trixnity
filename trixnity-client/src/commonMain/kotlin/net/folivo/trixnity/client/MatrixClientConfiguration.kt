@@ -4,6 +4,7 @@ import io.ktor.client.*
 import kotlinx.coroutines.CoroutineName
 import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.client.store.Room
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
@@ -12,53 +13,72 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-class MatrixClientConfiguration {
+data class MatrixClientConfiguration(
     /**
      * Set a name for this instance. This is used to set a [CoroutineName] to the [CoroutineContext].
      */
-    var name: String? = null
+    var name: String? = null,
+
+    /**
+     * Allow to save [TimelineEvent]s unencrypted.
+     */
+    var storeTimelineEventContentUnencrypted: Boolean = true,
 
     /**
      * Sets the own bookmark to the latest messages sent by this client.
      */
-    var setOwnMessagesAsFullyRead: Boolean = false
+    var setOwnMessagesAsFullyRead: Boolean = false,
 
     /**
      * Automatically join upgraded rooms.
      */
-    var autoJoinUpgradedRooms: Boolean = true
+    var autoJoinUpgradedRooms: Boolean = true,
 
     /**
      * Delete a room, when it's membership is [Membership.LEAVE].
      */
-    var deleteRoomsOnLeave: Boolean = true
+    var deleteRoomsOnLeave: Boolean = true,
+
+    /**
+     * Set the delay, after which a sent outbox message is deleted. The delay is checked each time a sync is received.
+     */
+    var deleteSentOutboxMessageDelay: Duration = 10.seconds,
 
     /**
      * Specifies how long values are kept in the cache when not used by anyone.
      */
-    var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes)
+    var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes),
+
+    /**
+     * The timeout for the normal sync loop.
+     */
+    var syncLoopTimeout: Duration = 30.seconds,
 
     /**
      * Set custom delays for the sync loop.
      */
-    var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default()
+    var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default(),
 
     /**
      * Allows you to customize, which [Room.lastRelevantEventId] is set.
      */
-    var lastRelevantEventFilter: (RoomEvent<*>) -> Boolean = { it is RoomEvent.MessageEvent<*> }
+    var lastRelevantEventFilter: (RoomEvent<*>) -> Boolean = { it is RoomEvent.MessageEvent<*> },
 
     /**
      * Set custom [HttpClient].
      */
-    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory()
+    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
 
     /**
-     * Inject and override modules into Trixnity.
+     * Inject and override modules into Trixnity. You should always apply [createDefaultTrixnityModules] first.
+     *
+     * For example:
+     * ```kotlin
+     * modules = createDefaultTrixnityModules() + customModule
+     * ```
      */
-    var modules: List<Module> = createDefaultModules()
-
-
+    var modules: List<Module> = createDefaultTrixnityModules(),
+) {
     data class SyncLoopDelays(
         val syncLoopDelay: Duration,
         val syncLoopErrorDelay: Duration

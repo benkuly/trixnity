@@ -9,21 +9,9 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 fun createKeyModule() = module {
-    singleOf(::KeyMemberEventHandler) {
-        bind<EventHandler>()
-        bind<LazyMemberEventHandler>()
-        named<KeyMemberEventHandler>()
-    }
-    singleOf(::KeyEncryptionEventHandler) {
-        bind<EventHandler>()
-        named<KeyEncryptionEventHandler>()
-    }
-    singleOf(::DeviceListsHandler) {
-        bind<EventHandler>()
-        named<DeviceListsHandler>()
-    }
     singleOf(::OutdatedKeysHandler) {
         bind<EventHandler>()
+        bind<LazyMemberEventHandler>()
         named<OutdatedKeysHandler>()
     }
     singleOf(::IncomingRoomKeyRequestEventHandler) {
@@ -41,13 +29,13 @@ fun createKeyModule() = module {
     }
     single<EventHandler>(named<OutgoingSecretKeyRequestEventHandler>()) {
         OutgoingSecretKeyRequestEventHandler(
-            get(),
-            get(),
-            get(),
-            get(named<KeyBackupService>()),
-            get(),
-            get(),
-            get()
+            userInfo = get(),
+            api = get(),
+            olmDecrypter = get(),
+            keyBackupService = get(named<KeyBackupService>()),
+            keyStore = get(),
+            globalAccountDataStore = get(),
+            currentSyncState = get()
         )
     }
     singleOf(::KeySecretServiceImpl) { bind<KeySecretService>() }
@@ -58,6 +46,16 @@ fun createKeyModule() = module {
         named<KeyBackupService>()
     }
     single<KeyService> {
-        KeyServiceImpl(get(), get(), get(), get(), get(), get(), get(named<KeyBackupService>()), get(), get())
+        KeyServiceImpl(
+            userInfo = get(),
+            keyStore = get(),
+            olmCryptoStore = get(),
+            globalAccountDataStore = get(),
+            roomService = get(),
+            signService = get(),
+            keyBackupService = get(named<KeyBackupService>()),
+            keyTrustService = get(),
+            api = get()
+        )
     }
 }

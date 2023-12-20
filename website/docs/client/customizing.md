@@ -8,7 +8,7 @@ The client can be customized via dependency injection:
 
 ```kotlin
 matrixClient.login(...){
-    modules = createDefaultModules() + customModule
+    modules = createDefaultTrixnityModules() + customModule
 }
 ```
 
@@ -20,9 +20,9 @@ of this Kotlin type like all other default events.
 
 ```kotlin
 val customMappings = createEventContentSerializerMappings {
-    ofMessage<DingoEventContent>("net.folivo.dino")
-    // ot
-    ofMessage("net.folivo.dino", DingoEventContentSerializer)
+    messageOf<DingoEventContent>("net.folivo.dino")
+    // or
+    messageOf("net.folivo.dino", DingoEventContentSerializer)
 }
 val customModule = module {
     single<EventContentSerializerMappings> {

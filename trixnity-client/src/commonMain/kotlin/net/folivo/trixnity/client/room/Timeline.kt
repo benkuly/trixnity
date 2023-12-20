@@ -9,13 +9,13 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.isFirst
 import net.folivo.trixnity.client.store.isLast
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration.Companion.INFINITE
-import kotlin.time.Duration.Companion.ZERO
 
 private val log = KotlinLogging.logger { }
 
@@ -190,7 +190,6 @@ abstract class TimelineBase<T>(
                 internalState.update { it.copy(isInitialized = false) }
                 val newEvents = internalInit(startFrom,
                     configStart = {
-                        decryptionTimeout = ZERO
                         fetchTimeout = INFINITE
                         fetchSize = 100
                     },

@@ -69,15 +69,11 @@ class IncomingSecretKeyRequestEventHandler(
                     ?.let { keyStore.getSecrets()[it] }
                 if (requestedSecret != null) {
                     log.info { "send incoming secret key request answer (${request.name}) to device $requestingDeviceId" }
-                    val encryptedAnswer = try {
+                    val encryptedAnswer =
                         olmEncryptionService.encryptOlm(
                             SecretKeySendEventContent(request.requestId, requestedSecret.decryptedPrivateKey),
                             ownUserId, requestingDeviceId
-                        )
-                    } catch (exception: Exception) {
-                        log.warn(exception) { "could not encrypt answer for secret key request (${request.name}) to device $requestingDeviceId" }
-                        null
-                    }
+                        ).getOrNull()
                     if (encryptedAnswer != null)
                         api.user.sendToDevice(
                             mapOf(ownUserId to mapOf(requestingDeviceId to encryptedAnswer))

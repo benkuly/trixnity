@@ -26,6 +26,11 @@ inline fun <reified C : StateEventContent> RoomStateStore.getByStateKey(
     stateKey: String = "",
 ): Flow<StateBaseEvent<C>?> = getByStateKey(roomId, C::class, stateKey)
 
+suspend inline fun <reified C : StateEventContent> RoomStateStore.getByRooms(
+    roomIds: Set<RoomId>,
+    stateKey: String = "",
+): List<StateBaseEvent<C>> = getByRooms(roomIds, C::class, stateKey)
+
 inline fun <reified C : StateEventContent> RoomStateStore.getContentByStateKey(
     roomId: RoomId,
     stateKey: String = "",
@@ -58,11 +63,12 @@ suspend fun RoomStateStore.membersCount(
         .count { allMemberships.contains(it.value.first()?.content?.membership) }.toLong()
 }
 
-suspend fun RoomStore.encryptedJoinedRooms(): List<RoomId> =
+suspend fun RoomStore.encryptedJoinedRooms(): Set<RoomId> =
     getAll().first().values
         .map { it.first() }
         .filter { it?.encrypted == true && it.membership == JOIN }
         .mapNotNull { it?.roomId }
+        .toSet()
 
 fun RoomTimelineStore.getNext(
     event: TimelineEvent,
@@ -71,9 +77,6 @@ fun RoomTimelineStore.getNext(
 
 suspend fun RoomTimelineStore.getPrevious(event: TimelineEvent): TimelineEvent? =
     event.previousEventId?.let { get(it, event.roomId) }?.first()
-
-suspend fun KeyStore.isTracked(userId: UserId): Boolean =
-    getDeviceKeys(userId).first() != null
 
 suspend fun OlmCryptoStore.waitForInboundMegolmSession(
     roomId: RoomId,

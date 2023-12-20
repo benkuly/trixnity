@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.key
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
@@ -13,21 +14,14 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventC
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.crypto.SecretType
 
-internal suspend fun KeyStore.waitForUpdateOutdatedKey(user: UserId) = waitForUpdateOutdatedKey(setOf(user))
-internal suspend fun KeyStore.waitForUpdateOutdatedKey(users: Set<UserId> = setOf()) {
-    getOutdatedKeysFlow().first { if (users.isEmpty()) it.isEmpty() else it.none { outdated -> users.contains(outdated) } }
-}
-
+private val log = KotlinLogging.logger { }
 internal suspend inline fun <reified T : Key> KeyStore.getAllKeysFromUser(
     userId: UserId,
     filterDeviceId: String? = null,
     filterUsage: CrossSigningKeysUsage? = null
 ): Set<T> {
-    val deviceKeys = (getDeviceKeys(userId).first() ?: run {
-        updateOutdatedKeys { it + userId }
-        waitForUpdateOutdatedKey(userId)
-        getDeviceKeys(userId).first()
-    })?.entries?.filter { if (filterDeviceId != null) it.key == filterDeviceId else true }
+    val deviceKeys = getDeviceKeys(userId).first()
+        ?.entries?.filter { if (filterDeviceId != null) it.key == filterDeviceId else true }
         ?.flatMap { it.value.value.signed.keys.filterIsInstance<T>() } ?: listOf()
     val crossSigningKeys =
         getCrossSigningKeys(userId).first()
@@ -42,14 +36,15 @@ internal fun KeyStore.getDeviceKey(userId: UserId, deviceId: String) =
 
 internal suspend inline fun KeyStore.getCrossSigningKey(
     userId: UserId,
-    usage: CrossSigningKeysUsage
+    usage: CrossSigningKeysUsage,
 ): StoredCrossSigningKeys? {
-    return this.getCrossSigningKeys(userId).first()?.firstOrNull { it.value.signed.usage.contains(usage) }
+    return this.getCrossSigningKeys(userId).first()
+        ?.firstOrNull { it.value.signed.usage.contains(usage) }
 }
 
 internal suspend inline fun KeyStore.getCrossSigningKey(
     userId: UserId,
-    keyId: String
+    keyId: String,
 ): StoredCrossSigningKeys? {
     return this.getCrossSigningKeys(userId).first()?.find { keys ->
         keys.value.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().any { it.keyId == keyId }
@@ -72,7 +67,7 @@ internal inline fun <reified T : Key> SignedDeviceKeys.get(): T? {
     return signed.keys.keys.filterIsInstance<T>().firstOrNull()
 }
 
-internal suspend fun SecretType.getEncryptedSecret(globalAccountDataStore: GlobalAccountDataStore) = when (this) {
+internal fun SecretType.getEncryptedSecret(globalAccountDataStore: GlobalAccountDataStore) = when (this) {
     SecretType.M_CROSS_SIGNING_USER_SIGNING -> globalAccountDataStore.get<UserSigningKeyEventContent>()
     SecretType.M_CROSS_SIGNING_SELF_SIGNING -> globalAccountDataStore.get<SelfSigningKeyEventContent>()
     SecretType.M_MEGOLM_BACKUP_V1 -> globalAccountDataStore.get<MegolmBackupV1EventContent>()

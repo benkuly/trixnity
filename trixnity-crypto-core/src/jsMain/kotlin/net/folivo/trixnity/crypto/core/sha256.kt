@@ -1,13 +1,15 @@
 package net.folivo.trixnity.crypto.core
 
 import createHash
-import crypto
 import io.ktor.util.*
-import kotlinx.coroutines.await
+import js.promise.await
+import js.typedarrays.Uint8Array
+import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import net.folivo.trixnity.utils.toByteArray
+import web.crypto.crypto
 
 actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
     return if (PlatformUtils.IS_BROWSER) {
@@ -16,7 +18,7 @@ actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
         Sha256ByteFlow(
             flow {// TODO should be streaming!
                 val content = toByteArray()
-                hash.value = crypto.digest("SHA-256", content.toInt8Array().buffer).await()
+                hash.value = Uint8Array(crypto.digest("SHA-256", content.toUint8Array()).await())
                     .toByteArray()
                     .encodeUnpaddedBase64()
                 emit(content)
@@ -30,9 +32,9 @@ actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
                 val digest = createHash("sha256")
                 emitAll(
                     onEach { input ->
-                        digest.update(input.toInt8Array())
+                        digest.update(input.toUint8Array())
                     }.onCompletion {
-                        hash.value = digest.digest().toByteArray().encodeUnpaddedBase64()
+                        hash.value = Uint8Array(digest.digest()).toByteArray().encodeUnpaddedBase64()
                     }
                 )
             },

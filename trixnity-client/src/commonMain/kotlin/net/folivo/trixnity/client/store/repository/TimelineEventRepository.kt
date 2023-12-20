@@ -4,7 +4,7 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 
-interface TimelineEventRepository : MinimalDeleteByRoomIdRepository<TimelineEventKey, TimelineEvent> {
+interface TimelineEventRepository : DeleteByRoomIdMinimalRepository<TimelineEventKey, TimelineEvent> {
     override fun serializeKey(key: TimelineEventKey): String =
         key.roomId.full + key.eventId.full
 }

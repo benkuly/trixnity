@@ -1,10 +1,13 @@
 package net.folivo.trixnity.clientserverapi.client
 
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.clientserverapi.model.users.GetProfile
@@ -15,13 +18,16 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.fail
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class UsersApiClientTest {
 
     @Test
@@ -200,7 +206,7 @@ class UsersApiClientTest {
     }
 
     @Test
-    fun shouldSendToDevice() = runTest {
+    fun shouldSendToDeviceUnsafe() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
@@ -228,7 +234,7 @@ class UsersApiClientTest {
                     )
                 }
             })
-        matrixRestClient.user.sendToDevice(
+        matrixRestClient.user.sendToDeviceUnsafe(
             mapOf(
                 UserId("@alice:example.com") to mapOf(
                     "TLLBEANAAG" to RoomKeyEventContent(
@@ -241,6 +247,137 @@ class UsersApiClientTest {
             ),
             transactionId = "txnId"
         ).getOrThrow()
+    }
+
+    @Test
+    fun shouldPreventSendToDeviceUnsafeWhenNoEvent() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory { })
+        shouldThrow<IllegalArgumentException> {
+            matrixRestClient.user.sendToDeviceUnsafe(
+                mapOf(UserId("@alice:example.com") to mapOf()),
+                transactionId = "txnId"
+            )
+        }
+    }
+
+    @Test
+    fun shouldPreventSendToDeviceUnsafeWhenDifferentEvents() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory { })
+        shouldThrow<IllegalArgumentException> {
+            matrixRestClient.user.sendToDeviceUnsafe(
+                mapOf(
+                    UserId("@alice:example.com") to mapOf(
+                        "TLLBEANAAG" to RoomKeyEventContent(
+                            roomId = RoomId("!Cuyf34gef24t:localhost"),
+                            sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                            sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
+                            algorithm = Megolm
+                        ),
+                        "ABLBEANAAG" to OlmEncryptedToDeviceEventContent(
+                            ciphertext = mapOf(
+                                "abc" to CiphertextInfo(
+                                    "body",
+                                    CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
+                                )
+                            ),
+                            senderKey = Key.Curve25519Key("keyId", "keyValue")
+                        )
+                    )
+                ),
+                transactionId = "txnId"
+            )
+        }
+    }
+
+    @Test
+    fun shouldSendToDeviceWhenNoEvent() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory { })
+        matrixRestClient.user.sendToDevice(
+            mapOf(UserId("@alice:example.com") to mapOf()),
+        )
+    }
+
+    @Test
+    fun shouldSendToDeviceWhenDifferentEvents() = runTest {
+        val endpointsCalled = MutableStateFlow(setOf<String>())
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory(false) {
+                addHandler { request ->
+                    request.method shouldBe HttpMethod.Put
+                    when {
+                        request.url.fullPath.startsWith("/_matrix/client/v3/sendToDevice/m.room_key/") -> {
+                            endpointsCalled.update { it + "m.room_key" }
+                            request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                  "messages":{
+                                    "@alice:example.com":{
+                                      "TLLBEANAAG":{
+                                        "algorithm":"m.megolm.v1.aes-sha2",
+                                        "room_id":"!Cuyf34gef24t:localhost",
+                                        "session_id":"X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                                        "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."
+                                      }
+                                    }
+                                  }
+                                }
+                            """.trimToFlatJson()
+                        }
+
+                        request.url.fullPath.startsWith("/_matrix/client/v3/sendToDevice/m.room.encrypted/") -> {
+                            endpointsCalled.update { it + "m.room.encrypted" }
+                            request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                    "messages":{
+                                        "@alice:example.com":{
+                                            "ABLBEANAAG":{
+                                                "algorithm":"m.olm.v1.curve25519-aes-sha2",
+                                                "ciphertext":{"abc":{"body":"body","type":0}},
+                                                "sender_key":"keyValue"
+                                            }
+                                        }
+                                    }
+                                }
+                            """.trimToFlatJson()
+                        }
+
+                        else -> fail("no handler for ${request.url.fullPath}")
+                    }
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.sendToDevice(
+            mapOf(
+                UserId("@alice:example.com") to mapOf(
+                    "TLLBEANAAG" to RoomKeyEventContent(
+                        roomId = RoomId("!Cuyf34gef24t:localhost"),
+                        sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                        sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
+                        algorithm = Megolm
+                    ),
+                    "ABLBEANAAG" to OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            "abc" to CiphertextInfo(
+                                "body",
+                                CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
+                            )
+                        ),
+                        senderKey = Key.Curve25519Key("keyId", "keyValue")
+                    )
+                )
+            ),
+        ).getOrThrow()
+        endpointsCalled.value shouldHaveSize 2
     }
 
     @Test

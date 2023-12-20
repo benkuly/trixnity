@@ -7,7 +7,10 @@ plugins {
 
 kotlin {
     jvmToolchain()
-    addJvmTarget(testEnabled = (isCI && HostManager.hostIsMac).not())
+    addJvmTarget(testEnabled = (isCI && HostManager.hostIsMac).not()) {
+        maxHeapSize = "8g"
+        maxParallelForks = 2
+    }
 
     sourceSets {
         all {

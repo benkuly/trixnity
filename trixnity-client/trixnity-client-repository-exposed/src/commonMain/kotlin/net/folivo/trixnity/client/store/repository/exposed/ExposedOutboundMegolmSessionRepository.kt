@@ -24,7 +24,7 @@ internal class ExposedOutboundMegolmSessionRepository(private val json: Json) : 
     }
 
     override suspend fun save(key: RoomId, value: StoredOutboundMegolmSession): Unit = withExposedWrite {
-        ExposedOutboundMegolmSession.replace {
+        ExposedOutboundMegolmSession.upsert {
             it[roomId] = key.full
             it[ExposedOutboundMegolmSession.value] = json.encodeToString(value)
         }

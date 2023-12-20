@@ -54,7 +54,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
         secondKey: String,
         value: RoomAccountDataEvent<*>
     ): Unit = withExposedWrite {
-        ExposedRoomAccountData.replace {
+        ExposedRoomAccountData.upsert {
             it[roomId] = firstKey.roomId.full
             it[type] = firstKey.type
             it[key] = secondKey

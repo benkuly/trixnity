@@ -56,12 +56,8 @@ class ActiveDeviceVerification(
 
         if (theirDeviceIds.isNotEmpty())
             api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.associateWith {
-                try {
-                    olmEncryptionService.encryptOlm(step, theirUserId, it)
-                } catch (error: Exception) {
-                    log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${error.message}" }
-                    step
-                }
+                olmEncryptionService.encryptOlm(step, theirUserId, it).getOrNull()
+                    ?: step
             })).getOrThrow()
     }
 
@@ -105,12 +101,7 @@ class ActiveDeviceVerification(
                         VerificationCancelEventContent(Accepted, "accepted by other device", relatesTo, transactionId)
                     try {
                         api.user.sendToDevice(mapOf(theirUserId to cancelDeviceIds.associateWith {
-                            try {
-                                olmEncryptionService.encryptOlm(cancelEvent, theirUserId, it)
-                            } catch (exception: Exception) {
-                                log.debug { "could not encrypt verification step. will be send unencrypted. Reason: ${exception.message}" }
-                                cancelEvent
-                            }
+                            olmEncryptionService.encryptOlm(cancelEvent, theirUserId, it).getOrNull() ?: cancelEvent
                         })).getOrThrow()
                     } catch (error: Exception) {
                         log.warn { "could not send cancel to other device ids ($cancelDeviceIds)" }

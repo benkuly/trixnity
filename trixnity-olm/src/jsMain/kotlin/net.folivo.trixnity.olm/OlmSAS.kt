@@ -17,7 +17,7 @@ actual class OlmSAS private constructor() : WantsToBeFree {
     actual fun setTheirPublicKey(theirPublicKey: String) = rethrow { ptr.set_their_key(theirPublicKey) }
 
     actual fun generateShortCode(info: String, numberOfBytes: Int): ByteArray =
-        rethrow { ptr.generate_bytes(info, numberOfBytes) }.unsafeCast<ByteArray>()
+        rethrow { ptr.generate_bytes(info, numberOfBytes) }.toByteArray()
 
     actual fun calculateMac(input: String, info: String): String = rethrow { ptr.calculate_mac(input, info) }
     actual fun calculateMacFixedBase64(input: String, info: String) =

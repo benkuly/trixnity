@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransaction
+import org.jetbrains.exposed.sql.transactions.experimental.withSuspendTransaction
 import kotlin.coroutines.CoroutineContext
 
 class ExposedReadTransaction(
@@ -29,19 +29,19 @@ class ExposedWriteTransaction(
     companion object Key : CoroutineContext.Key<ExposedWriteTransaction>
 }
 
-suspend fun <T> withExposedRead(block: () -> T) = coroutineScope {
+suspend fun <T> withExposedRead(block: () -> T): T = coroutineScope {
     val exposedReadTransaction =
         checkNotNull(coroutineContext[ExposedReadTransaction]) { "read transaction is missing" }
     withContext(exposedReadTransaction.transactionCoroutineContext) {
-        exposedReadTransaction.transaction.suspendedTransaction { block() }
+        exposedReadTransaction.transaction.withSuspendTransaction { block() }
     }
 }
 
-suspend fun <T> withExposedWrite(block: () -> T) = coroutineScope {
+suspend fun <T> withExposedWrite(block: () -> T): Unit = coroutineScope {
     val exposedWriteTransaction =
         checkNotNull(coroutineContext[ExposedWriteTransaction]) { "write transaction is missing" }
     withContext(exposedWriteTransaction.transactionCoroutineContext) {
-        exposedWriteTransaction.transaction.suspendedTransaction { block() }
+        exposedWriteTransaction.transaction.withSuspendTransaction { block() }
     }
 }
 

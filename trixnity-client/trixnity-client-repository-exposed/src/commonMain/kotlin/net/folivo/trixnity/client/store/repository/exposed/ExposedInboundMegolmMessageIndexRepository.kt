@@ -36,7 +36,7 @@ internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessage
         key: InboundMegolmMessageIndexRepositoryKey,
         value: StoredInboundMegolmMessageIndex
     ): Unit = withExposedWrite {
-        ExposedInboundMegolmMessageIndex.replace {
+        ExposedInboundMegolmMessageIndex.upsert {
             it[sessionId] = value.sessionId
             it[roomId] = value.roomId.full
             it[messageIndex] = value.messageIndex

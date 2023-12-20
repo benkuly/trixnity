@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -19,10 +19,9 @@ import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.EventType
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -99,7 +98,7 @@ class UserServiceTest : ShouldSpec({
                 Key.Curve25519Key(value = "")
             ),
             DefaultEventContentSerializerMappings,
-            RepositoryTransactionManagerMock(),
+            TransactionManagerMock(),
             scope = scope
         )
 
@@ -168,13 +167,13 @@ class UserServiceTest : ShouldSpec({
                 val powerLevelsEvent = getPowerLevelsEvent(
                     PowerLevelsEventContent(
                         users = mapOf(
-                            me to 60,
+                            me to 60L,
                             alice to 50
                         )
                     )
                 )
                 roomStateStore.save(powerLevelsEvent)
-                cut.getPowerLevel(roomId, me).first { it != 0 } shouldBe 60
+                cut.getPowerLevel(roomId, me).first { it != 0L } shouldBe 60L
             }
             should("return the usersDefault value when I am not in the user_id list") {
                 val powerLevelsEvent = getPowerLevelsEvent(
@@ -184,7 +183,7 @@ class UserServiceTest : ShouldSpec({
                     )
                 )
                 roomStateStore.save(powerLevelsEvent)
-                cut.getPowerLevel(roomId, me).first { it != 0 } shouldBe 40
+                cut.getPowerLevel(roomId, me).first { it != 0L } shouldBe 40
             }
         }
     }
@@ -425,12 +424,12 @@ class UserServiceTest : ShouldSpec({
 
     context(UserServiceImpl::canUnbanUser.name) {
         context("my level > kick level") {
-            val kickLevel = 60
-            val myLevel = 61
+            val kickLevel = 60L
+            val myLevel = 61L
             context("my power level > ban level") {
-                val banLevel = 60
+                val banLevel = 60L
                 should("return true when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -444,7 +443,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe true
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -458,7 +457,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -473,9 +472,9 @@ class UserServiceTest : ShouldSpec({
                 }
             }
             context("my power level == ban level") {
-                val banLevel = 61
+                val banLevel = 61L
                 should("return true when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -489,7 +488,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe true
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -503,7 +502,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -518,9 +517,9 @@ class UserServiceTest : ShouldSpec({
                 }
             }
             context("my power level < ban level") {
-                val banLevel = 62
+                val banLevel = 62L
                 should("return false when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -534,7 +533,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -548,7 +547,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -564,12 +563,12 @@ class UserServiceTest : ShouldSpec({
             }
         }
         context("my level == kick level") {
-            val kickLevel = 61
-            val myLevel = 61
+            val kickLevel = 61L
+            val myLevel = 61L
             context("my power level > ban level") {
-                val banLevel = 60
+                val banLevel = 60L
                 should("return true when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -583,7 +582,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe true
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -597,7 +596,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -612,9 +611,9 @@ class UserServiceTest : ShouldSpec({
                 }
             }
             context("my power level == ban level") {
-                val banLevel = 61
+                val banLevel = 61L
                 should("return true when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -628,7 +627,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe true
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -642,7 +641,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -657,9 +656,9 @@ class UserServiceTest : ShouldSpec({
                 }
             }
             context("my power level < ban level") {
-                val banLevel = 62
+                val banLevel = 62L
                 should("return false when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -673,7 +672,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -687,7 +686,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -704,12 +703,12 @@ class UserServiceTest : ShouldSpec({
             }
         }
         context("my level < kick level") {
-            val kickLevel = 62
-            val myLevel = 61
+            val kickLevel = 62L
+            val myLevel = 61L
             context("my power level > ban level") {
-                val banLevel = 60
+                val banLevel = 60L
                 should("return false when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -723,7 +722,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -737,7 +736,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -752,9 +751,9 @@ class UserServiceTest : ShouldSpec({
                 }
             }
             context("my power level == ban level") {
-                val banLevel = 61
+                val banLevel = 61L
                 should("return false when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -768,7 +767,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -782,7 +781,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -797,9 +796,9 @@ class UserServiceTest : ShouldSpec({
                 }
             }
             context("my power level < ban level") {
-                val banLevel = 62
+                val banLevel = 62L
                 should("return false when my level > other user level") {
-                    val otherUserLevel = 60
+                    val otherUserLevel = 60L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -813,7 +812,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level == other user level") {
-                    val otherUserLevel = 61
+                    val otherUserLevel = 61L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -827,7 +826,7 @@ class UserServiceTest : ShouldSpec({
                     cut.canUnbanUser(roomId, alice).first() shouldBe false
                 }
                 should("return false when my level < other user level") {
-                    val otherUserLevel = 62
+                    val otherUserLevel = 62L
                     val powerLevelsEvent = getPowerLevelsEvent(
                         PowerLevelsEventContent(
                             users = mapOf(
@@ -1040,7 +1039,7 @@ class UserServiceTest : ShouldSpec({
                             alice to 50
                         ),
                         events = mapOf(EventType(PowerLevelsEventContent::class, "m.room.power_levels") to 56),
-                        stateDefault = 60
+                        stateDefault = 60L
                     )
                 )
                 roomStateStore.save(powerLevelsEvent)
@@ -1055,7 +1054,7 @@ class UserServiceTest : ShouldSpec({
                             alice to 50
                         ),
                         events = mapOf(EventType(PowerLevelsEventContent::class, "m.room.power_levels") to 55),
-                        stateDefault = 60
+                        stateDefault = 60L
                     )
                 )
                 roomStateStore.save(powerLevelsEvent)

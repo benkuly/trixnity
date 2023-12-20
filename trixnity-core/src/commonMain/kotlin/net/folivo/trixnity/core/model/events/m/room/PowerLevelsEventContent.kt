@@ -15,50 +15,50 @@ import kotlin.reflect.KClass
 @Serializable
 data class PowerLevelsEventContent(
     @SerialName("ban")
-    val ban: Int = BAN_DEFAULT,
+    val ban: Long = BAN_DEFAULT,
     @SerialName("events")
-    val events: Map<@Contextual EventType, Int> = emptyMap(),
+    val events: Map<@Contextual EventType, Long> = emptyMap(),
     @SerialName("events_default")
-    val eventsDefault: Int = EVENTS_DEFAULT,
+    val eventsDefault: Long = EVENTS_DEFAULT,
     @SerialName("invite")
-    val invite: Int = INVITE_DEFAULT,
+    val invite: Long = INVITE_DEFAULT,
     @SerialName("kick")
-    val kick: Int = KICK_DEFAULT,
+    val kick: Long = KICK_DEFAULT,
     @SerialName("redact")
-    val redact: Int = REDACT_DEFAULT,
+    val redact: Long = REDACT_DEFAULT,
     @SerialName("state_default")
-    val stateDefault: Int = STATE_DEFAULT,
+    val stateDefault: Long = STATE_DEFAULT,
     @SerialName("users")
-    val users: Map<UserId, Int> = emptyMap(),
+    val users: Map<UserId, Long> = emptyMap(),
     @SerialName("users_default")
-    val usersDefault: Int = USERS_DEFAULT,
+    val usersDefault: Long = USERS_DEFAULT,
     @SerialName("notifications")
     val notifications: Notifications? = null,
     @SerialName("external_url")
     override val externalUrl: String? = null,
 ) : StateEventContent {
     companion object {
-        const val EVENTS_DEFAULT = 0
-        const val STATE_DEFAULT = 50
-        const val INVITE_DEFAULT = 0
-        const val KICK_DEFAULT = 50
-        const val BAN_DEFAULT = 50
-        const val REDACT_DEFAULT = 50
-        const val USERS_DEFAULT = 0
+        const val EVENTS_DEFAULT = 0L
+        const val STATE_DEFAULT = 50L
+        const val INVITE_DEFAULT = 0L
+        const val KICK_DEFAULT = 50L
+        const val BAN_DEFAULT = 50L
+        const val REDACT_DEFAULT = 50L
+        const val USERS_DEFAULT = 0L
     }
 
     @Serializable
     data class Notifications(
         @SerialName("room")
-        val room: Int = 50
+        val room: Long = 50
     )
 }
 
-operator fun Map<EventType, Int>.get(kClass: KClass<out EventContent>): Int? =
+operator fun Map<EventType, Long>.get(kClass: KClass<out EventContent>): Long? =
     entries.find { it.key.kClass == kClass }?.value
 
-operator fun Map<EventType, Int>.get(name: String): Int? =
+operator fun Map<EventType, Long>.get(name: String): Long? =
     entries.find { it.key.name == name }?.value
 
-inline fun <reified T : EventContent> Map<EventType, Int>.get(): Int? =
+inline fun <reified T : EventContent> Map<EventType, Long>.get(): Long? =
     get(T::class)

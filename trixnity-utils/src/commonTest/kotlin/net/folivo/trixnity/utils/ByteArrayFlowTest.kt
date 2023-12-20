@@ -4,13 +4,11 @@ import io.kotest.matchers.shouldBe
 import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class ByteArrayFlowTest {
     private val helloBytes = "hello".toByteArray()
     private val helloBytesFlow = flowOf("he".toByteArray(), "llo".toByteArray())

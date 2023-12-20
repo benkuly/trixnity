@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
@@ -41,7 +40,7 @@ class TimelineEventHandlerImpl(
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val timelineMutex: TimelineMutex,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
 ) : EventHandler, TimelineEventHandler {
     companion object {
         const val LAZY_LOAD_MEMBERS_FILTER = """{"lazy_load_members":true}"""

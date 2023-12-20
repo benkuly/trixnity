@@ -9,7 +9,7 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.replace
+import org.jetbrains.exposed.sql.upsert
 import org.jetbrains.exposed.sql.select
 
 internal object ExposedOutdatedKeys : LongIdTable("outdated_keys") {
@@ -24,7 +24,7 @@ internal class ExposedOutdatedKeysRepository(private val json: Json) : OutdatedK
     }
 
     override suspend fun save(key: Long, value: Set<UserId>): Unit = withExposedWrite {
-        ExposedOutdatedKeys.replace {
+        ExposedOutdatedKeys.upsert {
             it[id] = key
             it[ExposedOutdatedKeys.value] = json.encodeToString(value)
         }

@@ -40,7 +40,7 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
         secondKey: String,
         value: GlobalAccountDataEvent<*>
     ): Unit = withExposedWrite {
-        ExposedGlobalAccountData.replace {
+        ExposedGlobalAccountData.upsert {
             it[type] = firstKey
             it[key] = secondKey
             it[event] = json.encodeToString(serializer, value)

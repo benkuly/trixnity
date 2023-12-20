@@ -27,7 +27,7 @@ internal class ExposedKeyVerificationStateRepository(private val json: Json) : K
     }
 
     override suspend fun save(key: KeyVerificationStateKey, value: KeyVerificationState): Unit = withExposedWrite {
-        ExposedKeyVerificationState.replace {
+        ExposedKeyVerificationState.upsert {
             it[keyId] = key.keyId
             it[keyAlgorithm] = key.keyAlgorithm.name
             it[verificationState] = json.encodeToString(value)

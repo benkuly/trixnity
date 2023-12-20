@@ -13,7 +13,7 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomStore
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -34,7 +34,7 @@ class RoomListHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomService: RoomService,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
     private val config: MatrixClientConfiguration,
 ) : EventHandler {
 

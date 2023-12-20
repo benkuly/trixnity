@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
+import net.folivo.trixnity.client.clearOutdatedKeys
 import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -21,9 +22,7 @@ import net.folivo.trixnity.client.store.KeyVerificationState.Verified
 import net.folivo.trixnity.clientserverapi.model.keys.AddSignatures
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -168,6 +167,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(KeyTrustServiceImpl::updateTrustLevelOfKeyChainSignedBy.name) {
+        clearOutdatedKeys { keyStore }
         val aliceSigningKey1 = Ed25519Key(aliceDevice, "signingValue1")
         val aliceSigningKey2 = Ed25519Key("OTHER_ALICE", "signingValue2")
         val bobSignedKey = Ed25519Key(bobDevice, "signedValue")
@@ -226,6 +226,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context("calculateTrustLevel") {
+        clearOutdatedKeys { keyStore }
         context("without key chain") {
             val deviceKeys = Signed<DeviceKeys, UserId>(
                 DeviceKeys(
@@ -257,7 +258,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.saveKeyVerificationState(
                     Ed25519Key("AAAAAA", "edKeyValue"), Verified("edKeyValue")
                 )
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
             }
             should("be ${Valid::class.simpleName} + verified, when key is verified") {
                 keyStore.saveKeyVerificationState(
@@ -275,7 +276,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.saveKeyVerificationState(
                     Ed25519Key("AAAAAA", "edKeyValue"), KeyVerificationState.Blocked("edKeyValue")
                 )
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked
             }
             should("be ${Valid::class.simpleName}, when there is no master key") {
                 cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Valid(false)
@@ -295,7 +296,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
             }
         }
         context("with master key but only self signing key chain: BOB_DEVICE <- BOB_DEVICE") {
@@ -347,7 +348,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
             should("be ${NotCrossSigned::class.simpleName}") {
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe NotCrossSigned
             }
         }
         context("with key chain: BOB_DEVICE <- BOB_SSK <- BOB_MSK <- ALICE_USK <- ALICE_MSK <- ALICE_DEVICE") {
@@ -452,7 +453,7 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.saveKeyVerificationState(
                     Ed25519Key(bobDevice, "..."), KeyVerificationState.Blocked("...")
                 )
-                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked()
+                cut.calculateDeviceKeysTrustLevel(deviceKeys) shouldBe Blocked
             }
         }
         context("with key chain: BOB_DEVICE <- BOB_SSK <- BOB_MSK") {

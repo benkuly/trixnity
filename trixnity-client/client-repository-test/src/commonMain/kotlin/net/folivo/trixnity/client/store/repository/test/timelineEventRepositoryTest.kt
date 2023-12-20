@@ -33,8 +33,6 @@ fun ShouldSpec.timelineEventRepositoryTest(diReceiver: () -> Koin) {
                 RoomId("room1", "server"),
                 1234
             ),
-            roomId = RoomId("room1", "server"),
-            eventId = EventId("\$event1"),
             previousEventId = null,
             nextEventId = null,
             gap = TimelineEvent.Gap.GapBefore("batch")
@@ -47,8 +45,6 @@ fun ShouldSpec.timelineEventRepositoryTest(diReceiver: () -> Koin) {
                 RoomId("room1", "server"),
                 1234
             ),
-            roomId = RoomId("room2", "server"),
-            eventId = EventId("\$event2"),
             previousEventId = null,
             nextEventId = null,
             gap = null

@@ -6,12 +6,15 @@ import kotlinx.coroutines.withContext
 import okio.*
 import kotlin.coroutines.CoroutineContext
 
-suspend fun BufferedSink.write(content: ByteArrayFlow, coroutineContext: CoroutineContext = ioContext) =
+suspend fun ByteArrayFlow.writeTo(sink: BufferedSink, coroutineContext: CoroutineContext = ioContext) =
     withContext(coroutineContext) {
-        content.collect { write(it) }
+        collect { sink.write(it) }
     }
 
-fun byteArrayFlow(coroutineContext: CoroutineContext = ioContext, sourceFactory: suspend () -> Source) =
+suspend fun BufferedSink.write(content: ByteArrayFlow, coroutineContext: CoroutineContext = ioContext) =
+    content.writeTo(this, coroutineContext)
+
+fun byteArrayFlowFromSource(coroutineContext: CoroutineContext = ioContext, sourceFactory: suspend () -> Source) =
     flow {
         val source = sourceFactory().buffer()
         source.use {
@@ -27,12 +30,12 @@ suspend fun FileSystem.write(
     coroutineContext: CoroutineContext = ioContext,
 ): Unit =
     withContext(coroutineContext) {
-        sink(path).buffer().use { it.write(content) }
+        sink(path).buffer().use { content.writeTo(it, coroutineContext) }
     }
 
 fun FileSystem.readByteArrayFlow(
     path: Path,
     coroutineContext: CoroutineContext = ioContext,
 ): ByteArrayFlow? =
-    if (exists(path)) byteArrayFlow(coroutineContext) { source(path) }
+    if (exists(path)) byteArrayFlowFromSource(coroutineContext) { source(path) }
     else null

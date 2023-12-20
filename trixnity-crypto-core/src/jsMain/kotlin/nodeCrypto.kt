@@ -1,35 +1,35 @@
 @file:JsModule("crypto")
 @file:JsNonModule
 
-import org.khronos.webgl.ArrayBuffer
-import org.khronos.webgl.Int8Array
+import js.typedarrays.Uint8Array
 
-external fun randomFillSync(buffer: Int8Array): Int8Array
+
+external fun randomFillSync(buffer: Uint8Array): Uint8Array
 
 external fun pbkdf2(
     password: String,
-    salt: Int8Array,
+    salt: Uint8Array,
     iterations: Number,
     keylen: Number,
     digest: String,
-    callback: (err: Error?, derivedKey: Int8Array) -> Unit
+    callback: (err: Error?, derivedKey: Uint8Array) -> Unit
 )
 
 external fun createCipheriv(
     algorithm: String,
-    key: Int8Array,
-    iv: Int8Array
+    key: Uint8Array,
+    iv: Uint8Array
 ): Cipher
 
 external fun createDecipheriv(
     algorithm: String,
-    key: Int8Array,
-    iv: Int8Array
+    key: Uint8Array,
+    iv: Uint8Array
 ): Decipher
 
 external fun createHmac(
     algorithm: String,
-    key: Int8Array
+    key: Uint8Array
 ): HMAC
 
 external fun createHash(
@@ -37,21 +37,21 @@ external fun createHash(
 ): Hash
 
 external interface Cipher {
-    fun update(data: Int8Array): ArrayBuffer
-    fun final(): ArrayBuffer
+    fun update(data: Uint8Array): js.buffer.ArrayBuffer
+    fun final(): js.buffer.ArrayBuffer
 }
 
 external interface Decipher {
-    fun update(data: Int8Array): ArrayBuffer
-    fun final(): ArrayBuffer
+    fun update(data: Uint8Array): js.buffer.ArrayBuffer
+    fun final(): js.buffer.ArrayBuffer
 }
 
 external interface HMAC {
-    fun update(data: Int8Array)
-    fun digest(): ArrayBuffer
+    fun update(data: Uint8Array)
+    fun digest(): js.buffer.ArrayBuffer
 }
 
 external interface Hash {
-    fun update(data: Int8Array)
-    fun digest(): ArrayBuffer
+    fun update(data: Uint8Array)
+    fun digest(): js.buffer.ArrayBuffer
 }

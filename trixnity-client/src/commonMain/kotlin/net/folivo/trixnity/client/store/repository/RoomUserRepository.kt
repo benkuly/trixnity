@@ -4,7 +4,7 @@ import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
-interface RoomUserRepository : MapDeleteByRoomIdRepository<RoomId, UserId, RoomUser> {
+interface RoomUserRepository : DeleteByRoomIdMapRepository<RoomId, UserId, RoomUser> {
     override fun serializeKey(firstKey: RoomId, secondKey: UserId): String =
         firstKey.full + secondKey.full
 

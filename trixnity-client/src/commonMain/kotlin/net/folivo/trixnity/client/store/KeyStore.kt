@@ -1,9 +1,9 @@
 package net.folivo.trixnity.client.store
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
@@ -12,7 +12,10 @@ import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
+
+private val log = KotlinLogging.logger { }
 
 class KeyStore(
     outdatedKeysRepository: OutdatedKeysRepository,
@@ -104,9 +107,32 @@ class KeyStore(
             updater(it ?: mapOf())
         }
 
+    /**
+     * This prevents deadlocks when no parallel write transactions are allowed, but a second transaction is needed to update outdated keys.
+     */
+    object SkipOutdatedKeys : CoroutineContext.Element, CoroutineContext.Key<SkipOutdatedKeys> {
+        override val key: CoroutineContext.Key<*> = this
+    }
+
+    private suspend fun waitForUpdateOutdatedKey(user: UserId) {
+        log.debug { "wait for outdated keys of $user" }
+        getOutdatedKeysFlow().first { !it.contains(user) }
+        log.trace { "finished wait for outdated keys of $user" }
+    }
+
     fun getDeviceKeys(
         userId: UserId,
-    ): Flow<Map<String, StoredDeviceKeys>?> = deviceKeysCache.read(userId)
+    ): Flow<Map<String, StoredDeviceKeys>?> =
+        flow {
+            if (currentCoroutineContext()[SkipOutdatedKeys] == null) {
+                val keys = deviceKeysCache.read(userId).first()
+                if (keys == null) {
+                    updateOutdatedKeys { it + userId }
+                }
+                waitForUpdateOutdatedKey(userId)
+            }
+            emitAll(deviceKeysCache.read(userId))
+        }
 
     suspend fun updateDeviceKeys(
         userId: UserId,
@@ -122,7 +148,17 @@ class KeyStore(
 
     fun getCrossSigningKeys(
         userId: UserId,
-    ): Flow<Set<StoredCrossSigningKeys>?> = crossSigningKeysCache.read(userId)
+    ): Flow<Set<StoredCrossSigningKeys>?> =
+        flow {
+            if (currentCoroutineContext()[SkipOutdatedKeys] == null) {
+                val keys = crossSigningKeysCache.read(userId).first()
+                if (keys == null) {
+                    updateOutdatedKeys { it + userId }
+                }
+                waitForUpdateOutdatedKey(userId)
+            }
+            emitAll(crossSigningKeysCache.read(userId))
+        }
 
     suspend fun updateCrossSigningKeys(
         userId: UserId,

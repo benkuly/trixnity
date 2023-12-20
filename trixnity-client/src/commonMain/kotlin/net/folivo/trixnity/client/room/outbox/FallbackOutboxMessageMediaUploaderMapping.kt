@@ -7,6 +7,6 @@ private val log = KotlinLogging.logger { }
 
 val FallbackOutboxMessageMediaUploaderMapping =
     OutboxMessageMediaUploaderMapping(MessageEventContent::class) { content, _ ->
-        log.debug { "EventContent class ${content::class.simpleName} is not supported by any other media uploader." }
+        log.trace { "EventContent class ${content::class.simpleName} is not supported by any other media uploader." }
         content
     }

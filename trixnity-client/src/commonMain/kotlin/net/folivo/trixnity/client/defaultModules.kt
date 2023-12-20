@@ -1,5 +1,8 @@
 package net.folivo.trixnity.client
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.crypto.createCryptoModule
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.createKeyModule
@@ -9,7 +12,9 @@ import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.notification.createNotificationModule
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.createRoomModule
+import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
+import net.folivo.trixnity.client.store.TimelineEventSerializer
 import net.folivo.trixnity.client.store.createStoreModule
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.user.createUserModule
@@ -25,14 +30,25 @@ fun createDefaultEventContentSerializerMappingsModule() = module {
 }
 
 fun createDefaultOutboxMessageMediaUploaderMappingsModule() = module {
-    single { defaultOutboxMessageMediaUploaderMappings }
+    single<OutboxMessageMediaUploaderMappings> { defaultOutboxMessageMediaUploaderMappings }
 }
 
 fun createDefaultMatrixJsonModule() = module {
-    single { createMatrixEventJson(get()) }
+    single<Json> {
+        val mappings = get<EventContentSerializerMappings>()
+        val config = get<MatrixClientConfiguration>()
+        createMatrixEventJson(mappings, customModule = SerializersModule {
+            contextual(
+                TimelineEventSerializer(
+                    mappings.message + mappings.state,
+                    config.storeTimelineEventContentUnencrypted
+                )
+            )
+        })
+    }
 }
 
-fun createDefaultModules() = listOf(
+fun createDefaultTrixnityModules() = listOf(
     createDefaultEventContentSerializerMappingsModule(),
     createDefaultOutboxMessageMediaUploaderMappingsModule(),
     createDefaultMatrixJsonModule(),
@@ -45,6 +61,9 @@ fun createDefaultModules() = listOf(
     createMediaModule(),
     createNotificationModule(),
 )
+
+@Deprecated("use createDefaultTrixnityModules instead", ReplaceWith("createDefaultTrixnityModules()"))
+fun createDefaultModules() = createDefaultTrixnityModules()
 
 val MatrixClient.room
     get() = di.get<RoomService>()

@@ -365,11 +365,11 @@ class ActiveVerificationTest : ShouldSpec({
                 val step = VerificationDoneEventContent(null, "t")
                 cut.handleStep(step, bob, false)
                 val state = cut.state.value
-                state.shouldBeInstanceOf<PartlyDone>()
+                state.shouldBeInstanceOf<WaitForDone>()
                 state.isOurOwn shouldBe false
             }
         }
-        context("current state is ${PartlyDone::class.simpleName}") {
+        context("current state is ${WaitForDone::class.simpleName}") {
             beforeTest {
                 cut.handleStep(
                     VerificationReadyEventContent(bobDevice, setOf(Sas, Unknown("u")), null, "t"),
@@ -390,7 +390,7 @@ class ActiveVerificationTest : ShouldSpec({
                     ), bob, false
                 )
                 cut.handleStep(VerificationDoneEventContent(null, "t"), bob, false)
-                cut.state.value.shouldBeInstanceOf<PartlyDone>()
+                cut.state.value.shouldBeInstanceOf<WaitForDone>()
             }
             checkNotAllowedStateChange(
                 VerificationReadyEventContent(bobDevice, setOf(), null, "t"),

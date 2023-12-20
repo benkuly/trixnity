@@ -6,12 +6,11 @@ import io.kotest.matchers.collections.shouldHaveSize
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.mocks.OlmEncryptionServiceMock
-import net.folivo.trixnity.olm.OlmLibraryException
 
 class OlmDecrypterTest : ShouldSpec({
     timeout = 60_000
@@ -33,50 +32,18 @@ class OlmDecrypterTest : ShouldSpec({
 
 
 
-    should("catch DecryptionException") {
+    should("ignore exceptions") {
         val event = ToDeviceEvent(
-            EncryptedEventContent.OlmEncryptedEventContent(
-                mapOf(), Key.Curve25519Key(null, "")
-            ),
+            OlmEncryptedToDeviceEventContent(mapOf(), Key.Curve25519Key(null, "")),
             UserId("sender", "server")
         )
-        olmEncryptionServiceMock.decryptOlm = {
-            throw DecryptionException.ValidationFailed("whoops")
-        }
-        cut.handleOlmEvent(event)
-        subscriberReceived shouldHaveSize 0
-    }
-    should("catch KeyException") {
-        val event = ToDeviceEvent(
-            EncryptedEventContent.OlmEncryptedEventContent(
-                mapOf(), Key.Curve25519Key(null, "")
-            ),
-            UserId("sender", "server")
-        )
-        olmEncryptionServiceMock.decryptOlm = {
-            throw KeyException.KeyNotFoundException("not found")
-        }
-        cut.handleOlmEvent(event)
-        subscriberReceived shouldHaveSize 0
-    }
-    should("catch OlmLibraryException") {
-        val event = ToDeviceEvent(
-            EncryptedEventContent.OlmEncryptedEventContent(
-                mapOf(), Key.Curve25519Key(null, "")
-            ),
-            UserId("sender", "server")
-        )
-        olmEncryptionServiceMock.decryptOlm = {
-            throw OlmLibraryException("something")
-        }
-        cut.handleOlmEvent(event)
+        olmEncryptionServiceMock.decryptOlm = Result.failure(OlmEncryptionService.DecryptOlmError.ValidationFailed(""))
+        cut.handleOlmEvents(listOf(event))
         subscriberReceived shouldHaveSize 0
     }
     should("emit decrypted events") {
         val event = ToDeviceEvent(
-            EncryptedEventContent.OlmEncryptedEventContent(
-                mapOf(), Key.Curve25519Key(null, "")
-            ),
+            OlmEncryptedToDeviceEventContent(mapOf(), Key.Curve25519Key(null, "")),
             UserId("sender", "server")
         )
         val decryptedEvent = DecryptedOlmEvent(
@@ -84,10 +51,8 @@ class OlmDecrypterTest : ShouldSpec({
             UserId("sender", "server"), keysOf(),
             UserId("receiver", "server"), keysOf()
         )
-        olmEncryptionServiceMock.decryptOlm = {
-            decryptedEvent
-        }
-        cut.handleOlmEvent(event)
+        olmEncryptionServiceMock.decryptOlm = Result.success(decryptedEvent)
+        cut.handleOlmEvents(listOf(event))
         subscriberReceived shouldContainExactly listOf(DecryptedOlmEventContainer(event, decryptedEvent))
     }
 })

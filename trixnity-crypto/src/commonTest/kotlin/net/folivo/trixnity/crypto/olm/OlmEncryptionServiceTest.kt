@@ -23,17 +23,18 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.DecryptedMegolmEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.m.DummyEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent.OlmEncryptedEventContent.CiphertextInfo.OlmMessageType.ORDINARY
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo.OlmMessageType.ORDINARY
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.*
@@ -43,6 +44,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.mocks.OlmEncryptionServiceRequestHandlerMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
+import net.folivo.trixnity.crypto.olm.OlmEncryptionService.*
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
@@ -161,7 +163,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
     }
 
-    suspend fun mockClaimKeys() {
+    fun mockClaimKeys() {
         val bobsFakeSignedCurveKey =
             Key.SignedCurve25519Key(
                 bobDeviceId,
@@ -181,7 +183,7 @@ private val body: ShouldSpec.() -> Unit = {
     // #######################
     should("encrypt without stored olm encrypt session") {
         mockClaimKeys()
-        val encryptedMessage = cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId)
+        val encryptedMessage = cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId).getOrThrow()
         val encryptedCipherText = encryptedMessage.ciphertext[bobCurveKey.value]
         assertNotNull(encryptedCipherText)
 
@@ -207,13 +209,15 @@ private val body: ShouldSpec.() -> Unit = {
 
         olmStoreMock.olmSessions[bobCurveKey] shouldNotBe null
     }
-    should("throw exception when one time key is invalid without stored olm encrypt session") {
+    should("is failure when one time key is invalid without stored olm encrypt session") {
         mockClaimKeys()
         mockSignService.returnVerify = VerifyResult.Invalid("dino")
 
-        shouldThrow<KeyException.KeyVerificationFailedException> {
-            cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId).ciphertext.entries.first().value
-        }.message shouldBe "dino"
+        cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId).exceptionOrNull() shouldBe
+                EncryptOlmError.OneTimeKeyVerificationFailed(
+                    KeyAlgorithm.SignedCurve25519,
+                    VerifyResult.Invalid("dino")
+                )
         olmStoreMock.olmSessions.shouldBeEmpty()
     }
     should("encrypt event with stored session") {
@@ -238,7 +242,7 @@ private val body: ShouldSpec.() -> Unit = {
 
             olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
 
-            val encryptedMessage = cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId)
+            val encryptedMessage = cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId).getOrThrow()
             val encryptedCipherText = encryptedMessage.ciphertext[bobCurveKey.value]
             assertNotNull(encryptedCipherText)
 
@@ -272,13 +276,15 @@ private val body: ShouldSpec.() -> Unit = {
             bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
         }
         cut.decryptOlm(
-            OlmEncryptedEventContent(
-                ciphertext = mapOf(
-                    aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
-                ),
-                senderKey = bobCurveKey
-            ), bob
-        ) shouldBe receiveDecryptedOlmEvent
+            ClientEvent.ToDeviceEvent(
+                OlmEncryptedToDeviceEventContent(
+                    ciphertext = mapOf(
+                        aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                    ),
+                    senderKey = bobCurveKey
+                ), bob
+            )
+        ).getOrThrow() shouldBe receiveDecryptedOlmEvent
 
         olmStoreMock.olmSessions[bobCurveKey].shouldNotBeNull() shouldHaveSize 1
 
@@ -321,18 +327,18 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }.toSet()
         olmStoreMock.olmSessions[bobCurveKey] = existingSessions
-        shouldThrow<DecryptionException.PreventToManySessions> {
-            cut.decryptOlm(
-                OlmEncryptedEventContent(
+        cut.decryptOlm(
+            ClientEvent.ToDeviceEvent(
+                OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
                         aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
                     ),
                     senderKey = bobCurveKey
                 ), bob
             )
-        }
+        ).exceptionOrNull() shouldBe DecryptOlmError.TooManySessions
     }
-    should("throw on ordinary message") {
+    should("fail on ordinary message") {
         mockClaimKeys()
         val encryptedMessage = freeAfter(
             OlmSession.createOutbound(
@@ -343,20 +349,20 @@ private val body: ShouldSpec.() -> Unit = {
         ) { bobSession ->
             bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
         }
-        shouldThrow<DecryptionException.CouldNotDecrypt> {
-            cut.decryptOlm(
-                OlmEncryptedEventContent(
+        cut.decryptOlm(
+            ClientEvent.ToDeviceEvent(
+                OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
                         aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
                     ),
                     senderKey = bobCurveKey
                 ), bob
             )
-        }
+        ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
 
         val sendToDeviceEvents = olmEncryptionServiceRequestHandlerMock.sendToDeviceParams
         val encryptedEventContent =
-            sendToDeviceEvents.first()[bob]?.get(bobDeviceId)?.shouldBeInstanceOf<OlmEncryptedEventContent>()
+            sendToDeviceEvents.first()[bob]?.get(bobDeviceId)?.shouldBeInstanceOf<OlmEncryptedToDeviceEventContent>()
         val ciphertext = encryptedEventContent?.ciphertext?.get(bobCurveKey.value)?.body
         assertNotNull(ciphertext)
         freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
@@ -391,13 +397,15 @@ private val body: ShouldSpec.() -> Unit = {
             olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
 
             cut.decryptOlm(
-                OlmEncryptedEventContent(
-                    ciphertext = mapOf(
-                        aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
-                    ),
-                    senderKey = bobCurveKey
-                ), bob
-            ) shouldBe receiveDecryptedOlmEvent
+                ClientEvent.ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                        ),
+                        senderKey = bobCurveKey
+                    ), bob
+                )
+            ).getOrThrow() shouldBe receiveDecryptedOlmEvent
             olmStoreMock.olmSessions[bobCurveKey]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
@@ -426,13 +434,15 @@ private val body: ShouldSpec.() -> Unit = {
             olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
 
             cut.decryptOlm(
-                OlmEncryptedEventContent(
-                    ciphertext = mapOf(
-                        aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
-                    ),
-                    senderKey = bobCurveKey
-                ), bob
-            ) shouldBe receiveDecryptedOlmEvent
+                ClientEvent.ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                        ),
+                        senderKey = bobCurveKey
+                    ), bob
+                )
+            ).getOrThrow() shouldBe receiveDecryptedOlmEvent
             olmStoreMock.olmSessions[bobCurveKey]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
@@ -477,13 +487,15 @@ private val body: ShouldSpec.() -> Unit = {
             )
 
             cut.decryptOlm(
-                OlmEncryptedEventContent(
-                    ciphertext = mapOf(
-                        aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
-                    ),
-                    senderKey = bobCurveKey
-                ), bob
-            ) shouldBe receiveDecryptedOlmEvent
+                ClientEvent.ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                        ),
+                        senderKey = bobCurveKey
+                    ), bob
+                )
+            ).getOrThrow() shouldBe receiveDecryptedOlmEvent
             olmStoreMock.olmSessions[bobCurveKey].shouldNotBeNull() shouldNotContain storedOlmSession1
         }
     }
@@ -511,16 +523,16 @@ private val body: ShouldSpec.() -> Unit = {
             )
             olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
 
-            shouldThrow<DecryptionException> {
-                cut.decryptOlm(
-                    OlmEncryptedEventContent(
+            cut.decryptOlm(
+                ClientEvent.ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
                             aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
                         ),
                         senderKey = bobCurveKey
                     ), bob
                 )
-            }
+            ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.ValidationFailed>()
         }
     }
     should("handle manipulated sender") {
@@ -545,7 +557,7 @@ private val body: ShouldSpec.() -> Unit = {
         expectedMessageCount: Int,
     ) {
         mockClaimKeys()
-        val result = cut.encryptMegolm(decryptedMegolmEventContent, room, settings)
+        val result = cut.encryptMegolm(decryptedMegolmEventContent, room, settings).getOrThrow()
 
         val storedOutboundSession = olmStoreMock.outboundMegolmSession[room]
         assertNotNull(storedOutboundSession)
@@ -566,7 +578,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val sendToDeviceEvents = olmEncryptionServiceRequestHandlerMock.sendToDeviceParams
                 val ciphertext =
                     sendToDeviceEvents.firstOrNull()?.get(bob)?.get(bobDeviceId)
-                        ?.shouldBeInstanceOf<OlmEncryptedEventContent>()
+                        ?.shouldBeInstanceOf<OlmEncryptedToDeviceEventContent>()
                         ?.ciphertext?.get(bobCurveKey.value)?.body
                 assertNotNull(ciphertext)
                 freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
@@ -680,7 +692,7 @@ private val body: ShouldSpec.() -> Unit = {
                 outboundSession.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
             cut.decryptMegolm(
                 MessageEvent(
-                    EncryptedEventContent.MegolmEncryptedEventContent(
+                    MegolmEncryptedMessageEventContent(
                         ciphertext,
                         bobCurveKey,
                         bobDeviceId,
@@ -692,33 +704,66 @@ private val body: ShouldSpec.() -> Unit = {
                     room,
                     1234
                 )
-            ) shouldBe decryptedMegolmEvent.copy(content = decryptedMegolmEvent.content.copy(relatesTo = relatesTo))
+            )
+                .getOrThrow() shouldBe decryptedMegolmEvent.copy(content = decryptedMegolmEvent.content.copy(relatesTo = relatesTo))
             olmStoreMock.inboundMegolmSessionIndex[Triple(outboundSession.sessionId, room, 0)] shouldBe
                     StoredInboundMegolmMessageIndex(
                         outboundSession.sessionId, room, 0, EventId("\$event"), 1234
                     )
         }
     }
-    should("throw when no keys were send to us") {
+    should("decrypt megolm event") {
+        freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
+            val ciphertext = // encrypted before session saved
+                outboundSession.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
+            freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
+                olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
+                    senderKey = bobCurveKey,
+                    senderSigningKey = bobEdKey,
+                    sessionId = inboundSession.sessionId,
+                    roomId = room,
+                    firstKnownIndex = inboundSession.firstKnownIndex,
+                    hasBeenBackedUp = false,
+                    isTrusted = true,
+                    forwardingCurve25519KeyChain = listOf(),
+                    pickled = inboundSession.pickle("")
+                )
+            }
+            cut.decryptMegolm(
+                MessageEvent(
+                    MegolmEncryptedMessageEventContent(
+                        ciphertext,
+                        bobCurveKey,
+                        bobDeviceId,
+                        outboundSession.sessionId,
+                        relatesTo = relatesTo
+                    ),
+                    EventId("\$event"),
+                    bob,
+                    room,
+                    1234
+                )
+            ).exceptionOrNull() shouldBe DecryptMegolmError.MegolmKeyUnknownMessageIndex
+        }
+    }
+    should("fail when no keys were send to us") {
         freeAfter(OlmOutboundGroupSession.create()) { session ->
             val ciphertext =
                 session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
-            shouldThrow<DecryptionException> {
-                cut.decryptMegolm(
-                    MessageEvent(
-                        EncryptedEventContent.MegolmEncryptedEventContent(
-                            ciphertext,
-                            bobCurveKey,
-                            bobDeviceId,
-                            session.sessionId
-                        ),
-                        EventId("\$event"),
-                        bob,
-                        room,
-                        1234
-                    )
+            cut.decryptMegolm(
+                MessageEvent(
+                    MegolmEncryptedMessageEventContent(
+                        ciphertext,
+                        bobCurveKey,
+                        bobDeviceId,
+                        session.sessionId
+                    ),
+                    EventId("\$event"),
+                    bob,
+                    room,
+                    1234
                 )
-            }
+            ).exceptionOrNull() shouldBe DecryptMegolmError.MegolmKeyNotFound
         }
     }
     should("handle manipulated roomId in megolmEvent") {
@@ -742,22 +787,20 @@ private val body: ShouldSpec.() -> Unit = {
                     decryptedMegolmEvent.copy(roomId = RoomId("other", "server"))
                 )
             )
-            shouldThrow<DecryptionException> {
-                cut.decryptMegolm(
-                    MessageEvent(
-                        EncryptedEventContent.MegolmEncryptedEventContent(
-                            ciphertext,
-                            bobCurveKey,
-                            bobDeviceId,
-                            outboundSession.sessionId
-                        ),
-                        EventId("\$event"),
-                        bob,
-                        room,
-                        1234
-                    )
+            cut.decryptMegolm(
+                MessageEvent(
+                    MegolmEncryptedMessageEventContent(
+                        ciphertext,
+                        bobCurveKey,
+                        bobDeviceId,
+                        outboundSession.sessionId
+                    ),
+                    EventId("\$event"),
+                    bob,
+                    room,
+                    1234
                 )
-            }
+            ).exceptionOrNull().shouldBeInstanceOf<DecryptMegolmError.ValidationFailed>()
         }
     }
     should("handle manipulated message index") {
@@ -781,42 +824,38 @@ private val body: ShouldSpec.() -> Unit = {
                 StoredInboundMegolmMessageIndex(
                     outboundSession.sessionId, room, 0, EventId("\$otherEvent"), 1234
                 )
-            shouldThrow<DecryptionException> {
-                cut.decryptMegolm(
-                    MessageEvent(
-                        EncryptedEventContent.MegolmEncryptedEventContent(
-                            ciphertext,
-                            bobCurveKey,
-                            bobDeviceId,
-                            outboundSession.sessionId
-                        ),
-                        EventId("\$event"),
-                        bob,
-                        room,
-                        1234
-                    )
+            cut.decryptMegolm(
+                MessageEvent(
+                    MegolmEncryptedMessageEventContent(
+                        ciphertext,
+                        bobCurveKey,
+                        bobDeviceId,
+                        outboundSession.sessionId
+                    ),
+                    EventId("\$event"),
+                    bob,
+                    room,
+                    1234
                 )
-            }
+            ).exceptionOrNull().shouldBeInstanceOf<DecryptMegolmError.ValidationFailed>()
             olmStoreMock.inboundMegolmSessionIndex[Triple(outboundSession.sessionId, room, 0)]
             StoredInboundMegolmMessageIndex(
                 outboundSession.sessionId, room, 0, EventId("\$event"), 4321
             )
-            shouldThrow<DecryptionException> {
-                cut.decryptMegolm(
-                    MessageEvent(
-                        EncryptedEventContent.MegolmEncryptedEventContent(
-                            ciphertext,
-                            bobCurveKey,
-                            bobDeviceId,
-                            outboundSession.sessionId
-                        ),
-                        EventId("\$event"),
-                        bob,
-                        room,
-                        1234
-                    )
+            cut.decryptMegolm(
+                MessageEvent(
+                    MegolmEncryptedMessageEventContent(
+                        ciphertext,
+                        bobCurveKey,
+                        bobDeviceId,
+                        outboundSession.sessionId
+                    ),
+                    EventId("\$event"),
+                    bob,
+                    room,
+                    1234
                 )
-            }
+            ).exceptionOrNull().shouldBeInstanceOf<DecryptMegolmError.ValidationFailed>()
         }
     }
 }

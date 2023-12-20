@@ -23,7 +23,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -54,7 +54,8 @@ class OlmEventHandlerTest : ShouldSpec({
 
         olmStoreMock.olmAccount.value = freeAfter(OlmAccount.create()) { it.pickle("") }
 
-        val eventEmitter: ClientEventEmitterImpl<List<ClientEvent<*>>> = object : ClientEventEmitterImpl<List<ClientEvent<*>>>() {}
+        val eventEmitter: ClientEventEmitterImpl<List<ClientEvent<*>>> =
+            object : ClientEventEmitterImpl<List<ClientEvent<*>>>() {}
         val olmKeysChangeEmitter: OlmKeysChangeEmitter = object : OlmKeysChangeEmitter {
             override fun subscribeOneTimeKeysCount(subscriber: suspend (OlmKeysChange) -> Unit): Unsubscriber {
                 throw NotImplementedError()
@@ -190,7 +191,7 @@ class OlmEventHandlerTest : ShouldSpec({
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(
-            EncryptedEventContent.OlmEncryptedEventContent(
+            OlmEncryptedToDeviceEventContent(
                 ciphertext = mapOf(),
                 senderKey = Key.Curve25519Key(null, "BOB_IDEN"),
             ), bob
@@ -228,26 +229,30 @@ class OlmEventHandlerTest : ShouldSpec({
 
         olmStoreMock.outboundMegolmSession[roomId] = StoredOutboundMegolmSession(roomId, pickled = "")
         cut.handleMemberEvents(
-            StateEvent(
-                MemberEventContent(membership = Membership.LEAVE),
-                EventId("\$event"),
-                alice,
-                roomId,
-                1234,
-                stateKey = alice.full
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = Membership.LEAVE),
+                    EventId("\$event"),
+                    alice,
+                    roomId,
+                    1234,
+                    stateKey = alice.full
+                )
             )
         )
         olmStoreMock.outboundMegolmSession[roomId] shouldBe null
 
         olmStoreMock.outboundMegolmSession[roomId] = StoredOutboundMegolmSession(roomId, pickled = "")
         cut.handleMemberEvents(
-            StateEvent(
-                MemberEventContent(membership = Membership.BAN),
-                EventId("\$event"),
-                alice,
-                roomId,
-                1234,
-                stateKey = alice.full
+            listOf(
+                StateEvent(
+                    MemberEventContent(membership = Membership.BAN),
+                    EventId("\$event"),
+                    alice,
+                    roomId,
+                    1234,
+                    stateKey = alice.full
+                )
             )
         )
         olmStoreMock.outboundMegolmSession[roomId] shouldBe null

@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -71,7 +71,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     val encryptedEvent = ToDeviceEvent(
-        EncryptedEventContent.OlmEncryptedEventContent(
+        OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
             senderKey = Key.Curve25519Key(null, "")
         ), bob
@@ -104,12 +104,12 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            olmEncryptionServiceMock.returnEncryptOlm = {
-                EncryptedEventContent.OlmEncryptedEventContent(
+            olmEncryptionServiceMock.returnEncryptOlm = Result.success(
+                OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(),
                     senderKey = Key.Curve25519Key("", "")
                 )
-            }
+            )
         }
         should("ignore request from other user") {
             cut.handleEncryptedIncomingKeyRequests(
@@ -195,12 +195,12 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            olmEncryptionServiceMock.returnEncryptOlm = {
-                EncryptedEventContent.OlmEncryptedEventContent(
+            olmEncryptionServiceMock.returnEncryptOlm = Result.success(
+                OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(),
                     senderKey = Key.Curve25519Key("", "")
                 )
-            }
+            )
         }
         suspend fun ShouldSpecContainerScope.answerRequest(returnedTrustLevel: KeySignatureTrustLevel) {
             should("answer request with trust level $returnedTrustLevel") {
@@ -262,8 +262,8 @@ private val body: ShouldSpec.() -> Unit = {
         }
         notAnswerRequest(KeySignatureTrustLevel.Valid(false))
         notAnswerRequest(KeySignatureTrustLevel.CrossSigned(false))
-        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned())
-        notAnswerRequest(KeySignatureTrustLevel.Blocked())
+        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned)
+        notAnswerRequest(KeySignatureTrustLevel.Blocked)
         notAnswerRequest(KeySignatureTrustLevel.Invalid("reason"))
     }
 }

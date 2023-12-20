@@ -72,7 +72,7 @@ sealed interface ActiveVerificationState {
     /**
      * This state is active when one device is done.
      */
-    data class PartlyDone(val isOurOwn: Boolean) : ActiveVerificationState
+    data class WaitForDone(val isOurOwn: Boolean) : ActiveVerificationState
 
     /**
      * This state is active when the verification is done.

@@ -16,7 +16,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix("4.0.0")
+    version = withVersionSuffix("4.1.1")
 }
 
 subprojects {
@@ -29,6 +29,7 @@ subprojects {
             dependsOn(tasks.dokkaHtml)
             from(tasks.dokkaHtml.flatMap { it.outputDirectory })
             archiveClassifier.set("javadoc")
+            onlyIf { isCI }
         }
 
         publishing {
@@ -75,7 +76,7 @@ subprojects {
                             url.set("https://gitlab.com/trixnity/trixnity")
                         }
                     }
-                    artifact(dokkaJar)
+                    if (isCI) artifact(dokkaJar)
                 }
             }
         }

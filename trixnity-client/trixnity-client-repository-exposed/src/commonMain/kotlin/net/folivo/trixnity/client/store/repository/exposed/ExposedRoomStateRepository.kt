@@ -23,6 +23,13 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
     private val serializer = json.serializersModule.getContextual(StateBaseEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
+    override suspend fun get(firstKey: RoomStateRepositoryKey): Map<String, StateBaseEvent<*>> = withExposedRead {
+        ExposedRoomState.select { ExposedRoomState.roomId.eq(firstKey.roomId.full) and ExposedRoomState.type.eq(firstKey.type) }
+            .associate {
+                it[ExposedRoomState.stateKey] to json.decodeFromString(serializer, it[ExposedRoomState.event])
+            }
+    }
+
     override suspend fun get(firstKey: RoomStateRepositoryKey, secondKey: String): StateBaseEvent<*>? =
         withExposedRead {
             ExposedRoomState.select {
@@ -34,6 +41,17 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
             }
         }
 
+    override suspend fun getByRooms(roomIds: Set<RoomId>, type: String, stateKey: String): List<StateBaseEvent<*>> =
+        withExposedRead {
+            ExposedRoomState.select {
+                ExposedRoomState.roomId.inList(roomIds.map { it.full }) and
+                        ExposedRoomState.type.eq(type) and
+                        ExposedRoomState.stateKey.eq(stateKey)
+            }.toList().map {
+                json.decodeFromString(serializer, it[ExposedRoomState.event])
+            }
+        }
+
     override suspend fun deleteByRoomId(roomId: RoomId): Unit = withExposedWrite {
         ExposedRoomState.deleteWhere { ExposedRoomState.roomId.eq(roomId.full) }
     }
@@ -41,20 +59,13 @@ internal class ExposedRoomStateRepository(private val json: Json) : RoomStateRep
 
     override suspend fun save(firstKey: RoomStateRepositoryKey, secondKey: String, value: StateBaseEvent<*>): Unit =
         withExposedWrite {
-            ExposedRoomState.replace {
+            ExposedRoomState.upsert {
                 it[roomId] = firstKey.roomId.full
                 it[type] = firstKey.type
                 it[stateKey] = secondKey
                 it[event] = json.encodeToString(serializer, value)
             }
         }
-
-    override suspend fun get(firstKey: RoomStateRepositoryKey): Map<String, StateBaseEvent<*>> = withExposedRead {
-        ExposedRoomState.select { ExposedRoomState.roomId.eq(firstKey.roomId.full) and ExposedRoomState.type.eq(firstKey.type) }
-            .associate {
-                it[ExposedRoomState.stateKey] to json.decodeFromString(serializer, it[ExposedRoomState.event])
-            }
-    }
 
     override suspend fun delete(firstKey: RoomStateRepositoryKey, secondKey: String): Unit =
         withExposedWrite {

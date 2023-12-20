@@ -1,6 +1,11 @@
 package net.folivo.trixnity.client
 
+import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
@@ -18,7 +23,8 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
 
-fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.replace(": ", ":").trim() }
+fun String.trimToFlatJson() =
+    this.trimIndent().lines().filter { it.isNotEmpty() }.joinToString("") { it.replace(": ", ":").trim() }
 
 val simpleRoom = Room(RoomId("room", "server"), lastEventId = EventId("\$event"))
 val simpleUserInfo =
@@ -128,3 +134,19 @@ suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutbo
     scope,
     MatrixClientConfiguration(),
 ).apply { init() }
+
+suspend fun ShouldSpecContainerScope.clearOutdatedKeys(keyStoreBuilder: () -> KeyStore) {
+    lateinit var coroutineScope: CoroutineScope
+    beforeTest {
+        val keyStore = keyStoreBuilder()
+        coroutineScope = CoroutineScope(Dispatchers.Default)
+        coroutineScope.launch {
+            keyStore.getOutdatedKeysFlow().filter { it.isNotEmpty() }.collect {
+                keyStore.updateOutdatedKeys { setOf() }
+            }
+        }
+    }
+    afterTest {
+        coroutineScope.cancel()
+    }
+}

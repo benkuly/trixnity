@@ -4,7 +4,9 @@ interface WantsToBeFree {
     fun free()
 }
 
-suspend fun <T, W1 : WantsToBeFree> freeAfter(w1: W1, block: suspend (W1) -> T): T =
+// TODO freeAfter w# parameters should be factories itself. Otherwise cancellation could leak.
+
+inline fun <T, W1 : WantsToBeFree> freeAfter(w1: W1, block: (W1) -> T): T =
     try {
         block(w1)
     } finally {
@@ -12,7 +14,7 @@ suspend fun <T, W1 : WantsToBeFree> freeAfter(w1: W1, block: suspend (W1) -> T):
     }
 
 
-suspend fun <T, W1 : WantsToBeFree, W2 : WantsToBeFree> freeAfter(w1: W1, w2: W2, block: suspend (W1, W2) -> T): T =
+inline fun <T, W1 : WantsToBeFree, W2 : WantsToBeFree> freeAfter(w1: W1, w2: W2, block: (W1, W2) -> T): T =
     try {
         block(w1, w2)
     } finally {
@@ -20,11 +22,11 @@ suspend fun <T, W1 : WantsToBeFree, W2 : WantsToBeFree> freeAfter(w1: W1, w2: W2
         w2.free()
     }
 
-suspend fun <T, W1 : WantsToBeFree, W2 : WantsToBeFree, W3 : WantsToBeFree> freeAfter(
+inline fun <T, W1 : WantsToBeFree, W2 : WantsToBeFree, W3 : WantsToBeFree> freeAfter(
     w1: W1,
     w2: W2,
     w3: W3,
-    block: suspend (W1, W2, W3) -> T
+    block: (W1, W2, W3) -> T
 ): T =
     try {
         block(w1, w2, w3)
@@ -34,12 +36,12 @@ suspend fun <T, W1 : WantsToBeFree, W2 : WantsToBeFree, W3 : WantsToBeFree> free
         w3.free()
     }
 
-suspend fun <T, W1 : WantsToBeFree, W2 : WantsToBeFree, W3 : WantsToBeFree, W4 : WantsToBeFree> freeAfter(
+inline fun <T, W1 : WantsToBeFree, W2 : WantsToBeFree, W3 : WantsToBeFree, W4 : WantsToBeFree> freeAfter(
     w1: W1,
     w2: W2,
     w3: W3,
     w4: W4,
-    block: suspend (W1, W2, W3, W4) -> T
+    block: (W1, W2, W3, W4) -> T
 ): T =
     try {
         block(w1, w2, w3, w4)

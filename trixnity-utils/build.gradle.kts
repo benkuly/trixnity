@@ -17,6 +17,13 @@ kotlin {
                 api(libs.ktor.utils)
                 api(libs.kotlinx.coroutines.core)
                 api(libs.okio)
+                implementation(libs.oshai.logging)
+            }
+        }
+        jsMain {
+            dependencies {
+                api(project.dependencies.platform(libs.kotlin.wrappers.bom))
+                api(libs.kotlin.wrappers.browser)
             }
         }
         commonTest {

@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
-import net.folivo.trixnity.core.model.events.m.room.EncryptedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
@@ -228,8 +228,6 @@ class KeyServiceImpl(
                 }.mapCatching { uiaFlow ->
                     uiaFlow.injectOnSuccessIntoUIA {
                         keyStore.updateOutdatedKeys { oldOutdatedKeys -> oldOutdatedKeys + userInfo.userId }
-                        log.debug { "wait for outdated keys" }
-                        keyStore.waitForUpdateOutdatedKey(userInfo.userId)
                         val masterKey =
                             keyStore.getCrossSigningKey(userInfo.userId, MasterKey)?.value?.signed?.get<Ed25519Key>()
                         val ownDeviceKey =
@@ -287,7 +285,8 @@ class KeyServiceImpl(
                 is NotCrossSigned -> DeviceTrustLevel.NotCrossSigned
                 is Blocked -> DeviceTrustLevel.Blocked
                 is Invalid -> DeviceTrustLevel.Invalid(trustLevel.reason)
-                is NotAllDeviceKeysCrossSigned, null -> DeviceTrustLevel.Invalid("could not determine trust level of device key: $deviceKeys")
+                is NotAllDeviceKeysCrossSigned -> DeviceTrustLevel.Invalid("could not determine trust level of device key: $deviceKeys")
+                null -> DeviceTrustLevel.Unknown
             }
         }
     }
@@ -300,7 +299,7 @@ class KeyServiceImpl(
         roomService.getTimelineEvent(roomId, eventId).flatMapLatest { timelineEvent ->
             val event = timelineEvent?.event
             val content = event?.content
-            if (event is MessageEvent && content is EncryptedEventContent.MegolmEncryptedEventContent) {
+            if (event is MessageEvent && content is MegolmEncryptedMessageEventContent) {
                 combine(
                     olmCryptoStore.getInboundMegolmSession(content.sessionId, event.roomId),
                     keyStore.getDeviceKeys(event.sender)

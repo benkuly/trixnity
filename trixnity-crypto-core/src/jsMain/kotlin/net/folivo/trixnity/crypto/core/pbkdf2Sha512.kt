@@ -1,13 +1,15 @@
 package net.folivo.trixnity.crypto.core
 
-import crypto
 import io.ktor.util.*
-import kotlinx.coroutines.await
+import js.core.jso
+import js.promise.await
+import js.typedarrays.Uint8Array
+import js.typedarrays.toUint8Array
 import pbkdf2
+import web.crypto.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
-import kotlin.js.json
 
 actual suspend fun generatePbkdf2Sha512(
     password: String,
@@ -15,35 +17,35 @@ actual suspend fun generatePbkdf2Sha512(
     iterationCount: Int,
     keyBitLength: Int
 ): ByteArray {
-    val saltBuffer = salt.toInt8Array().buffer
     return if (PlatformUtils.IS_BROWSER) {
         val crypto = crypto.subtle
         val key = crypto.importKey(
-            format = "raw",
-            keyData = password.encodeToByteArray().toInt8Array().buffer,
-            algorithm = "PBKDF2",
+            format = KeyFormat.raw,
+            keyData = password.encodeToByteArray().toUint8Array(),
+            algorithm = jso<Algorithm> { name = "PBKDF2" },
             extractable = false,
-            keyUsages = arrayOf("deriveBits")
+            keyUsages = arrayOf(KeyUsage.deriveBits)
         ).await()
-        val keybits = crypto.deriveBits(
-            json(
-                "name" to "PBKDF2",
-                "salt" to saltBuffer,
-                "iterations" to iterationCount,
-                "hash" to "SHA-512"
-            ),
-            key,
-            keyBitLength,
-        ).await()
-        keybits.toByteArray()
+        Uint8Array(
+            crypto.deriveBits(
+                algorithm = jso<Pbkdf2Params> {
+                    name = "PBKDF2"
+                    this.salt = salt.toUint8Array()
+                    iterations = iterationCount.toDouble()
+                    hash = "SHA-512"
+                },
+                baseKey = key,
+                length = keyBitLength,
+            ).await()
+        ).toByteArray()
     } else {
         suspendCoroutine { continuation ->
             pbkdf2(
-                password,
-                salt.toInt8Array(),
-                iterationCount,
-                keyBitLength / 8,
-                "sha512"
+                password = password,
+                salt = salt.toUint8Array(),
+                iterations = iterationCount,
+                keylen = keyBitLength / 8,
+                digest = "sha512"
             ) { err, key ->
                 if (err != null) continuation.resumeWithException(err)
                 continuation.resume(key.toByteArray())

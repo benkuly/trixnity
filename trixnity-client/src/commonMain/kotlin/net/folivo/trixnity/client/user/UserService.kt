@@ -7,7 +7,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -48,12 +47,12 @@ interface UserService {
 
     fun getReceiptsById(roomId: RoomId, userId: UserId): Flow<RoomUserReceipts?>
 
-    fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Int>
+    fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Long>
     fun getPowerLevel(
         userId: UserId,
         powerLevelsEventContent: PowerLevelsEventContent?,
         createEventContent: CreateEventContent
-    ): Int
+    ): Long
 
     fun canKickUser(roomId: RoomId, userId: UserId): Flow<Boolean>
     fun canBanUser(roomId: RoomId, userId: UserId): Flow<Boolean>
@@ -62,7 +61,7 @@ interface UserService {
     fun canInvite(roomId: RoomId): Flow<Boolean>
     fun canRedactEvent(roomId: RoomId, eventId: EventId): Flow<Boolean>
 
-    fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<Int?>
+    fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<Long?>
 
     fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean>
 
@@ -85,7 +84,7 @@ class UserServiceImpl(
     private val currentSyncState: CurrentSyncState,
     userInfo: UserInfo,
     private val mappings: EventContentSerializerMappings,
-    private val tm: RepositoryTransactionManager,
+    private val tm: TransactionManager,
     private val scope: CoroutineScope,
 ) : UserService {
 
@@ -143,7 +142,7 @@ class UserServiceImpl(
     override fun getPowerLevel(
         roomId: RoomId,
         userId: UserId
-    ): Flow<Int> =
+    ): Flow<Long> =
         combine(
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getContentByStateKey<CreateEventContent>(roomId).filterNotNull()
@@ -155,7 +154,7 @@ class UserServiceImpl(
         userId: UserId,
         powerLevelsEventContent: PowerLevelsEventContent?,
         createEventContent: CreateEventContent
-    ): Int {
+    ): Long {
         return when (powerLevelsEventContent) {
             null -> if (createEventContent.creator == userId) 100 else 0
             else -> powerLevelsEventContent.users[userId] ?: powerLevelsEventContent.usersDefault
@@ -263,7 +262,7 @@ class UserServiceImpl(
     override fun canSetPowerLevelToMax(
         roomId: RoomId,
         userId: UserId
-    ): Flow<Int?> {
+    ): Flow<Long?> {
         return combine(
             getPowerLevel(roomId, ownUserId),
             getPowerLevel(roomId, userId),
