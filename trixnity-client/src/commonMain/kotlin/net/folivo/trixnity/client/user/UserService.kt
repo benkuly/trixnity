@@ -1,17 +1,8 @@
 package net.folivo.trixnity.client.user
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
-import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.utils.retryWhenSyncIs
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncEvents
-import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -22,7 +13,6 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
-import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.BAN_DEFAULT
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.EVENTS_DEFAULT
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.INVITE_DEFAULT
@@ -74,54 +64,19 @@ interface UserService {
 
 class UserServiceImpl(
     private val roomUserStore: RoomUserStore,
-    private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
-    private val api: MatrixClientServerApiClient,
+    private val loadMembersService: LoadMembersService,
     presenceEventHandler: PresenceEventHandler,
-    private val lazyMemberEventHandlers: List<LazyMemberEventHandler>,
-    private val currentSyncState: CurrentSyncState,
     userInfo: UserInfo,
     private val mappings: EventContentSerializerMappings,
-    private val tm: TransactionManager,
-    private val scope: CoroutineScope,
 ) : UserService {
 
-    private val currentlyLoadingMembers = MutableStateFlow<Set<RoomId>>(setOf())
     override val userPresence = presenceEventHandler.userPresence
     private val ownUserId = userInfo.userId
 
-    override suspend fun loadMembers(roomId: RoomId, wait: Boolean) {
-        if (currentlyLoadingMembers.getAndUpdate { it + roomId }.contains(roomId).not()) {
-            scope.launch {
-                currentSyncState.retryWhenSyncIs(
-                    SyncState.RUNNING,
-                    onError = { log.warn(it) { "failed loading members" } },
-                ) {
-                    val room = roomStore.get(roomId).first()
-                    if (room?.membersLoaded != true) {
-                        log.debug { "load members of room $roomId" }
-                        val memberEvents = api.room.getMembers(
-                            roomId = roomId,
-                            notMembership = LEAVE
-                        ).getOrThrow()
-                        memberEvents.chunked(50).forEach { chunk ->
-                            lazyMemberEventHandlers.forEach {
-                                it.handleLazyMemberEvents(chunk)
-                            }
-                            // TODO is there a nicer way? Maybe some sort of merged EventEmitter (including lazy members)
-                            api.sync.emit(SyncEvents(Sync.Response(""), chunk))
-                            yield()
-                        }
-                        roomStore.update(roomId) { it?.copy(membersLoaded = true) }
-                    }
-                }
-                currentlyLoadingMembers.update { it - roomId }
-            }
-        }
-        if (wait) roomStore.get(roomId).first { it?.membersLoaded == true }
-    }
+    override suspend fun loadMembers(roomId: RoomId, wait: Boolean) = loadMembersService(roomId, wait)
 
     override fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>> {
         return roomUserStore.getAll(roomId)

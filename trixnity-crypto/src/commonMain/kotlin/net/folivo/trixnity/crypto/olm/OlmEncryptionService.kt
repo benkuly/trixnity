@@ -222,7 +222,7 @@ class OlmEncryptionServiceImpl(
             }
 
             if (lastUsedOlmStoredOlmSessions == null || forceNewSession) {
-                log.debug { "encrypt olm event with new session for device with key $identityKey" }
+                log.debug { "encrypt olm event with new session (userId=$userId, deviceId=$deviceId)" }
                 val response =
                     requests.claimKeys(mapOf(userId to mapOf(deviceId to KeyAlgorithm.SignedCurve25519)))
                         .fold(
@@ -250,7 +250,7 @@ class OlmEncryptionServiceImpl(
                         OlmSession.createOutbound(
                             account = olmAccount,
                             theirIdentityKey = identityKey.value,
-                            theirOneTimeKey = oneTimeKey.signed.value
+                            theirOneTimeKey = oneTimeKey.value
                         )
                     ) { _, session ->
                         encryptionResult = encryptWithOlmSession(
@@ -271,7 +271,7 @@ class OlmEncryptionServiceImpl(
                     throw EncryptOlmError.OlmLibraryError(olmLibraryException)
                 }
             } else {
-                log.debug { "encrypt olm event with existing session for device with key $identityKey" }
+                log.debug { "encrypt olm event with existing session for device (userId=$userId, deviceId=$deviceId)" }
                 try {
                     freeAfter(
                         OlmSession.unpickle(
@@ -306,7 +306,6 @@ class OlmEncryptionServiceImpl(
     override suspend fun decryptOlm(
         event: ClientEvent.ToDeviceEvent<OlmEncryptedToDeviceEventContent>,
     ): Result<DecryptedOlmEvent<*>> = runCatchingCancellationAware {
-        log.debug { "start decrypt olm event $event" }
         val encryptedContent = event.content
         val userId = event.sender
         val senderIdentityKey = encryptedContent.senderKey
@@ -375,18 +374,18 @@ class OlmEncryptionServiceImpl(
                     ) { olmSession ->
                         if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
                             if (olmSession.matchesInboundSession(ciphertext.body)) {
-                                log.debug { "try decrypt initial olm event with matching session ${storedSession.sessionId} for device with key $senderIdentityKey" }
+                                log.debug { "try decrypt initial olm event with matching session ${storedSession.sessionId} (userId=$userId, deviceId=$deviceId)" }
                                 olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
                             } else {
-                                log.debug { "initial olm event did not match session ${storedSession.sessionId} for device with key $senderIdentityKey" }
+                                log.debug { "initial olm event did not match session ${storedSession.sessionId} (userId=$userId, deviceId=$deviceId)" }
                                 null
                             }
                         } else {
                             try {
-                                log.debug { "try decrypt ordinary olm event with matching session ${storedSession.sessionId} for device with key $senderIdentityKey" }
+                                log.debug { "try decrypt ordinary olm event with matching session ${storedSession.sessionId} (userId=$userId, deviceId=$deviceId)" }
                                 olmSession.decrypt(OlmMessage(ciphertext.body, ORDINARY))
                             } catch (error: Throwable) {
-                                log.debug { "could not decrypt olm event with existing session ${storedSession.sessionId} for device with key $senderIdentityKey. Reason: ${error.message}" }
+                                log.debug { "could not decrypt olm event with existing session ${storedSession.sessionId} (userId=$userId, deviceId=$deviceId). Reason: ${error.message}" }
                                 null
                             }
                         }?.let { decrypted ->
@@ -406,7 +405,6 @@ class OlmEncryptionServiceImpl(
             } ?: if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
                 if (hasCreatedTooManyOlmSessions(storedSessions))
                     throw DecryptOlmError.TooManySessions
-                log.debug { "decrypt olm event with new session for device with key $senderIdentityKey" }
                 lateinit var newStoredOlmSession: StoredOlmSession
                 try {
                     store.updateOlmAccount {
@@ -419,6 +417,7 @@ class OlmEncryptionServiceImpl(
                                 ciphertext.body
                             )
                         ) { _, olmSession ->
+                            log.debug { "decrypt olm event with new session (userId=$userId, deviceId=$deviceId)" }
                             val decrypted = olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
                             olmAccount.removeOneTimeKeys(olmSession)
                             decryptionResult = decryptWithOlmSession(decrypted)
@@ -432,6 +431,7 @@ class OlmEncryptionServiceImpl(
                         }
                     }
                 } catch (olmLibraryException: OlmLibraryException) {
+                    log.debug { "could not decrypt olm event with new session (userId=$userId, deviceId=$deviceId), create recovery session. Reason: ${olmLibraryException.message}" }
                     createRecoveryOlmSession(storedSessions)
                     throw DecryptOlmError.OlmLibraryError(olmLibraryException)
                 }

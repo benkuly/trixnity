@@ -27,6 +27,7 @@ benasher44Uuid = "0.8.2" # https://github.com/benasher44/uuid/releases
 
 ### databases ###
 exposed = "0.45.0" # https://github.com/JetBrains/Exposed/releases
+hikari = "5.1.0" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.2.224" # https://github.com/h2database/h2database/releases
 postgres = "42.7.0" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.6.1" # https://github.com/JuulLabs/indexeddb/releases
@@ -119,6 +120,7 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "androidxRoom" }
 androidx-room-testing = { module = "androidx.room:room-ktx", version.ref = "androidxRoom" }
 
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 
 ### logging ###
 oshai-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "oshaiKotlinLogging" }

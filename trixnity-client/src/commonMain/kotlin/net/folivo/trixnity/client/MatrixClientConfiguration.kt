@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineName
 import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
@@ -63,6 +64,16 @@ data class MatrixClientConfiguration(
      * Allows you to customize, which [Room.lastRelevantEventId] is set.
      */
     var lastRelevantEventFilter: (RoomEvent<*>) -> Boolean = { it is RoomEvent.MessageEvent<*> },
+
+    /**
+     * Set filter for the normal sync.
+     */
+    var syncFilter: Filters = Filters(),
+
+    /**
+     * Set filter for the single sync (background sync).
+     */
+    var syncOnceFilter: Filters = Filters(presence = Filters.EventFilter(limit = 0)),
 
     /**
      * Set custom [HttpClient].

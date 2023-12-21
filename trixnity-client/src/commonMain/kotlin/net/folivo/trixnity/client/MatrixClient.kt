@@ -85,8 +85,14 @@ interface MatrixClient {
 
     suspend fun startSync(presence: Presence? = Presence.ONLINE)
 
+    /**
+     * Usually used for background sync.
+     */
     suspend fun syncOnce(presence: Presence? = Presence.OFFLINE, timeout: Duration = Duration.ZERO): Result<Unit>
 
+    /**
+     * Usually used for background sync.
+     */
     suspend fun <T> syncOnce(
         presence: Presence? = Presence.OFFLINE,
         timeout: Duration = Duration.ZERO,
@@ -483,8 +489,13 @@ class MatrixClientImpl internal constructor(
                     flowOf(RUN),
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
-                    api.user.setFilter(userId, baseFilters)
-                        .getOrThrow().also { log.debug { "set new filter for sync: $it" } }
+                    api.user.setFilter(
+                        userId, config.syncFilter.copy(
+                            room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
+                                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                            )
+                        )
+                    ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
                 }
                 accountStore.updateAccount { it.copy(filterId = newFilterId) }
             }
@@ -495,8 +506,11 @@ class MatrixClientImpl internal constructor(
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
                     api.user.setFilter(
-                        userId,
-                        baseFilters.copy(presence = Filters.EventFilter(limit = 0))
+                        userId, config.syncFilter.copy(
+                            room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
+                                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                            ),
+                        )
                     ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
                 }
                 accountStore.updateAccount { it.copy(backgroundFilterId = newFilterId) }
@@ -568,13 +582,6 @@ class MatrixClientImpl internal constructor(
             runOnce = runOnce
         )
     }
-
-    private val baseFilters =
-        Filters(
-            room = Filters.RoomFilter(
-                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
-            )
-        )
 
     override suspend fun stopSync(wait: Boolean) {
         api.sync.stop(wait)

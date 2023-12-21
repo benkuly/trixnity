@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
@@ -33,7 +32,7 @@ private val log = KotlinLogging.logger {}
 class RoomListHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
-    private val roomService: RoomService,
+    private val forgetRoomService: ForgetRoomService,
     private val tm: TransactionManager,
     private val config: MatrixClientConfiguration,
 ) : EventHandler {
@@ -43,10 +42,10 @@ class RoomListHandler(
         api.sync.subscribe(Priority.AFTER_DEFAULT - 1, ::deleteLeftRooms).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun updateRoomList(syncEvents: SyncEvents) = tm.writeTransaction {
+    internal suspend fun updateRoomList(syncEvents: SyncEvents) = tm.transaction {
         val rooms = syncEvents.syncResponse.room
 
-        if (rooms != null) coroutineScope {
+        if (rooms != null) {
             val createEvents =
                 async(start = CoroutineStart.LAZY) {
                     syncEvents
@@ -136,6 +135,7 @@ class RoomListHandler(
             }
             createEvents.cancel()
             encryptionEnabled.cancel()
+            nextRoomIds.cancel()
         }
     }
 
@@ -155,9 +155,9 @@ class RoomListHandler(
             log.trace { "existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms" }
             if (forgetRooms.isNotEmpty()) {
                 log.debug { "forget rooms: $forgetRooms" }
-                tm.writeTransaction {
+                tm.transaction {
                     forgetRooms.forEach { roomId ->
-                        roomService.forgetRoom(roomId)
+                        forgetRoomService(roomId)
                     }
                 }
             }

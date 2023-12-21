@@ -72,7 +72,7 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
         outgoingRoomKeyRequestEventHandlerMock = OutgoingRoomKeyRequestEventHandlerMock()
         cut = MegolmRoomEventEncryptionService(
             roomStore = roomStore,
-            userService = userService,
+            loadMembersService = { _, _ -> },
             roomStateStore = roomStateStore,
             olmCryptoStore = olmCryptoStore,
             keyBackupService = keyBackupServiceMock,

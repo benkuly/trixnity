@@ -38,7 +38,7 @@ class RoomStateEventHandler(
     ) {
         if (events.isNotEmpty()) {
             log.debug { "start save ${events.size} state events" }
-            tm.writeTransaction {
+            tm.transaction {
                 events.forEach {
                     roomStateStore.save(it, skipWhenAlreadyPresent)
                 }

@@ -63,7 +63,7 @@ class OutboxMessageEventHandler(
             } else null
         }
         if (removeOutboxMessages.isNotEmpty())
-            tm.writeTransaction {
+            tm.transaction {
                 removeOutboxMessages.forEach { roomOutboxMessageStore.update(it) { null } }
             }
     }
@@ -94,19 +94,8 @@ class OutboxMessageEventHandler(
                         coroutineScope {
                             outboxMessagesGroupedByRoom.forEach { (roomId, outboxMessagesInRoom) ->
                                 launch {
-                                    val roomDataNotFoundLocally = withTimeoutOrNull(30.seconds) {
-                                        // RoomEventEncryptionService may need this
-                                        roomStore.get(roomId).filterNotNull().first()
-                                    } == null
                                     for (outboxMessage in outboxMessagesInRoom) {
                                         log.trace { "send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
-                                        if (roomDataNotFoundLocally) {
-                                            log.warn { "cannot send message, because room not found locally" }
-                                            roomOutboxMessageStore.update(outboxMessage.transactionId) {
-                                                it?.copy(sendError = SendError.RoomDataNotFoundLocally)
-                                            }
-                                            continue
-                                        }
                                         val originalContent = outboxMessage.content
                                         val uploader =
                                             outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)

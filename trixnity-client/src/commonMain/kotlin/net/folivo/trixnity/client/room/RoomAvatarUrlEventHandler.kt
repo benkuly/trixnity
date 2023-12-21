@@ -44,7 +44,7 @@ class RoomAvatarUrlEventHandler(
             }
         }
         if (newAvatarUrls.isNotEmpty())
-            tm.writeTransaction {
+            tm.transaction {
                 newAvatarUrls.forEach { (roomId, avatarUrl) ->
                     roomStore.update(roomId) { oldRoom ->
                         oldRoom?.copy(avatarUrl = avatarUrl)
@@ -77,7 +77,7 @@ class RoomAvatarUrlEventHandler(
             }
         }.flatten()
         if (newAvatarUrls.isNotEmpty())
-            tm.writeTransaction {
+            tm.transaction {
                 newAvatarUrls.forEach { (roomId, avatarUrl) ->
                     roomStore.update(roomId) { oldRoom ->
                         oldRoom?.copy(avatarUrl = avatarUrl)

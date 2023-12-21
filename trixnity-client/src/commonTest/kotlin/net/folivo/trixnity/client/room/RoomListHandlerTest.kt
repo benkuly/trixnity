@@ -38,6 +38,8 @@ class RoomListHandlerTest : ShouldSpec({
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
 
+    var forgetRooms= mutableListOf<RoomId>()
+
     lateinit var cut: RoomListHandler
 
     beforeTest {
@@ -46,12 +48,13 @@ class RoomListHandlerTest : ShouldSpec({
         roomServiceMock = RoomServiceMock()
         config = MatrixClientConfiguration()
         val (api, _) = mockMatrixClientServerApiClient(json)
+        forgetRooms.clear()
         cut = RoomListHandler(
-            api,
-            roomStore,
-            roomServiceMock,
-            TransactionManagerMock(),
-            config,
+            api = api,
+            roomStore = roomStore,
+            forgetRoomService = {forgetRooms.add(it) },
+            tm = TransactionManagerMock(),
+            config = config,
         )
     }
 
@@ -140,7 +143,7 @@ class RoomListHandlerTest : ShouldSpec({
                 )
             )
 
-            roomServiceMock.forgetRooms.value shouldBe listOf(room)
+            forgetRooms shouldBe listOf(room)
         }
         should("not forget rooms on leave when disabled") {
             config.deleteRoomsOnLeave = false

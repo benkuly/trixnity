@@ -47,7 +47,7 @@ class UserMemberEventHandler(
         skipWhenAlreadyPresent: Boolean = false
     ) {
         if (events.isNotEmpty()) {
-            tm.writeTransaction {
+            tm.transaction {
                 events.groupBy { it.roomIdOrNull }.forEach { (roomId, eventsByRoomId) ->
                     if (roomId != null) coroutineScope {
                         val allDisplayNames = mutableMapOf<UserId, String>()
