@@ -12,7 +12,6 @@ import net.folivo.trixnity.client.user.LoadMembersService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -48,7 +47,7 @@ class MegolmRoomEventEncryptionService(
         return olmEncryptionService.encryptMegolm(content, roomId, encryptionEventContent)
     }
 
-    override suspend fun decrypt(event: RoomEvent<*>): Result<RoomEventContent>? {
+    override suspend fun decrypt(event: RoomEvent.MessageEvent<*>): Result<MessageEventContent>? {
         val content = event.content
         val roomId = event.roomId
         val eventId = event.id

@@ -72,7 +72,6 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             api,
             listOf(roomEventDecryptionServiceMock),
             mediaServiceMock,
-            roomStore,
             roomOutboxMessageStore,
             defaultOutboxMessageMediaUploaderMappings,
             CurrentSyncState(currentSyncState),

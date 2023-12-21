@@ -280,12 +280,13 @@ class RoomServiceImpl(
                         }
                         if (timelineEvent == null)
                             log.warn { "getTimelineEvent: could not find TimelineEvent $eventId in store or by fetching (timeout=${cfg.fetchTimeout})" }
-                        if (timelineEvent?.canBeDecrypted() == true) {
+                        val event = timelineEvent?.event
+                        if (timelineEvent?.canBeDecrypted() == true && event is MessageEvent) {
                             log.trace { "getTimelineEvent: try decrypt ${timelineEvent.eventId}" }
                             val decryptedEventContent =
                                 withTimeoutOrNull(cfg.decryptionTimeout) {
                                     val decryptionResult =
-                                        roomEventEncryptionServices.firstNotNullOfOrNull { it.decrypt(timelineEvent.event) }
+                                        roomEventEncryptionServices.decrypt(event)
                                     if (decryptionResult != null) {
                                         try {
                                             Result.success(decryptionResult.getOrThrow())

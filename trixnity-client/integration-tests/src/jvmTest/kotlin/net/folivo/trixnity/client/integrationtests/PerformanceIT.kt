@@ -16,6 +16,8 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.createTrixnityBotModules
+import net.folivo.trixnity.client.room.decrypt
+import net.folivo.trixnity.client.room.encrypt
 import net.folivo.trixnity.client.roomEventEncryptionServices
 import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
@@ -209,9 +211,9 @@ class PerformanceIT {
             prepareTestClients.withLimitedParallelism {
                 val roomId = rooms[userId]
                 checkNotNull(roomId)
-                val encryptedEvent = roomEventEncryptionServices.firstNotNullOfOrNull {
-                    it.encrypt(RoomMessageEventContent.TextMessageEventContent(roomId.full), roomId)
-                }?.getOrThrow()
+                val encryptedEvent = roomEventEncryptionServices
+                    .encrypt(RoomMessageEventContent.TextMessageEventContent(roomId.full), roomId)
+                    ?.getOrThrow()
                 encryptedEvent.shouldNotBeNull()
                 api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
             }
@@ -223,9 +225,9 @@ class PerformanceIT {
                 val roomId = rooms[userId]
                 checkNotNull(roomId)
                 repeat(messagesCount) { i ->
-                    val encryptedEvent = roomEventEncryptionServices.firstNotNullOfOrNull {
-                        it.encrypt(RoomMessageEventContent.TextMessageEventContent("$i"), roomId)
-                    }?.getOrThrow()
+                    val encryptedEvent = roomEventEncryptionServices
+                        .encrypt(RoomMessageEventContent.TextMessageEventContent("$i"), roomId)
+                        ?.getOrThrow()
                     encryptedEvent.shouldNotBeNull()
                     api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
                 }
@@ -283,12 +285,11 @@ class PerformanceIT {
                         coroutineScope {
                             events.forEach { event ->
                                 val content = event.content
-                                if (content is EncryptedMessageEventContent && event.sender != client.userId) {
+                                if (event is RoomEvent.MessageEvent && content is EncryptedMessageEventContent && event.sender != client.userId) {
                                     launch {
                                         val decryptedContent = withTimeout(5.seconds) {
-                                            client.roomEventEncryptionServices.firstNotNullOfOrNull {
-                                                it.decrypt(event)
-                                            }?.getOrThrow()
+                                            client.roomEventEncryptionServices.decrypt(event)
+                                                ?.getOrThrow()
                                         }
                                         decryptedContent.shouldNotBeNull()
                                     }
@@ -414,12 +415,9 @@ class PerformanceIT {
                                     it.content.membership == JOIN
                         }
                     repeat(messagesPerRequestCount) {
-                        val encryptedEvent = sendingClient.roomEventEncryptionServices.firstNotNullOfOrNull {
-                            it.encrypt(
-                                RoomMessageEventContent.TextMessageEventContent("ping $it"),
-                                roomId
-                            )
-                        }?.getOrThrow()
+                        val encryptedEvent = sendingClient.roomEventEncryptionServices
+                            .encrypt(RoomMessageEventContent.TextMessageEventContent("ping $it"), roomId)
+                            ?.getOrThrow()
                         encryptedEvent.shouldNotBeNull()
                         sendingClient.api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
                         sentMessages.getAndUpdate { it + 1 }
@@ -451,11 +449,11 @@ class PerformanceIT {
                         events.forEach { event ->
                             launch {
                                 val content = event.content
-                                if (content is EncryptedMessageEventContent && event.sender != receivingClient.userId) {
+                                if (event is RoomEvent.MessageEvent && content is EncryptedMessageEventContent && event.sender != receivingClient.userId) {
                                     val decryptedContent = withTimeout(5.seconds) {
-                                        receivingClient.roomEventEncryptionServices.firstNotNullOfOrNull {
-                                            it.decrypt(event)
-                                        }?.getOrThrow()
+                                        receivingClient.roomEventEncryptionServices
+                                            .decrypt(event)
+                                            ?.getOrThrow()
                                     }
                                     decryptedContent.shouldNotBeNull()
                                     if (decryptedContent is RoomMessageEventContent.TextMessageEventContent) {
