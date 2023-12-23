@@ -124,14 +124,14 @@ suspend fun MatrixClient.Companion.login(
     loginType: LoginType = LoginType.Password,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient> =
     loginWith(
         baseUrl = baseUrl,
-        repositoriesModule = repositoriesModule,
-        mediaStore = mediaStore,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreFactory = mediaStoreFactory,
         getLoginInfo = { api ->
             api.authentication.login(
                 identifier = identifier,
@@ -156,14 +156,38 @@ suspend fun MatrixClient.Companion.login(
         configuration = configuration
     )
 
+suspend fun MatrixClient.Companion.login(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String? = null,
+    token: String? = null,
+    loginType: LoginType = LoginType.Password,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> = login(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    password = password,
+    token = token,
+    loginType = loginType,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreFactory = { mediaStore },
+    configuration = configuration
+)
+
 suspend fun MatrixClient.Companion.loginWithPassword(
     baseUrl: Url,
     identifier: IdentifierType? = null,
     password: String,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient> =
     login(
@@ -174,8 +198,51 @@ suspend fun MatrixClient.Companion.loginWithPassword(
         loginType = LoginType.Password,
         deviceId = deviceId,
         initialDeviceDisplayName = initialDeviceDisplayName,
-        repositoriesModule = repositoriesModule,
-        mediaStore = mediaStore,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreFactory = mediaStoreFactory,
+        configuration = configuration
+    )
+
+suspend fun MatrixClient.Companion.loginWithPassword(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> = loginWithPassword(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    password = password,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreFactory = { mediaStore },
+    configuration = configuration
+)
+
+suspend fun MatrixClient.Companion.loginWithToken(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    token: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> =
+    login(
+        baseUrl = baseUrl,
+        identifier = identifier,
+        password = null,
+        token = token,
+        loginType = LoginType.Token(),
+        deviceId = deviceId,
+        initialDeviceDisplayName = initialDeviceDisplayName,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreFactory = mediaStoreFactory,
         configuration = configuration
     )
 
@@ -188,38 +255,47 @@ suspend fun MatrixClient.Companion.loginWithToken(
     repositoriesModule: Module,
     mediaStore: MediaStore,
     configuration: MatrixClientConfiguration.() -> Unit = {}
-): Result<MatrixClient> =
-    login(
-        baseUrl = baseUrl,
-        identifier = identifier,
-        password = null,
-        token = token,
-        loginType = LoginType.Token(),
-        deviceId = deviceId,
-        initialDeviceDisplayName = initialDeviceDisplayName,
-        repositoriesModule = repositoriesModule,
-        mediaStore = mediaStore,
-        configuration = configuration
-    )
+): Result<MatrixClient> = loginWithToken(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    token = token,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreFactory = { mediaStore },
+    configuration = configuration
+)
 
 suspend fun MatrixClient.Companion.loginWith(
     baseUrl: Url,
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
+
+    val loginInfo = getLoginInfo(
+        MatrixClientServerApiClientImpl(
+            baseUrl = baseUrl,
+            httpClientFactory = config.httpClientFactory,
+        )
+    ).getOrThrow()
+    val mediaStore = mediaStoreFactory(loginInfo)
+    val repositoriesModule = repositoriesModuleFactory(loginInfo)
+
+    val (userId, deviceId, accessToken, displayName, avatarUrl) = loginInfo
+
     val handler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
     }
-
     val coroutineScope =
         CoroutineScope((Dispatchers.Default + handler).let {
             val coroutineName = config.name?.let { name -> CoroutineName(name) }
             if (coroutineName != null) it + coroutineName else it
         }
         )
+
     val koinApplication = koinApplication {
         modules(module {
             single { coroutineScope }
@@ -230,9 +306,9 @@ suspend fun MatrixClient.Companion.loginWith(
         modules(config.modules)
     }
     val di = koinApplication.koin
+
     val rootStore = di.get<RootStore>()
     rootStore.init()
-
     val accountStore = di.get<AccountStore>()
 
     val api = MatrixClientServerApiClientImpl(
@@ -244,7 +320,6 @@ suspend fun MatrixClient.Companion.loginWith(
         syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
         syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
     )
-    val (userId, deviceId, accessToken, displayName, avatarUrl) = getLoginInfo(api).getOrThrow()
     val olmPickleKey = ""
 
     api.accessToken.value = accessToken
@@ -262,7 +337,6 @@ suspend fun MatrixClient.Companion.loginWith(
             syncBatchToken = null
         )
     }
-
 
     val olmCryptoStore = di.get<OlmCryptoStore>()
     val (signingKey, identityKey) = freeAfter(
@@ -311,6 +385,20 @@ suspend fun MatrixClient.Companion.loginWith(
         log.trace { "finished creating MatrixClient" }
     }
 }
+
+suspend fun MatrixClient.Companion.loginWith(
+    baseUrl: Url,
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> = loginWith(
+    baseUrl = baseUrl,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreFactory = { mediaStore },
+    getLoginInfo = getLoginInfo,
+    configuration = configuration
+)
 
 suspend fun MatrixClient.Companion.fromStore(
     repositoriesModule: Module,
