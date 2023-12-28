@@ -82,7 +82,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             userInfo = simpleUserInfo,
             timelineEventHandler = timelineEventHandlerMock,
             config = MatrixClientConfiguration(),
-            typingEventHandler = TypingEventHandler(api),
+            typingEventHandler = TypingEventHandlerImpl(api),
             currentSyncState = CurrentSyncState(currentSyncState),
             scope = scope
         )

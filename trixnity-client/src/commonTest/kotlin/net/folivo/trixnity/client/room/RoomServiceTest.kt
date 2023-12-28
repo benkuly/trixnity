@@ -78,7 +78,7 @@ class RoomServiceTest : ShouldSpec({
             userInfo = simpleUserInfo,
             timelineEventHandler = TimelineEventHandlerMock(),
             config = MatrixClientConfiguration(),
-            typingEventHandler = TypingEventHandler(api),
+            typingEventHandler = TypingEventHandlerImpl(api),
             currentSyncState = CurrentSyncState(currentSyncState),
             scope = scope
         )
