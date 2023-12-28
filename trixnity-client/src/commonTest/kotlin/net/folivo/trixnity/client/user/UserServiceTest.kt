@@ -80,7 +80,7 @@ class UserServiceTest : ShouldSpec({
             roomTimelineStore = roomTimelineStore,
             globalAccountDataStore = globalAccountDataStore,
             loadMembersService = { _, _ -> },
-            presenceEventHandler = PresenceEventHandler(api),
+            presenceEventHandler = PresenceEventHandlerImpl(api),
             userInfo = UserInfo(
                 me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(value = ""),
                 Key.Curve25519Key(value = "")

@@ -4,9 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.EphemeralEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -16,11 +14,11 @@ class PresenceEventHandlerTest : ShouldSpec({
     val alice = UserId("alice", "localhost")
     val bob = UserId("bob", "localhost")
 
-    lateinit var cut: PresenceEventHandler
+    lateinit var cut: PresenceEventHandlerImpl
 
     val json = createMatrixEventJson()
     beforeTest {
-        cut = PresenceEventHandler(
+        cut = PresenceEventHandlerImpl(
             mockMatrixClientServerApiClient(json).first,
         )
     }

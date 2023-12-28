@@ -47,9 +47,10 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<RoomStateEventHandler>()
     }
-    singleOf(::TypingEventHandler) {
+    singleOf(::TypingEventHandlerImpl) {
+        bind<TypingEventHandler>()
         bind<EventHandler>()
-        named<TypingEventHandler>()
+        named<TypingEventHandlerImpl>()
     }
     singleOf(::RoomUpgradeHandler) {
         bind<EventHandler>()
@@ -91,7 +92,7 @@ fun createRoomModule() = module {
             mediaService = get(),
             userInfo = get(),
             timelineEventHandler = get(named<TimelineEventHandlerImpl>()),
-            typingEventHandler = get(named<TypingEventHandler>()),
+            typingEventHandler = get(named<TypingEventHandlerImpl>()),
             currentSyncState = get(),
             scope = get(),
             config = get(),

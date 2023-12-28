@@ -5,9 +5,7 @@ import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.EphemeralEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
@@ -16,11 +14,11 @@ class TypingEventHandlerTest : ShouldSpec({
     val room1 = RoomId("room1", "localhost")
     val room2 = RoomId("room2", "localhost")
 
-    lateinit var cut: TypingEventHandler
+    lateinit var cut: TypingEventHandlerImpl
 
     val json = createMatrixEventJson()
     beforeTest {
-        cut = TypingEventHandler(
+        cut = TypingEventHandlerImpl(
             mockMatrixClientServerApiClient(json).first,
         )
     }
