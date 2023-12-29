@@ -1,8 +1,8 @@
 [versions]
 ### build ###
-kotlin = "1.9.21" # https://github.com/JetBrains/kotlin/releases
-ksp = "1.9.21-1.0.15" # https://github.com/google/ksp/releases
-kotlinWrappers = "1.0.0-pre.666" # https://github.com/JetBrains/kotlin-wrappers/releases
+kotlin = "1.9.22" # https://github.com/JetBrains/kotlin/releases
+ksp = "1.9.22-1.0.16" # https://github.com/google/ksp/releases
+kotlinWrappers = "1.0.0-pre.674" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "1.9.10" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.1.4" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.5.0" # https://github.com/michel-kraemer/gradle-download-task/releases
@@ -18,9 +18,9 @@ trixnityBinaries = "1.0.0" # https://gitlab.com/trixnity/trixnity-binaries/-/rel
 jna = "5.13.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
-ktor = "2.3.6" # https://github.com/ktorio/ktor/releases
-koin = "3.5.0" # https://github.com/InsertKoinIO/koin/tags
-okio = "3.6.0" # https://square.github.io/okio/changelog/
+ktor = "2.3.7" # https://github.com/ktorio/ktor/releases
+koin = "3.5.3" # https://github.com/InsertKoinIO/koin/tags
+okio = "3.7.0" # https://square.github.io/okio/changelog/
 arrow = "1.2.1" # https://github.com/arrow-kt/arrow/releases
 korlibs = "4.0.10" # https://github.com/korlibs/korge/releases
 benasher44Uuid = "0.8.2" # https://github.com/benasher44/uuid/releases
@@ -29,13 +29,13 @@ benasher44Uuid = "0.8.2" # https://github.com/benasher44/uuid/releases
 exposed = "0.45.0" # https://github.com/JetBrains/Exposed/releases
 hikari = "5.1.0" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.2.224" # https://github.com/h2database/h2database/releases
-postgres = "42.7.0" # https://github.com/pgjdbc/pgjdbc/releases
+postgres = "42.7.1" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.6.1" # https://github.com/JuulLabs/indexeddb/releases
 realm = "1.13.0" # https://github.com/realm/realm-kotlin/tags
 androidxRoom = "2.6.1" # https://developer.android.com/jetpack/androidx/releases/room
 
 ### logging ###
-oshaiKotlinLogging = "5.1.1" # https://github.com/oshai/kotlin-logging/releases
+oshaiKotlinLogging = "6.0.1" # https://github.com/oshai/kotlin-logging/releases
 logback = "1.4.14" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
