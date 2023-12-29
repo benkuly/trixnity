@@ -8,7 +8,7 @@ data class AudioInfo(
     @SerialName("duration")
     val duration: Int? = null,
     @SerialName("mimetype")
-    val mimeType: String? = null,
+    override val mimeType: String? = null,
     @SerialName("size")
-    val size: Int? = null,
-)
+    override val size: Int? = null,
+) : FileBasedInfo
