@@ -85,9 +85,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         }
     }
 
-    sealed interface FileBasedMessageEventContent {
+    sealed interface FileBasedRoomMessageEventContent : RoomMessageEventContent {
         val url: String?
         val file: EncryptedFile?
+        val info: FileBasedInfo?
     }
 
     /**
@@ -96,13 +97,13 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     @Serializable
     data class ImageMessageEventContent(
         @SerialName("body") override val body: String,
-        @SerialName("info") val info: ImageInfo? = null,
+        @SerialName("info") override val info: ImageInfo? = null,
         @SerialName("url") override val url: String? = null,
         @SerialName("file") override val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
         @SerialName("external_url") override val externalUrl: String? = null,
-    ) : RoomMessageEventContent, FileBasedMessageEventContent {
+    ) : FileBasedRoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.image"
 
@@ -118,13 +119,13 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     data class FileMessageEventContent(
         @SerialName("body") override val body: String,
         @SerialName("filename") val fileName: String? = null,
-        @SerialName("info") val info: FileInfo? = null,
+        @SerialName("info") override val info: FileInfo? = null,
         @SerialName("url") override val url: String? = null,
         @SerialName("file") override val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
         @SerialName("external_url") override val externalUrl: String? = null,
-    ) : RoomMessageEventContent, FileBasedMessageEventContent {
+    ) : RoomMessageEventContent, FileBasedRoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.file"
 
@@ -139,13 +140,13 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     @Serializable
     data class AudioMessageEventContent(
         @SerialName("body") override val body: String,
-        @SerialName("info") val info: AudioInfo? = null,
+        @SerialName("info") override val info: AudioInfo? = null,
         @SerialName("url") override val url: String? = null,
         @SerialName("file") override val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
         @SerialName("external_url") override val externalUrl: String? = null,
-    ) : RoomMessageEventContent, FileBasedMessageEventContent {
+    ) : RoomMessageEventContent, FileBasedRoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.audio"
 
@@ -160,13 +161,13 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     @Serializable
     data class VideoMessageEventContent(
         @SerialName("body") override val body: String,
-        @SerialName("info") val info: VideoInfo? = null,
+        @SerialName("info") override val info: VideoInfo? = null,
         @SerialName("url") override val url: String? = null,
         @SerialName("file") override val file: EncryptedFile? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
         @SerialName("external_url") override val externalUrl: String? = null,
-    ) : RoomMessageEventContent, FileBasedMessageEventContent {
+    ) : RoomMessageEventContent, FileBasedRoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.video"
 
