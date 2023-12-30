@@ -13,7 +13,7 @@ import net.folivo.trixnity.utils.TrixnityDsl
 suspend fun MessageBuilder.video(
     body: String,
     video: ByteArrayFlow,
-    type: ContentType,
+    type: ContentType? = null,
     size: Int? = null,
     height: Int? = null,
     width: Int? = null,

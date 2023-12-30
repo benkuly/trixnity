@@ -13,7 +13,7 @@ import net.folivo.trixnity.utils.TrixnityDsl
 suspend fun MessageBuilder.file(
     body: String,
     file: ByteArrayFlow,
-    type: ContentType,
+    type: ContentType? = null,
     size: Int? = null,
     name: String? = null
 ) {
