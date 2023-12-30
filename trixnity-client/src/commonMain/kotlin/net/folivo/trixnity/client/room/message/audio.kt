@@ -13,7 +13,7 @@ import net.folivo.trixnity.utils.TrixnityDsl
 suspend fun MessageBuilder.audio(
     body: String,
     audio: ByteArrayFlow,
-    type: ContentType,
+    type: ContentType? = null,
     size: Int? = null,
     duration: Int? = null
 ) {
