@@ -116,7 +116,7 @@ class TimelineEventIT {
             val collectMessages = async {
                 client2.room.getTimelineEventsFromNowOn()
                     .filter { it.roomId == room }
-                    .filter { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+                    .filter { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
                     .take(3)
             }
 
@@ -151,7 +151,7 @@ class TimelineEventIT {
             client.room.sendMessage(room) { text("dino") }
 
             val eventId = client.room.getLastTimelineEvent(room).flatMapLatest { it ?: flowOf(null) }
-                .first { it?.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+                .first { it?.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
                 ?.eventId
                 .shouldNotBeNull()
 
@@ -192,7 +192,7 @@ class TimelineEventIT {
             client.room.sendMessage(room) { text("dino") }
 
             val eventId = client.room.getLastTimelineEvent(room).flatMapLatest { it ?: flowOf(null) }
-                .first { it?.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+                .first { it?.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
                 ?.eventId
                 .shouldNotBeNull()
 
@@ -355,13 +355,13 @@ class TimelineEventIT {
             ).getOrThrow()
             client1.room.sendMessage(oldRoom) { text("hi old") }
             client1.room.getLastTimelineEvent(oldRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
-                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
             }.first { it } // wait for sync
 
             val newRoom = client1.api.room.upgradeRoom(oldRoom, "10").getOrThrow()
             client1.room.sendMessage(newRoom) { text("hi new") }
             client1.room.getLastTimelineEvent(newRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
-                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextMessageEventContent }
+                timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
             }.first { it } // wait for sync
 
             val timelineFromOldRoom =

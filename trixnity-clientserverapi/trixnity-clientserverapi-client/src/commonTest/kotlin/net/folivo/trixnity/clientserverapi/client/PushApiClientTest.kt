@@ -188,7 +188,7 @@ class PushApiClientTest {
                     GetNotifications.Response.Notification(
                         actions = setOf(Notify, SetSoundTweak("default")),
                         event = MessageEvent(
-                            content = RoomMessageEventContent.TextMessageEventContent("body"),
+                            content = RoomMessageEventContent.TextBased.Text("body"),
                             id = EventId("\$143273582443PhrSn:example.org"),
                             originTimestamp = 1432735824653,
                             roomId = RoomId("!jEsUZKDJdhlrceRyVU:example.org"),

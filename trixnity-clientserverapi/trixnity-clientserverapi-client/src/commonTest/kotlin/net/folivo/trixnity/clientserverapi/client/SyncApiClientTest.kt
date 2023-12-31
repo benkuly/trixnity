@@ -878,7 +878,7 @@ class SyncApiClientTest {
                         timeline = Response.Rooms.Timeline(
                             listOf(
                                 MessageEvent(
-                                    RoomMessageEventContent.TextMessageEventContent("hi"),
+                                    RoomMessageEventContent.TextBased.Text("hi"),
                                     EventId("event1"),
                                     UserId("user", "server"),
                                     RoomId("room1", "server"),
@@ -921,7 +921,7 @@ class SyncApiClientTest {
                         timeline = Response.Rooms.Timeline(
                             listOf(
                                 MessageEvent(
-                                    RoomMessageEventContent.NoticeMessageEventContent("hi"),
+                                    RoomMessageEventContent.TextBased.Notice("hi"),
                                     EventId("event4"),
                                     UserId("user", "server"),
                                     RoomId("room2", "server"),
@@ -1044,7 +1044,7 @@ class SyncApiClientTest {
                         timeline = Response.Rooms.Timeline(
                             listOf(
                                 MessageEvent(
-                                    RoomMessageEventContent.TextMessageEventContent("hi"),
+                                    RoomMessageEventContent.TextBased.Text("hi"),
                                     EventId("event"),
                                     UserId("user", "server"),
                                     RoomId("room", "server"),
@@ -1111,7 +1111,7 @@ class SyncApiClientTest {
                         timeline = Response.Rooms.Timeline(
                             listOf(
                                 MessageEvent(
-                                    RoomMessageEventContent.TextMessageEventContent("hi"),
+                                    RoomMessageEventContent.TextBased.Text("hi"),
                                     EventId("event"),
                                     UserId("user", "server"),
                                     RoomId("room", "server"),

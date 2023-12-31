@@ -19,7 +19,8 @@ import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 
 class ForgetRoomsTest : ShouldSpec({
     timeout = 15_000
@@ -61,7 +62,7 @@ class ForgetRoomsTest : ShouldSpec({
             fun timelineEvent(roomId: RoomId, i: Int) =
                 TimelineEvent(
                     MessageEvent(
-                        TextMessageEventContent("$i"),
+                        RoomMessageEventContent.TextBased.Text("$i"),
                         EventId("$i"),
                         UserId("sender", "server"),
                         roomId,

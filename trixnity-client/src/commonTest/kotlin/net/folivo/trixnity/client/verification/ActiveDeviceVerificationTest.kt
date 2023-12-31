@@ -28,7 +28,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.User
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.keysOf
@@ -75,7 +75,12 @@ class ActiveDeviceVerificationTest : ShouldSpec({
 
     fun createCut(timestamp: Instant = Clock.System.now()) {
         cut = ActiveDeviceVerification(
-            request = VerificationRequestEventContent(bobDevice, setOf(Sas), timestamp.toEpochMilliseconds(), "t"),
+            request = VerificationRequestToDeviceEventContent(
+                bobDevice,
+                setOf(Sas),
+                timestamp.toEpochMilliseconds(),
+                "t"
+            ),
             requestIsOurs = false,
             ownUserId = alice,
             ownDeviceId = aliceDevice,
@@ -119,7 +124,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             }
         }
         cut = ActiveDeviceVerification(
-            request = VerificationRequestEventContent(
+            request = VerificationRequestToDeviceEventContent(
                 bobDevice,
                 setOf(Sas),
                 Clock.System.now().toEpochMilliseconds(),
@@ -137,10 +142,6 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             olmEncryptionService = olmEncryptionServiceMock,
             keyTrust = KeyTrustServiceMock(),
             keyStore = keyStore,
-        )
-        val encrypted = OlmEncryptedToDeviceEventContent(
-            ciphertext = mapOf(),
-            senderKey = Curve25519Key(null, "key")
         )
         cut.startLifecycle(this)
         cut.cancel()
@@ -281,7 +282,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         olmEncryptionServiceMock.returnEncryptOlm =
             Result.failure(EncryptOlmError.OlmLibraryError(OlmLibraryException(message = "hu")))
         cut = ActiveDeviceVerification(
-            request = VerificationRequestEventContent(
+            request = VerificationRequestToDeviceEventContent(
                 aliceDevice,
                 setOf(Sas),
                 Clock.System.now().toEpochMilliseconds(),

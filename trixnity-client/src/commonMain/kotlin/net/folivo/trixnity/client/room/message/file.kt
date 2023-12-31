@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.FileInfo
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.FileMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.TrixnityDsl
 
@@ -48,14 +48,14 @@ suspend fun MessageBuilder.file(
     }
     contentBuilder = { relatesTo, mentions, newContentMentions ->
         when (relatesTo) {
-            is RelatesTo.Replace -> FileMessageEventContent(
+            is RelatesTo.Replace -> RoomMessageEventContent.FileBased.File(
                 body = "* $body",
                 fileName = name,
                 info = format,
                 url = url,
                 file = encryptedFile,
                 relatesTo = relatesTo.copy(
-                    newContent = FileMessageEventContent(
+                    newContent = RoomMessageEventContent.FileBased.File(
                         body = body,
                         fileName = name,
                         info = format,
@@ -67,7 +67,7 @@ suspend fun MessageBuilder.file(
                 mentions = mentions,
             )
 
-            else -> FileMessageEventContent(
+            else -> RoomMessageEventContent.FileBased.File(
                 body = body,
                 fileName = name,
                 info = format,

@@ -30,7 +30,6 @@ class TimelineEventAggregationTest : ShouldSpec({
 
     val room = simpleRoom.roomId
     lateinit var roomStore: RoomStore
-    lateinit var roomUserStore: RoomUserStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomAccountDataStore: RoomAccountDataStore
     lateinit var roomTimelineStore: RoomTimelineStore
@@ -46,7 +45,6 @@ class TimelineEventAggregationTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         roomStore = getInMemoryRoomStore(scope)
-        roomUserStore = getInMemoryRoomUserStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
         roomTimelineStore = getInMemoryRoomTimelineStore(scope)
@@ -83,7 +81,7 @@ class TimelineEventAggregationTest : ShouldSpec({
         originTimestamp: Long = 1234,
         sender: UserId = UserId("sender", "server"),
         replacedBy: ServerAggregation.Replace? = null,
-        eventContent: MessageEventContent = RoomMessageEventContent.TextMessageEventContent(id)
+        eventContent: MessageEventContent = RoomMessageEventContent.TextBased.Text(id)
     ): TimelineEvent =
         TimelineEvent(
             event = MessageEvent(

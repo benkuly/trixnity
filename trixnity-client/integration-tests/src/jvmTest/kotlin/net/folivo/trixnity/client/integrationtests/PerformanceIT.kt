@@ -212,7 +212,7 @@ class PerformanceIT {
                 val roomId = rooms[userId]
                 checkNotNull(roomId)
                 val encryptedEvent = roomEventEncryptionServices
-                    .encrypt(RoomMessageEventContent.TextMessageEventContent(roomId.full), roomId)
+                    .encrypt(RoomMessageEventContent.TextBased.Text(roomId.full), roomId)
                     ?.getOrThrow()
                 encryptedEvent.shouldNotBeNull()
                 api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
@@ -226,7 +226,7 @@ class PerformanceIT {
                 checkNotNull(roomId)
                 repeat(messagesCount) { i ->
                     val encryptedEvent = roomEventEncryptionServices
-                        .encrypt(RoomMessageEventContent.TextMessageEventContent("$i"), roomId)
+                        .encrypt(RoomMessageEventContent.TextBased.Text("$i"), roomId)
                         ?.getOrThrow()
                     encryptedEvent.shouldNotBeNull()
                     api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
@@ -416,7 +416,7 @@ class PerformanceIT {
                         }
                     repeat(messagesPerRequestCount) {
                         val encryptedEvent = sendingClient.roomEventEncryptionServices
-                            .encrypt(RoomMessageEventContent.TextMessageEventContent("ping $it"), roomId)
+                            .encrypt(RoomMessageEventContent.TextBased.Text("ping $it"), roomId)
                             ?.getOrThrow()
                         encryptedEvent.shouldNotBeNull()
                         sendingClient.api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
@@ -456,7 +456,7 @@ class PerformanceIT {
                                             ?.getOrThrow()
                                     }
                                     decryptedContent.shouldNotBeNull()
-                                    if (decryptedContent is RoomMessageEventContent.TextMessageEventContent) {
+                                    if (decryptedContent is RoomMessageEventContent.TextBased.Text) {
                                         receivingClient.api.room.sendMessageEvent(event.roomId, content)
                                             .getOrThrow()
                                         answeredMessages.getAndUpdate { it + 1 }

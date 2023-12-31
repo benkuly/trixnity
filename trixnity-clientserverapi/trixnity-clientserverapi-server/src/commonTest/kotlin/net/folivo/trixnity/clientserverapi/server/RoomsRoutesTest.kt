@@ -315,7 +315,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     end = "end",
                     chunk = listOf(
                         MessageEvent(
-                            RoomMessageEventContent.TextMessageEventContent("hi"),
+                            RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("event"),
                             UserId("user", "server"),
                             RoomId("room", "server"),
@@ -394,7 +394,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     end = "end",
                     chunk = listOf(
                         MessageEvent(
-                            RoomMessageEventContent.TextMessageEventContent("hi"),
+                            RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("$2event"),
                             UserId("user", "server"),
                             RoomId("room", "server"),
@@ -452,7 +452,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     end = "end",
                     chunk = listOf(
                         MessageEvent(
-                            RoomMessageEventContent.TextMessageEventContent("hi"),
+                            RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("$2event"),
                             UserId("user", "server"),
                             RoomId("room", "server"),
@@ -511,7 +511,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     end = "end",
                     chunk = listOf(
                         MessageEvent(
-                            RoomMessageEventContent.TextMessageEventContent("hi"),
+                            RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("$2event"),
                             UserId("user", "server"),
                             RoomId("room", "server"),
@@ -570,7 +570,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     end = "end",
                     chunk = listOf(
                         MessageEvent(
-                            RoomMessageEventContent.TextMessageEventContent("hi"),
+                            RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("$2event"),
                             UserId("user", "server"),
                             RoomId("room", "server"),
@@ -705,7 +705,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.type shouldBe "m.room.message"
-                it.requestBody shouldBe RoomMessageEventContent.TextMessageEventContent("someBody")
+                it.requestBody shouldBe RoomMessageEventContent.TextBased.Text("someBody")
             })
         }
     }
@@ -1645,7 +1645,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     start = "t27-54_2_0_2",
                     end = "t29-57_2_0_2",
                     event = MessageEvent(
-                        content = RoomMessageEventContent.ImageMessageEventContent(
+                        content = RoomMessageEventContent.FileBased.Image(
                             body = "filename.jpg",
                             info = ImageInfo(
                                 height = 398,
@@ -1670,7 +1670,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     ),
                     eventsBefore = listOf(
                         MessageEvent(
-                            content = RoomMessageEventContent.FileMessageEventContent(
+                            content = RoomMessageEventContent.FileBased.File(
                                 body = "something-important.doc",
                                 fileName = "something-important.doc",
                                 info = FileInfo(
@@ -1695,7 +1695,7 @@ class RoomsRoutesTest : TestsWithMocks() {
                     ),
                     eventsAfter = listOf(
                         MessageEvent(
-                            content = RoomMessageEventContent.TextMessageEventContent(
+                            content = RoomMessageEventContent.TextBased.Text(
                                 body = "This is an example text message",
                                 format = "org.matrix.custom.html",
                                 formattedBody = "<b>This is an example text message</b>",

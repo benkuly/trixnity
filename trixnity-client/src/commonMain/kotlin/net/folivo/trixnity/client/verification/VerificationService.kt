@@ -28,8 +28,8 @@ import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
@@ -131,7 +131,7 @@ class VerificationServiceImpl(
         }
     }
 
-    private suspend fun handleDeviceVerificationRequestEvents(event: ClientEvent<VerificationRequestEventContent>) {
+    private suspend fun handleDeviceVerificationRequestEvents(event: ClientEvent<VerificationRequestToDeviceEventContent>) {
         val content = event.content
         when (event) {
             is ToDeviceEvent -> {
@@ -181,7 +181,7 @@ class VerificationServiceImpl(
 
     private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: DecryptedOlmEventContainer) {
         when (val content = event.decrypted.content) {
-            is VerificationRequestEventContent -> {
+            is VerificationRequestToDeviceEventContent -> {
                 if (isVerificationRequestActive(content.timestamp)) {
                     log.info { "got new device verification request from ${event.decrypted.sender}" }
                     if (_activeDeviceVerification.value != null) {
@@ -252,7 +252,7 @@ class VerificationServiceImpl(
         theirDeviceIds: Set<String>
     ): Result<ActiveDeviceVerification> = kotlin.runCatching {
         log.info { "create new device verification request to $theirUserId ($theirDeviceIds)" }
-        val request = VerificationRequestEventContent(
+        val request = VerificationRequestToDeviceEventContent(
             ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), uuid4().toString()
         )
         api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
@@ -282,7 +282,7 @@ class VerificationServiceImpl(
     ): Result<ActiveUserVerification> = kotlin.runCatching {
         coroutineScope {
             log.info { "create new user verification request to $theirUserId" }
-            val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
+            val request = VerificationRequest(ownDeviceId, theirUserId, supportedMethods)
             val roomId =
                 globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.get(theirUserId)
                     ?.firstOrNull()
@@ -411,7 +411,7 @@ class VerificationServiceImpl(
                 else {
                     val eventContent = timelineEvent.content?.getOrNull()
                     val request =
-                        if (eventContent is VerificationRequestMessageEventContent) eventContent
+                        if (eventContent is VerificationRequest) eventContent
                         else null
                     val sender = timelineEvent.event.sender
                     if (request != null && sender != ownUserId && request.to == ownUserId) {

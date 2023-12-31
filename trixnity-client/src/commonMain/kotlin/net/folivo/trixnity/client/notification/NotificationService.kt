@@ -20,7 +20,6 @@ import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
@@ -248,7 +247,7 @@ class NotificationServiceImpl(
 
     private fun bodyContainsPattern(event: ClientEvent<*>, pattern: String): Boolean {
         val content = event.content
-        return if (content is TextMessageEventContent) {
+        return if (content is RoomMessageEventContent.TextBased.Text) {
             pattern.matrixGlobToRegExp().containsMatchIn(content.body)
         } else false
     }
