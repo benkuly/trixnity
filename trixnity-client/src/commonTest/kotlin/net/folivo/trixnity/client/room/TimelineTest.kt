@@ -27,7 +27,7 @@ class TimelineTest : ShouldSpec({
     fun timelineEvent(id: String): TimelineEvent =
         TimelineEvent(
             event = MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent(id),
+                RoomMessageEventContent.TextBased.Text(id),
                 EventId(id),
                 UserId("sender", "server"),
                 RoomId("room", "server"),

@@ -64,7 +64,7 @@ class DefaultApplicationServiceApiServerHandlerTest {
         initCut(api)
 
         val event = MessageEvent(
-            RoomMessageEventContent.NoticeMessageEventContent("hi"),
+            RoomMessageEventContent.TextBased.Notice("hi"),
             EventId("event4"),
             userId,
             RoomId("room2", "server"),

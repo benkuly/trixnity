@@ -28,7 +28,8 @@ import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -88,9 +89,9 @@ class RoomServiceTest : ShouldSpec({
         scope.cancel()
     }
 
-    fun textEvent(i: Long = 24): MessageEvent<TextMessageEventContent> {
+    fun textEvent(i: Long = 24): MessageEvent<RoomMessageEventContent.TextBased.Text> {
         return MessageEvent(
-            TextMessageEventContent("message $i"),
+            RoomMessageEventContent.TextBased.Text("message $i"),
             EventId("\$event$i"),
             UserId("sender", "server"),
             room,
@@ -136,7 +137,7 @@ class RoomServiceTest : ShouldSpec({
                 roomStore.update(room) { simpleRoom.copy(lastEventId = lastEventId) }
                 currentSyncState.value = RUNNING
                 val event = MessageEvent(
-                    TextMessageEventContent("hello"),
+                    RoomMessageEventContent.TextBased.Text("hello"),
                     eventId,
                     UserId("sender", "server"),
                     room,
@@ -146,7 +147,7 @@ class RoomServiceTest : ShouldSpec({
                     listOf(
                         TimelineEvent(
                             event = MessageEvent(
-                                TextMessageEventContent("world"),
+                                RoomMessageEventContent.TextBased.Text("world"),
                                 lastEventId,
                                 UserId("sender", "server"),
                                 room,
@@ -182,7 +183,7 @@ class RoomServiceTest : ShouldSpec({
             withData(
                 mapOf(
                     "with already encrypted event" to encryptedTimelineEvent.copy(
-                        content = Result.success(TextMessageEventContent("hi"))
+                        content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
                     ),
                     "with encryption error" to encryptedTimelineEvent.copy(
                         content = Result.failure(TimelineEventContentError.DecryptionTimeout)
@@ -209,7 +210,7 @@ class RoomServiceTest : ShouldSpec({
         }
         context("event can be decrypted") {
             should("decrypt event") {
-                val expectedDecryptedEvent = TextMessageEventContent("decrypted")
+                val expectedDecryptedEvent = RoomMessageEventContent.TextBased.Text("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = Result.success(expectedDecryptedEvent)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
                 val result = cut.getTimelineEvent(room, eventId)
@@ -221,7 +222,7 @@ class RoomServiceTest : ShouldSpec({
                 }
             }
             should("decrypt event only once") {
-                val expectedDecryptedEvent = TextMessageEventContent("decrypted")
+                val expectedDecryptedEvent = RoomMessageEventContent.TextBased.Text("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = Result.success(expectedDecryptedEvent)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
                 (1..300).map {
@@ -272,11 +273,11 @@ class RoomServiceTest : ShouldSpec({
                     1
                 ),
                 content = Result.success(
-                    TextMessageEventContent(
+                    RoomMessageEventContent.TextBased.Text(
                         "*edited hi",
                         relatesTo = RelatesTo.Replace(
                             EventId("\$event1"),
-                            TextMessageEventContent("edited hi")
+                            RoomMessageEventContent.TextBased.Text("edited hi")
                         )
                     )
                 ),
@@ -301,7 +302,7 @@ class RoomServiceTest : ShouldSpec({
                         )
                     )
                 ),
-                content = Result.success(TextMessageEventContent("hi")),
+                content = Result.success(RoomMessageEventContent.TextBased.Text("hi")),
                 previousEventId = null,
                 nextEventId = null,
                 gap = null
@@ -309,13 +310,13 @@ class RoomServiceTest : ShouldSpec({
             should("replace content with content of other timeline event") {
                 roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
                 cut.getTimelineEvent(room, eventId).first() shouldBe timelineEvent.copy(
-                    content = Result.success(TextMessageEventContent("edited hi"))
+                    content = Result.success(RoomMessageEventContent.TextBased.Text("edited hi"))
                 )
             }
             should("not replace content when disabled") {
                 roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
                 cut.getTimelineEvent(room, eventId) { allowReplaceContent = false }.first() shouldBe timelineEvent.copy(
-                    content = Result.success(TextMessageEventContent("hi"))
+                    content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
                 )
             }
         }
@@ -349,7 +350,7 @@ class RoomServiceTest : ShouldSpec({
     }
     context(RoomServiceImpl::sendMessage.name) {
         should("just save message in store for later use") {
-            val content = TextMessageEventContent("hi")
+            val content = RoomMessageEventContent.TextBased.Text("hi")
             cut.sendMessage(room) {
                 contentBuilder = { _, _, _ -> content }
             }

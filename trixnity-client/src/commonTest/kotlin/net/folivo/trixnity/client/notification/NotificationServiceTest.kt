@@ -328,7 +328,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("new timeline events") {
             val timelineEvent = messageEventWithContent(
-                roomId, RoomMessageEventContent.TextMessageEventContent(
+                roomId, RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )
             )
@@ -348,7 +348,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("have correct order") {
                 val timelineEvents = (0..99).map {
                     messageEventWithContent(
-                        roomId, RoomMessageEventContent.TextMessageEventContent(
+                        roomId, RoomMessageEventContent.TextBased.Text(
                             body = "Hello User1 🦊! ($it)"
                         )
                     )
@@ -361,7 +361,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("not notify on own messages") {
                 val timelineEvents = (0..9).map {
                     messageEventWithContent(
-                        roomId, RoomMessageEventContent.TextMessageEventContent(
+                        roomId, RoomMessageEventContent.TextBased.Text(
                             body = "Hello User1 🦊! ($it)"
                         ),
                         sender = if (it == 0 || it == 9) user1 else otherUser
@@ -378,7 +378,7 @@ private val body: ShouldSpec.() -> Unit = {
             val timelineEvent = messageEventWithContent(
                 roomId, MegolmEncryptedMessageEventContent(
                     "", Key.Curve25519Key(null, ""), "", ""
-                ), RoomMessageEventContent.TextMessageEventContent(
+                ), RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )
             )
@@ -402,7 +402,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("push rules") {
             val timelineEvent = messageEventWithContent(
-                roomId, RoomMessageEventContent.TextMessageEventContent(
+                roomId, RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )
             )
@@ -582,7 +582,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("push actions") {
             val timelineEvent = messageEventWithContent(
-                roomId, RoomMessageEventContent.TextMessageEventContent(
+                roomId, RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )
             )

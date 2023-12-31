@@ -38,7 +38,6 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     val room = simpleRoom.roomId
     val sender = UserId("sender", "server")
     lateinit var roomStore: RoomStore
-    lateinit var roomUserStore: RoomUserStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomAccountDataStore: RoomAccountDataStore
     lateinit var roomTimelineStore: RoomTimelineStore
@@ -57,7 +56,6 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         roomStore = getInMemoryRoomStore(scope)
-        roomUserStore = getInMemoryRoomUserStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
         roomTimelineStore = getInMemoryRoomTimelineStore(scope)
@@ -508,7 +506,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     context(RoomServiceImpl::getTimelineEventsFromNowOn.name) {
         should("get timeline events from now on") {
             val event10 = MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("hi"),
+                RoomMessageEventContent.TextBased.Text("hi"),
                 EventId("\$event10"),
                 sender,
                 room,

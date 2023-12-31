@@ -185,7 +185,7 @@ class ServerApiClientTest {
                         Search.Response.ResultCategories.RoomEventsResult.Results(
                             rank = 0.00424866,
                             result = MessageEvent(
-                                RoomMessageEventContent.TextMessageEventContent("This is an example text message"),
+                                RoomMessageEventContent.TextBased.Text("This is an example text message"),
                                 id = EventId("$144429830826TWwbB:localhost"),
                                 originTimestamp = 1432735824653,
                                 roomId = RoomId("!qPewotXpIctQySfjSy:localhost"),

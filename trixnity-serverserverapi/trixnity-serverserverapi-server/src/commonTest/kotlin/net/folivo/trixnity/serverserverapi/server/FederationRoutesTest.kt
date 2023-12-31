@@ -61,7 +61,7 @@ class FederationRoutesTest : TestsWithMocks() {
     private val pdu: SignedPersistentDataUnit<*> = Signed(
         PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3(
             authEvents = listOf(),
-            content = RoomMessageEventContent.TextMessageEventContent("hi"),
+            content = RoomMessageEventContent.TextBased.Text("hi"),
             depth = 12u,
             hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
             originTimestamp = 1404838188000,

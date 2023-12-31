@@ -5,10 +5,10 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
 val defaultOutboxMessageMediaUploaderMappings = OutboxMessageMediaUploaderMappings(
     listOf(
-        of<RoomMessageEventContent.FileMessageEventContent>(::fileMessageEventContentMediaUploader),
-        of<RoomMessageEventContent.ImageMessageEventContent>(::imageMessageEventContentMediaUploader),
-        of<RoomMessageEventContent.VideoMessageEventContent>(::videoMessageEventContentMediaUploader),
-        of<RoomMessageEventContent.AudioMessageEventContent>(::audioMessageEventContentMediaUploader),
+        of<RoomMessageEventContent.FileBased.File>(::fileRoomMessageEventContentMediaUploader),
+        of<RoomMessageEventContent.FileBased.Image>(::imageRoomMessageEventContentMediaUploader),
+        of<RoomMessageEventContent.FileBased.Video>(::videoRoomMessageEventContentMediaUploader),
+        of<RoomMessageEventContent.FileBased.Audio>(::audioRoomMessageEventContentMediaUploader),
         FallbackOutboxMessageMediaUploaderMapping,
     )
 )

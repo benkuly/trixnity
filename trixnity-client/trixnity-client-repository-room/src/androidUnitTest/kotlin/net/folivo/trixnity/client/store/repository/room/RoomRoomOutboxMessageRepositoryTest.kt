@@ -6,8 +6,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.junit.Before
@@ -36,8 +35,8 @@ class RoomRoomOutboxMessageRepositoryTest {
         val roomId = RoomId("room", "server")
         val key1 = "transaction1"
         val key2 = "transaction2"
-        val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), null)
-        val message2 = RoomOutboxMessage(key2, roomId, ImageMessageEventContent("hi"), null)
+        val message1 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.TextBased.Text("hi"), null)
+        val message2 = RoomOutboxMessage(key2, roomId, RoomMessageEventContent.FileBased.Image("hi"), null)
         val message2Copy = message2.copy(sentAt = Instant.fromEpochMilliseconds(24))
 
         repo.save(key1, message1)
@@ -61,8 +60,8 @@ class RoomRoomOutboxMessageRepositoryTest {
         val roomId = RoomId("room", "server")
         val key1 = "transaction1"
         val key2 = "transaction2"
-        val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), null)
-        val message2 = RoomOutboxMessage(key1, roomId, ImageMessageEventContent("hi"), null)
+        val message1 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.TextBased.Text("hi"), null)
+        val message2 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.FileBased.Image("hi"), null)
 
         repo.save(key1, message1)
         repo.save(key2, message2)

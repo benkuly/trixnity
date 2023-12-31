@@ -157,7 +157,7 @@ class PersistentDataUnitSerializerTest {
                 PersistentDataUnit.EventHash("abase64encodedsha256hashshouldbe43byteslong")
             )
         ),
-        content = RoomMessageEventContent.TextMessageEventContent("hi"),
+        content = RoomMessageEventContent.TextBased.Text("hi"),
         depth = 12u,
         id = EventId("${'$'}a4ecee13e2accdadf56c1025:example.com"),
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
@@ -220,7 +220,7 @@ class PersistentDataUnitSerializerTest {
 
     private val messagePduV3 = PersistentMessageDataUnitV3(
         authEvents = listOf(EventId("${'$'}base64encodedeventid"), EventId("${'$'}adifferenteventid")),
-        content = RoomMessageEventContent.TextMessageEventContent("hi"),
+        content = RoomMessageEventContent.TextBased.Text("hi"),
         depth = 12u,
         hashes = PersistentDataUnit.EventHash("thishashcoversallfieldsincasethisisredacted"),
         originTimestamp = 1404838188000,

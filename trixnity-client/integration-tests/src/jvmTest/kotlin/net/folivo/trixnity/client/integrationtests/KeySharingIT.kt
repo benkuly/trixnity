@@ -185,10 +185,10 @@ class KeySharingIT {
                     .first { it.size == 2 }
                 events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
                     .first { it?.content != null }?.content?.getOrThrow()
-                    .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client2", mentions = Mentions()))
+                    .shouldBe(RoomMessageEventContent.TextBased.Text("hi from client2", mentions = Mentions()))
                 events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
                     .first { it?.content != null }?.content?.getOrThrow()
-                    .shouldBe(RoomMessageEventContent.TextMessageEventContent("hi from client1", mentions = Mentions()))
+                    .shouldBe(RoomMessageEventContent.TextBased.Text("hi from client1", mentions = Mentions()))
 
                 client3.stop()
             }

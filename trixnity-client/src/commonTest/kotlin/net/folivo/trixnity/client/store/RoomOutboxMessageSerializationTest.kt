@@ -7,7 +7,8 @@ import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.trimToFlatJson
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomOutboxMessageSerializationTest : ShouldSpec({
@@ -17,7 +18,7 @@ class RoomOutboxMessageSerializationTest : ShouldSpec({
     val roomOutboxMessage = RoomOutboxMessage(
         transactionId = "t1",
         roomId = RoomId("room", "server"),
-        content = TextMessageEventContent("dino"),
+        content = RoomMessageEventContent.TextBased.Text("dino"),
         sentAt = Instant.fromEpochMilliseconds(24),
         sendError = RoomOutboxMessage.SendError.BadRequest(ErrorResponse.Forbidden()),
         keepMediaInCache = true,
@@ -37,6 +38,6 @@ class RoomOutboxMessageSerializationTest : ShouldSpec({
         json.encodeToString(roomOutboxMessage) shouldBe roomOutboxMessageJson
     }
     should("deserialize ${RoomOutboxMessage::class.simpleName}") {
-        json.decodeFromString<RoomOutboxMessage<TextMessageEventContent>>(roomOutboxMessageJson) shouldBe roomOutboxMessage
+        json.decodeFromString<RoomOutboxMessage<RoomMessageEventContent.TextBased.Text>>(roomOutboxMessageJson) shouldBe roomOutboxMessage
     }
 })

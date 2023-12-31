@@ -13,9 +13,9 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 fun plainEvent(
     i: Long = 24,
     roomId: RoomId = RoomId("room", "server")
-): MessageEvent<RoomMessageEventContent.TextMessageEventContent> {
+): MessageEvent<RoomMessageEventContent.TextBased.Text> {
     return MessageEvent(
-        RoomMessageEventContent.TextMessageEventContent("message $i"),
+        RoomMessageEventContent.TextBased.Text("message $i"),
         EventId("\$event$i"),
         UserId("sender", "server"),
         roomId,

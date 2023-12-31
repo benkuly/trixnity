@@ -4,7 +4,6 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.EmoteMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.getFormattedBody
 
 internal fun computeRichReplies(
@@ -16,7 +15,7 @@ internal fun computeRichReplies(
     val richReplyBody = if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
         val sender = "<${repliedEvent.event.sender.full}>"
         when (repliedEventContent) {
-            is EmoteMessageEventContent -> "* $sender ${repliedEventContent.body}".asFallback()
+            is RoomMessageEventContent.TextBased.Emote -> "* $sender ${repliedEventContent.body}".asFallback()
             else -> "$sender ${repliedEventContent.body}".asFallback()
         } + "\n\n$body"
     } else {
@@ -30,7 +29,7 @@ internal fun computeRichReplies(
                     <mx-reply>
                     <blockquote>
                     <a href="https://matrix.to/#/${repliedEvent.roomId.full}/${repliedEvent.eventId.full}">In reply to</a>
-                    ${if (repliedEventContent is EmoteMessageEventContent) "* " else ""}<a href="https://matrix.to/#/${repliedEvent.event.sender.full}">${repliedEvent.event.sender.full}</a>
+                    ${if (repliedEventContent is RoomMessageEventContent.TextBased.Emote) "* " else ""}<a href="https://matrix.to/#/${repliedEvent.event.sender.full}">${repliedEvent.event.sender.full}</a>
                     <br />
                     """.trimIndent()
                 )

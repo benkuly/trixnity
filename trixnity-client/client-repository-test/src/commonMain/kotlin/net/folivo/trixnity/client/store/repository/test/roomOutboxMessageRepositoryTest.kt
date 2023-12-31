@@ -9,8 +9,7 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.koin.core.Koin
 
 fun ShouldSpec.roomOutboxMessageRepositoryTest(diReceiver: () -> Koin) {
@@ -25,8 +24,8 @@ fun ShouldSpec.roomOutboxMessageRepositoryTest(diReceiver: () -> Koin) {
         val roomId = RoomId("room", "server")
         val key1 = "transaction1"
         val key2 = "transaction2"
-        val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), null)
-        val message2 = RoomOutboxMessage(key2, roomId, ImageMessageEventContent("hi"), null)
+        val message1 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.TextBased.Text("hi"), null)
+        val message2 = RoomOutboxMessage(key2, roomId, RoomMessageEventContent.FileBased.Image("hi"), null)
         val message2Copy = message2.copy(sentAt = fromEpochMilliseconds(24))
 
         rtm.writeTransaction {
@@ -50,8 +49,8 @@ fun ShouldSpec.roomOutboxMessageRepositoryTest(diReceiver: () -> Koin) {
         val roomId = RoomId("room", "server")
         val key1 = "transaction1"
         val key2 = "transaction2"
-        val message1 = RoomOutboxMessage(key1, roomId, TextMessageEventContent("hi"), null)
-        val message2 = RoomOutboxMessage(key1, roomId, ImageMessageEventContent("hi"), null)
+        val message1 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.TextBased.Text("hi"), null)
+        val message2 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.FileBased.Image("hi"), null)
 
         rtm.writeTransaction {
             cut.save(key1, message1)

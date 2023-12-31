@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
-import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.RoomStore
@@ -26,33 +25,31 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomListHandlerTest : ShouldSpec({
     timeout = 10_000
     val room = RoomId("room", "server")
     lateinit var roomStore: RoomStore
-    lateinit var roomServiceMock: RoomServiceMock
     lateinit var config: MatrixClientConfiguration
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
 
-    var forgetRooms= mutableListOf<RoomId>()
+    var forgetRooms = mutableListOf<RoomId>()
 
     lateinit var cut: RoomListHandler
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         roomStore = getInMemoryRoomStore(scope)
-        roomServiceMock = RoomServiceMock()
         config = MatrixClientConfiguration()
         val (api, _) = mockMatrixClientServerApiClient(json)
         forgetRooms.clear()
         cut = RoomListHandler(
             api = api,
             roomStore = roomStore,
-            forgetRoomService = {forgetRooms.add(it) },
+            forgetRoomService = { forgetRooms.add(it) },
             tm = TransactionManagerMock(),
             config = config,
         )
@@ -102,7 +99,7 @@ class RoomListHandlerTest : ShouldSpec({
                                                     stateKey = ""
                                                 ),
                                                 MessageEvent(
-                                                    TextMessageEventContent("Hello!"),
+                                                    RoomMessageEventContent.TextBased.Text("Hello!"),
                                                     EventId("event2"),
                                                     UserId("user1", "localhost"),
                                                     room,

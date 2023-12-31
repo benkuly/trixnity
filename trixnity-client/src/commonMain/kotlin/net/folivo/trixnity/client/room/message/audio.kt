@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.AudioInfo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.AudioMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.TrixnityDsl
 
@@ -40,13 +40,13 @@ suspend fun MessageBuilder.audio(
     }
     contentBuilder = { relatesTo, mentions, newContentMentions ->
         when (relatesTo) {
-            is RelatesTo.Replace -> AudioMessageEventContent(
+            is RelatesTo.Replace -> RoomMessageEventContent.FileBased.Audio(
                 body = "* $body",
                 info = format,
                 url = url,
                 file = encryptedFile,
                 relatesTo = relatesTo.copy(
-                    newContent = AudioMessageEventContent(
+                    newContent = RoomMessageEventContent.FileBased.Audio(
                         body = body,
                         info = format,
                         url = url,
@@ -57,7 +57,7 @@ suspend fun MessageBuilder.audio(
                 mentions = mentions,
             )
 
-            else -> AudioMessageEventContent(
+            else -> RoomMessageEventContent.FileBased.Audio(
                 body = body,
                 info = format,
                 url = url,
