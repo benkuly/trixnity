@@ -4,10 +4,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
@@ -212,6 +210,7 @@ class SyncApiClientImpl(
                                     setPresence = setPresence,
                                     timeout = if (_currentSyncState.value == STARTED) ZERO else timeout,
                                     withTransaction = withTransaction,
+                                    allowStoppingRequest = true,
                                     asUserId = asUserId
                                 )
                                 delay(syncLoopDelay)
@@ -223,6 +222,10 @@ class SyncApiClientImpl(
                                     }
 
                                     is CancellationException -> throw error
+                                    is SyncStoppedException -> {
+                                        log.info { "sync has been stopped" }
+                                    }
+
                                     else -> {
                                         log.error(error) { "error while sync with token $currentBatchToken" }
                                         updateSyncState(ERROR)
@@ -261,7 +264,16 @@ class SyncApiClientImpl(
             log.info { "started single sync (initial=$isInitialSync)" }
             if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
             val syncResponse =
-                syncAndResponse(getBatchToken, setBatchToken, filter, setPresence, timeout, withTransaction, asUserId)
+                syncAndResponse(
+                    getBatchToken = getBatchToken,
+                    setBatchToken = setBatchToken,
+                    filter = filter,
+                    setPresence = setPresence,
+                    timeout = timeout,
+                    withTransaction = withTransaction,
+                    allowStoppingRequest = false,
+                    asUserId = asUserId
+                )
             runOnce(syncResponse)
         }
     }.onSuccess {
@@ -279,18 +291,31 @@ class SyncApiClientImpl(
         setPresence: Presence?,
         timeout: Duration,
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
+        allowStoppingRequest: Boolean,
         asUserId: UserId?,
     ): Sync.Response {
         val batchToken = getBatchToken()
         val (response, measuredSyncDuration) = measureTime<Sync.Response> {
-            sync(
-                filter = filter,
-                setPresence = setPresence,
-                fullState = false,
-                since = batchToken,
-                timeout = if (batchToken == null) ZERO else timeout,
-                asUserId = asUserId
-            ).getOrThrow()
+            coroutineScope {
+                select {
+                    if (allowStoppingRequest) {
+                        async {
+                            _currentSyncState.first { it == STOPPING }
+                            throw SyncStoppedException
+                        }.onAwait { it }
+                    }
+                    async {
+                        sync(
+                            filter = filter,
+                            setPresence = setPresence,
+                            fullState = false,
+                            since = batchToken,
+                            timeout = if (batchToken == null) ZERO else timeout,
+                            asUserId = asUserId
+                        ).getOrThrow()
+                    }.onAwait { it }
+                }.also { coroutineContext.cancelChildren() }
+            }
         }
         log.debug { "received sync response after about $measuredSyncDuration with token $batchToken" }
 
@@ -337,6 +362,8 @@ class SyncApiClientImpl(
         emit(syncEvents)
         log.trace { "finished process syncResponse" }
     }
+
+    private object SyncStoppedException : RuntimeException("sync has been stopped")
 
     override suspend fun stop(wait: Boolean) {
         startStopMutex.withLock {
