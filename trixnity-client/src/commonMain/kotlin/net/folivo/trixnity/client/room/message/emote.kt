@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.EmoteMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.utils.TrixnityDsl
 
 @TrixnityDsl
@@ -12,12 +12,12 @@ fun MessageBuilder.emote(
 ) {
     contentBuilder = { relatesTo, mentions, newContentMentions ->
         when (relatesTo) {
-            is RelatesTo.Replace -> EmoteMessageEventContent(
+            is RelatesTo.Replace -> RoomMessageEventContent.TextBased.Emote(
                 body = "* $body",
                 format = format,
                 formattedBody = formattedBody?.let { "* $it" },
                 relatesTo = relatesTo.copy(
-                    newContent = EmoteMessageEventContent(
+                    newContent = RoomMessageEventContent.TextBased.Emote(
                         body = body,
                         format = format,
                         formattedBody = formattedBody,
@@ -32,7 +32,7 @@ fun MessageBuilder.emote(
                     ?.let { roomService.getTimelineEventWithContentAndTimeout(roomId, it) }
                 val (richReplyBody, richReplyFormattedBody) =
                     computeRichReplies(repliedEvent, body, formattedBody)
-                EmoteMessageEventContent(
+                RoomMessageEventContent.TextBased.Emote(
                     body = richReplyBody,
                     format = "org.matrix.custom.html",
                     formattedBody = richReplyFormattedBody,
@@ -41,7 +41,7 @@ fun MessageBuilder.emote(
                 )
             }
 
-            else -> EmoteMessageEventContent(
+            else -> RoomMessageEventContent.TextBased.Emote(
                 body = body,
                 format = format,
                 formattedBody = formattedBody,

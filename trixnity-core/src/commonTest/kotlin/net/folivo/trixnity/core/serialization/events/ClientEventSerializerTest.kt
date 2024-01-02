@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Unknown
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.trimToFlatJson
@@ -101,7 +101,7 @@ class ClientEventSerializerTest {
     @Test
     fun shouldSerializeMessageEvent() {
         val content = MessageEvent(
-            RoomMessageEventContent.TextMessageEventContent(
+            RoomMessageEventContent.TextBased.Text(
                 "hello",
                 relatesTo = RelatesTo.Reference(EventId("$1234"))
             ),
@@ -163,11 +163,11 @@ class ClientEventSerializerTest {
     @Test
     fun shouldSerializeMessageEventWithRelatesToAndCopyNewContent() {
         val content = MessageEvent(
-            RoomMessageEventContent.TextMessageEventContent(
+            RoomMessageEventContent.TextBased.Text(
                 "hello",
                 relatesTo = RelatesTo.Replace(
                     EventId("$1234"),
-                    newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                    newContent = RoomMessageEventContent.TextBased.Text("hello-new")
                 )
             ),
             EventId("$143273582443PhrSn"),
@@ -215,7 +215,7 @@ class ClientEventSerializerTest {
                 sessionId = "sessionId",
                 relatesTo = RelatesTo.Replace(
                     EventId("$1234"),
-                    newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                    newContent = RoomMessageEventContent.TextBased.Text("hello-new")
                 )
             ),
             EventId("$143273582443PhrSn"),
@@ -255,7 +255,7 @@ class ClientEventSerializerTest {
     @Test
     fun shouldSerializeMessageEventWithExternalUrl() {
         val content = MessageEvent(
-            RoomMessageEventContent.TextMessageEventContent(
+            RoomMessageEventContent.TextBased.Text(
                 "hello",
                 externalUrl = "http://some-external-url.test"
             ),
@@ -328,7 +328,7 @@ class ClientEventSerializerTest {
         )
         assertEquals(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent(
+                RoomMessageEventContent.TextBased.Text(
                     "hello",
                     relatesTo = RelatesTo.Reference(EventId("$1234"))
                 ),
@@ -386,11 +386,11 @@ class ClientEventSerializerTest {
         )
         assertEquals(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent(
+                RoomMessageEventContent.TextBased.Text(
                     "hello",
                     relatesTo = RelatesTo.Replace(
                         EventId("$1234"),
-                        newContent = RoomMessageEventContent.TextMessageEventContent("hello-new")
+                        newContent = RoomMessageEventContent.TextBased.Text("hello-new")
                     )
                 ),
                 EventId("$143273582443PhrSn"),
@@ -429,7 +429,7 @@ class ClientEventSerializerTest {
         )
         assertEquals(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent(
+                RoomMessageEventContent.TextBased.Text(
                     body = "hello", relatesTo = RelatesTo.Unknown(buildJsonObject {
                         put("event_id", JsonPrimitive(24))
                         put("rel_type", JsonPrimitive("something"))
@@ -468,7 +468,7 @@ class ClientEventSerializerTest {
         )
         assertEquals(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent(
+                RoomMessageEventContent.TextBased.Text(
                     body = "hello",
                     externalUrl = "http://some-external-url.test"
                 ),
@@ -509,7 +509,7 @@ class ClientEventSerializerTest {
         )
         assertEquals(
             MessageEvent(
-                UnknownRoomMessageEventContent(
+                Unknown(
                     "m.dino", "hello", JsonObject(
                         mapOf(
                             "msgtype" to JsonPrimitive("m.dino"),

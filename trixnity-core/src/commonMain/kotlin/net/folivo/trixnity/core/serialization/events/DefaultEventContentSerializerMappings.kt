@@ -59,7 +59,7 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     toDeviceOf<RoomKeyRequestEventContent>("m.room_key_request")
     toDeviceOf<ForwardedRoomKeyEventContent>("m.forwarded_room_key")
     toDeviceOf<DummyEventContent>("m.dummy")
-    toDeviceOf<VerificationRequestEventContent>("m.key.verification.request")
+    toDeviceOf<VerificationRequestToDeviceEventContent>("m.key.verification.request")
     toDeviceOf<VerificationStartEventContent>("m.key.verification.start")
     toDeviceOf<VerificationReadyEventContent>("m.key.verification.ready")
     toDeviceOf<VerificationDoneEventContent>("m.key.verification.done")

@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.mocks.OlmEncryptionServiceMock
@@ -47,7 +47,7 @@ class OlmDecrypterTest : ShouldSpec({
             UserId("sender", "server")
         )
         val decryptedEvent = DecryptedOlmEvent(
-            TextMessageEventContent("hi"),
+            RoomMessageEventContent.TextBased.Text("hi"),
             UserId("sender", "server"), keysOf(),
             UserId("receiver", "server"), keysOf()
         )

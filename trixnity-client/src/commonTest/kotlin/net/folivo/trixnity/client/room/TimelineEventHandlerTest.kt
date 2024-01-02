@@ -26,12 +26,9 @@ import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -84,9 +81,9 @@ class TimelineEventHandlerTest : ShouldSpec({
         )
     }
 
-    fun textEvent(i: Long = 24): MessageEvent<TextMessageEventContent> {
+    fun textEvent(i: Long = 24): MessageEvent<RoomMessageEventContent.TextBased.Text> {
         return MessageEvent(
-            TextMessageEventContent("message $i"),
+            RoomMessageEventContent.TextBased.Text("message $i"),
             EventId("\$event$i"),
             UserId("sender", "server"),
             room,
@@ -510,7 +507,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     RoomOutboxMessage(
                         "transactionId1",
                         room,
-                        TextMessageEventContent("Hello!")
+                        RoomMessageEventContent.TextBased.Text("Hello!")
                     )
                 }
                 val eventId1 = EventId("\$event1")
@@ -564,7 +561,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 )
 
                 assertSoftly(roomTimelineStore.get(eventId1, room).first().shouldNotBeNull()) {
-                    content shouldBe Result.success(TextMessageEventContent("Hello!"))
+                    content shouldBe Result.success(RoomMessageEventContent.TextBased.Text("Hello!"))
                 }
                 assertSoftly(roomTimelineStore.get(eventId2, room).first().shouldNotBeNull()) {
                     content shouldBe null
@@ -1523,7 +1520,7 @@ class TimelineEventHandlerTest : ShouldSpec({
         should("add relation") {
             cut.addRelation(
                 MessageEvent(
-                    TextMessageEventContent(
+                    RoomMessageEventContent.TextBased.Text(
                         "hi",
                         relatesTo = RelatesTo.Reference(EventId("$1other"))
                     ),
@@ -1558,7 +1555,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             )
             cut.redactRelation(
                 MessageEvent(
-                    TextMessageEventContent(
+                    RoomMessageEventContent.TextBased.Text(
                         "hi",
                         relatesTo = RelatesTo.Reference(EventId("$1other"))
                     ),

@@ -43,7 +43,7 @@ class RoomTimelineEventRepositoryTest {
         val key2 = TimelineEventKey(EventId("\$event2"), RoomId("room1", "server"))
         val event1 = TimelineEvent(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("message"),
+                RoomMessageEventContent.TextBased.Text("message"),
                 EventId("\$event1"),
                 UserId("sender", "server"),
                 RoomId("room1", "server"),
@@ -55,7 +55,7 @@ class RoomTimelineEventRepositoryTest {
         )
         val event2 = TimelineEvent(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("message"),
+                RoomMessageEventContent.TextBased.Text("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
                 RoomId("room1", "server"),
@@ -84,7 +84,7 @@ class RoomTimelineEventRepositoryTest {
         val key3 = TimelineEventKey(EventId("\$event3"), RoomId("room1", "server"))
         val event1 = TimelineEvent(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("message"),
+                RoomMessageEventContent.TextBased.Text("message"),
                 EventId("\$event1"),
                 UserId("sender", "server"),
                 RoomId("room1", "server"),
@@ -96,7 +96,7 @@ class RoomTimelineEventRepositoryTest {
         )
         val event2 = TimelineEvent(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("message"),
+                RoomMessageEventContent.TextBased.Text("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
                 RoomId("room2", "server"),
@@ -108,7 +108,7 @@ class RoomTimelineEventRepositoryTest {
         )
         val event3 = TimelineEvent(
             MessageEvent(
-                RoomMessageEventContent.TextMessageEventContent("message"),
+                RoomMessageEventContent.TextBased.Text("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
                 RoomId("room1", "server"),

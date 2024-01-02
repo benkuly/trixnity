@@ -1,7 +1,8 @@
 package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.NoticeMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Notice
 import net.folivo.trixnity.utils.TrixnityDsl
 
 @TrixnityDsl
@@ -12,12 +13,12 @@ fun MessageBuilder.notice(
 ) {
     contentBuilder = { relatesTo, mentions, newContentMentions ->
         when (relatesTo) {
-            is RelatesTo.Replace -> NoticeMessageEventContent(
+            is RelatesTo.Replace -> RoomMessageEventContent.TextBased.Notice(
                 body = "* $body",
                 format = format,
                 formattedBody = formattedBody?.let { "* $it" },
                 relatesTo = relatesTo.copy(
-                    newContent = NoticeMessageEventContent(
+                    newContent = RoomMessageEventContent.TextBased.Notice(
                         body = body,
                         format = format,
                         formattedBody = formattedBody,
@@ -32,7 +33,7 @@ fun MessageBuilder.notice(
                     ?.let { roomService.getTimelineEventWithContentAndTimeout(roomId, it) }
                 val (richReplyBody, richReplyFormattedBody) =
                     computeRichReplies(repliedEvent, body, formattedBody)
-                NoticeMessageEventContent(
+                RoomMessageEventContent.TextBased.Notice(
                     body = richReplyBody,
                     format = "org.matrix.custom.html",
                     formattedBody = richReplyFormattedBody,
@@ -41,7 +42,7 @@ fun MessageBuilder.notice(
                 )
             }
 
-            else -> NoticeMessageEventContent(
+            else -> RoomMessageEventContent.TextBased.Notice(
                 body = body,
                 format = format,
                 formattedBody = formattedBody,

@@ -66,7 +66,7 @@ class TimelineEventSerializerTest : ShouldSpec({
     """.trimToFlatJson()
 
     context("message event content") {
-        val result = timelineEvent(Result.success(RoomMessageEventContent.TextMessageEventContent("hi")))
+        val result = timelineEvent(Result.success(RoomMessageEventContent.TextBased.Text("hi")))
         val resultJson = timelineEventJson("""{"type":"m.room.message","value":{"body":"hi","msgtype":"m.text"}}""")
         should("deserialize") {
             json.decodeFromString<TimelineEvent>(resultJson) shouldBe result
@@ -146,7 +146,7 @@ class TimelineEventSerializerTest : ShouldSpec({
                 )
             )
         })
-        val result = timelineEvent(Result.success(RoomMessageEventContent.TextMessageEventContent("hi")))
+        val result = timelineEvent(Result.success(RoomMessageEventContent.TextBased.Text("hi")))
         val resultJson = timelineEventJson(null)
         should("serialize") {
             disabledJson.encodeToString(result) shouldBe resultJson

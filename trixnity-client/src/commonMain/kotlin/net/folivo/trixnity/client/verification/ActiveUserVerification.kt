@@ -22,12 +22,12 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 
 private val log = KotlinLogging.logger {}
 
 class ActiveUserVerification(
-    request: VerificationRequestMessageEventContent,
+    request: VerificationRequest,
     private val requestIsFromOurOwn: Boolean,
     val requestEventId: EventId,
     requestTimestamp: Long,

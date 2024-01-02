@@ -9,7 +9,7 @@ class RoomMessageEventContentTest {
 
     @Test
     fun shouldNotStripFallbackWhenTheMessageIsNoReply() {
-        val cut = RoomMessageEventContent.TextMessageEventContent(
+        val cut = RoomMessageEventContent.TextBased.Text(
             body = "> Hello World!",
         )
 
@@ -18,7 +18,7 @@ class RoomMessageEventContentTest {
 
     @Test
     fun shouldNotStripFallbackOfReplyIfNoFallbackIsProvided() {
-        val cut = RoomMessageEventContent.TextMessageEventContent(
+        val cut = RoomMessageEventContent.TextBased.Text(
             body = "Hello World!",
             relatesTo = RelatesTo.Reply(replyTo = RelatesTo.ReplyTo(EventId("1")))
         )
@@ -28,7 +28,7 @@ class RoomMessageEventContentTest {
 
     @Test
     fun shouldStripFallbackOfReply() {
-        val cut = RoomMessageEventContent.TextMessageEventContent(
+        val cut = RoomMessageEventContent.TextBased.Text(
             body = "> Hello World!\n> FooBar\n\nMy answer.",
             relatesTo = RelatesTo.Reply(replyTo = RelatesTo.ReplyTo(EventId("1")))
         )
@@ -38,7 +38,7 @@ class RoomMessageEventContentTest {
 
     @Test
     fun shouldNotStripLinesAfterTheFallback() {
-        val cut = RoomMessageEventContent.TextMessageEventContent(
+        val cut = RoomMessageEventContent.TextBased.Text(
             body = "> Hello World!\n> FooBar\n\n> I want to be seen.",
             relatesTo = RelatesTo.Reply(replyTo = RelatesTo.ReplyTo(EventId("1")))
         )

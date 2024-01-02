@@ -45,9 +45,9 @@ import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
@@ -124,7 +124,7 @@ private val body: ShouldSpec.() -> Unit = {
     context("init") {
         context("handleVerificationRequestEvents") {
             should("ignore request, that is timed out") {
-                val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
+                val request = VerificationRequestToDeviceEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(Sync()) {
                         Sync.Response(
@@ -142,7 +142,7 @@ private val body: ShouldSpec.() -> Unit = {
                 activeDeviceVerifications shouldBe null
             }
             should("add device verification") {
-                val request = VerificationRequestEventContent(
+                val request = VerificationRequestToDeviceEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
@@ -165,13 +165,13 @@ private val body: ShouldSpec.() -> Unit = {
                 activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
             }
             should("cancel second verification request") {
-                val request1 = VerificationRequestEventContent(
+                val request1 = VerificationRequestToDeviceEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction1"
                 )
-                val request2 = VerificationRequestEventContent(
+                val request2 = VerificationRequestToDeviceEventContent(
                     aliceDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
@@ -211,7 +211,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("handleOlmDecryptedDeviceVerificationRequestEvents") {
             should("ignore request, that is timed out") {
-                val request = VerificationRequestEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
+                val request = VerificationRequestToDeviceEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
                         ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
@@ -221,7 +221,7 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.activeDeviceVerification.value shouldBe null
             }
             should("add device verification") {
-                val request = VerificationRequestEventContent(
+                val request = VerificationRequestToDeviceEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
@@ -243,13 +243,13 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
 
-                val request1 = VerificationRequestEventContent(
+                val request1 = VerificationRequestToDeviceEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction1"
                 )
-                val request2 = VerificationRequestEventContent(
+                val request2 = VerificationRequestToDeviceEventContent(
                     aliceDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
@@ -286,7 +286,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("startLifecycleOfActiveVerifications") {
             should("start all lifecycles of device verifications") {
-                val request = VerificationRequestEventContent(
+                val request = VerificationRequestToDeviceEventContent(
                     bobDeviceId,
                     setOf(Sas),
                     Clock.System.now().toEpochMilliseconds(),
@@ -340,7 +340,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 val timelineEvent = TimelineEvent(
                     event = MessageEvent(
-                        VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
+                        VerificationRequest(bobDeviceId, aliceUserId, setOf(Sas)),
                         eventId,
                         bobUserId,
                         roomId,
@@ -398,7 +398,7 @@ private val body: ShouldSpec.() -> Unit = {
             assertSoftly(sendToDeviceEvents) {
                 this?.shouldHaveSize(1)
                 this?.get(bobUserId)?.get(bobDeviceId)
-                    ?.shouldBeInstanceOf<VerificationRequestEventContent>()?.fromDevice shouldBe aliceDeviceId
+                    ?.shouldBeInstanceOf<VerificationRequestToDeviceEventContent>()?.fromDevice shouldBe aliceDeviceId
             }
         }
     }
@@ -647,7 +647,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("skip timed out verifications") {
             val timelineEvent = TimelineEvent(
                 event = MessageEvent(
-                    VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
+                    VerificationRequest(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
                     bobUserId,
                     roomId,
@@ -663,7 +663,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("return cached verification") {
             val timelineEvent = TimelineEvent(
                 event = MessageEvent(
-                    VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
+                    VerificationRequest(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
                     bobUserId,
                     roomId,
@@ -681,7 +681,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("create verification from event") {
             val timelineEvent = TimelineEvent(
                 event = MessageEvent(
-                    VerificationRequestMessageEventContent(bobDeviceId, aliceUserId, setOf(Sas)),
+                    VerificationRequest(bobDeviceId, aliceUserId, setOf(Sas)),
                     eventId,
                     bobUserId,
                     roomId,
@@ -699,7 +699,7 @@ private val body: ShouldSpec.() -> Unit = {
         should("not create verification from own request event") {
             val timelineEvent = TimelineEvent(
                 event = MessageEvent(
-                    VerificationRequestMessageEventContent(aliceDeviceId, bobUserId, setOf(Sas)),
+                    VerificationRequest(aliceDeviceId, bobUserId, setOf(Sas)),
                     eventId,
                     aliceUserId,
                     roomId,

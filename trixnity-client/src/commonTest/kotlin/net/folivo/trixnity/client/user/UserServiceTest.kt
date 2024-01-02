@@ -24,22 +24,18 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.testutils.PortableMockEngineConfig
 
 class UserServiceTest : ShouldSpec({
     timeout = 30_000
     val alice = UserId("alice", "server")
-    val bob = UserId("bob", "server")
     val me = UserId("me", "server")
     val roomId = simpleRoom.roomId
     lateinit var roomUserStore: RoomUserStore
-    lateinit var roomStore: RoomStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomTimelineStore: RoomTimelineStore
     lateinit var globalAccountDataStore: GlobalAccountDataStore
     lateinit var scope: CoroutineScope
     lateinit var api: MatrixClientServerApiClient
-    lateinit var apiConfig: PortableMockEngineConfig
     val json = createMatrixEventJson()
     val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
@@ -66,12 +62,10 @@ class UserServiceTest : ShouldSpec({
     beforeTest {
         val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
         api = newApi
-        apiConfig = newApiConfig
         currentSyncState.value = SyncState.RUNNING
         scope = CoroutineScope(Dispatchers.Default)
         roomUserStore = getInMemoryRoomUserStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
-        roomStore = getInMemoryRoomStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomTimelineStore = getInMemoryRoomTimelineStore(scope)
         cut = UserServiceImpl(
@@ -1089,7 +1083,7 @@ class UserServiceTest : ShouldSpec({
     context(UserServiceImpl::canRedactEvent.name) {
         val eventByUser = TimelineEvent(
             event = MessageEvent(
-                content = RoomMessageEventContent.TextMessageEventContent(body = "Hi"),
+                content = RoomMessageEventContent.TextBased.Text(body = "Hi"),
                 id = EventId("4711"),
                 sender = me,
                 roomId = roomId,
@@ -1101,7 +1095,7 @@ class UserServiceTest : ShouldSpec({
         )
         val eventByOtherUser = TimelineEvent(
             event = MessageEvent(
-                content = RoomMessageEventContent.TextMessageEventContent(body = "Hi"),
+                content = RoomMessageEventContent.TextBased.Text(body = "Hi"),
                 id = EventId("4711"),
                 sender = UserId("otherUser"),
                 roomId = roomId,

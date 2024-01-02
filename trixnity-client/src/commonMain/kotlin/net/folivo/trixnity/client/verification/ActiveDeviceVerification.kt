@@ -19,7 +19,7 @@ import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 private val log = KotlinLogging.logger {}
 
 class ActiveDeviceVerification(
-    request: VerificationRequestEventContent,
+    request: VerificationRequestToDeviceEventContent,
     requestIsOurs: Boolean,
     ownUserId: UserId,
     ownDeviceId: String,

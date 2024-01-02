@@ -16,7 +16,7 @@ class ActiveVerificationStateTest : ShouldSpec({
             should("send ${VerificationReadyEventContent::class.simpleName}") {
                 var step: VerificationStep? = null
                 val cut = TheirRequest(
-                    VerificationRequestEventContent("", setOf(), 1, ""),
+                    VerificationRequestToDeviceEventContent("", setOf(), 1, ""),
                     "AAAAAA", setOf(Sas), null, "t"
                 ) { step = it }
                 cut.ready()

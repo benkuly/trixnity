@@ -85,7 +85,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
 
     context(OutboxMessageEventHandler::removeOldOutboxMessages.name) {
         should("remove old outbox messages") {
-            val content = RoomMessageEventContent.TextMessageEventContent("")
+            val content = RoomMessageEventContent.TextBased.Text("")
             val outbox1 = RoomOutboxMessage("transaction1", room, content)
             val outbox2 = RoomOutboxMessage("transaction2", room, content, Clock.System.now() - 11.seconds)
             val outbox3 = RoomOutboxMessage("transaction3", room, content, Clock.System.now())
@@ -108,10 +108,10 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 RoomOutboxMessage(
                     "transaction1",
                     room,
-                    RoomMessageEventContent.ImageMessageEventContent("hi.png", url = cacheUrl)
+                    RoomMessageEventContent.FileBased.Image("hi.png", url = cacheUrl)
                 )
             val message2 =
-                RoomOutboxMessage("transaction2", room, RoomMessageEventContent.TextMessageEventContent("hi"))
+                RoomOutboxMessage("transaction2", room, RoomMessageEventContent.TextBased.Text("hi"))
             roomOutboxMessageStore.update(message1.transactionId) { message1 }
             roomOutboxMessageStore.update(message2.transactionId) { message2 }
             mediaServiceMock.returnUploadMedia = Result.success(mxcUrl)
@@ -120,13 +120,13 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 matrixJsonEndpoint(
                     SendMessageEvent(room, "m.room.message", "transaction1"),
                 ) {
-                    it shouldBe RoomMessageEventContent.ImageMessageEventContent("hi.png", url = mxcUrl)
+                    it shouldBe RoomMessageEventContent.FileBased.Image("hi.png", url = mxcUrl)
                     SendEventResponse(EventId("event"))
                 }
                 matrixJsonEndpoint(
                     SendMessageEvent(room, "m.room.message", "transaction2"),
                 ) {
-                    it shouldBe RoomMessageEventContent.TextMessageEventContent("hi")
+                    it shouldBe RoomMessageEventContent.TextBased.Text("hi")
                     sendMessageEventCalled = true
                     SendEventResponse(EventId("event"))
                 }
@@ -152,7 +152,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         should("encrypt events in encrypted rooms") {
             currentSyncState.value = SyncState.RUNNING
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
+                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
             roomOutboxMessageStore.update(message.transactionId) { message }
             val megolmEventContent =
                 MegolmEncryptedMessageEventContent(
@@ -188,7 +188,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 RoomOutboxMessage(
                     "transaction1",
                     room,
-                    RoomMessageEventContent.TextMessageEventContent("hi")
+                    RoomMessageEventContent.TextBased.Text("hi")
                 )
             val sendMessageEventCalled = MutableStateFlow(0)
             apiConfig.endpoints {
@@ -223,7 +223,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         }
         should("retry on sending error") {
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
+                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
             roomOutboxMessageStore.update(message.transactionId) { message }
             var call = 0
             apiConfig.endpoints {
@@ -251,7 +251,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         }
         should("not retry on MatrixServerException") {
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
+                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
             roomOutboxMessageStore.update(message.transactionId) { message }
             var call = 0
             apiConfig.endpoints {
@@ -279,7 +279,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         }
         should("retry on MatrixServerException rate limit") {
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextMessageEventContent("hi"), null)
+                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
             roomOutboxMessageStore.update(message.transactionId) { message }
             var call = 0
             apiConfig.endpoints {

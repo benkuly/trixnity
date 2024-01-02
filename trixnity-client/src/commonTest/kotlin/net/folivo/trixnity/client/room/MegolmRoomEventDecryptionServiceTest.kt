@@ -10,7 +10,6 @@ import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.OlmEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.OutgoingRoomKeyRequestEventHandlerMock
-import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.RoomStateStore
@@ -35,7 +34,6 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
 
     val alice = UserId("alice", "server")
     val room = simpleRoom.roomId
-    lateinit var userService: UserServiceMock
     lateinit var roomStore: RoomStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var olmCryptoStore: OlmCryptoStore
@@ -48,7 +46,6 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
-        userService = UserServiceMock()
         roomStore = getInMemoryRoomStore(scope)
         roomStore.update(room) { simpleRoom.copy(encrypted = true) }
         roomStateStore = getInMemoryRoomStateStore(scope)
@@ -97,12 +94,12 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
                     stateKey = "",
                 )
             )
-            cut.encrypt(RoomMessageEventContent.TextMessageEventContent("hi"), room) shouldBe null
+            cut.encrypt(RoomMessageEventContent.TextBased.Text("hi"), room) shouldBe null
         }
         should("encrypt") {
             val encryptedEvent = MegolmEncryptedMessageEventContent("cipher", sessionId = "sessionId")
             olmEncyptionServiceMock.returnEncryptMegolm = Result.success(encryptedEvent)
-            cut.encrypt(RoomMessageEventContent.TextMessageEventContent("hi"), room) shouldBe Result.success(
+            cut.encrypt(RoomMessageEventContent.TextBased.Text("hi"), room) shouldBe Result.success(
                 encryptedEvent
             )
         }
@@ -123,11 +120,11 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
             1234
         )
         val expectedDecryptedEvent =
-            DecryptedMegolmEvent(RoomMessageEventContent.TextMessageEventContent("decrypted"), room)
+            DecryptedMegolmEvent(RoomMessageEventContent.TextBased.Text("decrypted"), room)
         should("return null when unsupported") {
             cut.decrypt(
                 MessageEvent(
-                    RoomMessageEventContent.TextMessageEventContent("unsupported"),
+                    RoomMessageEventContent.TextBased.Text("unsupported"),
                     EventId("$1event"),
                     alice,
                     room,

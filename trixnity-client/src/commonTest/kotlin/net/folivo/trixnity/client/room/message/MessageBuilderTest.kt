@@ -20,7 +20,6 @@ import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.*
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 import net.folivo.trixnity.utils.toByteArrayFlow
 
 class MessageBuilderTest : ShouldSpec({
@@ -39,7 +38,7 @@ class MessageBuilderTest : ShouldSpec({
             returnGetTimelineEvent = flowOf(
                 TimelineEvent(
                     event = MessageEvent(
-                        TextMessageEventContent("dino\nunicorn"),
+                        RoomMessageEventContent.TextBased.Text("dino\nunicorn"),
                         EventId("dino"),
                         UserId("sender", "server"),
                         RoomId("room", "server"),
@@ -58,7 +57,7 @@ class MessageBuilderTest : ShouldSpec({
     fun timelineEvent(eventId: EventId, relatesTo: RelatesTo? = null, mentions: Mentions? = null) =
         TimelineEvent(
             event = MessageEvent(
-                content = TextMessageEventContent("hi", relatesTo = relatesTo, mentions = mentions),
+                content = RoomMessageEventContent.TextBased.Text("hi", relatesTo = relatesTo, mentions = mentions),
                 id = eventId,
                 sender = UserId("sender", "server"),
                 roomId = RoomId("room", "server"),
@@ -71,7 +70,7 @@ class MessageBuilderTest : ShouldSpec({
 
     context(MessageBuilder::build.name) {
         should("call builder and return content") {
-            val eventContent = TextMessageEventContent("")
+            val eventContent = RoomMessageEventContent.TextBased.Text("")
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 relatesTo = RelatesTo.Replace(EventId("other"), null)
                 contentBuilder = { relatesTo, _, _ ->
@@ -83,7 +82,7 @@ class MessageBuilderTest : ShouldSpec({
     }
 
     context("replace") {
-        val eventContent = TextMessageEventContent("")
+        val eventContent = RoomMessageEventContent.TextBased.Text("")
         should("create create replace relation") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 replace(timelineEvent(EventId("bla")))
@@ -96,7 +95,7 @@ class MessageBuilderTest : ShouldSpec({
     }
 
     context("reply") {
-        val eventContent = TextMessageEventContent("")
+        val eventContent = RoomMessageEventContent.TextBased.Text("")
         should("create create reply relation") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 reply(timelineEvent(EventId("bla")))
@@ -118,7 +117,7 @@ class MessageBuilderTest : ShouldSpec({
     }
 
     context("thread") {
-        val eventContent = TextMessageEventContent("")
+        val eventContent = RoomMessageEventContent.TextBased.Text("")
         should("create thread relation") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 thread(timelineEvent(EventId("bla"), RelatesTo.Thread(EventId("root"))))
@@ -164,7 +163,7 @@ class MessageBuilderTest : ShouldSpec({
         }
     }
     context(MessageBuilder::mentions.name) {
-        val eventContent = TextMessageEventContent("")
+        val eventContent = RoomMessageEventContent.TextBased.Text("")
         should("add mention") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 mentions(UserId("bla"), room = true)
@@ -222,19 +221,19 @@ class MessageBuilderTest : ShouldSpec({
         should("create text") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 text("body", "format", "formatted_body")
-            } shouldBe TextMessageEventContent("body", "format", "formatted_body", mentions = Mentions())
+            } shouldBe RoomMessageEventContent.TextBased.Text("body", "format", "formatted_body", mentions = Mentions())
         }
         should("create fallback text on replace") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 replace(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
-            } shouldBe TextMessageEventContent(
+            } shouldBe RoomMessageEventContent.TextBased.Text(
                 "* body",
                 "format",
                 "* formatted_body",
                 RelatesTo.Replace(
                     EventId("bla"),
-                    TextMessageEventContent("body", "format", "formatted_body", mentions = Mentions()),
+                    RoomMessageEventContent.TextBased.Text("body", "format", "formatted_body", mentions = Mentions()),
                 ),
                 mentions = Mentions()
             )
@@ -243,7 +242,7 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 reply(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
-            } shouldBe TextMessageEventContent(
+            } shouldBe RoomMessageEventContent.TextBased.Text(
                 "> <@sender:server> dino\n> unicorn\n\nbody",
                 "org.matrix.custom.html",
                 """
@@ -265,7 +264,7 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 thread(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
-            } shouldBe TextMessageEventContent(
+            } shouldBe RoomMessageEventContent.TextBased.Text(
                 "> <@sender:server> dino\n> unicorn\n\nbody",
                 "org.matrix.custom.html",
                 """
@@ -287,7 +286,7 @@ class MessageBuilderTest : ShouldSpec({
             roomService.returnGetTimelineEvent = flowOf(
                 TimelineEvent(
                     event = MessageEvent(
-                        ImageMessageEventContent(
+                        RoomMessageEventContent.FileBased.Image(
                             body = "image.png",
                             url = "http://localhost/media/123456",
                             mentions = Mentions()
@@ -305,7 +304,7 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 reply(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
-            } shouldBe TextMessageEventContent(
+            } shouldBe RoomMessageEventContent.TextBased.Text(
                 "> <@sender:server> image.png\n\nbody",
                 "org.matrix.custom.html",
                 """
@@ -328,14 +327,24 @@ class MessageBuilderTest : ShouldSpec({
         should("create notice") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 notice("body", "format", "formatted_body")
-            } shouldBe NoticeMessageEventContent("body", "format", "formatted_body", mentions = Mentions())
+            } shouldBe RoomMessageEventContent.TextBased.Notice(
+                "body",
+                "format",
+                "formatted_body",
+                mentions = Mentions()
+            )
         }
     }
     context(MessageBuilder::emote.name) {
         should("create emote") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 emote("body", "format", "formatted_body")
-            } shouldBe EmoteMessageEventContent("body", "format", "formatted_body", mentions = Mentions())
+            } shouldBe RoomMessageEventContent.TextBased.Emote(
+                "body",
+                "format",
+                "formatted_body",
+                mentions = Mentions()
+            )
         }
     }
     context(MessageBuilder::image.name) {
@@ -345,7 +354,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
                 image("body", "fake_image".toByteArray().toByteArrayFlow(), PNG, 10, 1024, 1024)
-            } shouldBe ImageMessageEventContent(
+            } shouldBe RoomMessageEventContent.FileBased.Image(
                 "body", ImageInfo(
                     1024, 1024, "image/png", 10, "thumbnailCacheUrl", null,
                     thumbnailInfo,
@@ -361,7 +370,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 image("body", "fake_image".toByteArray().toByteArrayFlow(), PNG, 10, 1024, 1024)
-            } shouldBe ImageMessageEventContent(
+            } shouldBe RoomMessageEventContent.FileBased.Image(
                 "body", ImageInfo(
                     1024, 1024, "image/png", 10, null, encryptedThumbnail,
                     thumbnailInfo,
@@ -377,7 +386,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
                 file("body", "fake_file".toByteArray().toByteArrayFlow(), PNG, 9, "filename")
-            } shouldBe FileMessageEventContent(
+            } shouldBe RoomMessageEventContent.FileBased.File(
                 "body", "filename", FileInfo(
                     "image/png", 9, "thumbnailCacheUrl", null, thumbnailInfo,
                 ), "mediaCacheUrl",
@@ -392,7 +401,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 file("body", "fake_file".toByteArray().toByteArrayFlow(), PNG, 9, "filename")
-            } shouldBe FileMessageEventContent(
+            } shouldBe RoomMessageEventContent.FileBased.File(
                 "body", "filename", FileInfo(
                     "image/png", 9, null, encryptedThumbnail, thumbnailInfo,
                 ), null, encryptedFile,
@@ -407,7 +416,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
                 video("body", "fake_video".toByteArray().toByteArrayFlow(), MP4, 10, 1024, 1024, 1024)
-            } shouldBe VideoMessageEventContent(
+            } shouldBe RoomMessageEventContent.FileBased.Video(
                 "body", VideoInfo(
                     1024, 1024, 1024, "video/mp4", 10, "thumbnailCacheUrl", null,
                     thumbnailInfo,
@@ -423,7 +432,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 video("body", "fake_video".toByteArray().toByteArrayFlow(), MP4, 10, 1024, 1024, 1024)
-            } shouldBe VideoMessageEventContent(
+            } shouldBe RoomMessageEventContent.FileBased.Video(
                 "body", VideoInfo(
                     1024, 1024, 1024, "video/mp4", 10, null, encryptedThumbnail,
                     thumbnailInfo,
@@ -437,7 +446,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
                 audio("body", "fake_audio".toByteArray().toByteArrayFlow(), OGG, 10, 1024)
-            } shouldBe AudioMessageEventContent(
+            } shouldBe RoomMessageEventContent.FileBased.Audio(
                 "body", AudioInfo(1024, "audio/ogg", 10), "mediaCacheUrl",
                 mentions = Mentions()
             )
@@ -447,7 +456,7 @@ class MessageBuilderTest : ShouldSpec({
             mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 audio("body", "fake_audio".toByteArray().toByteArrayFlow(), OGG, 10, 1024)
-            } shouldBe AudioMessageEventContent(
+            } shouldBe RoomMessageEventContent.FileBased.Audio(
                 "body", AudioInfo(1024, "audio/ogg", 10), null, encryptedFile,
                 mentions = Mentions()
             )
