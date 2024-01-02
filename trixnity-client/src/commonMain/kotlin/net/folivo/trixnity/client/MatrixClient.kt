@@ -608,7 +608,7 @@ class MatrixClientImpl internal constructor(
     }
 
     override suspend fun logout(): Result<Unit> {
-        stopSync(true)
+        cancelSync(true)
         return if (loginState.value == LOGGED_OUT_SOFT) {
             deleteAll()
             Result.success(Unit)
@@ -619,7 +619,6 @@ class MatrixClientImpl internal constructor(
     }
 
     internal suspend fun deleteAll() {
-        stopSync(true)
         rootStore.deleteAll()
     }
 
