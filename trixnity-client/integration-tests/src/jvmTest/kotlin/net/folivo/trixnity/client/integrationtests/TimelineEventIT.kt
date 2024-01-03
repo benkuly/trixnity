@@ -155,6 +155,7 @@ class TimelineEventIT {
                 ?.eventId
                 .shouldNotBeNull()
 
+            client.stopSync(true)
             client.stop()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
@@ -196,6 +197,7 @@ class TimelineEventIT {
                 ?.eventId
                 .shouldNotBeNull()
 
+            client.stopSync(true)
             client.stop()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
