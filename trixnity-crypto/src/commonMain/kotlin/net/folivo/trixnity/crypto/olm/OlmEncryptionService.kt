@@ -90,13 +90,13 @@ interface OlmEncryptionService {
             val keyAlgorithm: KeyAlgorithm,
         ) : DecryptOlmError, IllegalStateException("$keyAlgorithm key not found while decrypting with olm")
 
-        object SenderDidNotEncryptForThisDeviceException : DecryptOlmError,
+        data object SenderDidNotEncryptForThisDeviceException : DecryptOlmError,
             IllegalStateException("no ciphertext found for this device while decrypting with olm")
 
-        object NoMatchingOlmSessionFound : DecryptOlmError,
+        data object NoMatchingOlmSessionFound : DecryptOlmError,
             IllegalStateException("no matching olm session found while decrypting with olm")
 
-        object TooManySessions : DecryptOlmError,
+        data object TooManySessions : DecryptOlmError,
             IllegalStateException("too many sessions created while decrypting with olm")
 
         data class ValidationFailed(

@@ -67,9 +67,9 @@ interface VerificationService {
          */
         data class PreconditionsNotMet(val reasons: Set<Reason>) : SelfVerificationMethods {
             interface Reason {
-                object SyncNotRunning : Reason
-                object DeviceKeysNotFetchedYet : Reason
-                object CrossSigningKeysNotFetchedYet : Reason
+                data object SyncNotRunning : Reason
+                data object DeviceKeysNotFetchedYet : Reason
+                data object CrossSigningKeysNotFetchedYet : Reason
             }
         }
 
