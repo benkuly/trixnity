@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client
 
-import arrow.core.flatMap
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -66,8 +65,6 @@ interface MatrixClient {
         val userId: UserId,
         val deviceId: String,
         val accessToken: String,
-        val displayName: String?,
-        val avatarUrl: String?,
     )
 
     data class SoftLoginInfo(
@@ -140,17 +137,12 @@ suspend fun MatrixClient.Companion.login(
                 type = loginType,
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName
-            ).flatMap { login ->
-                api.accessToken.value = login.accessToken
-                api.user.getProfile(login.userId).map { profile ->
-                    LoginInfo(
-                        userId = login.userId,
-                        accessToken = login.accessToken,
-                        deviceId = login.deviceId,
-                        displayName = profile.displayName,
-                        avatarUrl = profile.avatarUrl
-                    )
-                }
+            ).map { login ->
+                LoginInfo(
+                    userId = login.userId,
+                    accessToken = login.accessToken,
+                    deviceId = login.deviceId,
+                )
             }
         },
         configuration = configuration
@@ -275,16 +267,18 @@ suspend fun MatrixClient.Companion.loginWith(
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
 
-    val loginInfo = getLoginInfo(
-        MatrixClientServerApiClientImpl(
-            baseUrl = baseUrl,
-            httpClientFactory = config.httpClientFactory,
-        )
-    ).getOrThrow()
+    val loginApi = MatrixClientServerApiClientImpl(
+        baseUrl = baseUrl,
+        httpClientFactory = config.httpClientFactory,
+    )
+    val loginInfo = getLoginInfo(loginApi).getOrThrow()
+    val (userId, deviceId, accessToken) = loginInfo
+    loginApi.accessToken.value = accessToken
+    val (displayName, avatarUrl) = loginApi.user.getProfile(userId).getOrThrow()
+    
     val mediaStore = mediaStoreFactory(loginInfo)
     val repositoriesModule = repositoriesModuleFactory(loginInfo)
 
-    val (userId, deviceId, accessToken, displayName, avatarUrl) = loginInfo
 
     val handler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) { "There was an unexpected exception. This should never happen!!!" }

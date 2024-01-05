@@ -61,7 +61,7 @@ suspend fun MatrixClientServerApiClient.register(
     val (userId, createdDeviceId, accessToken) = registerResult.value
     requireNotNull(createdDeviceId)
     requireNotNull(accessToken)
-    return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken, "displayName", null))
+    return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken))
 }
 
 fun newDatabase() = Database.connect("jdbc:h2:mem:${uuid4()};DB_CLOSE_DELAY=-1;")
