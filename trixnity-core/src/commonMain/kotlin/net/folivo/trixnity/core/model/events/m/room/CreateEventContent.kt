@@ -46,11 +46,11 @@ data class CreateEventContent(
     sealed interface RoomType {
         val name: String?
 
-        object Room : RoomType {
+        data object Room : RoomType {
             override val name: String? = null
         }
 
-        object Space : RoomType {
+        data object Space : RoomType {
             override val name = "m.space"
         }
 
