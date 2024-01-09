@@ -57,7 +57,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
 
     lateinit var scope: CoroutineScope
 
-    lateinit var cut: ActiveDeviceVerification
+    lateinit var cut: ActiveDeviceVerificationImpl
 
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
@@ -74,7 +74,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     }
 
     fun createCut(timestamp: Instant = Clock.System.now()) {
-        cut = ActiveDeviceVerification(
+        cut = ActiveDeviceVerificationImpl(
             request = VerificationRequestToDeviceEventContent(
                 bobDevice,
                 setOf(Sas),
@@ -123,7 +123,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
                 sendToDeviceEvents = it.messages
             }
         }
-        cut = ActiveDeviceVerification(
+        cut = ActiveDeviceVerificationImpl(
             request = VerificationRequestToDeviceEventContent(
                 bobDevice,
                 setOf(Sas),
@@ -281,7 +281,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         }
         olmEncryptionServiceMock.returnEncryptOlm =
             Result.failure(EncryptOlmError.OlmLibraryError(OlmLibraryException(message = "hu")))
-        cut = ActiveDeviceVerification(
+        cut = ActiveDeviceVerificationImpl(
             request = VerificationRequestToDeviceEventContent(
                 aliceDevice,
                 setOf(Sas),

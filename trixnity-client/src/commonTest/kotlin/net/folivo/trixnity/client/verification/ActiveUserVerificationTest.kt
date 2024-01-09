@@ -32,7 +32,6 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -54,7 +53,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     lateinit var keyStore: KeyStore
     lateinit var scope: CoroutineScope
 
-    lateinit var cut: ActiveUserVerification
+    lateinit var cut: ActiveUserVerificationImpl
 
     beforeTest {
         roomServiceMock = RoomServiceMock()
@@ -66,7 +65,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     }
 
     fun createCut(timestamp: Instant = Clock.System.now()) {
-        cut = ActiveUserVerification(
+        cut = ActiveUserVerificationImpl(
             request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
             requestIsFromOurOwn = true,
             requestEventId = event,
@@ -265,7 +264,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                 )
             )
         )
-        cut = ActiveUserVerification(
+        cut = ActiveUserVerificationImpl(
             request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
             requestIsFromOurOwn = false,
             requestEventId = event,
@@ -302,7 +301,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                 )
             )
         )
-        cut = ActiveUserVerification(
+        cut = ActiveUserVerificationImpl(
             request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
             requestIsFromOurOwn = false,
             requestEventId = event,
