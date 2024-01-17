@@ -1,4 +1,5 @@
 rootProject.name = "trixnity"
+include("trixnity-bom")
 include("trixnity-utils")
 include("trixnity-core")
 include("trixnity-crypto-core")
