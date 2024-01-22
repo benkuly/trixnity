@@ -88,7 +88,7 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
         getBatchToken: suspend () -> String?,
         setBatchToken: suspend (String) -> Unit,
         timeout: Duration = 30.seconds,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
         asUserId: UserId? = null,
         wait: Boolean = false,
         scope: CoroutineScope,
@@ -100,7 +100,7 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
         getBatchToken: suspend () -> String?,
         setBatchToken: suspend (String) -> Unit,
         timeout: Duration = ZERO,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
+        withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
         asUserId: UserId? = null,
         runOnce: suspend (Sync.Response) -> T,
     ): Result<T>
@@ -108,27 +108,6 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
     suspend fun stop(wait: Boolean = false)
     suspend fun cancel(wait: Boolean = false)
 }
-
-suspend fun SyncApiClient.start(
-    filter: String? = null,
-    setPresence: Presence? = null,
-    getBatchToken: suspend () -> String?,
-    setBatchToken: suspend (String) -> Unit,
-    timeout: Duration = 30.seconds,
-    asUserId: UserId? = null,
-    wait: Boolean = false,
-    scope: CoroutineScope,
-) = start(filter, setPresence, getBatchToken, setBatchToken, timeout, { it() }, asUserId, wait, scope)
-
-suspend fun <T> SyncApiClient.startOnce(
-    filter: String? = null,
-    setPresence: Presence? = null,
-    getBatchToken: suspend () -> String?,
-    setBatchToken: suspend (String) -> Unit,
-    timeout: Duration = 30.seconds,
-    asUserId: UserId? = null,
-    runOnce: suspend (Sync.Response) -> T,
-): Result<T> = startOnce(filter, setPresence, getBatchToken, setBatchToken, timeout, { it() }, asUserId, runOnce)
 
 suspend fun SyncApiClient.startOnce(
     filter: String? = null,
