@@ -19,6 +19,22 @@ fun trixnity(module: String, version: String = trixnityVersion) =
 implementation(trixnity("client"))
 ```
 
+Alternatively, add the trixnity BOM as a `platform` dependency. This then allows for version resolution of trixnity
+modules, in addition to `ktor` and `kotlinx.coroutines` dependencies:
+```kotlin
+val trixnityVersion = "x.x.x"
+
+dependencies {
+    implementation(platform("net.folivo:trixnity-bom:$trixnityVersion"))
+    
+    // trixnity dependency versions are covered by the trixnity BOM
+    implementation("net.folivo:trixnity-client")
+    
+    // ktor dependencies are also covered by the trixnity BOM
+    implementation("io.ktor:ktor-client-java")
+}
+```
+
 Modules containing `-client` in the name (for example `trixnity-client` or `trixnity-clientserverapi-client`) also need
 a Ktor client engine, that can be found [here](https://ktor.io/docs/http-client-engines.html).
 
