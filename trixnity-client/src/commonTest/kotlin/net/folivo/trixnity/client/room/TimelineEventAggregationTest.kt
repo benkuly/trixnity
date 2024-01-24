@@ -2,11 +2,11 @@ package net.folivo.trixnity.client.room
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import korlibs.io.async.async
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
@@ -156,8 +156,6 @@ class TimelineEventAggregationTest : ShouldSpec({
                     )
                 )
             )
-        }
-        should("load reactions") {
             roomTimelineStore.addRelation(
                 TimelineEventRelation(
                     room,
@@ -190,7 +188,8 @@ class TimelineEventAggregationTest : ShouldSpec({
                     EventId("1")
                 )
             )
-
+        }
+        should("load reactions") {
             cut.getTimelineEventReactionAggregation(room, EventId("1")).first() shouldBe
                     TimelineEventAggregation.Reaction(
                         mapOf(
@@ -198,6 +197,72 @@ class TimelineEventAggregationTest : ShouldSpec({
                             "🦄" to setOf(UserId("2", "server"))
                         )
                     )
+        }
+        should("update reactions on change") {
+            val receivedValues = MutableStateFlow(0)
+            val result = async {
+                cut.getTimelineEventReactionAggregation(room, EventId("1"))
+                    .onEach { receivedValues.value++ }
+                    .take(3).toList()
+            }
+
+            receivedValues.first { it == 1 }
+            roomTimelineStore.addAll(
+                listOf(
+                    timelineEvent(
+                        "6", 6, UserId("3", "server"),
+                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+                    )
+                )
+            )
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("6"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+
+            receivedValues.first { it == 2 }
+            roomTimelineStore.addAll(
+                listOf(
+                    timelineEvent(
+                        "7", 7, UserId("3", "server"),
+                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🐈"))
+                    )
+                )
+            )
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("7"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+
+            result.await() shouldBe listOf(
+                TimelineEventAggregation.Reaction(
+                    mapOf(
+                        "👍" to setOf(UserId("sender", "server"), UserId("2", "server")),
+                        "🦄" to setOf(UserId("2", "server"))
+                    )
+                ),
+                TimelineEventAggregation.Reaction(
+                    mapOf(
+                        "👍" to setOf(UserId("sender", "server"), UserId("2", "server"), UserId("3", "server")),
+                        "🦄" to setOf(UserId("2", "server"))
+                    )
+                ),
+                TimelineEventAggregation.Reaction(
+                    mapOf(
+                        "👍" to setOf(UserId("sender", "server"), UserId("2", "server"), UserId("3", "server")),
+                        "🦄" to setOf(UserId("2", "server")),
+                        "🐈" to setOf(UserId("3", "server"))
+                    )
+                ),
+            )
         }
     }
 })
