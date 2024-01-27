@@ -6,6 +6,8 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.notification.NotificationService.Notification
@@ -600,6 +602,20 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 checkNoNotification()
             }
+        }
+    }
+    context(NotificationServiceImpl::getEventProperty.name) {
+        should("get property from path") {
+            val input = lazy { JsonObject(mapOf("a" to JsonObject(mapOf("b" to JsonPrimitive("value"))))) }
+            cut.getEventProperty(input, "a.b") shouldBe JsonPrimitive("value")
+        }
+        should("return null when property not found") {
+            val input = lazy { JsonObject(mapOf("a" to JsonObject(mapOf("b" to JsonPrimitive("value"))))) }
+            cut.getEventProperty(input, "a.b.c") shouldBe null
+        }
+        should("escape path") {
+            val input = lazy { JsonObject(mapOf("a" to JsonObject(mapOf("b.c" to JsonPrimitive("value"))))) }
+            cut.getEventProperty(input, "a.b\\.c") shouldBe JsonPrimitive("value")
         }
     }
 }
