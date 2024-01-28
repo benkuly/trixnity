@@ -610,7 +610,7 @@ private val body: ShouldSpec.() -> Unit = {
             cut.getEventProperty(input, "a.b") shouldBe JsonPrimitive("value")
         }
         should("return null when property not found") {
-            val input = lazy { JsonObject(mapOf("a" to JsonObject(mapOf("b" to JsonPrimitive("value"))))) }
+            val input = lazy { JsonObject(mapOf("a" to JsonObject(mapOf("b.c" to JsonPrimitive("value"))))) }
             cut.getEventProperty(input, "a.b.c") shouldBe null
         }
         should("escape path") {
