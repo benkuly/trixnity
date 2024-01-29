@@ -28,8 +28,8 @@ class MessageEventSerializer(
                                 putAll(jsonObject)
                                 put("content", JsonObject(
                                     buildMap {
-                                        putAll(content)
                                         put("redacts", redacts)
+                                        putAll(content)
                                     }
                                 ))
                             })
@@ -50,8 +50,8 @@ class MessageEventSerializer(
                         val redacts = (jsonObject["content"] as? JsonObject)?.get("redacts")
                         return if (redacts != null)
                             JsonObject(buildMap {
-                                putAll(jsonObject)
                                 put("redacts", redacts)
+                                putAll(jsonObject)
                             })
                         else element
                     }

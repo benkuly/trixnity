@@ -14,7 +14,7 @@ data class ChildEventContent(
     @SerialName("suggested")
     val suggested: Boolean = false,
     @SerialName("via")
-    val via: Set<String>? = null,
+    val via: Set<String>,
     @SerialName("external_url")
     override val externalUrl: String? = null
 ) : StateEventContent
