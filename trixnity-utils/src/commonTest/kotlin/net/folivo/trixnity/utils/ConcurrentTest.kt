@@ -2,10 +2,8 @@ package net.folivo.trixnity.utils
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.time.measureTime
@@ -38,18 +36,26 @@ class ConcurrentTest {
     @Test
     fun massiveReadWriteShouldNotThrowConcurrentModificationException() = runTest {
         withContext(Dispatchers.Default) {
-            val operations = 1_000_000
+            val operations = 1_000
             val writeTime = async {
                 measureTime {
-                    repeat(operations) { i ->
-                        cut.write { add("$i") }
+                    coroutineScope {
+                        repeat(operations) { i ->
+                            launch {
+                                cut.write { add("$i") }
+                            }
+                        }
                     }
                 }
             }
             val readTime = async {
                 measureTime {
-                    repeat(operations) {
-                        cut.read { getOrNull(0) }
+                    coroutineScope {
+                        repeat(operations) {
+                            launch {
+                                cut.read { getOrNull(0) }
+                            }
+                        }
                     }
                 }
             }
