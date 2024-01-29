@@ -84,7 +84,7 @@ internal open class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
     removeFromCacheOnNull: Boolean = false,
-    values: ConcurrentMap<K, MutableStateFlow<CacheValue<V?>>> = ConcurrentMap(),
+    values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>> = ConcurrentObservableMap(),
 ) : ObservableCacheBase<K, V>(
     name = name,
     cacheScope = cacheScope,
@@ -143,7 +143,7 @@ internal open class ObservableCacheBase<K, V>(
     protected val cacheScope: CoroutineScope,
     protected val expireDuration: Duration = 1.minutes,
     protected val removeFromCacheOnNull: Boolean = false,
-    private val values: ConcurrentMap<K, MutableStateFlow<CacheValue<V?>>> = ConcurrentMap(),
+    private val values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>> = ConcurrentObservableMap(),
 ) {
     init {
         addIndex(RemoverJobExecutingIndex(name, values, cacheScope, expireDuration))
@@ -163,11 +163,10 @@ internal open class ObservableCacheBase<K, V>(
         get: (suspend () -> V?)? = null,
         persist: (suspend (newValue: V?) -> Unit)? = null,
     ): Flow<V?> {
-        val cacheEntry = values.update(key) {
-            it ?: MutableStateFlow<CacheValue<V?>>(CacheValue.Init())
+        val cacheEntry = values.getOrPut(key) {
+            MutableStateFlow<CacheValue<V?>>(CacheValue.Init())
                 .also { log.trace { "$name: no cache hit for key $key" } }
         }
-        checkNotNull(cacheEntry)
         cacheEntry.first() // resets expire duration by increasing subscription count for a moment
         val newValue = cacheEntry.updateAndGet {
             val oldValue = when (it) {
@@ -188,7 +187,7 @@ internal open class ObservableCacheBase<K, V>(
 
 private class RemoverJobExecutingIndex<K, V>(
     private val name: String,
-    private val values: ConcurrentMap<K, MutableStateFlow<CacheValue<V?>>>,
+    private val values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>>,
     private val cacheScope: CoroutineScope,
     private val expireDuration: Duration = 1.minutes,
 ) : ObservableMapIndex<K> {
