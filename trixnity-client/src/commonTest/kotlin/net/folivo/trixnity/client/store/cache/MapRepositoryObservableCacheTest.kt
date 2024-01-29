@@ -322,7 +322,7 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
     context("index") {
         should("has right subscription count") {
             val values =
-                ConcurrentMap<MapRepositoryCoroutinesCacheKey<String, String>, ObservableCacheValue<String?>>()
+                ConcurrentMap<MapRepositoryCoroutinesCacheKey<String, String>, MutableStateFlow<CacheValue<String?>>>()
             cut = MapRepositoryObservableCache(
                 repository = repository,
                 tm = tm,

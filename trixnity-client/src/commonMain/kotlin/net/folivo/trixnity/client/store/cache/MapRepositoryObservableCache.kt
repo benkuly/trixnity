@@ -79,7 +79,7 @@ internal open class MapRepositoryObservableCache<K1, K2, V>(
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
-    values: ConcurrentMap<MapRepositoryCoroutinesCacheKey<K1, K2>, ObservableCacheValue<V?>> = ConcurrentMap(),
+    values: ConcurrentMap<MapRepositoryCoroutinesCacheKey<K1, K2>, MutableStateFlow<CacheValue<V?>>> = ConcurrentMap(),
 ) : ObservableCache<MapRepositoryCoroutinesCacheKey<K1, K2>, V, MapRepositoryObservableCacheStore<K1, K2, V>>(
     name = repository::class.simpleName ?: repository::class.toString(),
     store = MapRepositoryObservableCacheStore(repository, tm),

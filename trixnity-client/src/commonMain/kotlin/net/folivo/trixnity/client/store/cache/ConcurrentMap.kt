@@ -15,10 +15,10 @@ internal class ConcurrentMap<K, V> {
     val indexes = MutableStateFlow(listOf<ObservableMapIndex<K>>())
 
     sealed interface CompareAndSetResult {
-        object TryAgain : CompareAndSetResult
-        object OnPut : CompareAndSetResult
-        object OnRemove : CompareAndSetResult
-        object NothingChanged : CompareAndSetResult
+        data object TryAgain : CompareAndSetResult
+        data object OnPut : CompareAndSetResult
+        data object OnRemove : CompareAndSetResult
+        data object NothingChanged : CompareAndSetResult
     }
 
     private suspend fun compareAndSet(key: K, expectedOldValue: V?, newValue: V?): CompareAndSetResult =
