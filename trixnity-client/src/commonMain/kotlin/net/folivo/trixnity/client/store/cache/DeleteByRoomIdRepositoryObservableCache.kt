@@ -17,16 +17,12 @@ private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
     private val keyMapper: (K) -> RoomId,
 ) : ObservableMapIndex<K> {
 
-    private val values = ConcurrentMap<RoomId, ConcurrentObservableSet<K>>()
+    private val values = ConcurrentObservableMap<RoomId, ConcurrentObservableSet<K>>()
 
     override suspend fun onPut(key: K) {
         val roomId = keyMapper(key)
-        val mapping = checkNotNull(
-            values.update(roomId) { mapping ->
-                mapping ?: ConcurrentObservableSet()
-            }
-        )
-        mapping.add(key)
+        values.getOrPut(roomId) { ConcurrentObservableSet() }
+            .add(key)
     }
 
     override suspend fun onRemove(key: K, stale: Boolean) {
@@ -46,11 +42,8 @@ private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
     override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = zeroStateFlow
 
     suspend fun getMapping(roomId: RoomId): Set<K> =
-        checkNotNull(
-            values.update(roomId) { mapping ->
-                mapping ?: ConcurrentObservableSet()
-            }
-        ).values.first()
+        values.getOrPut(roomId) { ConcurrentObservableSet() }
+            .values.first()
 }
 
 internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
