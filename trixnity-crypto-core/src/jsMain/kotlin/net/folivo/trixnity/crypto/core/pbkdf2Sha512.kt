@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.core
 
 import io.ktor.util.*
-import js.core.jso
+import js.objects.jso
 import js.promise.await
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
@@ -31,7 +31,7 @@ actual suspend fun generatePbkdf2Sha512(
                 algorithm = jso<Pbkdf2Params> {
                     name = "PBKDF2"
                     this.salt = salt.toUint8Array()
-                    iterations = iterationCount.toDouble()
+                    iterations = iterationCount
                     hash = "SHA-512"
                 },
                 baseKey = key,
