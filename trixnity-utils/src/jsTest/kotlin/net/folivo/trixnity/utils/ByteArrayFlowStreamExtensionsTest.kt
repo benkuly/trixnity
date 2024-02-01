@@ -2,7 +2,7 @@ package net.folivo.trixnity.utils
 
 import io.kotest.matchers.shouldBe
 import io.ktor.utils.io.core.*
-import js.core.jso
+import js.objects.jso
 import js.promise.Promise
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array

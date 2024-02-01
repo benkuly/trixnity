@@ -2,7 +2,7 @@ package net.folivo.trixnity.crypto.core
 
 import createHmac
 import io.ktor.util.*
-import js.core.jso
+import js.objects.jso
 import js.promise.await
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
