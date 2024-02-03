@@ -217,7 +217,7 @@ publish-snapshot:linux:
       - website/static/api/
   script:
     - ./gradlew
-      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToSnapshotRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationToSnapshotRepository
       dokkaHtmlToWebsite
       --stacktrace
 
@@ -273,7 +273,7 @@ publish:linux:
   script:
     - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
     - ./gradlew
-      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease}PublicationToReleaseRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationToReleaseRepository
       --stacktrace
 
 pages:
