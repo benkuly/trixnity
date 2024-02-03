@@ -77,7 +77,7 @@ sealed interface ActiveVerificationState {
     /**
      * This state is active when the verification is done.
      */
-    object Done : ActiveVerificationState
+    data object Done : ActiveVerificationState
 
     /**
      * This state is active when the verification is cancelled.
@@ -87,10 +87,10 @@ sealed interface ActiveVerificationState {
     /**
      * This state is active when another own device accepted the request.
      */
-    object AcceptedByOtherDevice : ActiveVerificationState
+    data object AcceptedByOtherDevice : ActiveVerificationState
 
     /**
      * This state is active when an incoming request was accepted, but the state got missing (e.g. by restarting the App)
      */
-    object Undefined : ActiveVerificationState
+    data object Undefined : ActiveVerificationState
 }

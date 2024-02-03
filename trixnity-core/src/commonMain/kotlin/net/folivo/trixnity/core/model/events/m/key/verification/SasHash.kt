@@ -12,7 +12,7 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface SasHash {
     val name: String
 
-    object Sha256 : SasHash {
+    data object Sha256 : SasHash {
         override val name: String = "sha256"
     }
 

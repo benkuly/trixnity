@@ -35,21 +35,21 @@ data class VerificationCancelEventContent(
         /**
          * The user cancelled the verification.
          */
-        object User : Code {
+        data object User : Code {
             override val value = "m.user"
         }
 
         /**
          * The verification process timed out. Verification processes can define their own timeout parameters.
          */
-        object Timeout : Code {
+        data object Timeout : Code {
             override val value = "m.timeout"
         }
 
         /**
          * The device does not know about the given transaction ID.
          */
-        object UnknownTransaction : Code {
+        data object UnknownTransaction : Code {
             override val value = "m.unknown_transaction"
         }
 
@@ -59,7 +59,7 @@ data class VerificationCancelEventContent(
          *
          * For SAS: The devices are unable to agree on the key agreement, hash, MAC, or SAS method.
          */
-        object UnknownMethod : Code {
+        data object UnknownMethod : Code {
             override val value = "m.unknown_method"
         }
 
@@ -67,28 +67,28 @@ data class VerificationCancelEventContent(
          * The device received an unexpected message. Typically raised, when one of the parties is handling the
          * verification out of order.
          */
-        object UnexpectedMessage : Code {
+        data object UnexpectedMessage : Code {
             override val value = "m.unexpected_message"
         }
 
         /**
          * The key was not verified.
          */
-        object KeyMismatch : Code {
+        data object KeyMismatch : Code {
             override val value = "m.key_mismatch"
         }
 
         /**
          * The expected user did not match the user verified.
          */
-        object UserMismatch : Code {
+        data object UserMismatch : Code {
             override val value = "m.user_mismatch"
         }
 
         /**
          * The message received was invalid.
          */
-        object InvalidMessage : Code {
+        data object InvalidMessage : Code {
             override val value = "m.invalid_message"
         }
 
@@ -96,28 +96,28 @@ data class VerificationCancelEventContent(
          * A m.key.verification.request was accepted by a different device. The device receiving this error can ignore
          * the verification request.
          */
-        object Accepted : Code {
+        data object Accepted : Code {
             override val value = "m.accepted"
         }
 
         /**
          * For SAS: The hash commitment did not match.
          */
-        object MismatchedCommitment : Code {
+        data object MismatchedCommitment : Code {
             override val value = "m.mismatched_commitment"
         }
 
         /**
          * For SAS: The SAS did not match.
          */
-        object MismatchedSas : Code {
+        data object MismatchedSas : Code {
             override val value = "m.mismatched_sas"
         }
 
         /**
          * Internal error.
          */
-        object InternalError : Code {
+        data object InternalError : Code {
             override val value = "net.folivo.internal"
         }
 

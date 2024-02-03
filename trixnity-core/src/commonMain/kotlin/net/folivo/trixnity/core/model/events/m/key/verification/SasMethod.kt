@@ -12,11 +12,11 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface SasMethod {
     val name: String
 
-    object Decimal : SasMethod {
+    data object Decimal : SasMethod {
         override val name: String = "decimal"
     }
 
-    object Emoji : SasMethod {
+    data object Emoji : SasMethod {
         override val name: String = "emoji"
     }
 
