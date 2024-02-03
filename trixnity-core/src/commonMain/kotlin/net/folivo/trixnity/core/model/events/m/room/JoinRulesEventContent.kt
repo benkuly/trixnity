@@ -28,27 +28,27 @@ data class JoinRulesEventContent(
     sealed interface JoinRule {
         abstract val name: String
 
-        object Public : JoinRule {
+        data object Public : JoinRule {
             override val name = "public"
         }
 
-        object Knock : JoinRule {
+        data object Knock : JoinRule {
             override val name = "knock"
         }
 
-        object Invite : JoinRule {
+        data object Invite : JoinRule {
             override val name = "invite"
         }
 
-        object Private : JoinRule {
+        data object Private : JoinRule {
             override val name = "private"
         }
 
-        object Restricted : JoinRule {
+        data object Restricted : JoinRule {
             override val name = "restricted"
         }
 
-        object KnockRestricted : JoinRule {
+        data object KnockRestricted : JoinRule {
             override val name = "knock_restricted"
         }
 
@@ -66,7 +66,7 @@ data class JoinRulesEventContent(
         sealed interface AllowConditionType {
             val name: String
 
-            object RoomMembership : AllowConditionType {
+            data object RoomMembership : AllowConditionType {
                 override val name = "m.room_membership"
             }
 

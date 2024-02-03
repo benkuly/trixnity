@@ -50,7 +50,7 @@ sealed interface AuthenticationRequest {
     }
 
     @Serializable
-    object Dummy : AuthenticationRequest {
+    data object Dummy : AuthenticationRequest {
         @SerialName("type")
         override val type = AuthenticationType.Dummy
     }
@@ -64,7 +64,7 @@ sealed interface AuthenticationRequest {
     }
 
     @Serializable
-    object Fallback : AuthenticationRequest {
+    data object Fallback : AuthenticationRequest {
         @SerialName("type")
         override val type: AuthenticationType? = null
     }

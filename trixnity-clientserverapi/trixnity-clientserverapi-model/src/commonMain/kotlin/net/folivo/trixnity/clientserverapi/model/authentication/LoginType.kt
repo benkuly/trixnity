@@ -14,7 +14,7 @@ sealed interface LoginType {
     val name: String
 
     @Serializable
-    object Password : LoginType {
+    data object Password : LoginType {
         @SerialName("type")
         override val name = "m.login.password"
     }
@@ -28,7 +28,7 @@ sealed interface LoginType {
     }
 
     @Serializable
-    object AppService : LoginType {
+    data object AppService : LoginType {
         @SerialName("type")
         override val name = "m.login.application_service"
     }

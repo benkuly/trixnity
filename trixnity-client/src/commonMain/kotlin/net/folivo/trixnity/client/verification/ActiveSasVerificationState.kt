@@ -179,5 +179,5 @@ sealed interface ActiveSasVerificationState {
         }
     }
 
-    object WaitForMacs : ActiveSasVerificationState
+    data object WaitForMacs : ActiveSasVerificationState
 }

@@ -13,37 +13,37 @@ sealed interface AuthenticationType {
     val name: String
 
     @Serializable(with = PasswordAuthenticationSerializer::class)
-    object Password : AuthenticationType {
+    data object Password : AuthenticationType {
         override val name = "m.login.password"
     }
 
     @Serializable(with = RecaptchaAuthenticationSerializer::class)
-    object Recaptcha : AuthenticationType {
+    data object Recaptcha : AuthenticationType {
         override val name = "m.login.recaptcha"
     }
 
     @Serializable(with = SSOAuthenticationSerializer::class)
-    object SSO : AuthenticationType {
+    data object SSO : AuthenticationType {
         override val name = "m.login.sso"
     }
 
     @Serializable(with = EmailIdentityAuthenticationSerializer::class)
-    object EmailIdentity : AuthenticationType {
+    data object EmailIdentity : AuthenticationType {
         override val name = "m.login.email.identity"
     }
 
     @Serializable(with = MsisdnAuthenticationSerializer::class)
-    object Msisdn : AuthenticationType {
+    data object Msisdn : AuthenticationType {
         override val name = "m.login.msisdn"
     }
 
     @Serializable(with = DummyAuthenticationSerializer::class)
-    object Dummy : AuthenticationType {
+    data object Dummy : AuthenticationType {
         override val name = "m.login.dummy"
     }
 
     @Serializable(with = RegistrationTokenAuthenticationSerializer::class)
-    object RegistrationToken : AuthenticationType {
+    data object RegistrationToken : AuthenticationType {
         override val name = "m.login.registration_token"
     }
 

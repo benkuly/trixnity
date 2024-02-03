@@ -12,7 +12,7 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface VerificationMethod {
     val value: String
 
-    object Sas : VerificationMethod {
+    data object Sas : VerificationMethod {
         override val value = "m.sas.v1"
     }
 

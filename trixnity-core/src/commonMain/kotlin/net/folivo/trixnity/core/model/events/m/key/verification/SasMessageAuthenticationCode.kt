@@ -12,11 +12,11 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface SasMessageAuthenticationCode {
     val name: String
 
-    object HkdfHmacSha256 : SasMessageAuthenticationCode {
+    data object HkdfHmacSha256 : SasMessageAuthenticationCode {
         override val name: String = "hkdf-hmac-sha256"
     }
 
-    object HkdfHmacSha256V2 : SasMessageAuthenticationCode {
+    data object HkdfHmacSha256V2 : SasMessageAuthenticationCode {
         override val name: String = "hkdf-hmac-sha256.v2"
     }
 
