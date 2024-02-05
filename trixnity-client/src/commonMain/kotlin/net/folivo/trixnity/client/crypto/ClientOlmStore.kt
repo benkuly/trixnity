@@ -7,7 +7,7 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.key.get
 import net.folivo.trixnity.client.key.getDeviceKey
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.user.UserService
+import net.folivo.trixnity.client.user.LoadMembersService
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -26,7 +26,7 @@ class ClientOlmStore(
     private val olmCryptoStore: OlmCryptoStore,
     private val keyStore: KeyStore,
     private val roomStateStore: RoomStateStore,
-    private val userService: UserService,
+    private val loadMembersService: LoadMembersService,
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
 
     override suspend fun findCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? =
@@ -91,7 +91,7 @@ class ClientOlmStore(
 
 
     override suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>> {
-        userService.loadMembers(roomId)
+        loadMembersService(roomId, true)
         val members = roomStateStore.members(roomId, memberships)
         return members.mapNotNull { userId ->
             keyStore.getDeviceKeys(userId).first()?.let { userId to it.keys }

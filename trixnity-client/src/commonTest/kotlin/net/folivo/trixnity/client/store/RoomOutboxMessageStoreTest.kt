@@ -13,7 +13,8 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.repository.InMemoryRoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import kotlin.time.Duration.Companion.milliseconds
 
 class RoomOutboxMessageStoreTest : ShouldSpec({
@@ -43,8 +44,8 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
 
     context(RoomOutboxMessageStore::init.name) {
         should("fill cache with values from repository") {
-            val message1 = RoomOutboxMessage("t1", room, TextMessageEventContent(""))
-            val message2 = RoomOutboxMessage("t2", room, TextMessageEventContent(""))
+            val message1 = RoomOutboxMessage("t1", room, RoomMessageEventContent.TextBased.Text(""))
+            val message2 = RoomOutboxMessage("t2", room, RoomMessageEventContent.TextBased.Text(""))
             roomOutboxMessageRepository.save("t1", message1)
             roomOutboxMessageRepository.save("t2", message2)
 
@@ -68,7 +69,7 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
         }
         repeat(50) { i ->
             cut.update(i.toString()) {
-                RoomOutboxMessage(i.toString(), RoomId("room", "server"), TextMessageEventContent(""))
+                RoomOutboxMessage(i.toString(), RoomId("room", "server"), RoomMessageEventContent.TextBased.Text(""))
             }
         }
         cut.getAll().flatten().first { it.isEmpty() } // we get a timeout if this never succeeds

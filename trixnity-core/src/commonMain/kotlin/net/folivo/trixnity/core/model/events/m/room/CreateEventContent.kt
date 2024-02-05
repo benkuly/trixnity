@@ -21,8 +21,9 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent.RoomType
  */
 @Serializable
 data class CreateEventContent(
+    @Deprecated("Clients should no longer depend on the creator property, instead clients can rely on sender instead to determine a room creator.")
     @SerialName("creator")
-    val creator: UserId,
+    val creator: UserId? = null,
     @SerialName("m.federate")
     val federate: Boolean = true,
     @SerialName("room_version")
@@ -46,11 +47,11 @@ data class CreateEventContent(
     sealed interface RoomType {
         val name: String?
 
-        object Room : RoomType {
+        data object Room : RoomType {
             override val name: String? = null
         }
 
-        object Space : RoomType {
+        data object Space : RoomType {
             override val name = "m.space"
         }
 

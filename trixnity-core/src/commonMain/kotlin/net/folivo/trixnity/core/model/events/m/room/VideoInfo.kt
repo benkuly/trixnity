@@ -12,13 +12,13 @@ data class VideoInfo(
     @SerialName("w")
     val width: Int? = null,
     @SerialName("mimetype")
-    val mimeType: String? = null,
+    override val mimeType: String? = null,
     @SerialName("size")
-    val size: Int? = null,
+    override val size: Int? = null,
     @SerialName("thumbnail_url")
     val thumbnailUrl: String? = null,
     @SerialName("thumbnail_file")
     val thumbnailFile: EncryptedFile? = null,
     @SerialName("thumbnail_info")
     val thumbnailInfo: ThumbnailInfo? = null
-)
+) : FileBasedInfo

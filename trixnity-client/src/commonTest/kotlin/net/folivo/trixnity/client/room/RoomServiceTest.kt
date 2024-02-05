@@ -8,7 +8,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.*
@@ -20,21 +19,17 @@ import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
-import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -48,7 +43,6 @@ class RoomServiceTest : ShouldSpec({
 
     val room = simpleRoom.roomId
     lateinit var roomStore: RoomStore
-    lateinit var roomUserStore: RoomUserStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomAccountDataStore: RoomAccountDataStore
     lateinit var roomTimelineStore: RoomTimelineStore
@@ -64,7 +58,6 @@ class RoomServiceTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         roomStore = getInMemoryRoomStore(scope)
-        roomUserStore = getInMemoryRoomUserStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
         roomTimelineStore = getInMemoryRoomTimelineStore(scope)
@@ -74,16 +67,21 @@ class RoomServiceTest : ShouldSpec({
         roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock()
         val (api, _) = mockMatrixClientServerApiClient(json)
         cut = RoomServiceImpl(
-            api,
-            roomStore, roomUserStore, roomStateStore, roomAccountDataStore, roomTimelineStore, roomOutboxMessageStore,
-            listOf(roomEventDecryptionServiceMock),
-            mediaServiceMock,
-            simpleUserInfo,
-            TimelineEventHandlerMock(),
-            MatrixClientConfiguration(),
-            TypingEventHandler(api),
-            CurrentSyncState(currentSyncState),
-            scope
+            api = api,
+            roomStore = roomStore,
+            roomStateStore = roomStateStore,
+            roomAccountDataStore = roomAccountDataStore,
+            roomTimelineStore = roomTimelineStore,
+            roomOutboxMessageStore = roomOutboxMessageStore,
+            roomEventEncryptionServices = listOf(roomEventDecryptionServiceMock),
+            mediaService = mediaServiceMock,
+            forgetRoomService = {},
+            userInfo = simpleUserInfo,
+            timelineEventHandler = TimelineEventHandlerMock(),
+            config = MatrixClientConfiguration(),
+            typingEventHandler = TypingEventHandlerImpl(api),
+            currentSyncState = CurrentSyncState(currentSyncState),
+            scope = scope
         )
     }
 
@@ -91,9 +89,9 @@ class RoomServiceTest : ShouldSpec({
         scope.cancel()
     }
 
-    fun textEvent(i: Long = 24): MessageEvent<TextMessageEventContent> {
+    fun textEvent(i: Long = 24): MessageEvent<RoomMessageEventContent.TextBased.Text> {
         return MessageEvent(
-            TextMessageEventContent("message $i"),
+            RoomMessageEventContent.TextBased.Text("message $i"),
             EventId("\$event$i"),
             UserId("sender", "server"),
             room,
@@ -139,7 +137,7 @@ class RoomServiceTest : ShouldSpec({
                 roomStore.update(room) { simpleRoom.copy(lastEventId = lastEventId) }
                 currentSyncState.value = RUNNING
                 val event = MessageEvent(
-                    TextMessageEventContent("hello"),
+                    RoomMessageEventContent.TextBased.Text("hello"),
                     eventId,
                     UserId("sender", "server"),
                     room,
@@ -149,7 +147,7 @@ class RoomServiceTest : ShouldSpec({
                     listOf(
                         TimelineEvent(
                             event = MessageEvent(
-                                TextMessageEventContent("world"),
+                                RoomMessageEventContent.TextBased.Text("world"),
                                 lastEventId,
                                 UserId("sender", "server"),
                                 room,
@@ -185,7 +183,7 @@ class RoomServiceTest : ShouldSpec({
             withData(
                 mapOf(
                     "with already encrypted event" to encryptedTimelineEvent.copy(
-                        content = Result.success(TextMessageEventContent("hi"))
+                        content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
                     ),
                     "with encryption error" to encryptedTimelineEvent.copy(
                         content = Result.failure(TimelineEventContentError.DecryptionTimeout)
@@ -212,7 +210,7 @@ class RoomServiceTest : ShouldSpec({
         }
         context("event can be decrypted") {
             should("decrypt event") {
-                val expectedDecryptedEvent = TextMessageEventContent("decrypted")
+                val expectedDecryptedEvent = RoomMessageEventContent.TextBased.Text("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = Result.success(expectedDecryptedEvent)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
                 val result = cut.getTimelineEvent(room, eventId)
@@ -224,7 +222,7 @@ class RoomServiceTest : ShouldSpec({
                 }
             }
             should("decrypt event only once") {
-                val expectedDecryptedEvent = TextMessageEventContent("decrypted")
+                val expectedDecryptedEvent = RoomMessageEventContent.TextBased.Text("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = Result.success(expectedDecryptedEvent)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
                 (1..300).map {
@@ -275,11 +273,11 @@ class RoomServiceTest : ShouldSpec({
                     1
                 ),
                 content = Result.success(
-                    TextMessageEventContent(
+                    RoomMessageEventContent.TextBased.Text(
                         "*edited hi",
                         relatesTo = RelatesTo.Replace(
                             EventId("\$event1"),
-                            TextMessageEventContent("edited hi")
+                            RoomMessageEventContent.TextBased.Text("edited hi")
                         )
                     )
                 ),
@@ -304,7 +302,7 @@ class RoomServiceTest : ShouldSpec({
                         )
                     )
                 ),
-                content = Result.success(TextMessageEventContent("hi")),
+                content = Result.success(RoomMessageEventContent.TextBased.Text("hi")),
                 previousEventId = null,
                 nextEventId = null,
                 gap = null
@@ -312,13 +310,13 @@ class RoomServiceTest : ShouldSpec({
             should("replace content with content of other timeline event") {
                 roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
                 cut.getTimelineEvent(room, eventId).first() shouldBe timelineEvent.copy(
-                    content = Result.success(TextMessageEventContent("edited hi"))
+                    content = Result.success(RoomMessageEventContent.TextBased.Text("edited hi"))
                 )
             }
             should("not replace content when disabled") {
                 roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
                 cut.getTimelineEvent(room, eventId) { allowReplaceContent = false }.first() shouldBe timelineEvent.copy(
-                    content = Result.success(TextMessageEventContent("hi"))
+                    content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
                 )
             }
         }
@@ -352,7 +350,7 @@ class RoomServiceTest : ShouldSpec({
     }
     context(RoomServiceImpl::sendMessage.name) {
         should("just save message in store for later use") {
-            val content = TextMessageEventContent("hi")
+            val content = RoomMessageEventContent.TextBased.Text("hi")
             cut.sendMessage(room) {
                 contentBuilder = { _, _, _ -> content }
             }
@@ -365,94 +363,6 @@ class RoomServiceTest : ShouldSpec({
                     transactionId.length shouldBeGreaterThan 12
                 }
             }
-        }
-    }
-    context(RoomServiceImpl::forgetRoom.name) {
-        should("forget rooms when membershipt is leave") {
-            roomStore.update(room) { simpleRoom.copy(room, membership = Membership.LEAVE) }
-
-            fun timelineEvent(roomId: RoomId, i: Int) =
-                TimelineEvent(
-                    MessageEvent(
-                        TextMessageEventContent("$i"),
-                        EventId("$i"),
-                        UserId("sender", "server"),
-                        roomId,
-                        1234L,
-                    ),
-                    previousEventId = null,
-                    nextEventId = null,
-                    gap = null,
-                )
-            roomTimelineStore.addAll(
-                listOf(
-                    timelineEvent(room, 1),
-                    timelineEvent(room, 2),
-                )
-            )
-
-            fun timelineEventRelation(roomId: RoomId, i: Int) =
-                TimelineEventRelation(roomId, EventId("r$i"), RelationType.Replace, EventId("$i"))
-            roomTimelineStore.addRelation(timelineEventRelation(room, 1))
-            roomTimelineStore.addRelation(timelineEventRelation(room, 2))
-
-            fun stateEvent(roomId: RoomId, i: Int) =
-                StateEvent(
-                    MemberEventContent(membership = Membership.JOIN),
-                    EventId("$i"),
-                    UserId("sender", "server"),
-                    roomId,
-                    1234L,
-                    stateKey = "$i",
-                )
-            roomStateStore.save(stateEvent(room, 1))
-            roomStateStore.save(stateEvent(room, 2))
-
-            fun roomAccountDataEvent(roomId: RoomId, i: Int) =
-                RoomAccountDataEvent(
-                    FullyReadEventContent(EventId("$i")),
-                    roomId,
-                    key = "$i",
-                )
-            roomAccountDataStore.save(roomAccountDataEvent(room, 1))
-            roomAccountDataStore.save(roomAccountDataEvent(room, 2))
-
-            fun roomUser(roomId: RoomId, i: Int) =
-                RoomUser(roomId, UserId("user$i", "server"), "$i", stateEvent(roomId, i))
-            roomUserStore.update(UserId("1"), room) { roomUser(room, 1) }
-            roomUserStore.update(UserId("2"), room) { roomUser(room, 2) }
-
-            roomStore.getAll().first { it.size == 1 }
-
-            cut.forgetRoom(room)
-
-            roomStore.get(room).first() shouldBe null
-
-            roomTimelineStore.get(EventId("1"), room).first() shouldBe null
-            roomTimelineStore.get(EventId("2"), room).first() shouldBe null
-
-            roomTimelineStore.getRelations(EventId("1"), room, RelationType.Replace)
-                .first().values.firstOrNull()?.first() shouldBe null
-            roomTimelineStore.getRelations(EventId("2"), room, RelationType.Replace)
-                .first().values.firstOrNull()?.first() shouldBe null
-
-            roomStateStore.getByStateKey<MemberEventContent>(room, "1").first() shouldBe null
-            roomStateStore.getByStateKey<MemberEventContent>(room, "2").first() shouldBe null
-
-            roomAccountDataStore.get<FullyReadEventContent>(room, "1").first() shouldBe null
-            roomAccountDataStore.get<FullyReadEventContent>(room, "2").first() shouldBe null
-
-            roomUserStore.get(UserId("1"), room).first() shouldBe null
-            roomUserStore.get(UserId("2"), room).first() shouldBe null
-        }
-        should("not forget rooms when membershipt is not leave") {
-            roomStore.update(room) { simpleRoom.copy(room) }
-
-            roomStore.getAll().first { it.size == 1 }
-
-            cut.forgetRoom(room)
-
-            roomStore.get(room).first() shouldNotBe null
         }
     }
 })

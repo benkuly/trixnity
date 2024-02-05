@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ImageInfo
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.ImageMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.TrixnityDsl
 
@@ -13,7 +13,7 @@ import net.folivo.trixnity.utils.TrixnityDsl
 suspend fun MessageBuilder.image(
     body: String,
     image: ByteArrayFlow,
-    type: ContentType,
+    type: ContentType? = null,
     size: Int? = null,
     height: Int? = null,
     width: Int? = null
@@ -53,13 +53,13 @@ suspend fun MessageBuilder.image(
     }
     contentBuilder = { relatesTo, mentions, newContentMentions ->
         when (relatesTo) {
-            is RelatesTo.Replace -> ImageMessageEventContent(
+            is RelatesTo.Replace -> RoomMessageEventContent.FileBased.Image(
                 body = "* $body",
                 info = format,
                 url = url,
                 file = encryptedFile,
                 relatesTo = relatesTo.copy(
-                    newContent = ImageMessageEventContent(
+                    newContent = RoomMessageEventContent.FileBased.Image(
                         body = body,
                         info = format,
                         url = url,
@@ -70,7 +70,7 @@ suspend fun MessageBuilder.image(
                 mentions = mentions,
             )
 
-            else -> ImageMessageEventContent(
+            else -> RoomMessageEventContent.FileBased.Image(
                 body = body,
                 info = format,
                 url = url,

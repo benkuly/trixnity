@@ -2,43 +2,46 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import net.folivo.trixnity.utils.concurrentMutableMap
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-internal class ConcurrentMap<K, V> {
-    private val valuesMutex = Mutex()
-    private val _values = mutableMapOf<K, V>()
+internal class ConcurrentObservableMap<K, V> {
+    private val _values = concurrentMutableMap<K, V>()
 
     val indexes = MutableStateFlow(listOf<ObservableMapIndex<K>>())
 
     sealed interface CompareAndSetResult {
-        object TryAgain : CompareAndSetResult
-        object OnPut : CompareAndSetResult
-        object OnRemove : CompareAndSetResult
-        object NothingChanged : CompareAndSetResult
+        data object TryAgain : CompareAndSetResult
+        data object OnPut : CompareAndSetResult
+        data object OnRemove : CompareAndSetResult
+        data object NothingChanged : CompareAndSetResult
     }
 
     private suspend fun compareAndSet(key: K, expectedOldValue: V?, newValue: V?): CompareAndSetResult =
-        valuesMutex.withLock {
-            val oldValue = _values[key]
+        _values.write {
+            val oldValue = get(key)
             when {
                 expectedOldValue != oldValue -> CompareAndSetResult.TryAgain
                 newValue == null -> {
-                    _values.remove(key)
+                    remove(key)
                     CompareAndSetResult.OnRemove
                 }
 
                 expectedOldValue != newValue -> {
-                    _values[key] = newValue
+                    put(key, newValue)
                     CompareAndSetResult.OnPut
                 }
 
                 else -> CompareAndSetResult.NothingChanged
             }
         }
+
+    suspend fun getOrPut(key: K, defaultValue: () -> V): V =
+        _values.read { get(key) }
+            ?: checkNotNull(update(key) { it ?: defaultValue() })
+
 
     @OptIn(ExperimentalContracts::class)
     suspend fun update(
@@ -88,16 +91,12 @@ internal class ConcurrentMap<K, V> {
         }
     }
 
-    suspend fun get(key: K): V? = valuesMutex.withLock {
-        _values[key]
-    }
+    suspend fun get(key: K): V? = _values.read { get(key) }
 
-    suspend fun getAll(): Map<K, V> = valuesMutex.withLock {
-        _values.toMap()
-    }
+    suspend fun getAll(): Map<K, V> = _values.read { toMap() }
 
-    suspend fun removeAll() = valuesMutex.withLock {
-        _values.clear()
+    suspend fun removeAll() = _values.write {
+        clear()
         indexes.value.forEach { index -> index.onRemoveAll() }
     }
 

@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.ToDeviceEventContent
  * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationrequest">matrix spec</a>
  */
 @Serializable
-data class VerificationRequestEventContent(
+data class VerificationRequestToDeviceEventContent(
     @SerialName("from_device")
     override val fromDevice: String,
     @SerialName("methods")

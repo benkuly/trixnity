@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client
 
-import arrow.core.flatMap
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -66,8 +65,6 @@ interface MatrixClient {
         val userId: UserId,
         val deviceId: String,
         val accessToken: String,
-        val displayName: String?,
-        val avatarUrl: String?,
     )
 
     data class SoftLoginInfo(
@@ -85,8 +82,14 @@ interface MatrixClient {
 
     suspend fun startSync(presence: Presence? = Presence.ONLINE)
 
+    /**
+     * Usually used for background sync.
+     */
     suspend fun syncOnce(presence: Presence? = Presence.OFFLINE, timeout: Duration = Duration.ZERO): Result<Unit>
 
+    /**
+     * Usually used for background sync.
+     */
     suspend fun <T> syncOnce(
         presence: Presence? = Presence.OFFLINE,
         timeout: Duration = Duration.ZERO,
@@ -118,14 +121,14 @@ suspend fun MatrixClient.Companion.login(
     loginType: LoginType = LoginType.Password,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient> =
     loginWith(
         baseUrl = baseUrl,
-        repositoriesModule = repositoriesModule,
-        mediaStore = mediaStore,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreFactory = mediaStoreFactory,
         getLoginInfo = { api ->
             api.authentication.login(
                 identifier = identifier,
@@ -134,19 +137,61 @@ suspend fun MatrixClient.Companion.login(
                 type = loginType,
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName
-            ).flatMap { login ->
-                api.accessToken.value = login.accessToken
-                api.user.getProfile(login.userId).map { profile ->
-                    LoginInfo(
-                        userId = login.userId,
-                        accessToken = login.accessToken,
-                        deviceId = login.deviceId,
-                        displayName = profile.displayName,
-                        avatarUrl = profile.avatarUrl
-                    )
-                }
+            ).map { login ->
+                LoginInfo(
+                    userId = login.userId,
+                    accessToken = login.accessToken,
+                    deviceId = login.deviceId,
+                )
             }
         },
+        configuration = configuration
+    )
+
+suspend fun MatrixClient.Companion.login(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String? = null,
+    token: String? = null,
+    loginType: LoginType = LoginType.Password,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> = login(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    password = password,
+    token = token,
+    loginType = loginType,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreFactory = { mediaStore },
+    configuration = configuration
+)
+
+suspend fun MatrixClient.Companion.loginWithPassword(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> =
+    login(
+        baseUrl = baseUrl,
+        identifier = identifier,
+        password = password,
+        token = null,
+        loginType = LoginType.Password,
+        deviceId = deviceId,
+        initialDeviceDisplayName = initialDeviceDisplayName,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreFactory = mediaStoreFactory,
         configuration = configuration
     )
 
@@ -159,17 +204,37 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     repositoriesModule: Module,
     mediaStore: MediaStore,
     configuration: MatrixClientConfiguration.() -> Unit = {}
+): Result<MatrixClient> = loginWithPassword(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    password = password,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreFactory = { mediaStore },
+    configuration = configuration
+)
+
+suspend fun MatrixClient.Companion.loginWithToken(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    token: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
+    configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient> =
     login(
         baseUrl = baseUrl,
         identifier = identifier,
-        password = password,
-        token = null,
-        loginType = LoginType.Password,
+        password = null,
+        token = token,
+        loginType = LoginType.Token(),
         deviceId = deviceId,
         initialDeviceDisplayName = initialDeviceDisplayName,
-        repositoriesModule = repositoriesModule,
-        mediaStore = mediaStore,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreFactory = mediaStoreFactory,
         configuration = configuration
     )
 
@@ -182,38 +247,49 @@ suspend fun MatrixClient.Companion.loginWithToken(
     repositoriesModule: Module,
     mediaStore: MediaStore,
     configuration: MatrixClientConfiguration.() -> Unit = {}
-): Result<MatrixClient> =
-    login(
-        baseUrl = baseUrl,
-        identifier = identifier,
-        password = null,
-        token = token,
-        loginType = LoginType.Token(),
-        deviceId = deviceId,
-        initialDeviceDisplayName = initialDeviceDisplayName,
-        repositoriesModule = repositoriesModule,
-        mediaStore = mediaStore,
-        configuration = configuration
-    )
+): Result<MatrixClient> = loginWithToken(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    token = token,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreFactory = { mediaStore },
+    configuration = configuration
+)
 
 suspend fun MatrixClient.Companion.loginWith(
     baseUrl: Url,
-    repositoriesModule: Module,
-    mediaStore: MediaStore,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
+
+    val loginApi = MatrixClientServerApiClientImpl(
+        baseUrl = baseUrl,
+        httpClientFactory = config.httpClientFactory,
+    )
+    val loginInfo = getLoginInfo(loginApi).getOrThrow()
+    val (userId, deviceId, accessToken) = loginInfo
+    loginApi.accessToken.value = accessToken
+    val (displayName, avatarUrl) = loginApi.user.getProfile(userId).getOrThrow()
+    
+    val mediaStore = mediaStoreFactory(loginInfo)
+    val repositoriesModule = repositoriesModuleFactory(loginInfo)
+
+
     val handler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
     }
-
     val coroutineScope =
         CoroutineScope((Dispatchers.Default + handler).let {
             val coroutineName = config.name?.let { name -> CoroutineName(name) }
             if (coroutineName != null) it + coroutineName else it
         }
         )
+
     val koinApplication = koinApplication {
         modules(module {
             single { coroutineScope }
@@ -224,9 +300,9 @@ suspend fun MatrixClient.Companion.loginWith(
         modules(config.modules)
     }
     val di = koinApplication.koin
+
     val rootStore = di.get<RootStore>()
     rootStore.init()
-
     val accountStore = di.get<AccountStore>()
 
     val api = MatrixClientServerApiClientImpl(
@@ -238,7 +314,6 @@ suspend fun MatrixClient.Companion.loginWith(
         syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
         syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
     )
-    val (userId, deviceId, accessToken, displayName, avatarUrl) = getLoginInfo(api).getOrThrow()
     val olmPickleKey = ""
 
     api.accessToken.value = accessToken
@@ -256,7 +331,6 @@ suspend fun MatrixClient.Companion.loginWith(
             syncBatchToken = null
         )
     }
-
 
     val olmCryptoStore = di.get<OlmCryptoStore>()
     val (signingKey, identityKey) = freeAfter(
@@ -305,6 +379,20 @@ suspend fun MatrixClient.Companion.loginWith(
         log.trace { "finished creating MatrixClient" }
     }
 }
+
+suspend fun MatrixClient.Companion.loginWith(
+    baseUrl: Url,
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> = loginWith(
+    baseUrl = baseUrl,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreFactory = { mediaStore },
+    getLoginInfo = getLoginInfo,
+    configuration = configuration
+)
 
 suspend fun MatrixClient.Companion.fromStore(
     repositoriesModule: Module,
@@ -483,8 +571,13 @@ class MatrixClientImpl internal constructor(
                     flowOf(RUN),
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
-                    api.user.setFilter(userId, baseFilters)
-                        .getOrThrow().also { log.debug { "set new filter for sync: $it" } }
+                    api.user.setFilter(
+                        userId, config.syncFilter.copy(
+                            room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
+                                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                            )
+                        )
+                    ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
                 }
                 accountStore.updateAccount { it.copy(filterId = newFilterId) }
             }
@@ -495,8 +588,11 @@ class MatrixClientImpl internal constructor(
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
                     api.user.setFilter(
-                        userId,
-                        baseFilters.copy(presence = Filters.EventFilter(limit = 0))
+                        userId, config.syncFilter.copy(
+                            room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
+                                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                            ),
+                        )
                     ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
                 }
                 accountStore.updateAccount { it.copy(backgroundFilterId = newFilterId) }
@@ -506,7 +602,7 @@ class MatrixClientImpl internal constructor(
     }
 
     override suspend fun logout(): Result<Unit> {
-        stopSync(true)
+        cancelSync(true)
         return if (loginState.value == LOGGED_OUT_SOFT) {
             deleteAll()
             Result.success(Unit)
@@ -517,7 +613,6 @@ class MatrixClientImpl internal constructor(
     }
 
     internal suspend fun deleteAll() {
-        stopSync(true)
         rootStore.deleteAll()
     }
 
@@ -568,13 +663,6 @@ class MatrixClientImpl internal constructor(
             runOnce = runOnce
         )
     }
-
-    private val baseFilters =
-        Filters(
-            room = Filters.RoomFilter(
-                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
-            )
-        )
 
     override suspend fun stopSync(wait: Boolean) {
         api.sync.stop(wait)

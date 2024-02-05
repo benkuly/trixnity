@@ -114,22 +114,24 @@ class KeyStore(
         override val key: CoroutineContext.Key<*> = this
     }
 
-    private suspend fun waitForUpdateOutdatedKey(user: UserId) {
-        log.debug { "wait for outdated keys of $user" }
-        getOutdatedKeysFlow().first { !it.contains(user) }
-        log.trace { "finished wait for outdated keys of $user" }
+    private suspend fun waitForUpdateOutdatedKey(userId: UserId, keysAreNull: suspend () -> Boolean) {
+        if (currentCoroutineContext()[SkipOutdatedKeys] == null) {
+            if (keysAreNull()) {
+                log.trace { "add $userId to outdated keys, because key not found" }
+                updateOutdatedKeys { it + userId }
+            }
+            log.debug { "wait for outdated keys of $userId" }
+            getOutdatedKeysFlow().first { !it.contains(userId) }
+            log.trace { "finished wait for outdated keys of $userId" }
+        }
     }
 
     fun getDeviceKeys(
         userId: UserId,
     ): Flow<Map<String, StoredDeviceKeys>?> =
         flow {
-            if (currentCoroutineContext()[SkipOutdatedKeys] == null) {
-                val keys = deviceKeysCache.read(userId).first()
-                if (keys == null) {
-                    updateOutdatedKeys { it + userId }
-                }
-                waitForUpdateOutdatedKey(userId)
+            waitForUpdateOutdatedKey(userId) {
+                deviceKeysCache.read(userId).first() == null
             }
             emitAll(deviceKeysCache.read(userId))
         }
@@ -150,12 +152,8 @@ class KeyStore(
         userId: UserId,
     ): Flow<Set<StoredCrossSigningKeys>?> =
         flow {
-            if (currentCoroutineContext()[SkipOutdatedKeys] == null) {
-                val keys = crossSigningKeysCache.read(userId).first()
-                if (keys == null) {
-                    updateOutdatedKeys { it + userId }
-                }
-                waitForUpdateOutdatedKey(userId)
+            waitForUpdateOutdatedKey(userId) {
+                crossSigningKeysCache.read(userId).first() == null
             }
             emitAll(crossSigningKeysCache.read(userId))
         }

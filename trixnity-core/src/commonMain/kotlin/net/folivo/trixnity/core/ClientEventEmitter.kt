@@ -21,11 +21,11 @@ interface ClientEventEmitter<T : List<ClientEvent<*>>> {
     object Priority {
         const val FIRST = Int.MAX_VALUE
 
-        const val ONE_TIME_KEYS = 24_000
-        const val ROOM_LIST = ONE_TIME_KEYS - 1_000
+        const val ROOM_LIST = 24_000
         const val STORE_EVENTS = ROOM_LIST
         const val DEVICE_LISTS = STORE_EVENTS - 1_000
         const val TO_DEVICE_EVENTS = DEVICE_LISTS - 1_000
+        const val ONE_TIME_KEYS = TO_DEVICE_EVENTS - 1_000
         const val STORE_TIMELINE_EVENTS = TO_DEVICE_EVENTS - 1_000
 
 

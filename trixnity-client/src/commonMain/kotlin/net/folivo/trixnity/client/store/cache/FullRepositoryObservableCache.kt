@@ -46,7 +46,7 @@ internal class FullRepositoryObservableCache<K, V>(
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
-    values: ConcurrentMap<K, ObservableCacheValue<V?>> = ConcurrentMap(),
+    values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>> = ConcurrentObservableMap(),
     private val valueToKeyMapper: (V) -> K,
 ) : ObservableCache<K, V, FullRepositoryObservableCacheStore<K, V>>(
     name = repository::class.simpleName ?: repository::class.toString(),

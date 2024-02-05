@@ -38,6 +38,7 @@ kotlin {
                 implementation(libs.testcontainers.junitJupiter)
                 implementation(libs.h2)
                 implementation(libs.postgresql)
+                implementation(libs.hikari)
                 implementation(libs.logback.classic)
             }
         }

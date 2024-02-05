@@ -32,6 +32,7 @@ class FallbackKeyIT {
 
     private lateinit var startedClient1: StartedClient
     private lateinit var startedClient2: StartedClient
+    private lateinit var startedClient3: StartedClient
 
     @Container
     val synapseDocker = synapseDocker()
@@ -46,6 +47,7 @@ class FallbackKeyIT {
         startedClient1 =
             registerAndStartClient("client1", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
         startedClient2 = startClient("client2", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
+        startedClient3 = startClient("client3", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
     }
 
     @AfterTest
@@ -53,6 +55,7 @@ class FallbackKeyIT {
         runBlocking {
             startedClient1.client.stop()
             startedClient2.client.stop()
+            startedClient3.client.stop()
         }
     }
 
@@ -71,10 +74,15 @@ class FallbackKeyIT {
             val oneTimeKeys = startedClient2.claimAllOneTimeKeysFrom(startedClient1)
 
             withClue("send encrypted message") {
-                startedClient2.client.room.sendMessage(roomId) { text("dino") }
+                startedClient2.client.room.sendMessage(roomId) { text("dino") } // uses fallback key
                 delay(500.milliseconds)
                 startedClient2.client.room.waitForOutboxSent()
                 startedClient2.client.cancelSync(true)
+
+                startedClient3.client.room.sendMessage(roomId) { text("dino") } // uses fallback key
+                delay(500.milliseconds)
+                startedClient3.client.room.waitForOutboxSent()
+                startedClient3.client.cancelSync(true)
             }
 
             startedClient1.client.startSync()
@@ -84,7 +92,7 @@ class FallbackKeyIT {
             withTimeoutOrNull(1.seconds) {
                 message.first { it.content != null }
             } ?: fail { "could not decrypt event (maybe there was no fallback key)" }
-            startedClient1.client.cancelSync(true)
+            startedClient1.client.stopSync(true)
 
             withClue("ensure, that new one time and fallback keys are generated") {
                 startedClient2.claimAllOneTimeKeysFrom(startedClient1) shouldNotContainAnyOf oneTimeKeys

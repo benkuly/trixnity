@@ -94,8 +94,8 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var sendDecryptedOlmEvent: DecryptedOlmEvent<RoomKeyEventContent>
     lateinit var receiveDecryptedOlmEvent: DecryptedOlmEvent<RoomKeyEventContent>
 
-    val relatesTo = RelatesTo.Replace(EventId("$1fancyEvent"), RoomMessageEventContent.TextMessageEventContent("Hi"))
-    val decryptedMegolmEventContent = RoomMessageEventContent.TextMessageEventContent("*Hi", relatesTo = relatesTo)
+    val relatesTo = RelatesTo.Replace(EventId("$1fancyEvent"), RoomMessageEventContent.TextBased.Text("Hi"))
+    val decryptedMegolmEventContent = RoomMessageEventContent.TextBased.Text("*Hi", relatesTo = relatesTo)
     val room = RoomId("room", "server")
     val decryptedMegolmEvent = DecryptedMegolmEvent(decryptedMegolmEventContent, room)
 

@@ -21,6 +21,7 @@ sealed interface ServerDefaultPushRules {
             Tombstone,
             Reaction,
             ServerAcl,
+            SuppressEdits,
             Call,
             EncryptedRoomOneToOne,
             RoomOneToOne,
@@ -192,6 +193,21 @@ sealed interface ServerDefaultPushRules {
                 PushCondition.EventMatch(
                     key = "state_key",
                     pattern = "",
+                ),
+            ),
+            actions = setOf(),
+        )
+    }
+
+    data object SuppressEdits : ServerDefaultPushRules {
+        override val rule: PushRule = PushRule.Override(
+            ruleId = ".m.rule.suppress_edits",
+            default = true,
+            enabled = true,
+            conditions = setOf(
+                PushCondition.EventPropertyIs(
+                    key = "content.m\\.relates_to.rel_type",
+                    value = JsonPrimitive("m.replace"),
                 ),
             ),
             actions = setOf(),

@@ -35,7 +35,8 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
@@ -148,7 +149,7 @@ class SyncRoutesTest : TestsWithMocks() {
                                             roomId = RoomId("!726s6s6q:example.com")
                                         ),
                                         ClientEvent.RoomEvent.MessageEvent(
-                                            content = TextMessageEventContent(
+                                            content = RoomMessageEventContent.TextBased.Text(
                                                 body = "This is an example text message",
                                                 format = "org.matrix.custom.html",
                                                 formattedBody = "<b>This is an example text message</b>"

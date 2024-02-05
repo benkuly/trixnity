@@ -18,7 +18,7 @@ kotlin {
                 api(project(":trixnity-api-server"))
                 api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
 
-                implementation(libs.ktor.server.auth)
+                api(libs.ktor.server.auth)
                 implementation(libs.ktor.server.cors)
 
                 implementation(libs.oshai.logging)

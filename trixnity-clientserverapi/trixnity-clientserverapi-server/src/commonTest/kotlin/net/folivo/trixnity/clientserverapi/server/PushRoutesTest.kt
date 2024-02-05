@@ -161,7 +161,7 @@ class PushRoutesTest : TestsWithMocks() {
                         GetNotifications.Response.Notification(
                             actions = setOf(PushAction.Notify, PushAction.SetSoundTweak("default")),
                             event = MessageEvent(
-                                content = RoomMessageEventContent.TextMessageEventContent("body"),
+                                content = RoomMessageEventContent.TextBased.Text("body"),
                                 id = EventId("\$143273582443PhrSn:example.org"),
                                 originTimestamp = 1432735824653,
                                 roomId = RoomId("!jEsUZKDJdhlrceRyVU:example.org"),

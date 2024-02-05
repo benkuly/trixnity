@@ -20,7 +20,6 @@ import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
@@ -213,7 +212,7 @@ class NotificationServiceImpl(
 
             is PushCondition.EventMatch -> {
                 val propertyValue =
-                    getEventProperty(eventJson, pushCondition.key)?.jsonPrimitiveOrNull?.contentOrNull
+                    (getEventProperty(eventJson, pushCondition.key) as? JsonPrimitive)?.contentOrNull
                 if (propertyValue == null) {
                     log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
                     false
@@ -223,7 +222,7 @@ class NotificationServiceImpl(
             }
 
             is PushCondition.EventPropertyIs -> {
-                val propertyValue = getEventProperty(eventJson, pushCondition.key)?.jsonPrimitiveOrNull
+                val propertyValue = getEventProperty(eventJson, pushCondition.key) as? JsonPrimitive
                 if (propertyValue == null) {
                     log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
                     false
@@ -233,7 +232,7 @@ class NotificationServiceImpl(
             }
 
             is PushCondition.EventPropertyContains -> {
-                val propertyValue = getEventProperty(eventJson, pushCondition.key)?.jsonArrayOrNull
+                val propertyValue = getEventProperty(eventJson, pushCondition.key) as? JsonArray
                 if (propertyValue == null) {
                     log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
                     false
@@ -248,40 +247,30 @@ class NotificationServiceImpl(
 
     private fun bodyContainsPattern(event: ClientEvent<*>, pattern: String): Boolean {
         val content = event.content
-        return if (content is TextMessageEventContent) {
+        return if (content is RoomMessageEventContent.TextBased.Text) {
             pattern.matrixGlobToRegExp().containsMatchIn(content.body)
         } else false
     }
 
-    private fun getEventProperty(
+    private val dotRegex = "(?<!\\\\)(?:\\\\\\\\)*[.]".toRegex()
+    private val removeEscapes = "\\\\(.)".toRegex()
+    internal fun getEventProperty(
         initialEventJson: Lazy<JsonObject?>,
         key: String
     ): JsonElement? {
         return try {
-            var eventJson: JsonElement? = initialEventJson.value
-            key.split('.').forEach { segment ->
-                eventJson = eventJson?.jsonObject?.get(segment)
-            }
-            eventJson
+            var targetProperty: JsonElement? = initialEventJson.value
+            key.split(dotRegex)
+                .map { it.replace(removeEscapes, "$1") }
+                .forEach { segment ->
+                    targetProperty = (targetProperty as? JsonObject)?.get(segment)
+                }
+            targetProperty
         } catch (exc: Exception) {
             log.warn(exc) { "could not find event property for key $key in event ${initialEventJson.value}" }
             null
         }
     }
-
-    private val JsonElement?.jsonPrimitiveOrNull: JsonPrimitive?
-        get() = try {
-            this?.jsonPrimitive
-        } catch (_: Exception) {
-            null
-        }
-
-    private val JsonElement?.jsonArrayOrNull: JsonArray?
-        get() = try {
-            this?.jsonArray
-        } catch (_: Exception) {
-            null
-        }
 
     private fun String.checkIsCount(size: Long): Boolean {
         this.toLongOrNull()?.let { count ->

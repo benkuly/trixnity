@@ -6,6 +6,8 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.notification.NotificationService.Notification
@@ -328,7 +330,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("new timeline events") {
             val timelineEvent = messageEventWithContent(
-                roomId, RoomMessageEventContent.TextMessageEventContent(
+                roomId, RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )
             )
@@ -348,7 +350,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("have correct order") {
                 val timelineEvents = (0..99).map {
                     messageEventWithContent(
-                        roomId, RoomMessageEventContent.TextMessageEventContent(
+                        roomId, RoomMessageEventContent.TextBased.Text(
                             body = "Hello User1 🦊! ($it)"
                         )
                     )
@@ -361,7 +363,7 @@ private val body: ShouldSpec.() -> Unit = {
             should("not notify on own messages") {
                 val timelineEvents = (0..9).map {
                     messageEventWithContent(
-                        roomId, RoomMessageEventContent.TextMessageEventContent(
+                        roomId, RoomMessageEventContent.TextBased.Text(
                             body = "Hello User1 🦊! ($it)"
                         ),
                         sender = if (it == 0 || it == 9) user1 else otherUser
@@ -378,7 +380,7 @@ private val body: ShouldSpec.() -> Unit = {
             val timelineEvent = messageEventWithContent(
                 roomId, MegolmEncryptedMessageEventContent(
                     "", Key.Curve25519Key(null, ""), "", ""
-                ), RoomMessageEventContent.TextMessageEventContent(
+                ), RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )
             )
@@ -402,7 +404,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("push rules") {
             val timelineEvent = messageEventWithContent(
-                roomId, RoomMessageEventContent.TextMessageEventContent(
+                roomId, RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )
             )
@@ -582,7 +584,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("push actions") {
             val timelineEvent = messageEventWithContent(
-                roomId, RoomMessageEventContent.TextMessageEventContent(
+                roomId, RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )
             )
@@ -600,6 +602,20 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 checkNoNotification()
             }
+        }
+    }
+    context(NotificationServiceImpl::getEventProperty.name) {
+        should("get property from path") {
+            val input = lazy { JsonObject(mapOf("a" to JsonObject(mapOf("b" to JsonPrimitive("value"))))) }
+            cut.getEventProperty(input, "a.b") shouldBe JsonPrimitive("value")
+        }
+        should("return null when property not found") {
+            val input = lazy { JsonObject(mapOf("a" to JsonObject(mapOf("b.c" to JsonPrimitive("value"))))) }
+            cut.getEventProperty(input, "a.b.c") shouldBe null
+        }
+        should("escape path") {
+            val input = lazy { JsonObject(mapOf("a" to JsonObject(mapOf("b.c" to JsonPrimitive("value"))))) }
+            cut.getEventProperty(input, "a.b\\.c") shouldBe JsonPrimitive("value")
         }
     }
 }

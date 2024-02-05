@@ -35,21 +35,22 @@ class ActiveVerificationTest : ShouldSpec({
     lateinit var sendVerificationStepFlow: MutableSharedFlow<VerificationStep>
     lateinit var keyStore: KeyStore
 
-    class TestActiveVerification(request: VerificationRequestEventContent, keyStore: KeyStore) : ActiveVerificationImpl(
-        request = request,
-        requestIsFromOurOwn = request.fromDevice == aliceDevice,
-        ownUserId = alice,
-        ownDeviceId = aliceDevice,
-        theirUserId = bob,
-        theirInitialDeviceId = null,
-        timestamp = 1234,
-        setOf(Sas),
-        null,
-        "t",
-        keyStore,
-        KeyTrustServiceMock(),
-        createMatrixEventJson(),
-    ) {
+    class TestActiveVerification(request: VerificationRequestToDeviceEventContent, keyStore: KeyStore) :
+        ActiveVerificationImpl(
+            request = request,
+            requestIsFromOurOwn = request.fromDevice == aliceDevice,
+            ownUserId = alice,
+            ownDeviceId = aliceDevice,
+            theirUserId = bob,
+            theirInitialDeviceId = null,
+            timestamp = 1234,
+            setOf(Sas),
+            null,
+            "t",
+            keyStore,
+            KeyTrustServiceMock(),
+            createMatrixEventJson(),
+        ) {
         override suspend fun lifecycle() {
             lifecycleCalled.value++
         }
@@ -72,7 +73,8 @@ class ActiveVerificationTest : ShouldSpec({
         keyStore = getInMemoryKeyStore(CoroutineScope(EmptyCoroutineContext))
         lifecycleCalled.value = 0
         sendVerificationStepFlow = MutableSharedFlow(replay = 10)
-        cut = TestActiveVerification(VerificationRequestEventContent(bobDevice, setOf(Sas), 1234, "t"), keyStore)
+        cut =
+            TestActiveVerification(VerificationRequestToDeviceEventContent(bobDevice, setOf(Sas), 1234, "t"), keyStore)
     }
 
     context(ActiveVerificationImpl::startLifecycle.name) {
@@ -155,7 +157,7 @@ class ActiveVerificationTest : ShouldSpec({
             )
             should("handle ${VerificationReadyEventContent::class.simpleName} when ${OwnRequest::class.simpleName}") {
                 cut = TestActiveVerification(
-                    VerificationRequestEventContent(aliceDevice, setOf(Sas), 1234, "t"),
+                    VerificationRequestToDeviceEventContent(aliceDevice, setOf(Sas), 1234, "t"),
                     keyStore
                 )
                 cut.state.value.shouldBeInstanceOf<OwnRequest>()

@@ -11,7 +11,6 @@ import net.folivo.trixnity.client.getInMemoryAccountStore
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.getInMemoryOlmStore
 import net.folivo.trixnity.client.getInMemoryRoomStateStore
-import net.folivo.trixnity.client.mocks.UserServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredDeviceKeys
@@ -36,11 +35,11 @@ private val body: ShouldSpec.() -> Unit = {
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
         cut = ClientOlmStore(
-            getInMemoryAccountStore(scope).apply { updateAccount { it.copy(olmPickleKey = "") } },
-            getInMemoryOlmStore(scope),
-            keyStore,
-            getInMemoryRoomStateStore(scope),
-            UserServiceMock(),
+            accountStore = getInMemoryAccountStore(scope).apply { updateAccount { it.copy(olmPickleKey = "") } },
+            olmCryptoStore = getInMemoryOlmStore(scope),
+            keyStore = keyStore,
+            roomStateStore = getInMemoryRoomStateStore(scope),
+            loadMembersService = { _, _ -> },
         )
     }
 

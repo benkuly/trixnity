@@ -12,7 +12,7 @@ data class ParentEventContent(
     @SerialName("canonical")
     val canonical: Boolean = false,
     @SerialName("via")
-    val via: Set<String>? = null,
+    val via: Set<String>,
     @SerialName("external_url")
     override val externalUrl: String? = null
 ) : StateEventContent

@@ -28,9 +28,6 @@ class InMemoryMediaStore : MediaStore {
         }
     }
 
-    override suspend fun init() {
-    }
-
     override suspend fun clearCache() {
         media.value = mapOf()
     }

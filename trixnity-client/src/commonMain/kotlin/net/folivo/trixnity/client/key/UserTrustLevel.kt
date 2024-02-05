@@ -15,7 +15,7 @@ sealed interface UserTrustLevel {
     /**
      * The users master key or a key, that signed this key is blocked.
      */
-    object Blocked : UserTrustLevel
+    data object Blocked : UserTrustLevel
 
     /**
      * The trust level could not be calculated.
@@ -25,5 +25,5 @@ sealed interface UserTrustLevel {
     /**
      * There are no stored cross signing keys of this user yet.
      */
-    object Unknown : UserTrustLevel
+    data object Unknown : UserTrustLevel
 }

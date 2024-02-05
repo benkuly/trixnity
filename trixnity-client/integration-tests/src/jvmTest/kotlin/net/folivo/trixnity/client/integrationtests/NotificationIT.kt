@@ -20,7 +20,8 @@ import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -85,7 +86,7 @@ class NotificationIT {
             startedClient1.client.room.sendMessage(room) { text("Hello ${startedClient2.client.userId.full}!") }
             withClue("second notification") {
                 notifications.first { it.size == 3 }.getOrNull(2).shouldNotBeNull()
-                    .event.content.shouldBeInstanceOf<TextMessageEventContent>()
+                    .event.content.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
                     .body shouldStartWith "Hello"
             }
         }

@@ -2,32 +2,24 @@ package net.folivo.trixnity.client.store.cache
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.store.cache.ObservableCacheValue.CacheValue
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 private val log = KotlinLogging.logger { }
 
-internal data class ObservableCacheValue<T>(
-    val value: MutableStateFlow<CacheValue<T>> = MutableStateFlow(CacheValue.Init()),
-    val resetExpireDuration: MutableSharedFlow<Unit> = MutableSharedFlow(replay = 1, onBufferOverflow = DROP_OLDEST),
-) {
-    sealed interface CacheValue<T> {
+internal sealed interface CacheValue<T> {
+    class Init<T> : CacheValue<T>
 
-        class Init<T> : CacheValue<T>
+    @JvmInline
+    value class Value<T>(val value: T) : CacheValue<T>
 
-        @JvmInline
-        value class Value<T>(val value: T) : CacheValue<T>
-
-        fun valueOrNull() = when (this) {
-            is Init -> null
-            is Value -> value
-        }
+    fun valueOrNull() = when (this) {
+        is Init -> null
+        is Value -> value
     }
 }
 
@@ -92,7 +84,7 @@ internal open class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
     removeFromCacheOnNull: Boolean = false,
-    values: ConcurrentMap<K, ObservableCacheValue<V?>> = ConcurrentMap(),
+    values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>> = ConcurrentObservableMap(),
 ) : ObservableCacheBase<K, V>(
     name = name,
     cacheScope = cacheScope,
@@ -151,7 +143,7 @@ internal open class ObservableCacheBase<K, V>(
     protected val cacheScope: CoroutineScope,
     protected val expireDuration: Duration = 1.minutes,
     protected val removeFromCacheOnNull: Boolean = false,
-    private val values: ConcurrentMap<K, ObservableCacheValue<V?>> = ConcurrentMap(),
+    private val values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>> = ConcurrentObservableMap(),
 ) {
     init {
         addIndex(RemoverJobExecutingIndex(name, values, cacheScope, expireDuration))
@@ -171,13 +163,12 @@ internal open class ObservableCacheBase<K, V>(
         get: (suspend () -> V?)? = null,
         persist: (suspend (newValue: V?) -> Unit)? = null,
     ): Flow<V?> {
-        val cacheEntry = values.update(key) {
-            it ?: ObservableCacheValue<V?>()
+        val cacheEntry = values.getOrPut(key) {
+            MutableStateFlow<CacheValue<V?>>(CacheValue.Init())
                 .also { log.trace { "$name: no cache hit for key $key" } }
         }
-        checkNotNull(cacheEntry)
-        cacheEntry.resetExpireDuration.emit(Unit)
-        val newValue = cacheEntry.value.updateAndGet {
+        cacheEntry.first() // resets expire duration by increasing subscription count for a moment
+        val newValue = cacheEntry.updateAndGet {
             val oldValue = when (it) {
                 is CacheValue.Init -> get?.invoke()
                 is CacheValue.Value -> it.value
@@ -190,13 +181,13 @@ internal open class ObservableCacheBase<K, V>(
             log.trace { "$name: remove value from cache with key $key because it is stale and is allowed to remove (will never be not-null again)" }
             values.remove(key, true)
         }
-        return cacheEntry.value.filterIsInstance<CacheValue.Value<V?>>().map { it.value }
+        return cacheEntry.filterIsInstance<CacheValue.Value<V?>>().map { it.value }
     }
 }
 
 private class RemoverJobExecutingIndex<K, V>(
     private val name: String,
-    private val values: ConcurrentMap<K, ObservableCacheValue<V?>>,
+    private val values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>>,
     private val cacheScope: CoroutineScope,
     private val expireDuration: Duration = 1.minutes,
 ) : ObservableMapIndex<K> {
@@ -207,14 +198,13 @@ private class RemoverJobExecutingIndex<K, V>(
             cacheScope.launch {
                 log.trace { "$name: launch remover job for key $key" }
                 combine(
-                    value.resetExpireDuration,
-                    value.value.subscriptionCount,
+                    value.subscriptionCount,
                     values.getIndexSubscriptionCount(key),
-                ) { _, subscriptionCount, indexSubscriptionCount ->
+                ) { subscriptionCount, indexSubscriptionCount ->
                     subscriptionCount to indexSubscriptionCount
                 }.collectLatest { (subscriptionCount, indexSubscriptionCount) ->
                     delay(expireDuration)
-                    val stale = value.value.value.valueOrNull() == null
+                    val stale = value.value.valueOrNull() == null
                     log.trace { "$name: remover job check for key $key (subscriptionCount=$subscriptionCount, indexSubscriptionCount=$indexSubscriptionCount, stale=$stale)" }
                     // indexSubscriptionCount currently means, that a collection of entries is subscribed.
                     // Therefore, it's okay to remove cache entries. The index would just update its list.

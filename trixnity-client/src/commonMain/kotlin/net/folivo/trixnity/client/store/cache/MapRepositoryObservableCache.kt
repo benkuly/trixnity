@@ -24,11 +24,11 @@ private class MapRepositoryObservableIndex<K1, K2>(
         val subscribers: MutableStateFlow<Int> = MutableStateFlow(0),
     )
 
-    private val values = ConcurrentMap<K1, MapRepositoryObservableMapIndexValue<K2>>()
+    private val values = ConcurrentObservableMap<K1, MapRepositoryObservableMapIndexValue<K2>>()
 
     override suspend fun onPut(key: MapRepositoryCoroutinesCacheKey<K1, K2>) {
-        values.update(key.firstKey) { it ?: MapRepositoryObservableMapIndexValue() }
-            ?.keys?.add(key.secondKey)
+        values.getOrPut(key.firstKey) { MapRepositoryObservableMapIndexValue() }
+            .keys.add(key.secondKey)
     }
 
     override suspend fun onRemove(key: MapRepositoryCoroutinesCacheKey<K1, K2>, stale: Boolean) {
@@ -50,10 +50,7 @@ private class MapRepositoryObservableIndex<K1, K2>(
 
     override suspend fun getSubscriptionCount(key: MapRepositoryCoroutinesCacheKey<K1, K2>): Flow<Int> =
         flow {
-            val value = values.update(key.firstKey) {
-                it ?: MapRepositoryObservableMapIndexValue()
-            }
-            checkNotNull(value)
+            val value = values.getOrPut(key.firstKey) { MapRepositoryObservableMapIndexValue() }
             emitAll(value.subscribers)
         }
 
@@ -79,7 +76,7 @@ internal open class MapRepositoryObservableCache<K1, K2, V>(
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
     expireDuration: Duration = 1.minutes,
-    values: ConcurrentMap<MapRepositoryCoroutinesCacheKey<K1, K2>, ObservableCacheValue<V?>> = ConcurrentMap(),
+    values: ConcurrentObservableMap<MapRepositoryCoroutinesCacheKey<K1, K2>, MutableStateFlow<CacheValue<V?>>> = ConcurrentObservableMap(),
 ) : ObservableCache<MapRepositoryCoroutinesCacheKey<K1, K2>, V, MapRepositoryObservableCacheStore<K1, K2, V>>(
     name = repository::class.simpleName ?: repository::class.toString(),
     store = MapRepositoryObservableCacheStore(repository, tm),

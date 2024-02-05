@@ -15,11 +15,11 @@ class OlmEncryptionServiceMock : OlmEncryptionService {
     var encryptOlmCalled: Triple<EventContent, UserId, String>? = null
     override suspend fun encryptOlm(
         content: EventContent,
-        receiverId: UserId,
+        userId: UserId,
         deviceId: String,
         forceNewSession: Boolean
     ): Result<OlmEncryptedToDeviceEventContent> {
-        encryptOlmCalled = Triple(content, receiverId, deviceId)
+        encryptOlmCalled = Triple(content, userId, deviceId)
         return returnEncryptOlm ?: Result.failure(NotImplementedError())
     }
 

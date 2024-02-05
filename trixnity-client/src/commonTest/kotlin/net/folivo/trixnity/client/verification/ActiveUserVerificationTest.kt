@@ -31,8 +31,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.time.Duration.Companion.minutes
@@ -53,7 +53,7 @@ class ActiveUserVerificationTest : ShouldSpec({
     lateinit var keyStore: KeyStore
     lateinit var scope: CoroutineScope
 
-    lateinit var cut: ActiveUserVerification
+    lateinit var cut: ActiveUserVerificationImpl
 
     beforeTest {
         roomServiceMock = RoomServiceMock()
@@ -65,8 +65,8 @@ class ActiveUserVerificationTest : ShouldSpec({
     }
 
     fun createCut(timestamp: Instant = Clock.System.now()) {
-        cut = ActiveUserVerification(
-            request = VerificationRequestMessageEventContent(aliceDevice, bob, setOf(Sas)),
+        cut = ActiveUserVerificationImpl(
+            request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
             requestIsFromOurOwn = true,
             requestEventId = event,
             requestTimestamp = timestamp.toEpochMilliseconds(),
@@ -85,7 +85,7 @@ class ActiveUserVerificationTest : ShouldSpec({
 
     val requestTimelineEvent = TimelineEvent(
         event = MessageEvent(
-            VerificationRequestMessageEventContent("from", alice, setOf()),
+            VerificationRequest("from", alice, setOf()),
             EventId("e"),
             bob,
             roomId,
@@ -103,7 +103,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             MutableStateFlow( // ignore event, that is no VerificationStep
                 TimelineEvent(
                     event = MessageEvent(
-                        TextMessageEventContent("hi"),
+                        RoomMessageEventContent.TextBased.Text("hi"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     previousEventId = null, nextEventId = null, gap = null
@@ -171,7 +171,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                         MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
-                    content = Result.success(TextMessageEventContent("hi")),
+                    content = Result.success(RoomMessageEventContent.TextBased.Text("hi")),
                     previousEventId = null, nextEventId = null, gap = null
                 )
             ),
@@ -264,8 +264,8 @@ class ActiveUserVerificationTest : ShouldSpec({
                 )
             )
         )
-        cut = ActiveUserVerification(
-            request = VerificationRequestMessageEventContent(aliceDevice, bob, setOf(Sas)),
+        cut = ActiveUserVerificationImpl(
+            request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
             requestIsFromOurOwn = false,
             requestEventId = event,
             requestTimestamp = Clock.System.now().toEpochMilliseconds(),
@@ -301,8 +301,8 @@ class ActiveUserVerificationTest : ShouldSpec({
                 )
             )
         )
-        cut = ActiveUserVerification(
-            request = VerificationRequestMessageEventContent(aliceDevice, bob, setOf(Sas)),
+        cut = ActiveUserVerificationImpl(
+            request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
             requestIsFromOurOwn = false,
             requestEventId = event,
             requestTimestamp = Clock.System.now().toEpochMilliseconds(),

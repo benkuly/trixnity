@@ -282,7 +282,7 @@ class ObservableCacheTest : ShouldSpec({
         }
         context("removeFromCacheOnNull enabled") {
             should("remove from cache when value is null") {
-                val values = ConcurrentMap<String, ObservableCacheValue<String?>>()
+                val values = ConcurrentObservableMap<String, MutableStateFlow<CacheValue<String?>>>()
                 cut = ObservableCache("", cacheStore, cacheScope, removeFromCacheOnNull = true, values = values)
                 cacheStore.persist("key", "a new value")
                 cut.read(key = "key").first() shouldBe "a new value"

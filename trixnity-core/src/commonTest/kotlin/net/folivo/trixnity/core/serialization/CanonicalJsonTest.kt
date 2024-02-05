@@ -131,4 +131,17 @@ class CanonicalJsonTest {
         val expected = """{"a":null}"""
         assertEquals(expected, output)
     }
+
+    @Test
+    fun test9() {
+        val input = JsonObject(
+            mapOf(
+                "a" to JsonPrimitive(-0),
+//                "b" to JsonPrimitive(1e10) // not relevant for us, because 1e10 in Kotlin is Double, but only Int is allowed
+            )
+        )
+        val output = canonicalJsonString(input)
+        val expected = """{"a":0}"""//"""{"a":0,"b":10000000000}"""
+        assertEquals(expected, output)
+    }
 }

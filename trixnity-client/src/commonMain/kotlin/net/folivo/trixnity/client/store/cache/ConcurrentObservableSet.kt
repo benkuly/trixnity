@@ -4,14 +4,12 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import net.folivo.trixnity.utils.concurrentOf
 
 class ConcurrentObservableSet<T>(
     initialValue: Set<T> = setOf(),
 ) {
-    private val valuesMutex = Mutex()
-    private val _values = initialValue.toMutableSet()
+    private val _values = concurrentOf<Set<T>, MutableSet<T>> { initialValue.toMutableSet() }
 
     private val changeSignal = MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
@@ -21,22 +19,19 @@ class ConcurrentObservableSet<T>(
 
     val values = changeSignal
         .conflate()
-        .map { valuesMutex.withLock { _values.toSet() } }
+        .map { _values.read { toSet() } }
 
-    suspend fun add(element: T): Boolean = valuesMutex.withLock {
-        _values.add(element)
-            .also { if (it) changeSignal.emit(Unit) }
-    }
+    suspend fun add(element: T): Boolean = _values.write {
+        add(element)
+    }.also { if (it) changeSignal.emit(Unit) }
 
-    suspend fun remove(element: T): Boolean = valuesMutex.withLock {
-        _values.remove(element)
-            .also { if (it) changeSignal.emit(Unit) }
-    }
+    suspend fun remove(element: T): Boolean = _values.write {
+        remove(element)
+    }.also { if (it) changeSignal.emit(Unit) }
 
-    suspend fun removeAll() = valuesMutex.withLock {
-        _values.clear()
-        changeSignal.emit(Unit)
-    }
+    suspend fun removeAll() = _values.write {
+        clear()
+    }.also { changeSignal.emit(Unit) }
 
-    suspend fun size(): Int = valuesMutex.withLock { _values.size }
+    suspend fun size(): Int = _values.read { size }
 }

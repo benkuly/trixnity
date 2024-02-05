@@ -13,9 +13,10 @@ fun createUserModule() = module {
         bind<LazyMemberEventHandler>()
         named<UserMemberEventHandler>()
     }
-    singleOf(::PresenceEventHandler) {
+    singleOf(::PresenceEventHandlerImpl) {
+        bind<PresenceEventHandler>()
         bind<EventHandler>()
-        named<PresenceEventHandler>()
+        named<PresenceEventHandlerImpl>()
     }
     singleOf(::ReceiptEventHandler) {
         bind<EventHandler>()
@@ -25,21 +26,25 @@ fun createUserModule() = module {
         bind<EventHandler>()
         named<GlobalAccountDataEventHandler>()
     }
+    single<LoadMembersService> {
+        LoadMembersServiceImpl(
+            roomStore = get(),
+            lazyMemberEventHandlers = getAll(),
+            currentSyncState = get(),
+            api = get(),
+            scope = get(),
+        )
+    }
     single<UserService> {
         UserServiceImpl(
             roomUserStore = get(),
-            roomStore = get(),
             roomStateStore = get(),
             roomTimelineStore = get(),
             globalAccountDataStore = get(),
-            api = get(),
-            presenceEventHandler = get(named<PresenceEventHandler>()),
-            lazyMemberEventHandlers = getAll(),
-            currentSyncState = get(),
+            loadMembersService = get(),
+            presenceEventHandler = get(named<PresenceEventHandlerImpl>()),
             userInfo = get(),
             mappings = get(),
-            tm = get(),
-            scope = get(),
         )
     }
 }

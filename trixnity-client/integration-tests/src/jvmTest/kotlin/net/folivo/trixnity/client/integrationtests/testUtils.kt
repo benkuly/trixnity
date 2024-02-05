@@ -23,7 +23,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 
 const val synapseVersion =
-    "v1.97.0" // TODO you should update this from time to time. https://github.com/matrix-org/synapse/releases
+    "v1.98.0" // TODO you should update this from time to time. https://github.com/element-hq/synapse
 
 fun synapseDocker() =
     GenericContainer<Nothing>(DockerImageName.parse("docker.io/matrixdotorg/synapse:$synapseVersion"))
@@ -61,7 +61,7 @@ suspend fun MatrixClientServerApiClient.register(
     val (userId, createdDeviceId, accessToken) = registerResult.value
     requireNotNull(createdDeviceId)
     requireNotNull(accessToken)
-    return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken, "displayName", null))
+    return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken))
 }
 
 fun newDatabase() = Database.connect("jdbc:h2:mem:${uuid4()};DB_CLOSE_DELAY=-1;")

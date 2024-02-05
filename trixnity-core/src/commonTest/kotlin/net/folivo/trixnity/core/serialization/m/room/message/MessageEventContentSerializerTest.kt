@@ -1,10 +1,7 @@
 package net.folivo.trixnity.core.serialization.m.room.message
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.NoticeMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContentSerializer
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
@@ -18,7 +15,7 @@ class MessageEventContentSerializerTest {
     fun shouldSerialize() {
         val result = json.encodeToString(
             RoomMessageEventContentSerializer,
-            NoticeMessageEventContent("test")
+            RoomMessageEventContent.TextBased.Notice("test")
         )
         assertEquals("""{"body":"test","msgtype":"m.notice"}""", result)
     }
@@ -27,19 +24,19 @@ class MessageEventContentSerializerTest {
     fun shouldDeserialize() {
         val input = """{"body":"test","format":null,"formatted_body":null,"msgtype":"m.text"}"""
         val result = json.decodeFromString(RoomMessageEventContentSerializer, input)
-        assertEquals(TextMessageEventContent("test"), result)
+        assertEquals(RoomMessageEventContent.TextBased.Text("test"), result)
     }
 
     @Test
     fun shouldSerializeSubtype() {
-        val result = json.encodeToString<RoomMessageEventContent>(NoticeMessageEventContent("test"))
+        val result = json.encodeToString<RoomMessageEventContent>(RoomMessageEventContent.TextBased.Notice("test"))
         assertEquals("""{"body":"test","msgtype":"m.notice"}""", result)
     }
 
     @Test
     fun shouldDeserializeSubtype() {
         val input = """{"body":"test","format":null,"formatted_body":null,"msgtype":"m.text"}"""
-        val result = json.decodeFromString<TextMessageEventContent>(input)
-        assertEquals(TextMessageEventContent("test"), result)
+        val result = json.decodeFromString<RoomMessageEventContent.TextBased.Text>(input)
+        assertEquals(RoomMessageEventContent.TextBased.Text("test"), result)
     }
 }

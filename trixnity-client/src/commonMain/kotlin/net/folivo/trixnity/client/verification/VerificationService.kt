@@ -28,8 +28,8 @@ import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequestMessageEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
@@ -67,9 +67,9 @@ interface VerificationService {
          */
         data class PreconditionsNotMet(val reasons: Set<Reason>) : SelfVerificationMethods {
             interface Reason {
-                object SyncNotRunning : Reason
-                object DeviceKeysNotFetchedYet : Reason
-                object CrossSigningKeysNotFetchedYet : Reason
+                data object SyncNotRunning : Reason
+                data object DeviceKeysNotFetchedYet : Reason
+                data object CrossSigningKeysNotFetchedYet : Reason
             }
         }
 
@@ -112,9 +112,9 @@ class VerificationServiceImpl(
 ) : VerificationService, EventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
-    private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerification?>(null)
+    private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerificationImpl?>(null)
     override val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
-    private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerification>>(listOf())
+    private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerificationImpl>>(listOf())
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -131,7 +131,7 @@ class VerificationServiceImpl(
         }
     }
 
-    private suspend fun handleDeviceVerificationRequestEvents(event: ClientEvent<VerificationRequestEventContent>) {
+    private suspend fun handleDeviceVerificationRequestEvents(event: ClientEvent<VerificationRequestToDeviceEventContent>) {
         val content = event.content
         when (event) {
             is ToDeviceEvent -> {
@@ -139,7 +139,7 @@ class VerificationServiceImpl(
                     log.info { "got new device verification request from ${event.sender}" }
                     if (_activeDeviceVerification.value != null) {
                         log.info { "already have an active device verification -> cancelling new verification request" }
-                        ActiveDeviceVerification(
+                        ActiveDeviceVerificationImpl(
                             request = event.content,
                             requestIsOurs = false,
                             ownUserId = ownUserId,
@@ -155,7 +155,7 @@ class VerificationServiceImpl(
                         ).cancel()
                     } else {
                         _activeDeviceVerification.value =
-                            ActiveDeviceVerification(
+                            ActiveDeviceVerificationImpl(
                                 request = event.content,
                                 requestIsOurs = false,
                                 ownUserId = ownUserId,
@@ -181,12 +181,12 @@ class VerificationServiceImpl(
 
     private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: DecryptedOlmEventContainer) {
         when (val content = event.decrypted.content) {
-            is VerificationRequestEventContent -> {
+            is VerificationRequestToDeviceEventContent -> {
                 if (isVerificationRequestActive(content.timestamp)) {
                     log.info { "got new device verification request from ${event.decrypted.sender}" }
                     if (_activeDeviceVerification.value != null) {
                         log.info { "already have an active device verification -> cancelling new verification request" }
-                        ActiveDeviceVerification(
+                        ActiveDeviceVerificationImpl(
                             request = content,
                             requestIsOurs = false,
                             ownUserId = ownUserId,
@@ -202,7 +202,7 @@ class VerificationServiceImpl(
                         ).cancel("already have an active device verification")
                     } else {
                         _activeDeviceVerification.value =
-                            ActiveDeviceVerification(
+                            ActiveDeviceVerificationImpl(
                                 request = content,
                                 requestIsOurs = false,
                                 ownUserId = ownUserId,
@@ -234,12 +234,12 @@ class VerificationServiceImpl(
                 scope.launch {
                     verification.state.first { verification.state.value is Done || verification.state.value is Cancel }
                     when (verification) {
-                        is ActiveUserVerification -> {
+                        is ActiveUserVerificationImpl -> {
                             delay(20.minutes)
                             activeUserVerifications.update { it - verification }
                         }
 
-                        is ActiveDeviceVerification -> {
+                        is ActiveDeviceVerificationImpl -> {
                             _activeDeviceVerification.update { null }
                         }
                     }
@@ -252,13 +252,13 @@ class VerificationServiceImpl(
         theirDeviceIds: Set<String>
     ): Result<ActiveDeviceVerification> = kotlin.runCatching {
         log.info { "create new device verification request to $theirUserId ($theirDeviceIds)" }
-        val request = VerificationRequestEventContent(
+        val request = VerificationRequestToDeviceEventContent(
             ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), uuid4().toString()
         )
         api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
             olmEncryptionService.encryptOlm(request, theirUserId, it).getOrNull() ?: request
         })).getOrThrow()
-        ActiveDeviceVerification(
+        ActiveDeviceVerificationImpl(
             request = request,
             requestIsOurs = true,
             ownUserId = ownUserId,
@@ -282,7 +282,7 @@ class VerificationServiceImpl(
     ): Result<ActiveUserVerification> = kotlin.runCatching {
         coroutineScope {
             log.info { "create new user verification request to $theirUserId" }
-            val request = VerificationRequestMessageEventContent(ownDeviceId, theirUserId, supportedMethods)
+            val request = VerificationRequest(ownDeviceId, theirUserId, supportedMethods)
             val roomId =
                 globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.get(theirUserId)
                     ?.firstOrNull()
@@ -294,7 +294,7 @@ class VerificationServiceImpl(
                 .flatMapLatest { it[transactionId] ?: flowOf(null) }
                 .mapNotNull { it?.eventId }
                 .first()
-            ActiveUserVerification(
+            ActiveUserVerificationImpl(
                 request = request,
                 requestIsFromOurOwn = true,
                 requestEventId = eventId,
@@ -411,11 +411,11 @@ class VerificationServiceImpl(
                 else {
                     val eventContent = timelineEvent.content?.getOrNull()
                     val request =
-                        if (eventContent is VerificationRequestMessageEventContent) eventContent
+                        if (eventContent is VerificationRequest) eventContent
                         else null
                     val sender = timelineEvent.event.sender
                     if (request != null && sender != ownUserId && request.to == ownUserId) {
-                        ActiveUserVerification(
+                        ActiveUserVerificationImpl(
                             request = request,
                             requestIsFromOurOwn = false,
                             requestEventId = timelineEvent.eventId,

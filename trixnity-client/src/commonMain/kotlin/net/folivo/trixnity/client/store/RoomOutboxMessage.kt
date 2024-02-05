@@ -36,21 +36,21 @@ data class RoomOutboxMessage<T : MessageEventContent>(
          */
         @Serializable
         @SerialName("no_event_permission")
-        object NoEventPermission : SendError
+        data object NoEventPermission : SendError
 
         /**
          * The user has no permission to send this media (for example file type not allowed or quota reached).
          */
         @Serializable
         @SerialName("no_media_permission")
-        object NoMediaPermission : SendError
+        data object NoMediaPermission : SendError
 
         /**
          * The media tried to upload is too large.
          */
         @SerialName("media_too_large")
         @Serializable
-        object MediaTooLarge : SendError
+        data object MediaTooLarge : SendError
 
         /**
          * The event tried to send is invalid.

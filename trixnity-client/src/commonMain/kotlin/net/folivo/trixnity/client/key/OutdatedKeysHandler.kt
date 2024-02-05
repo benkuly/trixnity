@@ -169,7 +169,7 @@ class OutdatedKeysHandler(
 
     private suspend fun trackKeys(start: Set<UserId>, stop: Set<UserId>, reason: String) {
         if (start.isNotEmpty() || stop.isNotEmpty()) {
-            tm.writeTransaction {
+            tm.transaction {
                 log.debug { "change tracking keys because of $reason (start=$start stop=$stop)" }
                 keyStore.updateOutdatedKeys { it + start - stop }
                 stop.forEach { userId ->
@@ -225,7 +225,7 @@ class OutdatedKeysHandler(
         }
 
         userIds.chunked(25).forEach { userIdChunk ->
-            tm.writeTransaction {
+            tm.transaction {
                 userIdChunk.forEach { userId ->
                     launch {
                         keysResponse.masterKeys?.get(userId)?.let { masterKey ->

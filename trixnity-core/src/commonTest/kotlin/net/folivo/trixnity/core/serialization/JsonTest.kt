@@ -16,8 +16,8 @@ import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.UnknownRoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Unknown
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -51,11 +51,11 @@ class JsonTest {
         val result = json.decodeFromString(serializer, content)
         if (result is MessageEvent<*>) {
             val resultContent = result.content
-            if (resultContent is TextMessageEventContent)
+            if (resultContent is RoomMessageEventContent.TextBased.Text)
                 assertEquals("org.matrix.custom.html", resultContent.format)
-            else fail("resultContent should be of type ${TextMessageEventContent::class}")
+            else fail("resultContent should be of type ${RoomMessageEventContent.TextBased.Text::class}")
         } else {
-            fail("resultContent should be of type ${TextMessageEventContent::class}")
+            fail("resultContent should be of type ${RoomMessageEventContent.TextBased.Text::class}")
         }
     }
 
@@ -131,9 +131,9 @@ class JsonTest {
         val result = json.decodeFromString(serializer, content)
         if (result is MessageEvent<*>) {
             val resultContent = result.content
-            if (resultContent is UnknownRoomMessageEventContent)
+            if (resultContent is Unknown)
                 assertEquals("This is an example text message", resultContent.body)
-            else fail("resultContent should be of type ${UnknownRoomMessageEventContent::class}")
+            else fail("resultContent should be of type ${Unknown::class}")
         } else {
             fail("result should be of type ${MessageEvent::class}")
         }
@@ -346,11 +346,11 @@ class JsonTest {
     """.trimIndent()
         val result = json.decodeFromString<CustomResponse>(content)
         val resultContent = result.event.content
-        if (resultContent is UnknownRoomMessageEventContent) {
+        if (resultContent is Unknown) {
             assertEquals("This is an example text message", resultContent.body)
             assertEquals("dino", resultContent.type)
         } else {
-            fail("resultContent should be of type ${UnknownRoomMessageEventContent::class} but was ${resultContent::class}")
+            fail("resultContent should be of type ${Unknown::class} but was ${resultContent::class}")
         }
     }
 
