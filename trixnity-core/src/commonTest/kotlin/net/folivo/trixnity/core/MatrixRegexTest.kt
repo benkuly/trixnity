@@ -11,8 +11,6 @@ class MatrixRegexTest {
 
         val result = MatrixRegex.findUserMentions(message)
         result.size shouldBe 1
-        println(result)
-        println(id)
         result[id] shouldBe UserId(localpart, domain)
     }
 
