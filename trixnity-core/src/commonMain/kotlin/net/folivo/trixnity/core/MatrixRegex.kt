@@ -35,14 +35,14 @@ object MatrixRegex {
     val userUri by lazy { baseUserUriRegex.toRegex() }
     val userLink by lazy { baseUserLinkRegex.toRegex() }
     val userHtmlAnchor by lazy { baseUserHtmlAnchorRegex.toRegex() }
-}
 
-fun matchUsers(message: String): Map<String, UserId> {
-    val matches = MatrixRegex.userMention.findAll(message)
-    return matches.associate {
-        val matched = it.groupValues[0]
-        val localpart = it.groupValues[1] + it.groupValues[3] + it.groupValues[5] + it.groupValues[7]
-        val domain = it.groupValues[2] + it.groupValues[4] + it.groupValues[6] + it.groupValues[8]
-        matched to UserId(localpart, domain)
+    fun findUserMentions(message: String): Map<String, UserId> {
+        val matches = userMention.findAll(message)
+        return matches.associate {
+            val matched = it.groupValues[0]
+            val localpart = it.groupValues[1] + it.groupValues[3] + it.groupValues[5] + it.groupValues[7]
+            val domain = it.groupValues[2] + it.groupValues[4] + it.groupValues[6] + it.groupValues[8]
+            matched to UserId(localpart, domain)
+        }
     }
 }

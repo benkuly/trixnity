@@ -9,7 +9,7 @@ class MatrixRegexTest {
     fun positiveTest(id: String, localpart: String, domain: String) {
         val message = "Hello $id"
 
-        val result = matchUsers(message)
+        val result = MatrixRegex.findUserMentions(message)
         result.size shouldBe 1
         println(result)
         println(id)
@@ -19,7 +19,7 @@ class MatrixRegexTest {
     fun negativeTest(id: String) {
         val message = "Hello $id"
 
-        val result = matchUsers(message)
+        val result = MatrixRegex.findUserMentions(message)
         result.size shouldBe 0
     }
 
