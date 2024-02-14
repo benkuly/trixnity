@@ -28,14 +28,17 @@ object MatrixRegex {
     private const val baseMentionUserRegex =
         """(?:(?:$baseUserIdRegex)|(?:$baseUserUriRegex)|(?:$baseUserLinkRegex)|(?:$baseUserHtmlAnchorRegex))$"""
 
-    val userMentionRegex by lazy { baseMentionUserRegex.toRegex() }
-    val domainRegex by lazy { baseDomainRegex.toRegex() }
-    val localpartRegex by lazy { baseLocalpartRegex.toRegex() }
-    val userIdRegex by lazy { baseUserIdRegex.toRegex() }
+    val userMention by lazy { baseMentionUserRegex.toRegex() }
+    val domain by lazy { baseDomainRegex.toRegex() }
+    val localpart by lazy { baseLocalpartRegex.toRegex() }
+    val userId by lazy { baseUserIdRegex.toRegex() }
+    val userUri by lazy { baseUserUriRegex.toRegex() }
+    val userLink by lazy { baseUserLinkRegex.toRegex() }
+    val userHtmlAnchor by lazy { baseUserHtmlAnchorRegex.toRegex() }
 }
 
 fun matchUsers(message: String): Map<String, UserId> {
-    val matches = MatrixRegex.userMentionRegex.findAll(message)
+    val matches = MatrixRegex.userMention.findAll(message)
     return matches.associate {
         val matched = it.groupValues[0]
         val localpart = it.groupValues[1] + it.groupValues[3] + it.groupValues[5] + it.groupValues[7]
