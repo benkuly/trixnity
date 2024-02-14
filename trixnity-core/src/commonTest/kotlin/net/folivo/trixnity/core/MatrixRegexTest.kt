@@ -86,4 +86,31 @@ class MatrixRegexTest {
     fun notMatchInvalidDomain() {
         negativeTest("@user:ex&mple.com")
     }
+
+    @Test
+    fun notMatchInvalidPort() {
+        negativeTest("@user:example.com:123456")
+    }
+
+    @Test
+    fun notMatchInvalidIPV4WithCharacters() {
+        negativeTest("@user:1.1.1.Abc")
+    }
+
+    @Test
+    fun notMatchInvalidIPV6WithIllegalCharacters() {
+        negativeTest("@user:[2001:8a2e:0370:733G]")
+    }
+
+    @Test
+    fun notMatchIncompleteHtmlTag() {
+        negativeTest("<a href=\"https://matrix.to/#/@user:example.com")
+    }
+
+    @Test
+    fun notMatchInvalidHtmlLinkTag() {
+        negativeTest("<b href=\"https://matrix.to/#/@user:example.com>User</b>")
+    }
+
+
 }
