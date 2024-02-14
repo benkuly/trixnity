@@ -29,7 +29,7 @@ object MatrixRegex {
         """(?:(?:$baseUserIdRegex)|(?:$baseUserUriRegex)|(?:$baseUserLinkRegex)|(?:$baseUserHtmlAnchorRegex))$"""
 
     val userMention by lazy { baseMentionUserRegex.toRegex() }
-    val domain by lazy { baseDomainRegex.toRegex() }
+    val domain by lazy { baseServernameRegex.toRegex() }
     val localpart by lazy { baseLocalpartRegex.toRegex() }
     val userId by lazy { baseUserIdRegex.toRegex() }
     val userUri by lazy { baseUserUriRegex.toRegex() }

@@ -18,6 +18,8 @@ class MatrixRegexTest {
         val message = "Hello $id"
 
         val result = MatrixRegex.findUserMentions(message)
+        println(result)
+
         result.size shouldBe 0
     }
 
@@ -72,7 +74,7 @@ class MatrixRegexTest {
 
     @Test
     fun matchValidUserIdentifierWithIPV6() {
-        positiveTest("@user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", "user", "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+        positiveTest("@user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", "user", "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]")
     }
 
     @Test
@@ -102,13 +104,11 @@ class MatrixRegexTest {
 
     @Test
     fun notMatchIncompleteHtmlTag() {
-        negativeTest("<a href=\"https://matrix.to/#/@user:example.com")
+        negativeTest("""<a href="https://matrix.to/#/@user:example.com"""")
     }
 
     @Test
     fun notMatchInvalidHtmlLinkTag() {
         negativeTest("<b href=\"https://matrix.to/#/@user:example.com>User</b>")
     }
-
-
 }
