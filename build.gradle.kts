@@ -16,7 +16,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix("4.2.4")
+    version = withVersionSuffix("4.2.5")
 }
 
 subprojects {
