@@ -1167,4 +1167,69 @@ class SyncApiClientTest {
             allEventsCount.value shouldBe 2
         }.join()
     }
+
+    @Test
+    fun shouldStopSyncLoop() = runTest(timeout = 30.seconds) {
+        val requestCount = MutableStateFlow(0)
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+                addHandler { request ->
+                    when (requestCount.value) {
+                        0 -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            requestCount.value++
+                            respond(
+                                json.encodeToString(serverResponse1),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        1 -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            requestCount.value++
+                            respond(
+                                json.encodeToString(serverResponse2),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        else -> {
+                            delay(10_000)
+                            respond(
+                                json.encodeToString(serverResponse2),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+                }
+            }
+        )
+
+        val currentBatchToken = MutableStateFlow<String?>("some")
+        val syncResponses = MutableSharedFlow<Response>(replay = 5)
+        matrixRestClient.sync.subscribe { syncResponses.emit(it.syncResponse) }
+        matrixRestClient.sync.start(
+            filter = "someFilter",
+            setPresence = Presence.ONLINE,
+            getBatchToken = { currentBatchToken.value },
+            setBatchToken = { currentBatchToken.value = it },
+            scope = this,
+            timeout = 30_000.milliseconds
+        )
+        syncResponses.first()
+        matrixRestClient.sync.stop(true)
+        matrixRestClient.sync.currentSyncState.value shouldBe STOPPED
+    }
 }

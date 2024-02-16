@@ -43,6 +43,7 @@ fun createRoomRepositoriesModule(
     singleOf(::RoomRoomRepository) { bind<RoomRepository>() }
     singleOf(::RoomRoomStateRepository) { bind<RoomStateRepository>() }
     singleOf(::RoomRoomUserRepository) { bind<RoomUserRepository>() }
+    singleOf(::RoomRoomUserReceiptsRepository) { bind<RoomUserReceiptsRepository>() }
     singleOf(::RoomSecretKeyRequestRepository) { bind<SecretKeyRequestRepository>() }
     singleOf(::RoomSecretsRepository) { bind<SecretsRepository>() }
     singleOf(::RoomTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }
