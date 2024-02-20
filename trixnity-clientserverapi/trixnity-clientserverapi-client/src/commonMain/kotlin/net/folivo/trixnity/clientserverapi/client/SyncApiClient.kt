@@ -55,11 +55,6 @@ enum class SyncState {
     TIMEOUT,
 
     /**
-     * The sync loop is going to be stopped.
-     */
-    STOPPING,
-
-    /**
      * The sync is stopped.
      */
     STOPPED,
@@ -152,10 +147,14 @@ class SyncApiClientImpl(
             }
         }
 
-    private var syncJob: Job? = null
-    private val startStopMutex = Mutex()
     private val syncMutex = Mutex()
 
+    private data class SyncJobState(
+        val job: Job,
+        val stopRequest: Boolean = false,
+    )
+
+    private val syncJobState = MutableStateFlow<SyncJobState?>(null)
     private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(STOPPED)
     override val currentSyncState = _currentSyncState.asStateFlow()
 
@@ -170,17 +169,22 @@ class SyncApiClientImpl(
         wait: Boolean,
         scope: CoroutineScope
     ) {
-        stop(wait = true)
-        startStopMutex.withLock {
-            if (syncJob == null) {
-                syncJob = scope.launch {
+        syncJobState.value.also {
+            if (it?.stopRequest == true) {
+                log.info { "wait for old sync loop to be fully stopped before starting another sync loop" }
+                it.job.join()
+            }
+        }
+        val currentSyncJobState = syncJobState.updateAndGet {
+            if (it == null) {
+                val job = scope.launch(start = CoroutineStart.LAZY) {
                     syncMutex.withLock {
                         log.info { "started syncLoop" }
                         val currentBatchToken = getBatchToken()
                         val isInitialSync = currentBatchToken == null
-                        if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
+                        _currentSyncState.value = if (isInitialSync) INITIAL_SYNC else STARTED
 
-                        while (isActive && _currentSyncState.value != STOPPING) {
+                        while (isActive && syncJobState.value?.stopRequest == false) {
                             try {
                                 syncAndResponse(
                                     getBatchToken = getBatchToken,
@@ -197,7 +201,7 @@ class SyncApiClientImpl(
                                 when (error) {
                                     is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
                                         log.info { "timeout while sync with token $currentBatchToken" }
-                                        updateSyncState(TIMEOUT)
+                                        _currentSyncState.value = TIMEOUT
                                     }
 
                                     is CancellationException -> throw error
@@ -207,24 +211,25 @@ class SyncApiClientImpl(
 
                                     else -> {
                                         log.error(error) { "error while sync with token $currentBatchToken" }
-                                        updateSyncState(ERROR)
+                                        _currentSyncState.value = ERROR
                                     }
                                 }
                                 delay(syncLoopErrorDelay) // TODO better retry policy!
-                                if (getBatchToken() == null) updateSyncState(INITIAL_SYNC)
-                                else updateSyncState(STARTED)
+                                _currentSyncState.value = if (getBatchToken() == null) INITIAL_SYNC else STARTED
                             }
                         }
                     }
                 }
-                syncJob?.invokeOnCompletion {
+                job.invokeOnCompletion {
                     log.info { "stopped syncLoop" }
+                    syncJobState.value = null
                     _currentSyncState.value = STOPPED
-                    syncJob = null
                 }
-            }
+                SyncJobState(job)
+            } else it
         }
-        if (wait) syncJob?.join()
+        currentSyncJobState?.job?.start()
+        if (wait) currentSyncJobState?.job?.join()
     }
 
     override suspend fun <T> startOnce(
@@ -241,7 +246,7 @@ class SyncApiClientImpl(
         syncMutex.withLock {
             val isInitialSync = getBatchToken() == null
             log.info { "started single sync (initial=$isInitialSync)" }
-            if (isInitialSync) updateSyncState(INITIAL_SYNC) else updateSyncState(STARTED)
+            _currentSyncState.value = if (isInitialSync) INITIAL_SYNC else STARTED
             val syncResponse =
                 syncAndResponse(
                     getBatchToken = getBatchToken,
@@ -279,7 +284,7 @@ class SyncApiClientImpl(
                 select {
                     if (allowStoppingRequest) {
                         async {
-                            _currentSyncState.first { it == STOPPING }
+                            syncJobState.first { it?.stopRequest == true }
                             throw SyncStoppedException
                         }.onAwait { it }
                     }
@@ -306,7 +311,7 @@ class SyncApiClientImpl(
 
             setBatchToken(response.nextBatch)
         }
-        updateSyncState(RUNNING)
+        _currentSyncState.value = RUNNING
         return response
     }
 
@@ -344,24 +349,14 @@ class SyncApiClientImpl(
 
     private object SyncStoppedException : RuntimeException("sync has been stopped")
 
-    override suspend fun stop(wait: Boolean) {
-        startStopMutex.withLock {
-            if (syncJob != null) {
-                _currentSyncState.value = STOPPING
-                if (wait) syncJob?.join()
-            }
-        }
+    override suspend fun stop(wait: Boolean) = coroutineScope {
+        val currentSyncJobState = syncJobState.updateAndGet { it?.copy(stopRequest = true) }
+        if (wait) currentSyncJobState?.job?.join()
     }
 
     override suspend fun cancel(wait: Boolean) {
-        if (wait) syncJob?.cancelAndJoin()
-        else syncJob?.cancel()
-    }
-
-    private fun updateSyncState(newSyncState: SyncState) {
-        _currentSyncState.update {
-            if (it != STOPPING) newSyncState else it
-        }
+        if (wait) syncJobState.value?.job?.cancelAndJoin()
+        else syncJobState.value?.job?.cancel()
     }
 
     private suspend fun <T> measureTime(block: suspend () -> T): Pair<T, Duration> {
