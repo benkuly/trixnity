@@ -36,11 +36,12 @@ class ConcurrentTest {
     @Test
     fun massiveReadWriteShouldNotThrowConcurrentModificationException() = runTest {
         withContext(Dispatchers.Default) {
-            val operations = 1_000
+            val writeOperations = 100
+            val readOperations = writeOperations * 100
             val writeTime = async {
                 measureTime {
                     coroutineScope {
-                        repeat(operations) { i ->
+                        repeat(writeOperations) { i ->
                             launch {
                                 cut.write { add("$i") }
                             }
@@ -51,17 +52,19 @@ class ConcurrentTest {
             val readTime = async {
                 measureTime {
                     coroutineScope {
-                        repeat(operations) {
+                        repeat(readOperations) { i ->
                             launch {
-                                cut.read { getOrNull(0) }
+                                cut.read {
+                                    toSet()
+                                }
                             }
                         }
                     }
                 }
             }
             println(
-                "writeTime=${writeTime.await()} (${writeTime.await() / operations}/operation), " +
-                        "readTime=${readTime.await()} (${readTime.await() / operations}/operation)"
+                "writeTime=${writeTime.await()} (${writeTime.await() / writeOperations}/operation), " +
+                        "readTime=${readTime.await()} (${readTime.await() / readOperations}/operation)"
             )
         }
     }
