@@ -8,6 +8,7 @@ object MatrixRegex {
     private const val baseLocalpartRegex = """[a-z0-9.\-_=\/+]+"""
 
     // Nothing in the Appendix found, assumed that based on research
+    // TL;DR it's an "encrypted" by the Server for security reasons
     private const val baseOpaqueIdRegex = """[a-zA-Z0-9.\-_=\/+]+"""
 
     // https://spec.matrix.org/v1.9/appendices/#server-name
@@ -63,8 +64,7 @@ object MatrixRegex {
     val userMention by lazy { baseMentionUserRegex.toRegex() }
 
     fun findUserMentions(message: String): Map<String, UserId> {
-        val matches = userMention.findAll(message)
-        return matches.associate {
+        return userMention.findAll(message).associate {
             val matched = it.groupValues[0]
             val localpart = it.groupValues[1] + it.groupValues[3] + it.groupValues[5] + it.groupValues[7]
             val domain = it.groupValues[2] + it.groupValues[4] + it.groupValues[6] + it.groupValues[8]
