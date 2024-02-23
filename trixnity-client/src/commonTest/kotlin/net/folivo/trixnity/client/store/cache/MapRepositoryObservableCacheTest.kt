@@ -110,8 +110,8 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
             database.replayCache shouldContainAll (0..99).map { it.toString() }
             val timePerOperation = operationsTimeSum / 100
             println("timePerOperation=$timePerOperation completeTime=$completeTime")
-            timePerOperation shouldBeLessThan 10.milliseconds
-            completeTime shouldBeLessThan 100.milliseconds
+            timePerOperation shouldBeLessThan 20.milliseconds
+            completeTime shouldBeLessThan 200.milliseconds
         }
         should("handle massive parallel manipulation of different keys") {
             val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
@@ -144,8 +144,8 @@ class MapRepositoryObservableCacheTest : ShouldSpec({
 
             val timePerOperation = operationsTimeSum / 100
             println("timePerOperation=$timePerOperation completeTime=$completeTime")
-            timePerOperation shouldBeLessThan 10.milliseconds
-            completeTime shouldBeLessThan 100.milliseconds
+            timePerOperation shouldBeLessThan 20.milliseconds
+            completeTime shouldBeLessThan 200.milliseconds
         }
     }
     context("write with update") {

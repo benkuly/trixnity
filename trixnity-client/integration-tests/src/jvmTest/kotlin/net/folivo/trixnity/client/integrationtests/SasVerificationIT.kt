@@ -16,6 +16,7 @@ import net.folivo.trixnity.client.store.repository.exposed.createExposedReposito
 import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
+import net.folivo.trixnity.client.verification.ActiveVerification
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
@@ -83,48 +84,70 @@ class SasVerificationIT {
             val client1Verification = client1.verification.activeDeviceVerification.first { it != null }
             val client2Verification = client2.verification.activeDeviceVerification.first { it != null }
 
-            client1Verification.shouldNotBeNull()
-            client2Verification.shouldNotBeNull()
-
-            client2Verification.state.first { it is TheirRequest }
-                .shouldBeInstanceOf<TheirRequest>().ready()
-
-            client1Verification.state.first { it is Ready }
-                .shouldBeInstanceOf<Ready>().start(VerificationMethod.Sas)
-
-            val client1SasVerification = client1Verification.state.first { it is Start }
-                .shouldBeInstanceOf<Start>()
-                .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
-            val client2SasVerification = client2Verification.state.first { it is Start }
-                .shouldBeInstanceOf<Start>()
-                .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
-
-            client2SasVerification.state.first { it is TheirSasStart }
-                .shouldBeInstanceOf<TheirSasStart>().accept()
-
-            val client1Comparison = client1SasVerification.state.first { it is ComparisonByUser }
-                .shouldBeInstanceOf<ComparisonByUser>()
-
-            val client2Comparison = client2SasVerification.state.first { it is ComparisonByUser }
-                .shouldBeInstanceOf<ComparisonByUser>()
-
-            client1Comparison.decimal shouldBe client2Comparison.decimal
-            client1Comparison.emojis shouldBe client2Comparison.emojis
-
-            client1Comparison.match()
-            client1SasVerification.state.first { it is WaitForMacs }
-                .shouldBeInstanceOf<WaitForMacs>()
-            client2Comparison.match()
-
-            client1Verification.state.first { it is Done }
-                .shouldBeInstanceOf<Done>()
-            client2Verification.state.first { it is Done }
-                .shouldBeInstanceOf<Done>()
-
-            client1.key.getTrustLevel(client2.userId, client2.deviceId)
-                .first { it == DeviceTrustLevel.Valid(true) }
-            client2.key.getTrustLevel(client1.userId, client1.deviceId)
-                .first { it == DeviceTrustLevel.Valid(true) }
+            checkSasVerification(client1Verification, client2Verification)
         }
+    }
+
+    @Test
+    fun shouldDoSasUserVerification(): Unit = runBlocking {
+        withTimeout(30_000) {
+            val client1Verification = client1.verification.createUserVerificationRequest(client2.userId).getOrThrow()
+
+            client2.api.room.joinRoom(client1Verification.roomId)
+            val client2Verification = client2.verification.getActiveUserVerification(
+                client1Verification.roomId,
+                client1Verification.requestEventId
+            )
+
+            checkSasVerification(client1Verification, client2Verification)
+        }
+    }
+
+    private suspend fun checkSasVerification(
+        client1Verification: ActiveVerification?,
+        client2Verification: ActiveVerification?,
+    ) {
+        client1Verification.shouldNotBeNull()
+        client2Verification.shouldNotBeNull()
+
+        client2Verification.state.first { it is TheirRequest }
+            .shouldBeInstanceOf<TheirRequest>().ready()
+
+        client1Verification.state.first { it is Ready }
+            .shouldBeInstanceOf<Ready>().start(VerificationMethod.Sas)
+
+        val client1SasVerification = client1Verification.state.first { it is Start }
+            .shouldBeInstanceOf<Start>()
+            .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
+        val client2SasVerification = client2Verification.state.first { it is Start }
+            .shouldBeInstanceOf<Start>()
+            .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
+
+        client2SasVerification.state.first { it is TheirSasStart }
+            .shouldBeInstanceOf<TheirSasStart>().accept()
+
+        val client1Comparison = client1SasVerification.state.first { it is ComparisonByUser }
+            .shouldBeInstanceOf<ComparisonByUser>()
+
+        val client2Comparison = client2SasVerification.state.first { it is ComparisonByUser }
+            .shouldBeInstanceOf<ComparisonByUser>()
+
+        client1Comparison.decimal shouldBe client2Comparison.decimal
+        client1Comparison.emojis shouldBe client2Comparison.emojis
+
+        client1Comparison.match()
+        client1SasVerification.state.first { it is WaitForMacs }
+            .shouldBeInstanceOf<WaitForMacs>()
+        client2Comparison.match()
+
+        client1Verification.state.first { it is Done }
+            .shouldBeInstanceOf<Done>()
+        client2Verification.state.first { it is Done }
+            .shouldBeInstanceOf<Done>()
+
+        client1.key.getTrustLevel(client2.userId, client2.deviceId)
+            .first { it == DeviceTrustLevel.Valid(true) }
+        client2.key.getTrustLevel(client1.userId, client1.deviceId)
+            .first { it == DeviceTrustLevel.Valid(true) }
     }
 }

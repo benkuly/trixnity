@@ -22,6 +22,8 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
@@ -39,6 +41,7 @@ import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
@@ -92,8 +95,17 @@ interface VerificationService {
 
     fun getSelfVerificationMethods(): Flow<SelfVerificationMethods>
 
+    @Deprecated(
+        "use eventId instead",
+        ReplaceWith("getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId)")
+    )
     suspend fun getActiveUserVerification(
-        timelineEvent: TimelineEvent
+        timelineEvent: TimelineEvent,
+    ): ActiveUserVerification?
+
+    suspend fun getActiveUserVerification(
+        roomId: RoomId,
+        eventId: EventId,
     ): ActiveUserVerification?
 }
 
@@ -400,31 +412,43 @@ class VerificationServiceImpl(
     }
 
     private val getActiveUserVerificationMutex = Mutex()
+
+    @Deprecated(
+        "use eventId instead",
+        replaceWith = ReplaceWith("getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId)")
+    )
     override suspend fun getActiveUserVerification(
-        timelineEvent: TimelineEvent
+        timelineEvent: TimelineEvent,
+    ): ActiveUserVerification? = getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId)
+
+    override suspend fun getActiveUserVerification(
+        roomId: RoomId,
+        eventId: EventId,
     ): ActiveUserVerification? {
+        val timelineEvent =
+            withTimeoutOrNull(6.seconds) {
+                roomService.getTimelineEvent(roomId, eventId) { decryptionTimeout = 5.seconds }
+                    .filter { it?.content != null }.first()
+            } ?: return null
+        val request = timelineEvent.content?.getOrNull() as? VerificationRequest ?: return null
         return if (isVerificationRequestActive(timelineEvent.event.originTimestamp)) {
             getActiveUserVerificationMutex.withLock {
                 val cache =
-                    activeUserVerifications.value.find { it.roomId == timelineEvent.roomId && it.relatesTo?.eventId == timelineEvent.eventId }
+                    activeUserVerifications.value.find { it.roomId == roomId && it.relatesTo?.eventId == eventId }
                 if (cache != null) cache
                 else {
-                    val eventContent = timelineEvent.content?.getOrNull()
-                    val request =
-                        if (eventContent is VerificationRequest) eventContent
-                        else null
                     val sender = timelineEvent.event.sender
-                    if (request != null && sender != ownUserId && request.to == ownUserId) {
+                    if (sender != ownUserId && request.to == ownUserId) {
                         ActiveUserVerificationImpl(
                             request = request,
                             requestIsFromOurOwn = false,
-                            requestEventId = timelineEvent.eventId,
+                            requestEventId = eventId,
                             requestTimestamp = timelineEvent.event.originTimestamp,
                             ownUserId = ownUserId,
                             ownDeviceId = ownDeviceId,
                             theirUserId = sender,
                             theirInitialDeviceId = request.fromDevice,
-                            roomId = timelineEvent.roomId,
+                            roomId = roomId,
                             supportedMethods = supportedMethods,
                             json = api.json,
                             keyStore = keyStore,

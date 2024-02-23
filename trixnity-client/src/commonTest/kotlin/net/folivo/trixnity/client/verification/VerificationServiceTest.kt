@@ -371,7 +371,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 )
-                val result = cut.getActiveUserVerification(timelineEvent)?.state
+                val result = cut.getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId)?.state
                 assertNotNull(result)
                 result.first { it is Cancel } shouldBe Cancel(
                     VerificationCancelEventContent(Code.User, "user", RelatesTo.Reference(eventId), null),
@@ -643,7 +643,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
     }
-    context(VerificationServiceImpl::getActiveUserVerification.name) {
+    context("getActiveUserVerification") {
         should("skip timed out verifications") {
             val timelineEvent = TimelineEvent(
                 event = MessageEvent(
@@ -657,7 +657,8 @@ private val body: ShouldSpec.() -> Unit = {
                 nextEventId = null,
                 gap = null
             )
-            val result = cut.getActiveUserVerification(timelineEvent)
+            roomServiceMock.returnGetTimelineEvent = MutableStateFlow(timelineEvent)
+            val result = cut.getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId)
             result shouldBe null
         }
         should("return cached verification") {
@@ -673,9 +674,10 @@ private val body: ShouldSpec.() -> Unit = {
                 nextEventId = null,
                 gap = null
             )
-            val result1 = cut.getActiveUserVerification(timelineEvent)
+            roomServiceMock.returnGetTimelineEvent = MutableStateFlow(timelineEvent)
+            val result1 = cut.getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId)
             assertNotNull(result1)
-            val result2 = cut.getActiveUserVerification(timelineEvent)
+            val result2 = cut.getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId)
             result2 shouldBe result1
         }
         should("create verification from event") {
@@ -691,7 +693,8 @@ private val body: ShouldSpec.() -> Unit = {
                 nextEventId = null,
                 gap = null
             )
-            val result = cut.getActiveUserVerification(timelineEvent)
+            roomServiceMock.returnGetTimelineEvent = MutableStateFlow(timelineEvent)
+            val result = cut.getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId)
             val state = result?.state
             assertNotNull(state)
             state.value.shouldBeInstanceOf<TheirRequest>()
@@ -709,7 +712,8 @@ private val body: ShouldSpec.() -> Unit = {
                 nextEventId = null,
                 gap = null
             )
-            cut.getActiveUserVerification(timelineEvent) shouldBe null
+            roomServiceMock.returnGetTimelineEvent = MutableStateFlow(timelineEvent)
+            cut.getActiveUserVerification(timelineEvent.roomId, timelineEvent.eventId) shouldBe null
         }
     }
 }
