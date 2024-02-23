@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = RoomAliasIdSerializer::class)
-data class RoomAliasId(val full: String) {
+data class RoomAliasId(override val full: String): Mention {
 
     constructor(localpart: String, domain: String) : this("${sigilCharacter}$localpart:$domain")
 
@@ -17,9 +17,9 @@ data class RoomAliasId(val full: String) {
         const val sigilCharacter = '#'
     }
 
-    val localpart: String
+    override val localpart: String
         get() = full.trimStart(sigilCharacter).substringBefore(':')
-    val domain: String
+    override val domain: String
         get() = full.trimStart(sigilCharacter).substringAfter(':')
 
     override fun toString() = full
