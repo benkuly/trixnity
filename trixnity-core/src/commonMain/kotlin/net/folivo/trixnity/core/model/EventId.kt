@@ -15,9 +15,9 @@ data class EventId(override val full: String): Mention {
     }
 
     override val localpart: String
-        get() = full.trimStart(RoomId.sigilCharacter).substringBefore(':')
+        get() = full.trimStart(sigilCharacter).substringBefore(':')
     override val domain: String
-        get() = full.trimStart(RoomId.sigilCharacter).substringAfter(':')
+        get() = full.trimStart(sigilCharacter).substringAfter(':')
 
     override fun toString() = full
 }
