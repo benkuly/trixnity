@@ -212,7 +212,7 @@ security:dependencies:
       dependency_scanning: report.json
   script:
     - trivy repo ./ --exit-code 0
-    - trivy repo ./ --exit-code 0 --format template --template "@contrib/gitlab.tpl" --output report.json
+    - trivy repo ./ --exit-code 0 --format template --template "@/contrib/gitlab.tpl" --output report.json
     - trivy repo ./ --exit-code 1 --severity HIGH
 
 publish-snapshot:mac:
