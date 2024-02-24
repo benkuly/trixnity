@@ -17,3 +17,7 @@ using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 [Website with documentation](https://trixnity.gitlab.io/trixnity)
 
 **You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).**
+
+## Upgrade lock
+
+Run `./gradlew dependenciesForAll --write-locks`.

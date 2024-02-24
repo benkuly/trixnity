@@ -213,7 +213,7 @@ security:dependencies:
   script:
     - trivy repo ./ --exit-code 0
     - trivy repo ./ --exit-code 0 --format template --template "@/contrib/gitlab.tpl" --output report.json
-    - trivy repo ./ --exit-code 1 --severity HIGH
+    - trivy repo ./ --exit-code 1 --severity HIGH,CRITICAL
 
 publish-snapshot:mac:
   stage: publish-snapshot
