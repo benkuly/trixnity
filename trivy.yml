@@ -1,0 +1,4 @@
+scan:
+  skip-dirs:
+    - trixnity-client/integration-test
+    - trixnity-client/client-repository-test
