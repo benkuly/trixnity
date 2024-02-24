@@ -7,6 +7,7 @@ stages:
   - prepare-build
   - build
   - test
+  - security
   - publish-snapshot
   - publish
   - website
@@ -191,6 +192,28 @@ test:integration-test:
     - ./gradlew
       :trixnity-client:integration-tests:jvmTest
       --stacktrace
+
+security:dependencies:
+  stage: security
+  interruptible: true
+  timeout: 30m
+  tags: [ "saas-linux-small-amd64" ]
+  image:
+    name: "aquasec/trivy"
+    entrypoint: [ "" ]
+  variables:
+    TRIVY_CACHE_DIR: ".trivycache/"
+  cache:
+    paths:
+      - .trivycache/
+  artifacts:
+    when: always
+    reports:
+      dependency_scanning: report.json
+  script:
+    - trivy repo ./ --exit-code 0
+    - trivy repo ./ --exit-code 0 --format template --template "@contrib/gitlab.tpl" --output report.json
+    - trivy repo ./ --exit-code 1 --severity HIGH
 
 publish-snapshot:mac:
   stage: publish-snapshot

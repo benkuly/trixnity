@@ -1,4 +1,11 @@
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 buildscript {
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
+    }
     dependencies {
         classpath(libs.kotlin.gradle.plugin.api)
     }
