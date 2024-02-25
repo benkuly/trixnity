@@ -1,4 +1,5 @@
 scan:
   skip-dirs:
+    - website
     - trixnity-client/integration-test
     - trixnity-client/client-repository-test
