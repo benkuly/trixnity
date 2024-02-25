@@ -20,4 +20,4 @@ using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 
 ## Upgrade lock
 
-Run `./gradlew dependenciesForAll --write-locks`.
+Run `./gradlew dependenciesForAll --write-locks --no-parallel`.
