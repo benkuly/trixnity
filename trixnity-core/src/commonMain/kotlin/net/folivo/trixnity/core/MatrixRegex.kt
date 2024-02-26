@@ -87,7 +87,6 @@ object MatrixRegex {
     fun findUserMentions(message: String): Map<String, UserId> {
         return userMention.findAll(message).associate {
             val matched = it.groupValues[0]
-            val user = it.groupValues.drop(1)
             val localpart = it.groupValues[2] + it.groupValues[5] + it.groupValues[8] + it.groupValues[11]
             val domain = it.groupValues[3] + it.groupValues[6] + it.groupValues[9] + it.groupValues[12]
             matched to UserId(localpart, domain)
@@ -100,10 +99,9 @@ object MatrixRegex {
             val matched = result.groupValues[0]
             val match = result.groupValues.drop(1).windowed(3, 3)
 
-            val sigil = match.joinToString { it[0] }
-            val localpart = match.joinToString { it[1] }
-            val domain = match.joinToString { it[2] }
-
+            val sigil = match.joinToString(separator = "") { it[0] }
+            val localpart = match.joinToString(separator = "")  { it[1] }
+            val domain = match.joinToString(separator = "")  { it[2] }
 
             val eventlocation = sigil
             val eventSigil = localpart
