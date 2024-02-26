@@ -9,22 +9,24 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = EventIdSerializer::class)
-data class EventId(override val full: String): Mention {
+data class EventId(val opaque: String, val room: Mention): Mention {
     companion object {
         const val sigilCharacter = '$'
     }
 
     override val localpart: String
-        get() = full.trimStart(sigilCharacter).substringBefore(':')
+        get() = room.localpart
     override val domain: String
-        get() = full.trimStart(sigilCharacter).substringAfter(':')
+        get() = room.domain
+    override val full: String
+        get() = "$sigilCharacter$opaque"
 
-    override fun toString() = full
+    override fun toString() = "$sigilCharacter$opaque"
 }
 
 object EventIdSerializer : KSerializer<EventId> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EventIdSerializer", PrimitiveKind.STRING)
-    override fun deserialize(decoder: Decoder): EventId = EventId(decoder.decodeString())
+    override fun deserialize(decoder: Decoder): EventId = EventId(decoder.decodeString(), RoomId("",""))
 
     override fun serialize(encoder: Encoder, value: EventId) {
         encoder.encodeString(value.full)
