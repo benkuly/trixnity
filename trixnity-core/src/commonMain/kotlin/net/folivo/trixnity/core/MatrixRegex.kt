@@ -96,6 +96,7 @@ object MatrixRegex {
 
     fun findMentions(message: String): Map<String, Mention> {
         return mention.findAll(message).associate { result ->
+            println(result.groupValues)
             val matched = result.groupValues[0]
             val match = result.groupValues.drop(1).windowed(3, 3)
 
@@ -114,8 +115,8 @@ object MatrixRegex {
                 "#", "r" -> matched to RoomAliasId(localpart, domain)
                 else -> matched to EventId(
                     eventId,
-                    if (eventlocation.startsWith("r/")) RoomId(eventlocation.replaceFirst("r/", "#"))
-                    else if (eventlocation.startsWith("roomid/")) RoomId(eventlocation.replaceFirst("roomid/", "!"))
+                    if (eventlocation.startsWith("r/")) EventId(eventId, RoomId(eventlocation.replaceFirst("r/", "#")))
+                    else if (eventlocation.startsWith("roomid/")) EventId(eventId, RoomId(eventlocation.replaceFirst("roomid/", "!")))
                     else RoomId("")
                 )
             }
