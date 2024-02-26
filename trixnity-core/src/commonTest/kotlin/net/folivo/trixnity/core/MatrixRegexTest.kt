@@ -7,18 +7,22 @@ import kotlin.test.Test
 
 
 class MatrixRegexTest {
-    fun positiveTest(id: String, localpart: String, domain: String) {
+    fun positiveTest(id: String, localpart: String, domain: String, matcher: Regex? = null) {
         val message = "Hello $id"
 
-        val result = findMentions(message)
+        val result =
+            if (matcher != null) findMentions(message, matcher)
+            else findMentions(message)
         result.size shouldBe 1
         result[id] shouldBe UserId(localpart, domain)
     }
 
-    fun negativeTest(id: String) {
+    fun negativeTest(id: String, matcher: Regex? = null) {
         val message = "Hello $id"
 
-        val result = findMentions(message)
+        val result =
+            if (matcher != null) findMentions(message, matcher)
+            else findMentions(message)
         println(result)
 
         result.size shouldBe 0
@@ -75,7 +79,11 @@ class MatrixRegexTest {
 
     @Test
     fun matchValidUserIdentifierWithIPV6() {
-        positiveTest("@user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", "user", "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]")
+        positiveTest(
+            "@user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            "user",
+            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"
+        )
     }
 
     @Test
@@ -89,7 +97,22 @@ class MatrixRegexTest {
     }
 
     @Test
+    fun notMatchInvalidIPV4WithCharacters() {
+        negativeTest("1.1.1.Abc", MatrixRegex.IPv4)
+    }
+
+    @Test
     fun notMatchInvalidIPV6WithIllegalCharacters() {
         negativeTest("@user:[2001:8a2e:0370:733G]")
+    }
+
+    @Test
+    fun notMatchIncompleteHtmlTag() {
+        negativeTest("""<a href="https://matrix.to/#/@user:example.com"""", MatrixRegex.userHtmlAnchor)
+    }
+
+    @Test
+    fun notMatchInvalidHtmlLinkTag() {
+        negativeTest("<b href=\"https://matrix.to/#/@user:example.com>User</b>", MatrixRegex.userHtmlAnchor)
     }
 }

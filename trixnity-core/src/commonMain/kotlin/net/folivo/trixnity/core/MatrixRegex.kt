@@ -65,6 +65,7 @@ object MatrixRegex {
         """(?:(?:$baseUserIdRegex)|(?:$baseUserUriRegex)|(?:$baseUserLinkRegex)|(?:$baseUserHtmlAnchorRegex))"""
     private const val baseMentionRegex = """(?:$baseMentionUserRegex)|(?:$baseMentionRoomRegex)"""
 
+    val IPv4 by lazy { baseIPV4Regex.toRegex() }
     val domain by lazy { baseServernameRegex.toRegex() }
     val localpart by lazy { baseLocalpartRegex.toRegex() }
 
@@ -93,8 +94,8 @@ object MatrixRegex {
         }
     }
 
-    fun findMentions(message: String): Map<String, Mention> {
-        return mention.findAll(message).associate { result ->
+    fun findMentions(message: String, matcher: Regex = mention): Map<String, Mention> {
+        return matcher.findAll(message).associate { result ->
             println(result.groupValues)
             val matched = result.groupValues[0]
             val match = result.groupValues.drop(1).windowed(3, 3)
