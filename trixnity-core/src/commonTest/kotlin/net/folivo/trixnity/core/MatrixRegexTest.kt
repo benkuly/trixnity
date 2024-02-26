@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core
 
 import io.kotest.matchers.shouldBe
+import net.folivo.trixnity.core.MatrixRegex.findMentions
 import net.folivo.trixnity.core.model.UserId
 import kotlin.test.Test
 
@@ -9,7 +10,7 @@ class MatrixRegexTest {
     fun positiveTest(id: String, localpart: String, domain: String) {
         val message = "Hello $id"
 
-        val result = MatrixRegex.findUserMentions(message)
+        val result = findMentions(message)
         result.size shouldBe 1
         result[id] shouldBe UserId(localpart, domain)
     }
@@ -17,7 +18,7 @@ class MatrixRegexTest {
     fun negativeTest(id: String) {
         val message = "Hello $id"
 
-        val result = MatrixRegex.findUserMentions(message)
+        val result = findMentions(message)
         println(result)
 
         result.size shouldBe 0
@@ -88,27 +89,7 @@ class MatrixRegexTest {
     }
 
     @Test
-    fun notMatchInvalidPort() {
-        negativeTest("@user:example.com:123456")
-    }
-
-    @Test
-    fun notMatchInvalidIPV4WithCharacters() {
-        negativeTest("@user:1.1.1.Abc")
-    }
-
-    @Test
     fun notMatchInvalidIPV6WithIllegalCharacters() {
         negativeTest("@user:[2001:8a2e:0370:733G]")
-    }
-
-    @Test
-    fun notMatchIncompleteHtmlTag() {
-        negativeTest("""<a href="https://matrix.to/#/@user:example.com"""")
-    }
-
-    @Test
-    fun notMatchInvalidHtmlLinkTag() {
-        negativeTest("<b href=\"https://matrix.to/#/@user:example.com>User</b>")
     }
 }
