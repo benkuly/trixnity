@@ -1,7 +1,10 @@
 workflow:
+  auto_cancel:
+    on_new_commit: interruptible
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
 
 stages:
   - prepare-build
@@ -84,6 +87,8 @@ variables:
 
 .if-main: &if-main
   - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
+    when: never
+  - if: $CI_PIPELINE_SOURCE == "schedule"
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
@@ -206,6 +211,11 @@ security:dependencies:
   cache:
     paths:
       - .trivycache/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      allow_failure: false
   artifacts:
     when: always
     reports:
