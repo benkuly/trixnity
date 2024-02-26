@@ -10,6 +10,8 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = EventIdSerializer::class)
 data class EventId(val opaque: String, val room: Mention): Mention {
+    constructor(opaque: String) : this(opaque.removePrefix("$"), RoomId(""))
+
     companion object {
         const val sigilCharacter = '$'
     }
