@@ -202,6 +202,7 @@ security:dependencies:
   stage: security
   interruptible: true
   timeout: 30m
+  needs: [ ]
   tags: [ "saas-linux-small-amd64" ]
   image:
     name: "aquasec/trivy"
