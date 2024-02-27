@@ -23,7 +23,7 @@ data class EventId(val opaque: String, val room: Mention): Mention {
     override val full: String
         get() = "$sigilCharacter$opaque"
 
-    override fun toString() = "$sigilCharacter$opaque"
+    override fun toString() = "$sigilCharacter$opaque:${room.full}"
 }
 
 object EventIdSerializer : KSerializer<EventId> {

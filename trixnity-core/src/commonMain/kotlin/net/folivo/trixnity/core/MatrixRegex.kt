@@ -25,7 +25,7 @@ object MatrixRegex {
     private const val baseRoomAliasRegex = """(#)($baseLocalpartRegex):($baseServernameRegex)"""
 
     // https://spec.matrix.org/latest/appendices/#event-ids
-    private const val baseEventIdRegex = """()($)($baseOpaqueIdRegex)"""
+    private const val baseEventIdRegex = """()(\$)($baseOpaqueIdRegex)"""
 
     // https://spec.matrix.org/v1.9/appendices/#user-identifiers
     private const val baseUserIdRegex = """(@)($baseLocalpartRegex):($baseServernameRegex)"""
@@ -34,7 +34,7 @@ object MatrixRegex {
     private const val baseRoomUriViaRegex =
         """(?:(?:\?action=join(?:&via=$baseServernameRegex)?)|(?:\?via=$baseServernameRegex(?:&action=join)?))?"""
     private const val baseEventUriRegex =
-        """matrix:((?:roomid)|(?:r)\/$baseLocalpartRegex:$baseServernameRegex)/(e)/($baseOpaqueIdRegex)$baseRoomUriViaRegex"""
+        """matrix:((?:(?:roomid)|(?:r))\/$baseLocalpartRegex:$baseServernameRegex)\/(e)\/($baseOpaqueIdRegex)$baseRoomUriViaRegex"""
     private const val baseRoomIdUriRegex =
         """matrix:(roomid)\/($baseLocalpartRegex):($baseServernameRegex)$baseRoomUriViaRegex"""
     private const val baseRoomAliasUriRegex =
@@ -47,7 +47,7 @@ object MatrixRegex {
     // https://spec.matrix.org/v1.9/appendices/#matrixto-navigation
     private const val baseRoomLinkViaRegex = """(?:\?via=$baseServernameRegex)?"""
     private const val baseEventLinkRegex =
-        """https?:\/\/matrix\.to\/#\/((?:@|!)$baseLocalpartRegex:$baseServernameRegex)\/()($baseOpaqueIdRegex):$baseServernameRegex$baseRoomLinkViaRegex"""
+        """https?:\/\/matrix\.to\/#\/((?:@|!)$baseLocalpartRegex:$baseServernameRegex)\/(\$)($baseOpaqueIdRegex)$baseRoomLinkViaRegex"""
     private const val baseRoomIdLinkRegex =
         """https?:\/\/matrix\.to\/#\/(!)($baseLocalpartRegex):($baseServernameRegex)$baseRoomLinkViaRegex"""
     private const val baseRoomAliasLinkRegex =
@@ -96,7 +96,7 @@ object MatrixRegex {
     }
 
     fun findMentions(message: String, matcher: Regex = mention): Map<String, Mention> {
-        println(baseRoomIdLinkRegex)
+        println(baseEventUriRegex)
         return matcher.findAll(message).associate { result ->
             println(result.groupValues)
             val matched = result.groupValues[0]
@@ -118,11 +118,12 @@ object MatrixRegex {
                 "@", "u" -> matched to UserId(localpart, domain)
                 "!", "roomid" -> matched to RoomId(localpart, domain)
                 "#", "r" -> matched to RoomAliasId(localpart, domain)
-                else -> matched to EventId(
-                    eventId,
-                    if (eventlocation.startsWith("r/")) EventId(eventId, RoomId(eventlocation.replaceFirst("r/", "#")))
+                else -> matched to (
+                    if (eventlocation.startsWith("r/")) EventId(eventId, RoomAliasId(eventlocation.replaceFirst("r/", "#")))
+                    else if (eventlocation.startsWith("#")) EventId(eventId, RoomAliasId(eventlocation))
                     else if (eventlocation.startsWith("roomid/")) EventId(eventId, RoomId(eventlocation.replaceFirst("roomid/", "!")))
-                    else RoomId("")
+                    else if (eventlocation.startsWith("!")) EventId(eventId, RoomId(eventlocation))
+                    else EventId(eventId, RoomId(""))
                 )
             }
         }

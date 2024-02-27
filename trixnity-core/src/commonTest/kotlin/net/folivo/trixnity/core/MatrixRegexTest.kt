@@ -2,6 +2,7 @@ package net.folivo.trixnity.core
 
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.core.MatrixRegex.findMentions
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -37,6 +38,16 @@ class MatrixRegexTest {
             else findMentions(message)
         result.size shouldBe 1
         result[id] shouldBe RoomAliasId(localpart, domain)
+    }
+
+    fun positiveEventIdTest(id: String, opaqueId: String, room: String = "", matcher: Regex? = null) {
+        val message = "participating at $id"
+
+        val result =
+            if (matcher != null) findMentions(message, matcher)
+            else findMentions(message)
+        result.size shouldBe 1
+        result[id] shouldBe EventId(opaqueId, RoomId(room))
     }
 
     fun negativeTest(id: String, matcher: Regex? = null) {
@@ -255,5 +266,45 @@ class MatrixRegexTest {
             "user",
             "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"
         )
+    }
+
+    // Event IDs
+    @Test
+    fun matchValidEventIdentifier() {
+        positiveEventIdTest("\$event", "event")
+    }
+
+    @Test
+    fun matchValidEventIdentifierWithMatrixToLink() {
+        positiveEventIdTest("<a href=\"https://matrix.to/#/!user:example.com/\$event\">Hallo</a>", "event",  "!user:example.com")
+    }
+
+    @Test
+    fun matchValidEventIdentifierWithMatrixToLinkWithoutHref() {
+        positiveEventIdTest("https://matrix.to/#/!user:example.com/\$event", "event", "!user:example.com")
+    }
+
+    @Test
+    fun matchValidEventIdentifierWithMatrixULinkAndActionAttribute() {
+        positiveEventIdTest("matrix:roomid/user:example.com/e/event?action=join", "event", "!user:example.com")
+    }
+
+    @Test
+    fun matchValidEventIdentifierWithMatrixULinkAndViaAttribute() {
+        positiveEventIdTest("matrix:roomid/user:example.com/e/event?via=example.com", "event", "!user:example.com")
+    }
+
+    @Test
+    fun matchValidEventIdentifierWithMatrixULinkViaAndActionAttribute() {
+        positiveEventIdTest("matrix:roomid/user:example.com/e/event?via=example.com&action=join", "event", "!user:example.com")
+    }
+
+    fun matchValidEventIdentifierWithMatrixULinkActionAndViaAttribute() {
+        positiveEventIdTest("matrix:roomid/user:example.com/e/event?action=chat&via=example.com", "event", "!user:example.com")
+    }
+
+    @Test
+    fun matchValidEventIdentifierWithMatrixULink() {
+        positiveEventIdTest("matrix:roomid/user:example.com/e/event", "event", "!user:example.com")
     }
 }
