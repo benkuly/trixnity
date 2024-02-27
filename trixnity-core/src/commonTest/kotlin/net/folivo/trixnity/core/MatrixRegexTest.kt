@@ -2,12 +2,13 @@ package net.folivo.trixnity.core
 
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.core.MatrixRegex.findMentions
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import kotlin.test.Test
 
 
 class MatrixRegexTest {
-    fun positiveTest(id: String, localpart: String, domain: String, matcher: Regex? = null) {
+    fun positiveUserIdTest(id: String, localpart: String, domain: String, matcher: Regex? = null) {
         val message = "Hello $id"
 
         val result =
@@ -15,6 +16,16 @@ class MatrixRegexTest {
             else findMentions(message)
         result.size shouldBe 1
         result[id] shouldBe UserId(localpart, domain)
+    }
+
+    fun positiveRoomIdTest(id: String, localpart: String, domain: String, matcher: Regex? = null) {
+        val message = "omw to $id"
+
+        val result =
+            if (matcher != null) findMentions(message, matcher)
+            else findMentions(message)
+        result.size shouldBe 1
+        result[id] shouldBe RoomId(localpart, domain)
     }
 
     fun negativeTest(id: String, matcher: Regex? = null) {
@@ -28,58 +39,59 @@ class MatrixRegexTest {
         result.size shouldBe 0
     }
 
+    // Users
     @Test
     fun matchValidUserIdentifier() {
-        positiveTest("@a9._=-/+:example.com", "a9._=-/+", "example.com")
+        positiveUserIdTest("@a9._=-/+:example.com", "a9._=-/+", "example.com")
     }
 
     @Test
     fun matchValidUserIdentifierWithMatrixToLink() {
-        positiveTest("<a href=\"https://matrix.to/#/@user:example.com\">Hallo</a>", "user", "example.com")
+        positiveUserIdTest("<a href=\"https://matrix.to/#/@user:example.com\">Hallo</a>", "user", "example.com")
     }
 
     @Test
     fun matchValidUserIdentifierWithMatrixToLinkWithoutHref() {
-        positiveTest("https://matrix.to/#/@user:example.com", "user", "example.com")
+        positiveUserIdTest("https://matrix.to/#/@user:example.com", "user", "example.com")
     }
 
     @Test
     fun matchValidUserIdentifierWithMatrixULinkAndActionAttribute() {
-        positiveTest("matrix:u/user:example.com?action=chat", "user", "example.com")
+        positiveUserIdTest("matrix:u/user:example.com?action=chat", "user", "example.com")
     }
 
     @Test
     fun matchValidUserIdentifierWithMatrixULinkAndViaAttribute() {
-        positiveTest("matrix:u/user:example.com?via=example.com", "user", "example.com")
+        positiveUserIdTest("matrix:u/user:example.com?via=example.com", "user", "example.com")
     }
 
     @Test
     fun matchValidUserIdentifierWithMatrixULinkViaAndActionAttribute() {
-        positiveTest("matrix:u/user:example.com?via=example.com&action=chat", "user", "example.com")
+        positiveUserIdTest("matrix:u/user:example.com?via=example.com&action=chat", "user", "example.com")
     }
 
     fun matchValidUserIdentifierWithMatrixULinkActionAndViaAttribute() {
-        positiveTest("matrix:u/user:example.com?action=chat&via=example.com", "user", "example.com")
+        positiveUserIdTest("matrix:u/user:example.com?action=chat&via=example.com", "user", "example.com")
     }
 
     @Test
     fun matchValidUserIdentifierWithMatrixULink() {
-        positiveTest("matrix:u/user:example.com", "user", "example.com")
+        positiveUserIdTest("matrix:u/user:example.com", "user", "example.com")
     }
 
     @Test
     fun matchValidUserIdentifierWithSpecialCharacters() {
-        positiveTest("@user:sub.example.com:8000", "user", "sub.example.com:8000")
+        positiveUserIdTest("@user:sub.example.com:8000", "user", "sub.example.com:8000")
     }
 
     @Test
     fun matchValidUserIdentifierWithIPV4() {
-        positiveTest("@user:1.1.1.1", "user", "1.1.1.1")
+        positiveUserIdTest("@user:1.1.1.1", "user", "1.1.1.1")
     }
 
     @Test
     fun matchValidUserIdentifierWithIPV6() {
-        positiveTest(
+        positiveUserIdTest(
             "@user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
             "user",
             "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"
@@ -114,5 +126,64 @@ class MatrixRegexTest {
     @Test
     fun notMatchInvalidHtmlLinkTag() {
         negativeTest("<b href=\"https://matrix.to/#/@user:example.com>User</b>", MatrixRegex.userHtmlAnchor)
+    }
+
+    // Room IDs
+    @Test
+    fun matchValidRoomIdentifier() {
+        positiveRoomIdTest("!a9._=-/+:example.com", "a9._=-/+", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithMatrixToLink() {
+        positiveRoomIdTest("<a href=\"https://matrix.to/#/!user:example.com\">Hallo</a>", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithMatrixToLinkWithoutHref() {
+        positiveRoomIdTest("https://matrix.to/#/!user:example.com", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithMatrixULinkAndActionAttribute() {
+        positiveRoomIdTest("matrix:roomid/user:example.com?action=join", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithMatrixULinkAndViaAttribute() {
+        positiveRoomIdTest("matrix:roomid/user:example.com?via=example.com", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithMatrixULinkViaAndActionAttribute() {
+        positiveRoomIdTest("matrix:roomid/user:example.com?via=example.com&action=join", "user", "example.com")
+    }
+
+    fun matchValidRoomIdentifierWithMatrixULinkActionAndViaAttribute() {
+        positiveRoomIdTest("matrix:roomid/user:example.com?action=chat&via=example.com", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithMatrixULink() {
+        positiveRoomIdTest("matrix:roomid/user:example.com", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithSpecialCharacters() {
+        positiveRoomIdTest("!user:sub.example.com:8000", "user", "sub.example.com:8000")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithIPV4() {
+        positiveRoomIdTest("!user:1.1.1.1", "user", "1.1.1.1")
+    }
+
+    @Test
+    fun matchValidRoomIdentifierWithIPV6() {
+        positiveRoomIdTest(
+            "!user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            "user",
+            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"
+        )
     }
 }

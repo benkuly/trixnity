@@ -53,7 +53,7 @@ object MatrixRegex {
     private const val baseRoomAliasLinkRegex =
         """https?:\/\/matrix\.to\/#\/(#)($baseLocalpartRegex):($baseServernameRegex)$baseRoomLinkViaRegex"""
     private const val baseRoomLinkRegex =
-        """(?:$baseEventLinkRegex)|(?:$baseRoomIdLinkRegex)|(?:$baseRoomAliasLinkRegex)"""
+        """(?:(?:$baseEventLinkRegex)|(?:$baseRoomIdLinkRegex)|(?:$baseRoomAliasLinkRegex))"""
     private const val baseRoomHtmlAnchorRegex = """<a href="$baseRoomLinkRegex">.*<\/a>"""
     private const val baseUserLinkRegex =
         """https?:\/\/matrix\.to\/#\/(@)($baseLocalpartRegex):($baseServernameRegex)"""
@@ -75,6 +75,7 @@ object MatrixRegex {
     val roomLink by lazy { baseRoomLinkRegex.toRegex() }
     val roomHtmlAnchor by lazy { baseRoomHtmlAnchorRegex.toRegex() }
     val roomMention by lazy { baseMentionRoomRegex.toRegex() }
+    val roomIdLink = """<a href="$baseRoomIdLinkRegex">.*<\/a>""".toRegex()
 
     val userId by lazy { baseUserIdRegex.toRegex() }
     val userUri by lazy { baseUserUriRegex.toRegex() }
@@ -95,6 +96,7 @@ object MatrixRegex {
     }
 
     fun findMentions(message: String, matcher: Regex = mention): Map<String, Mention> {
+        println(baseRoomIdLinkRegex)
         return matcher.findAll(message).associate { result ->
             println(result.groupValues)
             val matched = result.groupValues[0]
@@ -103,6 +105,10 @@ object MatrixRegex {
             val sigil = match.joinToString(separator = "") { it[0] }
             val localpart = match.joinToString(separator = "")  { it[1] }
             val domain = match.joinToString(separator = "")  { it[2] }
+
+            println(sigil)
+            println(localpart)
+            println(domain)
 
             val eventlocation = sigil
             val eventSigil = localpart
