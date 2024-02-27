@@ -2,6 +2,7 @@ package net.folivo.trixnity.core
 
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.core.MatrixRegex.findMentions
+import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import kotlin.test.Test
@@ -26,6 +27,16 @@ class MatrixRegexTest {
             else findMentions(message)
         result.size shouldBe 1
         result[id] shouldBe RoomId(localpart, domain)
+    }
+
+    fun positiveRoomAliasTest(id: String, localpart: String, domain: String, matcher: Regex? = null) {
+        val message = "omw to $id"
+
+        val result =
+            if (matcher != null) findMentions(message, matcher)
+            else findMentions(message)
+        result.size shouldBe 1
+        result[id] shouldBe RoomAliasId(localpart, domain)
     }
 
     fun negativeTest(id: String, matcher: Regex? = null) {
@@ -126,6 +137,65 @@ class MatrixRegexTest {
     @Test
     fun notMatchInvalidHtmlLinkTag() {
         negativeTest("<b href=\"https://matrix.to/#/@user:example.com>User</b>", MatrixRegex.userHtmlAnchor)
+    }
+
+    // Room Alias
+    @Test
+    fun matchValidRoomAlias() {
+        positiveRoomAliasTest("#a9._=-/+:example.com", "a9._=-/+", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithMatrixToLink() {
+        positiveRoomAliasTest("<a href=\"https://matrix.to/#/#user:example.com\">Hallo</a>", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithMatrixToLinkWithoutHref() {
+        positiveRoomAliasTest("https://matrix.to/#/#user:example.com", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithMatrixULinkAndActionAttribute() {
+        positiveRoomAliasTest("matrix:r/user:example.com?action=join", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithMatrixULinkAndViaAttribute() {
+        positiveRoomAliasTest("matrix:r/user:example.com?via=example.com", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithMatrixULinkViaAndActionAttribute() {
+        positiveRoomAliasTest("matrix:r/user:example.com?via=example.com&action=join", "user", "example.com")
+    }
+
+    fun matchValidRoomAliasWithMatrixULinkActionAndViaAttribute() {
+        positiveRoomAliasTest("matrix:r/user:example.com?action=chat&via=example.com", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithMatrixULink() {
+        positiveRoomAliasTest("matrix:r/user:example.com", "user", "example.com")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithSpecialCharacters() {
+        positiveRoomAliasTest("#user:sub.example.com:8000", "user", "sub.example.com:8000")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithIPV4() {
+        positiveRoomAliasTest("#user:1.1.1.1", "user", "1.1.1.1")
+    }
+
+    @Test
+    fun matchValidRoomAliasWithIPV6() {
+        positiveRoomAliasTest(
+            "#user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            "user",
+            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"
+        )
     }
 
     // Room IDs
