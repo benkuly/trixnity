@@ -192,6 +192,7 @@ fun createTrixnityBotModules() = listOf(
         }
         single<UserService> {
             UserServiceImpl(
+                roomStore = get(),
                 roomUserStore = get(),
                 roomStateStore = get(),
                 roomTimelineStore = get(),

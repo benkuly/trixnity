@@ -1,12 +1,16 @@
 workflow:
+  auto_cancel:
+    on_new_commit: interruptible
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
 
 stages:
   - prepare-build
   - build
   - test
+  - security
   - publish-snapshot
   - publish
   - website
@@ -83,6 +87,8 @@ variables:
 
 .if-main: &if-main
   - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
+    when: never
+  - if: $CI_PIPELINE_SOURCE == "schedule"
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
@@ -191,6 +197,36 @@ test:integration-test:
     - ./gradlew
       :trixnity-client:integration-tests:jvmTest
       --stacktrace
+
+security:dependencies:
+  stage: security
+  interruptible: true
+  timeout: 30m
+  needs: [ ]
+  tags: [ "saas-linux-small-amd64" ]
+  image:
+    name: "aquasec/trivy"
+    entrypoint: [ "" ]
+  variables:
+    TRIVY_CACHE_DIR: ".trivycache/"
+  cache:
+    paths:
+      - .trivycache/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      allow_failure: true
+    - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
+      allow_failure: false
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      allow_failure: false
+  artifacts:
+    when: always
+    reports:
+      dependency_scanning: report.json
+  script:
+    - trivy repo ./ --exit-code 0
+    - trivy repo ./ --exit-code 0 --format template --template "@/contrib/gitlab.tpl" --output report.json
+    - trivy repo ./ --exit-code 1 --severity CRITICAL
 
 publish-snapshot:mac:
   stage: publish-snapshot

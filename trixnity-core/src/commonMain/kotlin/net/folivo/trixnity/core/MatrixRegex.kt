@@ -5,7 +5,7 @@ import net.folivo.trixnity.core.model.*
 object MatrixRegex {
 
     // https://spec.matrix.org/v1.9/appendices/#identifier-grammar
-    private const val baseLocalpartRegex = """[a-z0-9.\-_=\/+]+"""
+    private const val baseUserLocalpartRegex = """[a-z0-9.\-_=/+]+"""
 
     // Nothing in the Appendix found, assumed that based on research
     // TL;DR it's an "encrypted" by the Server for security reasons
@@ -13,10 +13,10 @@ object MatrixRegex {
 
     // https://spec.matrix.org/v1.9/appendices/#server-name
     private const val basePortRegex = """:[0-9]{1,5}"""
-    private const val baseDomainRegex = """(?:[\w-]+\.)?[\w-]+\.[\w-]+(?:$basePortRegex)?"""
+    private const val baseDnsRegex = """(?:[\w-]+\.)?[\w-]+\.[\w-]+(?:$basePortRegex)?"""
     private const val baseIPV4Regex = """\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:$basePortRegex)?"""
     private const val baseIPV6Regex = """\[[0-9a-fA-F:]+\](?:$basePortRegex)?"""
-    private const val baseServernameRegex = """(?:(?:$baseIPV4Regex)|(?:$baseDomainRegex)|(?:$baseIPV6Regex))"""
+    private const val baseDomainRegex = """(?:(?:$baseIPV4Regex)|(?:$baseDnsRegex)|(?:$baseIPV6Regex))"""
 
     // https://spec.matrix.org/v1.9/appendices/#room-ids
     private const val baseRoomIdRegex = """(!)($baseOpaqueIdRegex):($baseServernameRegex)"""

@@ -20,6 +20,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.EventType
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
+import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
@@ -30,6 +31,7 @@ class UserServiceTest : ShouldSpec({
     val alice = UserId("alice", "server")
     val me = UserId("me", "server")
     val roomId = simpleRoom.roomId
+    lateinit var roomStore: RoomStore
     lateinit var roomUserStore: RoomUserStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomTimelineStore: RoomTimelineStore
@@ -64,11 +66,13 @@ class UserServiceTest : ShouldSpec({
         api = newApi
         currentSyncState.value = SyncState.RUNNING
         scope = CoroutineScope(Dispatchers.Default)
+        roomStore = getInMemoryRoomStore(scope)
         roomUserStore = getInMemoryRoomUserStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomTimelineStore = getInMemoryRoomTimelineStore(scope)
         cut = UserServiceImpl(
+            roomStore = roomStore,
             roomUserStore = roomUserStore,
             roomStateStore = roomStateStore,
             roomTimelineStore = roomTimelineStore,
@@ -82,10 +86,9 @@ class UserServiceTest : ShouldSpec({
             mappings = DefaultEventContentSerializerMappings,
         )
 
-        beforeTest { // some defaults
-            roomStateStore.save(getPowerLevelsEvent(PowerLevelsEventContent()))
-            roomStateStore.save(getCreateEvent(UserId("creator", "server")))
-        }
+        roomStore.update(roomId) { Room(roomId, membership = JOIN) }
+        roomStateStore.save(getPowerLevelsEvent(PowerLevelsEventContent()))
+        roomStateStore.save(getCreateEvent(UserId("creator", "server")))
     }
 
     afterTest {
@@ -124,6 +127,19 @@ class UserServiceTest : ShouldSpec({
     }
 
     context(UserServiceImpl::canKickUser.name) {
+        should("return false when not member of room") {
+            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 56,
+                        alice to 54
+                    ), kick = 55
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canKickUser(roomId, alice).first() shouldBe false
+        }
         context("my power level > kick level") {
             should("return true when my level > other user level") {
                 val powerLevelsEvent = getPowerLevelsEvent(
@@ -241,6 +257,19 @@ class UserServiceTest : ShouldSpec({
     }
 
     context(UserServiceImpl::canBanUser.name) {
+        should("return false when not member of room") {
+            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 56,
+                        alice to 54
+                    ), ban = 55
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canBanUser(roomId, alice).first() shouldBe false
+        }
         context("my power level > ban level") {
             should("return true when my level > other user level") {
                 val powerLevelsEvent = getPowerLevelsEvent(
@@ -358,6 +387,21 @@ class UserServiceTest : ShouldSpec({
     }
 
     context(UserServiceImpl::canUnbanUser.name) {
+        should("return false when not member of room") {
+            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+            val otherUserLevel = 60L
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 61L,
+                        alice to otherUserLevel
+                    ), kick = 60L,
+                    ban = 60L
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canUnbanUser(roomId, alice).first() shouldBe false
+        }
         context("my level > kick level") {
             val kickLevel = 60L
             val myLevel = 61L
@@ -779,6 +823,18 @@ class UserServiceTest : ShouldSpec({
     }
 
     context(UserServiceImpl::canInvite.name) {
+        should("return false when not member of room") {
+            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 56,
+                    ), invite = 55
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canInvite(roomId).first() shouldBe false
+        }
         should("return true when my power level > invite level") {
             val powerLevelsEvent = getPowerLevelsEvent(
                 PowerLevelsEventContent(
@@ -816,6 +872,18 @@ class UserServiceTest : ShouldSpec({
     }
 
     context(UserServiceImpl::canInviteUser.name) {
+        should("return false when not member of room") {
+            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 56,
+                    ), invite = 55
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canInviteUser(roomId, alice).first() shouldBe false
+        }
         context("User I want to invite is banned") {
             beforeTest {
                 val memberEvent = StateEvent(
@@ -915,6 +983,20 @@ class UserServiceTest : ShouldSpec({
         }
     }
     context("canSendEvent") {
+        should("return false when not member of room") {
+            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 55,
+                        alice to 50
+                    ),
+                    events = mapOf(EventType(RoomMessageEventContent::class, "m.room.message") to 55),
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canSendEvent<RoomMessageEventContent>(roomId).first() shouldBe false
+        }
         should("be true when allowed to send") {
             val powerLevelsEvent = getPowerLevelsEvent(
                 PowerLevelsEventContent(
@@ -965,6 +1047,21 @@ class UserServiceTest : ShouldSpec({
         }
     }
     context("canSetPowerLevelToMax") {
+        should("return null when not member of room") {
+            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+            val powerLevelsEvent = getPowerLevelsEvent(
+                PowerLevelsEventContent(
+                    users = mapOf(
+                        me to 55,
+                        alice to 50
+                    ),
+                    events = mapOf(EventType(PowerLevelsEventContent::class, "m.room.power_levels") to 55),
+                    stateDefault = 60L
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe null
+        }
         context("events-map is not null") {
             should("not allow to change the power level when (events power_levels value > own power level") {
                 val powerLevelsEvent = getPowerLevelsEvent(
@@ -1106,6 +1203,26 @@ class UserServiceTest : ShouldSpec({
             gap = null,
         )
 
+        should("return false when not member of room") {
+            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+            roomStateStore.save(
+                StateEvent(
+                    content = PowerLevelsEventContent(
+                        users = mapOf(
+                            me to 40,
+                        ),
+                        redact = 30,
+                    ),
+                    id = EventId("eventId"),
+                    sender = me,
+                    roomId = roomId,
+                    originTimestamp = 0L,
+                    stateKey = "",
+                )
+            )
+            roomTimelineStore.addAll(listOf(eventByOtherUser))
+            cut.canRedactEvent(eventByOtherUser.roomId, eventByOtherUser.eventId).firstOrNull() shouldBe false
+        }
         should("return true if it is the event of the user and the user's power level is at least as high as the needed event redaction level") {
             roomStateStore.save(
                 StateEvent(

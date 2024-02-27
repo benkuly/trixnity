@@ -12,7 +12,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
-import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import kotlin.reflect.KClass
 
@@ -88,8 +87,8 @@ class UserServiceMock : UserService {
 
     override fun getPowerLevel(
         userId: UserId,
-        powerLevelsEventContent: PowerLevelsEventContent?,
-        createEventContent: CreateEventContent
+        roomCreator: UserId,
+        powerLevelsEventContent: PowerLevelsEventContent?
     ): Long {
         throw NotImplementedError()
     }
