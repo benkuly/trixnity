@@ -13,50 +13,50 @@ object MatrixRegex {
 
     // https://spec.matrix.org/v1.9/appendices/#server-name
     private const val basePortRegex = """:[0-9]{1,5}"""
-    private const val baseDomainRegex = """(?:[\w-]+\.)?[\w-]+\.[\w-]+(?:$basePortRegex)?"""
+    private const val baseDNSRegex = """(?:[\w-]+\.)?[\w-]+\.[\w-]+(?:$basePortRegex)?"""
     private const val baseIPV4Regex = """\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:$basePortRegex)?"""
     private const val baseIPV6Regex = """\[[0-9a-fA-F:]+\](?:$basePortRegex)?"""
-    private const val baseServernameRegex = """(?:(?:$baseIPV4Regex)|(?:$baseDomainRegex)|(?:$baseIPV6Regex))"""
+    private const val baseDomainRegex = """(?:(?:$baseIPV4Regex)|(?:$baseDNSRegex)|(?:$baseIPV6Regex))"""
 
     // https://spec.matrix.org/v1.9/appendices/#room-ids
-    private const val baseRoomIdRegex = """(!)($baseOpaqueIdRegex):($baseServernameRegex)"""
+    private const val baseRoomIdRegex = """(!)($baseOpaqueIdRegex):($baseDomainRegex)"""
 
     // https://spec.matrix.org/v1.9/appendices/#room-aliases
-    private const val baseRoomAliasRegex = """(#)($baseLocalpartRegex):($baseServernameRegex)"""
+    private const val baseRoomAliasRegex = """(#)($baseLocalpartRegex):($baseDomainRegex)"""
 
     // https://spec.matrix.org/latest/appendices/#event-ids
     private const val baseEventIdRegex = """()(\$)($baseOpaqueIdRegex)"""
 
     // https://spec.matrix.org/v1.9/appendices/#user-identifiers
-    private const val baseUserIdRegex = """(@)($baseLocalpartRegex):($baseServernameRegex)"""
+    private const val baseUserIdRegex = """(@)($baseLocalpartRegex):($baseDomainRegex)"""
 
     // https://spec.matrix.org/v1.9/appendices/#matrix-uri-scheme
     private const val baseRoomUriViaRegex =
-        """(?:(?:\?action=join(?:&via=$baseServernameRegex)?)|(?:\?via=$baseServernameRegex(?:&action=join)?))?"""
+        """(?:(?:\?action=join(?:&via=$baseDomainRegex)?)|(?:\?via=$baseDomainRegex(?:&action=join)?))?"""
     private const val baseEventUriRegex =
-        """matrix:((?:(?:roomid)|(?:r))\/$baseLocalpartRegex:$baseServernameRegex)\/(e)\/($baseOpaqueIdRegex)$baseRoomUriViaRegex"""
+        """matrix:((?:(?:roomid)|(?:r))\/$baseLocalpartRegex:$baseDomainRegex)\/(e)\/($baseOpaqueIdRegex)$baseRoomUriViaRegex"""
     private const val baseRoomIdUriRegex =
-        """matrix:(roomid)\/($baseLocalpartRegex):($baseServernameRegex)$baseRoomUriViaRegex"""
+        """matrix:(roomid)\/($baseLocalpartRegex):($baseDomainRegex)$baseRoomUriViaRegex"""
     private const val baseRoomAliasUriRegex =
-        """matrix:(r)\/($baseLocalpartRegex):($baseServernameRegex)$baseRoomUriViaRegex"""
+        """matrix:(r)\/($baseLocalpartRegex):($baseDomainRegex)$baseRoomUriViaRegex"""
     private const val baseRoomUriRegex =
         """(?:$baseRoomIdUriRegex)|(?:$baseRoomAliasUriRegex)|(?:$baseEventUriRegex)"""
     private const val baseUserUriRegex =
-        """matrix:(u)\/($baseLocalpartRegex):($baseServernameRegex)(?:(?:\?action=chat(?:&via=$baseServernameRegex)?)|(?:\?via=$baseServernameRegex(?:&action=chat)?))?"""
+        """matrix:(u)\/($baseLocalpartRegex):($baseDomainRegex)(?:(?:\?action=chat(?:&via=$baseDomainRegex)?)|(?:\?via=$baseDomainRegex(?:&action=chat)?))?"""
 
     // https://spec.matrix.org/v1.9/appendices/#matrixto-navigation
-    private const val baseRoomLinkViaRegex = """(?:\?via=$baseServernameRegex)?"""
+    private const val baseRoomLinkViaRegex = """(?:\?via=$baseDomainRegex)?"""
     private const val baseEventLinkRegex =
-        """https?:\/\/matrix\.to\/#\/((?:@|!)$baseLocalpartRegex:$baseServernameRegex)\/(\$)($baseOpaqueIdRegex)$baseRoomLinkViaRegex"""
+        """https?:\/\/matrix\.to\/#\/((?:@|!)$baseLocalpartRegex:$baseDomainRegex)\/(\$)($baseOpaqueIdRegex)$baseRoomLinkViaRegex"""
     private const val baseRoomIdLinkRegex =
-        """https?:\/\/matrix\.to\/#\/(!)($baseLocalpartRegex):($baseServernameRegex)$baseRoomLinkViaRegex"""
+        """https?:\/\/matrix\.to\/#\/(!)($baseLocalpartRegex):($baseDomainRegex)$baseRoomLinkViaRegex"""
     private const val baseRoomAliasLinkRegex =
-        """https?:\/\/matrix\.to\/#\/(#)($baseLocalpartRegex):($baseServernameRegex)$baseRoomLinkViaRegex"""
+        """https?:\/\/matrix\.to\/#\/(#)($baseLocalpartRegex):($baseDomainRegex)$baseRoomLinkViaRegex"""
     private const val baseRoomLinkRegex =
         """(?:(?:$baseEventLinkRegex)|(?:$baseRoomIdLinkRegex)|(?:$baseRoomAliasLinkRegex))"""
     private const val baseRoomHtmlAnchorRegex = """<a href="$baseRoomLinkRegex">.*<\/a>"""
     private const val baseUserLinkRegex =
-        """https?:\/\/matrix\.to\/#\/(@)($baseLocalpartRegex):($baseServernameRegex)"""
+        """https?:\/\/matrix\.to\/#\/(@)($baseLocalpartRegex):($baseDomainRegex)"""
     private const val baseUserHtmlAnchorRegex = """<a href="$baseUserLinkRegex">.*<\/a>"""
 
     private const val baseMentionRoomRegex =
@@ -66,7 +66,7 @@ object MatrixRegex {
     private const val baseMentionRegex = """(?:$baseMentionUserRegex)|(?:$baseMentionRoomRegex)"""
 
     val IPv4 by lazy { baseIPV4Regex.toRegex() }
-    val domain by lazy { baseServernameRegex.toRegex() }
+    val domain by lazy { baseDomainRegex.toRegex() }
     val localpart by lazy { baseLocalpartRegex.toRegex() }
 
     val roomId by lazy { baseRoomIdRegex.toRegex() }
