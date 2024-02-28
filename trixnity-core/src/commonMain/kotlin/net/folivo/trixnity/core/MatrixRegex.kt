@@ -50,14 +50,14 @@ object MatrixRegex {
     private const val baseEventLinkRegex =
         """https?:\/\/matrix\.to\/#\/((?:@|!)$baseLocalpartRegex:$baseDomainRegex)\/(\$)($baseOpaqueIdRegex)$baseRoomLinkViaRegex"""
     private const val baseRoomIdLinkRegex =
-        """https?:\/\/matrix\.to\/#\/(!)($baseLocalpartRegex):($baseDomainRegex)$baseRoomLinkViaRegex"""
+        """https?:\/\/matrix\.to\/#\/$baseRoomIdRegex$baseRoomLinkViaRegex"""
     private const val baseRoomAliasLinkRegex =
-        """https?:\/\/matrix\.to\/#\/(#)($baseLocalpartRegex):($baseDomainRegex)$baseRoomLinkViaRegex"""
+        """https?:\/\/matrix\.to\/#\/$baseRoomAliasRegex$baseRoomLinkViaRegex"""
     private const val baseRoomLinkRegex =
         """(?:(?:$baseEventLinkRegex)|(?:$baseRoomIdLinkRegex)|(?:$baseRoomAliasLinkRegex))"""
     private const val baseRoomHtmlAnchorRegex = """<a href="$baseRoomLinkRegex">.*<\/a>"""
     private const val baseUserLinkRegex =
-        """https?:\/\/matrix\.to\/#\/(@)($baseLocalpartRegex):($baseDomainRegex)"""
+        """https?:\/\/matrix\.to\/#\/$baseUserIdRegex"""
     private const val baseUserHtmlAnchorRegex = """<a href="$baseUserLinkRegex">.*<\/a>"""
 
     private const val baseMentionRoomRegex =
