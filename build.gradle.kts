@@ -16,7 +16,13 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix("4.2.3")
+    version = withVersionSuffix("4.2.6")
+
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+
+    val dependenciesForAll by tasks.registering(DependencyReportTask::class) { }
 }
 
 subprojects {

@@ -261,7 +261,7 @@ class KeyServiceImpl(
     ): KeyService.BootstrapCrossSigning {
         val passphraseInfo = AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
             salt = SecureRandom.nextBytes(32).encodeBase64(),
-            iterations = 120_000,
+            iterations = 210_000,
             bits = 32 * 8
         )
         val iv = SecureRandom.nextBytes(16)

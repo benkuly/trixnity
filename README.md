@@ -17,3 +17,11 @@ using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 [Website with documentation](https://trixnity.gitlab.io/trixnity)
 
 **You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).**
+
+## Development
+
+### Upgrade lock
+
+If any dependency is upgraded, the locks also have to be upgraded. This is done with the following command:
+
+Run `./gradlew dependenciesForAll --write-locks --no-parallel`.

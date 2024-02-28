@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import net.folivo.trixnity.core.model.*
 
 object MatrixRegex {
@@ -14,10 +13,10 @@ object MatrixRegex {
 
     // https://spec.matrix.org/v1.9/appendices/#server-name
     private const val basePortRegex = """:[0-9]{1,5}"""
-    private const val baseDNSRegex = """(?:[\w-]+\.)?[\w-]+\.[\w-]+(?:$basePortRegex)?"""
+    private const val baseDnsRegex = """(?:[\w-]+\.)?[\w-]+\.[\w-]+(?:$basePortRegex)?"""
     private const val baseIPV4Regex = """\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:$basePortRegex)?"""
     private const val baseIPV6Regex = """\[[0-9a-fA-F:]+\](?:$basePortRegex)?"""
-    private const val baseDomainRegex = """(?:(?:$baseIPV4Regex)|(?:$baseDNSRegex)|(?:$baseIPV6Regex))"""
+    private const val baseDomainRegex = """(?:(?:$baseIPV4Regex)|(?:$baseDnsRegex)|(?:$baseIPV6Regex))"""
 
     // https://spec.matrix.org/v1.9/appendices/#room-ids
     private const val baseRoomIdRegex = """(!)($baseOpaqueIdRegex):($baseDomainRegex)"""
