@@ -1,5 +1,6 @@
 package net.folivo.trixnity.core
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import net.folivo.trixnity.core.model.*
 
 object MatrixRegex {
@@ -97,7 +98,6 @@ object MatrixRegex {
 
     fun findMentions(message: String, matcher: Regex = mention): Map<String, Mention> {
         return matcher.findAll(message).associate { result ->
-            println(result.groupValues)
             val matched = result.groupValues[0]
             val match = result.groupValues.drop(1).windowed(3, 3)
 
