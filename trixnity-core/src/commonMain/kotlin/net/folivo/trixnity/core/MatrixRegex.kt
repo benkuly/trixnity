@@ -127,9 +127,9 @@ object MatrixRegex {
                     eventId,
                     if (eventlocation.startsWith("r/")) RoomAliasId(eventlocation.replaceFirst("r/", "#"))
                     else if (eventlocation.startsWith("#")) RoomAliasId(eventlocation)
-                    else if (eventlocation.startsWith("roomid/")) RoomId(eventlocation.replaceFirst("roomid/", "!"))
-                    else if (eventlocation.startsWith("!")) RoomId(eventlocation)
-                    else RoomId("")
+                    else if (eventlocation.startsWith("roomid/")) RoomAliasId(eventlocation.replaceFirst("roomid/", "!"))
+                    else if (eventlocation.startsWith("!")) RoomAliasId(eventlocation)
+                    else RoomAliasId("")
                 )
             }
         }

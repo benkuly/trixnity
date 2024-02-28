@@ -1,12 +1,8 @@
 package net.folivo.trixnity.core.model
 
 sealed interface Mention {
-    val full: String
-    val localpart: String
-    val domain: String
+    data class User(val userId: UserId) : Mention
+    data class Room(val roomId: RoomId) : Mention
+    data class RoomAlias(val roomAliasId: RoomAliasId) : Mention
+    data class Event(val eventId: EventId) : Mention
 }
-
-val a = UserId
-val b = RoomId
-val c = RoomAliasId
-val d = EventId

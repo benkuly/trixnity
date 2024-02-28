@@ -47,7 +47,7 @@ class MatrixRegexTest {
             if (matcher != null) findMentions(message, matcher)
             else findMentions(message)
         result.size shouldBe 1
-        result[id] shouldBe EventId(opaqueId, RoomId(room))
+        result[id] shouldBe EventId(opaqueId, RoomAliasId(room))
     }
 
     fun negativeTest(id: String, matcher: Regex? = null) {
