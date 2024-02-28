@@ -1,5 +1,6 @@
 package net.folivo.trixnity.core
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import net.folivo.trixnity.core.model.*
 
 object MatrixRegex {
@@ -96,19 +97,23 @@ object MatrixRegex {
     }
 
     fun findMentions(message: String, matcher: Regex = mention): Map<String, Mention> {
-        println(baseEventUriRegex)
         return matcher.findAll(message).associate { result ->
             println(result.groupValues)
             val matched = result.groupValues[0]
             val match = result.groupValues.drop(1).windowed(3, 3)
 
             val sigil = match.joinToString(separator = "") { it[0] }
-            val localpart = match.joinToString(separator = "")  { it[1] }
-            val domain = match.joinToString(separator = "")  { it[2] }
+            val localpart = match.joinToString(separator = "") { it[1] }
+            val domain = match.joinToString(separator = "") { it[2] }
 
-            println(sigil)
-            println(localpart)
-            println(domain)
+            KotlinLogging.logger("Regex").trace {
+                """
+                    Matched: $matched
+                    Sigil/Event Location: $sigil
+                    Localpart/Event Sigil: $localpart
+                    Domain/EventId: $domain
+                """.trimIndent()
+            }
 
             val eventlocation = sigil
             val eventSigil = localpart
@@ -118,12 +123,13 @@ object MatrixRegex {
                 "@", "u" -> matched to UserId(localpart, domain)
                 "!", "roomid" -> matched to RoomId(localpart, domain)
                 "#", "r" -> matched to RoomAliasId(localpart, domain)
-                else -> matched to (
-                    if (eventlocation.startsWith("r/")) EventId(eventId, RoomAliasId(eventlocation.replaceFirst("r/", "#")))
-                    else if (eventlocation.startsWith("#")) EventId(eventId, RoomAliasId(eventlocation))
-                    else if (eventlocation.startsWith("roomid/")) EventId(eventId, RoomId(eventlocation.replaceFirst("roomid/", "!")))
-                    else if (eventlocation.startsWith("!")) EventId(eventId, RoomId(eventlocation))
-                    else EventId(eventId, RoomId(""))
+                else -> matched to EventId(
+                    eventId,
+                    if (eventlocation.startsWith("r/")) RoomAliasId(eventlocation.replaceFirst("r/", "#"))
+                    else if (eventlocation.startsWith("#")) RoomAliasId(eventlocation)
+                    else if (eventlocation.startsWith("roomid/")) RoomId(eventlocation.replaceFirst("roomid/", "!"))
+                    else if (eventlocation.startsWith("!")) RoomId(eventlocation)
+                    else RoomId("")
                 )
             }
         }
