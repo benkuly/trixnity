@@ -125,7 +125,7 @@ object MatrixRegex {
                 "!", "roomid" -> matched to Mention.Room(RoomId(localpart, domain))
                 "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpart, domain))
                 else -> matched to Mention.Event(EventId(
-                    "$eventSigil$eventId",
+                    "$$eventId",
                 ))
             }
         }
