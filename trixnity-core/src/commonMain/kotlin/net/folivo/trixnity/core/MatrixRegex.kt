@@ -6,11 +6,11 @@ import net.folivo.trixnity.core.model.*
 object MatrixRegex {
 
     // https://spec.matrix.org/v1.9/appendices/#identifier-grammar
-    private const val baseLocalpartRegex = """[a-z0-9.\-_=\/+]+"""
+    private const val baseLocalpartRegex = """(?:[a-z0-9.\-_=\/+]+)"""
 
     // Nothing in the Appendix found, assumed that based on research
     // TL;DR it's an "encrypted" by the Server for security reasons
-    private const val baseOpaqueIdRegex = """[a-zA-Z0-9.\-_=\/+]+"""
+    private const val baseOpaqueIdRegex = """(?:\S+)"""
 
     // https://spec.matrix.org/v1.9/appendices/#server-name
     private const val basePortRegex = """:[0-9]{1,5}"""
