@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = EventIdSerializer::class)
-data class EventId(val full: String): Mention {
+data class EventId(val full: String) {
     override fun toString() = full
 }
 

@@ -119,17 +119,12 @@ object MatrixRegex {
             val eventId = domain
 
             when (sigil) {
-                "@", "u" -> matched to UserId(localpart, domain)
-                "!", "roomid" -> matched to RoomId(localpart, domain)
-                "#", "r" -> matched to RoomAliasId(localpart, domain)
-                else -> matched to EventId(
-                    eventId,
-                    if (eventlocation.startsWith("r/")) RoomAliasId(eventlocation.replaceFirst("r/", "#"))
-                    else if (eventlocation.startsWith("#")) RoomAliasId(eventlocation)
-                    else if (eventlocation.startsWith("roomid/")) RoomAliasId(eventlocation.replaceFirst("roomid/", "!"))
-                    else if (eventlocation.startsWith("!")) RoomAliasId(eventlocation)
-                    else RoomAliasId("")
-                )
+                "@", "u" -> matched to Mention.User(UserId(localpart, domain))
+                "!", "roomid" -> matched to Mention.Room(RoomId(localpart, domain))
+                "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpart, domain))
+                else -> matched to Mention.Event(EventId(
+                    "$eventSigil$eventId",
+                ))
             }
         }
     }

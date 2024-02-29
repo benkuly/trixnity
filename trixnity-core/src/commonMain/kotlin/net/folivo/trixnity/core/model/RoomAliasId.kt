@@ -9,7 +9,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = RoomAliasIdSerializer::class)
-data class RoomAliasId(val full: String): Mention {
+data class RoomAliasId(val full: String) {
 
     constructor(localpart: String, domain: String) : this("${sigilCharacter}$localpart:$domain")
 
