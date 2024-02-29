@@ -3,6 +3,8 @@ package net.folivo.trixnity.core
 import io.github.oshai.kotlinlogging.KotlinLogging
 import net.folivo.trixnity.core.model.*
 
+private val log = KotlinLogging.logger {}
+
 object MatrixRegex {
 
     // https://spec.matrix.org/v1.9/appendices/#identifier-grammar
@@ -105,7 +107,7 @@ object MatrixRegex {
             val localpart = match.joinToString(separator = "") { it[1] }
             val domain = match.joinToString(separator = "") { it[2] }
 
-            KotlinLogging.logger("Regex").trace {
+            log.trace {
                 """
                     Matched: $matched
                     Sigil/Event Location: $sigil
