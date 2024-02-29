@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -32,50 +31,35 @@ class DirectRoomEventHandler(
     }
 
     internal suspend fun setNewDirectEventFromMemberEvent(events: List<StateEvent<MemberEventContent>>) {
-        val initialDirectEventContent = globalAccountDataStore.get<DirectEventContent>().first()?.content
-        val directEventContent = MutableStateFlow(initialDirectEventContent)
+        val initialDirectEventContentMappings =
+            globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings.orEmpty()
 
-        events.forEach { event ->
-            val currentDirectRooms = directEventContent.value
+        log.debug { "direct event mappings before recalculation: $initialDirectEventContentMappings" }
+
+        var directEventContentMappings = initialDirectEventContentMappings
+        for (event in events) {
             val roomId = event.roomId
             val stateKey = event.stateKey
             val sender = event.sender
-            log.trace { "set direct room $roomId for $stateKey" }
             val userWithMembershipChange = UserId(stateKey)
-            val directUser =
-                when {
-                    userInfo.userId == sender -> userWithMembershipChange
-                    userInfo.userId == userWithMembershipChange -> sender
-                    sender == userWithMembershipChange -> sender
-                    else -> return
-                }
 
-            if (directUser != userInfo.userId && event.content.isDirect == true) {
+            if (userWithMembershipChange == userInfo.userId && (event.content.membership == LEAVE || event.content.membership == BAN)) {
+                log.debug { "remove room $roomId from direct rooms, because we left it" }
+                directEventContentMappings =
+                    directEventContentMappings.mapValues { it.value?.minus(roomId) }
+                        .filterValues { it.isNullOrEmpty().not() }
+            } else if (event.content.isDirect == true && !(userInfo.userId == sender && sender == userWithMembershipChange)) {
+                val directUser = if (userInfo.userId == sender) userWithMembershipChange else sender
                 log.debug { "mark room $roomId as direct room with $directUser" }
-                val existingDirectRoomsWithUser = currentDirectRooms?.mappings?.get(directUser) ?: setOf()
-                directEventContent.value =
-                    currentDirectRooms?.copy(currentDirectRooms.mappings + (directUser to (existingDirectRoomsWithUser + roomId)))
-                        ?: DirectEventContent(mapOf(directUser to setOf(roomId)))
-            }
-            if ((event.content.membership == LEAVE || event.content.membership == BAN) && currentDirectRooms != null) {
-                if (directUser != userInfo.userId) {
-                    log.debug { "unmark room $roomId as direct room with $directUser" }
-                    directEventContent.value = DirectEventContent(
-                        (currentDirectRooms.mappings + (directUser to (currentDirectRooms.mappings[directUser].orEmpty() - roomId)))
-                            .filterValues { it.isNullOrEmpty().not() }
-                    )
-                } else {
-                    log.debug { "remove room $roomId from direct rooms, because we left it" }
-                    directEventContent.value = DirectEventContent(
-                        currentDirectRooms.mappings.mapValues { it.value?.minus(roomId) }
-                            .filterValues { it.isNullOrEmpty().not() }
-                    )
-                }
+                directEventContentMappings =
+                    directEventContentMappings + (directUser to (directEventContentMappings[directUser].orEmpty() + roomId))
             }
         }
-        val finalNewDirectRooms = directEventContent.value
-        if (finalNewDirectRooms != null && finalNewDirectRooms != initialDirectEventContent) {
-            api.user.setAccountData(finalNewDirectRooms, userInfo.userId).getOrThrow()
+
+        log.debug { "direct event mappings after recalculation: $directEventContentMappings" }
+
+        if (directEventContentMappings != initialDirectEventContentMappings) {
+            api.user.setAccountData(DirectEventContent(directEventContentMappings), userInfo.userId).getOrThrow()
         }
     }
 

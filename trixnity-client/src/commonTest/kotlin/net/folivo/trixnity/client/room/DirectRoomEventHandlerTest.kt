@@ -145,6 +145,28 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     )
                     setDirectCalled shouldBe true
                 }
+                should("ignore own direct room join") {
+                    var setDirectCalled = false
+                    apiConfig.endpoints {
+                        matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {
+                            it shouldBe DirectEventContent(mapOf(UserId("nobody", "server") to setOf(otherRoom)))
+                            setDirectCalled = true
+                        }
+                    }
+                    cut.setNewDirectEventFromMemberEvent(
+                        listOf(
+                            StateEvent(
+                                MemberEventContent(membership = Membership.JOIN, isDirect = true),
+                                EventId("$123"),
+                                sender = bob,
+                                room,
+                                1234,
+                                stateKey = bob.full
+                            )
+                        )
+                    )
+                    setDirectCalled shouldBe false
+                }
             }
             context("there are no direct rooms at all") {
                 should("add direct room") {
@@ -214,28 +236,7 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     var setDirectCalled = false
                     apiConfig.endpoints {
                         matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {
-                            it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
-                            setDirectCalled = true
-                        }
-                    }
-                    cut.setNewDirectEventFromMemberEvent(listOf(joinEvent))
-                    setDirectCalled shouldBe false
-                }
-            }
-            context("invitation does not affect us") {
-                val joinEvent = StateEvent(
-                    MemberEventContent(membership = Membership.JOIN, isDirect = true),
-                    EventId("$123"),
-                    sender = alice,
-                    room,
-                    1234,
-                    stateKey = UserId("someoneElse", "localhost").full
-                )
-                should("ignore this invitation") {
-                    var setDirectCalled = false
-                    apiConfig.endpoints {
-                        matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {
-                            it shouldBe DirectEventContent(mapOf(alice to setOf(room)))
+                            it shouldBe DirectEventContent(mapOf())
                             setDirectCalled = true
                         }
                     }
@@ -261,75 +262,19 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                 val event = StateEvent(
                     MemberEventContent(membership = Membership.LEAVE),
                     EventId("$123"),
-                    bob,
-                    room,
-                    1234,
-                    stateKey = bob.full
-                )
-                var setDirectCalled = false
-                apiConfig.endpoints {
-                    matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {
-                        it shouldBe DirectEventContent(
-                            mapOf(
-                                UserId("2", "server") to setOf(otherRoom)
-                            )
-                        )
-                        setDirectCalled = true
-                    }
-                }
-                cut.setNewDirectEventFromMemberEvent(listOf(event))
-                setDirectCalled shouldBe true
-            }
-            should("remove direct room on ban") {
-                val event = StateEvent(
-                    MemberEventContent(membership = Membership.BAN),
-                    EventId("$123"),
-                    bob,
-                    room,
-                    1234,
-                    stateKey = bob.full
-                )
-                var setDirectCalled = false
-                apiConfig.endpoints {
-                    matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {
-                        it shouldBe DirectEventContent(
-                            mapOf(
-                                UserId("2", "server") to setOf(otherRoom)
-                            )
-                        )
-                        setDirectCalled = true
-                    }
-                }
-                cut.setNewDirectEventFromMemberEvent(listOf(event))
-                setDirectCalled shouldBe true
-            }
-        }
-        context("others membership is leave or ban") {
-            beforeTest {
-                globalAccountDataStore.save(
-                    GlobalAccountDataEvent(
-                        DirectEventContent(
-                            mapOf(
-                                alice to setOf(room),
-                                UserId("2", "server") to setOf(room, otherRoom)
-                            )
-                        )
-                    )
-                )
-            }
-            should("remove direct room on leave") {
-                val event = StateEvent(
-                    MemberEventContent(membership = Membership.LEAVE),
-                    EventId("$123"),
                     alice,
                     room,
                     1234,
-                    stateKey = alice.full
+                    stateKey = bob.full
                 )
                 var setDirectCalled = false
                 apiConfig.endpoints {
                     matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {
-                        it shouldBe DirectEventContent(mapOf(UserId("2", "server") to setOf(room, otherRoom)))
+                        it shouldBe DirectEventContent(
+                            mapOf(
+                                UserId("2", "server") to setOf(otherRoom)
+                            )
+                        )
                         setDirectCalled = true
                     }
                 }
@@ -343,12 +288,16 @@ class DirectRoomEventHandlerTest : ShouldSpec({
                     bob,
                     room,
                     1234,
-                    stateKey = alice.full
+                    stateKey = bob.full
                 )
                 var setDirectCalled = false
                 apiConfig.endpoints {
                     matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {
-                        it shouldBe DirectEventContent(mapOf(UserId("2", "server") to setOf(room, otherRoom)))
+                        it shouldBe DirectEventContent(
+                            mapOf(
+                                UserId("2", "server") to setOf(otherRoom)
+                            )
+                        )
                         setDirectCalled = true
                     }
                 }
