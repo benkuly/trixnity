@@ -105,27 +105,23 @@ object MatrixRegex {
 
             val sigil = match.joinToString(separator = "") { it[0] }
             val localpart = match.joinToString(separator = "") { it[1] }
-            val domain = match.joinToString(separator = "") { it[2] }
+            val domainOrEventId = match.joinToString(separator = "") { it[2] }
 
             log.trace {
                 """
                     Matched: $matched
                     Sigil/Event Location: $sigil
                     Localpart/Event Sigil: $localpart
-                    Domain/EventId: $domain
+                    Domain/EventId: $domainOrEventId
                 """.trimIndent()
             }
 
-            val eventlocation = sigil
-            val eventSigil = localpart
-            val eventId = domain
-
             when (sigil) {
-                "@", "u" -> matched to Mention.User(UserId(localpart, domain))
-                "!", "roomid" -> matched to Mention.Room(RoomId(localpart, domain))
-                "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpart, domain))
+                "@", "u" -> matched to Mention.User(UserId(localpart, domainOrEventId))
+                "!", "roomid" -> matched to Mention.Room(RoomId(localpart, domainOrEventId))
+                "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpart, domainOrEventId))
                 else -> matched to Mention.Event(EventId(
-                    "$$eventId",
+                    "$$domainOrEventId",
                 ))
             }
         }
