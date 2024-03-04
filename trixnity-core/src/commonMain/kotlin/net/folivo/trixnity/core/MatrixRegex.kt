@@ -100,27 +100,31 @@ object MatrixRegex {
             val match = result.groupValues.drop(1).windowed(3, 3)
 
             val sigil = match.joinToString(separator = "") { it[0] }
-            val localpart = match.joinToString(separator = "") { it[1] }
+            val localpartOrEventSigil = match.joinToString(separator = "") { it[1] }
             val domainOrEventId = match.joinToString(separator = "") { it[2] }
 
             log.trace {
                 """
                     Matched: $matched
                     Sigil/Event Location: $sigil
-                    Localpart/Event Sigil: $localpart
+                    Localpart/Event Sigil: $localpartOrEventSigil
                     Domain/EventId: $domainOrEventId
                 """.trimIndent()
             }
 
             when (sigil) {
-                "@", "u" -> matched to Mention.User(UserId(localpart, domainOrEventId))
-                "!", "roomid" -> matched to Mention.Room(RoomId(localpart, domainOrEventId))
-                "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpart, domainOrEventId))
-                else -> matched to Mention.Event(EventId(
-                    "$$domainOrEventId",
-                ))
+                "@", "u" -> matched to Mention.User(UserId(localpartOrEventSigil, domainOrEventId))
+                "!", "roomid" -> matched to Mention.Room(RoomId(localpartOrEventSigil, domainOrEventId))
+                "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpartOrEventSigil, domainOrEventId))
+                else -> when (localpartOrEventSigil) {
+                    "$", "e" -> matched to Mention.Event(EventId("$$domainOrEventId"))
+                    else -> {
+                        log.warn { "Unknown mention type: $matched" }
+                        "" to Mention.Event(EventId(""))
+                    }
+                }
             }
-        }
+        }.filterNot { it.key == "" }
     }
 }
 
