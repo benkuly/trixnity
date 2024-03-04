@@ -9,9 +9,6 @@ object MatrixRegex {
 
     // https://spec.matrix.org/v1.9/appendices/#identifier-grammar
     private const val baseLocalpartRegex = """(?:[a-z0-9.\-_=\/+]+)"""
-
-    // Nothing in the Appendix found, assumed that based on research
-    // TL;DR it's an "encrypted" by the Server for security reasons
     private const val baseOpaqueIdRegex = """(?:\S+)"""
 
     // https://spec.matrix.org/v1.9/appendices/#server-name
@@ -78,7 +75,6 @@ object MatrixRegex {
     val roomLink by lazy { baseRoomLinkRegex.toRegex() }
     val roomHtmlAnchor by lazy { baseRoomHtmlAnchorRegex.toRegex() }
     val roomMention by lazy { baseMentionRoomRegex.toRegex() }
-    val roomIdLink = """<a href="$baseRoomIdLinkRegex">.*<\/a>""".toRegex()
 
     val userId by lazy { baseUserIdRegex.toRegex() }
     val userUri by lazy { baseUserUriRegex.toRegex() }
