@@ -9,7 +9,7 @@ object MatrixRegex {
 
     // https://spec.matrix.org/v1.9/appendices/#identifier-grammar
     private const val baseLocalpartRegex = """(?:[a-z0-9.\-_=\/+]+)"""
-    private const val baseOpaqueIdRegex = """(?:\S+)"""
+    private const val baseOpaqueIdRegex = """(?:[^\s?]+)"""
 
     // https://spec.matrix.org/v1.9/appendices/#server-name
     private const val basePortRegex = """:[0-9]{1,5}"""
