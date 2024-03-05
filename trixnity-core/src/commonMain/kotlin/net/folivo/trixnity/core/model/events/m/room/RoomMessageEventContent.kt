@@ -3,6 +3,7 @@ package net.folivo.trixnity.core.model.events.m.room
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -180,6 +181,28 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         }
     }
 
+    /**
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mlocation">matrix spec</a>
+     */
+    @Serializable
+    data class Location(
+        @SerialName("body") override val body: String,
+        @SerialName("geo_uri") private val stringGeoUri: String,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
+    ) : RoomMessageEventContent {
+        @SerialName("msgtype")
+        val type = "m.location"
+
+        @Transient
+        val geoUri = GeoUri(this.stringGeoUri)
+
+        companion object {
+            const val type = "m.location"
+        }
+    }
+
     @Serializable
     data class VerificationRequest(
         @SerialName("from_device") override val fromDevice: String,
@@ -251,6 +274,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
             is FileBased.File -> encoder.json.encodeToJsonElement(value)
             is FileBased.Audio -> encoder.json.encodeToJsonElement(value)
             is FileBased.Video -> encoder.json.encodeToJsonElement(value)
+            is Location -> encoder.json.encodeToJsonElement(value)
             is RoomMessageEventContent.VerificationRequest -> encoder.json.encodeToJsonElement(value)
             is Unknown -> value.raw
         }
@@ -265,6 +289,7 @@ fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
     is FileBased.Audio,
     is FileBased.File,
     is FileBased.Image,
+    is Location,
     is Unknown,
     is RoomMessageEventContent.VerificationRequest,
     is FileBased.Video -> null
