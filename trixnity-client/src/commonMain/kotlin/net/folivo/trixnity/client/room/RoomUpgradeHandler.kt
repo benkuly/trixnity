@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.RoomStore
+import net.folivo.trixnity.client.store.previousRoomId
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler

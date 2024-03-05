@@ -22,11 +22,14 @@ data class Room(
     val encrypted: Boolean = false,
     val membership: Membership = Membership.JOIN,
     val membersLoaded: Boolean = false,
-    val previousRoomId: RoomId? = createEventContent?.predecessor?.roomId,
     val nextRoomId: RoomId? = null,
 )
 
+val Room.previousRoomId: RoomId? get() = createEventContent?.predecessor?.roomId
+
 val Room.type: CreateEventContent.RoomType? get() = createEventContent?.type
+
+@Deprecated("use sender of CreateEventContent instead")
 val Room.creator: UserId? get() = createEventContent?.creator
 val Room.federate: Boolean? get() = createEventContent?.federate
 val Room.version: String? get() = createEventContent?.roomVersion
