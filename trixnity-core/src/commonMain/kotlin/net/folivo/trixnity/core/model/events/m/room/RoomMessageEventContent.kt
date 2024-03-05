@@ -275,7 +275,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
             is FileBased.Audio -> encoder.json.encodeToJsonElement(value)
             is FileBased.Video -> encoder.json.encodeToJsonElement(value)
             is Location -> encoder.json.encodeToJsonElement(value)
-            is RoomMessageEventContent.VerificationRequest -> encoder.json.encodeToJsonElement(value)
+            is VerificationRequest -> encoder.json.encodeToJsonElement(value)
             is Unknown -> value.raw
         }
         encoder.encodeJsonElement(jsonElement)
@@ -291,7 +291,7 @@ fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
     is FileBased.Image,
     is Location,
     is Unknown,
-    is RoomMessageEventContent.VerificationRequest,
+    is VerificationRequest,
     is FileBased.Video -> null
 }
 
