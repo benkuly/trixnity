@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -10,6 +11,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room
@@ -380,6 +382,9 @@ class TimelineEventIT {
 
             timelineFromOldRoom.state.first().elements.map { it.first().eventId } shouldBe
                     timelineFromNewRoom.state.first().elements.map { it.first().eventId }
+
+            client1.room.getAll().flattenValues(filterUpgradedRooms = true).first()
+                .map { it.roomId } shouldNotContain oldRoom
         }
     }
 
