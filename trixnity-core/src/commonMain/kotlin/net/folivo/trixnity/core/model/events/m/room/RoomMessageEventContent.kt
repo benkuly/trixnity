@@ -3,7 +3,6 @@ package net.folivo.trixnity.core.model.events.m.room
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -187,16 +186,13 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     @Serializable
     data class Location(
         @SerialName("body") override val body: String,
-        @SerialName("geo_uri") private val stringGeoUri: String,
+        @SerialName("geo_uri") val geoUri: String,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
         @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
         val type = "m.location"
-
-        @Transient
-        val geoUri = GeoUri(this.stringGeoUri)
 
         companion object {
             const val type = "m.location"
