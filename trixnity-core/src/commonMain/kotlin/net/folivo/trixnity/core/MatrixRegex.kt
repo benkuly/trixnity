@@ -65,7 +65,7 @@ object MatrixRegex {
         """(?:(?:$baseUserIdRegex)|(?:$baseUserUriRegex)|(?:$baseUserLinkRegex)|(?:$baseUserHtmlAnchorRegex))"""
     private const val baseMentionRegex = """(?:$baseMentionUserRegex)|(?:$baseMentionRoomRegex)"""
 
-    val IPv4 by lazy { baseIPV4Regex.toRegex() }
+    internal val IPv4 by lazy { baseIPV4Regex.toRegex() }
     val domain by lazy { baseDomainRegex.toRegex() }
     val localpart by lazy { baseLocalpartRegex.toRegex() }
 
