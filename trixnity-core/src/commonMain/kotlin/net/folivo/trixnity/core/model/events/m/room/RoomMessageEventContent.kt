@@ -242,6 +242,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
             FileBased.File.type -> decoder.json.decodeFromJsonElement<FileBased.File>(jsonObj)
             FileBased.Audio.type -> decoder.json.decodeFromJsonElement<FileBased.Audio>(jsonObj)
             FileBased.Video.type -> decoder.json.decodeFromJsonElement<FileBased.Video>(jsonObj)
+            Location.type -> decoder.json.decodeFromJsonElement<Location>(jsonObj)
             VerificationRequest.type ->
                 decoder.json.decodeFromJsonElement<VerificationRequest>(jsonObj)
 
