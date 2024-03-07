@@ -180,6 +180,25 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         }
     }
 
+    /**
+     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mlocation">matrix spec</a>
+     */
+    @Serializable
+    data class Location(
+        @SerialName("body") override val body: String,
+        @SerialName("geo_uri") val geoUri: String,
+        @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
+        @SerialName("m.mentions") override val mentions: Mentions? = null,
+        @SerialName("external_url") override val externalUrl: String? = null,
+    ) : RoomMessageEventContent {
+        @SerialName("msgtype")
+        val type = "m.location"
+
+        companion object {
+            const val type = "m.location"
+        }
+    }
+
     @Serializable
     data class VerificationRequest(
         @SerialName("from_device") override val fromDevice: String,
@@ -223,6 +242,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
             FileBased.File.type -> decoder.json.decodeFromJsonElement<FileBased.File>(jsonObj)
             FileBased.Audio.type -> decoder.json.decodeFromJsonElement<FileBased.Audio>(jsonObj)
             FileBased.Video.type -> decoder.json.decodeFromJsonElement<FileBased.Video>(jsonObj)
+            Location.type -> decoder.json.decodeFromJsonElement<Location>(jsonObj)
             VerificationRequest.type ->
                 decoder.json.decodeFromJsonElement<VerificationRequest>(jsonObj)
 
@@ -251,7 +271,8 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
             is FileBased.File -> encoder.json.encodeToJsonElement(value)
             is FileBased.Audio -> encoder.json.encodeToJsonElement(value)
             is FileBased.Video -> encoder.json.encodeToJsonElement(value)
-            is RoomMessageEventContent.VerificationRequest -> encoder.json.encodeToJsonElement(value)
+            is Location -> encoder.json.encodeToJsonElement(value)
+            is VerificationRequest -> encoder.json.encodeToJsonElement(value)
             is Unknown -> value.raw
         }
         encoder.encodeJsonElement(jsonElement)
@@ -265,8 +286,9 @@ fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
     is FileBased.Audio,
     is FileBased.File,
     is FileBased.Image,
+    is Location,
     is Unknown,
-    is RoomMessageEventContent.VerificationRequest,
+    is VerificationRequest,
     is FileBased.Video -> null
 }
 
