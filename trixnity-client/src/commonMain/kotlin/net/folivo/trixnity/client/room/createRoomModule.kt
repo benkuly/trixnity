@@ -35,14 +35,6 @@ fun createRoomModule() = module {
         bind<EventHandler>()
         named<RoomAccountDataEventHandler>()
     }
-    singleOf(::RoomAvatarUrlEventHandler) {
-        bind<EventHandler>()
-        named<RoomAvatarUrlEventHandler>()
-    }
-    singleOf(::RoomDisplayNameEventHandler) {
-        bind<EventHandler>()
-        named<RoomDisplayNameEventHandler>()
-    }
     singleOf(::RoomStateEventHandler) {
         bind<EventHandler>()
         named<RoomStateEventHandler>()
