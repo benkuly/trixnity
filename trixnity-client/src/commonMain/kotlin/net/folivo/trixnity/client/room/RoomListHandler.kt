@@ -42,7 +42,7 @@ class RoomListHandler(
     }
 
     internal suspend fun updateRoomList(syncEvents: SyncEvents) = coroutineScope {
-        val roomUpdates: ConcurrentMap<RoomId, ConcurrentList<suspend (Room?) -> Room?>> = concurrentMutableMap()
+        val roomUpdates: ConcurrentMap<RoomId, ConcurrentList<(Room?) -> Room?>> = concurrentMutableMap()
 
         val syncRooms = syncEvents.syncResponse.room
 
@@ -92,7 +92,7 @@ class RoomListHandler(
             lastRelevantEvent: ClientEvent.RoomEvent<*>?,
             unreadMessageCount: Long?,
             name: RoomDisplayName?,
-        ): suspend (Room?) -> Room {
+        ): (Room?) -> Room {
             val createEventContent = createEvents.await()[roomId]
             val encrypted = encryptionEnabled.await().contains(roomId)
             val nextRoomId = nextRoomIds.await()[roomId]
@@ -179,7 +179,7 @@ class RoomListHandler(
 
     private suspend fun updateIsDirectAndAvatarUrls(
         syncEvents: SyncEvents,
-        roomUpdates: ConcurrentMap<RoomId, ConcurrentList<suspend (Room?) -> Room?>>,
+        roomUpdates: ConcurrentMap<RoomId, ConcurrentList<(Room?) -> Room?>>,
     ) = coroutineScope {
         val directEvent = syncEvents.filterContent<DirectEventContent>().firstOrNull()?.content
         val syncRooms = syncEvents.syncResponse.room
@@ -396,9 +396,9 @@ class RoomListHandler(
         forEach { launch { block(it) } }
     }
 
-    private suspend fun ConcurrentMap<RoomId, ConcurrentList<suspend (Room?) -> Room?>>.add(
+    private suspend fun ConcurrentMap<RoomId, ConcurrentList<(Room?) -> Room?>>.add(
         roomId: RoomId,
-        value: suspend (Room?) -> Room?
+        value: (Room?) -> Room?
     ) = write {
         getOrPut(roomId) { concurrentMutableList() }.write { add(value) }
     }
