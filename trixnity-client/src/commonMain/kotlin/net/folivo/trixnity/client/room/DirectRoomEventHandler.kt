@@ -3,31 +3,30 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.GlobalAccountDataStore
+import net.folivo.trixnity.client.store.get
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
-import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.BAN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
+import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger {}
 
 class DirectRoomEventHandler(
     private val userInfo: UserInfo,
     private val api: MatrixClientServerApiClient,
-    private val roomStore: RoomStore,
-    private val roomStateStore: RoomStateStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribeEventList(subscriber = ::setNewDirectEventFromMemberEvent).unsubscribeOnCompletion(scope)
-        api.sync.subscribeContent(subscriber = ::setDirectRoomProperties).unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun setNewDirectEventFromMemberEvent(events: List<StateEvent<MemberEventContent>>) {
@@ -60,31 +59,6 @@ class DirectRoomEventHandler(
 
         if (directEventContentMappings != initialDirectEventContentMappings) {
             api.user.setAccountData(DirectEventContent(directEventContentMappings), userInfo.userId).getOrThrow()
-        }
-    }
-
-    // TODO merge into RoomListHandler (performance reasons)
-    internal suspend fun setDirectRoomProperties(directEvent: ClientEvent<DirectEventContent>) {
-        val allDirectRooms = directEvent.content.mappings.entries
-            .flatMap { entry -> entry.value?.map { it to entry.key }.orEmpty() }
-            .groupBy { it.first }
-            .mapValues { entry -> entry.value.map { it.second } }
-
-        roomStore.getAll().first().keys.map { room ->
-            val directUser = allDirectRooms[room]?.first()
-            val avatarUrl =
-                if (directUser != null && roomStateStore.getByStateKey<AvatarEventContent>(room)
-                        .first()?.content?.url.isNullOrEmpty()
-                )
-                    roomStateStore.getByStateKey<MemberEventContent>(room, stateKey = directUser.full).first()
-                        ?.content?.avatarUrl
-                else null
-            roomStore.update(room) { oldRoom ->
-                oldRoom?.copy(
-                    avatarUrl = avatarUrl?.ifEmpty { null } ?: oldRoom.avatarUrl,
-                    isDirect = directUser != null
-                )
-            }
         }
     }
 }
