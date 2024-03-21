@@ -10,7 +10,6 @@ javaPlatform {
 dependencies {
     // platform dependencies on BOMs enable consumers to better align versions of these libraries
     api(platform(libs.ktor.bom))
-    api(platform(libs.kotlinx.coroutines.bom))
 
     // ensure our own modules all are constrained to the same version
     constraints {
