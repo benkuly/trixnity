@@ -1,12 +1,13 @@
 package net.folivo.trixnity.client.integrationtests
 
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
@@ -17,6 +18,7 @@ import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
+import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.membership
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.store.roomId
@@ -126,7 +128,10 @@ class EncryptionIT {
             client2.api.room.joinRoom(roomId).getOrThrow()
 
             client1.user.getById(roomId, client2.userId).first { it?.membership == JOIN }
-            delay(1.seconds)
+            eventually(3.seconds) {
+                client1.di.get<OlmCryptoStore>().getOutboundMegolmSession(roomId).shouldNotBeNull()
+                    .newDevices.keys.shouldContain(client2.userId)
+            }
 
             client1.room.sendMessage(roomId) { text("Not secret.") }
             collectMessages.await().first().content?.getOrThrow()
