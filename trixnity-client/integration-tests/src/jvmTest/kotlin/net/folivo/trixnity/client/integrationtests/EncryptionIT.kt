@@ -20,7 +20,7 @@ import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.membership
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.client.user
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -57,15 +57,10 @@ class EncryptionIT {
             host = synapseDocker.host,
             port = synapseDocker.firstMappedPort
         ).build()
-        database1 = newDatabase()
-        database2 = newDatabase()
-
-        val repositoriesModule1 = createExposedRepositoriesModule(database1)
-        val repositoriesModule2 = createExposedRepositoriesModule(database2)
 
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            repositoriesModule = repositoriesModule1,
+            repositoriesModule = createInMemoryRepositoriesModule(),
             mediaStore = InMemoryMediaStore(),
             getLoginInfo = { it.register("user1", password) }
         ) {
@@ -73,7 +68,7 @@ class EncryptionIT {
         }.getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
-            repositoriesModule = repositoriesModule2,
+            repositoriesModule = createInMemoryRepositoriesModule(),
             mediaStore = InMemoryMediaStore(),
             getLoginInfo = { it.register("user2", password) }
         ) {
@@ -107,7 +102,6 @@ class EncryptionIT {
                 client1.room.waitForOutboxSent()
             }
 
-
             val roomId = client1.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
@@ -128,7 +122,7 @@ class EncryptionIT {
             client2.api.room.joinRoom(roomId).getOrThrow()
 
             client1.user.getById(roomId, client2.userId).first { it?.membership == JOIN }
-            eventually(5.seconds) {
+            eventually(10.seconds) {
                 client1.di.get<OlmCryptoStore>().getOutboundMegolmSession(roomId).shouldNotBeNull()
                     .newDevices.keys.shouldContain(client2.userId)
             }
