@@ -30,6 +30,7 @@ import kotlin.time.Duration.Companion.hours
 private val log = KotlinLogging.logger {}
 
 class OlmEventHandler(
+    private val userInfo: UserInfo,
     private val eventEmitter: ClientEventEmitter<*>,
     private val olmKeysChangeEmitter: OlmKeysChangeEmitter,
     private val decrypter: OlmDecrypter,
@@ -157,19 +158,21 @@ class OlmEventHandler(
         events.forEach { event ->
             val roomId = event.roomId
             val userId = UserId(event.stateKey)
-            val membership = event.content.membership
-            val membershipsAllowedToReceiveKey: Set<Membership> =
-                store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey
-            if (membershipsAllowedToReceiveKey.contains(membership)) {
-                log.debug { "add new devices to megolm session, because new membership does allow to share key" }
-                val devices = store.getDevices(roomId, userId)
-                if (!devices.isNullOrEmpty())
-                    store.updateOutboundMegolmSession(roomId) {
-                        it?.copy(newDevices = it.newDevices + (userId to devices))
-                    }
-            } else {
-                log.debug { "reset megolm session, because new membership does not allow share key" }
-                store.updateOutboundMegolmSession(roomId) { null }
+            if (userId != userInfo.userId) {
+                val membership = event.content.membership
+                val membershipsAllowedToReceiveKey: Set<Membership> =
+                    store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey
+                if (membershipsAllowedToReceiveKey.contains(membership)) {
+                    log.debug { "add new devices to megolm session, because new membership does allow to share key" }
+                    val devices = store.getDevices(roomId, userId)
+                    if (!devices.isNullOrEmpty())
+                        store.updateOutboundMegolmSession(roomId) {
+                            it?.copy(newDevices = it.newDevices + (userId to devices))
+                        }
+                } else {
+                    log.debug { "reset megolm session, because new membership does not allow share key" }
+                    store.updateOutboundMegolmSession(roomId) { null }
+                }
             }
         }
     }

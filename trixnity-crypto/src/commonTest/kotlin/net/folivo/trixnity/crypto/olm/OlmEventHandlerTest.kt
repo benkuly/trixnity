@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.ClientEventEmitterImpl
 import net.folivo.trixnity.core.Unsubscriber
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -64,6 +65,7 @@ class OlmEventHandlerTest : ShouldSpec({
         }
 
         cut = OlmEventHandler(
+            UserInfo(UserId(""), "", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             eventEmitter,
             olmKeysChangeEmitter,
             OlmDecrypterMock(),
