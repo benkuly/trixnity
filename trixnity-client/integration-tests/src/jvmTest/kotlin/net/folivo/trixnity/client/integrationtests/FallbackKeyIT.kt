@@ -5,12 +5,9 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.http.*
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.withTimeoutOrNull
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.eventId
@@ -60,7 +57,7 @@ class FallbackKeyIT {
     }
 
     @Test
-    fun testFallbackKey(): Unit = runBlocking {
+    fun testFallbackKey(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(90_000) {
             val roomId = startedClient1.client.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))

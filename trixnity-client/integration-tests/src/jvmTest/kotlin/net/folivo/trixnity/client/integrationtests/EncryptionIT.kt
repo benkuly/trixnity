@@ -7,6 +7,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -89,7 +90,7 @@ class EncryptionIT {
     }
 
     @Test
-    fun shouldEncryptOnJoin(): Unit = runBlocking {
+    fun shouldEncryptOnJoin(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             withClue("ensure, that both already know each others devices") {
                 val initialRoomId = client1.api.room.createRoom(

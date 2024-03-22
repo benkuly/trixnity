@@ -5,6 +5,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.filterNotNull
@@ -113,7 +114,7 @@ class CrossSigningIT {
     }
 
     @Test
-    fun testCrossSigning(): Unit = runBlocking {
+    fun testCrossSigning(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             withClue("wait for client1 self verification to be NoCrossSigningEnabled") {
                 client1.verification.getSelfVerificationMethods()
@@ -278,7 +279,7 @@ class CrossSigningIT {
     }
 
     @Test
-    fun shouldAllowResetCrossSigning(): Unit = runBlocking {
+    fun shouldAllowResetCrossSigning(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             withClue("wait for client1 self verification to be NoCrossSigningEnabled") {
                 client1.verification.getSelfVerificationMethods()
