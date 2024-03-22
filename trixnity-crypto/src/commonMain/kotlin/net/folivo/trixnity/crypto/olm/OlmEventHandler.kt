@@ -163,11 +163,13 @@ class OlmEventHandler(
                 val membershipsAllowedToReceiveKey: Set<Membership> =
                     store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey
                 if (membershipsAllowedToReceiveKey.contains(membership)) {
-                    log.debug { "add new devices to megolm session, because new membership does allow to share key" }
                     val devices = store.getDevices(roomId, userId)
                     if (!devices.isNullOrEmpty())
                         store.updateOutboundMegolmSession(roomId) {
-                            it?.copy(newDevices = it.newDevices + (userId to devices))
+                            if (it != null) {
+                                log.debug { "add new devices to megolm session, because new membership does allow to share key" }
+                                it.copy(newDevices = it.newDevices + (userId to devices))
+                            } else null
                         }
                 } else {
                     log.debug { "reset megolm session, because new membership does not allow share key" }

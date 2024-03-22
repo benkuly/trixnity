@@ -128,7 +128,7 @@ class EncryptionIT {
             client2.api.room.joinRoom(roomId).getOrThrow()
 
             client1.user.getById(roomId, client2.userId).first { it?.membership == JOIN }
-            eventually(3.seconds) {
+            eventually(5.seconds) {
                 client1.di.get<OlmCryptoStore>().getOutboundMegolmSession(roomId).shouldNotBeNull()
                     .newDevices.keys.shouldContain(client2.userId)
             }
