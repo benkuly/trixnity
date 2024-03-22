@@ -24,6 +24,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -224,7 +225,7 @@ class OlmEventHandlerTest : ShouldSpec({
     // ##########################
     // handleMemberEvents
     // ##########################
-    should("remove megolm session on leave or ban") {
+    should("remove megolm session") {
         olmStoreMock.roomEncryptionAlgorithm[roomId] = EncryptionAlgorithm.Megolm
 
         olmStoreMock.outboundMegolmSession[roomId] = StoredOutboundMegolmSession(roomId, pickled = "")
@@ -241,12 +242,18 @@ class OlmEventHandlerTest : ShouldSpec({
             )
         )
         olmStoreMock.outboundMegolmSession[roomId] shouldBe null
+    }
+    should("update new devices in megolm session") {
+        olmStoreMock.roomEncryptionAlgorithm[roomId] = EncryptionAlgorithm.Megolm
+        olmStoreMock.historyVisibility = HistoryVisibilityEventContent.HistoryVisibility.SHARED
+        olmStoreMock.devices[roomId] = mapOf(alice to setOf("A1", "A2"))
 
-        olmStoreMock.outboundMegolmSession[roomId] = StoredOutboundMegolmSession(roomId, pickled = "")
+        val megolmSession = StoredOutboundMegolmSession(roomId, pickled = "")
+        olmStoreMock.outboundMegolmSession[roomId] = megolmSession
         cut.handleMemberEvents(
             listOf(
                 StateEvent(
-                    MemberEventContent(membership = Membership.BAN),
+                    MemberEventContent(membership = Membership.KNOCK),
                     EventId("\$event"),
                     alice,
                     roomId,
@@ -255,6 +262,8 @@ class OlmEventHandlerTest : ShouldSpec({
                 )
             )
         )
-        olmStoreMock.outboundMegolmSession[roomId] shouldBe null
+        olmStoreMock.outboundMegolmSession[roomId] shouldBe megolmSession.copy(
+            newDevices = mapOf(alice to setOf("A1", "A2"))
+        )
     }
 })
