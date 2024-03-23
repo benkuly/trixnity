@@ -137,7 +137,7 @@ class EncryptionIT {
             collectMessages.await().first().content?.getOrThrow()
                 .shouldNotBeNull()
                 .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
-                .body shouldBe "Not secret."
+                .body shouldBe "Share secret."
         }
     }
 }
