@@ -106,11 +106,15 @@ class EncryptionIT {
             val roomId = client1.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            client1.room.getById(roomId).first { it?.encrypted == true }
-            client1.room.sendMessage(roomId) { text("Keep secret!") }
-            client1.room.waitForOutboxSent()
+            withClue("prepare room") {
+                client1.room.getById(roomId).first { it?.encrypted == true }
+                client1.room.sendMessage(roomId) { text("Keep secret!") }
+                client1.room.waitForOutboxSent()
 
-            client1.api.room.inviteUser(roomId, client2.userId).getOrThrow()
+                client1.api.room.inviteUser(roomId, client2.userId).getOrThrow()
+                client2.room.getById(roomId).first { it?.membership == INVITE }
+            }
+
 
             val collectMessages = async {
                 client2.room.getTimelineEventsFromNowOn()
@@ -119,11 +123,12 @@ class EncryptionIT {
                     .take(1)
             }
 
-            client2.room.getById(roomId).first { it?.membership == INVITE }
-            client2.api.room.joinRoom(roomId).getOrThrow()
-
-            client1.user.getById(roomId, client2.userId).first { it?.membership == JOIN }
-            eventually(10.seconds) {
+            withClue("join room") {
+                client2.api.room.joinRoom(roomId).getOrThrow()
+                client1.user.getById(roomId, client2.userId).first { it?.membership == JOIN }
+            }
+            
+            eventually(4.seconds) {
                 client1.di.get<OlmCryptoStore>().getOutboundMegolmSession(roomId).shouldNotBeNull()
                     .newDevices.keys.shouldContain(client2.userId)
             }
