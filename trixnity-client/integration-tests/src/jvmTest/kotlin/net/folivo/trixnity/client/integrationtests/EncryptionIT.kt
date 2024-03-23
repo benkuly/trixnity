@@ -99,7 +99,7 @@ class EncryptionIT {
                 ).getOrThrow()
                 client2.api.room.joinRoom(initialRoomId).getOrThrow()
                 client1.user.getById(initialRoomId, client2.userId).first { it?.membership == JOIN }
-                client1.room.sendMessage(initialRoomId) { text("Not secret.") }
+                client1.room.sendMessage(initialRoomId) { text("Share secret.") }
                 client1.room.waitForOutboxSent()
             }
 
@@ -117,7 +117,7 @@ class EncryptionIT {
 
 
             val collectMessages = async {
-                client2.room.getTimelineEventsFromNowOn()
+                client2.room.getTimelineEventsFromNowOn(decryptionTimeout = 2.seconds)
                     .filter { it.roomId == roomId }
                     .filter { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
                     .take(1)
@@ -127,13 +127,13 @@ class EncryptionIT {
                 client2.api.room.joinRoom(roomId).getOrThrow()
                 client1.user.getById(roomId, client2.userId).first { it?.membership == JOIN }
             }
-            
+
             eventually(4.seconds) {
                 client1.di.get<OlmCryptoStore>().getOutboundMegolmSession(roomId).shouldNotBeNull()
                     .newDevices.keys.shouldContain(client2.userId)
             }
 
-            client1.room.sendMessage(roomId) { text("Not secret.") }
+            client1.room.sendMessage(roomId) { text("Share secret.") }
             collectMessages.await().first().content?.getOrThrow()
                 .shouldNotBeNull()
                 .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
