@@ -2,9 +2,9 @@ package net.folivo.trixnity.client.utils
 
 import arrow.resilience.Schedule
 import arrow.resilience.retry
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import kotlin.coroutines.cancellation.CancellationException
@@ -12,6 +12,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+
+private val log = KotlinLogging.logger { }
 
 enum class RetryLoopFlowState {
     RUN, PAUSE, STOP,
@@ -56,9 +58,7 @@ suspend fun <T> retryLoopFlow(
                 emit(
                     RetryLoopFlowResult.Emit(
                         schedule.retry {
-                            retryOnRateLimit {
-                                block()
-                            }
+                            block()
                         }
                     )
                 )
@@ -69,6 +69,7 @@ suspend fun <T> retryLoopFlow(
                     onCancel()
                     throw error
                 }
+                log.debug { "retry loop operation after exception" }
             }
         }
         stateJob.cancel()

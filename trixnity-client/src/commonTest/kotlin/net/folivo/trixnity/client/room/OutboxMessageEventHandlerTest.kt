@@ -242,7 +242,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+            retry(100, 3.seconds, 50.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldNotBe null
@@ -290,7 +290,8 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                     when (call) {
                         1 -> throw MatrixServerException(
                             HttpStatusCode.TooManyRequests,
-                            ErrorResponse.LimitExceeded(retryAfterMillis = 300)
+                            ErrorResponse.LimitExceeded(),
+                            300,
                         )
 
                         else -> SendEventResponse(EventId("event"))

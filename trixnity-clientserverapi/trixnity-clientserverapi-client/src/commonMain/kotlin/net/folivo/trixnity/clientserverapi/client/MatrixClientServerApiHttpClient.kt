@@ -43,6 +43,12 @@ class MatrixClientServerApiHttpClient(
                 if (baseUrl != null) url.takeFrom(baseUrl)
             }
             install(ConvertMediaPlugin)
+            install(HttpRequestRetry) {
+                retryIf { _, httpResponse ->
+                    httpResponse.status == HttpStatusCode.TooManyRequests
+                }
+                exponentialDelay(maxDelayMs = 30_000, respectRetryAfterHeader = true)
+            }
         }
     }
 ) {
