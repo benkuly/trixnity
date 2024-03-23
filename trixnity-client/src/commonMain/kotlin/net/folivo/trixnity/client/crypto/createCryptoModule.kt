@@ -21,6 +21,6 @@ fun createCryptoModule() = module {
     singleOf(::OlmEncryptionServiceImpl) { bind<OlmEncryptionService>() }
     singleOf(::OlmDecrypterImpl) { bind<OlmDecrypter>() }
     single<EventHandler>(named<OlmEventHandler>()) {
-        OlmEventHandler(get<MatrixClientServerApiClient>().sync, get(), get(), get(), get(), get())
+        OlmEventHandler(get(), get<MatrixClientServerApiClient>().sync, get(), get(), get(), get(), get())
     }
 }

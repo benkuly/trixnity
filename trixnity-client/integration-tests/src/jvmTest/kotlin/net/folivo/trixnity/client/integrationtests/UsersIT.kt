@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.integrationtests
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -78,7 +79,7 @@ class UsersIT {
     }
 
     @Test
-    fun shouldHaveUsersInRoom(): Unit = runBlocking {
+    fun shouldHaveUsersInRoom(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(
                 invite = setOf(client2.userId),

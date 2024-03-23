@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.integrationtests
 import io.kotest.assertions.withClue
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -30,7 +31,7 @@ class LogoutIT {
     ).build()
 
     @Test
-    fun shouldLogoutOnDeviceDeletion(): Unit = runBlocking {
+    fun shouldLogoutOnDeviceDeletion(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val startedClient1 = registerAndStartClient(
                 "client1", "user1", getBaseUrl(),

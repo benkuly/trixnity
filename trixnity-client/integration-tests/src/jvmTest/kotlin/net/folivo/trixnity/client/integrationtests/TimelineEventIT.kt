@@ -105,7 +105,7 @@ class TimelineEventIT {
     }
 
     @Test
-    fun shouldStartEncryptedRoomAndSendMessages(): Unit = runBlocking {
+    fun shouldStartEncryptedRoomAndSendMessages(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(
                 invite = setOf(client2.userId),
@@ -135,7 +135,7 @@ class TimelineEventIT {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun shouldSaveUnencryptedTimelineEvent(): Unit = runBlocking {
+    fun shouldSaveUnencryptedTimelineEvent(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(180_000) {
             val database = newDatabase()
             val client = MatrixClient.loginWith(
@@ -177,7 +177,7 @@ class TimelineEventIT {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun shouldNotSaveUnencryptedTimelineEvent(): Unit = runBlocking {
+    fun shouldNotSaveUnencryptedTimelineEvent(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(180_000) {
             val database = newDatabase()
             val client = MatrixClient.loginWith(
@@ -217,7 +217,7 @@ class TimelineEventIT {
     }
 
     @Test
-    fun shouldHandleGappySyncsAndGetEventsFromEndOfTheTimeline(): Unit = runBlocking {
+    fun shouldHandleGappySyncsAndGetEventsFromEndOfTheTimeline(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
@@ -268,7 +268,7 @@ class TimelineEventIT {
     }
 
     @Test
-    fun shouldHandleGappySyncsAndGetEventsFromStartOfTheTimeline(): Unit = runBlocking {
+    fun shouldHandleGappySyncsAndGetEventsFromStartOfTheTimeline(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
@@ -303,7 +303,7 @@ class TimelineEventIT {
 
     @OptIn(FlowPreview::class)
     @Test
-    fun shouldHandleGappySyncsAndFillTimelineFromTheMiddle(): Unit = runBlocking {
+    fun shouldHandleGappySyncsAndFillTimelineFromTheMiddle(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
             client2.room.getById(room).first { it?.membership == INVITE }
@@ -351,7 +351,7 @@ class TimelineEventIT {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun shouldFollowRoomUpgrades(): Unit = runBlocking {
+    fun shouldFollowRoomUpgrades(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val oldRoom = client1.api.room.createRoom(
                 invite = setOf(client2.userId),

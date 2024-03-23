@@ -133,7 +133,7 @@ class OlmCryptoStore(
             config.cacheExpireDurations.outboundMegolmSession
         )
 
-    internal suspend fun getOutboundMegolmSession(roomId: RoomId): StoredOutboundMegolmSession? =
+    suspend fun getOutboundMegolmSession(roomId: RoomId): StoredOutboundMegolmSession? =
         outboundMegolmSessionCache.read(roomId).first()
 
     suspend fun updateOutboundMegolmSession(

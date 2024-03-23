@@ -89,8 +89,13 @@ class OlmStoreMock : OlmStore {
         return devices[roomId]
     }
 
+    override suspend fun getDevices(roomId: RoomId, userId: UserId): Set<String>? {
+        return devices[roomId]?.get(userId)
+    }
+
+    var historyVisibility: HistoryVisibilityEventContent.HistoryVisibility? = null
     override suspend fun getHistoryVisibility(roomId: RoomId): HistoryVisibilityEventContent.HistoryVisibility? {
-        return null
+        return historyVisibility
     }
 
     val roomEncryptionAlgorithm = mutableMapOf<RoomId, EncryptionAlgorithm?>()

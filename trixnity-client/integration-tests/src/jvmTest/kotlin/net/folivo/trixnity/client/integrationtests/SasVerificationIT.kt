@@ -4,6 +4,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -78,7 +79,7 @@ class SasVerificationIT {
     }
 
     @Test
-    fun shouldDoSasDeviceVerification(): Unit = runBlocking {
+    fun shouldDoSasDeviceVerification(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             client1.verification.createDeviceVerificationRequest(client2.userId, setOf(client2.deviceId))
             val client1Verification = client1.verification.activeDeviceVerification.first { it != null }
@@ -89,7 +90,7 @@ class SasVerificationIT {
     }
 
     @Test
-    fun shouldDoSasUserVerification(): Unit = runBlocking {
+    fun shouldDoSasUserVerification(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val client1Verification = client1.verification.createUserVerificationRequest(client2.userId).getOrThrow()
 
