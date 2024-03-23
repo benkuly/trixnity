@@ -167,12 +167,12 @@ class OlmEventHandler(
                     if (!devices.isNullOrEmpty())
                         store.updateOutboundMegolmSession(roomId) {
                             if (it != null) {
-                                log.debug { "add new devices to megolm session, because new membership does allow to share key" }
+                                log.debug { "add new devices to megolm session of $roomId, because new membership does allow to share key" }
                                 it.copy(newDevices = it.newDevices + (userId to devices))
                             } else null
                         }
                 } else {
-                    log.debug { "reset megolm session, because new membership does not allow share key" }
+                    log.debug { "reset megolm session of $roomId, because new membership does not allow share key" }
                     store.updateOutboundMegolmSession(roomId) { null }
                 }
             }
