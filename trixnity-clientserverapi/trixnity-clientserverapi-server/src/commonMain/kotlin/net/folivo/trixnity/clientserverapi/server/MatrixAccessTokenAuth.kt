@@ -7,6 +7,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.AuthenticationFailedCause.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import net.folivo.trixnity.api.server.AuthRequired
 import net.folivo.trixnity.api.server.withoutAuthAttributeKey
 import net.folivo.trixnity.core.ErrorResponse
 
@@ -81,7 +82,14 @@ fun AuthenticationConfig.matrixAccessTokenAuth(
         .apply(configure)
         .apply {
             skipWhen {
-                it.attributes.getOrNull(withoutAuthAttributeKey) == true
+                when (it.attributes.getOrNull(withoutAuthAttributeKey)) {
+                    AuthRequired.YES -> false
+                    AuthRequired.OPTIONAL -> !it.request.headers.contains(HttpHeaders.Authorization) &&
+                            !it.request.queryParameters.contains("access_token")
+
+                    AuthRequired.NO -> true
+                    null -> false
+                }
             }
         })
     register(provider)

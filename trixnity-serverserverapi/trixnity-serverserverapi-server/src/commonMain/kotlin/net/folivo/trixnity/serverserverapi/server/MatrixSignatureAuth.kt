@@ -10,6 +10,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
+import net.folivo.trixnity.api.server.AuthRequired
 import net.folivo.trixnity.api.server.withoutAuthAttributeKey
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.model.keys.Key
@@ -120,7 +121,7 @@ fun AuthenticationConfig.matrixSignatureAuth(
         .apply(configure)
         .apply {
             skipWhen {
-                it.attributes.getOrNull(withoutAuthAttributeKey) == true
+                it.attributes.getOrNull(withoutAuthAttributeKey) == AuthRequired.NO
             }
         })
     register(provider)

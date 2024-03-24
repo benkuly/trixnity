@@ -14,11 +14,11 @@ import net.folivo.trixnity.core.WithoutAuth
 @Serializable
 @Resource("/_matrix/client/versions")
 @HttpMethod(GET)
-@WithoutAuth
+@WithoutAuth(true)
 object GetVersions : MatrixEndpoint<Unit, GetVersions.Response> {
     @Serializable
     data class Response(
         @SerialName("versions") val versions: List<String> = listOf(),
-        @SerialName("unstable_features") val unstable_features: Map<String, Boolean> = mapOf()
+        @SerialName("unstable_features") val unstableFeatures: Map<String, Boolean> = mapOf()
     )
 }
