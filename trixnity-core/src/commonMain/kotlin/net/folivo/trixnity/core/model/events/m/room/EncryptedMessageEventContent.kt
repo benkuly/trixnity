@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroomencrypted">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroomencrypted">matrix spec</a>
  */
 @Serializable(with = EncryptedMessageEventContentSerializer::class)
 sealed interface EncryptedMessageEventContent : MessageEventContent {

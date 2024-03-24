@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.events.StateEventContent
 import kotlin.reflect.KClass
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroompower_levels">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroompower_levels">matrix spec</a>
  */
 @Serializable
 data class PowerLevelsEventContent(

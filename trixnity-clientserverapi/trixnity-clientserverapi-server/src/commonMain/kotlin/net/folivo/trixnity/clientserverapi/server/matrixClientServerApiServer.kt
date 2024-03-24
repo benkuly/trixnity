@@ -35,7 +35,7 @@ fun Application.matrixClientServerApiServer(
 fun Route.installMatrixClientServerApiServer() {
     // TODO rate limit
     install(ConvertMediaPlugin)
-    // see also https://spec.matrix.org/v1.7/client-server-api/#web-browser-clients
+    // see also https://spec.matrix.org/v1.10/client-server-api/#web-browser-clients
     install(CORS) {
         anyHost()
         allowMethod(io.ktor.http.HttpMethod.Get)

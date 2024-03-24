@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#get_matrixmediav3preview_url">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixmediav3preview_url">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/media/v3/preview_url")

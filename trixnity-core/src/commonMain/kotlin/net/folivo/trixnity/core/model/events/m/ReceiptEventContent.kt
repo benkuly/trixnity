@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.EphemeralEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#receipts">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#receipts">matrix spec</a>
  */
 @Serializable(with = ReceiptEventContentSerializer::class)
 data class ReceiptEventContent(

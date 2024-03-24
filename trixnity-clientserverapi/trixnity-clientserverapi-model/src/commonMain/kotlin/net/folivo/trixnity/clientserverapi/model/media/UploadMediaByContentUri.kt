@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#put_matrixmediav3uploadservernamemediaid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#put_matrixmediav3uploadservernamemediaid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/media/v3/upload/{serverName}/{mediaId}")

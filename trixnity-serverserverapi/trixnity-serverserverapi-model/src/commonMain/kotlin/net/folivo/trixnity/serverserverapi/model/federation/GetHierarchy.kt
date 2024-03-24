@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#get_matrixfederationv1hierarchyroomid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/server-server-api/#get_matrixfederationv1hierarchyroomid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/hierarchy/{roomId}")

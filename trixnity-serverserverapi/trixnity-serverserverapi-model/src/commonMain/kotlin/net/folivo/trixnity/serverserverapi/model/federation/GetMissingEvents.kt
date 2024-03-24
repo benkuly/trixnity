@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#post_matrixfederationv1get_missing_eventsroomid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/server-server-api/#post_matrixfederationv1get_missing_eventsroomid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/get_missing_events/{roomId}")

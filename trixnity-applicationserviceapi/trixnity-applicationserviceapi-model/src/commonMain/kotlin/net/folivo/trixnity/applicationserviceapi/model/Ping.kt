@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/application-service-api/#post_matrixappv1ping">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/application-service-api/#post_matrixappv1ping">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/app/v1/ping")

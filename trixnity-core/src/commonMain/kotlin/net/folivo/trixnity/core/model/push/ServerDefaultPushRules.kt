@@ -4,7 +4,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#predefined-rules">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#predefined-rules">matrix spec</a>
  */
 sealed interface ServerDefaultPushRules {
     val rule: PushRule
