@@ -31,7 +31,7 @@ data class GetHierarchy(
     ) {
         @Serializable
         data class PublicRoomsChunk(
-            @SerialName("allowed_room_ids") val allowedRoomIds: Set<RoomId>,
+            @SerialName("allowed_room_ids") val allowedRoomIds: Set<RoomId>? = null,
             @SerialName("avatar_url") val avatarUrl: String? = null,
             @SerialName("canonical_alias") val canonicalAlias: RoomAliasId? = null,
             @SerialName("children_state") val childrenState: Set<@Contextual StrippedStateEvent<*>>,
