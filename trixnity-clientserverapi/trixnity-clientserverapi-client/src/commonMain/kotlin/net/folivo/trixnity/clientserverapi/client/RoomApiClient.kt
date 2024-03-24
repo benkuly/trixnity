@@ -92,6 +92,7 @@ interface RoomApiClient {
         from: String,
         to: String? = null,
         limit: Long? = null,
+        recurse: Boolean? = null,
         asUserId: UserId? = null
     ): Result<GetRelationsResponse>
 
@@ -105,6 +106,7 @@ interface RoomApiClient {
         from: String,
         to: String? = null,
         limit: Long? = null,
+        recurse: Boolean? = null,
         asUserId: UserId? = null
     ): Result<GetRelationsResponse>
 
@@ -557,9 +559,10 @@ class RoomApiClientImpl(
         from: String,
         to: String?,
         limit: Long?,
+        recurse: Boolean?,
         asUserId: UserId?
     ): Result<GetRelationsResponse> =
-        httpClient.request(GetRelations(roomId, eventId, from, to, limit, asUserId))
+        httpClient.request(GetRelations(roomId, eventId, from, to, limit, recurse, asUserId))
 
     override suspend fun getRelations(
         roomId: RoomId,
@@ -568,9 +571,21 @@ class RoomApiClientImpl(
         from: String,
         to: String?,
         limit: Long?,
+        recurse: Boolean?,
         asUserId: UserId?
     ): Result<GetRelationsResponse> =
-        httpClient.request(GetRelationsByRelationType(roomId, eventId, relationType, from, to, limit, asUserId))
+        httpClient.request(
+            GetRelationsByRelationType(
+                roomId,
+                eventId,
+                relationType,
+                from,
+                to,
+                limit,
+                recurse,
+                asUserId
+            )
+        )
 
     override suspend fun getRelations(
         roomId: RoomId,
