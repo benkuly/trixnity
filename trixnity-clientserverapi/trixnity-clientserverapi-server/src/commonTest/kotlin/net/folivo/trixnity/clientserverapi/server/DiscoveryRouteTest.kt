@@ -10,6 +10,8 @@ import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.Charsets.UTF_8
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.DiscoveryInformation
+import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import org.kodein.mock.Mock
@@ -63,6 +65,52 @@ class DiscoveryRouteTest : TestsWithMocks() {
         }
         verifyWithSuspend {
             handlerMock.getWellKnown(isAny())
+        }
+    }
+
+    @Test
+    fun shouldGetSupport() = testApplication {
+        initCut()
+        everySuspending { handlerMock.getSupport(isAny()) }
+            .returns(
+                GetSupport.Response(
+                    contacts = listOf(
+                        GetSupport.Response.Contact(
+                            emailAddress = "admin@example.org",
+                            userId = UserId("@admin:example.org"),
+                            role = GetSupport.Response.Contact.Role.Admin,
+                        ),
+                        GetSupport.Response.Contact(
+                            emailAddress = "dino@example.org",
+                            role = GetSupport.Response.Contact.Role.Unknown("m.role.dino"),
+                        )
+                    ),
+                    supportPage = "https://example.org/support.html"
+                )
+            )
+        val response = client.get("/.well-known/matrix/support")
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.body<String>() shouldBe """
+                    {
+                      "contacts": [
+                        {
+                          "email_address": "admin@example.org",
+                          "matrix_id": "@admin:example.org",
+                          "role": "m.role.admin"
+                        },
+                        {
+                          "email_address": "dino@example.org",
+                          "role": "m.role.dino"
+                        }
+                      ],
+                      "support_page": "https://example.org/support.html"
+                    }
+                """.trimToFlatJson()
+        }
+        verifyWithSuspend {
+            handlerMock.getSupport(isAny())
         }
     }
 }

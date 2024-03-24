@@ -7,6 +7,8 @@ import io.ktor.http.ContentType.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.authentication.DiscoveryInformation
+import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -77,6 +79,52 @@ class DiscoveryApiClientTest {
         matrixRestClient.discovery.getWellKnown().getOrThrow() shouldBe DiscoveryInformation(
             homeserver = DiscoveryInformation.HomeserverInformation("https://matrix.example.com"),
             identityServer = DiscoveryInformation.IdentityServerInformation("https://identity.example.com")
+        )
+    }
+
+    @Test
+    fun shouldGetSupport() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler { request ->
+                    assertEquals("/.well-known/matrix/support", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            {
+                              "contacts": [
+                                {
+                                  "email_address": "admin@example.org",
+                                  "matrix_id": "@admin:example.org",
+                                  "role": "m.role.admin"
+                                },
+                                {
+                                  "email_address": "dino@example.org",
+                                  "role": "m.role.dino"
+                                }
+                              ],
+                              "support_page": "https://example.org/support.html"
+                            }
+                        """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.discovery.getSupport().getOrThrow() shouldBe GetSupport.Response(
+            contacts = listOf(
+                GetSupport.Response.Contact(
+                    emailAddress = "admin@example.org",
+                    userId = UserId("@admin:example.org"),
+                    role = GetSupport.Response.Contact.Role.Admin,
+                ),
+                GetSupport.Response.Contact(
+                    emailAddress = "dino@example.org",
+                    role = GetSupport.Response.Contact.Role.Unknown("m.role.dino"),
+                )
+            ),
+            supportPage = "https://example.org/support.html"
         )
     }
 }
