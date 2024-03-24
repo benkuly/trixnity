@@ -1,8 +1,6 @@
 package net.folivo.trixnity.core.model.events.m.room
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -23,11 +21,10 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequ
 @Serializable(with = RoomMessageEventContentSerializer::class)
 sealed interface RoomMessageEventContent : MessageEventContent {
     val body: String
+    val format: String?
+    val formattedBody: String?
 
     sealed interface TextBased : RoomMessageEventContent {
-        val format: String?
-        val formattedBody: String?
-
         /**
          * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mnotice">matrix spec</a>
          */
@@ -93,6 +90,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         val url: String?
         val file: EncryptedFile?
         val info: FileBasedInfo?
+        val fileName: String?
 
         /**
          * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mimage">matrix spec</a>
@@ -100,6 +98,9 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @Serializable
         data class Image(
             @SerialName("body") override val body: String,
+            @SerialName("format") override val format: String? = null,
+            @SerialName("formatted_body") override val formattedBody: String? = null,
+            @SerialName("filename") override val fileName: String? = null,
             @SerialName("info") override val info: ImageInfo? = null,
             @SerialName("url") override val url: String? = null,
             @SerialName("file") override val file: EncryptedFile? = null,
@@ -121,7 +122,9 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @Serializable
         data class File(
             @SerialName("body") override val body: String,
-            @SerialName("filename") val fileName: String? = null,
+            @SerialName("format") override val format: String? = null,
+            @SerialName("formatted_body") override val formattedBody: String? = null,
+            @SerialName("filename") override val fileName: String? = null,
             @SerialName("info") override val info: FileInfo? = null,
             @SerialName("url") override val url: String? = null,
             @SerialName("file") override val file: EncryptedFile? = null,
@@ -143,6 +146,9 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @Serializable
         data class Audio(
             @SerialName("body") override val body: String,
+            @SerialName("format") override val format: String? = null,
+            @SerialName("formatted_body") override val formattedBody: String? = null,
+            @SerialName("filename") override val fileName: String? = null,
             @SerialName("info") override val info: AudioInfo? = null,
             @SerialName("url") override val url: String? = null,
             @SerialName("file") override val file: EncryptedFile? = null,
@@ -164,6 +170,9 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @Serializable
         data class Video(
             @SerialName("body") override val body: String,
+            @SerialName("format") override val format: String? = null,
+            @SerialName("formatted_body") override val formattedBody: String? = null,
+            @SerialName("filename") override val fileName: String? = null,
             @SerialName("info") override val info: VideoInfo? = null,
             @SerialName("url") override val url: String? = null,
             @SerialName("file") override val file: EncryptedFile? = null,
@@ -194,6 +203,12 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("msgtype")
         val type = "m.location"
 
+        @Transient
+        override val format: String? = null
+
+        @Transient
+        override val formattedBody: String? = null
+
         companion object {
             const val type = "m.location"
         }
@@ -205,6 +220,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("to") val to: UserId,
         @SerialName("methods") override val methods: Set<VerificationMethod>,
         @SerialName("body") override val body: String = "Attempting verification request (m.key.verification.request). Apparently your client doesn't support this.",
+        @SerialName("format") override val format: String? = null,
+        @SerialName("formatted_body") override val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
         @SerialName("external_url") override val externalUrl: String? = null,
@@ -220,6 +237,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     data class Unknown(
         val type: String,
         override val body: String,
+        override val format: String? = null,
+        override val formattedBody: String? = null,
         val raw: JsonObject,
         override val relatesTo: RelatesTo? = null,
         override val mentions: Mentions? = null,
@@ -248,6 +267,8 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
 
             else -> {
                 val body = (jsonObj["body"] as? JsonPrimitive)?.content
+                val format = (jsonObj["format"] as? JsonPrimitive)?.content
+                val formattedBody = (jsonObj["formatted_body"] as? JsonPrimitive)?.content
                 val relatesTo: RelatesTo? =
                     (jsonObj["m.relates_to"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 val mentions: Mentions? =
@@ -256,7 +277,7 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                     (jsonObj["external_url"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 if (type == null) throw SerializationException("msgtype must not be null")
                 if (body == null) throw SerializationException("body must not be null")
-                Unknown(type, body, jsonObj, relatesTo, mentions, externalUrl)
+                Unknown(type, body, format, formattedBody, jsonObj, relatesTo, mentions, externalUrl)
             }
         }
     }

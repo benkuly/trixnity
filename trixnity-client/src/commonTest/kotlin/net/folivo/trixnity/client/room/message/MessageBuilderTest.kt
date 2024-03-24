@@ -355,10 +355,10 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
                 image("body", "fake_image".toByteArray().toByteArrayFlow(), PNG, 10, 1024, 1024)
             } shouldBe RoomMessageEventContent.FileBased.Image(
-                "body", ImageInfo(
+                "body", info = ImageInfo(
                     1024, 1024, "image/png", 10, "thumbnailCacheUrl", null,
                     thumbnailInfo,
-                ), "mediaCacheUrl",
+                ), url = "mediaCacheUrl",
                 mentions = Mentions()
             )
         }
@@ -371,10 +371,10 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 image("body", "fake_image".toByteArray().toByteArrayFlow(), PNG, 10, 1024, 1024)
             } shouldBe RoomMessageEventContent.FileBased.Image(
-                "body", ImageInfo(
+                "body", info = ImageInfo(
                     1024, 1024, "image/png", 10, null, encryptedThumbnail,
                     thumbnailInfo,
-                ), null, encryptedFile,
+                ), url = null, file = encryptedFile,
                 mentions = Mentions()
             )
         }
@@ -387,9 +387,9 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
                 file("body", "fake_file".toByteArray().toByteArrayFlow(), PNG, 9, "filename")
             } shouldBe RoomMessageEventContent.FileBased.File(
-                "body", "filename", FileInfo(
+                "body", fileName = "filename", info = FileInfo(
                     "image/png", 9, "thumbnailCacheUrl", null, thumbnailInfo,
-                ), "mediaCacheUrl",
+                ), url = "mediaCacheUrl",
                 mentions = Mentions()
             )
         }
@@ -402,9 +402,9 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 file("body", "fake_file".toByteArray().toByteArrayFlow(), PNG, 9, "filename")
             } shouldBe RoomMessageEventContent.FileBased.File(
-                "body", "filename", FileInfo(
+                "body", fileName = "filename", info = FileInfo(
                     "image/png", 9, null, encryptedThumbnail, thumbnailInfo,
-                ), null, encryptedFile,
+                ), url = null, file = encryptedFile,
                 mentions = Mentions()
             )
         }
@@ -417,10 +417,10 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
                 video("body", "fake_video".toByteArray().toByteArrayFlow(), MP4, 10, 1024, 1024, 1024)
             } shouldBe RoomMessageEventContent.FileBased.Video(
-                "body", VideoInfo(
+                "body", info = VideoInfo(
                     1024, 1024, 1024, "video/mp4", 10, "thumbnailCacheUrl", null,
                     thumbnailInfo,
-                ), "mediaCacheUrl",
+                ), url = "mediaCacheUrl",
                 mentions = Mentions()
             )
         }
@@ -433,10 +433,10 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 video("body", "fake_video".toByteArray().toByteArrayFlow(), MP4, 10, 1024, 1024, 1024)
             } shouldBe RoomMessageEventContent.FileBased.Video(
-                "body", VideoInfo(
+                "body", info = VideoInfo(
                     1024, 1024, 1024, "video/mp4", 10, null, encryptedThumbnail,
                     thumbnailInfo,
-                ), null, encryptedFile,
+                ), url = null, file = encryptedFile,
                 mentions = Mentions()
             )
         }
@@ -447,7 +447,7 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
                 audio("body", "fake_audio".toByteArray().toByteArrayFlow(), OGG, 10, 1024)
             } shouldBe RoomMessageEventContent.FileBased.Audio(
-                "body", AudioInfo(1024, "audio/ogg", 10), "mediaCacheUrl",
+                "body", info = AudioInfo(1024, "audio/ogg", 10), url = "mediaCacheUrl",
                 mentions = Mentions()
             )
         }
@@ -457,7 +457,7 @@ class MessageBuilderTest : ShouldSpec({
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 audio("body", "fake_audio".toByteArray().toByteArrayFlow(), OGG, 10, 1024)
             } shouldBe RoomMessageEventContent.FileBased.Audio(
-                "body", AudioInfo(1024, "audio/ogg", 10), null, encryptedFile,
+                "body", info = AudioInfo(1024, "audio/ogg", 10), url = null, file = encryptedFile,
                 mentions = Mentions()
             )
         }

@@ -510,7 +510,7 @@ class ClientEventSerializerTest {
         assertEquals(
             MessageEvent(
                 Unknown(
-                    "m.dino", "hello", JsonObject(
+                    "m.dino", "hello", null, null, JsonObject(
                         mapOf(
                             "msgtype" to JsonPrimitive("m.dino"),
                             "body" to JsonPrimitive("hello"),
