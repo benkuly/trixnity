@@ -21,6 +21,8 @@ data class DeactivateAccount(
     data class Request(
         @SerialName("id_server")
         val identityServer: String?,
+        @SerialName("erase")
+        val erase: Boolean? = null,
     )
 
     @Serializable
