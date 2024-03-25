@@ -29,7 +29,6 @@ import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -352,7 +351,7 @@ class RoomServiceTest : ShouldSpec({
         should("just save message in store for later use") {
             val content = RoomMessageEventContent.TextBased.Text("hi")
             cut.sendMessage(room) {
-                contentBuilder = { _, _, _ -> content }
+                contentBuilder = { content }
             }
             retry(100, 3_000.milliseconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
                 val outboundMessages = roomOutboxMessageStore.getAll().flattenValues().first()

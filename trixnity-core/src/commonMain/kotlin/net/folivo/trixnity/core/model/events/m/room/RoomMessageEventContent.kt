@@ -38,10 +38,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = "m.notice"
+            val type = TYPE
 
             companion object {
-                const val type = "m.notice"
+                const val TYPE = "m.notice"
             }
         }
 
@@ -58,10 +58,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = "m.text"
+            val type = TYPE
 
             companion object {
-                const val type = "m.text"
+                const val TYPE = "m.text"
             }
         }
 
@@ -78,10 +78,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = "m.emote"
+            val type = TYPE
 
             companion object {
-                const val type = "m.emote"
+                const val TYPE = "m.emote"
             }
         }
     }
@@ -109,10 +109,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = "m.image"
+            val type = TYPE
 
             companion object {
-                const val type = "m.image"
+                const val TYPE = "m.image"
             }
         }
 
@@ -133,10 +133,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = "m.file"
+            val type = TYPE
 
             companion object {
-                const val type = "m.file"
+                const val TYPE = "m.file"
             }
         }
 
@@ -157,10 +157,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = "m.audio"
+            val type = TYPE
 
             companion object {
-                const val type = "m.audio"
+                const val TYPE = "m.audio"
             }
         }
 
@@ -181,10 +181,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = "m.video"
+            val type = TYPE
 
             companion object {
-                const val type = "m.video"
+                const val TYPE = "m.video"
             }
         }
     }
@@ -201,7 +201,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
-        val type = "m.location"
+        val type = TYPE
 
         @Transient
         override val format: String? = null
@@ -210,7 +210,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         override val formattedBody: String? = null
 
         companion object {
-            const val type = "m.location"
+            const val TYPE = "m.location"
         }
     }
 
@@ -227,10 +227,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent, IVerificationRequest {
         @SerialName("msgtype")
-        val type = "m.key.verification.request"
+        val type = TYPE
 
         companion object {
-            const val type = "m.key.verification.request"
+            const val TYPE = "m.key.verification.request"
         }
     }
 
@@ -254,15 +254,15 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         return when (val type = (jsonObj["msgtype"] as? JsonPrimitive)?.content) {
-            TextBased.Text.type -> decoder.json.decodeFromJsonElement<TextBased.Text>(jsonObj)
-            TextBased.Notice.type -> decoder.json.decodeFromJsonElement<TextBased.Notice>(jsonObj)
-            TextBased.Emote.type -> decoder.json.decodeFromJsonElement<TextBased.Emote>(jsonObj)
-            FileBased.Image.type -> decoder.json.decodeFromJsonElement<FileBased.Image>(jsonObj)
-            FileBased.File.type -> decoder.json.decodeFromJsonElement<FileBased.File>(jsonObj)
-            FileBased.Audio.type -> decoder.json.decodeFromJsonElement<FileBased.Audio>(jsonObj)
-            FileBased.Video.type -> decoder.json.decodeFromJsonElement<FileBased.Video>(jsonObj)
-            Location.type -> decoder.json.decodeFromJsonElement<Location>(jsonObj)
-            VerificationRequest.type ->
+            TextBased.Text.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Text>(jsonObj)
+            TextBased.Notice.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Notice>(jsonObj)
+            TextBased.Emote.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Emote>(jsonObj)
+            FileBased.Image.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Image>(jsonObj)
+            FileBased.File.TYPE -> decoder.json.decodeFromJsonElement<FileBased.File>(jsonObj)
+            FileBased.Audio.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Audio>(jsonObj)
+            FileBased.Video.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Video>(jsonObj)
+            Location.TYPE -> decoder.json.decodeFromJsonElement<Location>(jsonObj)
+            VerificationRequest.TYPE ->
                 decoder.json.decodeFromJsonElement<VerificationRequest>(jsonObj)
 
             else -> {
@@ -300,19 +300,6 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
     }
 }
 
-fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
-    is TextBased.Text -> formattedBody
-    is TextBased.Notice -> formattedBody
-    is TextBased.Emote -> formattedBody
-    is FileBased.Audio,
-    is FileBased.File,
-    is FileBased.Image,
-    is Location,
-    is Unknown,
-    is VerificationRequest,
-    is FileBased.Video -> null
-}
-
 val RoomMessageEventContent.bodyWithoutFallback: String
     get() =
         if (this.relatesTo?.replyTo != null) {
@@ -322,13 +309,7 @@ val RoomMessageEventContent.bodyWithoutFallback: String
                 .joinToString("\n")
         } else body
 
-val TextBased.Text.formattedBodyWithoutFallback: String?
-    get() = formattedBody?.removeFallbackFromFormattedBody()
-
-val TextBased.Notice.formattedBodyWithoutFallback: String?
-    get() = formattedBody?.removeFallbackFromFormattedBody()
-
-val TextBased.Emote.formattedBodyWithoutFallback: String?
+val RoomMessageEventContent.formattedBodyWithoutFallback: String?
     get() = formattedBody?.removeFallbackFromFormattedBody()
 
 private fun String.removeFallbackFromFormattedBody(): String =

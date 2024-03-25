@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.VideoInfo
@@ -13,13 +12,16 @@ import net.folivo.trixnity.utils.TrixnityDsl
 suspend fun MessageBuilder.video(
     body: String,
     video: ByteArrayFlow,
+    format: String? = null,
+    formattedBody: String? = null,
+    fileName: String? = null,
     type: ContentType? = null,
     size: Int? = null,
     height: Int? = null,
     width: Int? = null,
     duration: Int? = null
 ) {
-    val format: VideoInfo?
+    val info: VideoInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
     val isEncryptedRoom = roomService.getById(roomId).first()?.encrypted == true
@@ -28,7 +30,7 @@ suspend fun MessageBuilder.video(
             ?: Pair(null, null)
 
         encryptedFile = mediaService.prepareUploadEncryptedMedia(video)
-        format = VideoInfo(
+        info = VideoInfo(
             duration = duration,
             height = height,
             width = width,
@@ -42,7 +44,7 @@ suspend fun MessageBuilder.video(
     } else {
         url = mediaService.prepareUploadMedia(video, type)
         val (thumbnailUrl, thumbnailInfo) = mediaService.prepareUploadThumbnail(video, type) ?: Pair(null, null)
-        format = VideoInfo(
+        info = VideoInfo(
             duration = duration,
             height = height,
             width = width,
@@ -54,33 +56,17 @@ suspend fun MessageBuilder.video(
         )
         encryptedFile = null
     }
-    contentBuilder = { relatesTo, mentions, newContentMentions ->
-        when (relatesTo) {
-            is RelatesTo.Replace -> RoomMessageEventContent.FileBased.Video(
-                body = "* $body",
-                info = format,
-                url = url,
-                file = encryptedFile,
-                relatesTo = relatesTo.copy(
-                    newContent = RoomMessageEventContent.FileBased.Video(
-                        body = body,
-                        info = format,
-                        url = url,
-                        file = encryptedFile,
-                        mentions = newContentMentions,
-                    )
-                ),
-                mentions = mentions,
-            )
-
-            else -> RoomMessageEventContent.FileBased.Video(
-                body = body,
-                info = format,
-                url = url,
-                file = encryptedFile,
-                relatesTo = relatesTo,
-                mentions = mentions,
-            )
-        }
+    roomMessageBuilder(body, format, formattedBody) {
+        RoomMessageEventContent.FileBased.Video(
+            body = this.body,
+            format = this.format,
+            formattedBody = this.formattedBody,
+            fileName = fileName,
+            info = info,
+            url = url,
+            file = encryptedFile,
+            relatesTo = relatesTo,
+            mentions = mentions,
+        )
     }
 }
