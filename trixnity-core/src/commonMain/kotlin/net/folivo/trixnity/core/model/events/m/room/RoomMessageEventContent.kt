@@ -1,6 +1,8 @@
 package net.folivo.trixnity.core.model.events.m.room
 
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -203,10 +205,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("msgtype")
         val type = TYPE
 
-        @Transient
         override val format: String? = null
-
-        @Transient
         override val formattedBody: String? = null
 
         companion object {
