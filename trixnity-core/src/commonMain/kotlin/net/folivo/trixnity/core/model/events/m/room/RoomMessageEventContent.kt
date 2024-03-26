@@ -236,9 +236,9 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     data class Unknown(
         val type: String,
         override val body: String,
+        val raw: JsonObject,
         override val format: String? = null,
         override val formattedBody: String? = null,
-        val raw: JsonObject,
         override val relatesTo: RelatesTo? = null,
         override val mentions: Mentions? = null,
         override val externalUrl: String? = null,
@@ -272,11 +272,10 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                     (jsonObj["m.relates_to"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 val mentions: Mentions? =
                     (jsonObj["m.mentions"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
-                val externalUrl: String? =
-                    (jsonObj["external_url"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
+                val externalUrl: String? = (jsonObj["external_url"] as? JsonPrimitive)?.content
                 if (type == null) throw SerializationException("msgtype must not be null")
                 if (body == null) throw SerializationException("body must not be null")
-                Unknown(type, body, format, formattedBody, jsonObj, relatesTo, mentions, externalUrl)
+                Unknown(type, body, jsonObj, format, formattedBody, relatesTo, mentions, externalUrl)
             }
         }
     }
