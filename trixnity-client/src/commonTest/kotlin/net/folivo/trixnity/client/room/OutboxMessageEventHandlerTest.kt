@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.room
 
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.retry
 import io.kotest.assertions.timing.continually
 import io.kotest.assertions.until.until
@@ -94,7 +95,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             roomOutboxMessageStore.update(outbox2.transactionId) { outbox2 }
             roomOutboxMessageStore.update(outbox3.transactionId) { outbox3 }
 
-            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+            eventually(3.seconds) {// we need this, because the cache may not be fast enough
                 cut.removeOldOutboxMessages()
                 roomOutboxMessageStore.getAll().flattenValues().first() shouldContainExactly listOf(outbox1, outbox3)
             }
@@ -140,7 +141,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             }
             currentSyncState.value = SyncState.RUNNING
             mediaServiceMock.uploadMediaCalled.first { it == cacheUrl }
-            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+            eventually(3.seconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 2
                 outboxMessages[0].sentAt shouldNotBe null
@@ -175,7 +176,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+            eventually(3.seconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldNotBe null
@@ -242,7 +243,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-            retry(100, 3.seconds, 50.milliseconds) {// we need this, because the cache may not be fast enough
+            eventually(3.seconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldNotBe null
@@ -270,7 +271,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
 
             val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
 
-            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+            eventually(3.seconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldBe null
@@ -308,7 +309,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldBe null
             }
-            retry(100, 1.seconds, 30.milliseconds) {// we need this, because the cache may not be fast enough
+            eventually(3.seconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldBe null
