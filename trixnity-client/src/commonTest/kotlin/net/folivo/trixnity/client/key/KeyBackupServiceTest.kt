@@ -1,8 +1,10 @@
 package net.folivo.trixnity.client.key
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.timing.continually
+import io.kotest.assertions.nondeterministic.continually
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.core.test.TestScope
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.shouldBe
@@ -51,6 +53,18 @@ import kotlin.random.Random
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+
+private val log = KotlinLogging.logger { } // TODO remove when not timeouting anymore
+
+private fun TestScope.logTestCase() {
+    log.debug {
+        """
+        ########################################################################################################################
+        ${this.testCase.name.testName}
+        ########################################################################################################################
+    """.trimIndent()
+    }
+}
 
 class KeyBackupServiceTest : ShouldSpec(body)
 
@@ -149,6 +163,7 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
         should("set version to null when algorithm not supported") {
+            logTestCase()
             var call = 0
             apiConfig.endpoints {
                 matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
@@ -185,6 +200,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("key backup can be trusted") {
             should("just set version when already signed") {
+                logTestCase()
                 apiConfig.endpoints {
                     matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
                         keyVersion
@@ -203,6 +219,7 @@ private val body: ShouldSpec.() -> Unit = {
                 cut.version.first { it != null } shouldBe keyVersion
             }
             should("set version and sign when not signed by own device") {
+                logTestCase()
                 var setRoomKeyBackupVersionCalled = false
                 apiConfig.endpoints {
                     matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
@@ -238,6 +255,7 @@ private val body: ShouldSpec.() -> Unit = {
         }
         context("key backup cannot be trusted") {
             should("set version to null, remove secret and remove signatures when signed by own device") {
+                logTestCase()
                 var setRoomKeyBackupVersionCalled = false
                 apiConfig.endpoints {
                     matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
@@ -292,6 +310,7 @@ private val body: ShouldSpec.() -> Unit = {
             currentSyncState.value = RUNNING
         }
         should("do nothing when version is null") {
+            logTestCase()
             val job = launch {
                 cut.loadMegolmSession(roomId, sessionId)
             }
@@ -333,6 +352,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 should("fetch megolm session and save, when index is older than known index") {
+                    logTestCase()
                     val currentSession = StoredInboundMegolmSession(
                         senderKey = senderKey,
                         sessionId = sessionId,
@@ -362,6 +382,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 should("fetch megolm session, but keep old session, when index is older than known index") {
+                    logTestCase()
                     val currentSession = StoredInboundMegolmSession(
                         senderKey = senderKey,
                         sessionId = sessionId,
@@ -395,6 +416,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 should("fetch one megolm session only once at a time") {
+                    logTestCase()
                     repeat(20) {
                         launch {
                             cut.loadMegolmSession(roomId, sessionId)
@@ -427,6 +449,7 @@ private val body: ShouldSpec.() -> Unit = {
                     }
                 }
                 should("retry fetch megolm session") {
+                    logTestCase()
                     cut.loadMegolmSession(roomId, sessionId)
                     assertSoftly(olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
                         .first { it != null }) {
@@ -445,6 +468,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
     context(KeyBackupServiceImpl::bootstrapRoomKeyBackup.name) {
         should("upload new room key version and add secret to account data") {
+            logTestCase()
             val (masterSigningPrivateKey, masterSigningPublicKey) =
                 freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
             var setRoomKeyBackupVersionCalled = false
@@ -538,6 +562,7 @@ private val body: ShouldSpec.() -> Unit = {
             session2.run { olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { this } }
         }
         should("do nothing when version is null") {
+            logTestCase()
             var setRoomKeyBackupVersionCalled = false
             apiConfig.endpoints {
                 matrixJsonEndpoint(SetRoomKeyBackupVersion()) {
@@ -557,6 +582,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         should("do nothing when not backed up is empty") {
+            logTestCase()
             session1.run {
                 olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
             }
@@ -577,6 +603,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         should("upload key backup and set flag, that session has been backed up") {
+            logTestCase()
             setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
 
             var setRoomKeyBackupDataCalled = false
@@ -612,6 +639,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         should("update key backup version when error is M_WRONG_ROOM_KEYS_VERSION") {
+            logTestCase()
             setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
 
             var setRoomKeyBackupDataCalled = false
@@ -680,10 +708,12 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         should("return false, when private key is invalid") {
+            logTestCase()
             deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
             cut.keyBackupCanBeTrusted(roomKeyVersion(), "dino") shouldBe false
         }
         should("return false, when key backup version not supported") {
+            logTestCase()
             deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
             cut.keyBackupCanBeTrusted(
                 GetRoomKeysBackupVersionResponse.Unknown(
@@ -693,6 +723,7 @@ private val body: ShouldSpec.() -> Unit = {
             ) shouldBe false
         }
         should("return false, when public key does not match") {
+            logTestCase()
             deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
             cut.keyBackupCanBeTrusted(
                 roomKeyVersion(),
@@ -710,21 +741,25 @@ private val body: ShouldSpec.() -> Unit = {
 //            ) shouldBe false
 //        }
         should("return true, when there is a device key is valid+verified") {
+            logTestCase()
             deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
             masterKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
             cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
         }
         should("return true, when there is a device key is crossSigned+verified") {
+            logTestCase()
             deviceKeyTrustLevel(KeySignatureTrustLevel.CrossSigned(true))
             masterKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
             cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
         }
         should("return true, when there is a master key we crossSigned+verified") {
+            logTestCase()
             deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
             masterKeyTrustLevel(KeySignatureTrustLevel.CrossSigned(true))
             cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
         }
         should("return true, when there is a master key we notFullyCrossSigned+verified") {
+            logTestCase()
             deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
             masterKeyTrustLevel(KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true))
             cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
