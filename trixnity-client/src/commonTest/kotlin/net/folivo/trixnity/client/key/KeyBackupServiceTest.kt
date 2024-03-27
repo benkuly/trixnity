@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.key
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.nondeterministic.continually
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.test.TestScope
 import io.kotest.matchers.collections.shouldContain
@@ -675,7 +676,9 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
 
-            olmCryptoStore.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
+            eventually(2.seconds) {
+                olmCryptoStore.notBackedUpInboundMegolmSessions.first().shouldBeEmpty()
+            }
             setRoomKeyBackupDataCalled shouldBe true
             logTestCaseEnd()
         }
