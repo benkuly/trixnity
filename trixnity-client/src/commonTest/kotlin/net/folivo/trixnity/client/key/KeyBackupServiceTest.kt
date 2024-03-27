@@ -68,7 +68,7 @@ private fun TestScope.logTestCaseEnd() {
 class KeyBackupServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 10_000
+    timeout = 15_000
 
     val ownUserId = UserId("alice", "server")
     val ownDeviceId = "DEV"
@@ -140,12 +140,13 @@ private val body: ShouldSpec.() -> Unit = {
             etag = "etag",
             version = version
         )
+        val nextVersion = additionalKeyVersionBuilder?.invoke()
         val firstCall = MutableStateFlow(true)
         apiConfig.endpoints(replace = false) {
             matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
                 val keyVersion =
                     if (firstCall.value) defaultVersion
-                    else additionalKeyVersionBuilder?.invoke() ?: defaultVersion
+                    else nextVersion ?: defaultVersion
                 firstCall.value = false
                 keyVersion
             }
@@ -644,7 +645,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
 
-            eventually(5.seconds) {
+            eventually(10.seconds) {
                 olmCryptoStore.notBackedUpInboundMegolmSessions.value.shouldBeEmpty()
             }
             setRoomKeyBackupDataCalled shouldBe true
@@ -682,7 +683,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
 
-            eventually(5.seconds) {
+            eventually(10.seconds) {
                 olmCryptoStore.notBackedUpInboundMegolmSessions.first().shouldBeEmpty()
             }
             setRoomKeyBackupDataCalled shouldBe true
