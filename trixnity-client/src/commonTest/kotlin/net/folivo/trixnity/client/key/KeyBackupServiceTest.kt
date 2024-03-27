@@ -120,7 +120,7 @@ private val body: ShouldSpec.() -> Unit = {
         keyBackupPrivateKey: String,
         keyBackupPublicKey: String,
         version: String,
-        additionalKeyVersionBuilder: (() -> GetRoomKeysBackupVersionResponse.V1)? = null
+        modifyVersion: ((GetRoomKeysBackupVersionResponse.V1) -> GetRoomKeysBackupVersionResponse.V1) = { it }
     ) {
         keyStore.updateSecrets {
             mapOf(
@@ -140,18 +140,14 @@ private val body: ShouldSpec.() -> Unit = {
             etag = "etag",
             version = version
         )
-        val nextVersion = additionalKeyVersionBuilder?.invoke()
-        val firstCall = MutableStateFlow(true)
-        apiConfig.endpoints(replace = false) {
+        apiConfig.endpoints {
             matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
-                val keyVersion =
-                    if (firstCall.value) defaultVersion
-                    else nextVersion ?: defaultVersion
-                firstCall.value = false
-                keyVersion
+                modifyVersion(defaultVersion)
             }
         }
-        cut.version.first { newVersion -> newVersion == defaultVersion }
+        eventually(2.seconds) {
+            cut.version.value == defaultVersion
+        }
     }
 
     context(KeyBackupServiceImpl::setAndSignNewKeyBackupVersion.name) {
@@ -356,7 +352,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("without error") {
                 beforeTest {
-                    apiConfig.endpoints {
+                    apiConfig.endpoints() {
                         matrixJsonEndpoint(GetRoomKeyBackupData(roomId, sessionId, version)) {
                             RoomKeyBackupData(1, 0, false, encryptedRoomKeyBackupV1SessionData)
                         }
@@ -661,37 +657,41 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("update key backup version when error is M_WRONG_ROOM_KEYS_VERSION") {
             logTestCaseStart()
-            var setRoomKeyBackupDataCalled = false
+            val setRoomKeyBackupDataCalled1 = MutableStateFlow(false)
+            val setRoomKeyBackupDataCalled2 = MutableStateFlow(false)
             apiConfig.endpoints {
                 matrixJsonEndpoint(SetRoomsKeyBackup("1")) {
+                    setRoomKeyBackupDataCalled1.value = true
                     throw MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.WrongRoomKeysVersion())
                 }
                 matrixJsonEndpoint(SetRoomsKeyBackup("2")) {
-                    setRoomKeyBackupDataCalled = true
+                    setRoomKeyBackupDataCalled2.value = true
                     SetRoomKeysResponse(2, "etag")
                 }
             }
             setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1") {
-                GetRoomKeysBackupVersionResponse.V1(
-                    authData = RoomKeyBackupV1AuthData(
-                        publicKey = Curve25519Key(null, validKeyBackupPublicKey),
-                        signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
-                    ),
-                    count = 1,
-                    etag = "etag",
-                    version = "2"
-                )
+                if (setRoomKeyBackupDataCalled1.value)
+                    GetRoomKeysBackupVersionResponse.V1(
+                        authData = RoomKeyBackupV1AuthData(
+                            publicKey = Curve25519Key(null, validKeyBackupPublicKey),
+                            signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
+                        ),
+                        count = 1,
+                        etag = "etag",
+                        version = "2"
+                    )
+                else it
             }
 
             eventually(10.seconds) {
                 olmCryptoStore.notBackedUpInboundMegolmSessions.first().shouldBeEmpty()
             }
-            setRoomKeyBackupDataCalled shouldBe true
+            setRoomKeyBackupDataCalled2.value shouldBe true
             logTestCaseEnd()
         }
     }
     context(KeyBackupServiceImpl::keyBackupCanBeTrusted.name) {
-        suspend fun roomKeyVersion() = GetRoomKeysBackupVersionResponse.V1(
+        fun roomKeyVersion() = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
                 publicKey = Curve25519Key(null, validKeyBackupPublicKey),
                 signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEVICE", "s1"), Ed25519Key("MSK", "s2")))
