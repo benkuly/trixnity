@@ -36,9 +36,9 @@ data class MockEngineEndpointsConfig(
 
 class PortableMockEngineConfig {
     lateinit var config: MockEngineEndpointsConfig
-    fun endpoints(block: MockEngineEndpointsConfig.() -> Unit) =
+    fun endpoints(replace: Boolean = true, block: MockEngineEndpointsConfig.() -> Unit) =
         config.apply {
-            requestHandlers.clear()
+            if (replace) requestHandlers.clear()
             block()
         }
 }

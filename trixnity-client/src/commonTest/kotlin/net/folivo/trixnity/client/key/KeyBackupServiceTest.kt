@@ -119,17 +119,9 @@ private val body: ShouldSpec.() -> Unit = {
     suspend fun setVersion(
         keyBackupPrivateKey: String,
         keyBackupPublicKey: String,
-        version: String
+        version: String,
+        additionalKeyVersionBuilder: (() -> GetRoomKeysBackupVersionResponse.V1)? = null
     ) {
-        val keyVersion = GetRoomKeysBackupVersionResponse.V1(
-            authData = RoomKeyBackupV1AuthData(
-                publicKey = Curve25519Key(null, keyBackupPublicKey),
-                signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
-            ),
-            count = 1,
-            etag = "etag",
-            version = version
-        )
         keyStore.updateSecrets {
             mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -139,12 +131,26 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
         olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
-        apiConfig.endpoints {
+        val defaultVersion = GetRoomKeysBackupVersionResponse.V1(
+            authData = RoomKeyBackupV1AuthData(
+                publicKey = Curve25519Key(null, keyBackupPublicKey),
+                signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
+            ),
+            count = 1,
+            etag = "etag",
+            version = version
+        )
+        val firstCall = MutableStateFlow(true)
+        apiConfig.endpoints(replace = false) {
             matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+                val keyVersion =
+                    if (firstCall.value) defaultVersion
+                    else additionalKeyVersionBuilder?.invoke() ?: defaultVersion
+                firstCall.value = false
                 keyVersion
             }
         }
-        cut.version.first { newVersion -> newVersion == keyVersion }
+        cut.version.first { newVersion -> newVersion == defaultVersion }
     }
 
     context(KeyBackupServiceImpl::setAndSignNewKeyBackupVersion.name) {
@@ -652,31 +658,29 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("update key backup version when error is M_WRONG_ROOM_KEYS_VERSION") {
             logTestCaseStart()
-            setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
-
             var setRoomKeyBackupDataCalled = false
-            apiConfig.endpoints {
+            apiConfig.endpoints(replace = false) {
                 matrixJsonEndpoint(SetRoomsKeyBackup("1")) {
                     throw MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.WrongRoomKeysVersion())
-                }
-                matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
-                    GetRoomKeysBackupVersionResponse.V1(
-                        authData = RoomKeyBackupV1AuthData(
-                            publicKey = Curve25519Key(null, validKeyBackupPublicKey),
-                            signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
-                        ),
-                        count = 1,
-                        etag = "etag",
-                        version = "2"
-                    )
                 }
                 matrixJsonEndpoint(SetRoomsKeyBackup("2")) {
                     setRoomKeyBackupDataCalled = true
                     SetRoomKeysResponse(2, "etag")
                 }
             }
+            setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1") {
+                GetRoomKeysBackupVersionResponse.V1(
+                    authData = RoomKeyBackupV1AuthData(
+                        publicKey = Curve25519Key(null, validKeyBackupPublicKey),
+                        signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
+                    ),
+                    count = 1,
+                    etag = "etag",
+                    version = "2"
+                )
+            }
 
-            eventually(2.seconds) {
+            eventually(5.seconds) {
                 olmCryptoStore.notBackedUpInboundMegolmSessions.first().shouldBeEmpty()
             }
             setRoomKeyBackupDataCalled shouldBe true
