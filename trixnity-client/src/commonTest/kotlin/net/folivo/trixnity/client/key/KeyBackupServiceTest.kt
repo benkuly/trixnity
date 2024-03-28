@@ -122,14 +122,6 @@ private val body: ShouldSpec.() -> Unit = {
         version: String,
         modifyVersion: ((GetRoomKeysBackupVersionResponse.V1) -> GetRoomKeysBackupVersionResponse.V1) = { it }
     ) {
-        keyStore.updateSecrets {
-            mapOf(
-                M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
-                    keyBackupPrivateKey
-                )
-            )
-        }
         olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
         val defaultVersion = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
@@ -144,6 +136,14 @@ private val body: ShouldSpec.() -> Unit = {
             matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
                 modifyVersion(defaultVersion)
             }
+        }
+        keyStore.updateSecrets {
+            mapOf(
+                M_MEGOLM_BACKUP_V1 to StoredSecret(
+                    GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                    keyBackupPrivateKey
+                )
+            )
         }
         eventually(10.seconds) {
             cut.version.value shouldBe defaultVersion
@@ -526,10 +526,7 @@ private val body: ShouldSpec.() -> Unit = {
                         version = "1"
                     )
                 }
-                matrixJsonEndpoint(
-
-                    SetGlobalAccountData(ownUserId, "m.megolm_backup.v1")
-                ) {
+                matrixJsonEndpoint(SetGlobalAccountData(ownUserId, "m.megolm_backup.v1")) {
                     setGlobalAccountDataCalled = true
                 }
             }
