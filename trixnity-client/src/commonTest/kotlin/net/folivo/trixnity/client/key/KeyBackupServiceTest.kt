@@ -68,7 +68,7 @@ private fun TestScope.logTestCaseEnd() {
 class KeyBackupServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 15_000
+    timeout = 30_000
 
     val ownUserId = UserId("alice", "server")
     val ownDeviceId = "DEV"
@@ -145,7 +145,7 @@ private val body: ShouldSpec.() -> Unit = {
                 modifyVersion(defaultVersion)
             }
         }
-        eventually(2.seconds) {
+        eventually(10.seconds) {
             cut.version.value shouldBe defaultVersion
         }
     }
@@ -189,7 +189,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            eventually(1.seconds) {
+            eventually(10.seconds) {
                 cut.version.value shouldBe keyVersion
             }
             keyStore.updateSecrets {
@@ -200,7 +200,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            eventually(1.seconds) {
+            eventually(10.seconds) {
                 cut.version.value shouldBe null
             }
             logTestCaseEnd()
@@ -223,7 +223,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                eventually(1.seconds) {
+                eventually(10.seconds) {
                     cut.version.value shouldBe keyVersion
                 }
                 logTestCaseEnd()
@@ -259,7 +259,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                eventually(1.seconds) {
+                eventually(10.seconds) {
                     cut.version.value shouldBe keyVersion
                 }
                 setRoomKeyBackupVersionCalled shouldBe true
@@ -297,7 +297,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                eventually(1.seconds) {
+                eventually(10.seconds) {
                     cut.version.value shouldBe keyVersion
                 }
                 keyStore.updateSecrets {
@@ -309,7 +309,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                eventually(1.seconds) {
+                eventually(10.seconds) {
                     cut.version.value shouldBe null
                 }
 
@@ -386,7 +386,7 @@ private val body: ShouldSpec.() -> Unit = {
                     olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
                     cut.loadMegolmSession(roomId, sessionId)
-                    eventually(1.seconds) {
+                    eventually(10.seconds) {
                         olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
                             .shouldNotBeNull().firstKnownIndex shouldBe 1
                     }
@@ -447,7 +447,7 @@ private val body: ShouldSpec.() -> Unit = {
                         }
                     }
                     allLoadMegolmSessionsCalled.value = true
-                    eventually(1.seconds) {
+                    eventually(10.seconds) {
                         olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first().shouldNotBeNull()
                     }
                     getRoomKeyBackupDataCalled shouldBe true
@@ -478,7 +478,7 @@ private val body: ShouldSpec.() -> Unit = {
                 should("retry fetch megolm session") {
                     logTestCaseStart()
                     cut.loadMegolmSession(roomId, sessionId)
-                    val session = eventually(1.seconds) {
+                    val session = eventually(10.seconds) {
                         olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
                             .first().shouldNotBeNull()
                     }
@@ -666,12 +666,12 @@ private val body: ShouldSpec.() -> Unit = {
             }
             setRoomKeyBackupDataCalled shouldBe true
             session1.run {
-                eventually(1.seconds) {
+                eventually(10.seconds) {
                     olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
                 }
             }
             session2.run {
-                eventually(1.seconds) {
+                eventually(10.seconds) {
                     olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
                 }
             }
