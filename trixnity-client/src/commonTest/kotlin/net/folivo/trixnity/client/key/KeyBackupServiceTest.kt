@@ -8,6 +8,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.test.TestScope
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
@@ -15,11 +16,11 @@ import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -52,7 +53,6 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.random.Random
 import kotlin.test.assertNotNull
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger { } // TODO remove when not timeouting anymore
@@ -93,7 +93,7 @@ private val body: ShouldSpec.() -> Unit = {
         val (newValidKeyBackupPrivateKey, newValidKeyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
         validKeyBackupPrivateKey = newValidKeyBackupPrivateKey
         validKeyBackupPublicKey = newValidKeyBackupPublicKey
-        scope = CoroutineScope(TestCoroutineScheduler())
+        scope = CoroutineScope(Dispatchers.Default)
         accountStore = getInMemoryAccountStore(scope)
         olmCryptoStore = getInMemoryOlmStore(scope)
         keyStore = getInMemoryKeyStore(scope)
@@ -189,7 +189,9 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.version.first { it != null } shouldBe keyVersion
+            eventually(1.seconds) {
+                cut.version.value shouldBe keyVersion
+            }
             keyStore.updateSecrets {
                 mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -198,7 +200,9 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.version.first { it == null } shouldBe null
+            eventually(1.seconds) {
+                cut.version.value shouldBe null
+            }
             logTestCaseEnd()
         }
         context("key backup can be trusted") {
@@ -219,7 +223,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.version.first { it != null } shouldBe keyVersion
+                eventually(1.seconds) {
+                    cut.version.value shouldBe keyVersion
+                }
                 logTestCaseEnd()
             }
             should("set version and sign when not signed by own device") {
@@ -253,7 +259,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.version.first { it != null } shouldBe keyVersion
+                eventually(1.seconds) {
+                    cut.version.value shouldBe keyVersion
+                }
                 setRoomKeyBackupVersionCalled shouldBe true
                 logTestCaseEnd()
             }
@@ -289,7 +297,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.version.first { it != null } shouldBe keyVersion
+                eventually(1.seconds) {
+                    cut.version.value shouldBe keyVersion
+                }
                 keyStore.updateSecrets {
                     mapOf(
                         M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -299,7 +309,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.version.first { it == null } shouldBe null
+                eventually(1.seconds) {
+                    cut.version.value shouldBe null
+                }
 
                 setRoomKeyBackupVersionCalled shouldBe true
                 keyStore.getSecrets().shouldBeEmpty()
@@ -320,7 +332,7 @@ private val body: ShouldSpec.() -> Unit = {
             val job = launch {
                 cut.loadMegolmSession(roomId, sessionId)
             }
-            continually(500.milliseconds) {
+            continually(1.seconds) {
                 olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first() shouldBe null
             }
             job.cancel()
@@ -374,9 +386,12 @@ private val body: ShouldSpec.() -> Unit = {
                     olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
                     cut.loadMegolmSession(roomId, sessionId)
+                    eventually(1.seconds) {
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
+                            .shouldNotBeNull().firstKnownIndex shouldBe 1
+                    }
                     assertSoftly(
-                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                            .first { it?.firstKnownIndex == 1L }
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
                     ) {
                         assertNotNull(this)
                         this.senderKey shouldBe senderKey
@@ -405,7 +420,7 @@ private val body: ShouldSpec.() -> Unit = {
                     olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
                     cut.loadMegolmSession(roomId, sessionId)
-                    continually(500.milliseconds) {
+                    continually(1.seconds) {
                         olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first() shouldBe currentSession
                     }
                     logTestCaseEnd()
@@ -432,7 +447,9 @@ private val body: ShouldSpec.() -> Unit = {
                         }
                     }
                     allLoadMegolmSessionsCalled.value = true
-                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first { it != null }
+                    eventually(1.seconds) {
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first().shouldNotBeNull()
+                    }
                     getRoomKeyBackupDataCalled shouldBe true
                     logTestCaseEnd()
                 }
@@ -461,8 +478,11 @@ private val body: ShouldSpec.() -> Unit = {
                 should("retry fetch megolm session") {
                     logTestCaseStart()
                     cut.loadMegolmSession(roomId, sessionId)
-                    assertSoftly(olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                        .first { it != null }) {
+                    val session = eventually(1.seconds) {
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
+                            .first().shouldNotBeNull()
+                    }
+                    assertSoftly(session) {
                         assertNotNull(this)
                         this.senderKey shouldBe senderKey
                         this.sessionId shouldBe sessionId
@@ -582,7 +602,7 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeyBackupVersion.Response("1")
                 }
             }
-            continually(500.milliseconds) {
+            continually(1.seconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
                 olmCryptoStore.notBackedUpInboundMegolmSessions.value.size shouldBe 2
                 session1.run {
@@ -612,7 +632,7 @@ private val body: ShouldSpec.() -> Unit = {
             val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
             setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
 
-            continually(500.milliseconds) {
+            continually(1.seconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
             }
             logTestCaseEnd()
@@ -646,12 +666,14 @@ private val body: ShouldSpec.() -> Unit = {
             }
             setRoomKeyBackupDataCalled shouldBe true
             session1.run {
-                olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                    .first { it?.hasBeenBackedUp == true }
-            }?.hasBeenBackedUp shouldBe true
+                eventually(1.seconds) {
+                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
+                }
+            }
             session2.run {
-                olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                    .first { it?.hasBeenBackedUp == true }
+                eventually(1.seconds) {
+                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
+                }
             }
             logTestCaseEnd()
         }
