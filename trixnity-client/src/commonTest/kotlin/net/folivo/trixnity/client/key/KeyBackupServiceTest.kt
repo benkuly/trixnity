@@ -15,11 +15,11 @@ import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -93,7 +93,7 @@ private val body: ShouldSpec.() -> Unit = {
         val (newValidKeyBackupPrivateKey, newValidKeyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
         validKeyBackupPrivateKey = newValidKeyBackupPrivateKey
         validKeyBackupPublicKey = newValidKeyBackupPublicKey
-        scope = CoroutineScope(Dispatchers.Default)
+        scope = CoroutineScope(TestCoroutineScheduler())
         accountStore = getInMemoryAccountStore(scope)
         olmCryptoStore = getInMemoryOlmStore(scope)
         keyStore = getInMemoryKeyStore(scope)
@@ -405,7 +405,7 @@ private val body: ShouldSpec.() -> Unit = {
                     olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
                     cut.loadMegolmSession(roomId, sessionId)
-                    continually(300.milliseconds) {
+                    continually(500.milliseconds) {
                         olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first() shouldBe currentSession
                     }
                     logTestCaseEnd()
@@ -582,7 +582,7 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeyBackupVersion.Response("1")
                 }
             }
-            continually(2.seconds) {
+            continually(500.milliseconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
                 olmCryptoStore.notBackedUpInboundMegolmSessions.value.size shouldBe 2
                 session1.run {
@@ -612,7 +612,7 @@ private val body: ShouldSpec.() -> Unit = {
             val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
             setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
 
-            continually(2.seconds) {
+            continually(500.milliseconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
             }
             logTestCaseEnd()
