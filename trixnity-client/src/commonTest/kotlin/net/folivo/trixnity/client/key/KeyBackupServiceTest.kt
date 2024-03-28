@@ -146,7 +146,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
         eventually(2.seconds) {
-            cut.version.value == defaultVersion
+            cut.version.value shouldBe defaultVersion
         }
     }
 
