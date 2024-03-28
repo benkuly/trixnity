@@ -7,7 +7,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#push-rules">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#push-rules">matrix spec</a>
  */
 sealed interface PushRule {
     val kind: PushRuleKind

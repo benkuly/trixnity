@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#post_matrixclientv3accountdeactivate">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3accountdeactivate">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/account/deactivate")
@@ -21,6 +21,8 @@ data class DeactivateAccount(
     data class Request(
         @SerialName("id_server")
         val identityServer: String?,
+        @SerialName("erase")
+        val erase: Boolean? = null,
     )
 
     @Serializable

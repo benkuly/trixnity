@@ -136,6 +136,12 @@ class MatrixAccessTokenAuthTest {
     @WithoutAuth
     object GetResourceWithoutAuth : MatrixEndpoint<Unit, Unit>
 
+    @Serializable
+    @Resource("/get")
+    @HttpMethod(GET)
+    @WithoutAuth(true)
+    object GetResourceWithOptionalAuth : MatrixEndpoint<Unit, Unit>
+
     @Test
     fun shouldAuthenticateWhenResourceWantsIt() = testApplication {
         application {
@@ -150,10 +156,9 @@ class MatrixAccessTokenAuthTest {
             }
             routing {
                 authenticate {
-                    matrixEndpoint<GetResourceWithAuth, Unit, Unit>(
-                        json,
-                        mapping
-                    ) { call.respond(HttpStatusCode.OK) }
+                    matrixEndpoint<GetResourceWithAuth, Unit, Unit>(json, mapping) {
+                        call.respond(HttpStatusCode.OK)
+                    }
                 }
             }
         }
@@ -181,5 +186,37 @@ class MatrixAccessTokenAuthTest {
             }
         }
         client.get("/get").status shouldBe HttpStatusCode.OK
+    }
+
+    @Test
+    fun shouldAuthenticateWhenResourceOptionallyAllowsIt() = testApplication {
+        var username: String? = null
+        application {
+            install(ContentNegotiation) {
+                json(json)
+            }
+            install(Resources)
+            installMatrixAccessTokenAuth {
+                this.authenticationFunction = {
+                    it.accessToken shouldBe "accessToken"
+                    AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
+                }
+            }
+            routing {
+                authenticate {
+                    matrixEndpoint<GetResourceWithOptionalAuth, Unit, Unit>(json, mapping) {
+                        username = call.authentication.principal<UserIdPrincipal>()?.name
+                        call.respond(HttpStatusCode.OK)
+                    }
+                }
+            }
+        }
+        client.get("/get").status shouldBe HttpStatusCode.OK
+        username shouldBe null
+
+        client.get("/get") {
+            header(HttpHeaders.Authorization, "Bearer accessToken")
+        }.status shouldBe HttpStatusCode.OK
+        username shouldBe "user"
     }
 }

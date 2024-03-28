@@ -28,11 +28,19 @@ fun Application.installMatrixApiServer(json: Json) {
         exception { call: ApplicationCall, cause: Throwable ->
             call.application.log.error(cause)
             when (cause) {
-                is MatrixServerException ->
+                is MatrixServerException -> {
+                    val retryAfter = cause.retryAfter
+                    if (retryAfter != null) call.response.header(HttpHeaders.RetryAfter, retryAfter)
+                    val errorResponse = cause.errorResponse.let {
+                        if (it is ErrorResponse.LimitExceeded && retryAfter != null)
+                            it.copy(retryAfterMillis = retryAfter * 1000)
+                        else it
+                    }
                     call.respond(
                         cause.statusCode,
-                        json.encodeToJsonElement(ErrorResponseSerializer, cause.errorResponse)
+                        json.encodeToJsonElement(ErrorResponseSerializer, errorResponse)
                     )
+                }
 
                 is SerializationException ->
                     call.respond(

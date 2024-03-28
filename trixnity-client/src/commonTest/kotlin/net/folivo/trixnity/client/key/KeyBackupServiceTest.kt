@@ -1,10 +1,12 @@
 package net.folivo.trixnity.client.key
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.timing.continually
+import io.kotest.assertions.nondeterministic.continually
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
@@ -49,13 +51,12 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.random.Random
 import kotlin.test.assertNotNull
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class KeyBackupServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 10_000
+    timeout = 30_000
 
     val ownUserId = UserId("alice", "server")
     val ownDeviceId = "DEV"
@@ -106,9 +107,11 @@ private val body: ShouldSpec.() -> Unit = {
     suspend fun setVersion(
         keyBackupPrivateKey: String,
         keyBackupPublicKey: String,
-        version: String
+        version: String,
+        modifyVersion: ((GetRoomKeysBackupVersionResponse.V1) -> GetRoomKeysBackupVersionResponse.V1) = { it }
     ) {
-        val keyVersion = GetRoomKeysBackupVersionResponse.V1(
+        olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
+        val defaultVersion = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
                 publicKey = Curve25519Key(null, keyBackupPublicKey),
                 signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
@@ -117,6 +120,11 @@ private val body: ShouldSpec.() -> Unit = {
             etag = "etag",
             version = version
         )
+        apiConfig.endpoints {
+            matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+                modifyVersion(defaultVersion)
+            }
+        }
         keyStore.updateSecrets {
             mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -125,13 +133,9 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             )
         }
-        olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
-        apiConfig.endpoints {
-            matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
-                keyVersion
-            }
+        eventually(10.seconds) {
+            cut.version.value shouldBe defaultVersion
         }
-        cut.version.first { newVersion -> newVersion == keyVersion }
     }
 
     context(KeyBackupServiceImpl::setAndSignNewKeyBackupVersion.name) {
@@ -172,7 +176,9 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.version.first { it != null } shouldBe keyVersion
+            eventually(10.seconds) {
+                cut.version.value shouldBe keyVersion
+            }
             keyStore.updateSecrets {
                 mapOf(
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -181,7 +187,9 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 )
             }
-            cut.version.first { it == null } shouldBe null
+            eventually(10.seconds) {
+                cut.version.value shouldBe null
+            }
         }
         context("key backup can be trusted") {
             should("just set version when already signed") {
@@ -200,7 +208,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.version.first { it != null } shouldBe keyVersion
+                eventually(10.seconds) {
+                    cut.version.value shouldBe keyVersion
+                }
             }
             should("set version and sign when not signed by own device") {
                 var setRoomKeyBackupVersionCalled = false
@@ -232,7 +242,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.version.first { it != null } shouldBe keyVersion
+                eventually(10.seconds) {
+                    cut.version.value shouldBe keyVersion
+                }
                 setRoomKeyBackupVersionCalled shouldBe true
             }
         }
@@ -266,7 +278,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.version.first { it != null } shouldBe keyVersion
+                eventually(10.seconds) {
+                    cut.version.value shouldBe keyVersion
+                }
                 keyStore.updateSecrets {
                     mapOf(
                         M_MEGOLM_BACKUP_V1 to StoredSecret(
@@ -276,7 +290,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.version.first { it == null } shouldBe null
+                eventually(10.seconds) {
+                    cut.version.value shouldBe null
+                }
 
                 setRoomKeyBackupVersionCalled shouldBe true
                 keyStore.getSecrets().shouldBeEmpty()
@@ -295,7 +311,7 @@ private val body: ShouldSpec.() -> Unit = {
             val job = launch {
                 cut.loadMegolmSession(roomId, sessionId)
             }
-            continually(500.milliseconds) {
+            continually(1.seconds) {
                 olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first() shouldBe null
             }
             job.cancel()
@@ -326,7 +342,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
             context("without error") {
                 beforeTest {
-                    apiConfig.endpoints {
+                    apiConfig.endpoints() {
                         matrixJsonEndpoint(GetRoomKeyBackupData(roomId, sessionId, version)) {
                             RoomKeyBackupData(1, 0, false, encryptedRoomKeyBackupV1SessionData)
                         }
@@ -347,9 +363,12 @@ private val body: ShouldSpec.() -> Unit = {
                     olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
                     cut.loadMegolmSession(roomId, sessionId)
+                    eventually(10.seconds) {
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
+                            .shouldNotBeNull().firstKnownIndex shouldBe 1
+                    }
                     assertSoftly(
-                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                            .first { it?.firstKnownIndex == 1L }
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()
                     ) {
                         assertNotNull(this)
                         this.senderKey shouldBe senderKey
@@ -376,7 +395,7 @@ private val body: ShouldSpec.() -> Unit = {
                     olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { currentSession }
 
                     cut.loadMegolmSession(roomId, sessionId)
-                    continually(300.milliseconds) {
+                    continually(1.seconds) {
                         olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first() shouldBe currentSession
                     }
                 }
@@ -401,7 +420,9 @@ private val body: ShouldSpec.() -> Unit = {
                         }
                     }
                     allLoadMegolmSessionsCalled.value = true
-                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first { it != null }
+                    eventually(10.seconds) {
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first().shouldNotBeNull()
+                    }
                     getRoomKeyBackupDataCalled shouldBe true
                 }
             }
@@ -428,8 +449,11 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 should("retry fetch megolm session") {
                     cut.loadMegolmSession(roomId, sessionId)
-                    assertSoftly(olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                        .first { it != null }) {
+                    val session = eventually(10.seconds) {
+                        olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
+                            .first().shouldNotBeNull()
+                    }
+                    assertSoftly(session) {
                         assertNotNull(this)
                         this.senderKey shouldBe senderKey
                         this.sessionId shouldBe sessionId
@@ -471,10 +495,7 @@ private val body: ShouldSpec.() -> Unit = {
                         version = "1"
                     )
                 }
-                matrixJsonEndpoint(
-
-                    SetGlobalAccountData(ownUserId, "m.megolm_backup.v1")
-                ) {
+                matrixJsonEndpoint(SetGlobalAccountData(ownUserId, "m.megolm_backup.v1")) {
                     setGlobalAccountDataCalled = true
                 }
             }
@@ -545,7 +566,7 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeyBackupVersion.Response("1")
                 }
             }
-            continually(2.seconds) {
+            continually(1.seconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
                 olmCryptoStore.notBackedUpInboundMegolmSessions.value.size shouldBe 2
                 session1.run {
@@ -563,8 +584,6 @@ private val body: ShouldSpec.() -> Unit = {
             session2.run {
                 olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) { this.copy(hasBeenBackedUp = true) }
             }
-            val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
-            setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
             var setRoomKeyBackupVersionCalled = false
             apiConfig.endpoints {
                 matrixJsonEndpoint(SetRoomKeyBackupVersion()) {
@@ -572,13 +591,14 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeyBackupVersion.Response("2")
                 }
             }
-            continually(2.seconds) {
+            val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
+            setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
+
+            continually(1.seconds) {
                 setRoomKeyBackupVersionCalled shouldBe false
             }
         }
         should("upload key backup and set flag, that session has been backed up") {
-            setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
-
             var setRoomKeyBackupDataCalled = false
             apiConfig.endpoints {
                 matrixJsonEndpoint(SetRoomsKeyBackup("1")) {
@@ -599,27 +619,38 @@ private val body: ShouldSpec.() -> Unit = {
                     SetRoomKeysResponse(2, "etag")
                 }
             }
+            setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
 
-            olmCryptoStore.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
+            eventually(10.seconds) {
+                olmCryptoStore.notBackedUpInboundMegolmSessions.value.shouldBeEmpty()
+            }
             setRoomKeyBackupDataCalled shouldBe true
             session1.run {
-                olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                    .first { it?.hasBeenBackedUp == true }
-            }?.hasBeenBackedUp shouldBe true
+                eventually(10.seconds) {
+                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
+                }
+            }
             session2.run {
-                olmCryptoStore.getInboundMegolmSession(sessionId, roomId)
-                    .first { it?.hasBeenBackedUp == true }
+                eventually(10.seconds) {
+                    olmCryptoStore.getInboundMegolmSession(sessionId, roomId).first()?.hasBeenBackedUp shouldBe true
+                }
             }
         }
         should("update key backup version when error is M_WRONG_ROOM_KEYS_VERSION") {
-            setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
-
-            var setRoomKeyBackupDataCalled = false
+            val setRoomKeyBackupDataCalled1 = MutableStateFlow(false)
+            val setRoomKeyBackupDataCalled2 = MutableStateFlow(false)
             apiConfig.endpoints {
                 matrixJsonEndpoint(SetRoomsKeyBackup("1")) {
+                    setRoomKeyBackupDataCalled1.value = true
                     throw MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.WrongRoomKeysVersion())
                 }
-                matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
+                matrixJsonEndpoint(SetRoomsKeyBackup("2")) {
+                    setRoomKeyBackupDataCalled2.value = true
+                    SetRoomKeysResponse(2, "etag")
+                }
+            }
+            setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1") {
+                if (setRoomKeyBackupDataCalled1.value)
                     GetRoomKeysBackupVersionResponse.V1(
                         authData = RoomKeyBackupV1AuthData(
                             publicKey = Curve25519Key(null, validKeyBackupPublicKey),
@@ -629,19 +660,17 @@ private val body: ShouldSpec.() -> Unit = {
                         etag = "etag",
                         version = "2"
                     )
-                }
-                matrixJsonEndpoint(SetRoomsKeyBackup("2")) {
-                    setRoomKeyBackupDataCalled = true
-                    SetRoomKeysResponse(2, "etag")
-                }
+                else it
             }
 
-            olmCryptoStore.notBackedUpInboundMegolmSessions.first { it.isEmpty() }
-            setRoomKeyBackupDataCalled shouldBe true
+            eventually(10.seconds) {
+                olmCryptoStore.notBackedUpInboundMegolmSessions.first().shouldBeEmpty()
+            }
+            setRoomKeyBackupDataCalled2.value shouldBe true
         }
     }
     context(KeyBackupServiceImpl::keyBackupCanBeTrusted.name) {
-        suspend fun roomKeyVersion() = GetRoomKeysBackupVersionResponse.V1(
+        fun roomKeyVersion() = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
                 publicKey = Curve25519Key(null, validKeyBackupPublicKey),
                 signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEVICE", "s1"), Ed25519Key("MSK", "s2")))

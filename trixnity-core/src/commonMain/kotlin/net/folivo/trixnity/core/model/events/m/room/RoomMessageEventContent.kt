@@ -18,18 +18,17 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest as IVerificationRequest
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mroommessage">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroommessage">matrix spec</a>
  */
 @Serializable(with = RoomMessageEventContentSerializer::class)
 sealed interface RoomMessageEventContent : MessageEventContent {
     val body: String
+    val format: String?
+    val formattedBody: String?
 
     sealed interface TextBased : RoomMessageEventContent {
-        val format: String?
-        val formattedBody: String?
-
         /**
-         * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mnotice">matrix spec</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mnotice">matrix spec</a>
          */
         @Serializable
         data class Notice(
@@ -41,15 +40,15 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = "m.notice"
+            val type = TYPE
 
             companion object {
-                const val type = "m.notice"
+                const val TYPE = "m.notice"
             }
         }
 
         /**
-         * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mtext">matrix spec</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mtext">matrix spec</a>
          */
         @Serializable
         data class Text(
@@ -61,15 +60,15 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = "m.text"
+            val type = TYPE
 
             companion object {
-                const val type = "m.text"
+                const val TYPE = "m.text"
             }
         }
 
         /**
-         * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#memote">matrix spec</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#memote">matrix spec</a>
          */
         @Serializable
         data class Emote(
@@ -81,10 +80,10 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = "m.emote"
+            val type = TYPE
 
             companion object {
-                const val type = "m.emote"
+                const val TYPE = "m.emote"
             }
         }
     }
@@ -93,13 +92,17 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         val url: String?
         val file: EncryptedFile?
         val info: FileBasedInfo?
+        val fileName: String?
 
         /**
-         * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mimage">matrix spec</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mimage">matrix spec</a>
          */
         @Serializable
         data class Image(
             @SerialName("body") override val body: String,
+            @SerialName("format") override val format: String? = null,
+            @SerialName("formatted_body") override val formattedBody: String? = null,
+            @SerialName("filename") override val fileName: String? = null,
             @SerialName("info") override val info: ImageInfo? = null,
             @SerialName("url") override val url: String? = null,
             @SerialName("file") override val file: EncryptedFile? = null,
@@ -108,20 +111,22 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = "m.image"
+            val type = TYPE
 
             companion object {
-                const val type = "m.image"
+                const val TYPE = "m.image"
             }
         }
 
         /**
-         * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mfile">matrix spec</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mfile">matrix spec</a>
          */
         @Serializable
         data class File(
             @SerialName("body") override val body: String,
-            @SerialName("filename") val fileName: String? = null,
+            @SerialName("format") override val format: String? = null,
+            @SerialName("formatted_body") override val formattedBody: String? = null,
+            @SerialName("filename") override val fileName: String? = null,
             @SerialName("info") override val info: FileInfo? = null,
             @SerialName("url") override val url: String? = null,
             @SerialName("file") override val file: EncryptedFile? = null,
@@ -130,19 +135,22 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = "m.file"
+            val type = TYPE
 
             companion object {
-                const val type = "m.file"
+                const val TYPE = "m.file"
             }
         }
 
         /**
-         * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#maudio">matrix spec</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#maudio">matrix spec</a>
          */
         @Serializable
         data class Audio(
             @SerialName("body") override val body: String,
+            @SerialName("format") override val format: String? = null,
+            @SerialName("formatted_body") override val formattedBody: String? = null,
+            @SerialName("filename") override val fileName: String? = null,
             @SerialName("info") override val info: AudioInfo? = null,
             @SerialName("url") override val url: String? = null,
             @SerialName("file") override val file: EncryptedFile? = null,
@@ -151,19 +159,22 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = "m.audio"
+            val type = TYPE
 
             companion object {
-                const val type = "m.audio"
+                const val TYPE = "m.audio"
             }
         }
 
         /**
-         * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mvideo">matrix spec</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mvideo">matrix spec</a>
          */
         @Serializable
         data class Video(
             @SerialName("body") override val body: String,
+            @SerialName("format") override val format: String? = null,
+            @SerialName("formatted_body") override val formattedBody: String? = null,
+            @SerialName("filename") override val fileName: String? = null,
             @SerialName("info") override val info: VideoInfo? = null,
             @SerialName("url") override val url: String? = null,
             @SerialName("file") override val file: EncryptedFile? = null,
@@ -172,16 +183,16 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = "m.video"
+            val type = TYPE
 
             companion object {
-                const val type = "m.video"
+                const val TYPE = "m.video"
             }
         }
     }
 
     /**
-     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mlocation">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mlocation">matrix spec</a>
      */
     @Serializable
     data class Location(
@@ -192,10 +203,13 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
-        val type = "m.location"
+        val type = TYPE
+
+        override val format: String? = null
+        override val formattedBody: String? = null
 
         companion object {
-            const val type = "m.location"
+            const val TYPE = "m.location"
         }
     }
 
@@ -205,15 +219,17 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("to") val to: UserId,
         @SerialName("methods") override val methods: Set<VerificationMethod>,
         @SerialName("body") override val body: String = "Attempting verification request (m.key.verification.request). Apparently your client doesn't support this.",
+        @SerialName("format") override val format: String? = null,
+        @SerialName("formatted_body") override val formattedBody: String? = null,
         @SerialName("m.relates_to") override val relatesTo: RelatesTo? = null,
         @SerialName("m.mentions") override val mentions: Mentions? = null,
         @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent, IVerificationRequest {
         @SerialName("msgtype")
-        val type = "m.key.verification.request"
+        val type = TYPE
 
         companion object {
-            const val type = "m.key.verification.request"
+            const val TYPE = "m.key.verification.request"
         }
     }
 
@@ -221,6 +237,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         val type: String,
         override val body: String,
         val raw: JsonObject,
+        override val format: String? = null,
+        override val formattedBody: String? = null,
         override val relatesTo: RelatesTo? = null,
         override val mentions: Mentions? = null,
         override val externalUrl: String? = null,
@@ -235,28 +253,29 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         return when (val type = (jsonObj["msgtype"] as? JsonPrimitive)?.content) {
-            TextBased.Text.type -> decoder.json.decodeFromJsonElement<TextBased.Text>(jsonObj)
-            TextBased.Notice.type -> decoder.json.decodeFromJsonElement<TextBased.Notice>(jsonObj)
-            TextBased.Emote.type -> decoder.json.decodeFromJsonElement<TextBased.Emote>(jsonObj)
-            FileBased.Image.type -> decoder.json.decodeFromJsonElement<FileBased.Image>(jsonObj)
-            FileBased.File.type -> decoder.json.decodeFromJsonElement<FileBased.File>(jsonObj)
-            FileBased.Audio.type -> decoder.json.decodeFromJsonElement<FileBased.Audio>(jsonObj)
-            FileBased.Video.type -> decoder.json.decodeFromJsonElement<FileBased.Video>(jsonObj)
-            Location.type -> decoder.json.decodeFromJsonElement<Location>(jsonObj)
-            VerificationRequest.type ->
+            TextBased.Text.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Text>(jsonObj)
+            TextBased.Notice.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Notice>(jsonObj)
+            TextBased.Emote.TYPE -> decoder.json.decodeFromJsonElement<TextBased.Emote>(jsonObj)
+            FileBased.Image.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Image>(jsonObj)
+            FileBased.File.TYPE -> decoder.json.decodeFromJsonElement<FileBased.File>(jsonObj)
+            FileBased.Audio.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Audio>(jsonObj)
+            FileBased.Video.TYPE -> decoder.json.decodeFromJsonElement<FileBased.Video>(jsonObj)
+            Location.TYPE -> decoder.json.decodeFromJsonElement<Location>(jsonObj)
+            VerificationRequest.TYPE ->
                 decoder.json.decodeFromJsonElement<VerificationRequest>(jsonObj)
 
             else -> {
                 val body = (jsonObj["body"] as? JsonPrimitive)?.content
+                val format = (jsonObj["format"] as? JsonPrimitive)?.content
+                val formattedBody = (jsonObj["formatted_body"] as? JsonPrimitive)?.content
                 val relatesTo: RelatesTo? =
                     (jsonObj["m.relates_to"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 val mentions: Mentions? =
                     (jsonObj["m.mentions"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
-                val externalUrl: String? =
-                    (jsonObj["external_url"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
+                val externalUrl: String? = (jsonObj["external_url"] as? JsonPrimitive)?.content
                 if (type == null) throw SerializationException("msgtype must not be null")
                 if (body == null) throw SerializationException("body must not be null")
-                Unknown(type, body, jsonObj, relatesTo, mentions, externalUrl)
+                Unknown(type, body, jsonObj, format, formattedBody, relatesTo, mentions, externalUrl)
             }
         }
     }
@@ -279,19 +298,6 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
     }
 }
 
-fun RoomMessageEventContent.getFormattedBody(): String? = when (this) {
-    is TextBased.Text -> formattedBody
-    is TextBased.Notice -> formattedBody
-    is TextBased.Emote -> formattedBody
-    is FileBased.Audio,
-    is FileBased.File,
-    is FileBased.Image,
-    is Location,
-    is Unknown,
-    is VerificationRequest,
-    is FileBased.Video -> null
-}
-
 val RoomMessageEventContent.bodyWithoutFallback: String
     get() =
         if (this.relatesTo?.replyTo != null) {
@@ -301,13 +307,7 @@ val RoomMessageEventContent.bodyWithoutFallback: String
                 .joinToString("\n")
         } else body
 
-val TextBased.Text.formattedBodyWithoutFallback: String?
-    get() = formattedBody?.removeFallbackFromFormattedBody()
-
-val TextBased.Notice.formattedBodyWithoutFallback: String?
-    get() = formattedBody?.removeFallbackFromFormattedBody()
-
-val TextBased.Emote.formattedBodyWithoutFallback: String?
+val RoomMessageEventContent.formattedBodyWithoutFallback: String?
     get() = formattedBody?.removeFallbackFromFormattedBody()
 
 private fun String.removeFallbackFromFormattedBody(): String =

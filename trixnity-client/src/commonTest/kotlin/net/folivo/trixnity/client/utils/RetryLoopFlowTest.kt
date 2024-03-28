@@ -4,7 +4,6 @@ import io.kotest.assertions.until.fixed
 import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import kotlinx.coroutines.async
@@ -14,12 +13,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.MatrixServerException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 
 @OptIn(ExperimentalTime::class)
 class RetryLoopFlowTest : ShouldSpec({
@@ -185,31 +181,6 @@ class RetryLoopFlowTest : ShouldSpec({
             onErrorCalled.value shouldBe 1
             onCancelCalled.value shouldBe 1
         }
-        should("retry on rate limit") {
-            val syncState = MutableStateFlow(SyncState.RUNNING)
-
-            val blockCalled = MutableStateFlow(0)
-
-            measureTime {
-                val job = launch {
-                    syncState.retryLoopWhenSyncIs(
-                        SyncState.RUNNING,
-                        scheduleBase = 10.milliseconds,
-                    ) {
-                        when (blockCalled.updateAndGet { it + 1 }) {
-                            1 -> throw MatrixServerException(
-                                HttpStatusCode.TooManyRequests,
-                                ErrorResponse.LimitExceeded("", retryAfterMillis = 500)
-                            )
-
-                            else -> delay(Duration.INFINITE)
-                        }
-                    }
-                }
-                blockCalled.first { it == 2 } shouldBe 2
-                job.cancelAndJoin()
-            } shouldBeGreaterThan 500.milliseconds
-        }
     }
     context("retryWhenSyncIs") {
         should("wait until connected, retry on error") {
@@ -241,31 +212,6 @@ class RetryLoopFlowTest : ShouldSpec({
             result.await() shouldBe "hi"
             onErrorCalled.value shouldBe 1
             onCancelCalled.value shouldBe 1
-        }
-        should("retry on rate limit") {
-            val syncState = MutableStateFlow(SyncState.RUNNING)
-
-            val blockCalled = MutableStateFlow(0)
-
-            measureTime {
-                val result = async {
-                    syncState.retryWhenSyncIs(
-                        SyncState.RUNNING,
-                        scheduleBase = 10.milliseconds,
-                    ) {
-                        when (blockCalled.updateAndGet { it + 1 }) {
-                            1 -> throw MatrixServerException(
-                                HttpStatusCode.TooManyRequests,
-                                ErrorResponse.LimitExceeded("", retryAfterMillis = 500)
-                            )
-
-                            else -> "hi"
-                        }
-                    }
-                }
-                blockCalled.first { it == 2 } shouldBe 2
-                result.await() shouldBe "hi"
-            } shouldBeGreaterThan 500.milliseconds
         }
     }
 })

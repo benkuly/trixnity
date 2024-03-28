@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#get_matrixclientv3roomsroomidmembers">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixclientv3roomsroomidmembers">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/rooms/{roomId}/members")

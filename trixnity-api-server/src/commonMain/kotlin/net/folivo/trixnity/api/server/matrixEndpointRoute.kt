@@ -24,7 +24,11 @@ class MatrixEndpointContext<ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, REQUES
     val call: ApplicationCall,
 )
 
-val withoutAuthAttributeKey = AttributeKey<Boolean>("matrixEndpointWithoutAuth")
+enum class AuthRequired {
+    YES, OPTIONAL, NO
+}
+
+val withoutAuthAttributeKey = AttributeKey<AuthRequired>("matrixEndpointAuthRequired")
 
 // TODO inject json and mappings with context receivers in a future kotlin version
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpoint(
@@ -88,10 +92,16 @@ inline fun <reified ENDPOINT : MatrixEndpoint<*, *>> Route.matrixEndpointResourc
     val annotations = serializer<ENDPOINT>().descriptor.annotations
     val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
         ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
-    val withoutAuth = annotations.filterIsInstance<WithoutAuth>().firstOrNull() != null
+    val withoutAuthOptional = annotations.filterIsInstance<WithoutAuth>().firstOrNull()?.optional
     method(io.ktor.http.HttpMethod(endpointHttpMethod.type.name)) {
         intercept(ApplicationCallPipeline.Plugins) {
-            call.attributes.put(withoutAuthAttributeKey, withoutAuth)
+            call.attributes.put(
+                withoutAuthAttributeKey, when (withoutAuthOptional) {
+                    true -> AuthRequired.OPTIONAL
+                    false -> AuthRequired.NO
+                    null -> AuthRequired.YES
+                }
+            )
         }
         handle<ENDPOINT> { endpoint ->
             block(endpoint)

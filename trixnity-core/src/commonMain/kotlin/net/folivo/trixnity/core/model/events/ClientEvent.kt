@@ -7,11 +7,11 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#types-of-room-events">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#types-of-room-events">matrix spec</a>
  */
 sealed interface ClientEvent<C : EventContent> : Event<C> {
     /**
-     * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#room-event-fields">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#room-event-fields">matrix spec</a>
      */
     sealed interface RoomEvent<C : RoomEventContent> : ClientEvent<C> {
         val id: EventId
@@ -31,7 +31,7 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
         ) : RoomEvent<C>
 
         /**
-         * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#types-of-room-events">matrix spec</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#types-of-room-events">matrix spec</a>
          */
         @Serializable
         data class StateEvent<C : StateEventContent>(

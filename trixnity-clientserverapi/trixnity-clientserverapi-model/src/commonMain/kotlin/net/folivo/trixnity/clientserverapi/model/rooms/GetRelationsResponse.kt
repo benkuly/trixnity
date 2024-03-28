@@ -10,4 +10,5 @@ data class GetRelationsResponse(
     @SerialName("prev_batch") val start: String? = null,
     @SerialName("next_batch") val end: String? = null,
     @SerialName("chunk") val chunk: List<@Contextual RoomEvent<*>>,
+    @SerialName("recursion_depth") val recursionDepth: Long? = null,
 )

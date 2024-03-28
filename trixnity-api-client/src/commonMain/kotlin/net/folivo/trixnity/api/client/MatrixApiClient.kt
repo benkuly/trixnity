@@ -35,9 +35,7 @@ open class MatrixApiClient(
         followRedirects = false
     }
 
-    open suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {
-
-    }
+    open suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {}
 
     suspend inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE> request(
         endpoint: ENDPOINT,

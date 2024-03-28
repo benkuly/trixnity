@@ -44,7 +44,7 @@ enum class HttpMethodType {
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS)
-annotation class WithoutAuth
+annotation class WithoutAuth(val optional: Boolean = false)
 
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo

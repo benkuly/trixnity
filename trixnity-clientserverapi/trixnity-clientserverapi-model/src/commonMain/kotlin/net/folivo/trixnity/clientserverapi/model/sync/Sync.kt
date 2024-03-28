@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#get_matrixclientv3sync">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixclientv3sync">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/sync")

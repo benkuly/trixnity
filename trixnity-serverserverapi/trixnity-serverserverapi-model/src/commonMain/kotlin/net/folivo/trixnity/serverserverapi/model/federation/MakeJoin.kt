@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentStateD
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#get_matrixfederationv1make_joinroomiduserid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/server-server-api/#get_matrixfederationv1make_joinroomiduserid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/make_join/{roomId}/{userId}")

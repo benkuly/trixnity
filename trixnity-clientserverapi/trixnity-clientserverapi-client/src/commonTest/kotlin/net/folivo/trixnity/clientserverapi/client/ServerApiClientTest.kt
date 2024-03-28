@@ -27,7 +27,7 @@ class ServerApiClientTest {
     fun shouldGetVersions() = runTest {
         val response = GetVersions.Response(
             versions = emptyList(),
-            unstable_features = mapOf()
+            unstableFeatures = mapOf()
         )
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),

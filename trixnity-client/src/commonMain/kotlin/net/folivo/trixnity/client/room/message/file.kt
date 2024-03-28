@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.room.message
 
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.FileInfo
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -13,11 +12,13 @@ import net.folivo.trixnity.utils.TrixnityDsl
 suspend fun MessageBuilder.file(
     body: String,
     file: ByteArrayFlow,
+    format: String? = null,
+    formattedBody: String? = null,
+    fileName: String? = null,
     type: ContentType? = null,
     size: Int? = null,
-    name: String? = null
 ) {
-    val format: FileInfo?
+    val info: FileInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
     val isEncryptedRoom = roomService.getById(roomId).first()?.encrypted == true
@@ -26,7 +27,7 @@ suspend fun MessageBuilder.file(
             ?: Pair(null, null)
 
         encryptedFile = mediaService.prepareUploadEncryptedMedia(file)
-        format = FileInfo(
+        info = FileInfo(
             mimeType = type.toString(),
             size = size,
             thumbnailUrl = null,
@@ -37,7 +38,7 @@ suspend fun MessageBuilder.file(
     } else {
         url = mediaService.prepareUploadMedia(file, type)
         val (thumbnailUrl, thumbnailInfo) = mediaService.prepareUploadThumbnail(file, type) ?: Pair(null, null)
-        format = FileInfo(
+        info = FileInfo(
             mimeType = type.toString(),
             size = size,
             thumbnailUrl = thumbnailUrl,
@@ -46,36 +47,17 @@ suspend fun MessageBuilder.file(
         )
         encryptedFile = null
     }
-    contentBuilder = { relatesTo, mentions, newContentMentions ->
-        when (relatesTo) {
-            is RelatesTo.Replace -> RoomMessageEventContent.FileBased.File(
-                body = "* $body",
-                fileName = name,
-                info = format,
-                url = url,
-                file = encryptedFile,
-                relatesTo = relatesTo.copy(
-                    newContent = RoomMessageEventContent.FileBased.File(
-                        body = body,
-                        fileName = name,
-                        info = format,
-                        url = url,
-                        file = encryptedFile,
-                        mentions = newContentMentions,
-                    )
-                ),
-                mentions = mentions,
-            )
-
-            else -> RoomMessageEventContent.FileBased.File(
-                body = body,
-                fileName = name,
-                info = format,
-                url = url,
-                file = encryptedFile,
-                relatesTo = relatesTo,
-                mentions = mentions,
-            )
-        }
+    roomMessageBuilder(body, format, formattedBody) {
+        RoomMessageEventContent.FileBased.File(
+            body = this.body,
+            format = this.format,
+            formattedBody = this.formattedBody,
+            fileName = fileName,
+            info = info,
+            url = url,
+            file = encryptedFile,
+            relatesTo = relatesTo,
+            mentions = mentions,
+        )
     }
 }

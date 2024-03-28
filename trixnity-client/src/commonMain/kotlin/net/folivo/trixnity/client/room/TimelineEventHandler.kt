@@ -281,7 +281,7 @@ class TimelineEventHandlerImpl(
                             val newContent = RedactedEventContent(eventType)
                             oldTimelineEvent.copy(
                                 event = RoomEvent.StateEvent(
-                                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.7/rooms/v9/#redactions
+                                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.10/rooms/v9/#redactions
                                     newContent,
                                     oldEvent.id,
                                     oldEvent.sender,

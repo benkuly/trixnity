@@ -53,7 +53,7 @@ class OkioMediaStoreTest {
     fun shouldAddMedia() = runTest {
         cut.init()
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
-        fileSystem.read(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) { readUtf8() } shouldBe "hi"
+        fileSystem.read(basePath.resolve("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=")) { readUtf8() } shouldBe "hi"
     }
 
     @Test
@@ -65,13 +65,13 @@ class OkioMediaStoreTest {
         }
         file.emit("h".encodeToByteArray())
         job.cancel()
-        fileSystem.exists(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) shouldBe false
+        fileSystem.exists(basePath.resolve("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=")) shouldBe false
     }
 
     @Test
     fun shouldGetMedia() = runTest {
         cut.init()
-        fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
+        fileSystem.write(basePath.resolve("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=")) {
             writeUtf8("hi")
         }
         cut.getMedia("url1")?.toByteArray()?.decodeToString() shouldBe "hi"
@@ -86,7 +86,7 @@ class OkioMediaStoreTest {
     @Test
     fun shouldDeleteMedia() = runTest {
         cut.init()
-        fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
+        fileSystem.write(basePath.resolve("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=")) {
             writeUtf8("hi")
         }
         cut.deleteMedia("url1")
@@ -103,10 +103,10 @@ class OkioMediaStoreTest {
     @Test
     fun shouldChangeMediaUrl() = runTest {
         cut.init()
-        fileSystem.write(basePath.resolve("2b9a40694179883a0dd41b2b16be242746cff1ac8cfd0fdfb44b7279bfc56362")) {
+        fileSystem.write(basePath.resolve("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=")) {
             writeUtf8("hi")
         }
         cut.changeMediaUrl("url1", "url2")
-        fileSystem.read(basePath.resolve("86729d96320481bc7f78a334b8c81f216631fec96b0ef19040537c4144384068")) { readUtf8() } shouldBe "hi"
+        fileSystem.read(basePath.resolve("hnKdljIEgbx_eKM0uMgfIWYx_slrDvGQQFN8QUQ4QGg=")) { readUtf8() } shouldBe "hi"
     }
 }
