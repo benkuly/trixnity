@@ -99,28 +99,39 @@ object MatrixRegex {
             val matched = result.groupValues[0]
             val match = result.groupValues.drop(1).windowed(3, 3)
 
-            val sigil = match.joinToString(separator = "") { it[0] }
+            val sigilOrEventLocation = match.joinToString(separator = "") { it[0] }
             val localpartOrEventSigil = match.joinToString(separator = "") { it[1] }
             val domainOrEventId = match.joinToString(separator = "") { it[2] }
 
             log.trace {
                 """
                     Matched: $matched
-                    Sigil/Event Location: $sigil
+                    Sigil/Event Location: $sigilOrEventLocation
                     Localpart/Event Sigil: $localpartOrEventSigil
                     Domain/EventId: $domainOrEventId
                 """.trimIndent()
             }
 
-            when (sigil) {
+            when (sigilOrEventLocation) {
                 "@", "u" -> matched to Mention.User(UserId(localpartOrEventSigil, domainOrEventId))
                 "!", "roomid" -> matched to Mention.Room(RoomId(localpartOrEventSigil, domainOrEventId))
                 "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpartOrEventSigil, domainOrEventId))
                 else -> when (localpartOrEventSigil) {
-                    "$", "e" -> matched to Mention.Event(EventId("$$domainOrEventId"))
+                    "$", "e" -> {
+                        val room = if (sigilOrEventLocation.startsWith("roomid/") || sigilOrEventLocation.startsWith("!")) {
+                            Mention.Room(RoomId(sigilOrEventLocation.replaceFirst("roomid/", "!")))
+                        } else if (sigilOrEventLocation.startsWith("r/") || sigilOrEventLocation.startsWith("#")) {
+                            Mention.RoomAlias(RoomAliasId(sigilOrEventLocation.replaceFirst("r/", "#")))
+                        } else {
+                            log.warn { "Unknown room type: $matched" }
+                            Mention.Unknown(Unit)
+                        }
+
+                        matched to Mention.Event(EventId("$$domainOrEventId"), room)
+                    }
                     else -> {
                         log.warn { "Unknown mention type: $matched" }
-                        "" to Mention.Event(EventId(""))
+                        "" to Mention.Unknown(Unit)
                     }
                 }
             }
