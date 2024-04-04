@@ -120,13 +120,13 @@ object MatrixRegex {
                     "$", "e" -> matched to
                             if (sigilOrEventLocation.startsWith("roomid/") || sigilOrEventLocation.startsWith("!")) {
                                 Mention.RoomEvent(
-                                    EventId("$$domainOrEventId"),
-                                    RoomId(sigilOrEventLocation.replaceFirst("roomid/", "!"))
+                                    RoomId(sigilOrEventLocation.replaceFirst("roomid/", "!")),
+                                    EventId("$$domainOrEventId")
                                 )
                             } else if (sigilOrEventLocation.startsWith("r/") || sigilOrEventLocation.startsWith("#")) {
                                 Mention.RoomAliasEvent(
-                                    EventId("$$domainOrEventId"),
-                                    RoomAliasId(sigilOrEventLocation.replaceFirst("r/", "#"))
+                                    RoomAliasId(sigilOrEventLocation.replaceFirst("r/", "#")),
+                                    EventId("$$domainOrEventId")
                                 )
                             } else {
                                 log.warn { "Unknown room type: $matched" }
