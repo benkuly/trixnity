@@ -11,7 +11,7 @@ import kotlinx.serialization.encoding.Encoder
 import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#mtag">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mtag">matrix spec</a>
  */
 @Serializable
 data class TagEventContent(

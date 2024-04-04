@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#post_matrixclientv3search">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3search">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/search")

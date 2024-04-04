@@ -205,6 +205,22 @@ class MemberEventHandlerTest : ShouldSpec({
                         roomId, user2, "U1 (@user2:server)", event2
                     )
                 }
+                should("evaluate events from server multiple times and still be correct" ) {
+                    val event2 =
+                        user2Event.copy(content = MemberEventContent(displayName = "U1", membership = Membership.JOIN))
+                    roomUserStore.update(user2, roomId) { RoomUser(roomId, user2, "U1", event2) }
+                    val event = user1Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
+                    )
+                    cut.setRoomUser(listOf(event))
+                    cut.setRoomUser(listOf(event))
+                    roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
+                        roomId, user1, "U1 (@user1:server)", event
+                    )
+                    roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
+                        roomId, user2, "U1 (@user2:server)", event2
+                    )
+                }
             }
             context("two other users have same displayName") {
                 should("set our displayName to 'DisplayName (@user:server)'") {

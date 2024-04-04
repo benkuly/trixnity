@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.api.client.retryOnRateLimit
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenNotNull
@@ -84,91 +83,90 @@ class OutboxMessageEventHandler(
                         .also { alreadyProcessedOutboxMessages.addAll(outbox.keys) }
                 }
                 .collect { outboxMessages ->
-                    retryOnRateLimit {
-                        val outboxMessagesGroupedByRoom = outboxMessages.groupBy { it.roomId }
-                        coroutineScope {
-                            outboxMessagesGroupedByRoom.forEach { (roomId, outboxMessagesInRoom) ->
-                                launch {
-                                    for (outboxMessage in outboxMessagesInRoom) {
-                                        log.trace { "send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
-                                        val originalContent = outboxMessage.content
-                                        val uploader =
-                                            outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)
-                                        val uploadedContent = try {
-                                            uploader(originalContent) { cacheUri ->
-                                                mediaService.uploadMedia(
-                                                    cacheUri,
-                                                    outboxMessage.mediaUploadProgress,
-                                                    outboxMessage.keepMediaInCache,
-                                                ).getOrThrow()
-                                            }
-                                        } catch (exception: MatrixServerException) {
-                                            val sendError = when (exception.statusCode) {
-                                                HttpStatusCode.Forbidden -> SendError.NoMediaPermission
-                                                HttpStatusCode.PayloadTooLarge -> SendError.MediaTooLarge
-                                                HttpStatusCode.BadRequest -> SendError.BadRequest(exception.errorResponse)
-                                                HttpStatusCode.TooManyRequests -> throw exception
-                                                else -> SendError.Unknown(exception.errorResponse)
-                                            }
-                                            roomOutboxMessageStore.update(outboxMessage.transactionId) {
-                                                it?.copy(sendError = sendError)
-                                            }
-                                            continue
+                    val outboxMessagesGroupedByRoom = outboxMessages.groupBy { it.roomId }
+                    coroutineScope {
+                        outboxMessagesGroupedByRoom.forEach { (roomId, outboxMessagesInRoom) ->
+                            launch {
+                                for (outboxMessage in outboxMessagesInRoom) {
+                                    log.trace { "send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
+                                    val originalContent = outboxMessage.content
+                                    val uploader =
+                                        outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)
+                                    val uploadedContent = try {
+                                        uploader(originalContent) { cacheUri ->
+                                            mediaService.uploadMedia(
+                                                cacheUri,
+                                                outboxMessage.mediaUploadProgress,
+                                                outboxMessage.keepMediaInCache,
+                                            ).getOrThrow()
                                         }
-                                        val contentResult = roomEventEncryptionServices.encrypt(uploadedContent, roomId)
-
-                                        val content = when {
-                                            contentResult == null -> {
-                                                log.warn { "cannot send message, because encryption algorithm not supported" }
-                                                roomOutboxMessageStore.update(outboxMessage.transactionId) {
-                                                    it?.copy(sendError = SendError.EncryptionAlgorithmNotSupported)
-                                                }
-                                                continue
-                                            }
-
-                                            contentResult.isFailure -> {
-                                                log.warn(contentResult.exceptionOrNull()) { "cannot send message" }
-                                                roomOutboxMessageStore.update(outboxMessage.transactionId) {
-                                                    it?.copy(sendError = SendError.EncryptionError(contentResult.exceptionOrNull()?.message))
-                                                }
-                                                continue
-                                            }
-
-                                            else -> contentResult.getOrThrow()
-                                        }
-                                        val eventId = try {
-                                            log.debug { "send event into $roomId" }
-                                            api.room.sendMessageEvent(roomId, content, outboxMessage.transactionId)
-                                                .getOrThrow() // TODO fold as soon as continue is supported in inline lambdas
-                                        } catch (exception: MatrixServerException) {
-                                            val sendError = when (exception.statusCode) {
-                                                HttpStatusCode.Forbidden -> SendError.NoEventPermission
-                                                HttpStatusCode.BadRequest -> SendError.BadRequest(exception.errorResponse)
-                                                HttpStatusCode.TooManyRequests -> throw exception
-                                                else -> SendError.Unknown(exception.errorResponse)
-                                            }
-                                            roomOutboxMessageStore.update(outboxMessage.transactionId) {
-                                                it?.copy(sendError = sendError)
-                                            }
-                                            continue
+                                    } catch (exception: MatrixServerException) {
+                                        val sendError = when (exception.statusCode) {
+                                            HttpStatusCode.Forbidden -> SendError.NoMediaPermission
+                                            HttpStatusCode.PayloadTooLarge -> SendError.MediaTooLarge
+                                            HttpStatusCode.BadRequest -> SendError.BadRequest(exception.errorResponse)
+                                            HttpStatusCode.TooManyRequests -> throw exception
+                                            else -> SendError.Unknown(exception.errorResponse)
                                         }
                                         roomOutboxMessageStore.update(outboxMessage.transactionId) {
-                                            it?.copy(sentAt = Clock.System.now(), eventId = eventId)
+                                            it?.copy(sendError = sendError)
                                         }
-                                        if (config.setOwnMessagesAsFullyRead) {
-                                            try {
-                                                api.room.setReadMarkers(roomId, eventId, eventId).getOrThrow()
-                                            } catch (exception: MatrixServerException) {
-                                                if (exception.statusCode == HttpStatusCode.TooManyRequests) throw exception
-                                                log.warn(exception) { "could not set read marker for sent message $eventId in $roomId" }
-                                            }
-                                        }
-                                        log.trace { "finished send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
+                                        continue
                                     }
+                                    val contentResult = roomEventEncryptionServices.encrypt(uploadedContent, roomId)
+
+                                    val content = when {
+                                        contentResult == null -> {
+                                            log.warn { "cannot send message, because encryption algorithm not supported" }
+                                            roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                                                it?.copy(sendError = SendError.EncryptionAlgorithmNotSupported)
+                                            }
+                                            continue
+                                        }
+
+                                        contentResult.isFailure -> {
+                                            log.warn(contentResult.exceptionOrNull()) { "cannot send message" }
+                                            roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                                                it?.copy(sendError = SendError.EncryptionError(contentResult.exceptionOrNull()?.message))
+                                            }
+                                            continue
+                                        }
+
+                                        else -> contentResult.getOrThrow()
+                                    }
+                                    val eventId = try {
+                                        log.debug { "send event into $roomId" }
+                                        api.room.sendMessageEvent(roomId, content, outboxMessage.transactionId)
+                                            .getOrThrow() // TODO fold as soon as continue is supported in inline lambdas
+                                    } catch (exception: MatrixServerException) {
+                                        val sendError = when (exception.statusCode) {
+                                            HttpStatusCode.Forbidden -> SendError.NoEventPermission
+                                            HttpStatusCode.BadRequest -> SendError.BadRequest(exception.errorResponse)
+                                            HttpStatusCode.TooManyRequests -> throw exception
+                                            else -> SendError.Unknown(exception.errorResponse)
+                                        }
+                                        roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                                            it?.copy(sendError = sendError)
+                                        }
+                                        continue
+                                    }
+                                    roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                                        it?.copy(sentAt = Clock.System.now(), eventId = eventId)
+                                    }
+                                    if (config.setOwnMessagesAsFullyRead) {
+                                        try {
+                                            api.room.setReadMarkers(roomId, eventId, eventId).getOrThrow()
+                                        } catch (exception: MatrixServerException) {
+                                            if (exception.statusCode == HttpStatusCode.TooManyRequests) throw exception
+                                            log.warn(exception) { "could not set read marker for sent message $eventId in $roomId" }
+                                        }
+                                    }
+                                    log.trace { "finished send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
                                 }
                             }
                         }
                     }
+
                 }
         }
     }

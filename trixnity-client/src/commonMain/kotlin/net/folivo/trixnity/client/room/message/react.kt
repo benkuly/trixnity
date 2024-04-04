@@ -25,7 +25,5 @@ fun MessageBuilder.react(
     eventId: EventId,
     key: String
 ) {
-    contentBuilder = { _, _, _ ->
-        ReactionEventContent(RelatesTo.Annotation(eventId, key))
-    }
+    content(ReactionEventContent(RelatesTo.Annotation(eventId, key)))
 }

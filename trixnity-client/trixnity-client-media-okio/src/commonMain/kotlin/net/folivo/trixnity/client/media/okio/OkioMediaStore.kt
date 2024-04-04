@@ -56,7 +56,7 @@ class OkioMediaStore(
     }
 
     private fun Path.resolveUrl(url: String) =
-        resolve(url.encodeToByteArray().toByteString().sha256().hex())
+        resolve(url.encodeToByteArray().toByteString().sha256().base64Url())
 
     override suspend fun addMedia(url: String, content: ByteArrayFlow) = downloadsLock.withLock(url) {
         // It may happen, that a download is aborted.

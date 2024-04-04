@@ -7,30 +7,30 @@ private val log = KotlinLogging.logger {}
 
 object MatrixRegex {
 
-    // https://spec.matrix.org/v1.9/appendices/#identifier-grammar
+    // https://spec.matrix.org/v1.10/appendices/#identifier-grammar
     private const val baseLocalpartRegex = """(?:[a-z0-9.\-_=\/+]+)"""
     private const val baseOpaqueIdRegex = """(?:[^\s?]+)"""
 
-    // https://spec.matrix.org/v1.9/appendices/#server-name
+    // https://spec.matrix.org/v1.10/appendices/#server-name
     private const val basePortRegex = """:[0-9]{1,5}"""
     private const val baseDnsRegex = """(?:[\w-]+\.)?[\w-]+\.[\w-]+(?:$basePortRegex)?"""
     private const val baseIPV4Regex = """\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:$basePortRegex)?"""
     private const val baseIPV6Regex = """\[[0-9a-fA-F:]+\](?:$basePortRegex)?"""
     private const val baseDomainRegex = """(?:(?:$baseIPV4Regex)|(?:$baseDnsRegex)|(?:$baseIPV6Regex))"""
 
-    // https://spec.matrix.org/v1.9/appendices/#room-ids
+    // https://spec.matrix.org/v1.10/appendices/#room-ids
     private const val baseRoomIdRegex = """(!)($baseOpaqueIdRegex):($baseDomainRegex)"""
 
-    // https://spec.matrix.org/v1.9/appendices/#room-aliases
+    // https://spec.matrix.org/v1.10/appendices/#room-aliases
     private const val baseRoomAliasRegex = """(#)($baseLocalpartRegex):($baseDomainRegex)"""
 
     // https://spec.matrix.org/latest/appendices/#event-ids
     private const val baseEventIdRegex = """()(\$)($baseOpaqueIdRegex)"""
 
-    // https://spec.matrix.org/v1.9/appendices/#user-identifiers
+    // https://spec.matrix.org/v1.10/appendices/#user-identifiers
     private const val baseUserIdRegex = """(@)($baseLocalpartRegex):($baseDomainRegex)"""
 
-    // https://spec.matrix.org/v1.9/appendices/#matrix-uri-scheme
+    // https://spec.matrix.org/v1.10/appendices/#matrix-uri-scheme
     private const val baseRoomUriViaRegex =
         """(?:(?:\?action=join(?:&via=$baseDomainRegex)?)|(?:\?via=$baseDomainRegex(?:&action=join)?))?"""
     private const val baseEventUriRegex =
@@ -44,7 +44,7 @@ object MatrixRegex {
     private const val baseUserUriRegex =
         """matrix:(u)\/($baseLocalpartRegex):($baseDomainRegex)(?:(?:\?action=chat(?:&via=$baseDomainRegex)?)|(?:\?via=$baseDomainRegex(?:&action=chat)?))?"""
 
-    // https://spec.matrix.org/v1.9/appendices/#matrixto-navigation
+    // https://spec.matrix.org/v1.10/appendices/#matrixto-navigation
     private const val baseRoomLinkViaRegex = """(?:\?via=$baseDomainRegex)?"""
     private const val baseEventLinkRegex =
         """https?:\/\/matrix\.to\/#\/((?:@|!)$baseLocalpartRegex:$baseDomainRegex)\/(\$)($baseOpaqueIdRegex)$baseRoomLinkViaRegex"""

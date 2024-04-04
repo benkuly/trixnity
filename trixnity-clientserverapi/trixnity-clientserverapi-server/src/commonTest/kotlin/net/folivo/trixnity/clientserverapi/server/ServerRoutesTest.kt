@@ -51,7 +51,7 @@ class ServerRoutesTest : TestsWithMocks() {
             .returns(
                 GetVersions.Response(
                     versions = emptyList(),
-                    unstable_features = mapOf()
+                    unstableFeatures = mapOf()
                 )
             )
         val response = client.get("/_matrix/client/versions") { bearerAuth("token") }

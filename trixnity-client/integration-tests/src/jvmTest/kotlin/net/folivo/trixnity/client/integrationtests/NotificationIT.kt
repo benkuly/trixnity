@@ -21,7 +21,6 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -63,7 +62,7 @@ class NotificationIT {
     }
 
     @Test
-    fun testPushNotificationForNormalMessage(): Unit = runBlocking {
+    fun testPushNotificationForNormalMessage(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val notifications = startedClient2.client.notification.getNotifications()
                 .scan(listOf<NotificationService.Notification>()) { old, new -> old + new }

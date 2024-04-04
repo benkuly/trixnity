@@ -123,6 +123,7 @@ interface AuthenticationApiClient {
      */
     suspend fun deactivateAccount(
         identityServer: String? = null,
+        erase: Boolean? = null,
         asUserId: UserId? = null
     ): Result<UIA<DeactivateAccount.Response>>
 
@@ -313,9 +314,10 @@ class AuthenticationApiClientImpl(
 
     override suspend fun deactivateAccount(
         identityServer: String?,
+        erase: Boolean?,
         asUserId: UserId?
     ): Result<UIA<DeactivateAccount.Response>> =
-        httpClient.uiaRequest(DeactivateAccount(asUserId), DeactivateAccount.Request(identityServer))
+        httpClient.uiaRequest(DeactivateAccount(asUserId), DeactivateAccount.Request(identityServer, erase))
 
     override suspend fun changePassword(
         newPassword: String,

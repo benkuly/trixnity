@@ -9,7 +9,7 @@ sealed interface EventContent
 
 sealed interface RoomEventContent : EventContent {
     /**
-     * @see <a href="https://spec.matrix.org/v1.8/application-service-api/#referencing-messages-from-a-third-party-network">matrix spec</a>
+     * @see <a href="https://spec.matrix.org/v1.10/application-service-api/#referencing-messages-from-a-third-party-network">matrix spec</a>
      */
     val externalUrl: String?
 }

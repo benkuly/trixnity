@@ -145,7 +145,10 @@ class KeyBackupServiceImpl(
                     keyStore.updateSecrets { it - SecretType.M_MEGOLM_BACKUP_V1 }
                     null
                 }
-            } else null
+            } else {
+                log.warn { "unsupported key backup version" }
+                null
+            }
         }
         currentBackupVersion.value = currentVersion
     }

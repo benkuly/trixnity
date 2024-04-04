@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/server-server-api/#get_matrixfederationv1hierarchyroomid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/server-server-api/#get_matrixfederationv1hierarchyroomid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/federation/v1/hierarchy/{roomId}")
@@ -31,7 +31,7 @@ data class GetHierarchy(
     ) {
         @Serializable
         data class PublicRoomsChunk(
-            @SerialName("allowed_room_ids") val allowedRoomIds: Set<RoomId>,
+            @SerialName("allowed_room_ids") val allowedRoomIds: Set<RoomId>? = null,
             @SerialName("avatar_url") val avatarUrl: String? = null,
             @SerialName("canonical_alias") val canonicalAlias: RoomAliasId? = null,
             @SerialName("children_state") val childrenState: Set<@Contextual StrippedStateEvent<*>>,

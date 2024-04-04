@@ -11,7 +11,7 @@
     </root>
 
     <logger name="net.folivo.trixnity.client.integrationtests" level="TRACE"/>
-    <logger name="net.folivo.trixnity" level="INFO"/>
+    <logger name="net.folivo.trixnity" level="DEBUG"/>
     <logger name="org.testcontainers" level="INFO"/>
     <logger name="com.github.dockerjava" level="WARN"/>
 </configuration>

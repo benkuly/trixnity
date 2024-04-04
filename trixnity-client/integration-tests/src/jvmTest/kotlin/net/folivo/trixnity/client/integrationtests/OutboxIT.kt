@@ -70,7 +70,7 @@ class OutboxIT {
     }
 
     @Test
-    fun shouldSendManyMessagesAndHaveEmptyOutboxAfterThat(): Unit = runBlocking {
+    fun shouldSendManyMessagesAndHaveEmptyOutboxAfterThat(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(180_000) {
             val room = client.api.room.createRoom().getOrThrow()
             client.user.canSendEvent<RoomMessageEventContent>(room).first() shouldBe true

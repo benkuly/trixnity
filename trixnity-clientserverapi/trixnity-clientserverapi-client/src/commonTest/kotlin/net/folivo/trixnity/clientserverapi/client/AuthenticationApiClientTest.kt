@@ -7,7 +7,6 @@ import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -19,7 +18,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class AuthenticationApiClientTest {
 
     @Test
@@ -509,7 +507,7 @@ class AuthenticationApiClientTest {
                     assertEquals("/_matrix/client/v3/account/deactivate", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
                     assertEquals(
-                        """{"id_server":"id.host"}""",
+                        """{"id_server":"id.host","erase":false}""",
                         request.body.toByteArray().decodeToString()
                     )
                     respond(
@@ -519,7 +517,7 @@ class AuthenticationApiClientTest {
                     )
                 }
             })
-        val result = matrixRestClient.authentication.deactivateAccount("id.host").getOrThrow()
+        val result = matrixRestClient.authentication.deactivateAccount("id.host", false).getOrThrow()
             .shouldBeInstanceOf<UIA.Success<DeactivateAccount.Response>>()
         result.value shouldBe DeactivateAccount.Response(IdServerUnbindResult.SUCCESS)
     }

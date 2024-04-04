@@ -68,7 +68,7 @@ sealed interface ErrorResponse {
     @SerialName("M_LIMIT_EXCEEDED")
     data class LimitExceeded(
         override val error: String? = null,
-        @SerialName("retry_after_ms") val retryAfterMillis: Long
+        @SerialName("retry_after_ms") @Deprecated("replaced by Retry-After header") val retryAfterMillis: Long? = null,
     ) : ErrorResponse
 
     /**

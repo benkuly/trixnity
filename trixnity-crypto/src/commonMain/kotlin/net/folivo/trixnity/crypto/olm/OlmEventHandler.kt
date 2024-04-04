@@ -2,11 +2,13 @@ package net.folivo.trixnity.crypto.olm
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
@@ -28,6 +30,7 @@ import kotlin.time.Duration.Companion.hours
 private val log = KotlinLogging.logger {}
 
 class OlmEventHandler(
+    private val userInfo: UserInfo,
     private val eventEmitter: ClientEventEmitter<*>,
     private val olmKeysChangeEmitter: OlmKeysChangeEmitter,
     private val decrypter: OlmDecrypter,
@@ -151,20 +154,29 @@ class OlmEventHandler(
         }
     }
 
-    internal suspend fun handleMemberEvents(events: List<StateEvent<MemberEventContent>>) {
-        events
-            .filter {
-                when (it.content.membership) {
-                    Membership.LEAVE, Membership.BAN -> true
-                    else -> false
+    internal suspend fun handleMemberEvents(events: List<StateEvent<MemberEventContent>>) = coroutineScope {
+        events.forEach { event ->
+            val roomId = event.roomId
+            val userId = UserId(event.stateKey)
+            if (userId != userInfo.userId) {
+                val membership = event.content.membership
+                val membershipsAllowedToReceiveKey: Set<Membership> =
+                    store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey
+                if (membershipsAllowedToReceiveKey.contains(membership)) {
+                    val devices = store.getDevices(roomId, userId)
+                    if (!devices.isNullOrEmpty())
+                        store.updateOutboundMegolmSession(roomId) {
+                            if (it != null) {
+                                log.debug { "add new devices of $userId to megolm session of $roomId, because new membership does allow to share key" }
+                                it.copy(newDevices = it.newDevices + (userId to devices))
+                            } else null
+                        }
+                } else {
+                    log.debug { "reset megolm session of $roomId, because new membership does not allow share key" }
+                    store.updateOutboundMegolmSession(roomId) { null }
                 }
             }
-            .map { it.roomId }
-            .toSet()
-            .forEach { roomId ->
-                log.debug { "reset megolm session, because LEAVE or BAN received" }
-                store.updateOutboundMegolmSession(roomId) { null }
-            }
+        }
     }
 
     internal suspend fun handleHistoryVisibility(event: StateEvent<HistoryVisibilityEventContent>) {

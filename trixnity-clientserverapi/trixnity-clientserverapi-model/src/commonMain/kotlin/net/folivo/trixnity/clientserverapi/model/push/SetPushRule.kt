@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRuleKind
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#put_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#put_matrixclientv3pushrulesscopekindruleid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/pushrules/{scope}/{kind}/{ruleId}")

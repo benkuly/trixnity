@@ -11,4 +11,5 @@ internal fun Route.discoveryApiRoutes(
     contentMappings: EventContentSerializerMappings,
 ) {
     matrixEndpoint(json, contentMappings, handler::getWellKnown)
+    matrixEndpoint(json, contentMappings, handler::getSupport)
 }

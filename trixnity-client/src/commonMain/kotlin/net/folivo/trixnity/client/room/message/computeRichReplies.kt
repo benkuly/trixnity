@@ -4,7 +4,6 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.getFormattedBody
 
 internal fun computeRichReplies(
     repliedEvent: TimelineEvent?,
@@ -34,7 +33,7 @@ internal fun computeRichReplies(
                     """.trimIndent()
                 )
                 appendLine(
-                    repliedEventContent.getFormattedBody()
+                    repliedEventContent.formattedBody
                         ?: repliedEventContent.body.replace("\n", "<br />")
                 )
                 appendLine(

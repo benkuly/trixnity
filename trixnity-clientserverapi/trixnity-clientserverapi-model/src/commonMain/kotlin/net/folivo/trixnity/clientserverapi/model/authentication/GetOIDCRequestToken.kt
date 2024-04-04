@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/client-server-api/#post_matrixclientv3useruseridopenidrequest_token">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3useruseridopenidrequest_token">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/client/v3/user/{userId}/openid/request_token")

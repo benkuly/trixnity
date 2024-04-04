@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 
 /**
- * @see <a href="https://spec.matrix.org/v1.7/application-service-api/#put_matrixappv1transactionstxnid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.10/application-service-api/#put_matrixappv1transactionstxnid">matrix spec</a>
  */
 @Serializable
 @Resource("/_matrix/app/v1/transactions/{txnId}")

@@ -52,6 +52,7 @@ interface OlmStore {
     suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?)
 
     suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>>?
+    suspend fun getDevices(roomId: RoomId, userId: UserId): Set<String>?
 
     suspend fun getHistoryVisibility(roomId: RoomId): HistoryVisibilityEventContent.HistoryVisibility?
 
