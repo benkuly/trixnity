@@ -66,7 +66,9 @@ class UserMemberEventHandler(
 
                                 val oldDisplayName = roomUserStore.get(userId, roomId).first()?.originalName
                                 val hasCollisions =
-                                    if (hasLeftRoom || oldDisplayName != newDisplayName) {
+                                    if (hasLeftRoom) {
+                                        false
+                                    } else {
                                         if (!oldDisplayName.isNullOrEmpty()) {
                                             putAllDisplayNames.await()
                                             resolveUserDisplayNameCollisions(
@@ -87,7 +89,7 @@ class UserMemberEventHandler(
                                                 roomId
                                             )
                                         } else false
-                                    } else false
+                                    }
                                 val calculatedName =
                                     calculateUserDisplayName(
                                         newDisplayName,

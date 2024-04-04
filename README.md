@@ -11,7 +11,7 @@ This SDK supports JVM (also Android), JS and Native as targets for most modules.
 Trixnity aims to be strongly typed, customizable and easy to use.
 You can register custom events and Trixnity will take care, that you can send and receive that type.
 
-If you you just want to implement a messenger without having to dive to deep into trixnity-client and Matrix, consider
+If you just want to implement a messenger without having to dive to deep into trixnity-client and Matrix, consider
 using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 
 [Website with documentation](https://trixnity.gitlab.io/trixnity)
