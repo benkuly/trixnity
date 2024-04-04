@@ -71,7 +71,7 @@ class NotificationServiceImpl(
                             globalRuleSet.content.orEmpty() +
                             globalRuleSet.room.orEmpty() +
                             globalRuleSet.sender.orEmpty() +
-                            globalRuleSet.content.orEmpty()
+                            globalRuleSet.underride.orEmpty()
                 } ?: listOf()
             }.stateIn(this)
         val inviteEventsFlow = syncResponseFlow
