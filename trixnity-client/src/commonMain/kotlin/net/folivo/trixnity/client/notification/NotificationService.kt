@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.notification
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.client.CurrentSyncState
@@ -90,11 +89,6 @@ class NotificationServiceImpl(
                 .filter {
                     it.sender != userInfo.userId
                 }
-        launch {
-            timelineEventsFlow.map {
-
-            }
-        }
         merge(inviteEventsFlow, timelineEventsFlow)
             .map {
                 evaluatePushRules(
