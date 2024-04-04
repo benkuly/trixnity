@@ -117,25 +117,29 @@ object MatrixRegex {
                 "!", "roomid" -> matched to Mention.Room(RoomId(localpartOrEventSigil, domainOrEventId))
                 "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpartOrEventSigil, domainOrEventId))
                 else -> when (localpartOrEventSigil) {
-                    "$", "e" -> {
-                        val room = if (sigilOrEventLocation.startsWith("roomid/") || sigilOrEventLocation.startsWith("!")) {
-                            Mention.Room(RoomId(sigilOrEventLocation.replaceFirst("roomid/", "!")))
-                        } else if (sigilOrEventLocation.startsWith("r/") || sigilOrEventLocation.startsWith("#")) {
-                            Mention.RoomAlias(RoomAliasId(sigilOrEventLocation.replaceFirst("r/", "#")))
-                        } else {
-                            log.warn { "Unknown room type: $matched" }
-                            Mention.Unknown(Unit)
-                        }
+                    "$", "e" -> matched to
+                            if (sigilOrEventLocation.startsWith("roomid/") || sigilOrEventLocation.startsWith("!")) {
+                                Mention.RoomEvent(
+                                    EventId("$$domainOrEventId"),
+                                    RoomId(sigilOrEventLocation.replaceFirst("roomid/", "!"))
+                                )
+                            } else if (sigilOrEventLocation.startsWith("r/") || sigilOrEventLocation.startsWith("#")) {
+                                Mention.RoomAliasEvent(
+                                    EventId("$$domainOrEventId"),
+                                    RoomAliasId(sigilOrEventLocation.replaceFirst("r/", "#"))
+                                )
+                            } else {
+                                log.warn { "Unknown room type: $matched" }
+                                null
+                            }
 
-                        matched to Mention.Event(EventId("$$domainOrEventId"), room)
-                    }
                     else -> {
                         log.warn { "Unknown mention type: $matched" }
-                        "" to Mention.Unknown(Unit)
+                        "" to null
                     }
                 }
             }
-        }.filterNot { it.key == "" }
+        }.filterValues { it != null }.mapValues { it.value!! }
     }
 }
 
