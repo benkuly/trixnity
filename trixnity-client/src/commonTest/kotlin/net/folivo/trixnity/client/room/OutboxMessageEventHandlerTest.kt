@@ -9,7 +9,15 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.mock.*
+import io.ktor.client.plugins.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.util.*
+import io.ktor.util.date.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -38,9 +46,11 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(InternalAPI::class)
 class OutboxMessageEventHandlerTest : ShouldSpec({
     timeout = 30_000
 
@@ -262,6 +272,48 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                     call++
                     when (call) {
                         1 -> throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
+                        else -> SendEventResponse(EventId("event"))
+                    }
+
+                }
+            }
+            currentSyncState.value = SyncState.RUNNING
+
+            val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
+
+            eventually(3.seconds) {// we need this, because the cache may not be fast enough
+                val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+                outboxMessages shouldHaveSize 1
+                outboxMessages.first().sentAt shouldBe null
+            }
+            job.cancel()
+        }
+        should("not retry on ResponseException") {
+            val message =
+                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
+            roomOutboxMessageStore.update(message.transactionId) { message }
+            var call = 0
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    SendMessageEvent(room, "m.room.message", "transaction"),
+                ) {
+                    call++
+                    when (call) {
+                        1 -> throw ResponseException(
+                            DefaultHttpResponse(
+                                HttpClientCall(HttpClient(MockEngine)),
+                                HttpResponseData(
+                                    HttpStatusCode.BadRequest,
+                                    GMTDate.START,
+                                    headersOf(),
+                                    HttpProtocolVersion.HTTP_1_1,
+                                    "error",
+                                    EmptyCoroutineContext,
+                                )
+                            ),
+                            "error"
+                        )
+
                         else -> SendEventResponse(EventId("event"))
                     }
 
