@@ -95,7 +95,7 @@ object MatrixRegex {
     }
 
     fun findMentions(message: String, matcher: Regex = mention): Map<String, Mention> {
-        return matcher.findAll(message).associate { result ->
+        return matcher.findAll(message).mapNotNull { result ->
             val matched = result.groupValues[0]
             val match = result.groupValues.drop(1).windowed(3, 3)
 
@@ -117,29 +117,29 @@ object MatrixRegex {
                 "!", "roomid" -> matched to Mention.Room(RoomId(localpartOrEventSigil, domainOrEventId))
                 "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpartOrEventSigil, domainOrEventId))
                 else -> when (localpartOrEventSigil) {
-                    "$", "e" -> matched to
+                    "$", "e" ->
                             if (sigilOrEventLocation.startsWith("roomid/") || sigilOrEventLocation.startsWith("!")) {
-                                Mention.RoomEvent(
+                                matched to Mention.RoomEvent(
                                     RoomId(sigilOrEventLocation.replaceFirst("roomid/", "!")),
                                     EventId("$$domainOrEventId")
                                 )
                             } else if (sigilOrEventLocation.startsWith("r/") || sigilOrEventLocation.startsWith("#")) {
-                                Mention.RoomAliasEvent(
+                                matched to Mention.RoomAliasEvent(
                                     RoomAliasId(sigilOrEventLocation.replaceFirst("r/", "#")),
                                     EventId("$$domainOrEventId")
                                 )
                             } else {
                                 log.warn { "Unknown room type: $matched" }
-                                null
+                                return@mapNotNull null
                             }
 
                     else -> {
                         log.warn { "Unknown mention type: $matched" }
-                        "" to null
+                        null
                     }
                 }
             }
-        }.filterValues { it != null }.mapValues { it.value!! }
+        }.toMap()
     }
 }
 
