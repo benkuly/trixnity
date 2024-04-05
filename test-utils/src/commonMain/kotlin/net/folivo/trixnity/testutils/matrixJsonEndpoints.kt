@@ -26,6 +26,8 @@ import kotlin.jvm.JvmName
 
 val matrixEndpointLog = KotlinLogging.logger {}
 
+data class CustomErrorResponse(val httpStatusCode: HttpStatusCode, override val message: String) : Exception(message)
+
 @JvmName("matrixJsonEndpoint")
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> MockEngineEndpointsConfig.matrixJsonEndpoint(
     endpoint: ENDPOINT,
@@ -68,6 +70,14 @@ inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUES
                                 exception.errorResponse
                             ), exception.statusCode,
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        )
+                    }
+
+                    is CustomErrorResponse -> {
+                        matrixEndpointLog.debug { "respond with CustomErrorResponse $exception" }
+                        respond(
+                            exception.message,
+                            exception.httpStatusCode
                         )
                     }
 
@@ -151,6 +161,14 @@ inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQ
                                 exception.errorResponse
                             ).also { matrixEndpointLog.debug { "responseBody: $it" } }, exception.statusCode,
                             headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        )
+                    }
+
+                    is CustomErrorResponse -> {
+                        matrixEndpointLog.debug { "respond with CustomErrorResponse $exception" }
+                        respond(
+                            exception.message,
+                            exception.httpStatusCode
                         )
                     }
 
