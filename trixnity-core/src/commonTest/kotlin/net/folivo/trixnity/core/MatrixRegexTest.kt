@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.core.MatrixRegex.findMentions
 import net.folivo.trixnity.core.model.*
 import kotlin.test.Test
+import kotlin.test.fail
 
 
 class MatrixRegexTest {
@@ -44,9 +45,19 @@ class MatrixRegexTest {
             if (matcher != null) findMentions(message, matcher)
             else findMentions(message)
         result.size shouldBe 1
-        (result[id] as Mention.Event).eventId shouldBe EventId(opaqueId)
-        if (roomId != null) {
-            (result[id] as Mention.Event).room shouldBe Mention.Room(RoomId(roomId))
+        when (val mention = result[id]) {
+            is Mention.RoomEvent -> {
+                mention.eventId shouldBe EventId(opaqueId)
+                if (roomId != null) {
+                    mention.roomId shouldBe RoomId(roomId)
+                }
+            }
+
+            is Mention.Event -> {
+                mention.eventId shouldBe EventId(opaqueId)
+            }
+
+            else -> fail("Wrong Mention type")
         }
     }
 
@@ -98,6 +109,7 @@ class MatrixRegexTest {
         positiveUserIdTest("matrix:u/user:example.com?via=example.com&action=chat", "user", "example.com")
     }
 
+    @Test
     fun matchValidUserIdentifierWithMatrixULinkActionAndViaAttribute() {
         positiveUserIdTest("matrix:u/user:example.com?action=chat&via=example.com", "user", "example.com")
     }

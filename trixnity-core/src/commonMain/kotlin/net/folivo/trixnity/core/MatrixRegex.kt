@@ -130,7 +130,7 @@ object MatrixRegex {
                                 )
                             } else {
                                 log.warn { "Unknown room type: $matched" }
-                                return@mapNotNull null
+                                matched to Mention.Event(EventId("$$domainOrEventId"))
                             }
 
                     else -> {

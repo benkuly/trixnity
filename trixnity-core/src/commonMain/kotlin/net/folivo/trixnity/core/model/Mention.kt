@@ -6,4 +6,5 @@ sealed interface Mention {
     data class RoomEvent(val roomId: RoomId, val eventId: EventId) : Mention
     data class RoomAlias(val roomAliasId: RoomAliasId) : Mention
     data class RoomAliasEvent(val roomAliasId: RoomAliasId, val eventId: EventId) : Mention
+    data class Event(val eventId: EventId) : Mention
 }
