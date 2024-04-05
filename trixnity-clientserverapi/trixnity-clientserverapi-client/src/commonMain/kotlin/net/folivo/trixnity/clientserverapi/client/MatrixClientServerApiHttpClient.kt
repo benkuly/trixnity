@@ -47,6 +47,9 @@ class MatrixClientServerApiHttpClient(
                 retryIf { _, httpResponse ->
                     httpResponse.status == HttpStatusCode.TooManyRequests
                 }
+                retryOnExceptionIf { _, throwable ->
+                    throwable is MatrixServerException && throwable.statusCode == HttpStatusCode.TooManyRequests
+                }
                 exponentialDelay(maxDelayMs = 30_000, respectRetryAfterHeader = true)
             }
         }

@@ -9,15 +9,8 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.mock.*
-import io.ktor.client.plugins.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.*
-import io.ktor.util.date.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -44,9 +37,9 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.testutils.CustomErrorResponse
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -285,6 +278,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldBe null
+                outboxMessages.first().sendError shouldNotBe null
             }
             job.cancel()
         }
@@ -299,21 +293,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 ) {
                     call++
                     when (call) {
-                        1 -> throw ResponseException(
-                            DefaultHttpResponse(
-                                HttpClientCall(HttpClient(MockEngine)),
-                                HttpResponseData(
-                                    HttpStatusCode.BadRequest,
-                                    GMTDate.START,
-                                    headersOf(),
-                                    HttpProtocolVersion.HTTP_1_1,
-                                    "error",
-                                    EmptyCoroutineContext,
-                                )
-                            ),
-                            "error"
-                        )
-
+                        1 -> throw CustomErrorResponse(HttpStatusCode.BadGateway, "error")
                         else -> SendEventResponse(EventId("event"))
                     }
 
@@ -327,6 +307,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldBe null
+                outboxMessages.first().sendError shouldNotBe null
             }
             job.cancel()
         }
