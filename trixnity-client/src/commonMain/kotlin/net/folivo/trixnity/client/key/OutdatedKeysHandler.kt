@@ -74,8 +74,10 @@ class OutdatedKeysHandler(
     internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) =
         withContext(KeyStore.SkipOutdatedKeys) {
             // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
+            val trackOwnKey = deviceList?.changed?.contains(userInfo.userId) == true
             if (syncState != SyncState.INITIAL_SYNC) {
                 val startTrackingKeys = deviceList?.changed?.filter { keyStore.isTracked(it) }?.toSet().orEmpty()
+                    .let { if (trackOwnKey) it + userInfo.userId else it }
                 val stopTrackingKeys = deviceList?.left.orEmpty()
 
                 trackKeys(
@@ -83,7 +85,7 @@ class OutdatedKeysHandler(
                     stop = stopTrackingKeys,
                     reason = "device list"
                 )
-            } else if (deviceList?.changed?.contains(userInfo.userId) == true) {
+            } else if (trackOwnKey) {
                 trackKeys(
                     start = setOf(userInfo.userId),
                     stop = setOf(),
