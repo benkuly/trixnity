@@ -18,7 +18,7 @@ fun withVersionSuffix(version: String) = when {
             .withZone(ZoneId.systemDefault())
         val instant = Instant.parse(System.getenv("CI_COMMIT_TIMESTAMP"))
         val formattedInstant = formatter.format(instant)
-        "$version-DEV-$formattedInstant"
+        "$version-SNAPSHOT-$formattedInstant"
     }
 
     else -> "$version-LOCAL"

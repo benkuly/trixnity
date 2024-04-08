@@ -52,10 +52,10 @@ project [Smalk](https://gitlab.com/terrakok/smalk).
 If you you just want to implement a messenger without having to dive to deep into trixnity-client and Matrix, consider
 using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 
-## dev builds
+## Snapshot builds
 
 Dev builds are published on each commit to main.
 Add `https://gitlab.com/api/v4/projects/26519650/packages/maven` to your
 maven repositories. You can find
 the complete version names here (
-containing `DEV`): https://gitlab.com/trixnity/trixnity/-/packages?search[]=trixnity-bom
+containing `SNAPSHOT`): https://gitlab.com/trixnity/trixnity/-/packages?search[]=trixnity-bom
