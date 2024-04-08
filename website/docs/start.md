@@ -57,4 +57,5 @@ using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 Dev builds are published on each commit to main.
 Add `https://gitlab.com/api/v4/projects/26519650/packages/maven` to your
 maven repositories. You can find
-the complete version names here (containing `DEV`): https://gitlab.com/trixnity/trixnity/-/packages
+the complete version names here (
+containing `DEV`): https://gitlab.com/trixnity/trixnity/-/packages?search[]=trixnity-bom
