@@ -148,6 +148,13 @@ private val body: ShouldSpec.() -> Unit = {
         should("always handle own keys") {
             cut.handleDeviceLists(
                 Sync.Response.DeviceLists(changed = setOf(UserId("us", "server"), bob)),
+                SyncState.RUNNING
+            )
+            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(UserId("us", "server"))
+        }
+        should("always handle own keys in initial sync") {
+            cut.handleDeviceLists(
+                Sync.Response.DeviceLists(changed = setOf(UserId("us", "server"), bob)),
                 SyncState.INITIAL_SYNC
             )
             keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(UserId("us", "server"))
