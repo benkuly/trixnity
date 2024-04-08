@@ -1,8 +1,10 @@
 package net.folivo.trixnity.utils
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 private val log = KotlinLogging.logger {}
 
@@ -22,7 +24,9 @@ open class KeyedMutex<K : Any> {
                 block()
             }
         } finally {
-            releaseMutex(key)
+            withContext(NonCancellable) {
+                releaseMutex(key)
+            }
         }
     }
 
