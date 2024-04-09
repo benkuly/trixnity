@@ -1,6 +1,4 @@
 import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 val isCI = System.getenv("CI") != null
 val isRelease = System.getenv("CI_COMMIT_TAG")?.matches("^v\\d+.\\d+.\\d+.*".toRegex()) ?: false
@@ -14,11 +12,9 @@ fun withVersionSuffix(version: String) = when {
     }
 
     isCI -> {
-        val formatter = DateTimeFormatter.ofPattern("yyMMddHHmmss")
-            .withZone(ZoneId.systemDefault())
-        val instant = Instant.parse(System.getenv("CI_COMMIT_TIMESTAMP"))
-        val formattedInstant = formatter.format(instant)
-        "$version-DEV-$formattedInstant"
+        val commitEpoch = Instant.parse(System.getenv("CI_COMMIT_TIMESTAMP")).epochSecond
+        val commitCustomEpoch = commitEpoch - 1704067200 // 01.01.2024
+        "$version-DEV-$commitCustomEpoch"
     }
 
     else -> "$version-LOCAL"
