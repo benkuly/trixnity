@@ -9,7 +9,7 @@ kotlin {
     jvmToolchain()
     addJvmTarget(testEnabled = (isCI && HostManager.hostIsMac).not()) {
         maxHeapSize = "8g"
-        maxParallelForks = 3
+        maxParallelForks = if (isCI) 3 else 1
     }
 
     sourceSets {

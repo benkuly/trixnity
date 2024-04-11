@@ -202,6 +202,7 @@ class PerformanceIT {
                     invite = clients.map { it.userId }.toSet(),
                 ).getOrThrow()
                 clients.forEach { it.api.room.joinRoom(roomId).getOrThrow() }
+                it.cancelSync(true)
                 userId to roomId
             }.toMap()
             log.info { "all rooms created" }
@@ -209,6 +210,7 @@ class PerformanceIT {
             val createRoomResults = clients.measureSyncSpeed(decrypt)
 
             prepareTestClients.withLimitedParallelism {
+                it.startSync()
                 val roomId = rooms[userId]
                 checkNotNull(roomId)
                 val encryptedEvent = roomEventEncryptionServices
@@ -216,12 +218,14 @@ class PerformanceIT {
                     ?.getOrThrow()
                 encryptedEvent.shouldNotBeNull()
                 api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
+                it.cancelSync(true)
             }
             log.info { "all initial messages sent" }
 
             val initialMessageResults = clients.measureSyncSpeed(decrypt)
 
             prepareTestClients.withLimitedParallelism {
+                it.startSync()
                 val roomId = rooms[userId]
                 checkNotNull(roomId)
                 repeat(messagesCount) { i ->
@@ -231,8 +235,8 @@ class PerformanceIT {
                     encryptedEvent.shouldNotBeNull()
                     api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
                 }
+                it.stop()
             }
-            prepareTestClients.forEach { it.stop() }
             log.info { "all messages sent" }
 
             val messagesResults = clients.measureSyncSpeed(decrypt)
