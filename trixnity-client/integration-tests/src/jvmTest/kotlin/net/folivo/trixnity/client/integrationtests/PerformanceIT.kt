@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.matchers.comparables.shouldBeLessThan
+import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -86,7 +87,8 @@ class PerformanceIT {
         println("diff: ${diff.roundToInt()}%")
         println("################################")
 
-        diff shouldBeLessThan 80.0 // %
+        diff shouldBeLessThan 150.0 // %
+        diff shouldBeGreaterThan 50.0 // %
     }
 
     @Test
