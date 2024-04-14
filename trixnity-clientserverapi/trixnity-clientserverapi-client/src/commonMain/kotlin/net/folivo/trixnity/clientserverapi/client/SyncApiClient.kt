@@ -144,6 +144,7 @@ class SyncApiClientImpl(
         ) {
             timeout {
                 requestTimeoutMillis = (if (timeout == ZERO) 5.minutes else timeout + 10.seconds).inWholeMilliseconds
+                socketTimeoutMillis = requestTimeoutMillis
             }
         }
 
