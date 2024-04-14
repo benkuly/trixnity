@@ -22,7 +22,6 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -69,6 +68,7 @@ class OutdatedKeysHandler(
 
     internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) =
         withContext(KeyStore.SkipOutdatedKeys) {
+            log.debug { "handle new device list" }
             // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
             val trackOwnKey = deviceList?.changed?.contains(userInfo.userId) == true
             if (syncState != SyncState.INITIAL_SYNC) {
@@ -125,7 +125,7 @@ class OutdatedKeysHandler(
             joinedEncryptedRooms.cancelAndJoin()
         }
     }
-    
+
     private suspend fun trackKeys(start: Set<UserId>, stop: Set<UserId>, reason: String) {
         if (start.isNotEmpty() || stop.isNotEmpty()) {
             tm.transaction {
@@ -164,9 +164,9 @@ class OutdatedKeysHandler(
         }
     }
 
-    internal suspend fun updateOutdatedKeys() = coroutineScope {
+    internal suspend fun updateOutdatedKeys() = withContext(KeyStore.SkipOutdatedKeys) {
         val userIds = keyStore.getOutdatedKeys()
-        if (userIds.isEmpty()) return@coroutineScope
+        if (userIds.isEmpty()) return@withContext
         log.debug { "try update outdated keys of $userIds" }
         val keysResponse = api.key.getKeys(
             deviceKeys = userIds.associateWith { emptySet() },
