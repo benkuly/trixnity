@@ -114,15 +114,15 @@ class KeyStore(
         override val key: CoroutineContext.Key<*> = this
     }
 
-    private suspend fun waitForUpdateOutdatedKey(userId: UserId, keysAreNull: suspend () -> Boolean) {
+    private suspend fun waitForUpdateOutdatedKey(userId: UserId, reason: String, keysAreNull: suspend () -> Boolean) {
         if (currentCoroutineContext()[SkipOutdatedKeys] == null) {
             if (keysAreNull()) {
-                log.trace { "add $userId to outdated keys, because key not found" }
+                log.trace { "add $userId to outdated keys, because key ($reason) not found" }
                 updateOutdatedKeys { it + userId }
             }
-            log.debug { "wait for outdated keys of $userId" }
+            log.debug { "wait for outdated keys ($reason) of $userId" }
             getOutdatedKeysFlow().first { !it.contains(userId) }
-            log.trace { "finished wait for outdated keys of $userId" }
+            log.trace { "finished wait for outdated keys ($reason) of $userId" }
         }
     }
 
@@ -130,7 +130,7 @@ class KeyStore(
         userId: UserId,
     ): Flow<Map<String, StoredDeviceKeys>?> =
         flow {
-            waitForUpdateOutdatedKey(userId) {
+            waitForUpdateOutdatedKey(userId, "device keys") {
                 deviceKeysCache.read(userId).first() == null
             }
             emitAll(deviceKeysCache.read(userId))
@@ -152,7 +152,7 @@ class KeyStore(
         userId: UserId,
     ): Flow<Set<StoredCrossSigningKeys>?> =
         flow {
-            waitForUpdateOutdatedKey(userId) {
+            waitForUpdateOutdatedKey(userId, "cross singing keys") {
                 crossSigningKeysCache.read(userId).first() == null
             }
             emitAll(crossSigningKeysCache.read(userId))

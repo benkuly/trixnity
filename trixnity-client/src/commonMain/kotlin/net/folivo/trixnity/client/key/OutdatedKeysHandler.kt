@@ -22,7 +22,6 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -56,23 +55,20 @@ class OutdatedKeysHandler(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(Priority.DEVICE_LISTS) {
             handleDeviceLists(it.syncResponse.deviceLists, api.sync.currentSyncState.value)
-        }
-            .unsubscribeOnCompletion(scope)
+        }.unsubscribeOnCompletion(scope)
         api.sync.subscribeEventList {
-            updateDeviceKeysFromChangedMembership(it, isLoadingMembers = false, api.sync.currentSyncState.value)
-        }
-            .unsubscribeOnCompletion(scope)
-        api.sync.subscribeEventList { updateDeviceKeysFromChangedEncryption(it, api.sync.currentSyncState.value) }
-            .unsubscribeOnCompletion(scope)
+            updateDeviceKeysFromChangedMembership(it, api.sync.currentSyncState.value)
+        }.unsubscribeOnCompletion(scope)
         scope.launch(start = CoroutineStart.UNDISPATCHED) { updateLoop() }
     }
 
     override suspend fun handleLazyMemberEvents(memberEvents: List<ClientEvent.RoomEvent.StateEvent<MemberEventContent>>) {
-        updateDeviceKeysFromChangedMembership(memberEvents, isLoadingMembers = true, api.sync.currentSyncState.value)
+        updateDeviceKeysFromChangedMembership(memberEvents, api.sync.currentSyncState.value)
     }
 
     internal suspend fun handleDeviceLists(deviceList: Sync.Response.DeviceLists?, syncState: SyncState) =
         withContext(KeyStore.SkipOutdatedKeys) {
+            log.debug { "handle new device list" }
             // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
             val trackOwnKey = deviceList?.changed?.contains(userInfo.userId) == true
             if (syncState != SyncState.INITIAL_SYNC) {
@@ -96,12 +92,10 @@ class OutdatedKeysHandler(
 
     internal suspend fun updateDeviceKeysFromChangedMembership(
         events: List<ClientEvent.RoomEvent.StateEvent<MemberEventContent>>,
-        isLoadingMembers: Boolean,
         syncState: SyncState,
     ) = withContext(KeyStore.SkipOutdatedKeys) {
         // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
         if (syncState != SyncState.INITIAL_SYNC) {
-            val startTrackingKeys = mutableSetOf<UserId>()
             val stopTrackingKeys = mutableSetOf<UserId>()
             val joinedEncryptedRooms = async(start = CoroutineStart.LAZY) { roomStore.encryptedJoinedRooms() }
 
@@ -110,64 +104,27 @@ class OutdatedKeysHandler(
                 if (room?.encrypted == true) {
                     log.trace { "update keys from changed membership (event=$event)" }
                     val userId = UserId(event.stateKey)
-                    val allowedMemberships =
-                        roomStateStore.getByStateKey<HistoryVisibilityEventContent>(event.roomId)
-                            .first()?.content?.historyVisibility
-                            .membershipsAllowedToReceiveKey
-                    if (allowedMemberships.contains(event.content.membership)) {
-                        if ((isLoadingMembers || room.membersLoaded) && !keyStore.isTracked(userId)) {
-                            startTrackingKeys.add(userId)
-                        }
-                    } else {
-                        if (keyStore.isTracked(userId)) {
-                            val isActiveMemberOfAnyOtherEncryptedRoom =
-                                roomStateStore.getByRooms<MemberEventContent>(joinedEncryptedRooms.await(), userId.full)
-                                    .any {
-                                        val membership = it.content.membership
-                                        membership == Membership.JOIN || membership == Membership.INVITE
-                                    }
-                            if (!isActiveMemberOfAnyOtherEncryptedRoom) {
-                                stopTrackingKeys.add(userId)
-                            }
+                    if (keyStore.isTracked(userId)) {
+                        val isActiveMemberOfAnyOtherEncryptedRoom =
+                            roomStateStore.getByRooms<MemberEventContent>(joinedEncryptedRooms.await(), userId.full)
+                                .any {
+                                    val membership = it.content.membership
+                                    membership == Membership.JOIN || membership == Membership.INVITE
+                                }
+                        if (!isActiveMemberOfAnyOtherEncryptedRoom) {
+                            stopTrackingKeys.add(userId)
                         }
                     }
                 }
             }
             trackKeys(
-                start = startTrackingKeys,
+                start = setOf(),
                 stop = stopTrackingKeys,
                 reason = "member event"
             )
             joinedEncryptedRooms.cancelAndJoin()
         }
     }
-
-    internal suspend fun updateDeviceKeysFromChangedEncryption(
-        events: List<ClientEvent.RoomEvent.StateEvent<EncryptionEventContent>>,
-        syncState: SyncState
-    ) = withContext(KeyStore.SkipOutdatedKeys) {
-        // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
-        if (syncState != SyncState.INITIAL_SYNC) {
-            log.trace { "update keys from changed encryption" }
-            val startTrackingKeys = events.flatMap { event ->
-                if (roomStore.get(event.roomId).first()?.membersLoaded == true) {
-                    val allowedMemberships =
-                        roomStateStore.getByStateKey<HistoryVisibilityEventContent>(event.roomId)
-                            .first()?.content?.historyVisibility
-                            .membershipsAllowedToReceiveKey
-                    roomStateStore.members(event.roomId, allowedMemberships)
-                } else emptySet()
-            }.toSet()
-                .filterNot { keyStore.isTracked(it) }.toSet()
-            trackKeys(
-                start = startTrackingKeys,
-                stop = emptySet(),
-                reason = "encryption event"
-            )
-        }
-    }
-
-    //TODO we should also listen to HistoryVisibilityEventContent changes, which becomes important for MSC3061
 
     private suspend fun trackKeys(start: Set<UserId>, stop: Set<UserId>, reason: String) {
         if (start.isNotEmpty() || stop.isNotEmpty()) {
@@ -207,9 +164,9 @@ class OutdatedKeysHandler(
         }
     }
 
-    internal suspend fun updateOutdatedKeys() = coroutineScope {
+    internal suspend fun updateOutdatedKeys() = withContext(KeyStore.SkipOutdatedKeys) {
         val userIds = keyStore.getOutdatedKeys()
-        if (userIds.isEmpty()) return@coroutineScope
+        if (userIds.isEmpty()) return@withContext
         log.debug { "try update outdated keys of $userIds" }
         val keysResponse = api.key.getKeys(
             deviceKeys = userIds.associateWith { emptySet() },

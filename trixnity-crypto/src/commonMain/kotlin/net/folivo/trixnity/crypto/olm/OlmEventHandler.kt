@@ -16,6 +16,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
@@ -158,19 +159,20 @@ class OlmEventHandler(
         events.forEach { event ->
             val roomId = event.roomId
             val userId = UserId(event.stateKey)
-            if (userId != userInfo.userId) {
+            if (userId != userInfo.userId && store.getRoomEncryptionAlgorithm(roomId) == EncryptionAlgorithm.Megolm) {
                 val membership = event.content.membership
                 val membershipsAllowedToReceiveKey: Set<Membership> =
                     store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey
                 if (membershipsAllowedToReceiveKey.contains(membership)) {
-                    val devices = store.getDevices(roomId, userId)
-                    if (!devices.isNullOrEmpty())
-                        store.updateOutboundMegolmSession(roomId) {
-                            if (it != null) {
-                                log.debug { "add new devices of $userId to megolm session of $roomId, because new membership does allow to share key" }
+                    store.updateOutboundMegolmSession(roomId) {
+                        if (it != null) {
+                            log.debug { "add new devices of $userId to megolm session of $roomId, because new membership does allow to share key" }
+                            val devices = store.getDevices(roomId, userId)
+                            if (!devices.isNullOrEmpty())
                                 it.copy(newDevices = it.newDevices + (userId to devices))
-                            } else null
-                        }
+                            else it
+                        } else null
+                    }
                 } else {
                     log.debug { "reset megolm session of $roomId, because new membership does not allow share key" }
                     store.updateOutboundMegolmSession(roomId) { null }
@@ -181,6 +183,7 @@ class OlmEventHandler(
 
     internal suspend fun handleHistoryVisibility(event: StateEvent<HistoryVisibilityEventContent>) {
         log.debug { "reset megolm session, because visibility has changed in ${event.roomId}" }
-        store.updateOutboundMegolmSession(event.roomId) { null }
+        if (store.getRoomEncryptionAlgorithm(event.roomId) == EncryptionAlgorithm.Megolm)
+            store.updateOutboundMegolmSession(event.roomId) { null }
     }
 }

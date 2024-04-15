@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.matchers.comparables.shouldBeLessThan
+import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -86,7 +87,8 @@ class PerformanceIT {
         println("diff: ${diff.roundToInt()}%")
         println("################################")
 
-        diff shouldBeLessThan 80.0 // %
+        diff shouldBeLessThan 150.0 // %
+        diff shouldBeGreaterThan 50.0 // %
     }
 
     @Test
@@ -202,6 +204,7 @@ class PerformanceIT {
                     invite = clients.map { it.userId }.toSet(),
                 ).getOrThrow()
                 clients.forEach { it.api.room.joinRoom(roomId).getOrThrow() }
+                it.cancelSync(true)
                 userId to roomId
             }.toMap()
             log.info { "all rooms created" }
@@ -209,6 +212,7 @@ class PerformanceIT {
             val createRoomResults = clients.measureSyncSpeed(decrypt)
 
             prepareTestClients.withLimitedParallelism {
+                it.startSync()
                 val roomId = rooms[userId]
                 checkNotNull(roomId)
                 val encryptedEvent = roomEventEncryptionServices
@@ -216,12 +220,14 @@ class PerformanceIT {
                     ?.getOrThrow()
                 encryptedEvent.shouldNotBeNull()
                 api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
+                it.cancelSync(true)
             }
             log.info { "all initial messages sent" }
 
             val initialMessageResults = clients.measureSyncSpeed(decrypt)
 
             prepareTestClients.withLimitedParallelism {
+                it.startSync()
                 val roomId = rooms[userId]
                 checkNotNull(roomId)
                 repeat(messagesCount) { i ->
@@ -231,8 +237,8 @@ class PerformanceIT {
                     encryptedEvent.shouldNotBeNull()
                     api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
                 }
+                it.stop()
             }
-            prepareTestClients.forEach { it.stop() }
             log.info { "all messages sent" }
 
             val messagesResults = clients.measureSyncSpeed(decrypt)

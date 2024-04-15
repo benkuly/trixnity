@@ -2,11 +2,14 @@ package net.folivo.trixnity.client.store
 
 import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
+import korlibs.io.async.async
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
@@ -20,8 +23,8 @@ import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventConte
 import net.folivo.trixnity.crypto.SecretType
 import kotlin.time.Duration.Companion.seconds
 
-class DeviceKeysStoreTest : ShouldSpec({
-    timeout = 30_000
+class KeyStoreTest : ShouldSpec({
+    timeout = 5_000
 
     lateinit var outdatedKeysRepository: OutdatedKeysRepository
     lateinit var deviceKeysRepository: DeviceKeysRepository
@@ -121,5 +124,22 @@ class DeviceKeysStoreTest : ShouldSpec({
                 )
             }
         }
+    }
+    suspend fun getKeys() = cut.getDeviceKeys(UserId("alice", "server")).first()
+    should("update keys when not known") {
+        cut.getOutdatedKeys().shouldBeEmpty()
+        val getKeysJob = async {
+            getKeys()
+        }
+        cut.getOutdatedKeysFlow().first { it.isNotEmpty() }
+        cut.updateOutdatedKeys { emptySet() }
+        getKeysJob.join()
+    }
+    should("not update keys when context forbids it") {
+        cut.getOutdatedKeys().shouldBeEmpty()
+        withContext(KeyStore.SkipOutdatedKeys) {
+            getKeys()
+        }
+        cut.getOutdatedKeys().shouldBeEmpty()
     }
 })

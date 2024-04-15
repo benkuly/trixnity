@@ -83,6 +83,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         httpClient.request(UploadMedia(media.filename), media) {
             timeout {
                 requestTimeoutMillis = timeout
+                socketTimeoutMillis = requestTimeoutMillis
             }
             if (progress != null)
                 onUpload { transferred, total ->
@@ -100,6 +101,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         httpClient.request(UploadMediaByContentUri(serverName, mediaId, media.filename), media) {
             timeout {
                 requestTimeoutMillis = timeout
+                socketTimeoutMillis = requestTimeoutMillis
             }
             if (progress != null)
                 onUpload { transferred, total ->
@@ -121,6 +123,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
             method = HttpMethod.Get
             timeout {
                 requestTimeoutMillis = timeout
+                socketTimeoutMillis = requestTimeoutMillis
             }
             if (progress != null)
                 onDownload { transferred, total ->
@@ -154,6 +157,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
             this.method = HttpMethod.Get
             timeout {
                 requestTimeoutMillis = 300000
+                socketTimeoutMillis = requestTimeoutMillis
             }
             if (progress != null)
                 onDownload { transferred, total ->

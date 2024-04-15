@@ -100,7 +100,7 @@ class ClientOlmStore(
 
     override suspend fun getDevices(roomId: RoomId, userId: UserId): Set<String>? =
         keyStore.getDeviceKeys(userId).first()?.keys
-    
+
     override suspend fun getHistoryVisibility(roomId: RoomId): HistoryVisibilityEventContent.HistoryVisibility? =
         roomStateStore.getByStateKey<HistoryVisibilityEventContent>(roomId).first()?.content?.historyVisibility
 
