@@ -10,6 +10,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.koin.core.Koin
 
@@ -60,6 +61,26 @@ fun ShouldSpec.timelineEventRepositoryTest(diReceiver: () -> Koin) {
             cut.get(key2) shouldBe session2Copy
             cut.delete(key1)
             cut.get(key1) shouldBe null
+        }
+    }
+    should("timelineEventRepositoryTest: redacted events") {
+        val key = TimelineEventKey(EventId("\$event1"), RoomId("room1", "server"))
+        val event = TimelineEvent(
+            MessageEvent(
+                RedactedEventContent("m.room.message"),
+                EventId("\$event1"),
+                UserId("sender", "server"),
+                RoomId("room1", "server"),
+                1234
+            ),
+            content = Result.success(RedactedEventContent("m.room.message")),
+            previousEventId = null,
+            nextEventId = null,
+            gap = TimelineEvent.Gap.GapBefore("batch")
+        )
+        rtm.writeTransaction {
+            cut.save(key, event)
+            cut.get(key) shouldBe event
         }
     }
     should("timelineEventRepositoryTest: deleteByRoomId") {

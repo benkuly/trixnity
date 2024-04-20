@@ -24,7 +24,7 @@ fun ShouldSpec.repositoryTestSuite(
                 listOf(
                     repositoriesModule,
                     module {
-                        single { MatrixClientConfiguration() }
+                        single { MatrixClientConfiguration(storeTimelineEventContentUnencrypted = true) }
                     },
                     createDefaultEventContentSerializerMappingsModule(),
                     createDefaultMatrixJsonModule()
