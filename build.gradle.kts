@@ -16,7 +16,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix("4.3.2")
+    version = withVersionSuffix("4.3.3")
 
     dependencyLocking {
         lockAllConfigurations()

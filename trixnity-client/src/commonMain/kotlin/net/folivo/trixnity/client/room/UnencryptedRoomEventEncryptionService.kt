@@ -7,7 +7,7 @@ import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 
 private val log = KotlinLogging.logger { }
 
@@ -24,10 +24,7 @@ class UnencryptedRoomEventEncryptionService(
     }
 
     override suspend fun decrypt(event: ClientEvent.RoomEvent.MessageEvent<*>): Result<MessageEventContent>? {
-        if (event.content is RedactedEventContent) return Result.success(event.content)
-        if (roomStore.get(event.roomId).first() == null)
-            log.warn { "could not find ${event.roomId} in local data, waiting started" }
-        if (roomStore.get(event.roomId).filterNotNull().first().encrypted) return null
+        if (event.content is EncryptedMessageEventContent) return null
         return Result.success(event.content)
     }
 }
