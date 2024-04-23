@@ -265,7 +265,9 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 decoder.json.decodeFromJsonElement<VerificationRequest>(jsonObj)
 
             else -> {
+                if (type == null) throw SerializationException("msgtype must not be null")
                 val body = (jsonObj["body"] as? JsonPrimitive)?.content
+                    ?: throw SerializationException("body must not be null")
                 val format = (jsonObj["format"] as? JsonPrimitive)?.content
                 val formattedBody = (jsonObj["formatted_body"] as? JsonPrimitive)?.content
                 val relatesTo: RelatesTo? =
@@ -273,8 +275,6 @@ object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> 
                 val mentions: Mentions? =
                     (jsonObj["m.mentions"] as? JsonObject)?.let { decoder.json.decodeFromJsonElement(it) }
                 val externalUrl: String? = (jsonObj["external_url"] as? JsonPrimitive)?.content
-                if (type == null) throw SerializationException("msgtype must not be null")
-                if (body == null) throw SerializationException("body must not be null")
                 Unknown(type, body, jsonObj, format, formattedBody, relatesTo, mentions, externalUrl)
             }
         }

@@ -708,7 +708,7 @@ class ClientEventSerializerTest {
                     "redacts":"$143273582443PhrSn"
                     }
                 },
-            "type":"m.room.message"
+            "type":"m.room.encrypted"
         }
     """.trimToFlatJson()
         val result = json.decodeFromString(
@@ -718,7 +718,7 @@ class ClientEventSerializerTest {
         )
         assertEquals(
             MessageEvent(
-                RedactedEventContent("m.room.message"),
+                RedactedEventContent("m.room.encrypted"),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
                 RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -770,7 +770,7 @@ class ClientEventSerializerTest {
     @Test
     fun shouldSerializeRedactedMessageEvent() {
         val content = MessageEvent(
-            RedactedEventContent("m.room.message"),
+            RedactedEventContent("m.room.encrypted"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
             RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
@@ -793,7 +793,7 @@ class ClientEventSerializerTest {
             "origin_server_ts":1432735824653,
             "room_id":"!jEsUZKDJdhlrceRyVU:example.org",
             "sender":"@example:example.org",
-            "type":"m.room.message",
+            "type":"m.room.encrypted",
             "unsigned":{
                 "age":1234,
                 "redacted_because":{
