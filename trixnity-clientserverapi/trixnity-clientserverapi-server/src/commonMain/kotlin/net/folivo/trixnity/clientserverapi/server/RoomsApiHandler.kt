@@ -148,7 +148,7 @@ interface RoomsApiHandler {
     /**
      * @see [SetReceipt]
      */
-    suspend fun setReceipt(context: MatrixEndpointContext<SetReceipt, Unit, Unit>)
+    suspend fun setReceipt(context: MatrixEndpointContext<SetReceipt, SetReceipt.Request, Unit>)
 
     /**
      * @see [SetReadMarkers]
