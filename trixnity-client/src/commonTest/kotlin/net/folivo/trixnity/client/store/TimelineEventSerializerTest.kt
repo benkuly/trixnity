@@ -100,8 +100,8 @@ class TimelineEventSerializerTest : ShouldSpec({
         }
     }
     context("redacted content") {
-        val result = timelineEvent(Result.success(RedactedEventContent("m.room.message")))
-        val resultJson = timelineEventJson("""{"type":"m.room.message","value":{}}""")
+        val result = timelineEvent(Result.success(RedactedEventContent("m.room.encrypted")))
+        val resultJson = timelineEventJson("""{"type":"m.room.encrypted","value":{}}""")
         should("deserialize") {
             json.decodeFromString<TimelineEvent>(resultJson) shouldBe result
         }

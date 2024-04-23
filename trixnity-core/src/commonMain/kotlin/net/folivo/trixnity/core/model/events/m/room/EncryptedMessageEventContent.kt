@@ -3,6 +3,7 @@ package net.folivo.trixnity.core.model.events.m.room
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -66,7 +67,7 @@ object EncryptedMessageEventContentSerializer : KSerializer<EncryptedMessageEven
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         return when (val algorithm = decoder.json.decodeFromJsonElement<EncryptionAlgorithm>(
-            jsonObj["algorithm"] ?: JsonPrimitive("unknown")
+            jsonObj["algorithm"] ?: throw SerializationException("algorithm must not be null")
         )) {
             Megolm -> decoder.json.decodeFromJsonElement<MegolmEncryptedMessageEventContent>(jsonObj)
             Olm, is EncryptionAlgorithm.Unknown -> Unknown(algorithm, jsonObj)
