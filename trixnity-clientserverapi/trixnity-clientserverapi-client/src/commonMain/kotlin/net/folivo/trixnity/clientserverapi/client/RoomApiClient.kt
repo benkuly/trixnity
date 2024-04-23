@@ -327,6 +327,7 @@ interface RoomApiClient {
         roomId: RoomId,
         eventId: EventId,
         receiptType: ReceiptType = ReceiptType.Read,
+        threadId: EventId? = null,
         asUserId: UserId? = null,
     ): Result<Unit>
 
@@ -801,9 +802,10 @@ class RoomApiClientImpl(
         roomId: RoomId,
         eventId: EventId,
         receiptType: ReceiptType,
+        threadId: EventId?,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(SetReceipt(roomId, receiptType, eventId, asUserId))
+        httpClient.request(SetReceipt(roomId, receiptType, eventId, asUserId), SetReceipt.Request(threadId))
 
     override suspend fun setReadMarkers(
         roomId: RoomId,
