@@ -38,7 +38,12 @@ class MessageBuilderTest : ShouldSpec({
             returnGetTimelineEvent = flowOf(
                 TimelineEvent(
                     event = MessageEvent(
-                        RoomMessageEventContent.TextBased.Text("dino\nunicorn"),
+                        RoomMessageEventContent.TextBased.Text(
+                            """
+                            dino
+                            unicorn
+                        """.trimIndent()
+                        ),
                         EventId("dino"),
                         UserId("sender", "server"),
                         RoomId("room", "server"),
@@ -96,7 +101,7 @@ class MessageBuilderTest : ShouldSpec({
 
     context("reply") {
         val eventContent = RoomMessageEventContent.TextBased.Text("")
-        should("create create reply relation") {
+        should("create reply relation") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 reply(timelineEvent(EventId("bla")))
                 contentBuilder = {
@@ -243,7 +248,12 @@ class MessageBuilderTest : ShouldSpec({
                 reply(timelineEvent(EventId("bla")))
                 text("body", "format", "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Text(
-                "> <@sender:server> dino\n> unicorn\n\nbody",
+                """
+                    > <@sender:server> dino
+                    > unicorn
+                    
+                    body
+                """.trimIndent(),
                 "org.matrix.custom.html",
                 """
                     <mx-reply>
@@ -252,6 +262,118 @@ class MessageBuilderTest : ShouldSpec({
                     <a href="https://matrix.to/#/@sender:server">@sender:server</a>
                     <br />
                     dino<br />unicorn
+                    </blockquote>
+                    </mx-reply>
+                    formatted_body
+                """.trimIndent(),
+                RelatesTo.Reply(RelatesTo.ReplyTo(EventId("bla"))),
+                mentions = Mentions(users = setOf(UserId("sender", "server")))
+            )
+        }
+        should("not nest fallback text on reply") {
+            roomService.returnGetTimelineEvent = flowOf(
+                TimelineEvent(
+                    event = MessageEvent(
+                        RoomMessageEventContent.TextBased.Text(
+                            """
+                                > <@other:server> bla
+                                > blub
+                    
+                                dino
+                                unicorn
+                            """.trimIndent(),
+                            relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("otherEvent")))
+                        ),
+                        EventId("dino"),
+                        UserId("sender", "server"),
+                        RoomId("room", "server"),
+                        1234
+                    ),
+                    gap = null,
+                    nextEventId = null,
+                    previousEventId = null,
+                )
+            )
+            MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
+                reply(timelineEvent(EventId("bla")))
+                text("body", "format", "formatted_body")
+            } shouldBe RoomMessageEventContent.TextBased.Text(
+                """
+                    > <@sender:server> dino
+                    > unicorn
+                    
+                    body
+                """.trimIndent(),
+                "org.matrix.custom.html",
+                """
+                    <mx-reply>
+                    <blockquote>
+                    <a href="https://matrix.to/#/!room:server/dino">In reply to</a>
+                    <a href="https://matrix.to/#/@sender:server">@sender:server</a>
+                    <br />
+                    dino<br />unicorn
+                    </blockquote>
+                    </mx-reply>
+                    formatted_body
+                """.trimIndent(),
+                RelatesTo.Reply(RelatesTo.ReplyTo(EventId("bla"))),
+                mentions = Mentions(users = setOf(UserId("sender", "server")))
+            )
+        }
+        should("not nest fallback text on rich reply") {
+            roomService.returnGetTimelineEvent = flowOf(
+                TimelineEvent(
+                    event = MessageEvent(
+                        RoomMessageEventContent.TextBased.Text(
+                            """
+                                > <@other:server> bla
+                                > blub
+                    
+                                dino
+                                unicorn
+                            """.trimIndent(),
+                            "org.matrix.custom.html",
+                            """
+                                <mx-reply>
+                                <blockquote>
+                                <a href="https://matrix.to/#/!room:server/dino">In reply to</a>
+                                <a href="https://matrix.to/#/@other:server">@other:server</a>
+                                <br />
+                                bla_formatted<br />blub_formatted
+                                </blockquote>
+                                </mx-reply>
+                                dino_formatted<br />unicorn_formatted
+                            """.trimIndent(),
+                            relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("otherEvent")))
+                        ),
+                        EventId("dino"),
+                        UserId("sender", "server"),
+                        RoomId("room", "server"),
+                        1234
+                    ),
+                    gap = null,
+                    nextEventId = null,
+                    previousEventId = null,
+                )
+            )
+            MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
+                reply(timelineEvent(EventId("bla")))
+                text("body", "format", "formatted_body")
+            } shouldBe RoomMessageEventContent.TextBased.Text(
+                """
+                    > <@sender:server> dino
+                    > unicorn
+                    
+                    body
+                """.trimIndent(),
+                "org.matrix.custom.html",
+                """
+                    <mx-reply>
+                    <blockquote>
+                    <a href="https://matrix.to/#/!room:server/dino">In reply to</a>
+                    <a href="https://matrix.to/#/@sender:server">@sender:server</a>
+                    <br />
+                    dino_formatted<br />unicorn_formatted
                     </blockquote>
                     </mx-reply>
                     formatted_body
