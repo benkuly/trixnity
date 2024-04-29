@@ -19,11 +19,7 @@ internal fun computeRichReplies(
             when (repliedEventContent) {
                 is RoomMessageEventContent.TextBased.Emote -> "* $sender ${repliedEventContent.bodyWithoutFallback}".asFallback()
                 else -> "$sender ${repliedEventContent.bodyWithoutFallback}".asFallback()
-            } + """
-                
-                
-                $body
-            """.trimIndent()
+            } + "\n\n$body"
         } else {
             body
         }
