@@ -1,8 +1,8 @@
 [versions]
 ### build ###
 kotlin = "1.9.23" # https://github.com/JetBrains/kotlin/releases
-ksp = "1.9.23-1.0.19" # https://github.com/google/ksp/releases
-kotlinWrappers = "1.0.0-pre.718" # https://github.com/JetBrains/kotlin-wrappers/releases
+ksp = "1.9.23-1.0.20" # https://github.com/google/ksp/releases
+kotlinWrappers = "1.0.0-pre.736" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "1.9.20" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.2.2" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
@@ -31,12 +31,12 @@ hikari = "5.1.0" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.2.224" # https://github.com/h2database/h2database/releases
 postgres = "42.7.3" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.7.1" # https://github.com/JuulLabs/indexeddb/releases
-realm = "1.14.1" # https://github.com/realm/realm-kotlin/tags
+realm = "1.15.0" # https://github.com/realm/realm-kotlin/tags
 androidxRoom = "2.6.1" # https://developer.android.com/jetpack/androidx/releases/room
 
 ### logging ###
-oshaiKotlinLogging = "6.0.4" # https://github.com/oshai/kotlin-logging/releases
-logback = "1.5.5" # https://github.com/qos-ch/logback/tags
+oshaiKotlinLogging = "6.0.9" # https://github.com/oshai/kotlin-logging/releases
+logback = "1.5.6" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
 kotest = "5.8.1" # https://github.com/kotest/kotest/releases
