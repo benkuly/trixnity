@@ -8,42 +8,34 @@ import kotlin.test.fail
 
 
 class MatrixRegexTest {
-    fun positiveUserIdTest(id: String, localpart: String, domain: String, matcher: Regex? = null) {
+    fun positiveUserIdTest(id: String, localpart: String, domain: String) {
         val message = "Hello $id"
 
-        val result =
-            if (matcher != null) findMentions(message, matcher)
-            else findMentions(message)
+        val result = findMentions(message)
         result.size shouldBe 1
         (result[id] as Mention.User).userId shouldBe UserId(localpart, domain)
     }
 
-    fun positiveRoomIdTest(id: String, localpart: String, domain: String, matcher: Regex? = null) {
+    fun positiveRoomIdTest(id: String, localpart: String, domain: String) {
         val message = "omw to $id"
 
-        val result =
-            if (matcher != null) findMentions(message, matcher)
-            else findMentions(message)
+        val result = findMentions(message)
         result.size shouldBe 1
         (result[id] as Mention.Room).roomId shouldBe RoomId(localpart, domain)
     }
 
-    fun positiveRoomAliasTest(id: String, localpart: String, domain: String, matcher: Regex? = null) {
+    fun positiveRoomAliasTest(id: String, localpart: String, domain: String) {
         val message = "omw to $id"
 
-        val result =
-            if (matcher != null) findMentions(message, matcher)
-            else findMentions(message)
+        val result = findMentions(message)
         result.size shouldBe 1
         (result[id] as Mention.RoomAlias).roomAliasId shouldBe RoomAliasId(localpart, domain)
     }
 
-    fun positiveEventIdTest(id: String, opaqueId: String, roomId: String? = null, matcher: Regex? = null) {
+    fun positiveEventIdTest(id: String, opaqueId: String, roomId: String? = null) {
         val message = "participating at $id"
 
-        val result =
-            if (matcher != null) findMentions(message, matcher)
-            else findMentions(message)
+        val result = findMentions(message)
         result.size shouldBe 1
         when (val mention = result[id]) {
             is Mention.RoomEvent -> {
@@ -64,12 +56,10 @@ class MatrixRegexTest {
     fun negativeTest(id: String, matcher: Regex? = null) {
         val message = "Hello $id"
 
-        val result =
-            if (matcher != null) findMentions(message, matcher)
-            else findMentions(message)
-        println(result)
+        val result = matcher?.findAll(message)?.toList()?.size
+            ?: findMentions(message).size
 
-        result.size shouldBe 0
+        result shouldBe 0
     }
 
     // General
@@ -339,7 +329,11 @@ class MatrixRegexTest {
 
     @Test
     fun matchValidEventIdentifierWithMatrixToLink() {
-        positiveEventIdTest("<a href=\"https://matrix.to/#/!room:example.com/\$event\">Hallo</a>", "\$event", "!room:example.com")
+        positiveEventIdTest(
+            "<a href=\"https://matrix.to/#/!room:example.com/\$event\">Hallo</a>",
+            "\$event",
+            "!room:example.com"
+        )
     }
 
     @Test
@@ -359,11 +353,19 @@ class MatrixRegexTest {
 
     @Test
     fun matchValidEventIdentifierWithMatrixULinkViaAndActionAttribute() {
-        positiveEventIdTest("matrix:roomid/room:example.com/e/event?via=example.com&action=join", "\$event", "!room:example.com")
+        positiveEventIdTest(
+            "matrix:roomid/room:example.com/e/event?via=example.com&action=join",
+            "\$event",
+            "!room:example.com"
+        )
     }
 
     fun matchValidEventIdentifierWithMatrixULinkActionAndViaAttribute() {
-        positiveEventIdTest("matrix:roomid/room:example.com/e/event?action=chat&via=example.com", "\$event", "!room:example.com")
+        positiveEventIdTest(
+            "matrix:roomid/room:example.com/e/event?action=chat&via=example.com",
+            "\$event",
+            "!room:example.com"
+        )
     }
 
     @Test
