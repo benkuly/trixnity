@@ -11,13 +11,13 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
+val olmBinariesDirs = TrixnityOlmBinariesDirs(project, libs.versions.trixnityOlmBinaries.get())
 
 class OlmNativeTarget(
     val target: KonanTarget,
     val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> KotlinNativeTarget,
 ) {
-    val libPath: File = trixnityBinariesDirs.olmBinStaticDir.resolve(target.name).resolve("libolm.a")
+    val libPath: File = olmBinariesDirs.binStatic.resolve(target.name).resolve("libolm.a")
 }
 
 val olmNativeTargetList = listOf(
@@ -62,7 +62,7 @@ project.afterEvaluate {
 
 val installOlmToJvmResources by tasks.registering(Copy::class) {
     group = "olm"
-    from(trixnityBinariesDirs.olmBinSharedDir)
+    from(olmBinariesDirs.binShared)
     include("*/libolm.so", "*/olm.dll", "*/libolm.dylib")
     into(layout.buildDirectory.dir("processedResources/jvm/main"))
     dependsOn(trixnityBinariesTask)
@@ -90,7 +90,7 @@ android {
     }
     sourceSets.getByName("main") {
         manifest.srcFile("src/androidMain/AndroidManifest.xml")
-        jniLibs.srcDirs(trixnityBinariesDirs.olmBinSharedAndroidDir)
+        jniLibs.srcDirs(olmBinariesDirs.binSharedAndroid)
     }
     compileOptions {
         sourceCompatibility = kotlinJvmTarget
@@ -126,7 +126,7 @@ kotlin {
                     cinterops {
                         val libolm by creating {
                             packageName("org.matrix.olm")
-                            includeDirs(trixnityBinariesDirs.olmHeadersDir)
+                            includeDirs(olmBinariesDirs.headers)
                             tasks.named(interopProcessingTaskName) {
                                 dependsOn(trixnityBinariesTask)
                             }

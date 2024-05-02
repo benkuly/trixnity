@@ -108,30 +108,53 @@ subprojects {
 }
 
 val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")
-val trixnityBinariesZipDir = tmpDir.resolve("trixnity-binaries-${libs.versions.trixnityBinaries.get()}.zip")
-val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
+val olmBinariesZipDir = tmpDir.resolve("trixnity-olm-binaries-${libs.versions.trixnityOlmBinaries.get()}.zip")
+val opensslBinariesZipDir =
+    tmpDir.resolve("trixnity-openssl-binaries-${libs.versions.trixnityOpensslBinaries.get()}.zip")
+val olmBinariesDirs = TrixnityOlmBinariesDirs(project, libs.versions.trixnityOlmBinaries.get())
+val opensslBinariesDirs = TrixnityOpensslBinariesDirs(project, libs.versions.trixnityOpensslBinaries.get())
 
-val downloadTrixnityBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
-    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${libs.versions.trixnityBinaries.get()}/build.zip")
-    dest(trixnityBinariesZipDir)
+val downloadOlmBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
+    src("https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${libs.versions.trixnityOlmBinaries.get()}/build.zip")
+    dest(olmBinariesZipDir)
     overwrite(false)
 }
 
-val extractTrixnityBinaries by tasks.registering(Copy::class) {
-    from(zipTree(trixnityBinariesZipDir)) {
+val downloadOpensslBinaries by tasks.registering(de.undercouch.gradle.tasks.download.Download::class) {
+    src("https://gitlab.com/api/v4/projects/57407788/packages/generic/build/v${libs.versions.trixnityOpensslBinaries.get()}/build.zip")
+    dest(opensslBinariesZipDir)
+    overwrite(false)
+}
+
+val extractOlmBinaries by tasks.registering(Copy::class) {
+    from(zipTree(olmBinariesZipDir)) {
         include("build/**")
         eachFile {
             relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
         }
     }
-    into(trixnityBinariesDirs.root)
+    into(olmBinariesDirs.root)
     outputs.cacheIf { true }
-    inputs.files(downloadTrixnityBinaries)
-    dependsOn(downloadTrixnityBinaries)
+    inputs.files(downloadOlmBinaries)
+    dependsOn(downloadOlmBinaries)
+}
+
+val extractOpensslBinaries by tasks.registering(Copy::class) {
+    from(zipTree(opensslBinariesZipDir)) {
+        include("build/**")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+        }
+    }
+    into(opensslBinariesDirs.root)
+    outputs.cacheIf { true }
+    inputs.files(downloadOpensslBinaries)
+    dependsOn(downloadOpensslBinaries)
 }
 
 val trixnityBinaries by tasks.registering {
-    dependsOn(extractTrixnityBinaries)
+    dependsOn(extractOlmBinaries)
+    dependsOn(extractOpensslBinaries)
 }
 
 val dokkaHtmlToWebsite by tasks.registering(Copy::class) {

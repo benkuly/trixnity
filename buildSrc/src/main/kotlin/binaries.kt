@@ -1,20 +1,26 @@
 import org.gradle.api.Project
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 val trixnityBinariesTask = ":trixnityBinaries"
 
-class TrixnityBinariesDirs(project: Project, version: String) {
+class TrixnityOlmBinariesDirs(project: Project, version: String) {
     val root = project.rootProject.layout.buildDirectory.get().asFile
-        .resolve("trixnity-binaries").resolve(version)
+        .resolve("trixnity-olm-binaries").resolve(version)
 
-    val olmDir = root.resolve("olm")
-    val olmHeadersDir = olmDir.resolve("headers")
-    val olmBinDir = olmDir.resolve("bin")
-    val olmBinSharedDir = olmBinDir.resolve("shared")
-    val olmBinSharedAndroidDir = olmBinDir.resolve("shared-android")
-    val olmBinStaticDir = olmBinDir.resolve("static")
+    private val rootDir = root.resolve("olm")
+    val headers = rootDir.resolve("headers")
+    private val binDir = rootDir.resolve("bin")
+    val binShared = binDir.resolve("shared")
+    val binSharedAndroid = binDir.resolve("shared-android")
+    val binStatic = binDir.resolve("static")
+}
 
-    val opensslDir = root.resolve("openssl")
-    val opensslHeadersDir = opensslDir.resolve("headers")
-    val opensslBinDir = opensslDir.resolve("bin")
-    val opensslBinStaticDir = opensslBinDir.resolve("static")
+class TrixnityOpensslBinariesDirs(project: Project, version: String) {
+    val root = project.rootProject.layout.buildDirectory.get().asFile
+        .resolve("trixnity-openssl-binaries").resolve(version)
+
+    private val rootDir = root.resolve("openssl")
+    private fun targetDir(target: KonanTarget) = rootDir.resolve(target.name)
+    fun include(target: KonanTarget) = targetDir(target).resolve("include")
+    fun lib(target: KonanTarget) = targetDir(target).resolve("lib")
 }

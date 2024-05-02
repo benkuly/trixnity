@@ -9,13 +9,14 @@ plugins {
     alias(libs.plugins.kotest)
 }
 
-val trixnityBinariesDirs = TrixnityBinariesDirs(project, libs.versions.trixnityBinaries.get())
+val opensslBinariesDirs = TrixnityOpensslBinariesDirs(project, libs.versions.trixnityOpensslBinaries.get())
 
 class OpensslNativeTarget(
     val target: KonanTarget,
     val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> KotlinNativeTarget,
 ) {
-    val libPath: File = trixnityBinariesDirs.opensslBinStaticDir.resolve(target.name).resolve("libcrypto.a")
+    val libPath: File = opensslBinariesDirs.lib(target).resolve("libcrypto.a")
+    val includePath: File = opensslBinariesDirs.include(target)
 }
 
 val opensslNativeTargetList = listOf(
@@ -43,7 +44,7 @@ kotlin {
                         val libopenssl by creating {
                             defFile("src/opensslMain/cinterop/libopenssl.def")
                             packageName("org.openssl")
-                            includeDirs(trixnityBinariesDirs.opensslHeadersDir)
+                            includeDirs(target.includePath.absolutePath)
                             tasks.named(interopProcessingTaskName) {
                                 dependsOn(trixnityBinariesTask)
                             }
