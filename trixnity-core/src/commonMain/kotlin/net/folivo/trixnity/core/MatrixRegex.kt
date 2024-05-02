@@ -84,18 +84,8 @@ object MatrixRegex {
 
     val mention by lazy { baseMentionRegex.toRegex() }
 
-    @Deprecated("Use findMentions instead", ReplaceWith("findMentions(message)"))
-    fun findUserMentions(message: String): Map<String, UserId> {
-        return userMention.findAll(message).associate {
-            val matched = it.groupValues[0]
-            val localpart = it.groupValues[2] + it.groupValues[5] + it.groupValues[8] + it.groupValues[11]
-            val domain = it.groupValues[3] + it.groupValues[6] + it.groupValues[9] + it.groupValues[12]
-            matched to UserId(localpart, domain)
-        }
-    }
-
-    fun findMentions(message: String, matcher: Regex = mention): Map<String, Mention> {
-        return matcher.findAll(message).mapNotNull { result ->
+    fun findMentions(message: String): Map<String, Mention> {
+        return mention.findAll(message).mapNotNull { result ->
             val matched = result.groupValues[0]
             val match = result.groupValues.drop(1).windowed(3, 3)
 
@@ -118,20 +108,20 @@ object MatrixRegex {
                 "#", "r" -> matched to Mention.RoomAlias(RoomAliasId(localpartOrEventSigil, domainOrEventId))
                 else -> when (localpartOrEventSigil) {
                     "$", "e" ->
-                            if (sigilOrEventLocation.startsWith("roomid/") || sigilOrEventLocation.startsWith("!")) {
-                                matched to Mention.RoomEvent(
-                                    RoomId(sigilOrEventLocation.replaceFirst("roomid/", "!")),
-                                    EventId("$$domainOrEventId")
-                                )
-                            } else if (sigilOrEventLocation.startsWith("r/") || sigilOrEventLocation.startsWith("#")) {
-                                matched to Mention.RoomAliasEvent(
-                                    RoomAliasId(sigilOrEventLocation.replaceFirst("r/", "#")),
-                                    EventId("$$domainOrEventId")
-                                )
-                            } else {
-                                log.warn { "Unknown room type: $matched" }
-                                matched to Mention.Event(EventId("$$domainOrEventId"))
-                            }
+                        if (sigilOrEventLocation.startsWith("roomid/") || sigilOrEventLocation.startsWith("!")) {
+                            matched to Mention.RoomEvent(
+                                RoomId(sigilOrEventLocation.replaceFirst("roomid/", "!")),
+                                EventId("$$domainOrEventId")
+                            )
+                        } else if (sigilOrEventLocation.startsWith("r/") || sigilOrEventLocation.startsWith("#")) {
+                            matched to Mention.RoomAliasEvent(
+                                RoomAliasId(sigilOrEventLocation.replaceFirst("r/", "#")),
+                                EventId("$$domainOrEventId")
+                            )
+                        } else {
+                            log.warn { "Unknown room type: $matched" }
+                            matched to Mention.Event(EventId("$$domainOrEventId"))
+                        }
 
                     else -> {
                         log.warn { "Unknown mention type: $matched" }
