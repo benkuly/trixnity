@@ -6,9 +6,7 @@ import net.folivo.trixnity.core.model.events.m.room.AudioInfo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.utils.ByteArrayFlow
-import net.folivo.trixnity.utils.TrixnityDsl
 
-@TrixnityDsl
 suspend fun MessageBuilder.audio(
     body: String,
     audio: ByteArrayFlow,

@@ -8,6 +8,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.utils.TrixnityDsl
 
 data class ContentBuilderInfo(
     val relatesTo: RelatesTo?,
@@ -18,6 +19,7 @@ data class ContentBuilderInfo(
 typealias ContentBuilder = suspend ContentBuilderInfo.() -> MessageEventContent?
 
 // TODO this has MSC1767 in mind.
+@TrixnityDsl
 class MessageBuilder(
     val roomId: RoomId,
     val roomService: RoomService,
