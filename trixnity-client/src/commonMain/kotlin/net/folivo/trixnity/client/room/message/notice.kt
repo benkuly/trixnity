@@ -1,9 +1,7 @@
 package net.folivo.trixnity.client.room.message
 
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.utils.TrixnityDsl
 
-@TrixnityDsl
 fun MessageBuilder.notice(
     body: String,
     format: String? = null,

@@ -9,14 +9,11 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.utils.TrixnityDsl
 
-@TrixnityDsl
 suspend fun MessageBuilder.reply(
     event: TimelineEvent,
 ) = reply(event.eventId, event.relatesTo)
 
-@TrixnityDsl
 suspend fun MessageBuilder.reply(
     event: MessageEvent<*>,
 ) = reply(event.id, event.content.relatesTo)
@@ -24,7 +21,6 @@ suspend fun MessageBuilder.reply(
 /**
  * Important: [eventRelatesTo] should be set from the event, that is replied. Otherwise, thread support is dropped.
  */
-@TrixnityDsl
 suspend fun MessageBuilder.reply(
     eventId: EventId,
     eventRelatesTo: RelatesTo?,

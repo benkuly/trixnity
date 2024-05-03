@@ -6,12 +6,10 @@ import net.folivo.trixnity.client.store.relatesTo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.utils.TrixnityDsl
 
 /**
  * [event] must be the last known event of a thread.
  */
-@TrixnityDsl
 fun MessageBuilder.thread(
     event: TimelineEvent,
     reply: Boolean = false,
@@ -20,7 +18,6 @@ fun MessageBuilder.thread(
 /**
  * [event] must be the last known event of a thread.
  */
-@TrixnityDsl
 fun MessageBuilder.thread(
     event: MessageEvent<*>,
     reply: Boolean = false,
@@ -29,7 +26,6 @@ fun MessageBuilder.thread(
 /**
  * [eventId] and [eventRelatesTo] must be from the last known event of a thread.
  */
-@TrixnityDsl
 fun MessageBuilder.thread(
     eventId: EventId,
     eventRelatesTo: RelatesTo? = null,
