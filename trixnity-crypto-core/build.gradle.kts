@@ -44,7 +44,7 @@ kotlin {
                         val libopenssl by creating {
                             defFile("src/opensslMain/cinterop/libopenssl.def")
                             packageName("org.openssl")
-                            includeDirs(target.includePath.absolutePath)
+                            includeDirs(target.includePath)
                             tasks.named(interopProcessingTaskName) {
                                 dependsOn(trixnityBinariesTask)
                             }
