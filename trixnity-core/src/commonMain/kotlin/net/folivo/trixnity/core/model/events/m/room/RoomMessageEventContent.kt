@@ -311,4 +311,4 @@ val RoomMessageEventContent.formattedBodyWithoutFallback: String?
     get() = formattedBody?.removeFallbackFromFormattedBody()
 
 private fun String.removeFallbackFromFormattedBody(): String =
-    substringAfter("</mx-reply>").removePrefix("\n")
+    substringAfterLast("</mx-reply>").removePrefix("\n")

@@ -33,4 +33,4 @@ org.jetbrains:annotations:23.0.0=dokkaGfmPartialPlugin,dokkaGfmPartialRuntime,do
 org.jetbrains:markdown-jvm:0.5.2=dokkaGfmPartialPlugin,dokkaGfmPlugin,dokkaHtmlPartialPlugin,dokkaHtmlPlugin,dokkaJavadocPartialPlugin,dokkaJavadocPlugin,dokkaJekyllPartialPlugin,dokkaJekyllPlugin
 org.jetbrains:markdown:0.5.2=dokkaGfmPartialPlugin,dokkaGfmPlugin,dokkaHtmlPartialPlugin,dokkaHtmlPlugin,dokkaJavadocPartialPlugin,dokkaJavadocPlugin,dokkaJekyllPartialPlugin,dokkaJekyllPlugin
 org.jsoup:jsoup:1.16.1=dokkaGfmPartialPlugin,dokkaGfmPlugin,dokkaHtmlPartialPlugin,dokkaHtmlPlugin,dokkaJavadocPartialPlugin,dokkaJavadocPlugin,dokkaJekyllPartialPlugin,dokkaJekyllPlugin
-empty=dokkaPlugin,dokkaRuntime
+empty=classpath,dokkaPlugin,dokkaRuntime

@@ -4,6 +4,8 @@ import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.bodyWithoutFallback
+import net.folivo.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 
 internal fun computeRichReplies(
     repliedEvent: TimelineEvent?,
@@ -11,15 +13,16 @@ internal fun computeRichReplies(
     formattedBody: String?
 ): Pair<String, String?> {
     val repliedEventContent = repliedEvent?.content?.getOrNull()
-    val richReplyBody = if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
-        val sender = "<${repliedEvent.event.sender.full}>"
-        when (repliedEventContent) {
-            is RoomMessageEventContent.TextBased.Emote -> "* $sender ${repliedEventContent.body}".asFallback()
-            else -> "$sender ${repliedEventContent.body}".asFallback()
-        } + "\n\n$body"
-    } else {
-        body
-    }
+    val richReplyBody =
+        if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
+            val sender = "<${repliedEvent.event.sender.full}>"
+            when (repliedEventContent) {
+                is RoomMessageEventContent.TextBased.Emote -> "* $sender ${repliedEventContent.bodyWithoutFallback}".asFallback()
+                else -> "$sender ${repliedEventContent.bodyWithoutFallback}".asFallback()
+            } + "\n\n$body"
+        } else {
+            body
+        }
     val richReplyFormattedBody =
         if (repliedEvent != null && repliedEventContent is RoomMessageEventContent) {
             buildString {
@@ -33,8 +36,8 @@ internal fun computeRichReplies(
                     """.trimIndent()
                 )
                 appendLine(
-                    repliedEventContent.formattedBody
-                        ?: repliedEventContent.body.replace("\n", "<br />")
+                    repliedEventContent.formattedBodyWithoutFallback
+                        ?: repliedEventContent.bodyWithoutFallback.replace("\n", "<br />")
                 )
                 appendLine(
                     """
@@ -48,4 +51,4 @@ internal fun computeRichReplies(
     return Pair(richReplyBody, richReplyFormattedBody)
 }
 
-private fun String.asFallback(): String = this.splitToSequence("\n").joinToString("\n") { "> $it" }
+private fun String.asFallback(): String = this.lineSequence().joinToString("\n") { "> $it" }
