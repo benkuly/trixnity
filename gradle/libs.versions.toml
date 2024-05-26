@@ -101,7 +101,6 @@ okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", versio
 arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
 
 korlibs-korim = { module = "com.soywiz.korlibs.korim:korim", version.ref = "korlibs" }
-korlibs-krypto = { module = "com.soywiz.korlibs.krypto:krypto", version.ref = "korlibs" }
 
 benasher44-uuid = { module = "com.benasher44:uuid", version.ref = "benasher44Uuid" }
 
