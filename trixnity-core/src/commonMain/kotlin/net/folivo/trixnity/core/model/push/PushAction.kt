@@ -25,9 +25,7 @@ sealed interface PushAction {
         override val name = "sound"
     }
 
-    data class SetHighlightTweak(
-        val value: Boolean? = null
-    ) : PushAction {
+    data object SetHighlightTweak : PushAction {
         override val name = "highlight"
     }
 
@@ -47,7 +45,7 @@ object PushActionSerializer : KSerializer<PushAction> {
 
             is JsonObject -> when (val name = (json["set_tweak"] as? JsonPrimitive)?.content) {
                 "sound" -> PushAction.SetSoundTweak((json["value"] as? JsonPrimitive)?.content)
-                "highlight" -> PushAction.SetHighlightTweak(json["value"]?.let { decoder.json.decodeFromJsonElement(it) })
+                "highlight" -> PushAction.SetHighlightTweak
                 else -> PushAction.Unknown(name, json)
             }
 
@@ -69,7 +67,6 @@ object PushActionSerializer : KSerializer<PushAction> {
             is PushAction.SetHighlightTweak -> JsonObject(
                 buildMap {
                     put("set_tweak", JsonPrimitive(value.name))
-                    value.value?.let { put("value", JsonPrimitive(it)) }
                 }
             )
 

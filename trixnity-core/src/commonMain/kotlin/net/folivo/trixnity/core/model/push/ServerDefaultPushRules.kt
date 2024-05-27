@@ -117,7 +117,7 @@ sealed interface ServerDefaultPushRules {
             ),
             actions = setOf(
                 PushAction.SetSoundTweak("default"),
-                PushAction.SetHighlightTweak(),
+                PushAction.SetHighlightTweak,
             ),
         )
     }
@@ -138,7 +138,7 @@ sealed interface ServerDefaultPushRules {
             ),
             actions = setOf(
                 PushAction.Notify,
-                PushAction.SetHighlightTweak(),
+                PushAction.SetHighlightTweak,
             ),
         )
     }
@@ -160,7 +160,7 @@ sealed interface ServerDefaultPushRules {
             ),
             actions = setOf(
                 PushAction.Notify,
-                PushAction.SetHighlightTweak(),
+                PushAction.SetHighlightTweak,
             ),
         )
     }
