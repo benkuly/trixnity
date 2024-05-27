@@ -10,7 +10,7 @@ downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-downlo
 ### kotlinx ###
 kotlinxCoroutines = "1.8.1" # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinxSerialization = "1.6.3" # https://github.com/Kotlin/kotlinx.serialization/releases
-kotlinxDatetime = "0.6.0" # https://github.com/Kotlin/kotlinx-datetime/releases
+kotlinxDatetime = "0.5.0" # https://github.com/Kotlin/kotlinx-datetime/releases
 
 ### native bindings ###
 olm = "3.2.15" # https://gitlab.matrix.org/matrix-org/olm/-/releases
