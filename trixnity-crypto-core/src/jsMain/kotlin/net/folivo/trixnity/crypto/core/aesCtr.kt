@@ -3,7 +3,6 @@ package net.folivo.trixnity.crypto.core
 import createCipheriv
 import io.ktor.util.*
 import js.objects.jso
-import js.promise.await
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.flow
@@ -24,7 +23,7 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
                 algorithm = jso<AesKeyAlgorithm> { name = "AES-CTR" },
                 extractable = false,
                 keyUsages = arrayOf(KeyUsage.encrypt, KeyUsage.decrypt),
-            ).await()
+            )
             val result = Uint8Array(
                 crypto.encrypt(
                     algorithm = jso<AesCtrParams> {
@@ -34,7 +33,7 @@ actual fun ByteArrayFlow.encryptAes256Ctr(
                     },
                     key = aesKey,
                     data = filterNotEmpty().toByteArray().toUint8Array(),
-                ).await()
+                )
             ).toByteArray()
             emit(result)
         }.filterNotEmpty()
@@ -68,7 +67,7 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
                     algorithm = jso<AesKeyAlgorithm> { name = "AES-CTR" },
                     extractable = false,
                     keyUsages = arrayOf(KeyUsage.encrypt, KeyUsage.decrypt),
-                ).await()
+                )
                 val result = Uint8Array(
                     crypto.decrypt(
                         algorithm = jso<AesCtrParams> {
@@ -78,7 +77,7 @@ actual fun ByteArrayFlow.decryptAes256Ctr(
                         },
                         key = aesKey,
                         data = filterNotEmpty().toByteArray().toUint8Array(),
-                    ).await()
+                    )
                 ).toByteArray()
                 emit(result)
             } catch (exception: Throwable) {
