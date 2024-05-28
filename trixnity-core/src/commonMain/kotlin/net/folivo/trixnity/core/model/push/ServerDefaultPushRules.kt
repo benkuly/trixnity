@@ -111,7 +111,7 @@ sealed interface ServerDefaultPushRules {
             enabled = true,
             conditions = setOf(
                 PushCondition.EventPropertyContains(
-                    key = """content.m\\.mentions.user_ids""",
+                    key = "content.m\\.mentions.user_ids",
                     value = JsonPrimitive(userId.full),
                 ),
             ),
@@ -130,7 +130,7 @@ sealed interface ServerDefaultPushRules {
             enabled = true,
             conditions = setOf(
                 PushCondition.EventPropertyIs(
-                    key = """content.m\\.mentions.room""",
+                    key = "content.m\\.mentions.room",
                     value = JsonPrimitive(true),
                 ),
                 PushCondition.SenderNotificationPermission(
