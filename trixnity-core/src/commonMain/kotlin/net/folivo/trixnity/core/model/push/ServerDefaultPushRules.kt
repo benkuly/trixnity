@@ -155,7 +155,7 @@ sealed interface ServerDefaultPushRules {
                     pattern = "m.room.tombstone",
                 ),
                 PushCondition.EventMatch(
-                    key = "event_match",
+                    key = "state_key",
                     pattern = "",
                 ),
             ),
