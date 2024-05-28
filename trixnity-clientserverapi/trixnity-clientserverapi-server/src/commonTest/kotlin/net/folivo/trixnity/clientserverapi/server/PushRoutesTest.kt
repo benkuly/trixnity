@@ -369,7 +369,8 @@ class PushRoutesTest : TestsWithMocks() {
                             "value": "default"
                           },
                           {
-                            "set_tweak": "highlight"
+                            "set_tweak": "highlight",
+                            "value": true
                           }
                         ],
                         "pattern": "alice"
@@ -410,7 +411,8 @@ class PushRoutesTest : TestsWithMocks() {
                             "value": "default"
                           },
                           {
-                            "set_tweak": "highlight"
+                            "set_tweak": "highlight",
+                            "value": true
                           }
                         ],
                         "conditions": [
