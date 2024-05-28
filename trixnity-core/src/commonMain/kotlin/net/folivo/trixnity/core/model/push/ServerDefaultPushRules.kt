@@ -116,6 +116,7 @@ sealed interface ServerDefaultPushRules {
                 ),
             ),
             actions = setOf(
+                PushAction.Notify,
                 PushAction.SetSoundTweak("default"),
                 PushAction.SetHighlightTweak(),
             ),
