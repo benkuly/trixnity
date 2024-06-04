@@ -72,7 +72,6 @@ class MatrixRegexTest {
     @Test
     fun matchValidUserIdentifier() {
         positiveUserIdTest("@a9._=-/+:example.com", "a9._=-/+", "example.com")
-
         positiveUserIdTest("@demo.test:example.eu.timp.mock.abc.xyz", "demo.test", "example.eu.timp.mock.abc.xyz")
     }
 
