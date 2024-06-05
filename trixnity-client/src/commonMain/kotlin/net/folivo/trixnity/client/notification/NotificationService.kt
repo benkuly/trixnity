@@ -31,7 +31,8 @@ private val log = KotlinLogging.logger { }
 
 interface NotificationService {
     data class Notification(
-        val event: ClientEvent<*>
+        val event: ClientEvent<*>,
+        val actions: Set<PushAction>,
     )
 
     fun getNotifications(
@@ -159,13 +160,10 @@ class NotificationServiceImpl(
                 }
             }
         log.trace { "event ${event.idOrNull}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
-        return rule?.actions?.asFlow()
-            ?.transform { pushAction ->
-                if (pushAction is PushAction.Notify) {
-                    log.debug { "notify for event ${event.idOrNull} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
-                    emit(Notification(event))
-                }
-            }?.firstOrNull()
+        return if (rule?.actions?.contains(PushAction.Notify) == true) {
+            log.debug { "notify for event ${event.idOrNull} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
+            Notification(event, rule.actions)
+        } else null
     }
 
     private suspend fun matchPushCondition(
