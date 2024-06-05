@@ -326,7 +326,7 @@ private val body: ShouldSpec.() -> Unit = {
                 getBatchToken = { null },
                 setBatchToken = {},
             ).getOrThrow()
-            notification.await() shouldBe Notification(invitation)
+            notification.await() shouldBe Notification(invitation, setOf(Notify))
         }
         context("new timeline events") {
             val timelineEvent = messageEventWithContent(
@@ -345,7 +345,7 @@ private val body: ShouldSpec.() -> Unit = {
                 room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
             }
             should("check push rules and notify") {
-                cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
             }
             should("have correct order") {
                 val timelineEvents = (0..99).map {
@@ -357,7 +357,7 @@ private val body: ShouldSpec.() -> Unit = {
                 }
                 room.returnGetTimelineEventsFromNowOn = timelineEvents.asFlow()
                 cut.getNotifications(0.seconds).take(100).toList() shouldBe timelineEvents.map {
-                    Notification(it.event)
+                    Notification(it.event, setOf(Notify))
                 }
             }
             should("not notify on own messages") {
@@ -372,7 +372,7 @@ private val body: ShouldSpec.() -> Unit = {
                 room.returnGetTimelineEventsFromNowOn = timelineEvents.asFlow()
                 cut.getNotifications(0.seconds).take(8).toList() shouldBe
                         timelineEvents.drop(1).dropLast(1).map {
-                            Notification(it.event)
+                            Notification(it.event, setOf(Notify))
                         }
             }
         }
@@ -426,7 +426,7 @@ private val body: ShouldSpec.() -> Unit = {
                     roomStore.update(roomId) {
                         Room(roomId, name = RoomDisplayName(summary = RoomSummary(joinedMemberCount = 2)))
                     }
-                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
                 }
                 should("not notify when not met") {
                     roomStore.update(roomId) {
@@ -455,7 +455,7 @@ private val body: ShouldSpec.() -> Unit = {
                             stateKey = "",
                         )
                     )
-                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
                 }
                 should("not notify when not met") {
                     roomStateStore.save(
@@ -490,7 +490,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                     setUser1DisplayName(roomId)
-                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
                 }
                 should("not notify when one condition matches") {
                     globalAccountDataStore.save(
@@ -507,7 +507,7 @@ private val body: ShouldSpec.() -> Unit = {
                         pushRules(listOf(pushRuleNoCondition()))
                     )
                 )
-                cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
             }
             should("override") {
                 globalAccountDataStore.save(
@@ -578,7 +578,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
 
-                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event)
+                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
                 }
             }
         }

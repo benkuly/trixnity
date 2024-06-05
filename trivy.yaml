@@ -1,5 +1,6 @@
 scan:
   skip-dirs:
+    - .gradle
     - website
     - trixnity-client/integration-test
     - trixnity-client/client-repository-test
