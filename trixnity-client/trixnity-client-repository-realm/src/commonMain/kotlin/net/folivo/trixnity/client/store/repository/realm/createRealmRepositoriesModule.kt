@@ -3,6 +3,8 @@ package net.folivo.trixnity.client.store.repository.realm
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.repository.*
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
@@ -52,6 +54,11 @@ fun createRealmRepositoriesModule(
 
     return module {
         single { realm }
+        single(createdAtStart = true) {
+            get<CoroutineScope>().coroutineContext.job.invokeOnCompletion {
+                realm.close()
+            }
+        }
         singleOf(::RealmRepositoryTransactionManager) { bind<RepositoryTransactionManager>() }
         singleOf(::RealmAccountRepository) { bind<AccountRepository>() }
         singleOf(::RealmOutdatedKeysRepository) { bind<OutdatedKeysRepository>() }
