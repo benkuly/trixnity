@@ -2,6 +2,8 @@ package net.folivo.trixnity.client.store.repository.indexeddb
 
 import com.juul.indexeddb.openDatabase
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.job
 import net.folivo.trixnity.client.store.repository.*
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
@@ -18,6 +20,11 @@ suspend fun createIndexedDBRepositoriesModule(
     log.debug { "finished database migration" }
     return module {
         single { database }
+        single(createdAtStart = true) {
+            get<CoroutineScope>().coroutineContext.job.invokeOnCompletion {
+                database.close()
+            }
+        }
         single<RepositoryTransactionManager> { IndexedDBRepositoryTransactionManager(get(), allStoreNames) }
         singleOf(::IndexedDBAccountRepository) { bind<AccountRepository>() }
         singleOf(::IndexedDBCrossSigningKeysRepository) { bind<CrossSigningKeysRepository>() }
