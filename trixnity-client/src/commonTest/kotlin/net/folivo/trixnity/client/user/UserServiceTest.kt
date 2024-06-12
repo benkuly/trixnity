@@ -62,7 +62,7 @@ class UserServiceTest : ShouldSpec({
     )
 
     beforeTest {
-        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        val (newApi, _) = mockMatrixClientServerApiClient(json)
         api = newApi
         currentSyncState.value = SyncState.RUNNING
         scope = CoroutineScope(Dispatchers.Default)

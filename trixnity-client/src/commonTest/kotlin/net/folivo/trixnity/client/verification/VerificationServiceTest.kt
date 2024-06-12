@@ -1,7 +1,7 @@
 package net.folivo.trixnity.client.verification
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.timing.eventually
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe

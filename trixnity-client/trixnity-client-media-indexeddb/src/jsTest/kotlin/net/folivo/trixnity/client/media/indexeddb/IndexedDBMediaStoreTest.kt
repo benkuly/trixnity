@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.media.indexeddb
 
-import com.benasher44.uuid.uuid4
 import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
@@ -10,8 +9,10 @@ import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.MEDIA_OBJECT_STORE_NAME
+import net.folivo.trixnity.utils.nextString
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -24,7 +25,7 @@ class IndexedDBMediaStoreTest {
     private val file2 = "file2"
 
     private suspend fun beforeTest() {
-        cut = IndexedDBMediaStore(uuid4().toString())
+        cut = IndexedDBMediaStore(Random.nextString(22))
         cut.init()
         database = openDatabase(cut.databaseName, 1) { _, _, _ -> }
     }

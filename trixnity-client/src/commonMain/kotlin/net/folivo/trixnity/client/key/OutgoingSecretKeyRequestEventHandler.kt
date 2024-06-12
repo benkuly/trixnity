@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.key
 
-import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
@@ -23,10 +22,12 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
+import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.utils.nextString
 import kotlin.time.Duration.Companion.days
 
 private val log = KotlinLogging.logger {}
@@ -69,7 +70,7 @@ class OutgoingSecretKeyRequestEventHandler(
             return
         }
         missingSecrets.map { missingSecret ->
-            val requestId = uuid4().toString()
+            val requestId = SecureRandom.nextString(22)
             val request = SecretKeyRequestEventContent(
                 name = missingSecret.id,
                 action = KeyRequestAction.REQUEST,

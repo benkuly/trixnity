@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.utils
 
-import io.kotest.assertions.until.fixed
-import io.kotest.assertions.until.until
+import io.kotest.assertions.nondeterministic.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -15,9 +14,7 @@ import net.folivo.trixnity.client.utils.RetryLoopFlowState.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
 class RetryLoopFlowTest : ShouldSpec({
     timeout = 10_000
 
@@ -169,7 +166,7 @@ class RetryLoopFlowTest : ShouldSpec({
                 }
             }
 
-            until(50.milliseconds, 25.milliseconds.fixed()) {
+            until(50.milliseconds) {
                 job.isActive
             }
             blockCalled.value shouldBe 0
@@ -203,7 +200,7 @@ class RetryLoopFlowTest : ShouldSpec({
                 }
             }
 
-            until(50.milliseconds, 25.milliseconds.fixed()) {
+            until(50.milliseconds) {
                 result.isActive
             }
             blockCalled.value shouldBe 0
