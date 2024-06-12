@@ -25,7 +25,6 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(libs.kotest.common)
                 implementation(libs.kotest.assertions.core)
-                implementation(libs.benasher44.uuid)
                 implementation(libs.oshai.logging)
             }
         }

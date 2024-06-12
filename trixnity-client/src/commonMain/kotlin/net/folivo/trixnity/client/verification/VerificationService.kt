@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.verification
 
-import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
@@ -37,9 +36,11 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.core.unsubscribeOnCompletion
+import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
+import net.folivo.trixnity.utils.nextString
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -265,7 +266,7 @@ class VerificationServiceImpl(
     ): Result<ActiveDeviceVerification> = kotlin.runCatching {
         log.info { "create new device verification request to $theirUserId ($theirDeviceIds)" }
         val request = VerificationRequestToDeviceEventContent(
-            ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), uuid4().toString()
+            ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), SecureRandom.nextString(22)
         )
         api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
             olmEncryptionService.encryptOlm(request, theirUserId, it).getOrNull() ?: request

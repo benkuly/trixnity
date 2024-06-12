@@ -23,8 +23,6 @@ kotlin {
                 implementation(libs.ktor.client.contentNegotiation)
                 implementation(libs.ktor.client.resources)
 
-                implementation(libs.benasher44.uuid)
-
                 implementation(libs.oshai.logging)
             }
         }

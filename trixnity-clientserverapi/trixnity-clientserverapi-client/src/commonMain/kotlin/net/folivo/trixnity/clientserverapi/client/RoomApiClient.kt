@@ -1,6 +1,5 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import com.benasher44.uuid.uuid4
 import net.folivo.trixnity.clientserverapi.model.rooms.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
@@ -22,6 +21,8 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.contentType
+import net.folivo.trixnity.utils.nextString
+import kotlin.random.Random
 
 interface RoomApiClient {
 
@@ -151,7 +152,7 @@ interface RoomApiClient {
     suspend fun sendMessageEvent(
         roomId: RoomId,
         eventContent: MessageEventContent,
-        txnId: String = uuid4().toString(),
+        txnId: String = Random.nextString(22),
         asUserId: UserId? = null
     ): Result<EventId>
 
@@ -162,7 +163,7 @@ interface RoomApiClient {
         roomId: RoomId,
         eventId: EventId,
         reason: String? = null,
-        txnId: String = uuid4().toString(),
+        txnId: String = Random.nextString(22),
         asUserId: UserId? = null
     ): Result<EventId>
 

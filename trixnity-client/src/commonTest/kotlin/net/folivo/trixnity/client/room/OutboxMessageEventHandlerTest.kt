@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.room
 
+import io.kotest.assertions.nondeterministic.continually
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.retry
-import io.kotest.assertions.timing.continually
 import io.kotest.assertions.until.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly

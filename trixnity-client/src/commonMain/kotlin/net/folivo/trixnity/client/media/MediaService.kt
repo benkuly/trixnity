@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.media
 
-import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -161,7 +160,7 @@ class MediaServiceImpl(
     }
 
     override suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String {
-        return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
+        return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${SecureRandom.nextString(22)}".also { cacheUri ->
             var fileSize = 0
             mediaStore.addMedia(cacheUri, content.onEach { fileSize += it.size })
             mediaCacheMappingStore.saveMediaCacheMapping(

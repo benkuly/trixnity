@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import com.benasher44.uuid.uuid4
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -39,11 +38,13 @@ import net.folivo.trixnity.core.model.events.stateKeyOrNull
 import net.folivo.trixnity.core.subscribeContentAsFlow
 import net.folivo.trixnity.core.subscribeContentList
 import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.math.roundToInt
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -68,7 +69,7 @@ class PerformanceIT {
                     "realm", "realm", baseUrl,
                     repositoriesModule = createRealmRepositoriesModule {
                         inMemory()
-                        directory("build/test-db/${uuid4()}")
+                        directory("build/test-db/${Random.nextString(22)}")
                     },
                 ).client
             }

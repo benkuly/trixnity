@@ -1,6 +1,5 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import com.benasher44.uuid.uuid4
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
@@ -14,6 +13,8 @@ import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.contentType
+import net.folivo.trixnity.utils.nextString
+import kotlin.random.Random
 
 interface UserApiClient {
     val contentMappings: EventContentSerializerMappings
@@ -80,7 +81,7 @@ interface UserApiClient {
      */
     suspend fun <C : ToDeviceEventContent> sendToDeviceUnsafe(
         events: Map<UserId, Map<String, C>>,
-        transactionId: String = uuid4().toString(),
+        transactionId: String = Random.nextString(22),
         asUserId: UserId? = null
     ): Result<Unit>
 
@@ -90,7 +91,7 @@ interface UserApiClient {
     suspend fun sendToDeviceUnsafe(
         type: String,
         events: Map<UserId, Map<String, ToDeviceEventContent>>,
-        transactionId: String = uuid4().toString(),
+        transactionId: String = Random.nextString(22),
         asUserId: UserId? = null
     ): Result<Unit>
 

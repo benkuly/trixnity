@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.key
 
-import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
@@ -21,11 +20,13 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribeOnCompletion
+import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.utils.nextString
 import kotlin.time.Duration.Companion.days
 
 private val log = KotlinLogging.logger {}
@@ -141,7 +142,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                     log.debug { "there are no receivers, that we can request room keys from" }
                     return@retryWhenSyncIs
                 }
-                val requestId = uuid4().toString()
+                val requestId = SecureRandom.nextString(22)
                 val request = RoomKeyRequestEventContent(
                     action = KeyRequestAction.REQUEST,
                     requestingDeviceId = ownDeviceId,
