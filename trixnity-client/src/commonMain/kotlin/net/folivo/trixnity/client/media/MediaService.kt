@@ -173,12 +173,14 @@ class MediaServiceImpl(
         content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<String, ThumbnailInfo>? {
-        val thumbnail = try {
-            createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
-        } catch (e: Exception) {
-            log.warn(e) { "could not create thumbnail from file with content type $contentType" }
-            return null
-        }
+        val thumbnail =
+            if (contentType?.contentType == "image") try {
+                createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
+            } catch (e: Exception) {
+                log.warn(e) { "could not create thumbnail from file with content type $contentType" }
+                return null
+            }
+            else return null
         val cacheUri = prepareUploadMedia(thumbnail.file.toByteArrayFlow(), thumbnail.contentType)
         return cacheUri to ThumbnailInfo(
             width = thumbnail.width,
@@ -213,12 +215,14 @@ class MediaServiceImpl(
         content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<EncryptedFile, ThumbnailInfo>? {
-        val thumbnail = try {
-            createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
-        } catch (e: Exception) {
-            log.debug { "could not create thumbnail from file with content type $contentType" }
-            return null
-        }
+        val thumbnail =
+            if (contentType?.contentType == "image") try {
+                createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
+            } catch (e: Exception) {
+                log.debug { "could not create thumbnail from file with content type $contentType" }
+                return null
+            }
+            else return null
         val encryptedFile = prepareUploadEncryptedMedia(thumbnail.file.toByteArrayFlow())
         return encryptedFile to ThumbnailInfo(
             width = thumbnail.width,
