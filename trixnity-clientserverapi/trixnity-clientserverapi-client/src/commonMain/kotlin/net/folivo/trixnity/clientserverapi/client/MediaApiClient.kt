@@ -40,8 +40,34 @@ interface MediaApiClient {
     /**
      * @see [DownloadMedia]
      */
+    @Deprecated("use download with downloadHandler")
     suspend fun download(
         mxcUri: String,
+        allowRemote: Boolean? = null,
+        progress: MutableStateFlow<FileTransferProgress?>? = null,
+        timeout: Duration = Duration.INFINITE,
+    ): Result<Media>
+
+    /**
+     * @see [DownloadMedia]
+     */
+    suspend fun download(
+        mxcUri: String,
+        allowRemote: Boolean? = null,
+        progress: MutableStateFlow<FileTransferProgress?>? = null,
+        timeout: Duration = Duration.INFINITE,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit>
+
+    /**
+     * @see [DownloadThumbnail]
+     */
+    @Deprecated("use downloadThumbnail with downloadHandler")
+    suspend fun downloadThumbnail(
+        mxcUri: String,
+        width: Long,
+        height: Long,
+        method: ThumbnailResizingMethod,
         allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         timeout: Duration = Duration.INFINITE,
@@ -58,7 +84,8 @@ interface MediaApiClient {
         allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         timeout: Duration = Duration.INFINITE,
-    ): Result<Media>
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit>
 
     /**
      * @see [GetUrlPreview]
@@ -109,6 +136,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
                 }
         }
 
+    @Deprecated("use download with downloadHandler")
     override suspend fun download(
         mxcUri: String,
         allowRemote: Boolean?,
@@ -131,6 +159,34 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         }
     }
 
+    override suspend fun download(
+        mxcUri: String,
+        allowRemote: Boolean?,
+        progress: MutableStateFlow<FileTransferProgress?>?,
+        timeout: Duration,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit> {
+        val uri = Url(mxcUri)
+        if (uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
+        val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
+            .let { it.substringBefore("/") to it.substringAfter("/") }
+        return httpClient.withRequest(
+            endpoint = DownloadMedia(serverName, mediaId, allowRemote),
+            requestBuilder = {
+                method = HttpMethod.Get
+                timeout {
+                    requestTimeoutMillis = timeout.inWholeMilliseconds
+                }
+                if (progress != null)
+                    onDownload { transferred, total ->
+                        progress.value = FileTransferProgress(transferred, total)
+                    }
+            },
+            responseHandler = downloadHandler
+        )
+    }
+
+    @Deprecated("use downloadThumbnail with downloadHandler")
     override suspend fun downloadThumbnail(
         mxcUri: String,
         width: Long,
@@ -163,6 +219,43 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
                     progress.value = FileTransferProgress(transferred, total)
                 }
         }
+    }
+
+    override suspend fun downloadThumbnail(
+        mxcUri: String,
+        width: Long,
+        height: Long,
+        method: ThumbnailResizingMethod,
+        allowRemote: Boolean?,
+        progress: MutableStateFlow<FileTransferProgress?>?,
+        timeout: Duration,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit> {
+        val uri = Url(mxcUri)
+        if (uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
+        val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
+            .let { it.substringBefore("/") to it.substringAfter("/") }
+        return httpClient.withRequest(
+            endpoint = DownloadThumbnail(
+                serverName = serverName,
+                mediaId = mediaId,
+                width = width,
+                height = height,
+                method = method,
+                allowRemote = allowRemote,
+            ),
+            requestBuilder = {
+                this.method = HttpMethod.Get
+                timeout {
+                    requestTimeoutMillis = timeout.inWholeMilliseconds
+                }
+                if (progress != null)
+                    onDownload { transferred, total ->
+                        progress.value = FileTransferProgress(transferred, total)
+                    }
+            },
+            responseHandler = downloadHandler
+        )
     }
 
     override suspend fun getUrlPreview(
