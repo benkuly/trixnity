@@ -82,7 +82,9 @@ class MediaServiceImpl(
     ): ByteArrayFlow {
         val media = getOrThrow().content.toByteArrayFlow().transform()
         return if (saveToCache) {
+            log.debug { "save media to store: $uri" }
             mediaStore.addMedia(uri, media)
+            log.debug { "completed save media to store: $uri" }
             requireNotNull(mediaStore.getMedia(uri)) { "media should not be null. because it has just been saved" }
         } else media
     }
@@ -95,21 +97,28 @@ class MediaServiceImpl(
     ): Result<ByteArrayFlow> = kotlin.runCatching {
         when {
             uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> {
-                mediaStore.getMedia(uri)
-                    ?: if (sha256Hash == null) api.media.download(uri, progress = progress)
+                val existingMedia = mediaStore.getMedia(uri)
+                if (existingMedia == null) {
+                    log.debug { "download media: $uri" }
+                    if (sha256Hash == null) api.media.download(uri, progress = progress)
                         .saveMedia(uri, saveToCache) { this }
                     else {
-                        api.media.download(uri, progress = progress).saveMedia(uri, saveToCache) {
-                            val sha256ByteFlow = sha256()
-                            sha256ByteFlow.onCompletion {
-                                val expectedHash = sha256ByteFlow.hash.value
-                                if (expectedHash != sha256Hash) {
-                                    mediaStore.deleteMedia(uri)
-                                    throw MediaValidationException(expectedHash, sha256Hash)
+                        api.media.download(uri, progress = progress)
+                            .saveMedia(uri, saveToCache) {
+                                val sha256ByteFlow = sha256()
+                                sha256ByteFlow.onCompletion {
+                                    val expectedHash = sha256ByteFlow.hash.value
+                                    if (expectedHash != sha256Hash) {
+                                        mediaStore.deleteMedia(uri)
+                                        throw MediaValidationException(expectedHash, sha256Hash)
+                                    }
                                 }
                             }
-                        }
                     }
+                } else {
+                    log.debug { "found media in store: $uri" }
+                    existingMedia
+                }
             }
 
             uri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX) -> mediaStore.getMedia(uri)
