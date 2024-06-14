@@ -5,7 +5,6 @@ import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.client.store.MediaCacheMapping
@@ -175,7 +174,7 @@ class MediaServiceImpl(
         contentType: ContentType?
     ): Pair<String, ThumbnailInfo>? {
         val thumbnail = try {
-            createThumbnail(content.take(maxFileSizeForThumbnail).toByteArray(), 600, 600)
+            createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
         } catch (e: Exception) {
             log.warn(e) { "could not create thumbnail from file with content type $contentType" }
             return null
@@ -215,7 +214,7 @@ class MediaServiceImpl(
         contentType: ContentType?
     ): Pair<EncryptedFile, ThumbnailInfo>? {
         val thumbnail = try {
-            createThumbnail(content.take(maxFileSizeForThumbnail).toByteArray(), 600, 600)
+            createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
         } catch (e: Exception) {
             log.debug { "could not create thumbnail from file with content type $contentType" }
             return null
