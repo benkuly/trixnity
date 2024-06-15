@@ -107,7 +107,10 @@ class OutboxMessageEventHandler(
                                             HttpStatusCode.PayloadTooLarge -> SendError.MediaTooLarge
                                             HttpStatusCode.BadRequest -> SendError.BadRequest(exception.errorResponse)
                                             HttpStatusCode.TooManyRequests -> throw exception
-                                            else -> SendError.Unknown(exception.errorResponse)
+                                            else -> {
+                                                log.error(exception) { "could not upload media" }
+                                                SendError.Unknown(exception.errorResponse)
+                                            }
                                         }
                                         roomOutboxMessageStore.update(outboxMessage.transactionId) {
                                             it?.copy(sendError = sendError)

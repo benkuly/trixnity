@@ -161,14 +161,15 @@ class MediaApiClientTest {
                 }
             })
         val progress = MutableStateFlow<FileTransferProgress?>(null)
-        val result = matrixRestClient.media.download(
+        matrixRestClient.media.download(
             mxcUri = "mxc://matrix.org:443/ascERGshawAWawugaAcauga",
             allowRemote = false,
             progress = progress
-        ).getOrThrow()
-        result.content.toByteArray().decodeToString() shouldBe "test"
-        result.contentLength shouldBe 4
-        result.contentType shouldBe ContentType.Text.Plain
+        ) { result ->
+            result.content.toByteArray().decodeToString() shouldBe "test"
+            result.contentLength shouldBe 4
+            result.contentType shouldBe ContentType.Text.Plain
+        }.getOrThrow()
         progress.value shouldBe FileTransferProgress(4, 4)
     }
 
@@ -194,17 +195,18 @@ class MediaApiClientTest {
                 }
             })
         val progress = MutableStateFlow<FileTransferProgress?>(null)
-        val result = matrixRestClient.media.downloadThumbnail(
+        matrixRestClient.media.downloadThumbnail(
             mxcUri = "mxc://matrix.org:443/ascERGshawAWawugaAcauga",
             width = 64,
             height = 64,
             method = ThumbnailResizingMethod.SCALE,
             allowRemote = false,
             progress = progress
-        ).getOrThrow()
-        result.content.toByteArray().decodeToString() shouldBe "test"
-        result.contentLength shouldBe 4
-        result.contentType shouldBe ContentType.Text.Plain
+        ) { result ->
+            result.content.toByteArray().decodeToString() shouldBe "test"
+            result.contentLength shouldBe 4
+            result.contentType shouldBe ContentType.Text.Plain
+        }.getOrThrow()
         progress.value shouldBe FileTransferProgress(4, 4)
     }
 

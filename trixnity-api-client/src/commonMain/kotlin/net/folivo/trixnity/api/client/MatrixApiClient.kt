@@ -39,16 +39,29 @@ open class MatrixApiClient(
 
     suspend inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE> request(
         endpoint: ENDPOINT,
-        requestBuilder: HttpRequestBuilder.() -> Unit = {}
-    ): Result<RESPONSE> = request(endpoint, Unit, requestBuilder)
+        requestBuilder: HttpRequestBuilder.() -> Unit = {},
+    ): Result<RESPONSE> = withRequest(endpoint, requestBuilder) { it }
+
+    suspend inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE, T> withRequest(
+        endpoint: ENDPOINT,
+        requestBuilder: HttpRequestBuilder.() -> Unit = {},
+        noinline responseHandler: suspend (RESPONSE) -> T
+    ): Result<T> = withRequest(endpoint, Unit, requestBuilder, responseHandler)
 
     suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> request(
         endpoint: ENDPOINT,
         body: REQUEST,
-        requestBuilder: HttpRequestBuilder.() -> Unit = {}
-    ): Result<RESPONSE> = runCatching<RESPONSE> {
+        requestBuilder: HttpRequestBuilder.() -> Unit = {},
+    ): Result<RESPONSE> = withRequest(endpoint, body, requestBuilder) { it }
+
+    suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE, T> withRequest(
+        endpoint: ENDPOINT,
+        body: REQUEST,
+        requestBuilder: HttpRequestBuilder.() -> Unit = {},
+        noinline responseHandler: suspend (RESPONSE) -> T
+    ): Result<T> = runCatching<T> {
         try {
-            unsafeRequest(endpoint, body, requestBuilder)
+            unsafeRequest(endpoint, body, requestBuilder, responseHandler)
         } catch (responseException: ResponseException) {
             when (responseException) {
                 is RedirectResponseException -> throw responseException
@@ -70,13 +83,14 @@ open class MatrixApiClient(
 
     @PublishedApi
     @OptIn(ExperimentalSerializationApi::class)
-    internal suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> unsafeRequest(
+    internal suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE, T> unsafeRequest(
         endpoint: ENDPOINT,
         requestBody: REQUEST,
-        requestBuilder: HttpRequestBuilder.() -> Unit = {}
-    ): RESPONSE {
+        requestBuilder: HttpRequestBuilder.() -> Unit = {},
+        noinline responseHandler: suspend (RESPONSE) -> T
+    ): T {
         val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json, requestBody)
-        val response = baseClient.request(endpoint) {
+        val request = baseClient.prepareRequest(endpoint) {
             val endpointHttpMethod =
                 serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<HttpMethod>().firstOrNull()
                     ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
@@ -96,10 +110,14 @@ open class MatrixApiClient(
         val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json, null)
         val forceJson =
             serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<ForceJson>().isNotEmpty()
-        return when {
-            forceJson -> json.decodeFromString(responseSerializer ?: serializer(), response.bodyAsText())
-            responseSerializer != null -> json.decodeFromJsonElement(responseSerializer, response.body())
-            else -> response.body()
+        return request.execute { response ->
+            responseHandler(
+                when {
+                    forceJson -> json.decodeFromString(responseSerializer ?: serializer(), response.bodyAsText())
+                    responseSerializer != null -> json.decodeFromJsonElement(responseSerializer, response.body())
+                    else -> response.body()
+                }
+            )
         }
     }
 }

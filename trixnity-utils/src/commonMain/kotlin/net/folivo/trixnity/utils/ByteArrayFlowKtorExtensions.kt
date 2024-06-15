@@ -12,7 +12,10 @@ import kotlinx.coroutines.flow.onCompletion
  */
 fun ByteReadChannel.toByteArrayFlow(): ByteArrayFlow = flow {
     while (isClosedForRead.not()) {
-        emit(readRemaining(BYTE_ARRAY_FLOW_CHUNK_SIZE).readBytes())
+        val packet = readRemaining(BYTE_ARRAY_FLOW_CHUNK_SIZE)
+        while (!packet.isEmpty) {
+            emit(packet.readBytes())
+        }
     }
 }.onCompletion { if (it != null) this@toByteArrayFlow.cancel(it) }
 

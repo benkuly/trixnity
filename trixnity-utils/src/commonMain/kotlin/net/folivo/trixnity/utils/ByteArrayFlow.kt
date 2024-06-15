@@ -1,8 +1,6 @@
 package net.folivo.trixnity.utils
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 
 typealias ByteArrayFlow = Flow<ByteArray>
 
@@ -21,4 +19,12 @@ suspend fun ByteArrayFlow.toByteArray(): ByteArray {
         }
     }
     return concatByteArray
+}
+
+fun ByteArrayFlow.takeBytes(size: Int): ByteArrayFlow = flow {
+    var currentSize = 0
+    takeWhile { next ->
+        currentSize += next.size
+        currentSize <= size
+    }.collect(this)
 }
