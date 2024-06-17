@@ -9,7 +9,7 @@ import kotlin.test.Test
 import kotlin.time.measureTime
 
 class ConcurrentTest {
-    private lateinit var cut: Concurrent<List<String>, MutableList<String>>
+    private lateinit var cut: Concurrent<List<Int>, MutableList<Int>>
 
     @BeforeTest
     fun before() {
@@ -18,9 +18,9 @@ class ConcurrentTest {
 
     @Test
     fun writeAndReadData() = runTest {
-        cut.write { add("a") }
-        cut.write { add("b") }
-        cut.read { toList() } shouldBe listOf("a", "b")
+        cut.write { add(1) }
+        cut.write { add(2) }
+        cut.read { toList() } shouldBe listOf(1, 2)
     }
 
     @Test
@@ -43,7 +43,7 @@ class ConcurrentTest {
                     coroutineScope {
                         repeat(writeOperations) { i ->
                             launch {
-                                cut.write { add("$i") }
+                                cut.write { add(i) }
                             }
                         }
                     }
@@ -52,11 +52,9 @@ class ConcurrentTest {
             val readTime = async {
                 measureTime {
                     coroutineScope {
-                        repeat(readOperations) { i ->
+                        repeat(readOperations) {
                             launch {
-                                cut.read {
-                                    toSet()
-                                }
+                                cut.read { toSet() }
                             }
                         }
                     }
@@ -66,6 +64,7 @@ class ConcurrentTest {
                 "writeTime=${writeTime.await()} (${writeTime.await() / writeOperations}/operation), " +
                         "readTime=${readTime.await()} (${readTime.await() / readOperations}/operation)"
             )
+            cut.read { toList() }.sorted() shouldBe List(writeOperations) { it }
         }
     }
 }
