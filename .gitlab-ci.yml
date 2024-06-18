@@ -11,6 +11,7 @@ stages:
   - build
   - test
   - security
+  - changelog
   - publish-snapshot
   - publish
   - website
@@ -227,6 +228,25 @@ security:dependencies:
     - trivy repo ./ --exit-code 0
     - trivy repo ./ --exit-code 0 --format template --template "@/contrib/gitlab.tpl" --output report.json
     - trivy repo ./ --exit-code 1 --severity CRITICAL
+
+changelog:
+  stage: changelog
+  interruptible: true
+  timeout: 30m
+  needs: [ ]
+  tags: [ "saas-linux-small-amd64" ]
+  rules:
+    - *if-merge-request
+  script:
+    - git fetch origin main
+    - |
+      # Check if the file was changed in the last commit
+      if git diff --name-only HEAD origin/main | grep "CHANGELOG"; then
+        echo "CHANGELOG has changed"
+      else
+        echo "CHANGELOG has not changed"
+        exit 1
+      fi
 
 publish-snapshot:mac:
   stage: publish-snapshot
