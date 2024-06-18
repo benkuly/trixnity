@@ -1,5 +1,8 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.mock
+import dev.mokkery.resetAnswers
+import dev.mokkery.resetCalls
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.request.*
@@ -11,45 +14,21 @@ import io.ktor.http.HttpHeaders.Origin
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.server.auth.*
 import io.ktor.server.testing.*
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class MatrixClientServerApiServerTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
-    @Mock
-    lateinit var appserviceApiHandlerMock: AppserviceApiHandler
-
-    @Mock
-    lateinit var authenticationApiHandlerMock: AuthenticationApiHandler
-
-    @Mock
-    lateinit var discoveryApiHandlerMock: DiscoveryApiHandler
-
-    @Mock
-    lateinit var devicesApiHandlerMock: DevicesApiHandler
-
-    @Mock
-    lateinit var keysApiHandlerMock: KeysApiHandler
-
-    @Mock
-    lateinit var mediaApiHandlerMock: MediaApiHandler
-
-    @Mock
-    lateinit var pushApiHandlerMock: PushApiHandler
-
-    @Mock
-    lateinit var roomsApiHandlerMock: RoomsApiHandler
-
-    @Mock
-    lateinit var serverApiHandlerMock: ServerApiHandler
-
-    @Mock
-    lateinit var syncApiHandlerMock: SyncApiHandler
-
-    @Mock
-    lateinit var usersApiHandlerMock: UsersApiHandler
+class MatrixClientServerApiServerTest {
+    val appserviceApiHandlerMock = mock<AppserviceApiHandler>()
+    val authenticationApiHandlerMock = mock<AuthenticationApiHandler>()
+    val discoveryApiHandlerMock = mock<DiscoveryApiHandler>()
+    val devicesApiHandlerMock = mock<DevicesApiHandler>()
+    val keysApiHandlerMock = mock<KeysApiHandler>()
+    val mediaApiHandlerMock = mock<MediaApiHandler>()
+    val pushApiHandlerMock = mock<PushApiHandler>()
+    val roomsApiHandlerMock = mock<RoomsApiHandler>()
+    val serverApiHandlerMock = mock<ServerApiHandler>()
+    val syncApiHandlerMock = mock<SyncApiHandler>()
+    val usersApiHandlerMock = mock<UsersApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -76,6 +55,25 @@ class MatrixClientServerApiServerTest : TestsWithMocks() {
                 )
             }
         }
+    }
+
+    @BeforeTest
+    fun beforeTest() {
+        val mocks = listOf(
+            appserviceApiHandlerMock,
+            authenticationApiHandlerMock,
+            discoveryApiHandlerMock,
+            devicesApiHandlerMock,
+            keysApiHandlerMock,
+            mediaApiHandlerMock,
+            pushApiHandlerMock,
+            roomsApiHandlerMock,
+            serverApiHandlerMock,
+            syncApiHandlerMock,
+            usersApiHandlerMock,
+        ).toTypedArray()
+        resetAnswers(*mocks)
+        resetCalls(*mocks)
     }
 
     @Test

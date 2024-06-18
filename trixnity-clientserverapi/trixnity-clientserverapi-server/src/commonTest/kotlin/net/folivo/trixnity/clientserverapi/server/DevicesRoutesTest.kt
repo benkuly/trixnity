@@ -1,5 +1,8 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -17,18 +20,14 @@ import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class DevicesRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class DevicesRoutesTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: DevicesApiHandler
+    val handlerMock = mock<DevicesApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -41,10 +40,16 @@ class DevicesRoutesTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldGetDevices() = testApplication {
         initCut()
-        everySuspending { handlerMock.getDevices(isAny()) }
+        everySuspend { handlerMock.getDevices(any()) }
             .returns(
                 GetDevices.Response(
                     listOf(
@@ -74,15 +79,15 @@ class DevicesRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getDevices(isAny())
+        verifySuspend {
+            handlerMock.getDevices(any())
         }
     }
 
     @Test
     fun shouldGetDevice() = testApplication {
         initCut()
-        everySuspending { handlerMock.getDevice(isAny()) }
+        everySuspend { handlerMock.getDevice(any()) }
             .returns(
                 Device(
                     deviceId = "ABCDEF",
@@ -104,7 +109,7 @@ class DevicesRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getDevice(assert { it.endpoint.deviceId shouldBe "ABCDEF" })
         }
     }
@@ -112,7 +117,7 @@ class DevicesRoutesTest : TestsWithMocks() {
     @Test
     fun shouldUpdateDevice() = testApplication {
         initCut()
-        everySuspending { handlerMock.updateDevice(isAny()) }
+        everySuspend { handlerMock.updateDevice(any()) }
             .returns(Unit)
         val response = client.put("/_matrix/client/v3/devices/ABCDEF") {
             bearerAuth("token")
@@ -124,7 +129,7 @@ class DevicesRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.updateDevice(assert {
                 it.endpoint.deviceId shouldBe "ABCDEF"
                 it.requestBody shouldBe UpdateDevice.Request("desktop")
@@ -135,7 +140,7 @@ class DevicesRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDeleteDevices() = testApplication {
         initCut()
-        everySuspending { handlerMock.deleteDevices(isAny()) }
+        everySuspend { handlerMock.deleteDevices(any()) }
             .returns(ResponseWithUIA.Success(Unit))
         val response = client.post("/_matrix/client/v3/delete_devices") {
             bearerAuth("token")
@@ -155,7 +160,7 @@ class DevicesRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.deleteDevices(assert {
                 it.requestBody shouldBe RequestWithUIA(DeleteDevices.Request(listOf("ABCDEFG")), null)
             })
@@ -165,7 +170,7 @@ class DevicesRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDeleteDevice() = testApplication {
         initCut()
-        everySuspending { handlerMock.deleteDevice(isAny()) }
+        everySuspend { handlerMock.deleteDevice(any()) }
             .returns(ResponseWithUIA.Success(Unit))
         val response = client.delete("/_matrix/client/v3/devices/ABCDEF") {
             bearerAuth("token")
@@ -177,7 +182,7 @@ class DevicesRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.deleteDevice(assert {
                 it.endpoint.deviceId shouldBe "ABCDEF"
             })

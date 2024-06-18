@@ -1,5 +1,8 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -14,18 +17,14 @@ import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class DiscoveryRouteTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class DiscoveryRouteTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: DiscoveryApiHandler
+    val handlerMock = mock<DiscoveryApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -38,10 +37,16 @@ class DiscoveryRouteTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldGetWellKnown() = testApplication {
         initCut()
-        everySuspending { handlerMock.getWellKnown(isAny()) }
+        everySuspend { handlerMock.getWellKnown(any()) }
             .returns(
                 DiscoveryInformation(
                     homeserver = DiscoveryInformation.HomeserverInformation("https://matrix.example.com"),
@@ -63,15 +68,15 @@ class DiscoveryRouteTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getWellKnown(isAny())
+        verifySuspend {
+            handlerMock.getWellKnown(any())
         }
     }
 
     @Test
     fun shouldGetSupport() = testApplication {
         initCut()
-        everySuspending { handlerMock.getSupport(isAny()) }
+        everySuspend { handlerMock.getSupport(any()) }
             .returns(
                 GetSupport.Response(
                     contacts = listOf(
@@ -109,8 +114,8 @@ class DiscoveryRouteTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getSupport(isAny())
+        verifySuspend {
+            handlerMock.getSupport(any())
         }
     }
 }

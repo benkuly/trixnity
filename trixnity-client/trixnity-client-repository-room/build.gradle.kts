@@ -2,7 +2,6 @@ plugins {
     id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    alias(libs.plugins.ksp)
 }
 
 android {
@@ -56,12 +55,4 @@ kotlin {
             }
         }
     }
-}
-
-dependencies {
-    configurations
-        .filter { it.name.startsWith("ksp") }
-        .forEach {
-            add(it.name, libs.androidx.room.compiler)
-        }
 }

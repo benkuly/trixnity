@@ -8,10 +8,10 @@ plugins {
     `maven-publish`
     signing
     alias(libs.plugins.dokka)
-    alias(libs.plugins.ksp).apply(false)
     alias(libs.plugins.realm).apply(false)
     alias(libs.plugins.download).apply(false)
     alias(libs.plugins.kotest).apply(false)
+    alias(libs.plugins.mokkery).apply(false)
 }
 
 allprojects {
