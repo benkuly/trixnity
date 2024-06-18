@@ -240,7 +240,6 @@ changelog:
   script:
     - git fetch origin main
     - |
-      # Check if the file was changed in the last commit
       if git diff --name-only HEAD origin/main | grep "CHANGELOG"; then
         echo "CHANGELOG has changed"
       else
