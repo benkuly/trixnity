@@ -240,10 +240,10 @@ changelog:
   script:
     - git fetch origin main
     - |
-      if git diff --name-only HEAD origin/main | grep "CHANGELOG"; then
-        echo "CHANGELOG has changed"
+      if git diff --name-only HEAD origin/main | grep "CHANGELOG.md"; then
+        echo "CHANGELOG.md has changed"
       else
-        echo "CHANGELOG has not changed"
+        echo "CHANGELOG.md has not changed"
         exit 1
       fi
 
