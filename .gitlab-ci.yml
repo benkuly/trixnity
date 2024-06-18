@@ -232,7 +232,7 @@ security:dependencies:
 changelog:
   stage: changelog
   interruptible: true
-  timeout: 30m
+  timeout: 5m
   needs: [ ]
   tags: [ "saas-linux-small-amd64" ]
   rules:
