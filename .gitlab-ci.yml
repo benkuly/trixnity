@@ -20,6 +20,7 @@ variables:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
+  KOTLIN_DATA_DIR: $CI_PROJECT_DIR/.kotlin
   BUILD_LINUX_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/trixnity-build-linux:latest
 
 .cache-linux: &cache-linux
@@ -28,6 +29,7 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+      - $KOTLIN_DATA_DIR
 
 .push-cache-linux: &push-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
@@ -35,6 +37,7 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+      - $KOTLIN_DATA_DIR
 
 .pull-cache-linux: &pull-cache-linux
   - key: "$CI_COMMIT_REF_NAME-linux"
@@ -43,6 +46,7 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+      - $KOTLIN_DATA_DIR
 
 .cache-mac: &cache-mac
   - key: global-trixnity-cache-mac
@@ -50,6 +54,7 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+      - $KOTLIN_DATA_DIR
 
 .push-cache-mac: &push-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
@@ -57,6 +62,7 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+      - $KOTLIN_DATA_DIR
 
 .pull-cache-mac: &pull-cache-mac
   - key: "$CI_COMMIT_REF_NAME-mac"
@@ -65,6 +71,7 @@ variables:
     paths:
       - $GRADLE_USER_HOME
       - $KONAN_DATA_DIR
+      - $KOTLIN_DATA_DIR
 
 .docker-variables: &docker-variables
   DOCKER_HOST: tcp://docker:2375
