@@ -2,6 +2,7 @@
 .gradle
 build/
 /local.properties
+.kotlin
 
 # Ignore Gradle GUI config
 gradle-app.setting

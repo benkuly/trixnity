@@ -1,58 +1,56 @@
 plugins {
-    id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-}
-
-android {
-    namespace = "net.folivo.trixnity.client.store.repository.room"
-    compileSdk = libs.versions.androidTargetSdk.get().toInt()
-    buildToolsVersion = libs.versions.androidBuildTools.get()
-    defaultConfig {
-        minSdk = libs.versions.androidMinSdk.get().toInt()
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    compileOptions {
-        sourceCompatibility = kotlinJvmTarget
-        targetCompatibility = kotlinJvmTarget
-    }
-    buildTypes {
-        release {
-            isDefault = true
-        }
-    }
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
-    addAndroidTarget()
+    jvmToolchain()
+    addJvmTarget()
+    // TODO enable native targets as soon as it is more stable
+    // does not use addNativeTargets() because mingw is not supported yet
+    //addNativeAppleTargets()
+    //linuxX64()
 
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
 
-        androidMain {
+        commonMain {
             dependencies {
                 implementation(project(":trixnity-client"))
 
                 implementation(libs.oshai.logging)
 
                 implementation(libs.androidx.room.runtime)
-                implementation(libs.androidx.room.ktx)
             }
         }
-        val androidUnitTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation(libs.androidx.room.testing)
-                implementation(libs.androidx.test.core)
-                implementation(libs.logback.classic)
+                implementation(project(":trixnity-client:client-repository-test"))
+
+                implementation(libs.androidx.sqlite.bundled)
+
                 implementation(libs.kotest.assertions.core)
                 implementation(libs.kotest.common)
                 implementation(libs.kotest.framework.engine)
+            }
+        }
+        jvmTest {
+            dependencies {
                 implementation(libs.kotest.runner.junit5)
-                implementation(libs.robolectric)
+                implementation(libs.logback.classic)
             }
         }
     }
+}
+
+dependencies {
+    configurations
+        .filter { it.name.startsWith("ksp") }
+        .forEach {
+            add(it.name, libs.androidx.room.compiler)
+        }
 }

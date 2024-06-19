@@ -15,6 +15,7 @@ import org.koin.dsl.module
 
 fun ShouldSpec.repositoryTestSuite(
     disabledRollbackTest: Boolean = false,
+    disabledSimultaneousReadWriteTests: Boolean = false,
     customRepositoryTransactionManager: suspend () -> RepositoryTransactionManager? = { null },
     repositoriesModuleBuilder: suspend () -> Module
 ) {
@@ -40,7 +41,11 @@ fun ShouldSpec.repositoryTestSuite(
     }
     afterTest { coroutineScope.cancel() }
 
-    repositoryTransactionManagerTest(disabledRollbackTest, customRepositoryTransactionManager) { di }
+    repositoryTransactionManagerTest(
+        disabledRollbackTest = disabledRollbackTest,
+        disabledSimultaneousReadWriteTests = disabledSimultaneousReadWriteTests,
+        customRepositoryTransactionManager = customRepositoryTransactionManager
+    ) { di }
 
     accountRepositoryTest { di }
     crossSigningKeysRepositoryTest { di }

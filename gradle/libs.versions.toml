@@ -1,6 +1,7 @@
 [versions]
 ### build ###
 kotlin = "2.0.0" # https://github.com/JetBrains/kotlin/releases
+ksp = "2.0.0-1.0.22" # https://github.com/google/ksp/releases
 kotlinWrappers = "1.0.0-pre.758" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "1.9.20" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.2.0" # https://developer.android.com/reference/tools/gradle-api
@@ -32,7 +33,8 @@ h2 = "2.2.224" # https://github.com/h2database/h2database/releases
 postgres = "42.7.3" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.7.1" # https://github.com/JuulLabs/indexeddb/releases
 realm = "2.0.0" # https://github.com/realm/realm-kotlin/tags
-androidxRoom = "2.6.1" # https://developer.android.com/jetpack/androidx/releases/room
+androidxRoom = "2.7.0-alpha04" # https://developer.android.com/jetpack/androidx/releases/room
+androidxSqlite = "2.5.0-alpha04" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
 ### logging ###
 oshaiKotlinLogging = "7.0.0" # https://github.com/oshai/kotlin-logging/releases
@@ -119,6 +121,7 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidxRoom" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "androidxRoom" }
 androidx-room-testing = { module = "androidx.room:room-ktx", version.ref = "androidxRoom" }
+androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "androidxSqlite" }
 
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 
@@ -143,6 +146,7 @@ androidx-test-core = { module = "androidx.test:core-ktx", version.ref = "android
 
 [plugins]
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 realm = { id = "io.realm.kotlin", version.ref = "realm" }
 download = { id = "de.undercouch.download", version.ref = "downloadGradlePlugin" }
 kotest = { id = "io.kotest.multiplatform", version.ref = "kotest" }

@@ -17,6 +17,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 fun ShouldSpec.repositoryTransactionManagerTest(
     disabledRollbackTest: Boolean,
+    disabledSimultaneousReadWriteTests: Boolean,
     customRepositoryTransactionManager: suspend () -> RepositoryTransactionManager?,
     diReceiver: () -> Koin
 ) {
@@ -51,14 +52,16 @@ fun ShouldSpec.repositoryTransactionManagerTest(
         repeat(calls) { i ->
             launch {
                 callCount.value++
+                callCount.first { it == calls }
                 rtm.writeTransaction {
-                    callCount.first { it == calls }
                     testWrite(i)
                 }
             }
         }
     }
-    should("repositoryTransactionManagerTest: write allows simultaneous writes") {
+
+    val simultaneousWriteTestName = "rrepositoryTransactionManagerTest: write allows simultaneous writes"
+    suspend fun simultaneousWriteTest() {
         val calls = 10
         val callCount = MutableStateFlow(0)
         rtm.writeTransaction {
@@ -73,6 +76,27 @@ fun ShouldSpec.repositoryTransactionManagerTest(
             }
         }
     }
+    if (disabledSimultaneousReadWriteTests) xshould(simultaneousWriteTestName) { simultaneousWriteTest() }
+    else should(simultaneousWriteTestName) { simultaneousWriteTest() }
+
+    val simultaneousReadTestName = "rrepositoryTransactionManagerTest: write allows simultaneous reads"
+    suspend fun simultaneousReadTest() {
+        val calls = 10
+        val callCount = MutableStateFlow(0)
+        rtm.writeTransaction {
+            coroutineScope {
+                repeat(calls) { i ->
+                    launch {
+                        callCount.value++
+                        callCount.first { it == calls }
+                        testRead(i)
+                    }
+                }
+            }
+        }
+    }
+    if (disabledSimultaneousReadWriteTests) xshould(simultaneousReadTestName) { simultaneousReadTest() }
+    else should(simultaneousReadTestName) { simultaneousReadTest() }
 
     should("repositoryTransactionManagerTest: read does not lock") {
         rtm.readTransaction {

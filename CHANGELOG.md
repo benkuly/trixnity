@@ -9,9 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- (internal) update dependencies (including Kotlin 2.0.0, Realm 2.0.0)
+- (trixnity-client-repositories-room) added Kotlin Multiplatform support
+  (JVM based targets for now, Native will be enabled, when more stable)
 
 ### Changed
+
+- (internal) update dependencies (including Kotlin 2.0.0)
+- (trixnity-client-repositories-room) updated AndroidX Room (to an alpha version!)
 
 ### Deprecated
 
