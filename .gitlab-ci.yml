@@ -7,11 +7,11 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
 stages:
+  - changelog
   - prepare-build
   - build
   - test
   - security
-  - changelog
   - publish-snapshot
   - publish
   - website
@@ -233,7 +233,6 @@ changelog:
   stage: changelog
   interruptible: true
   timeout: 5m
-  needs: [ ]
   tags: [ "saas-linux-small-amd64" ]
   rules:
     - *if-merge-request
