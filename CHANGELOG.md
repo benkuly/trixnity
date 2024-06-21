@@ -11,8 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- only decrypt when decryptionTimeout is larger than ZERO
-
 ### Deprecated
 
 ### Removed
@@ -20,3 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## 4.3.12
+
+### Changed
+
+- only decrypt when decryptionTimeout is larger than ZERO
