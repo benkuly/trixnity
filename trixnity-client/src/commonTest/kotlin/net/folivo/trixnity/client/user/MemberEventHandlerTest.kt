@@ -13,12 +13,14 @@ import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserStore
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class MemberEventHandlerTest : ShouldSpec({
@@ -39,6 +41,7 @@ class MemberEventHandlerTest : ShouldSpec({
             mockMatrixClientServerApiClient(json).first,
             accountStore,
             roomUserStore,
+            UserInfo(UserId("alice", "server"), "a", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             TransactionManagerMock(),
         )
     }
@@ -205,7 +208,7 @@ class MemberEventHandlerTest : ShouldSpec({
                         roomId, user2, "U1 (@user2:server)", event2
                     )
                 }
-                should("evaluate events from server multiple times and still be correct" ) {
+                should("evaluate events from server multiple times and still be correct") {
                     val event2 =
                         user2Event.copy(content = MemberEventContent(displayName = "U1", membership = Membership.JOIN))
                     roomUserStore.update(user2, roomId) { RoomUser(roomId, user2, "U1", event2) }
@@ -219,6 +222,21 @@ class MemberEventHandlerTest : ShouldSpec({
                     )
                     roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "U1 (@user2:server)", event2
+                    )
+                }
+                should("find collision in same list") {
+                    val user2EventJoin = user2Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
+                    )
+                    val user3EventJoin = user3Event.copy(
+                        content = MemberEventContent(displayName = "U1", membership = Membership.JOIN)
+                    )
+                    cut.setRoomUser(listOf(user2EventJoin, user3EventJoin))
+                    roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
+                        roomId, user2, "U1 (@user2:server)", user2EventJoin
+                    )
+                    roomUserStore.get(user3, roomId).first() shouldBe RoomUser(
+                        roomId, user3, "U1 (@user3:server)", user3EventJoin
                     )
                 }
             }
@@ -302,15 +320,6 @@ class MemberEventHandlerTest : ShouldSpec({
                     )
                 }
             }
-            should("set our displayName to 'DisplayName (@user:server)'") {
-                val event = user1Event.copy(
-                    content = MemberEventContent(displayName = "OLD", membership = Membership.LEAVE)
-                )
-                cut.setRoomUser(listOf(event))
-                roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
-                    roomId, user1, "OLD (@user1:server)", event
-                )
-            }
             context("one other user has same displayName") {
                 should("set displayName of the other to 'DisplayName'") {
                     val event2 =
@@ -321,7 +330,7 @@ class MemberEventHandlerTest : ShouldSpec({
                     )
                     cut.setRoomUser(listOf(event))
                     roomUserStore.get(user1, roomId).first() shouldBe RoomUser(
-                        roomId, user1, "U1 (@user1:server)", event
+                        roomId, user1, "U1", event
                     )
                     roomUserStore.get(user2, roomId).first() shouldBe RoomUser(
                         roomId, user2, "U1", event2

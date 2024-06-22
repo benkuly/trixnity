@@ -1,12 +1,10 @@
 package net.folivo.trixnity.client.media.indexeddb
 
-import com.benasher44.uuid.uuid4
 import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
 import io.kotest.matchers.shouldBe
 import io.ktor.utils.io.core.*
-import js.promise.await
 import js.typedarrays.Int8Array
 import js.typedarrays.asInt8Array
 import kotlinx.coroutines.flow.flowOf
@@ -14,8 +12,10 @@ import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.MEDIA_OBJECT_STORE_NAME
+import net.folivo.trixnity.utils.nextString
 import net.folivo.trixnity.utils.toByteArray
 import web.blob.Blob
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -28,7 +28,7 @@ class IndexedDBMediaStoreTest {
     private val file2 = "file2"
 
     private suspend fun beforeTest() {
-        cut = IndexedDBMediaStore(uuid4().toString())
+        cut = IndexedDBMediaStore(Random.nextString(22))
         cut.init()
         database = openDatabase(cut.databaseName, 1) { _, _, _ -> }
     }
@@ -78,7 +78,7 @@ class IndexedDBMediaStoreTest {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store.getAll().size shouldBe 1
             store.get(Key(file1)).unsafeCast<Blob>().arrayBuffer()
-        }.await().let { Int8Array(it) }
+        }.let { Int8Array(it) }
             .asByteArray().decodeToString() shouldBe "hi"
     }
 

@@ -27,7 +27,7 @@ class MediaServiceMock : MediaService {
     }
 
     override suspend fun getThumbnail(
-        mxcUri: String,
+        uri: String,
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,

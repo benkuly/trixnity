@@ -19,12 +19,24 @@ Serializers. In this example we added a new message event `net.folivo.dino`. As 
 of this Kotlin type like all other default events.
 
 ```kotlin
-val customMappings = createEventContentSerializerMappings {
-    messageOf<DingoEventContent>("net.folivo.dino")
-    // or
-    messageOf("net.folivo.dino", DingoEventContentSerializer)
+@Serializable
+data class DinoEventContent(
+    val dinoCount: Long,
+) : MessageEventContent {
+    // just ignore these properties when you don't need them
+    override val relatesTo: RelatesTo? = null
+    override val mentions: Mentions? = null
+    override val externalUrl: String? = null
 }
-val customModule = module {
+
+val customMappings = createEventContentSerializerMappings {
+    messageOf<DinoEventContent>("net.folivo.dino")
+    // or if you have a custom serializer
+    // messageOf("net.folivo.dino", DingoEventContentSerializer)
+}
+
+// add the module to MatrixClient as shown above
+val customMappingsModule = module {
     single<EventContentSerializerMappings> {
         DefaultEventContentSerializerMappings + customMappings
     }

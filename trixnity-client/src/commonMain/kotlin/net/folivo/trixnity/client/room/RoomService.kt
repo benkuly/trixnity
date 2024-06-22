@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.room
 
-import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -30,6 +29,7 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import net.folivo.trixnity.core.subscribeAsFlow
+import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.utils.*
 import kotlin.reflect.KClass
 import kotlin.time.Duration
@@ -281,7 +281,7 @@ class RoomServiceImpl(
                         if (timelineEvent == null)
                             log.warn { "getTimelineEvent: could not find TimelineEvent $eventId in store or by fetching (timeout=${cfg.fetchTimeout})" }
                         val event = timelineEvent?.event
-                        if (timelineEvent?.canBeDecrypted() == true && event is MessageEvent) {
+                        if (cfg.decryptionTimeout > ZERO && timelineEvent?.canBeDecrypted() == true && event is MessageEvent) {
                             log.trace { "getTimelineEvent: try decrypt ${timelineEvent.eventId}" }
                             val decryptedEventContent =
                                 withTimeoutOrNull(cfg.decryptionTimeout) {
@@ -565,7 +565,7 @@ class RoomServiceImpl(
     ): String {
         val content = MessageBuilder(roomId, this, mediaService, userInfo.userId).build(builder)
         requireNotNull(content) { "you must add some sort of content for sending a message" }
-        val transactionId = uuid4().toString()
+        val transactionId = SecureRandom.nextString(22)
         roomOutboxMessageStore.update(transactionId) {
             RoomOutboxMessage(
                 transactionId = transactionId,

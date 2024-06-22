@@ -48,7 +48,6 @@ kotlin {
                 implementation(libs.androidx.room.testing)
                 implementation(libs.androidx.test.core)
                 implementation(libs.logback.classic)
-                implementation(libs.benasher44.uuid)
                 implementation(libs.kotest.assertions.core)
                 implementation(libs.kotest.common)
                 implementation(libs.kotest.framework.engine)

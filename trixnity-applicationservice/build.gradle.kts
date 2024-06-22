@@ -22,8 +22,6 @@ kotlin {
                 implementation(libs.ktor.server.contentNegotiation)
                 implementation(libs.ktor.serialization.kotlinx.json)
 
-                implementation(libs.benasher44.uuid)
-
                 implementation(libs.oshai.logging)
             }
         }

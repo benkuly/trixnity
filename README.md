@@ -18,7 +18,18 @@ using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 
 **You need help? Ask your questions in [#trixnity:imbitbu.de](https://matrix.to/#/#trixnity:imbitbu.de).**
 
-## Development
+## Contributions
+
+### Build this project
+
+#### Android SDK
+
+Install the Android SDK and add a file named `local.properties` with the
+following content in the project root:
+
+```properties
+sdk.dir=/path/to/android/sdk
+```
 
 ### Upgrade lock
 

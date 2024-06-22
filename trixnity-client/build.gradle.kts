@@ -25,8 +25,6 @@ kotlin {
 
                 implementation(libs.arrow.resilience)
 
-                implementation(libs.benasher44.uuid)
-
                 implementation(libs.oshai.logging)
 
                 implementation(libs.korlibs.korim)

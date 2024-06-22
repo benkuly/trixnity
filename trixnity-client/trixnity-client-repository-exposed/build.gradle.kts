@@ -22,7 +22,6 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":trixnity-client:client-repository-test"))
-                implementation(libs.benasher44.uuid)
             }
         }
         jvmMain {

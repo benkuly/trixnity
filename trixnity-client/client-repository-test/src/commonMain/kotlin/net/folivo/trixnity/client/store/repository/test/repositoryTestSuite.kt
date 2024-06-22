@@ -1,6 +1,9 @@
 package net.folivo.trixnity.client.store.repository.test
 
 import io.kotest.core.spec.style.ShouldSpec
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.createDefaultEventContentSerializerMappingsModule
 import net.folivo.trixnity.client.createDefaultMatrixJsonModule
@@ -16,15 +19,18 @@ fun ShouldSpec.repositoryTestSuite(
     repositoriesModuleBuilder: suspend () -> Module
 ) {
     lateinit var di: Koin
+    lateinit var coroutineScope: CoroutineScope
 
     beforeTest {
         val repositoriesModule = repositoriesModuleBuilder()
+        coroutineScope = CoroutineScope(Dispatchers.Default)
         di = koinApplication {
             modules(
                 listOf(
                     repositoriesModule,
                     module {
                         single { MatrixClientConfiguration(storeTimelineEventContentUnencrypted = true) }
+                        single { coroutineScope }
                     },
                     createDefaultEventContentSerializerMappingsModule(),
                     createDefaultMatrixJsonModule()
@@ -32,6 +38,7 @@ fun ShouldSpec.repositoryTestSuite(
             )
         }.koin
     }
+    afterTest { coroutineScope.cancel() }
 
     repositoryTransactionManagerTest(disabledRollbackTest, customRepositoryTransactionManager) { di }
 

@@ -11,7 +11,9 @@ import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
 import net.folivo.trixnity.client.utils.retryWhen
-import net.folivo.trixnity.clientserverapi.client.*
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -102,11 +104,11 @@ interface MatrixClient {
 
     /**
      * Stop the MatrixClient and its [CoroutineScope].
-     * It should be called to clean up all resources used by [MatrixClient].
+     * It should be called to clean up all resources used by [MatrixClient] (including databases).
      *
      * After calling this, this instance should not be used anymore!
      */
-    fun stop()
+    suspend fun stop(wait: Boolean = false)
 
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
@@ -275,7 +277,7 @@ suspend fun MatrixClient.Companion.loginWith(
     val (userId, deviceId, accessToken) = loginInfo
     loginApi.accessToken.value = accessToken
     val (displayName, avatarUrl) = loginApi.user.getProfile(userId).getOrThrow()
-    
+
     val mediaStore = mediaStoreFactory(loginInfo)
     val repositoriesModule = repositoriesModuleFactory(loginInfo)
 
@@ -672,9 +674,10 @@ class MatrixClientImpl internal constructor(
         api.sync.cancel(wait)
     }
 
-    override fun stop() {
+    override suspend fun stop(wait: Boolean) {
         started.value = false
         coroutineScope.cancel("stopped MatrixClient")
+        if (wait) coroutineScope.coroutineContext.job.join()
     }
 
     override suspend fun setDisplayName(displayName: String?): Result<Unit> {

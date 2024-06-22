@@ -1,12 +1,10 @@
 package net.folivo.trixnity.client.media
 
-import com.benasher44.uuid.uuid4
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.client.store.MediaCacheMapping
@@ -40,7 +38,7 @@ interface MediaService {
     ): Result<ByteArrayFlow>
 
     suspend fun getThumbnail(
-        mxcUri: String,
+        uri: String,
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod = CROP,
@@ -77,16 +75,14 @@ class MediaServiceImpl(
         const val maxFileSizeForThumbnail = 1024 * 50_000 // = 50MB
     }
 
-    private suspend fun <T : ByteArrayFlow> Result<Media>.saveMedia(
+    private suspend fun <T : ByteArrayFlow> Media.saveMedia(
         uri: String,
-        saveToCache: Boolean,
         transform: ByteArrayFlow.() -> T
-    ): ByteArrayFlow {
-        val media = getOrThrow().content.toByteArrayFlow().transform()
-        return if (saveToCache) {
-            mediaStore.addMedia(uri, media)
-            requireNotNull(mediaStore.getMedia(uri)) { "media should not be null. because it has just been saved" }
-        } else media
+    ) {
+        val media = content.toByteArrayFlow().transform()
+        log.debug { "save media to store: $uri" }
+        mediaStore.addMedia(uri, media)
+        log.debug { "completed save media to store: $uri" }
     }
 
     private suspend fun getMedia(
@@ -97,21 +93,33 @@ class MediaServiceImpl(
     ): Result<ByteArrayFlow> = kotlin.runCatching {
         when {
             uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> {
-                mediaStore.getMedia(uri)
-                    ?: if (sha256Hash == null) api.media.download(uri, progress = progress)
-                        .saveMedia(uri, saveToCache) { this }
-                    else {
-                        api.media.download(uri, progress = progress).saveMedia(uri, saveToCache) {
-                            val sha256ByteFlow = sha256()
-                            sha256ByteFlow.onCompletion {
-                                val expectedHash = sha256ByteFlow.hash.value
-                                if (expectedHash != sha256Hash) {
-                                    mediaStore.deleteMedia(uri)
-                                    throw MediaValidationException(expectedHash, sha256Hash)
+                val existingMedia = mediaStore.getMedia(uri)
+                if (existingMedia == null) {
+                    log.debug { "download media: $uri" }
+                    if (sha256Hash == null) {
+                        api.media.download(uri, progress = progress) {
+                            it.saveMedia(uri) { this }
+                        }.getOrThrow()
+                    } else {
+                        api.media.download(uri, progress = progress) {
+                            it.saveMedia(uri) {
+                                val sha256ByteFlow = sha256()
+                                sha256ByteFlow.onCompletion {
+                                    val expectedHash = sha256ByteFlow.hash.value
+                                    if (expectedHash != sha256Hash) {
+                                        mediaStore.deleteMedia(uri)
+                                        throw MediaValidationException(expectedHash, sha256Hash)
+                                    }
                                 }
                             }
-                        }
+                        }.getOrThrow()
                     }
+                    requireNotNull(mediaStore.getMedia(uri)) { "media should not be null, because it has just been saved" }
+                        .onCompletion { if (!saveToCache) mediaStore.deleteMedia(uri) }
+                } else {
+                    log.debug { "found media in store: $uri" }
+                    existingMedia
+                }
             }
 
             uri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX) -> mediaStore.getMedia(uri)
@@ -147,21 +155,26 @@ class MediaServiceImpl(
     }
 
     override suspend fun getThumbnail(
-        mxcUri: String,
+        uri: String,
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
     ): Result<ByteArrayFlow> = kotlin.runCatching {
-        val thumbnailUrl = "$mxcUri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
-        mediaStore.getMedia(thumbnailUrl)
-            ?: api.media.downloadThumbnail(mxcUri, width, height, method, progress = progress)
-                .saveMedia(thumbnailUrl, saveToCache) { this }
+        val thumbnailUrl = "$uri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
+        val existingMedia = mediaStore.getMedia(thumbnailUrl)
+        if (existingMedia == null) {
+            api.media.downloadThumbnail(uri, width, height, method, progress = progress) {
+                it.saveMedia(thumbnailUrl) { this }
+            }.getOrThrow()
+            requireNotNull(mediaStore.getMedia(thumbnailUrl)) { "media should not be null, because it has just been saved" }
+                .onCompletion { if (!saveToCache) mediaStore.deleteMedia(thumbnailUrl) }
+        } else existingMedia
     }
 
     override suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String {
-        return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${uuid4()}".also { cacheUri ->
+        return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${SecureRandom.nextString(22)}".also { cacheUri ->
             var fileSize = 0
             mediaStore.addMedia(cacheUri, content.onEach { fileSize += it.size })
             mediaCacheMappingStore.saveMediaCacheMapping(
@@ -175,12 +188,14 @@ class MediaServiceImpl(
         content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<String, ThumbnailInfo>? {
-        val thumbnail = try {
-            createThumbnail(content.take(maxFileSizeForThumbnail).toByteArray(), 600, 600)
-        } catch (e: Exception) {
-            log.warn(e) { "could not create thumbnail from file with content type $contentType" }
-            return null
-        }
+        val thumbnail =
+            if (contentType?.contentType == "image") try {
+                createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
+            } catch (e: Exception) {
+                log.warn(e) { "could not create thumbnail from file with content type $contentType" }
+                return null
+            }
+            else return null
         val cacheUri = prepareUploadMedia(thumbnail.file.toByteArrayFlow(), thumbnail.contentType)
         return cacheUri to ThumbnailInfo(
             width = thumbnail.width,
@@ -215,12 +230,14 @@ class MediaServiceImpl(
         content: ByteArrayFlow,
         contentType: ContentType?
     ): Pair<EncryptedFile, ThumbnailInfo>? {
-        val thumbnail = try {
-            createThumbnail(content.take(maxFileSizeForThumbnail).toByteArray(), 600, 600)
-        } catch (e: Exception) {
-            log.debug { "could not create thumbnail from file with content type $contentType" }
-            return null
-        }
+        val thumbnail =
+            if (contentType?.contentType == "image") try {
+                createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
+            } catch (e: Exception) {
+                log.debug { "could not create thumbnail from file with content type $contentType" }
+                return null
+            }
+            else return null
         val encryptedFile = prepareUploadEncryptedMedia(thumbnail.file.toByteArrayFlow())
         return encryptedFile to ThumbnailInfo(
             width = thumbnail.width,

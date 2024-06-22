@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import com.benasher44.uuid.uuid4
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
@@ -14,6 +13,7 @@ import net.folivo.trixnity.clientserverapi.model.authentication.AccountType
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
+import net.folivo.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.module.Module
 import org.testcontainers.containers.BindMode
@@ -21,6 +21,7 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
+import kotlin.random.Random
 
 const val synapseVersion =
     "v1.103.0" // TODO you should update this from time to time. https://github.com/element-hq/synapse/releases
@@ -64,7 +65,7 @@ suspend fun MatrixClientServerApiClient.register(
     return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken))
 }
 
-fun newDatabase() = Database.connect("jdbc:h2:mem:${uuid4()};DB_CLOSE_DELAY=-1;")
+fun newDatabase() = Database.connect("jdbc:h2:mem:${Random.nextString(22)};DB_CLOSE_DELAY=-1;")
 
 data class StartedClient(
     val client: MatrixClient,

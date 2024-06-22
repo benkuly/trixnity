@@ -7,6 +7,7 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
 stages:
+  - changelog
   - prepare-build
   - build
   - test
@@ -227,6 +228,23 @@ security:dependencies:
     - trivy repo ./ --exit-code 0
     - trivy repo ./ --exit-code 0 --format template --template "@/contrib/gitlab.tpl" --output report.json
     - trivy repo ./ --exit-code 1 --severity CRITICAL
+
+changelog:
+  stage: changelog
+  interruptible: true
+  timeout: 5m
+  tags: [ "saas-linux-small-amd64" ]
+  rules:
+    - *if-merge-request
+  script:
+    - git fetch origin main
+    - |
+      if git diff --name-only HEAD origin/main | grep "CHANGELOG.md"; then
+        echo "CHANGELOG.md has changed"
+      else
+        echo "CHANGELOG.md has not changed"
+        exit 1
+      fi
 
 publish-snapshot:mac:
   stage: publish-snapshot

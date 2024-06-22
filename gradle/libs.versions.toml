@@ -1,14 +1,14 @@
 [versions]
 ### build ###
-kotlin = "1.9.23" # https://github.com/JetBrains/kotlin/releases
-ksp = "1.9.23-1.0.20" # https://github.com/google/ksp/releases
-kotlinWrappers = "1.0.0-pre.736" # https://github.com/JetBrains/kotlin-wrappers/releases
+kotlin = "1.9.24" # https://github.com/JetBrains/kotlin/releases
+ksp = "1.9.24-1.0.20" # https://github.com/google/ksp/releases
+kotlinWrappers = "1.0.0-pre.754" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "1.9.20" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.2.2" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 
 ### kotlinx ###
-kotlinxCoroutines = "1.8.0" # https://github.com/Kotlin/kotlinx.coroutines/releases
+kotlinxCoroutines = "1.8.1" # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinxSerialization = "1.6.3" # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinxDatetime = "0.5.0" # https://github.com/Kotlin/kotlinx-datetime/releases
 
@@ -19,7 +19,7 @@ trixnityOpensslBinaries = "1.0.3" # https://gitlab.com/trixnity/trixnity-openssl
 jna = "5.14.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
-ktor = "2.3.10" # https://github.com/ktorio/ktor/releases
+ktor = "2.3.11" # https://github.com/ktorio/ktor/releases
 koin = "3.5.6" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.9.0" # https://square.github.io/okio/changelog/
 arrow = "1.2.4" # https://github.com/arrow-kt/arrow/releases
@@ -27,12 +27,12 @@ korlibs = "4.0.10" # https://github.com/korlibs/korge/releases
 benasher44Uuid = "0.8.4" # https://github.com/benasher44/uuid/releases
 
 ### databases ###
-exposed = "0.49.0" # https://github.com/JetBrains/Exposed/releases
+exposed = "0.50.1" # https://github.com/JetBrains/Exposed/releases
 hikari = "5.1.0" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.2.224" # https://github.com/h2database/h2database/releases
 postgres = "42.7.3" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.7.1" # https://github.com/JuulLabs/indexeddb/releases
-realm = "1.15.0" # https://github.com/realm/realm-kotlin/tags
+realm = "1.16.0" # https://github.com/realm/realm-kotlin/tags
 androidxRoom = "2.6.1" # https://developer.android.com/jetpack/androidx/releases/room
 
 ### logging ###
@@ -40,12 +40,12 @@ oshaiKotlinLogging = "6.0.9" # https://github.com/oshai/kotlin-logging/releases
 logback = "1.5.6" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
-kotest = "5.8.1" # https://github.com/kotest/kotest/releases
+kotest = "5.9.0" # https://github.com/kotest/kotest/releases
 mocKmp = "1.17.0" # https://github.com/Kodein-Framework/MocKMP/releases
-testContainers = "1.19.7" # https://github.com/testcontainers/testcontainers-java/releases
+testContainers = "1.19.8" # https://github.com/testcontainers/testcontainers-java/releases
 androidxTestRunner = "1.5.2" # https://developer.android.com/jetpack/androidx/releases/test
 androidxTestCore = "1.5.0" # https://developer.android.com/jetpack/androidx/releases/test
-robolectric = "4.12.1" # https://github.com/robolectric/robolectric/releases
+robolectric = "4.12.2" # https://github.com/robolectric/robolectric/releases
 
 ### android ###
 # make sure to update Dockerfile, when you change a version here!
@@ -101,7 +101,6 @@ okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", versio
 arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
 
 korlibs-korim = { module = "com.soywiz.korlibs.korim:korim", version.ref = "korlibs" }
-korlibs-krypto = { module = "com.soywiz.korlibs.krypto:krypto", version.ref = "korlibs" }
 
 benasher44-uuid = { module = "com.benasher44:uuid", version.ref = "benasher44Uuid" }
 

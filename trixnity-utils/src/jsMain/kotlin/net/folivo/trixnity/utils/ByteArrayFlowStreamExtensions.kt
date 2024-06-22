@@ -1,6 +1,5 @@
 package net.folivo.trixnity.utils
 
-import js.promise.await
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.flow
@@ -12,7 +11,7 @@ import web.streams.WritableStream
 fun byteArrayFlowFromReadableStream(streamFactory: suspend () -> ReadableStream<Uint8Array>) = flow {
     val reader = streamFactory().getReader()
     while (true) {
-        when (val readResult = reader.read().await()) {
+        when (val readResult = reader.read()) {
             is ReadableStreamReadValueResult -> {
                 emit(readResult.value.toByteArray())
             }
@@ -27,7 +26,7 @@ fun byteArrayFlowFromReadableStream(streamFactory: suspend () -> ReadableStream<
 suspend fun ByteArrayFlow.writeTo(writableStream: WritableStream<Uint8Array>) {
     val writer = writableStream.getWriter()
     collect {
-        writer.write(it.toUint8Array()).await()
+        writer.write(it.toUint8Array())
     }
     writer.close()
 }

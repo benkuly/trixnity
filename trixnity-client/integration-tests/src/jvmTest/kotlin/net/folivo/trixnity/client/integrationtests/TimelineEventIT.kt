@@ -37,10 +37,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -167,9 +164,9 @@ class TimelineEventIT {
                 val value = text("value")
             }
             newSuspendedTransaction(Dispatchers.IO, database) {
-                val result = exposedTimelineEvent.select {
-                    exposedTimelineEvent.eventId.eq(eventId.full) and exposedTimelineEvent.roomId.eq(room.full)
-                }.firstOrNull()?.get(exposedTimelineEvent.value).shouldNotBeNull()
+                val result = exposedTimelineEvent.selectAll()
+                    .where { exposedTimelineEvent.eventId.eq(eventId.full) and exposedTimelineEvent.roomId.eq(room.full) }
+                    .firstOrNull()?.get(exposedTimelineEvent.value).shouldNotBeNull()
                 "dino".toRegex().findAll(result).count() shouldBe 1
             }
         }

@@ -7,6 +7,6 @@ package net.folivo.trixnity.client.store.repository.room
 //        Room.inMemoryDatabaseBuilder(context, TrixnityRoomDatabase::class.java)
 //            .allowMainThreadQueries()
 //            .build()
-//        createRoomRepositoriesModule(context, uuid4().toString())
+//        createRoomRepositoriesModule(context, Random.nextString(22))
 //    }
 //})

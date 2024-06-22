@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.media.indexeddb
 import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
-import js.promise.await
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -37,7 +36,7 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
         launch {
             content.writeTo(transformStream.writable)
         }
-        val value = Response(BodyInit(transformStream.readable)).blob().await()
+        val value = Response(BodyInit(transformStream.readable)).blob()
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store.put(value, Key(url))

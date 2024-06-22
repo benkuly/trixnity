@@ -2,7 +2,6 @@ package net.folivo.trixnity.crypto.core
 
 import io.ktor.util.*
 import js.objects.jso
-import js.promise.await
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
 import pbkdf2
@@ -25,7 +24,7 @@ actual suspend fun generatePbkdf2Sha512(
             algorithm = jso<Algorithm> { name = "PBKDF2" },
             extractable = false,
             keyUsages = arrayOf(KeyUsage.deriveBits)
-        ).await()
+        )
         Uint8Array(
             crypto.deriveBits(
                 algorithm = jso<Pbkdf2Params> {
@@ -36,7 +35,7 @@ actual suspend fun generatePbkdf2Sha512(
                 },
                 baseKey = key,
                 length = keyBitLength,
-            ).await()
+            )
         ).toByteArray()
     } else {
         suspendCoroutine { continuation ->
