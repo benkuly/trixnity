@@ -26,6 +26,7 @@ include(
     "trixnity-client:integration-tests",
     "trixnity-client:trixnity-client-media-indexeddb",
     "trixnity-client:trixnity-client-media-okio",
+    "trixnity-client:trixnity-client-media-opfs",
     "trixnity-client:client-repository-test",
     "trixnity-client:trixnity-client-repository-exposed",
     "trixnity-client:trixnity-client-repository-indexeddb",
@@ -58,5 +59,5 @@ dependencyResolutionManagement {
 }
 
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.8.0") // https://github.com/gradle/foojay-toolchains/tags
+    id("org.gradle.toolchains.foojay-resolver-convention") version ("0.8.0") // https://github.com/gradle/foojay-toolchains/tags
 }

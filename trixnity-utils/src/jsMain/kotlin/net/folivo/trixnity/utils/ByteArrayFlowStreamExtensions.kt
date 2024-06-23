@@ -21,6 +21,7 @@ fun byteArrayFlowFromReadableStream(streamFactory: suspend () -> ReadableStream<
             }
         }
     }
+    reader.cancel()
 }
 
 suspend fun ByteArrayFlow.writeTo(writableStream: WritableStream<Uint8Array>) {
@@ -28,6 +29,7 @@ suspend fun ByteArrayFlow.writeTo(writableStream: WritableStream<Uint8Array>) {
     collect {
         writer.write(it.toUint8Array())
     }
+    writer.close()
 }
 
 suspend fun WritableStream<Uint8Array>.write(content: ByteArrayFlow) = content.writeTo(this)
