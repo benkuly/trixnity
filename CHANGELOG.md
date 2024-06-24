@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- added `trixnity-client-media-opfs`, which implements a store with Origin private file system.
+
 ### Changed
 
 ### Deprecated
