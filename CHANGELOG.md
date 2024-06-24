@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Streaming support of Media in Kotlin Browser target. This means, that for AES-CTR-256 and SHA-256 media is not loaded
   completely into memory anymore and instead processed sequentially.
+- added `trixnity-client-media-opfs`, which implements a store with Origin private file system.
 
 ### Changed
 
