@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - fix download on missing file
+- never remove own keys from key tracking, when server says to
 
 ### Security
 
