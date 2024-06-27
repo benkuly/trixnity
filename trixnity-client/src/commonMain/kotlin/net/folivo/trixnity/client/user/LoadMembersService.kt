@@ -16,7 +16,6 @@ import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.room.Membership
 
 private val log = KotlinLogging.logger {}
 
@@ -42,10 +41,7 @@ class LoadMembersServiceImpl(
                     val room = roomStore.get(roomId).first()
                     if (room?.membersLoaded != true) {
                         log.debug { "load members of room $roomId" }
-                        val memberEvents = api.room.getMembers(
-                            roomId = roomId,
-                            notMembership = Membership.LEAVE
-                        ).getOrThrow()
+                        val memberEvents = api.room.getMembers(roomId = roomId).getOrThrow()
                         memberEvents.chunked(50).forEach { chunk ->
                             lazyMemberEventHandlers.forEach {
                                 it.handleLazyMemberEvents(chunk)
