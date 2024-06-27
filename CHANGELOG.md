@@ -31,17 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - don't filter in load members
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - fix download on missing file
 - never remove own keys from key tracking, when server says to
 - fix typo in encrypted file content
-
-### Security
 
 ## 4.3.12
 
