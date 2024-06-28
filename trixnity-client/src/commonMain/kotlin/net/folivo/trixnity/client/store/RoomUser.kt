@@ -12,5 +12,6 @@ data class RoomUser(
     val roomId: RoomId,
     val userId: UserId,
     val name: String,
+    // TODO replace with MemberEventContent only (needs custom serializer for backwards compatibility)
     val event: @Contextual StateBaseEvent<MemberEventContent>,
 )
