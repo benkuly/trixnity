@@ -73,8 +73,8 @@ class OutdatedKeysHandler(
             val trackOwnKey = deviceList?.changed?.contains(userInfo.userId) == true
             if (syncState != SyncState.INITIAL_SYNC) {
                 val startTrackingKeys = deviceList?.changed?.filter { keyStore.isTracked(it) }?.toSet().orEmpty()
-                    .let { if (trackOwnKey) it + userInfo.userId else it }
-                val stopTrackingKeys = deviceList?.left.orEmpty()
+                    .let { if (trackOwnKey) it + userInfo.userId else it } // always track own key
+                val stopTrackingKeys = deviceList?.left.orEmpty() - userInfo.userId // always track own key
 
                 trackKeys(
                     start = startTrackingKeys,

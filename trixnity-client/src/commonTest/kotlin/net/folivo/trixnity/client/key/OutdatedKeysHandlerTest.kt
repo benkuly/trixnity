@@ -156,6 +156,15 @@ private val body: ShouldSpec.() -> Unit = {
             )
             keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(UserId("us", "server"))
         }
+        should("never remove own keys") {
+            keyStore.updateDeviceKeys(UserId("us", "server")) { mapOf() }
+            cut.handleDeviceLists(
+                Sync.Response.DeviceLists(left = setOf(UserId("us", "server"), bob)),
+                SyncState.RUNNING
+            )
+
+            keyStore.getDeviceKeys(UserId("us", "server")).first() shouldBe mapOf()
+        }
     }
     context(OutdatedKeysHandler::updateDeviceKeysFromChangedMembership.name) {
         val room = RoomId("room", "server")

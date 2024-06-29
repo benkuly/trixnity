@@ -2,7 +2,6 @@ package net.folivo.trixnity.crypto.core
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
-import io.ktor.util.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -21,12 +20,30 @@ class AesCtrTest {
 
     @Test
     fun shouldEncrypt() = runTest {
-        val expectedResult = if (PlatformUtils.IS_BROWSER) listOf("14e2d5701d") else listOf("14e2", "d5701d")
+        val expectedResult = listOf("14e2", "d5701d")
         val result =
             flowOf("he".encodeToByteArray(), "llo".encodeToByteArray(), ByteArray(0)).encryptAes256Ctr(
                 key,
                 initialisationVector
             )
+        result.map { it.toHexString() }.toList() shouldBe expectedResult
+    }
+
+    @Test
+    fun shouldEncryptMultipleAesBlocks() = runTest {
+        val expectedResult = listOf(
+            "14e2",
+            "d5701d",
+            "7410fb20b43d90ff9d2c1666f6f714f0c15e8ecd10ea20f121550e397af52a02" +
+                    "051d39637c49e82d57fb467fe7a3968a07e8650032271ae6b11466678a558174" +
+                    "dab86357732c3c4715897e402fada1299460ce0766603824228e2ebd5b583659" +
+                    "07a820246067ce4a84ad47b9ad30fc98073948a7d1a821b40479c4aa32a40e81"
+        )
+        val result =
+            flowOf(
+                "he".encodeToByteArray(), "llo".encodeToByteArray(),
+                buildString { repeat(32) { append("dino") } }.encodeToByteArray() // 128 bit (block size)
+            ).encryptAes256Ctr(key, initialisationVector)
         result.map { it.toHexString() }.toList() shouldBe expectedResult
     }
 
@@ -38,7 +55,22 @@ class AesCtrTest {
 
     @Test
     fun shouldDecrypt() = runTest {
-        val expectedResult = if (PlatformUtils.IS_BROWSER) listOf("hello") else listOf("he", "llo")
+        val expectedResult = listOf("he", "llo") + buildString { repeat(32) { append("dino") } }
+        flowOf(
+            "14e2".hexToByteArray(),
+            "d5701d".hexToByteArray(),
+            ("7410fb20b43d90ff9d2c1666f6f714f0c15e8ecd10ea20f121550e397af52a02" +
+                    "051d39637c49e82d57fb467fe7a3968a07e8650032271ae6b11466678a558174" +
+                    "dab86357732c3c4715897e402fada1299460ce0766603824228e2ebd5b583659" +
+                    "07a820246067ce4a84ad47b9ad30fc98073948a7d1a821b40479c4aa32a40e81").hexToByteArray()
+        )
+            .decryptAes256Ctr(key, initialisationVector)
+            .map { it.decodeToString() }.toList() shouldBe expectedResult
+    }
+
+    @Test
+    fun shouldDecryptMultipleAesBlocks() = runTest {
+        val expectedResult = listOf("he", "llo")
         flowOf("14e2".hexToByteArray(), "d5701d".hexToByteArray(), ByteArray(0))
             .decryptAes256Ctr(key, initialisationVector)
             .map { it.decodeToString() }.toList() shouldBe expectedResult

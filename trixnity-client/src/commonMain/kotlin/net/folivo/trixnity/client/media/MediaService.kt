@@ -124,7 +124,7 @@ class MediaServiceImpl(
 
             uri.startsWith(UPLOAD_MEDIA_CACHE_URI_PREFIX) -> mediaStore.getMedia(uri)
                 ?: mediaCacheMappingStore.getMediaCacheMapping(uri)?.mxcUri
-                    ?.let { mediaStore.getMedia(it) }
+                    ?.let { getMedia(it, saveToCache, sha256Hash, progress).getOrThrow() }
                 ?: throw IllegalArgumentException("cache uri $uri does not exists")
 
             else -> throw IllegalArgumentException("uri $uri is no valid cache or mxc uri")

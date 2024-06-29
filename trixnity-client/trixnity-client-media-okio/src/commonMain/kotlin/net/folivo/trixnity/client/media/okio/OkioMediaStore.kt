@@ -1,12 +1,9 @@
 package net.folivo.trixnity.client.media.okio
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.utils.ByteArrayFlow
+import net.folivo.trixnity.utils.KeyedMutex
 import net.folivo.trixnity.utils.readByteArrayFlow
 import net.folivo.trixnity.utils.write
 import okio.ByteString.Companion.toByteString
@@ -22,22 +19,8 @@ class OkioMediaStore(
 
     private val downloadsPath = basePath.resolve("downloads")
 
-    private val basePathLock = MutableStateFlow(setOf<String>())
-    private val downloadsLock = MutableStateFlow(setOf<String>())
-
-    private suspend fun <T> MutableStateFlow<Set<String>>.withLock(vararg keys: String, block: suspend () -> T): T {
-        while (true) {
-            val hasLock =
-                getAndUpdate { it + keys }.let { lockedKeys -> keys.none { lockedKeys.contains(it) } }
-            if (hasLock) break
-            else first { lockedKeys -> keys.none { lockedKeys.contains(it) } }
-        }
-        return try {
-            block()
-        } finally {
-            update { it - keys.toSet() }
-        }
-    }
+    private val basePathLock = KeyedMutex<String>()
+    private val downloadsLock = KeyedMutex<String>()
 
     override suspend fun init() = withContext(coroutineContext) {
         if (fileSystem.exists(basePath).not()) {
@@ -83,8 +66,10 @@ class OkioMediaStore(
     }
 
     override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = withContext(coroutineContext) {
-        basePathLock.withLock(oldUrl, newUrl) {
-            fileSystem.atomicMove(basePath.resolveUrl(oldUrl), basePath.resolveUrl(newUrl))
+        basePathLock.withLock(oldUrl) {
+            basePathLock.withLock(newUrl) {
+                fileSystem.atomicMove(basePath.resolveUrl(oldUrl), basePath.resolveUrl(newUrl))
+            }
         }
     }
 }
