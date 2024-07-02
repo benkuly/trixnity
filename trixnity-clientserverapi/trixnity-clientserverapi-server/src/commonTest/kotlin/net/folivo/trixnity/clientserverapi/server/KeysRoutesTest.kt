@@ -1,5 +1,8 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -20,19 +23,15 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class KeysRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class KeysRoutesTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
     private val alice = UserId("alice", "example.com")
 
-    @Mock
-    lateinit var handlerMock: KeysApiHandler
+    val handlerMock = mock<KeysApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -45,10 +44,16 @@ class KeysRoutesTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldSetDeviceKeys() = testApplication {
         initCut()
-        everySuspending { handlerMock.setKeys(isAny()) }
+        everySuspend { handlerMock.setKeys(any()) }
             .returns(SetKeys.Response((mapOf(KeyAlgorithm.Curve25519 to 10, KeyAlgorithm.SignedCurve25519 to 20))))
         val response = client.post("/_matrix/client/v3/keys/upload") {
             bearerAuth("token")
@@ -119,7 +124,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setKeys(assert {
                 it.requestBody shouldBe SetKeys.Request(
                     deviceKeys = Signed(
@@ -188,7 +193,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetKeys() = testApplication {
         initCut()
-        everySuspending { handlerMock.getKeys(isAny()) }
+        everySuspend { handlerMock.getKeys(any()) }
             .returns(
                 GetKeys.Response(
                     failures = null,
@@ -357,7 +362,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getKeys(assert {
                 it.requestBody shouldBe GetKeys.Request(
                     timeout = 10_000,
@@ -370,7 +375,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldClaimKeys() = testApplication {
         initCut()
-        everySuspending { handlerMock.claimKeys(isAny()) }
+        everySuspend { handlerMock.claimKeys(any()) }
             .returns(
                 ClaimKeys.Response(
                     failures = mapOf(),
@@ -433,7 +438,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.claimKeys(assert {
                 it.requestBody shouldBe ClaimKeys.Request(
                     timeout = 10_000,
@@ -446,7 +451,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetKeyChanges() = testApplication {
         initCut()
-        everySuspending { handlerMock.getKeyChanges(isAny()) }
+        everySuspend { handlerMock.getKeyChanges(any()) }
             .returns(
                 GetKeyChanges.Response(
                     changed = setOf(UserId("@alice:example.com"), UserId("@bob:example.org")),
@@ -472,7 +477,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getKeyChanges(assert {
                 it.endpoint.from shouldBe "s72594_4483_1934"
                 it.endpoint.to shouldBe "s75689_5632_2435"
@@ -483,7 +488,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetCrossSigningKeys() = testApplication {
         initCut()
-        everySuspending { handlerMock.setCrossSigningKeys(isAny()) }
+        everySuspend { handlerMock.setCrossSigningKeys(any()) }
             .returns(ResponseWithUIA.Success(Unit))
         val response = client.post("/_matrix/client/v3/keys/device_signing/upload") {
             bearerAuth("token")
@@ -538,7 +543,7 @@ class KeysRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setCrossSigningKeys(assert {
                 it.requestBody shouldBe RequestWithUIA(
                     SetCrossSigningKeys.Request(
@@ -589,7 +594,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldAddSignatures() = testApplication {
         initCut()
-        everySuspending { handlerMock.addSignatures(isAny()) }
+        everySuspend { handlerMock.addSignatures(any()) }
             .returns(
                 AddSignatures.Response(
                     mapOf(
@@ -675,7 +680,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.addSignatures(assert {
                 it.requestBody shouldBe mapOf(
                     UserId("@alice:example.com") to JsonObject(
@@ -761,7 +766,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetRoomsKeyBackup() = testApplication {
         initCut()
-        everySuspending { handlerMock.getRoomsKeyBackup(isAny()) }
+        everySuspend { handlerMock.getRoomsKeyBackup(any()) }
             .returns(
                 RoomsKeyBackup(
                     mapOf(
@@ -807,7 +812,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getRoomsKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
             })
@@ -817,7 +822,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetRoomKeyBackup() = testApplication {
         initCut()
-        everySuspending { handlerMock.getRoomKeyBackup(isAny()) }
+        everySuspend { handlerMock.getRoomKeyBackup(any()) }
             .returns(
                 RoomKeyBackup(
                     mapOf(
@@ -856,7 +861,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getRoomKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
@@ -867,7 +872,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetRoomKeyBackupData() = testApplication {
         initCut()
-        everySuspending { handlerMock.getRoomKeyBackupData(isAny()) }
+        everySuspend { handlerMock.getRoomKeyBackupData(any()) }
             .returns(
                 RoomKeyBackupData(
                     firstMessageIndex = 1,
@@ -900,7 +905,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getRoomKeyBackupData(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
@@ -912,7 +917,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetRoomsKeyBackup() = testApplication {
         initCut()
-        everySuspending { handlerMock.setRoomsKeyBackup(isAny()) }
+        everySuspend { handlerMock.setRoomsKeyBackup(any()) }
             .returns(SetRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response = client.put("/_matrix/client/v3/room_keys/keys?version=1") {
             bearerAuth("token")
@@ -950,7 +955,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setRoomsKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
                 it.requestBody shouldBe RoomsKeyBackup(
@@ -978,7 +983,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetRoomKeyBackup() = testApplication {
         initCut()
-        everySuspending { handlerMock.setRoomKeyBackup(isAny()) }
+        everySuspend { handlerMock.setRoomKeyBackup(any()) }
             .returns(SetRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response = client.put("/_matrix/client/v3/room_keys/keys/!room:example.org?version=1") {
             bearerAuth("token")
@@ -1012,7 +1017,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setRoomKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
@@ -1037,7 +1042,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetRoomKeyBackupData() = testApplication {
         initCut()
-        everySuspending { handlerMock.setRoomKeyBackupData(isAny()) }
+        everySuspend { handlerMock.setRoomKeyBackupData(any()) }
             .returns(SetRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response =
             client.put("/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1") {
@@ -1068,7 +1073,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setRoomKeyBackupData(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
@@ -1090,7 +1095,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDeleteRoomsKeyBackup() = testApplication {
         initCut()
-        everySuspending { handlerMock.deleteRoomsKeyBackup(isAny()) }
+        everySuspend { handlerMock.deleteRoomsKeyBackup(any()) }
             .returns(DeleteRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response = client.delete("/_matrix/client/v3/room_keys/keys?version=1") {
             bearerAuth("token")
@@ -1105,7 +1110,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.deleteRoomsKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
             })
@@ -1115,7 +1120,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDeleteRoomKeyBackup() = testApplication {
         initCut()
-        everySuspending { handlerMock.deleteRoomKeyBackup(isAny()) }
+        everySuspend { handlerMock.deleteRoomKeyBackup(any()) }
             .returns(DeleteRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response = client.delete("/_matrix/client/v3/room_keys/keys/!room:example.org?version=1") {
             bearerAuth("token")
@@ -1130,7 +1135,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.deleteRoomKeyBackup(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
@@ -1141,7 +1146,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDeleteRoomKeyBackupData() = testApplication {
         initCut()
-        everySuspending { handlerMock.deleteRoomKeyBackupData(isAny()) }
+        everySuspend { handlerMock.deleteRoomKeyBackupData(any()) }
             .returns(DeleteRoomKeysResponse(count = 10, etag = "abcdefg"))
         val response =
             client.delete("/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1") {
@@ -1157,7 +1162,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.deleteRoomKeyBackupData(assert {
                 it.endpoint.version shouldBe "1"
                 it.endpoint.roomId shouldBe RoomId("!room:example.org")
@@ -1169,7 +1174,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetRoomKeyBackupVersion() = testApplication {
         initCut()
-        everySuspending { handlerMock.getRoomKeyBackupVersion(isAny()) }
+        everySuspend { handlerMock.getRoomKeyBackupVersion(any()) }
             .returns(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
@@ -1206,15 +1211,15 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getRoomKeyBackupVersion(isAny())
+        verifySuspend {
+            handlerMock.getRoomKeyBackupVersion(any())
         }
     }
 
     @Test
     fun shouldGetRoomKeyBackupVersionByVersion() = testApplication {
         initCut()
-        everySuspending { handlerMock.getRoomKeyBackupVersionByVersion(isAny()) }
+        everySuspend { handlerMock.getRoomKeyBackupVersionByVersion(any()) }
             .returns(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
@@ -1251,7 +1256,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getRoomKeyBackupVersionByVersion(assert {
                 it.endpoint.version shouldBe "1"
             })
@@ -1261,7 +1266,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetRoomKeyBackupVersion() = testApplication {
         initCut()
-        everySuspending { handlerMock.setRoomKeyBackupVersion(isAny()) }
+        everySuspend { handlerMock.setRoomKeyBackupVersion(any()) }
             .returns(SetRoomKeyBackupVersion.Response("1"))
         val response = client.post("/_matrix/client/v3/room_keys/version") {
             bearerAuth("token")
@@ -1291,7 +1296,7 @@ class KeysRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setRoomKeyBackupVersion(assert {
                 it.requestBody shouldBe SetRoomKeyBackupVersionRequest.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
@@ -1308,7 +1313,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetRoomKeyBackupVersionByVersion() = testApplication {
         initCut()
-        everySuspending { handlerMock.setRoomKeyBackupVersionByVersion(isAny()) }
+        everySuspend { handlerMock.setRoomKeyBackupVersionByVersion(any()) }
             .returns(Unit)
         val response = client.put("/_matrix/client/v3/room_keys/version/1") {
             bearerAuth("token")
@@ -1334,7 +1339,7 @@ class KeysRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setRoomKeyBackupVersionByVersion(assert {
                 it.endpoint.version shouldBe "1"
                 it.requestBody shouldBe SetRoomKeyBackupVersionRequest.V1(
@@ -1352,7 +1357,7 @@ class KeysRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDeleteRoomKeyBackupVersionByVersion() = testApplication {
         initCut()
-        everySuspending { handlerMock.deleteRoomKeyBackupVersion(isAny()) }
+        everySuspend { handlerMock.deleteRoomKeyBackupVersion(any()) }
             .returns(Unit)
         val response = client.delete("/_matrix/client/v3/room_keys/version/1") {
             bearerAuth("token")
@@ -1362,7 +1367,7 @@ class KeysRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.deleteRoomKeyBackupVersion(assert {
                 it.endpoint.version shouldBe "1"
             })

@@ -1,11 +1,12 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
-import io.ktor.client.plugins.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.testing.*
@@ -19,18 +20,14 @@ import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class AuthenticationRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class AuthenticationRoutesTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: AuthenticationApiHandler
+    val handlerMock = mock<AuthenticationApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -43,10 +40,16 @@ class AuthenticationRoutesTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldGetWhoami() = testApplication {
         initCut()
-        everySuspending { handlerMock.whoAmI(isAny()) }
+        everySuspend { handlerMock.whoAmI(any()) }
             .returns(WhoAmI.Response(UserId("user", "server"), "ABCDEF", false))
         val response = client.get("/_matrix/client/v3/account/whoami") { bearerAuth("token") }
         assertSoftly(response) {
@@ -54,15 +57,15 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"user_id":"@user:server","device_id":"ABCDEF","is_guest":false}"""
         }
-        verifyWithSuspend {
-            handlerMock.whoAmI(isAny())
+        verifySuspend {
+            handlerMock.whoAmI(any())
         }
     }
 
     @Test
     fun shouldIsRegistrationTokenValid() = testApplication {
         initCut()
-        everySuspending { handlerMock.isRegistrationTokenValid(isAny()) }
+        everySuspend { handlerMock.isRegistrationTokenValid(any()) }
             .returns(IsRegistrationTokenValid.Response(true))
         val response = client.get("/_matrix/client/v1/register/m.login.registration_token/validity?token=token")
         assertSoftly(response) {
@@ -75,7 +78,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                 """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.isRegistrationTokenValid(assert { it.endpoint.token shouldBe "token" })
         }
     }
@@ -83,7 +86,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldIsUsernameAvailable() = testApplication {
         initCut()
-        everySuspending { handlerMock.isUsernameAvailable(isAny()) }
+        everySuspend { handlerMock.isUsernameAvailable(any()) }
             .returns(Unit)
         val response = client.get("/_matrix/client/v3/register/available?username=user")
         assertSoftly(response) {
@@ -92,7 +95,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe "{}"
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.isUsernameAvailable(assert { it.endpoint.username shouldBe "user" })
         }
     }
@@ -100,7 +103,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetEmailRequestTokenForPassword() = testApplication {
         initCut()
-        everySuspending { handlerMock.getEmailRequestTokenForPassword(isAny()) }
+        everySuspend { handlerMock.getEmailRequestTokenForPassword(any()) }
             .returns(
                 GetEmailRequestTokenForPassword.Response(
                     sessionId = "123abc",
@@ -132,7 +135,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getEmailRequestTokenForPassword(assert {
                 it.requestBody shouldBe GetEmailRequestTokenForPassword.Request(
                     clientSecret = "monkeys_are_GREAT",
@@ -148,7 +151,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetEmailRequestTokenForRegistration() = testApplication {
         initCut()
-        everySuspending { handlerMock.getEmailRequestTokenForRegistration(isAny()) }
+        everySuspend { handlerMock.getEmailRequestTokenForRegistration(any()) }
             .returns(
                 GetEmailRequestTokenForRegistration.Response(
                     sessionId = "123abc",
@@ -180,7 +183,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getEmailRequestTokenForRegistration(assert {
                 it.requestBody shouldBe GetEmailRequestTokenForRegistration.Request(
                     clientSecret = "monkeys_are_GREAT",
@@ -196,7 +199,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetMsisdnRequestTokenForPassword() = testApplication {
         initCut()
-        everySuspending { handlerMock.getMsisdnRequestTokenForPassword(isAny()) }
+        everySuspend { handlerMock.getMsisdnRequestTokenForPassword(any()) }
             .returns(
                 GetMsisdnRequestTokenForPassword.Response(
                     sessionId = "123abc",
@@ -229,7 +232,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getMsisdnRequestTokenForPassword(assert {
                 it.requestBody shouldBe GetMsisdnRequestTokenForPassword.Request(
                     clientSecret = "monkeys_are_GREAT",
@@ -246,7 +249,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetMsisdnRequestTokenForRegistration() = testApplication {
         initCut()
-        everySuspending { handlerMock.getMsisdnRequestTokenForRegistration(isAny()) }
+        everySuspend { handlerMock.getMsisdnRequestTokenForRegistration(any()) }
             .returns(
                 GetMsisdnRequestTokenForRegistration.Response(
                     sessionId = "123abc",
@@ -279,7 +282,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getMsisdnRequestTokenForRegistration(assert {
                 it.requestBody shouldBe GetMsisdnRequestTokenForRegistration.Request(
                     clientSecret = "monkeys_are_GREAT",
@@ -296,7 +299,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldRegister() = testApplication {
         initCut()
-        everySuspending { handlerMock.register(isAny()) }
+        everySuspend { handlerMock.register(any()) }
             .returns(ResponseWithUIA.Success(Register.Response(UserId("user", "server"))))
         val response = client.post("/_matrix/client/v3/register?kind=user") {
             contentType(ContentType.Application.Json)
@@ -318,7 +321,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """{"user_id":"@user:server"}"""
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.register(assert {
                 it.endpoint.kind shouldBe AccountType.USER
                 it.requestBody.request shouldBe Register.Request(
@@ -335,7 +338,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSSORedirect() = testApplication {
         initCut()
-        everySuspending { handlerMock.ssoRedirect(isAny()) }
+        everySuspend { handlerMock.ssoRedirect(any()) }
             .returns("https://somewhere.redirect/sso")
         val response = client
             .config { followRedirects = false }
@@ -345,7 +348,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.ssoRedirect(assert {
                 it.endpoint.redirectUrl shouldBe "trixnity://sso"
             })
@@ -355,7 +358,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSSORedirectTo() = testApplication {
         initCut()
-        everySuspending { handlerMock.ssoRedirectTo(isAny()) }
+        everySuspend { handlerMock.ssoRedirectTo(any()) }
             .returns("https://somewhere.redirect/sso")
         val response = client
             .config { followRedirects = false }
@@ -365,7 +368,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.ssoRedirectTo(assert {
                 it.endpoint.redirectUrl shouldBe "trixnity://sso"
                 it.endpoint.idpId shouldBe "someId"
@@ -376,7 +379,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetLoginTypes() = testApplication {
         initCut()
-        everySuspending { handlerMock.getLoginTypes(isAny()) }
+        everySuspend { handlerMock.getLoginTypes(any()) }
             .returns(
                 GetLoginTypes.Response(
                     setOf(
@@ -419,15 +422,15 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                 }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getLoginTypes(isAny())
+        verifySuspend {
+            handlerMock.getLoginTypes(any())
         }
     }
 
     @Test
     fun shouldLogin() = testApplication {
         initCut()
-        everySuspending { handlerMock.login(isAny()) }
+        everySuspend { handlerMock.login(any()) }
             .returns(
                 Login.Response(
                     userId = UserId("@cheeky_monkey:matrix.org"),
@@ -475,7 +478,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                 """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.login(assert {
                 it.requestBody shouldBe Login.Request(
                     type = LoginType.Password.name,
@@ -490,7 +493,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldLogout() = testApplication {
         initCut()
-        everySuspending { handlerMock.logout(isAny()) }
+        everySuspend { handlerMock.logout(any()) }
             .returns(Unit)
         val response = client.post("/_matrix/client/v3/logout") { bearerAuth("token") }
         assertSoftly(response) {
@@ -499,15 +502,15 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe "{}"
         }
 
-        verifyWithSuspend {
-            handlerMock.logout(isAny())
+        verifySuspend {
+            handlerMock.logout(any())
         }
     }
 
     @Test
     fun shouldLogoutAll() = testApplication {
         initCut()
-        everySuspending { handlerMock.logoutAll(isAny()) }
+        everySuspend { handlerMock.logoutAll(any()) }
             .returns(Unit)
         val response = client.post("/_matrix/client/v3/logout/all") { bearerAuth("token") }
         assertSoftly(response) {
@@ -516,15 +519,15 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe "{}"
         }
 
-        verifyWithSuspend {
-            handlerMock.logoutAll(isAny())
+        verifySuspend {
+            handlerMock.logoutAll(any())
         }
     }
 
     @Test
     fun shouldDeactivateAccount() = testApplication {
         initCut()
-        everySuspending { handlerMock.deactivateAccount(isAny()) }
+        everySuspend { handlerMock.deactivateAccount(any()) }
             .returns(ResponseWithUIA.Success(DeactivateAccount.Response(IdServerUnbindResult.SUCCESS)))
         val response = client.post("/_matrix/client/v3/account/deactivate") {
             bearerAuth("token")
@@ -537,7 +540,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.deactivateAccount(assert {
                 it.requestBody shouldBe RequestWithUIA(DeactivateAccount.Request("id.host"), null)
             })
@@ -547,7 +550,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldChangePassword() = testApplication {
         initCut()
-        everySuspending { handlerMock.changePassword(isAny()) }
+        everySuspend { handlerMock.changePassword(any()) }
             .returns(ResponseWithUIA.Success(Unit))
         val response = client.post("/_matrix/client/v3/account/password") {
             bearerAuth("token")
@@ -560,7 +563,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """{}"""
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.changePassword(assert {
                 it.requestBody shouldBe RequestWithUIA(ChangePassword.Request("newPassword", false), null)
             })
@@ -570,7 +573,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetThirdPartyIdentifiers() = testApplication {
         initCut()
-        everySuspending { handlerMock.getThirdPartyIdentifiers(isAny()) }
+        everySuspend { handlerMock.getThirdPartyIdentifiers(any()) }
             .returns(
                 GetThirdPartyIdentifiers.Response(
                     setOf(
@@ -601,15 +604,15 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
-            handlerMock.getThirdPartyIdentifiers(isAny())
+        verifySuspend {
+            handlerMock.getThirdPartyIdentifiers(any())
         }
     }
 
     @Test
     fun shouldAddThirdPartyIdentifiers() = testApplication {
         initCut()
-        everySuspending { handlerMock.addThirdPartyIdentifiers(isAny()) }
+        everySuspend { handlerMock.addThirdPartyIdentifiers(any()) }
             .returns(ResponseWithUIA.Success(Unit))
         val response = client.post("/_matrix/client/v3/account/3pid/add") {
             bearerAuth("token")
@@ -629,7 +632,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe "{}"
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.addThirdPartyIdentifiers(assert {
                 it.requestBody.request shouldBe AddThirdPartyIdentifiers.Request("d0nt-T3ll", "abc123987")
             })
@@ -639,7 +642,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldBindThirdPartyIdentifiers() = testApplication {
         initCut()
-        everySuspending { handlerMock.bindThirdPartyIdentifiers(isAny()) }
+        everySuspend { handlerMock.bindThirdPartyIdentifiers(any()) }
             .returns(Unit)
         val response = client.post("/_matrix/client/v3/account/3pid/bind") {
             bearerAuth("token")
@@ -661,7 +664,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe "{}"
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.bindThirdPartyIdentifiers(assert {
                 it.requestBody shouldBe BindThirdPartyIdentifiers.Request(
                     clientSecret = "d0nt-T3ll",
@@ -676,7 +679,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDeleteThirdPartyIdentifiers() = testApplication {
         initCut()
-        everySuspending { handlerMock.deleteThirdPartyIdentifiers(isAny()) }
+        everySuspend { handlerMock.deleteThirdPartyIdentifiers(any()) }
             .returns(DeleteThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS))
         val response = client.post("/_matrix/client/v3/account/3pid/delete") {
             bearerAuth("token")
@@ -697,7 +700,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.deleteThirdPartyIdentifiers(assert {
                 it.requestBody shouldBe DeleteThirdPartyIdentifiers.Request(
                     address = "example@example.org",
@@ -711,7 +714,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldUnbindThirdPartyIdentifiers() = testApplication {
         initCut()
-        everySuspending { handlerMock.unbindThirdPartyIdentifiers(isAny()) }
+        everySuspend { handlerMock.unbindThirdPartyIdentifiers(any()) }
             .returns(UnbindThirdPartyIdentifiers.Response(IdServerUnbindResult.SUCCESS))
         val response = client.post("/_matrix/client/v3/account/3pid/unbind") {
             bearerAuth("token")
@@ -732,7 +735,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.unbindThirdPartyIdentifiers(assert {
                 it.requestBody shouldBe UnbindThirdPartyIdentifiers.Request(
                     address = "example@example.org",
@@ -746,7 +749,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetOIDCRequestToken() = testApplication {
         initCut()
-        everySuspending { handlerMock.getOIDCRequestToken(isAny()) }
+        everySuspend { handlerMock.getOIDCRequestToken(any()) }
             .returns(
                 GetOIDCRequestToken.Response(
                     accessToken = "SomeT0kenHere",
@@ -769,7 +772,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getOIDCRequestToken(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
             })
@@ -779,7 +782,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldRefresh() = testApplication {
         initCut()
-        everySuspending { handlerMock.refresh(isAny()) }
+        everySuspend { handlerMock.refresh(any()) }
             .returns(
                 Refresh.Response(
                     accessToken = "a_new_token",
@@ -809,7 +812,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
                 """.trimToFlatJson()
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.refresh(assert {
                 it.requestBody shouldBe Refresh.Request(
                     refreshToken = "some_token"
@@ -821,7 +824,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetToken() = testApplication {
         initCut()
-        everySuspending { handlerMock.getToken(isAny()) }
+        everySuspend { handlerMock.getToken(any()) }
             .returns(
                 ResponseWithUIA.Success(
                     GetToken.Response(
@@ -841,7 +844,7 @@ class AuthenticationRoutesTest : TestsWithMocks() {
             this.body<String>() shouldBe """{"login_token":"<opaque string>","expires_in_ms":120000}"""
         }
 
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getToken(assert {
                 it.requestBody shouldBe RequestWithUIA(Unit, null)
             })

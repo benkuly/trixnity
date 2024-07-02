@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.mokkery)
 }
 
 kotlin {
@@ -29,9 +29,6 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
 
-                implementation(libs.mocKmp.runtime)
-                implementation(libs.mocKmp.testHelper)
-
                 implementation(libs.ktor.server.testHost)
                 implementation(libs.ktor.server.contentNegotiation)
                 implementation(libs.ktor.serialization.kotlinx.json)
@@ -46,12 +43,4 @@ kotlin {
             }
         }
     }
-}
-
-dependencies {
-    configurations
-        .filter { it.name.startsWith("ksp") && it.name.contains("Test") }
-        .forEach {
-            add(it.name, libs.mocKmp.processor)
-        }
 }

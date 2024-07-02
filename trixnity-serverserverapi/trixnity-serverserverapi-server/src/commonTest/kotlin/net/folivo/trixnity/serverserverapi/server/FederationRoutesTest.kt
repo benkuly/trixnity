@@ -1,5 +1,8 @@
 package net.folivo.trixnity.serverserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -34,18 +37,14 @@ import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
 import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class FederationRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class FederationRoutesTest {
     private val json = createMatrixEventAndDataUnitJson({ "3" })
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: FederationApiHandler
+    val handlerMock = mock<FederationApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -56,6 +55,12 @@ class FederationRoutesTest : TestsWithMocks() {
                 federationApiRoutes(handlerMock, json, mapping)
             }
         }
+    }
+
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
     }
 
     private val pdu: SignedPersistentDataUnit<*> = Signed(
@@ -110,7 +115,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSendTransaction() = testApplication {
         initCut()
-        everySuspending { handlerMock.sendTransaction(isAny()) }
+        everySuspend { handlerMock.sendTransaction(any()) }
             .returns(
                 SendTransaction.Response(
                     mapOf(
@@ -161,7 +166,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.sendTransaction(assert {
                 it.endpoint.txnId shouldBe "someTransactionId"
                 it.requestBody shouldBe SendTransaction.Request(
@@ -189,7 +194,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetEventAuthChain() = testApplication {
         initCut()
-        everySuspending { handlerMock.getEventAuthChain(isAny()) }
+        everySuspend { handlerMock.getEventAuthChain(any()) }
             .returns(
                 GetEventAuthChain.Response(
                     listOf(pdu)
@@ -207,7 +212,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getEventAuthChain(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
@@ -218,7 +223,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldBackfillRoom() = testApplication {
         initCut()
-        everySuspending { handlerMock.backfillRoom(isAny()) }
+        everySuspend { handlerMock.backfillRoom(any()) }
             .returns(
                 PduTransaction(
                     origin = "matrix.org",
@@ -240,7 +245,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.backfillRoom(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.startFrom shouldBe listOf(EventId("$1event"))
@@ -252,7 +257,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetMissingEvents() = testApplication {
         initCut()
-        everySuspending { handlerMock.getMissingEvents(isAny()) }
+        everySuspend { handlerMock.getMissingEvents(any()) }
             .returns(
                 PduTransaction(
                     origin = "matrix.org",
@@ -289,7 +294,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getMissingEvents(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe GetMissingEvents.Request(
@@ -305,7 +310,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetEvent() = testApplication {
         initCut()
-        everySuspending { handlerMock.getEvent(isAny()) }
+        everySuspend { handlerMock.getEvent(any()) }
             .returns(
                 PduTransaction(
                     origin = "matrix.org",
@@ -327,7 +332,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getEvent(assert {
                 it.endpoint.eventId shouldBe EventId("$1event")
             })
@@ -337,7 +342,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetState() = testApplication {
         initCut()
-        everySuspending { handlerMock.getState(isAny()) }
+        everySuspend { handlerMock.getState(any()) }
             .returns(
                 GetState.Response(
                     authChain = listOf(pdu),
@@ -357,7 +362,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getState(assert {
                 it.endpoint.eventId shouldBe EventId("$1event")
                 it.endpoint.roomId shouldBe RoomId("!room:server")
@@ -368,7 +373,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetStateIds() = testApplication {
         initCut()
-        everySuspending { handlerMock.getStateIds(isAny()) }
+        everySuspend { handlerMock.getStateIds(any()) }
             .returns(
                 GetStateIds.Response(
                     authChainIds = listOf(EventId("$1event")),
@@ -388,7 +393,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getStateIds(assert {
                 it.endpoint.eventId shouldBe EventId("$1event")
                 it.endpoint.roomId shouldBe RoomId("!room:server")
@@ -399,7 +404,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldMakeJoin() = testApplication {
         initCut()
-        everySuspending { handlerMock.makeJoin(isAny()) }
+        everySuspend { handlerMock.makeJoin(any()) }
             .returns(
                 MakeJoin.Response(
                     eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
@@ -448,7 +453,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.makeJoin(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
@@ -460,7 +465,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSendJoin() = testApplication {
         initCut()
-        everySuspending { handlerMock.sendJoin(isAny()) }
+        everySuspend { handlerMock.sendJoin(any()) }
             .returns(
                 SendJoin.Response(
                     authChain = listOf(pdu),
@@ -563,7 +568,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.sendJoin(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
@@ -599,7 +604,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldMakeKnock() = testApplication {
         initCut()
-        everySuspending { handlerMock.makeKnock(isAny()) }
+        everySuspend { handlerMock.makeKnock(any()) }
             .returns(
                 MakeKnock.Response(
                     eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
@@ -646,7 +651,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.makeKnock(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
@@ -658,7 +663,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSendKnock() = testApplication {
         initCut()
-        everySuspending { handlerMock.sendKnock(isAny()) }
+        everySuspend { handlerMock.sendKnock(any()) }
             .returns(
                 SendKnock.Response(
                     listOf(
@@ -729,7 +734,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.sendKnock(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
@@ -764,7 +769,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldInvite() = testApplication {
         initCut()
-        everySuspending { handlerMock.invite(isAny()) }
+        everySuspend { handlerMock.invite(any()) }
             .returns(
                 Invite.Response(
                     event = Signed(
@@ -870,7 +875,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.invite(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
@@ -920,7 +925,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldMakeLeave() = testApplication {
         initCut()
-        everySuspending { handlerMock.makeLeave(isAny()) }
+        everySuspend { handlerMock.makeLeave(any()) }
             .returns(
                 MakeLeave.Response(
                     eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
@@ -967,7 +972,7 @@ class FederationRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.makeLeave(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
@@ -978,7 +983,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSendLeave() = testApplication {
         initCut()
-        everySuspending { handlerMock.sendLeave(isAny()) }
+        everySuspend { handlerMock.sendLeave(any()) }
             .returns(Unit)
         val response = client.put("/_matrix/federation/v2/send_leave/!room:server/$1event") {
             someSignature()
@@ -1013,7 +1018,7 @@ class FederationRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.sendLeave(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
@@ -1048,7 +1053,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldOnBindThirdPid() = testApplication {
         initCut()
-        everySuspending { handlerMock.onBindThirdPid(isAny()) }
+        everySuspend { handlerMock.onBindThirdPid(any()) }
             .returns(Unit)
         val response = client.put("/_matrix/federation/v1/3pid/onbind") {
             someSignature()
@@ -1086,7 +1091,7 @@ class FederationRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.onBindThirdPid(assert {
                 it.requestBody shouldBe OnBindThirdPid.Request(
                     address = "alice@example.com",
@@ -1113,7 +1118,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldExchangeThirdPartyInvite() = testApplication {
         initCut()
-        everySuspending { handlerMock.exchangeThirdPartyInvite(isAny()) }
+        everySuspend { handlerMock.exchangeThirdPartyInvite(any()) }
             .returns(Unit)
         val response = client.put("/_matrix/federation/v1/exchange_third_party_invite/!room:server") {
             someSignature()
@@ -1155,7 +1160,7 @@ class FederationRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.exchangeThirdPartyInvite(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe Signed(
@@ -1198,7 +1203,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetPublicRooms() = testApplication {
         initCut()
-        everySuspending { handlerMock.getPublicRooms(isAny()) }
+        everySuspend { handlerMock.getPublicRooms(any()) }
             .returns(
                 GetPublicRoomsResponse(
                     chunk = listOf(
@@ -1245,7 +1250,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getPublicRooms(assert {
                 it.endpoint.limit shouldBe 5
                 it.endpoint.includeAllNetworks shouldBe false
@@ -1258,7 +1263,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetPublicRoomsWithFilter() = testApplication {
         initCut()
-        everySuspending { handlerMock.getPublicRoomsWithFilter(isAny()) }
+        everySuspend { handlerMock.getPublicRoomsWithFilter(any()) }
             .returns(
                 GetPublicRoomsResponse(
                     chunk = listOf(
@@ -1318,7 +1323,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getPublicRoomsWithFilter(assert {
                 it.requestBody shouldBe GetPublicRoomsWithFilter.Request(
                     filter = GetPublicRoomsWithFilter.Request.Filter("foo"),
@@ -1333,7 +1338,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetHierarchy() = testApplication {
         initCut()
-        everySuspending { handlerMock.getHierarchy(isAny()) }
+        everySuspend { handlerMock.getHierarchy(any()) }
             .returns(
                 GetHierarchy.Response(
                     rooms = listOf(
@@ -1455,7 +1460,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getHierarchy(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.suggestedOnly shouldBe true
@@ -1466,7 +1471,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldQueryDirectory() = testApplication {
         initCut()
-        everySuspending { handlerMock.queryDirectory(isAny()) }
+        everySuspend { handlerMock.queryDirectory(any()) }
             .returns(
                 QueryDirectory.Response(
                     roomId = RoomId("!roomid1234:example.org"),
@@ -1494,7 +1499,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.queryDirectory(assert {
                 it.endpoint.roomAlias shouldBe RoomAliasId("#alias:server")
             })
@@ -1504,7 +1509,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldQueryProfile() = testApplication {
         initCut()
-        everySuspending { handlerMock.queryProfile(isAny()) }
+        everySuspend { handlerMock.queryProfile(any()) }
             .returns(
                 QueryProfile.Response(
                     displayname = "John Doe",
@@ -1524,7 +1529,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.queryProfile(assert {
                 it.endpoint.userId shouldBe UserId("@user:server")
                 it.endpoint.field shouldBe QueryProfile.Field.DISPLAYNNAME
@@ -1535,7 +1540,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetOIDCUserInfo() = testApplication {
         initCut()
-        everySuspending { handlerMock.getOIDCUserInfo(isAny()) }
+        everySuspend { handlerMock.getOIDCUserInfo(any()) }
             .returns(
                 GetOIDCUserInfo.Response(
                     sub = UserId("@alice:example.com")
@@ -1553,7 +1558,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getOIDCUserInfo(assert {
                 it.endpoint.accessToken shouldBe "token"
             })
@@ -1563,7 +1568,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetDevices() = testApplication {
         initCut()
-        everySuspending { handlerMock.getDevices(isAny()) }
+        everySuspend { handlerMock.getDevices(any()) }
             .returns(
                 GetDevices.Response(
                     devices = setOf(
@@ -1683,7 +1688,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getDevices(assert {
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
             })
@@ -1693,7 +1698,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldClaimKeys() = testApplication {
         initCut()
-        everySuspending { handlerMock.claimKeys(isAny()) }
+        everySuspend { handlerMock.claimKeys(any()) }
             .returns(
                 ClaimKeys.Response(
                     oneTimeKeys = mapOf(
@@ -1755,7 +1760,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.claimKeys(assert {
                 it.requestBody shouldBe ClaimKeys.Request(
                     oneTimeKeys = mapOf(UserId("@alice:example.com") to mapOf("JLAFKJWSCS" to KeyAlgorithm.SignedCurve25519)),
@@ -1767,7 +1772,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetKeys() = testApplication {
         initCut()
-        everySuspending { handlerMock.getKeys(isAny()) }
+        everySuspend { handlerMock.getKeys(any()) }
             .returns(
                 GetKeys.Response(
                     deviceKeys = mapOf(
@@ -1895,7 +1900,7 @@ class FederationRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getKeys(assert {
                 it.requestBody shouldBe GetKeys.Request(
                     keysFrom = mapOf(UserId("alice", "example.com") to setOf()),
@@ -1907,7 +1912,7 @@ class FederationRoutesTest : TestsWithMocks() {
     @Test
     fun shouldTimestampToEvent() = testApplication {
         initCut()
-        everySuspending { handlerMock.timestampToEvent(isAny()) }
+        everySuspend { handlerMock.timestampToEvent(any()) }
             .returns(
                 TimestampToEvent.Response(
                     eventId = EventId("$143273582443PhrSn:example.org"),
@@ -1928,7 +1933,7 @@ class FederationRoutesTest : TestsWithMocks() {
                }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.timestampToEvent(assert {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.timestamp shouldBe 24

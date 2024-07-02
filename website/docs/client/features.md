@@ -18,7 +18,7 @@ sidebar_position: 12
     - [trixnity-client-repository-room](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-repository-room)
       implements a database for trixnity-client
       with [room](https://developer.android.com/jetpack/androidx/releases/room).
-      This supports Android.
+      This supports JVM/Android (Native comes soon).
 - [x] extremely fast reactive cache on top of the database
 - [x] exchangeable media store
     - in memory (e. g. for tests)

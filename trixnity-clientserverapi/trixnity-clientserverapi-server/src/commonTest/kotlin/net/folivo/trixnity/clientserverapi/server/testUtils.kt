@@ -1,16 +1,19 @@
 package net.folivo.trixnity.clientserverapi.server
 
-import org.kodein.mock.ArgConstraint
-import org.kodein.mock.ArgConstraintsBuilder
+import dev.mokkery.matcher.ArgMatchersScope
+import dev.mokkery.matcher.matching
 
 fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.replace(": ", ":").trim() }
 
-inline fun <reified T> ArgConstraintsBuilder.assert(crossinline assertionBlock: (T) -> Unit): T =
-    isValid(null, { "assert" }) {
-        try {
-            assertionBlock(it)
-            ArgConstraint.Result.Success
-        } catch (error: AssertionError) {
-            ArgConstraint.Result.Failure { error.message ?: "" }
-        }
-    }
+inline fun <reified T> ArgMatchersScope.assert(crossinline assertionBlock: (T) -> Unit): T =
+    matching(
+        toString = { "assert" },
+        predicate = {
+            try {
+                assertionBlock(it)
+                true
+            } catch (error: AssertionError) {
+                false
+            }
+        },
+    )

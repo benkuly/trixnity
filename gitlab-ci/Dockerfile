@@ -1,9 +1,10 @@
 FROM ubuntu:20.04
 
 # make sure to update libs.versions.toml, when you change something here
-ARG ANDROID_CLI_TOOLS=10406996
-ARG ANDROID_PLATFORM=34
-ARG ANDROID_BUILD_TOOLS=34.0.0
+# https://developer.android.com/studio#command-tools
+ARG ANDROID_CLI_TOOLS=11076708
+ARG ANDROID_PLATFORM=35
+ARG ANDROID_BUILD_TOOLS=35.0.0
 
 ENV ANDROID_HOME=/android
 

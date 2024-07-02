@@ -1,5 +1,8 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -16,18 +19,14 @@ import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.media.*
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class MediaRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class MediaRoutesTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: MediaApiHandler
+    val handlerMock = mock<MediaApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -41,10 +40,16 @@ class MediaRoutesTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldGetMediaConfig() = testApplication {
         initCut()
-        everySuspending { handlerMock.getMediaConfig(isAny()) }
+        everySuspend { handlerMock.getMediaConfig(any()) }
             .returns(GetMediaConfig.Response(maxUploadSize = 50000000))
         val response = client.get("/_matrix/media/v3/config") { bearerAuth("token") }
         assertSoftly(response) {
@@ -56,15 +61,15 @@ class MediaRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getMediaConfig(isAny())
+        verifySuspend {
+            handlerMock.getMediaConfig(any())
         }
     }
 
     @Test
     fun shouldCreateMedia() = testApplication {
         initCut()
-        everySuspending { handlerMock.createMedia(isAny()) }
+        everySuspend { handlerMock.createMedia(any()) }
             .returns(
                 CreateMedia.Response(
                     contentUri = "mxc://example.com/AQwafuaFswefuhsfAFAgsw",
@@ -82,15 +87,15 @@ class MediaRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.createMedia(isAny())
+        verifySuspend {
+            handlerMock.createMedia(any())
         }
     }
 
     @Test
     fun shouldUploadMedia() = testApplication {
         initCut()
-        everySuspending { handlerMock.uploadMedia(isAny()) }
+        everySuspend { handlerMock.uploadMedia(any()) }
             .returns(UploadMedia.Response("mxc://example.com/AQwafuaFswefuhsfAFAgsw"))
         val response = client.post("/_matrix/media/v3/upload?filename=testFile.txt") {
             bearerAuth("token")
@@ -109,7 +114,7 @@ class MediaRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.uploadMedia(assert {
                 it.endpoint.filename shouldBe "testFile.txt"
                 it.requestBody.contentType shouldBe ContentType.Text.Plain
@@ -122,7 +127,7 @@ class MediaRoutesTest : TestsWithMocks() {
     @Test
     fun shouldUploadMediaByContentUri() = testApplication {
         initCut()
-        everySuspending { handlerMock.uploadMediaByContentUri(isAny()) }
+        everySuspend { handlerMock.uploadMediaByContentUri(any()) }
             .returns(Unit)
         val response =
             client.post("/_matrix/media/v3/upload/example.com/AQwafuaFswefuhsfAFAgsw?filename=testFile.txt") {
@@ -140,7 +145,7 @@ class MediaRoutesTest : TestsWithMocks() {
                 {}
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.uploadMediaByContentUri(assert {
                 it.endpoint.serverName shouldBe "example.com"
                 it.endpoint.mediaId shouldBe "AQwafuaFswefuhsfAFAgsw"
@@ -155,7 +160,7 @@ class MediaRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDownloadMedia() = testApplication {
         initCut()
-        everySuspending { handlerMock.downloadMedia(isAny()) }
+        everySuspend { handlerMock.downloadMedia(any()) }
             .returns(
                 Media(
                     content = ByteReadChannel("test"),
@@ -175,7 +180,7 @@ class MediaRoutesTest : TestsWithMocks() {
             this.headers[HttpHeaders.ContentDisposition] shouldBe "testFile.txt"
             this.body<ByteReadChannel>().readUTF8Line() shouldBe "test"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.downloadMedia(assert {
                 it.endpoint.serverName shouldBe "matrix.org:443"
                 it.endpoint.mediaId shouldBe "ascERGshawAWawugaAcauga"
@@ -187,7 +192,7 @@ class MediaRoutesTest : TestsWithMocks() {
     @Test
     fun shouldDownloadThumbnail() = testApplication {
         initCut()
-        everySuspending { handlerMock.downloadThumbnail(isAny()) }
+        everySuspend { handlerMock.downloadThumbnail(any()) }
             .returns(
                 Media(
                     content = ByteReadChannel("test"),
@@ -207,7 +212,7 @@ class MediaRoutesTest : TestsWithMocks() {
             this.headers[HttpHeaders.ContentDisposition] shouldBe "testFile.txt"
             this.body<ByteReadChannel>().readUTF8Line() shouldBe "test"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.downloadThumbnail(assert {
                 it.endpoint.serverName shouldBe "matrix.org:443"
                 it.endpoint.mediaId shouldBe "ascERGshawAWawugaAcauga"
@@ -222,7 +227,7 @@ class MediaRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetUrlPreview() = testApplication {
         initCut()
-        everySuspending { handlerMock.getUrlPreview(isAny()) }
+        everySuspend { handlerMock.getUrlPreview(any()) }
             .returns(
                 GetUrlPreview.Response(
                     size = 102400,
@@ -240,7 +245,7 @@ class MediaRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getUrlPreview(assert {
                 it.endpoint.url shouldBe "someUrl"
             })

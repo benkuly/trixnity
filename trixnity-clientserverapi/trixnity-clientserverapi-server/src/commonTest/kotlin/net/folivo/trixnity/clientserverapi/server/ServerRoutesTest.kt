@@ -1,5 +1,8 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -20,18 +23,14 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class ServerRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class ServerRoutesTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: ServerApiHandler
+    val handlerMock = mock<ServerApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -44,10 +43,16 @@ class ServerRoutesTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldGetVersions() = testApplication {
         initCut()
-        everySuspending { handlerMock.getVersions(isAny()) }
+        everySuspend { handlerMock.getVersions(any()) }
             .returns(
                 GetVersions.Response(
                     versions = emptyList(),
@@ -62,15 +67,15 @@ class ServerRoutesTest : TestsWithMocks() {
                 {"versions":[],"unstable_features":{}}
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getVersions(isAny())
+        verifySuspend {
+            handlerMock.getVersions(any())
         }
     }
 
     @Test
     fun shouldGetCapabilities() = testApplication {
         initCut()
-        everySuspending { handlerMock.getCapabilities(isAny()) }
+        everySuspend { handlerMock.getCapabilities(any()) }
             .returns(
                 GetCapabilities.Response(
                     capabilities = GetCapabilities.Response.Capabilities(
@@ -106,15 +111,15 @@ class ServerRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getCapabilities(isAny())
+        verifySuspend {
+            handlerMock.getCapabilities(any())
         }
     }
 
     @Test
     fun shouldSearch() = testApplication {
         initCut()
-        everySuspending { handlerMock.search(isAny()) }
+        everySuspend { handlerMock.search(any()) }
             .returns(
                 Search.Response(
                     Search.Response.ResultCategories(
@@ -218,7 +223,7 @@ class ServerRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.search(assert {
                 it.requestBody shouldBe Search.Request(
                     Search.Request.Categories(
@@ -243,7 +248,7 @@ class ServerRoutesTest : TestsWithMocks() {
     @Test
     fun shouldWhoIs() = testApplication {
         initCut()
-        everySuspending { handlerMock.whoIs(isAny()) }
+        everySuspend { handlerMock.whoIs(any()) }
             .returns(
                 WhoIs.Response(
                     userId = UserId("@peter:rabbit.rocks"),
@@ -299,7 +304,7 @@ class ServerRoutesTest : TestsWithMocks() {
                }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.whoIs(assert {
                 it.endpoint.userId shouldBe UserId("@peter:rabbit.rocks")
             })

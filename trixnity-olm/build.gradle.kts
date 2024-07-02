@@ -119,7 +119,7 @@ kotlin {
     addAndroidTarget()
     addJsTarget(rootDir)
 
-    val nativeOlmTargets = olmNativeTargetList.mapNotNull { target ->
+    val nativeOlmTargets = olmNativeTargetList.map { target ->
         target.createTarget(this).apply {
             compilations {
                 "main" {

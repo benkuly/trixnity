@@ -1,5 +1,8 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -23,7 +26,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.*
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.Event.*
 import net.folivo.trixnity.core.model.events.UnknownEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedMessageEventData
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
@@ -36,21 +38,16 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class SyncRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class SyncRoutesTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: SyncApiHandler
+    val handlerMock = mock<SyncApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -63,10 +60,16 @@ class SyncRoutesTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldSync() = testApplication {
         initCut()
-        everySuspending { handlerMock.sync(isAny()) }
+        everySuspend { handlerMock.sync(any()) }
             .returns(
                 Sync.Response(
                     nextBatch = "s72595_4483_1934",
@@ -382,7 +385,7 @@ class SyncRoutesTest : TestsWithMocks() {
                 }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.sync(assert {
                 it.endpoint.filter shouldBe "someFilter"
                 it.endpoint.fullState shouldBe true

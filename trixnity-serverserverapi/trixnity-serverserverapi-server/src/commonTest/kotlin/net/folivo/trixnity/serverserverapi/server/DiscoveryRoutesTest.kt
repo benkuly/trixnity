@@ -1,5 +1,8 @@
 package net.folivo.trixnity.serverserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -17,18 +20,14 @@ import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
 import net.folivo.trixnity.serverserverapi.model.discovery.*
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class DiscoveryRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class DiscoveryRoutesTest {
     private val json = createMatrixDataUnitJson({ "3" })
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: DiscoveryApiHandler
+    val handlerMock = mock<DiscoveryApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -41,10 +40,16 @@ class DiscoveryRoutesTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldGetWellKnown() = testApplication {
         initCut()
-        everySuspending { handlerMock.getWellKnown(isAny()) }
+        everySuspend { handlerMock.getWellKnown(any()) }
             .returns(
                 GetWellKnown.Response("delegated.example.com:1234")
             )
@@ -58,15 +63,15 @@ class DiscoveryRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getWellKnown(isAny())
+        verifySuspend {
+            handlerMock.getWellKnown(any())
         }
     }
 
     @Test
     fun shouldGetServerVersion() = testApplication {
         initCut()
-        everySuspending { handlerMock.getServerVersion(isAny()) }
+        everySuspend { handlerMock.getServerVersion(any()) }
             .returns(
                 GetServerVersion.Response(
                     GetServerVersion.Response.Server(
@@ -88,15 +93,15 @@ class DiscoveryRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getServerVersion(isAny())
+        verifySuspend {
+            handlerMock.getServerVersion(any())
         }
     }
 
     @Test
     fun shouldGetServerKeys() = testApplication {
         initCut()
-        everySuspending { handlerMock.getServerKeys(isAny()) }
+        everySuspend { handlerMock.getServerKeys(any()) }
             .returns(
                 Signed(
                     ServerKeys(
@@ -148,15 +153,15 @@ class DiscoveryRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
-            handlerMock.getServerKeys(isAny())
+        verifySuspend {
+            handlerMock.getServerKeys(any())
         }
     }
 
     @Test
     fun shouldQueryServerKeys() = testApplication {
         initCut()
-        everySuspending { handlerMock.queryServerKeys(isAny()) }
+        everySuspend { handlerMock.queryServerKeys(any()) }
             .returns(
                 QueryServerKeysResponse(
                     setOf(
@@ -232,7 +237,7 @@ class DiscoveryRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.queryServerKeys(assert {
                 it.requestBody shouldBe QueryServerKeys.Request(buildJsonObject {
                     put("example.org", buildJsonObject {
@@ -248,7 +253,7 @@ class DiscoveryRoutesTest : TestsWithMocks() {
     @Test
     fun shouldQueryServerKeysByServer() = testApplication {
         initCut()
-        everySuspending { handlerMock.queryKeysByServer(isAny()) }
+        everySuspend { handlerMock.queryKeysByServer(any()) }
             .returns(
                 QueryServerKeysResponse(
                     setOf(
@@ -308,7 +313,7 @@ class DiscoveryRoutesTest : TestsWithMocks() {
                     }
                 """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.queryKeysByServer(assert {
                 it.endpoint.serverName shouldBe "example.org"
                 it.endpoint.minimumValidUntil shouldBe 1234567890

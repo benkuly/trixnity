@@ -1,5 +1,8 @@
 package net.folivo.trixnity.clientserverapi.server
 
+import dev.mokkery.*
+import dev.mokkery.answering.returns
+import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
@@ -21,18 +24,14 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import org.kodein.mock.Mock
-import org.kodein.mock.tests.TestsWithMocks
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class UsersRoutesTest : TestsWithMocks() {
-    override fun setUpMocks() = injectMocks(mocker)
-
+class UsersRoutesTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 
-    @Mock
-    lateinit var handlerMock: UsersApiHandler
+    val handlerMock = mock<UsersApiHandler>()
 
     private fun ApplicationTestBuilder.initCut() {
         application {
@@ -45,10 +44,16 @@ class UsersRoutesTest : TestsWithMocks() {
         }
     }
 
+    @BeforeTest
+    fun beforeTest() {
+        resetAnswers(handlerMock)
+        resetCalls(handlerMock)
+    }
+
     @Test
     fun shouldSetDisplayName() = testApplication {
         initCut()
-        everySuspending { handlerMock.setDisplayName(isAny()) }
+        everySuspend { handlerMock.setDisplayName(any()) }
             .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/profile/@user:server/displayname") {
@@ -61,7 +66,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setDisplayName(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.requestBody shouldBe SetDisplayName.Request("someDisplayName")
@@ -72,7 +77,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetDisplayName() = testApplication {
         initCut()
-        everySuspending { handlerMock.getDisplayName(isAny()) }
+        everySuspend { handlerMock.getDisplayName(any()) }
             .returns(GetDisplayName.Response("someDisplayName"))
         val response = client.get("/_matrix/client/v3/profile/@user:server/displayname")
         assertSoftly(response) {
@@ -80,7 +85,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"displayname":"someDisplayName"}"""
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getDisplayName(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
             })
@@ -90,7 +95,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetAvatarUrl() = testApplication {
         initCut()
-        everySuspending { handlerMock.setAvatarUrl(isAny()) }
+        everySuspend { handlerMock.setAvatarUrl(any()) }
             .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/profile/@user:server/avatar_url") {
@@ -103,7 +108,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setAvatarUrl(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.requestBody shouldBe SetAvatarUrl.Request("mxc://localhost/123456")
@@ -114,7 +119,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetAvatarUrl() = testApplication {
         initCut()
-        everySuspending { handlerMock.getAvatarUrl(isAny()) }
+        everySuspend { handlerMock.getAvatarUrl(any()) }
             .returns(GetAvatarUrl.Response("mxc://localhost/123456"))
         val response = client.get("/_matrix/client/v3/profile/@user:server/avatar_url")
         assertSoftly(response) {
@@ -122,7 +127,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"avatar_url":"mxc://localhost/123456"}"""
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getAvatarUrl(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
             })
@@ -132,7 +137,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetProfile() = testApplication {
         initCut()
-        everySuspending { handlerMock.getProfile(isAny()) }
+        everySuspend { handlerMock.getProfile(any()) }
             .returns(GetProfile.Response("someDisplayName", "mxc://localhost/123456"))
         val response = client.get("/_matrix/client/v3/profile/@user:server")
         assertSoftly(response) {
@@ -140,7 +145,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"displayname":"someDisplayName","avatar_url":"mxc://localhost/123456"}"""
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getProfile(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
             })
@@ -150,7 +155,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetPresence() = testApplication {
         initCut()
-        everySuspending { handlerMock.setPresence(isAny()) }
+        everySuspend { handlerMock.setPresence(any()) }
             .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/presence/@user:server/status") {
@@ -170,7 +175,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setPresence(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.requestBody shouldBe SetPresence.Request(ONLINE, "I am here.")
@@ -181,7 +186,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetPresence() = testApplication {
         initCut()
-        everySuspending { handlerMock.getPresence(isAny()) }
+        everySuspend { handlerMock.getPresence(any()) }
             .returns(PresenceEventContent(UNAVAILABLE, lastActiveAgo = 420845))
         val response = client.get("/_matrix/client/v3/presence/@user:server/status") { bearerAuth("token") }
         assertSoftly(response) {
@@ -194,7 +199,7 @@ class UsersRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getPresence(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
             })
@@ -204,7 +209,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSendToDevice() = testApplication {
         initCut()
-        everySuspending { handlerMock.sendToDevice(isAny()) }
+        everySuspend { handlerMock.sendToDevice(any()) }
             .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/sendToDevice/m.room_key/txnId") {
@@ -232,7 +237,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.sendToDevice(assert {
                 it.endpoint.txnId shouldBe "txnId"
                 it.requestBody shouldBe SendToDevice.Request(
@@ -254,7 +259,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetFilter() = testApplication {
         initCut()
-        everySuspending { handlerMock.setFilter(isAny()) }
+        everySuspend { handlerMock.setFilter(any()) }
             .returns(SetFilter.Response("0"))
         val response =
             client.post("/_matrix/client/v3/user/@user:server/filter") {
@@ -277,7 +282,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"filter_id":"0"}"""
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setFilter(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.requestBody shouldBe Filters(
@@ -294,7 +299,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetFilter() = testApplication {
         initCut()
-        everySuspending { handlerMock.getFilter(isAny()) }
+        everySuspend { handlerMock.getFilter(any()) }
             .returns(
                 Filters(
                     room = Filters.RoomFilter(
@@ -318,7 +323,7 @@ class UsersRoutesTest : TestsWithMocks() {
                 }
             """.trimToFlatJson()
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getFilter(assert {
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.endpoint.filterId shouldBe "0"
@@ -329,7 +334,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetAccountData() = testApplication {
         initCut()
-        everySuspending { handlerMock.getAccountData(isAny()) }
+        everySuspend { handlerMock.getAccountData(any()) }
             .returns(
                 DirectEventContent(
                     mapOf(UserId("bob", "server") to setOf(RoomId("someRoom", "server")))
@@ -344,7 +349,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"@bob:server":["!someRoom:server"]}"""
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getAccountData(assert {
                 it.endpoint.type shouldBe "m.direct"
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
@@ -355,7 +360,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldGetAccountDataWithKey() = testApplication {
         initCut()
-        everySuspending { handlerMock.getAccountData(isAny()) }
+        everySuspend { handlerMock.getAccountData(any()) }
             .returns(SecretKeyEventContent.AesHmacSha2Key("name"))
         val response =
             client.get("/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1") {
@@ -366,7 +371,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"algorithm":"m.secret_storage.v1.aes-hmac-sha2","name":"name"}"""
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.getAccountData(assert {
                 it.endpoint.type shouldBe "m.secret_storage.key.key1"
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
@@ -377,7 +382,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetAccountData() = testApplication {
         initCut()
-        everySuspending { handlerMock.setAccountData(isAny()) }
+        everySuspend { handlerMock.setAccountData(any()) }
             .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/user/@alice:example.com/account_data/m.direct") {
@@ -390,7 +395,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setAccountData(assert {
                 it.endpoint.type shouldBe "m.direct"
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
@@ -406,7 +411,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSetAccountDataWithKey() = testApplication {
         initCut()
-        everySuspending { handlerMock.setAccountData(isAny()) }
+        everySuspend { handlerMock.setAccountData(any()) }
             .returns(Unit)
         val response =
             client.put("/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1") {
@@ -419,7 +424,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.setAccountData(assert {
                 it.endpoint.type shouldBe "m.secret_storage.key.key1"
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
@@ -431,7 +436,7 @@ class UsersRoutesTest : TestsWithMocks() {
     @Test
     fun shouldSearchUsers() = testApplication {
         initCut()
-        everySuspending { handlerMock.searchUsers(isAny()) }
+        everySuspend { handlerMock.searchUsers(any()) }
             .returns(
                 SearchUsers.Response(
                     limited = true,
@@ -456,7 +461,7 @@ class UsersRoutesTest : TestsWithMocks() {
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"limited":true,"results":[{"avatar_url":"mxc://localhost/123456","display_name":"bob","user_id":"@bob:localhost"}]}"""
         }
-        verifyWithSuspend {
+        verifySuspend {
             handlerMock.searchUsers(assert {
                 it.requestBody shouldBe SearchUsers.Request("bob", 20)
                 it.call.request.headers[HttpHeaders.AcceptLanguage] shouldBe "de"
