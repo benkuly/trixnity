@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.5.0
+
+### Added
+
 - (trixnity-client-repositories-room) added Kotlin Multiplatform support
   (JVM based targets for now, Native will be enabled, when more stable)
 
