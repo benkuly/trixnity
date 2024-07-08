@@ -98,7 +98,7 @@ private suspend fun ByteArrayFlow.aesOperation(
     )
     // iv is composed of a nonce and counter in AES-CTR
     val nonce = initialisationVector.copyOf(8)
-    var currentCounter = initialisationVector.copyOfRange(9, 16).toLong()
+    val currentCounter = initialisationVector.copyOfRange(8, 16)
     var previousInput = ByteArray(0)
     filterNotEmpty().collect { nextInput ->
         val input = previousInput + nextInput
@@ -106,7 +106,7 @@ private suspend fun ByteArrayFlow.aesOperation(
             operation(
                 jso {
                     name = "AES-CTR"
-                    counter = (nonce + currentCounter.toByteArray()).toUint8Array()
+                    counter = (nonce + currentCounter).toUint8Array()
                     length = 64
                 },
                 aesKey,
@@ -118,25 +118,19 @@ private suspend fun ByteArrayFlow.aesOperation(
         // the counter needs to be increased after a complete block is decrypted
         // a block is 128 bits (= 16 bytes) long
         val inputSize = input.size / 16
-        currentCounter += inputSize
+        // increase counter
+        repeat(inputSize) {
+            currentCounter.increment()
+        }
         // as long as the block is not completely "used", we need to cache the previous part of the block
         previousInput = input.copyOfRange(inputSize * 16, input.size)
     }
 }
 
-private fun ByteArray.toLong(): Long {
-    require(size <= 8)
-    var result = 0L
-    forEach { result = (result shl 8) + it }
-    return result
-}
-
-private fun Long.toByteArray(): ByteArray {
-    var intermediate = this
-    val result = ByteArray(8)
-    repeat(result.size) { i ->
-        result[i] = intermediate.toByte()
-        intermediate = intermediate shr 8
+private fun ByteArray.increment() {
+    for (i in (size - 1) downTo 0) {
+        if ((++this[i]).toInt() != 0) {
+            break
+        }
     }
-    return result
 }

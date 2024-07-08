@@ -16,11 +16,11 @@ import kotlin.test.Test
 class AesCtrTest {
     private val key = ByteArray(32) { (it + 1).toByte() }
     private val nonce = ByteArray(8) { (it + 1).toByte() }
-    private val initialisationVector = nonce + ByteArray(8)
+    private val initialisationVector = nonce + ByteArray(7) + ByteArray(1) { (0xff).toByte() }
 
     @Test
     fun shouldEncrypt() = runTest {
-        val expectedResult = listOf("14e2", "d5701d")
+        val expectedResult = listOf("a61e", "093832")
         val result =
             flowOf("he".encodeToByteArray(), "llo".encodeToByteArray(), ByteArray(0)).encryptAes256Ctr(
                 key,
@@ -32,9 +32,9 @@ class AesCtrTest {
     @Test
     fun shouldEncryptMultipleAesBlocks() = runTest {
         val expectedResult = listOf(
-            "14e2",
-            "d5701d",
-            "7410fb20b43d90ff9d2c1666f6f714f0"
+            "a61e",
+            "093832",
+            "e5d9669dcb23e0e3554edbb860715201"
         )
         val result =
             flowOf(
@@ -52,21 +52,21 @@ class AesCtrTest {
 
     @Test
     fun shouldDecrypt() = runTest {
-        val expectedResult = listOf("he", "llo") +
-                buildString { repeat(4) { append("dino") } } // 128 bit (block size)
-        flowOf(
-            "14e2".hexToByteArray(),
-            "d5701d".hexToByteArray(),
-            "7410fb20b43d90ff9d2c1666f6f714f0".hexToByteArray()
-        )
+        val expectedResult = listOf("he", "llo")
+        flowOf("a61e".hexToByteArray(), "093832".hexToByteArray(), ByteArray(0))
             .decryptAes256Ctr(key, initialisationVector)
             .map { it.decodeToString() }.toList() shouldBe expectedResult
     }
 
     @Test
     fun shouldDecryptMultipleAesBlocks() = runTest {
-        val expectedResult = listOf("he", "llo")
-        flowOf("14e2".hexToByteArray(), "d5701d".hexToByteArray(), ByteArray(0))
+        val expectedResult = listOf("he", "llo") +
+                buildString { repeat(4) { append("dino") } } // 128 bit (block size)
+        flowOf(
+            "a61e".hexToByteArray(),
+            "093832".hexToByteArray(),
+            "e5d9669dcb23e0e3554edbb860715201".hexToByteArray()
+        )
             .decryptAes256Ctr(key, initialisationVector)
             .map { it.decodeToString() }.toList() shouldBe expectedResult
     }
