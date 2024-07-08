@@ -217,6 +217,7 @@ security:dependencies:
     entrypoint: [ "" ]
   variables:
     TRIVY_CACHE_DIR: ".trivycache/"
+    WITH_LOCK: true
   cache:
     paths:
       - .trivycache/
@@ -231,6 +232,9 @@ security:dependencies:
     when: always
     reports:
       dependency_scanning: report.json
+  before_script:
+    - apk add openjdk17
+    - ./gradlew dependenciesForAll --write-locks --no-parallel > dependencies.txt
   script:
     - trivy repo ./ --exit-code 0
     - trivy repo ./ --exit-code 0 --format template --template "@/contrib/gitlab.tpl" --output report.json

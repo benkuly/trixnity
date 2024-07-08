@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- move locks to CI
+
 ### Deprecated
 
 ### Removed
@@ -23,14 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- (trixnity-client-repositories-room) added Kotlin Multiplatform support
+- added Kotlin Multiplatform support to client-repositories-room
   (JVM based targets for now, Native will be enabled, when more stable)
 
 ### Changed
 
 - revert: don't filter in load members
-- (internal) update dependencies (including Kotlin 2.0.0)
-- (trixnity-client-repositories-room) updated AndroidX Room (to an alpha version!)
+- update dependencies (including Kotlin 2.0.0)
+- updated AndroidX Room (to an alpha version!)
 
 ### Deprecated
 
