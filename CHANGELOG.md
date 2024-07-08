@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- fix wrong AES counter increase in Browser
+
 ### Security
 
 ## 4.5.0
