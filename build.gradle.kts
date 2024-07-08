@@ -18,11 +18,13 @@ allprojects {
     group = "net.folivo"
     version = withVersionSuffix("4.5.1")
 
-    dependencyLocking {
-        lockAllConfigurations()
-    }
+    if (System.getenv("WITH_LOCK")?.toBoolean() == true) {
+        dependencyLocking {
+            lockAllConfigurations()
+        }
 
-    val dependenciesForAll by tasks.registering(DependencyReportTask::class) { }
+        val dependenciesForAll by tasks.registering(DependencyReportTask::class) { }
+    }
 }
 
 subprojects {
