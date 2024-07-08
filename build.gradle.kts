@@ -16,7 +16,7 @@ plugins {
 
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix("4.5.1")
+    version = withVersionSuffix("4.5.2")
 
     if (System.getenv("WITH_LOCK")?.toBoolean() == true) {
         dependencyLocking {

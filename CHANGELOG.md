@@ -11,17 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- move gradle locks to CI
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- fix wrong AES counter increase in Browser
-
 ### Security
+
+## 4.5.1
+
+### Changed
+
+- move gradle locks to CI
+
+### Fixed
+
+- fix wrong AES counter increase in Browser
 
 ## 4.5.0
 
