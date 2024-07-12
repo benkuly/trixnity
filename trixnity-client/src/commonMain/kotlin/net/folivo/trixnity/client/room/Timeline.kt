@@ -8,13 +8,12 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.eventId
-import net.folivo.trixnity.client.store.isFirst
-import net.folivo.trixnity.client.store.isLast
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
+import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import kotlin.time.Duration.Companion.INFINITE
 
 private val log = KotlinLogging.logger { }
@@ -126,40 +125,6 @@ data class TimelineStateChange<T>(
 abstract class TimelineBase<T>(
     val transformer: suspend (Flow<TimelineEvent>) -> T,
 ) : Timeline<T> {
-    private data class InternalState<T>(
-        val elements: List<T> = listOf(),
-        val lastLoadedEventBefore: Flow<TimelineEvent>? = null,
-        val lastLoadedEventAfter: Flow<TimelineEvent>? = null,
-        val isInitialized: Boolean = false,
-        val isLoadingBefore: Boolean = false,
-        val isLoadingAfter: Boolean = false,
-    )
-
-    private val internalState = MutableStateFlow(InternalState<T>())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override val state: Flow<TimelineState<T>> =
-        internalState.flatMapLatest { internalState ->
-            combine(
-                (internalState.lastLoadedEventBefore ?: flowOf(null)).map { it?.isFirst != true },
-                (internalState.lastLoadedEventAfter ?: flowOf(null)).map { it?.isLast != true }
-            ) { canLoadBefore, canLoadAfter ->
-                TimelineState(
-                    elements = internalState.elements,
-                    lastLoadedEventIdBefore = internalState.lastLoadedEventBefore?.first()?.eventId,
-                    lastLoadedEventIdAfter = internalState.lastLoadedEventAfter?.first()?.eventId,
-                    isInitialized = internalState.isInitialized,
-                    isLoadingBefore = internalState.isLoadingBefore,
-                    isLoadingAfter = internalState.isLoadingAfter,
-                    canLoadBefore = canLoadBefore,
-                    canLoadAfter = canLoadAfter,
-                )
-            }
-        }.distinctUntilChanged()
-
-    private val loadBeforeMutex = Mutex()
-    private val loadAfterMutex = Mutex()
-
     protected abstract suspend fun internalInit(
         startFrom: EventId,
         configStart: GetTimelineEventConfig.() -> Unit = {},
@@ -176,6 +141,44 @@ abstract class TimelineBase<T>(
         startFrom: EventId,
         config: GetTimelineEventsConfig.() -> Unit,
     ): List<Flow<TimelineEvent>>
+
+    protected abstract suspend fun Flow<TimelineEvent>.canLoadBefore(): Flow<Boolean>
+    protected abstract suspend fun Flow<TimelineEvent>.canLoadAfter(): Flow<Boolean>
+
+
+    private data class InternalState<T>(
+        val elements: List<T> = listOf(),
+        val lastLoadedEventBefore: Flow<TimelineEvent>? = null,
+        val lastLoadedEventAfter: Flow<TimelineEvent>? = null,
+        val isInitialized: Boolean = false,
+        val isLoadingBefore: Boolean = false,
+        val isLoadingAfter: Boolean = false,
+    )
+
+    private val internalState = MutableStateFlow(InternalState<T>())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val state: Flow<TimelineState<T>> =
+        internalState.flatMapLatest { internalState ->
+            combine(
+                internalState.lastLoadedEventBefore?.canLoadBefore() ?: flowOf(true),
+                internalState.lastLoadedEventAfter?.canLoadAfter() ?: flowOf(true)
+            ) { canLoadBefore, canLoadAfter ->
+                TimelineState(
+                    elements = internalState.elements,
+                    lastLoadedEventIdBefore = internalState.lastLoadedEventBefore?.first()?.eventId,
+                    lastLoadedEventIdAfter = internalState.lastLoadedEventAfter?.first()?.eventId,
+                    isInitialized = internalState.isInitialized,
+                    isLoadingBefore = internalState.isLoadingBefore,
+                    isLoadingAfter = internalState.isLoadingAfter,
+                    canLoadBefore = canLoadBefore,
+                    canLoadAfter = canLoadAfter,
+                )
+            }
+        }.distinctUntilChanged()
+
+    private val loadBeforeMutex = Mutex()
+    private val loadAfterMutex = Mutex()
 
     private suspend fun List<Flow<TimelineEvent>>.transformToElements() = map { events -> transformer(events) }
 
@@ -365,5 +368,17 @@ class TimelineImpl<T>(
         ).drop(1).toList().map { it.filterNotNull() }
         log.debug { "finished load after $startFrom" }
         return newEvents
+    }
+
+    override suspend fun Flow<TimelineEvent>.canLoadBefore(): Flow<Boolean> = map { timelineEvent ->
+        val createEventContent = timelineEvent.event.content as? CreateEventContent
+        timelineEvent.isFirst.not() || createEventContent?.predecessor != null
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun Flow<TimelineEvent>.canLoadAfter(): Flow<Boolean> = flatMapLatest { timelineEvent ->
+        roomService.getState<TombstoneEventContent>(timelineEvent.roomId).map { tombstone ->
+            timelineEvent.isLast.not() || tombstone != null
+        }
     }
 }

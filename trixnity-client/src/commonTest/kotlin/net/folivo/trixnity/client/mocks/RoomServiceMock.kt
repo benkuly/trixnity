@@ -144,12 +144,20 @@ class RoomServiceMock : RoomService {
     val outbox = MutableStateFlow(mapOf<String, Flow<RoomOutboxMessage<*>?>>())
     override fun getOutbox(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>> = outbox
 
+    data class GetStateKey(
+        val roomId: RoomId,
+        val eventContentClass: KClass<out StateEventContent>,
+        val stateKey: String = ""
+    )
+
+    val state = MutableStateFlow<Map<GetStateKey, StateBaseEvent<*>?>>(mapOf())
     override fun <C : StateEventContent> getState(
         roomId: RoomId,
         eventContentClass: KClass<C>,
         stateKey: String
     ): Flow<StateBaseEvent<C>?> {
-        throw NotImplementedError()
+        @Suppress("UNCHECKED_CAST")
+        return flowOf(state.value.entries.find { it.key.eventContentClass == eventContentClass }?.value as StateBaseEvent<C>?)
     }
 
     override fun <C : StateEventContent> getAllState(
