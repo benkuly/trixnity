@@ -87,12 +87,16 @@ class AuthenticationRoutesTest {
     fun shouldIsUsernameAvailable() = testApplication {
         initCut()
         everySuspend { handlerMock.isUsernameAvailable(any()) }
-            .returns(Unit)
+            .returns(IsUsernameAvailable.Response(true))
         val response = client.get("/_matrix/client/v3/register/available?username=user")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
-            this.body<String>() shouldBe "{}"
+            this.body<String>() shouldBe """
+                    {
+                          "available": true
+                    }
+                """.trimToFlatJson()
         }
 
         verifySuspend {

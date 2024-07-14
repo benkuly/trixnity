@@ -21,7 +21,7 @@ interface AuthenticationApiClient {
      */
     suspend fun isUsernameAvailable(
         username: String
-    ): Result<Unit>
+    ): Result<Boolean>
 
     /**
      * @see [GetEmailRequestTokenForPassword]
@@ -216,8 +216,8 @@ class AuthenticationApiClientImpl(
 
     override suspend fun isUsernameAvailable(
         username: String
-    ): Result<Unit> =
-        httpClient.request(IsUsernameAvailable(username))
+    ): Result<Boolean> =
+        httpClient.request(IsUsernameAvailable(username)).map { it.available }
 
     override suspend fun getEmailRequestTokenForPassword(
         request: GetEmailRequestTokenForPassword.Request
