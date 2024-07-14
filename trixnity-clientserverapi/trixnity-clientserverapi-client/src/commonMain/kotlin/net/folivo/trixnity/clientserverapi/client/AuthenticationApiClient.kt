@@ -191,7 +191,7 @@ interface AuthenticationApiClient {
      * @see [Refresh]
      */
     suspend fun refresh(
-        refreshToken: String? = null,
+        refreshToken: String,
     ): Result<Refresh.Response>
 
     /**
@@ -390,7 +390,7 @@ class AuthenticationApiClientImpl(
     override suspend fun getOIDCRequestToken(userId: UserId, asUserId: UserId?): Result<GetOIDCRequestToken.Response> =
         httpClient.request(GetOIDCRequestToken(userId, asUserId))
 
-    override suspend fun refresh(refreshToken: String?): Result<Refresh.Response> =
+    override suspend fun refresh(refreshToken: String): Result<Refresh.Response> =
         httpClient.request(Refresh, Refresh.Request(refreshToken))
 
     override suspend fun getToken(asUserId: UserId?): Result<UIA<GetToken.Response>> =

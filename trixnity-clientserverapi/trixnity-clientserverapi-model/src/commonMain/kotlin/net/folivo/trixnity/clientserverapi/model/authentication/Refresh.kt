@@ -19,7 +19,7 @@ object Refresh : MatrixEndpoint<Refresh.Request, Refresh.Response> {
     @Serializable
     data class Request(
         @SerialName("refresh_token")
-        val refreshToken: String? = null,
+        val refreshToken: String,
     )
 
     @Serializable
