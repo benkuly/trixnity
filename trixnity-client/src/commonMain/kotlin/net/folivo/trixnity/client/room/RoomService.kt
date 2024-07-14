@@ -403,12 +403,18 @@ class RoomServiceImpl(
                                     }
                             } else null
                         val successor: RoomEventIdPair? =
-                            if (direction == FORWARDS && currentTimelineEvent.isLast && currentTimelineEventContent is TombstoneEventContent) {
-                                val create =
-                                    getState<CreateEventContent>(currentTimelineEventContent.replacementRoom).first()?.idOrNull
-                                if (create != null) RoomEventIdPair(create, currentTimelineEventContent.replacementRoom)
-                                else {
-                                    log.warn { "getTimelineEvents: found successor of room, but room does not exist locally" }
+                            if (direction == FORWARDS && currentTimelineEvent.isLast) {
+                                val tombstone =
+                                    getState<TombstoneEventContent>(currentTimelineEvent.roomId).first()?.content
+                                if (tombstone != null) {
+                                    val create =
+                                        getState<CreateEventContent>(tombstone.replacementRoom).first()?.idOrNull
+                                    if (create != null) RoomEventIdPair(create, tombstone.replacementRoom)
+                                    else {
+                                        log.warn { "getTimelineEvents: found successor of room, but room does not exist locally" }
+                                        null
+                                    }
+                                } else {
                                     null
                                 }
                             } else null
