@@ -105,6 +105,14 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         )
     }
 
+    val createEvent = StateEvent(
+        CreateEventContent(),
+        EventId("\$event1"),
+        sender,
+        room,
+        1,
+        stateKey = ""
+    )
     val event1 = encryptedEvent(1)
     val event2 = encryptedEvent(2)
     val event3 = encryptedEvent(3)
@@ -227,7 +235,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             beforeTest {
                 roomTimelineStore.addAll(
                     listOf(
-                        timelineEvent1.copy(gap = null, previousEventId = null),
+                        timelineEvent1.copy(gap = null, previousEventId = null, event = createEvent),
                         timelineEvent2,
                         timelineEvent3
                     )
@@ -238,7 +246,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                     .toList().map { it.first() } shouldBe listOf(
                     timelineEvent3,
                     timelineEvent2,
-                    timelineEvent1.copy(gap = null, previousEventId = null)
+                    timelineEvent1.copy(gap = null, previousEventId = null, event = createEvent)
                 )
             }
         }
@@ -252,8 +260,16 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 2000,
                 stateKey = "",
             )
-            val createEvent = StateEvent(
-                CreateEventContent(sender, predecessor = CreateEventContent.PreviousRoom(room, EventId("\$tombstone"))),
+            val createEvent1 = StateEvent(
+                CreateEventContent(),
+                EventId("\$event1"),
+                sender,
+                room,
+                2000,
+                stateKey = "",
+            )
+            val createEvent2 = StateEvent(
+                CreateEventContent(predecessor = CreateEventContent.PreviousRoom(room, EventId("\$tombstone"))),
                 EventId("\$create"),
                 sender,
                 newRoom,
@@ -266,30 +282,37 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 nextEventId = null,
                 gap = TimelineEvent.Gap.GapAfter("3")
             )
-            val createTimelineEvent = TimelineEvent(
-                event = createEvent,
+            val createTimelineEvent1 = TimelineEvent(
+                event = createEvent1,
+                previousEventId = null,
+                nextEventId = event2.id,
+                gap = null
+            )
+            val createTimelineEvent2 = TimelineEvent(
+                event = createEvent2,
                 previousEventId = null,
                 nextEventId = event3.id,
                 gap = null
             )
             val timeline = listOf(
-                timelineEvent1.copy(gap = null, previousEventId = null),
+                createTimelineEvent1,
                 timelineEvent2.copy(nextEventId = tombstoneTimelineEvent.eventId),
                 tombstoneTimelineEvent,
                 // new room
-                createTimelineEvent,
+                createTimelineEvent2,
                 timelineEvent3.copy(
                     event = event3.copy(roomId = newRoom),
-                    previousEventId = createTimelineEvent.eventId
+                    previousEventId = createTimelineEvent2.eventId
                 ),
             )
             beforeTest {
                 roomTimelineStore.addAll(timeline)
                 roomStateStore.save(tombstoneEvent)
-                roomStateStore.save(createEvent)
+                roomStateStore.save(createEvent1)
+                roomStateStore.save(createEvent2)
             }
             should("follow room upgrade from old to new room") {
-                cut.getTimelineEvents(room, event1.id, FORWARDS) { minSize = 5 }
+                cut.getTimelineEvents(room, createEvent1.id, FORWARDS) { minSize = 5 }
                     .take(5).toList().map { it.first() } shouldBe timeline
             }
             should("follow room upgrade from new to old room") {

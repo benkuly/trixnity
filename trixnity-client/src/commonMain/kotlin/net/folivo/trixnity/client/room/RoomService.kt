@@ -389,17 +389,35 @@ class RoomServiceImpl(
                         // check for room upgrades
                         data class RoomEventIdPair(val eventId: EventId, val roomId: RoomId)
 
+                        val currentTimelineEventContent = currentTimelineEvent.event.content
                         val predecessor: RoomEventIdPair? =
-                            if (direction == BACKWARDS && currentTimelineEvent.isFirst) {
-                                getState<CreateEventContent>(currentRoomId).first()?.content?.predecessor
-                                    ?.let { RoomEventIdPair(it.eventId, it.roomId) }
+                            if (direction == BACKWARDS && currentTimelineEvent.isFirst && currentTimelineEventContent is CreateEventContent) {
+                                currentTimelineEventContent.predecessor
+                                    ?.let {
+                                        val tombstone = getState<TombstoneEventContent>(it.roomId).first()
+                                        if (tombstone != null) RoomEventIdPair(it.eventId, it.roomId)
+                                        else {
+                                            log.warn { "getTimelineEvents: found predecessor of room, but room does not exist locally" }
+                                            null
+                                        }
+                                    }
                             } else null
-                        val timelineEventSnapshotContent = currentTimelineEvent.content?.getOrNull()
                         val successor: RoomEventIdPair? =
-                            if (direction == FORWARDS && timelineEventSnapshotContent is TombstoneEventContent) {
-                                getState<CreateEventContent>(timelineEventSnapshotContent.replacementRoom).first()
-                                    ?.idOrNull
-                                    ?.let { RoomEventIdPair(it, timelineEventSnapshotContent.replacementRoom) }
+                            if (direction == FORWARDS && (currentTimelineEvent.isLast || currentTimelineEventContent is TombstoneEventContent)) {
+                                val tombstone =
+                                    (currentTimelineEventContent as? TombstoneEventContent)
+                                        ?: getState<TombstoneEventContent>(currentTimelineEvent.roomId).first()?.content
+                                if (tombstone != null) {
+                                    val create =
+                                        getState<CreateEventContent>(tombstone.replacementRoom).first()?.idOrNull
+                                    if (create != null) RoomEventIdPair(create, tombstone.replacementRoom)
+                                    else {
+                                        log.warn { "getTimelineEvents: found successor of room, but room does not exist locally" }
+                                        null
+                                    }
+                                } else {
+                                    null
+                                }
                             } else null
 
                         // check for break conditions
@@ -465,7 +483,7 @@ class RoomServiceImpl(
                             if (continueWith != null) {
                                 emit(FollowTimelineResult.Continue(continueWith))
                             } else {
-                                log.debug { "getTimelineEvents: did not found any event to continue with at $currentEventId" }
+                                log.debug { "getTimelineEvents: did not found any event to continue with at $currentEventId, wait for update" }
                             }
                         }
                     }

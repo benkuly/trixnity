@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- fixed wrong calculation of canLoadBefore and canLoadAfter in Timeline, when room with upgrades is used
+
 ### Security
 
 ## 4.5.1
