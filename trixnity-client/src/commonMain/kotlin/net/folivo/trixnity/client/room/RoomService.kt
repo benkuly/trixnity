@@ -403,9 +403,10 @@ class RoomServiceImpl(
                                     }
                             } else null
                         val successor: RoomEventIdPair? =
-                            if (direction == FORWARDS && currentTimelineEvent.isLast) {
+                            if (direction == FORWARDS && (currentTimelineEvent.isLast || currentTimelineEventContent is TombstoneEventContent)) {
                                 val tombstone =
-                                    getState<TombstoneEventContent>(currentTimelineEvent.roomId).first()?.content
+                                    (currentTimelineEventContent as? TombstoneEventContent)
+                                        ?: getState<TombstoneEventContent>(currentTimelineEvent.roomId).first()?.content
                                 if (tombstone != null) {
                                     val create =
                                         getState<CreateEventContent>(tombstone.replacementRoom).first()?.idOrNull

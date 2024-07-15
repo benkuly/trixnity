@@ -370,15 +370,28 @@ class TimelineEventIT {
                     init(
                         client1.room.getState<CreateEventContent>(oldRoom).first()?.idOrNull.shouldNotBeNull(),
                         configAfter = { maxSize = 20 })
-                }
+                }.state.first().elements.map { it.first() }
+                    .map { it.eventId to it.event.content::class.simpleName }
+            println(
+                """
+                |# timeline from old room
+                |${timelineFromOldRoom.joinToString("\n|")}
+            """.trimMargin()
+            )
             val timelineFromNewRoom =
                 client1.room.getTimeline(newRoom).apply {
                     init(client1.room.getById(newRoom).first()?.lastEventId.shouldNotBeNull())
                     loadBefore { maxSize = 20 }
-                }
+                }.state.first().elements.map { it.first() }
+                    .map { it.eventId to it.event.content::class.simpleName }
+            println(
+                """
+                |# timeline from new room
+                |${timelineFromOldRoom.joinToString("\n|")}
+            """.trimMargin()
+            )
 
-            timelineFromOldRoom.state.first().elements.map { it.first().eventId } shouldBe
-                    timelineFromNewRoom.state.first().elements.map { it.first().eventId }
+            timelineFromOldRoom shouldBe timelineFromNewRoom
 
             client1.room.getAll().flattenValues(filterUpgradedRooms = true).first()
                 .map { it.roomId } shouldNotContain oldRoom
