@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - upgrade gradle to 8.9
+- close Okio streams by default
 
 ### Deprecated
 
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - fixed wrong calculation of canLoadBefore and canLoadAfter in Timeline, when room with upgrades is used
+- close JavaScript streams correctly
 
 ### Security
 

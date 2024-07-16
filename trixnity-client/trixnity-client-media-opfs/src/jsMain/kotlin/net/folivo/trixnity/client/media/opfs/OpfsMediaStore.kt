@@ -35,18 +35,16 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
         } catch (throwable: Throwable) {
             basePath.removeEntry(fileSystemSafe(url))
             throw throwable
-        } finally {
-            writableFileStream.close()
         }
     }
 
     override suspend fun getMedia(url: String): ByteArrayFlow? = basePathLock.withLock(url) {
         val fileHandle = try {
-            basePath.resolveUrl(url).getFile().stream()
+            basePath.resolveUrl(url).getFile()
         } catch (throwable: Throwable) {
             return@withLock null
         }
-        byteArrayFlowFromReadableStream { fileHandle }
+        byteArrayFlowFromReadableStream { fileHandle.stream() }
     }
 
     override suspend fun deleteMedia(url: String) = basePathLock.withLock(url) {
@@ -62,8 +60,6 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
             } catch (throwable: Throwable) {
                 basePath.removeEntry(fileSystemSafe(newUrl))
                 throw throwable
-            } finally {
-                writableFileStream.close()
             }
         }
         basePath.removeEntry(fileSystemSafe(oldUrl))
