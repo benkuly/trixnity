@@ -10,26 +10,32 @@ import web.streams.WritableStream
 
 fun byteArrayFlowFromReadableStream(streamFactory: suspend () -> ReadableStream<Uint8Array>) = flow {
     val reader = streamFactory().getReader()
-    while (true) {
-        when (val readResult = reader.read()) {
-            is ReadableStreamReadValueResult -> {
-                emit(readResult.value.toByteArray())
-            }
+    try {
+        while (true) {
+            when (val readResult = reader.read()) {
+                is ReadableStreamReadValueResult -> {
+                    emit(readResult.value.toByteArray())
+                }
 
-            is ReadableStreamReadDoneResult -> {
-                break
+                is ReadableStreamReadDoneResult -> {
+                    break
+                }
             }
         }
+    } finally {
+        reader.cancel()
     }
-    reader.cancel()
 }
 
 suspend fun ByteArrayFlow.writeTo(writableStream: WritableStream<Uint8Array>) {
     val writer = writableStream.getWriter()
-    collect {
-        writer.write(it.toUint8Array())
+    try {
+        collect {
+            writer.write(it.toUint8Array())
+        }
+    } finally {
+        writer.close()
     }
-    writer.close()
 }
 
 suspend fun WritableStream<Uint8Array>.write(content: ByteArrayFlow) = content.writeTo(this)
