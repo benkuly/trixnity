@@ -8,7 +8,9 @@ import kotlin.coroutines.CoroutineContext
 
 suspend fun ByteArrayFlow.writeTo(sink: BufferedSink, coroutineContext: CoroutineContext = ioContext) =
     withContext(coroutineContext) {
-        collect { sink.write(it) }
+        sink.use {
+            collect { data -> it.write(data) }
+        }
     }
 
 suspend fun BufferedSink.write(content: ByteArrayFlow, coroutineContext: CoroutineContext = ioContext) =
@@ -30,7 +32,7 @@ suspend fun FileSystem.write(
     coroutineContext: CoroutineContext = ioContext,
 ): Unit =
     withContext(coroutineContext) {
-        sink(path).buffer().use { content.writeTo(it, coroutineContext) }
+        content.writeTo(sink(path).buffer(), coroutineContext)
     }
 
 fun FileSystem.readByteArrayFlow(
