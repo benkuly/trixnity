@@ -20,7 +20,7 @@ interface AuthenticationApiHandler {
     /**
      * @see [IsUsernameAvailable]
      */
-    suspend fun isUsernameAvailable(context: MatrixEndpointContext<IsUsernameAvailable, Unit, Unit>)
+    suspend fun isUsernameAvailable(context: MatrixEndpointContext<IsUsernameAvailable, Unit, IsUsernameAvailable.Response>): IsUsernameAvailable.Response
 
     /**
      * @see [GetEmailRequestTokenForPassword]

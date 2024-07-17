@@ -21,7 +21,7 @@ interface AuthenticationApiClient {
      */
     suspend fun isUsernameAvailable(
         username: String
-    ): Result<Unit>
+    ): Result<Boolean>
 
     /**
      * @see [GetEmailRequestTokenForPassword]
@@ -191,7 +191,7 @@ interface AuthenticationApiClient {
      * @see [Refresh]
      */
     suspend fun refresh(
-        refreshToken: String? = null,
+        refreshToken: String,
     ): Result<Refresh.Response>
 
     /**
@@ -216,8 +216,8 @@ class AuthenticationApiClientImpl(
 
     override suspend fun isUsernameAvailable(
         username: String
-    ): Result<Unit> =
-        httpClient.request(IsUsernameAvailable(username))
+    ): Result<Boolean> =
+        httpClient.request(IsUsernameAvailable(username)).map { it.available }
 
     override suspend fun getEmailRequestTokenForPassword(
         request: GetEmailRequestTokenForPassword.Request
@@ -390,7 +390,7 @@ class AuthenticationApiClientImpl(
     override suspend fun getOIDCRequestToken(userId: UserId, asUserId: UserId?): Result<GetOIDCRequestToken.Response> =
         httpClient.request(GetOIDCRequestToken(userId, asUserId))
 
-    override suspend fun refresh(refreshToken: String?): Result<Refresh.Response> =
+    override suspend fun refresh(refreshToken: String): Result<Refresh.Response> =
         httpClient.request(Refresh, Refresh.Request(refreshToken))
 
     override suspend fun getToken(asUserId: UserId?): Result<UIA<GetToken.Response>> =

@@ -17,4 +17,7 @@ import net.folivo.trixnity.core.WithoutAuth
 @WithoutAuth
 data class IsUsernameAvailable(
     @SerialName("username") val username: String,
-) : MatrixEndpoint<Unit, Unit>
+) : MatrixEndpoint<Unit, IsUsernameAvailable.Response> {
+    @Serializable
+    data class Response(@SerialName("available") val available: Boolean)
+}

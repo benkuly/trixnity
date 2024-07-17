@@ -74,13 +74,17 @@ class AuthenticationApiClientTest {
                     assertEquals("/_matrix/client/v3/register/available?username=user", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        "{}",
+                        """
+                            {
+                              "available": true
+                            }
+                        """.trimIndent(),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
                 }
             })
-        matrixRestClient.authentication.isUsernameAvailable("user").getOrThrow()
+        matrixRestClient.authentication.isUsernameAvailable("user").getOrThrow() shouldBe true
     }
 
     @Test

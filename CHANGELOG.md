@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - upgrade gradle to 8.9
 - close Okio streams by default
+- Make `refresh_token` required on [`/_matrix/client/v3/refresh`](https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3refresh).
+- [`/_matrix/client/v3/register/available`](https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3registeravailable) returns the correct json body on 200.
 
 ### Deprecated
 
