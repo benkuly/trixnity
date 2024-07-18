@@ -226,16 +226,17 @@ class RoomServiceImpl(
                 && this.event.isEncrypted
                 && (this.content == null || this.content.exceptionOrNull() is TimelineEventContentError.DecryptionTimeout)
 
-    private val getTimelineEventMutex = KeyedMutex<Pair<EventId, RoomId>>()
+    private val getTimelineEventFetchMutex = KeyedMutex<Pair<EventId, RoomId>>()
+    private val getTimelineEventDecryptionMutex = KeyedMutex<Pair<EventId, RoomId>>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTimelineEvent(
         roomId: RoomId,
         eventId: EventId,
         config: GetTimelineEventConfig.() -> Unit
-    ): Flow<TimelineEvent?> = channelFlow {
+    ): Flow<TimelineEvent?> {
         val cfg = GetTimelineEventConfig().apply(config).copy()
-        roomTimelineStore.get(eventId, roomId)
+        return roomTimelineStore.get(eventId, roomId)
             .transformLatest { timelineEvent ->
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent) {
@@ -260,10 +261,12 @@ class RoomServiceImpl(
                     })
                 } else emit(timelineEvent)
             }
-            .also { timelineEventFlow ->
-                launch {
-                    getTimelineEventMutex.withLock(eventId to roomId) {
-                        val timelineEvent = timelineEventFlow.first() ?: withTimeoutOrNull(cfg.fetchTimeout) {
+            .transformLatest { timelineEvent ->
+                emit(timelineEvent)
+
+                if (timelineEvent == null) {
+                    withTimeoutOrNull(cfg.fetchTimeout) {
+                        getTimelineEventFetchMutex.withLock(eventId to roomId) {
                             val lastEventId = roomStore.get(roomId).first()?.lastEventId
                             if (lastEventId != null) {
                                 log.debug { "getTimelineEvent: cannot find TimelineEvent $eventId in store. we try to fetch it by filling some gaps." }
@@ -278,25 +281,38 @@ class RoomServiceImpl(
                                     .also { log.trace { "getTimelineEvent: found TimelineEvent $eventId" } }
                             } else null
                         }
-                        if (timelineEvent == null)
-                            log.warn { "getTimelineEvent: could not find TimelineEvent $eventId in store or by fetching (timeout=${cfg.fetchTimeout})" }
-                        val event = timelineEvent?.event
-                        if (cfg.decryptionTimeout > ZERO && timelineEvent?.canBeDecrypted() == true && event is MessageEvent) {
-                            log.trace { "getTimelineEvent: try decrypt ${timelineEvent.eventId}" }
-                            val decryptedEventContent =
-                                withTimeoutOrNull(cfg.decryptionTimeout) {
-                                    val decryptionResult =
-                                        roomEventEncryptionServices.decrypt(event)
-                                    if (decryptionResult != null) {
-                                        try {
-                                            Result.success(decryptionResult.getOrThrow())
-                                        } catch (exception: Exception) {
-                                            Result.failure(TimelineEventContentError.DecryptionError(exception))
+                    }
+                    log.warn { "getTimelineEvent: could not find TimelineEvent ${eventId} in store or by fetching (timeout=${cfg.fetchTimeout})" }
+                } else {
+                    val event = timelineEvent.event
+                    if (cfg.decryptionTimeout > ZERO && timelineEvent.canBeDecrypted() && event is MessageEvent) {
+                        log.trace { "getTimelineEvent: try decrypt ${timelineEvent.eventId}" }
+                        val decryptedEventContent =
+                            try {
+                                withTimeout(cfg.decryptionTimeout) {
+                                    getTimelineEventDecryptionMutex.withLock(timelineEvent.eventId to roomId) {
+                                        val decryptionResult = roomEventEncryptionServices.decrypt(event)
+                                        if (decryptionResult != null) {
+                                            try {
+                                                Result.success(decryptionResult.getOrThrow())
+                                            } catch (exception: Exception) {
+                                                log.trace { "getTimelineEvent: failed decrypt ${timelineEvent.eventId} (${exception.message})" }
+                                                Result.failure(TimelineEventContentError.DecryptionError(exception))
+                                            }
+                                        } else {
+                                            log.trace { "getTimelineEvent: failed decrypt ${timelineEvent.eventId} (algorithm not supported)" }
+                                            Result.failure(TimelineEventContentError.DecryptionAlgorithmNotSupported)
                                         }
-                                    } else Result.failure(TimelineEventContentError.DecryptionAlgorithmNotSupported)
-                                } ?: Result.failure(TimelineEventContentError.DecryptionTimeout)
+                                    }
+                                }
+                            } catch (timeout: TimeoutCancellationException) {
+                                log.trace { "getTimelineEvent: failed decrypt ${timelineEvent.eventId} (timeout)" }
+                                Result.failure(TimelineEventContentError.DecryptionTimeout)
+                            }
+                        if (decryptedEventContent.isSuccess) {
+                            log.trace { "getTimelineEvent: update decrypted TimelineEvent in store" }
                             roomTimelineStore.update(
-                                eventId,
+                                timelineEvent.eventId,
                                 roomId,
                                 persistIntoRepository = this@RoomServiceImpl.config.storeTimelineEventContentUnencrypted
                             ) { oldEvent ->
@@ -304,11 +320,12 @@ class RoomServiceImpl(
                                 if (oldEvent?.canBeDecrypted() == true) timelineEvent.copy(content = decryptedEventContent)
                                 else oldEvent
                             }
+                        } else {
+                            emit(timelineEvent.copy(content = decryptedEventContent))
                         }
                     }
                 }
-            }
-            .collect { send(it) }
+            }.distinctUntilChanged()
     }
 
     override fun getPreviousTimelineEvent(

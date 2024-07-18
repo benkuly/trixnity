@@ -169,6 +169,7 @@ internal open class ObservableCacheBase<K, V>(
         }
         cacheEntry.first() // resets expire duration by increasing subscription count for a moment
         val newValue = cacheEntry.updateAndGet {
+            log.trace { "update cache entry" }
             val oldValue = when (it) {
                 is CacheValue.Init -> get?.invoke()
                 is CacheValue.Value -> it.value

@@ -18,8 +18,8 @@ open class KeyedMutex<K : Any> {
     private val mutexByKey = mutableMapOf<K, ClaimedMutex>()
 
     suspend fun <T : Any?> withLock(key: K, block: suspend () -> T): T {
-        val mutex = claimMutex(key)
         return try {
+            val mutex = claimMutex(key)
             mutex.withLock {
                 block()
             }
@@ -42,7 +42,7 @@ open class KeyedMutex<K : Any> {
 
     private suspend fun releaseMutex(key: K): Unit = mutexByKeyMutex.withLock {
         log.trace { "release mutex (key=$key)" }
-        val claimedMutex = requireNotNull(mutexByKey[key])
+        val claimedMutex = mutexByKey[key] ?: return@withLock
         if (claimedMutex.claimCount == 1) mutexByKey.remove(key)
         else mutexByKey[key] = claimedMutex.copy(claimCount = claimedMutex.claimCount - 1)
     }

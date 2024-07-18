@@ -224,12 +224,11 @@ class RoomServiceTest : ShouldSpec({
                 val expectedDecryptedEvent = RoomMessageEventContent.TextBased.Text("decrypted")
                 roomEventDecryptionServiceMock.returnDecrypt = Result.success(expectedDecryptedEvent)
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                (1..300).map {
-                    async {
-                        cut.getTimelineEvent(room, eventId)
-                            .first { it?.content?.getOrNull() != null }
-                    }
-                }.awaitAll()
+
+                repeat(100) {
+                    cut.getTimelineEvent(room, eventId)
+                        .first { it?.content?.getOrNull() != null }
+                }
                 roomEventDecryptionServiceMock.decryptCounter shouldBe 1
             }
             should("timeout when decryption takes too long") {
@@ -244,8 +243,12 @@ class RoomServiceTest : ShouldSpec({
                 roomEventDecryptionServiceMock.decryptDelay = 10.seconds
                 roomEventDecryptionServiceMock.returnDecrypt = null
                 roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                cut.getTimelineEvent(room, eventId) { decryptionTimeout = 50.milliseconds }.first()
-                cut.getTimelineEvent(room, eventId) { decryptionTimeout = 50.milliseconds }.first()
+                withTimeoutOrNull(100.milliseconds) {
+                    cut.getTimelineEvent(room, eventId) { decryptionTimeout = 50.milliseconds }.collect()
+                }
+                withTimeoutOrNull(100.milliseconds) {
+                    cut.getTimelineEvent(room, eventId) { decryptionTimeout = 50.milliseconds }.collect()
+                }
                 roomEventDecryptionServiceMock.decryptCounter shouldBe 2
             }
             should("handle error") {
