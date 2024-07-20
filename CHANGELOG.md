@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.6.0
+
+### Changed
+
 - cleaned up `MatrixRegex`
 - upgrade gradle to 8.9
 - close Okio streams by default
@@ -21,17 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow to have individual timeouts when calling `getTimelineEvent` in parallel. Previously the first one calling
   defined the timeouts.
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - parsing and scanning of mentions
 - fixed wrong calculation of canLoadBefore and canLoadAfter in Timeline, when room with upgrades is used
 - close JavaScript streams correctly
-
-### Security
 
 ## 4.5.1
 
