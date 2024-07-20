@@ -14,6 +14,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.replace
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.minutes
 
 sealed interface TimelineEventAggregation {
@@ -34,8 +35,10 @@ fun RoomService.getTimelineEventReplaceAggregation(
     getTimelineEventRelations(roomId, eventId, RelationType.Replace)
         .map { it?.keys }
         .transformLatest { relations ->
-            val serverAggregation = getTimelineEvent(roomId, eventId) { allowReplaceContent = false }
-                .first()?.event?.unsigned?.relations?.replace?.eventId
+            val serverAggregation = getTimelineEvent(roomId, eventId) {
+                allowReplaceContent = false
+                decryptionTimeout = ZERO
+            }.first()?.event?.unsigned?.relations?.replace?.eventId
             emit(
                 when {
                     relations == null -> setOfNotNull(serverAggregation)
@@ -45,9 +48,16 @@ fun RoomService.getTimelineEventReplaceAggregation(
             )
         }
         .map { relations ->
-            val timelineEvent = getTimelineEvent(roomId, eventId) { allowReplaceContent = false }.first()
-            val history = relations.mapNotNull { getTimelineEvent(roomId, it) { allowReplaceContent = false }.first() }
-                .filter { it.event.sender == timelineEvent?.sender }
+            val timelineEvent = getTimelineEvent(roomId, eventId) {
+                allowReplaceContent = false
+                decryptionTimeout = ZERO
+            }.first()
+            val history = relations.mapNotNull {
+                getTimelineEvent(roomId, it) {
+                    allowReplaceContent = false
+                    decryptionTimeout = ZERO
+                }.first()
+            }.filter { it.event.sender == timelineEvent?.sender }
                 .sortedBy { it.event.originTimestamp }
                 .map { it.eventId }
             TimelineEventAggregation.Replace(history.lastOrNull(), history)

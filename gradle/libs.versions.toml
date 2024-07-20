@@ -1,8 +1,8 @@
 [versions]
 ### build ###
 kotlin = "2.0.0" # https://github.com/JetBrains/kotlin/releases
-ksp = "2.0.0-1.0.22" # https://github.com/google/ksp/releases
-kotlinWrappers = "1.0.0-pre.767" # https://github.com/JetBrains/kotlin-wrappers/releases
+ksp = "2.0.0-1.0.23" # https://github.com/google/ksp/releases
+kotlinWrappers = "1.0.0-pre.774" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "1.9.20" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.2.2" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
@@ -31,9 +31,9 @@ hikari = "5.1.0" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.2.224" # https://github.com/h2database/h2database/releases
 postgres = "42.7.3" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.7.1" # https://github.com/JuulLabs/indexeddb/releases
-realm = "2.0.0" # https://github.com/realm/realm-kotlin/tags
-androidxRoom = "2.7.0-alpha04" # https://developer.android.com/jetpack/androidx/releases/room
-androidxSqlite = "2.5.0-alpha04" # https://developer.android.com/jetpack/androidx/releases/sqlite
+realm = "2.1.0" # https://github.com/realm/realm-kotlin/tags
+androidxRoom = "2.7.0-alpha05" # https://developer.android.com/jetpack/androidx/releases/room
+androidxSqlite = "2.5.0-alpha05" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
 ### logging ###
 oshaiKotlinLogging = "7.0.0" # https://github.com/oshai/kotlin-logging/releases
