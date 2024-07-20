@@ -1,6 +1,8 @@
 package net.folivo.trixnity.core
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.ktor.http.*
 import net.folivo.trixnity.core.MatrixRegex.findMentions
 import net.folivo.trixnity.core.model.*
 import kotlin.test.Test
@@ -8,53 +10,1052 @@ import kotlin.test.fail
 
 
 class MatrixRegexTest {
-    fun positiveUserIdTest(id: String, localpart: String, domain: String) {
-        val message = "Hello $id"
+    // Common Namespaced Identifier
+    private fun commonNamespacedIdTest(id: String, expected: Boolean) {
+        val message = "ID $id ist very common"
+        val preamount = 3
 
-        val result = findMentions(message)
-        result.size shouldBe 1
-        (result[id] as Mention.User).userId shouldBe UserId(localpart, domain)
-    }
-
-    fun positiveRoomIdTest(id: String, localpart: String, domain: String) {
-        val message = "omw to $id"
-
-        val result = findMentions(message)
-        result.size shouldBe 1
-        (result[id] as Mention.Room).roomId shouldBe RoomId(localpart, domain)
-    }
-
-    fun positiveRoomAliasTest(id: String, localpart: String, domain: String) {
-        val message = "omw to $id"
-
-        val result = findMentions(message)
-        result.size shouldBe 1
-        (result[id] as Mention.RoomAlias).roomAliasId shouldBe RoomAliasId(localpart, domain)
-    }
-
-    fun positiveEventIdTest(id: String, opaqueId: String, roomId: String? = null) {
-        val message = "participating at $id"
-
-        val result = findMentions(message)
-        result.size shouldBe 1
-        when (val mention = result[id]) {
-            is Mention.RoomEvent -> {
-                mention.eventId shouldBe EventId(opaqueId)
-                if (roomId != null) {
-                    mention.roomId shouldBe RoomId(roomId)
-                }
+        if (expected) {
+            MatrixRegex.namespacedId.findAll(message).let {
+                it.count() shouldBe 1 + preamount
+                it.find { it.value == id }?.value shouldBe id
             }
-
-            is Mention.Event -> {
-                mention.eventId shouldBe EventId(opaqueId)
-            }
-
-            else -> fail("Wrong Mention type")
+        } else {
+            MatrixRegex.namespacedId.findAll(message).find { it.value == id }?.value shouldNotBe id
         }
     }
 
-    fun negativeTest(id: String, matcher: Regex? = null) {
-        val message = "Hello $id"
+    @Test
+    fun shouldFailNamespacedWhenBiggerThan225Characters() {
+        commonNamespacedIdTest("e".repeat(256), expected = false)
+    }
+
+    @Test
+    fun shouldPassNamespacedWhenUnder255Characters() {
+        commonNamespacedIdTest("e".repeat(255), expected = true)
+    }
+
+    @Test
+    fun shouldFailNamespacedWhenStartingWithNumber() {
+        commonNamespacedIdTest("7id", expected = false)
+    }
+
+    @Test
+    fun shouldFailNamespacedWhenStartingWithMDot() {
+        commonNamespacedIdTest("m.id", expected = false)
+    }
+
+    @Test
+    fun shouldFailNamespacedWhenStartingWithDot() {
+        commonNamespacedIdTest(".id", expected = false)
+    }
+
+    @Test
+    fun shouldFailNamespacedWhenStartingWithUnderscore() {
+        commonNamespacedIdTest("_id", expected = false)
+    }
+
+    @Test
+    fun shouldFailNamespacedWhenStartingWithMinus() {
+        commonNamespacedIdTest("-id", expected = false)
+    }
+
+    @Test
+    fun shouldPassNamespacedWhenStartingWithLowercaseLetter() {
+        commonNamespacedIdTest("super_id", expected = true)
+    }
+
+    @Test
+    fun shouldFailNamespacedWhenContainingUppercaseLetter() {
+        commonNamespacedIdTest("superID", expected = false)
+    }
+
+    @Test
+    fun shouldFailNamespacedWhenContainingColon() {
+        commonNamespacedIdTest("super:id", expected = false)
+    }
+
+    @Test
+    fun shouldPassNamespacedWithoutInvalidCharacters() {
+        commonNamespacedIdTest("xxx__6002-super.gamer-2006_xxx", expected = true)
+    }
+
+    // Server Name
+    private fun serverNameTest(hostname: String, expected: Boolean) {
+        val message = "Will host my server at $hostname wbu?"
+
+        if (expected) {
+            MatrixRegex.domain.findAll(message).let {
+                it.count() shouldBe 1
+                it.first().groupValues[0] shouldBe hostname
+            }
+        } else {
+            MatrixRegex.domain.findAll(message).find { it.value == hostname }?.value shouldNotBe hostname
+        }
+    }
+
+    @Test
+    fun shouldPassDomainWithPort() {
+        serverNameTest("matrix.org:8000", expected = true)
+    }
+
+    @Test
+    fun shouldPassDomain() {
+        serverNameTest("matrix.org", expected = true)
+    }
+
+    @Test
+    fun shouldPassDomains() {
+        serverNameTest("awesome.server.matrix.org", expected = true)
+    }
+
+    @Test
+    fun shouldFailDomainWithIllegalSymboles() {
+        serverNameTest("ex&mple.com", expected = false)
+    }
+
+    @Test
+    fun shouldPassIPv4WithPort() {
+        serverNameTest("1.2.3.4:1234", expected = true)
+    }
+
+    @Test
+    fun shouldPassIPv4() {
+        serverNameTest("1.2.3.4", expected = true)
+    }
+
+    @Test
+    fun shouldPassIPV6WithPort() {
+        serverNameTest("[1234:5678::abcd]:5678", expected = true)
+    }
+
+    @Test
+    fun shouldPassIPV6() {
+        serverNameTest("[1234:5678::abcd]", expected = true)
+    }
+
+    @Test
+    fun shouldFailIPV6WithIllegalSymbols() {
+        serverNameTest("[2001:8a2e:0370:733G]", expected = false)
+    }
+
+    // User Localpart
+    private fun userLocalpartTest(localpart: String, expected: Boolean) {
+        val message = "HALLO $localpart!"
+        if (expected) {
+            MatrixRegex.userIdLocalpart.findAll(message).let {
+                it.count() shouldBe 1
+                it.first().groupValues[0] shouldBe localpart
+            }
+        } else {
+            MatrixRegex.userIdLocalpart.findAll(message).find { it.value == localpart }?.value shouldNotBe localpart
+        }
+    }
+
+    @Test
+    fun shouldFailEmptyUserLocalpart() {
+        userLocalpartTest("", expected = false)
+    }
+
+    @Test
+    fun shouldFailUserLocalpartWithUppercase() {
+        userLocalpartTest("i-am_the.UNDEFINEDman/1+undefined=NaN", expected = false)
+    }
+
+    @Test
+    fun shouldFailUserLocalpartWithIllegalSymboles() {
+        userLocalpartTest("real&true", expected = false)
+    }
+
+    @Test
+    fun shouldPassValidUserLocalpart() {
+        userLocalpartTest("i-am_the.nullman/1+nullptr=nullptr", expected = true)
+    }
+
+    // Room Alias Localpart
+    private fun roomAliasLocalpartTest(localpart: String, expected: Boolean) {
+        val message = "HALLO $localpart !"
+        val baseAmount = 2
+
+        if (expected) {
+            MatrixRegex.roomAliasLocalpart.findAll(message).let {
+                it.count() shouldBe 1 + baseAmount
+                it.iterator().next().next()?.value shouldBe localpart
+            }
+        } else {
+            MatrixRegex.roomAliasLocalpart.findAll(message).find { it.value == localpart }?.value shouldNotBe localpart
+        }
+    }
+
+    @Test
+    fun shouldFailEmptyRoomAliasLocalpart() {
+        roomAliasLocalpartTest("", expected = false)
+    }
+
+    @Test
+    fun shouldPassRoomAliasLocalpartWithUppercase() {
+        roomAliasLocalpartTest("i-am_the.UNDEFINEDman/1+undefined=NaN", expected = true)
+    }
+
+    @Test
+    fun shouldFailRoomAliasLocalpartWithIllegalSymboles() {
+        roomAliasLocalpartTest("real:true", expected = false)
+    }
+
+    @Test
+    fun shouldPassValidRoomAliasLocalpart() {
+        roomAliasLocalpartTest("i-am_the.nullman/1+nullptr=nullptr", expected = true)
+    }
+
+    // Opaque ID
+    private fun opaqueIdTest(id: String, expected: Boolean) {
+        val message = "HALLO $id!"
+        val baseAmount = 1
+
+        if (expected) {
+            MatrixRegex.opaqueId.findAll(message).let {
+                it.count() shouldBe 1 + baseAmount
+                it.iterator().next().next()?.value shouldBe id
+            }
+        } else {
+            MatrixRegex.opaqueId.findAll(message).find { it.value == id }?.value shouldNotBe id
+        }
+    }
+
+    @Test
+    fun shouldFailEmptyOpaqueId() {
+        opaqueIdTest("", expected = false)
+    }
+
+    @Test
+    fun shouldPassOpaqueIdWithUppercase() {
+        opaqueIdTest("i-am_the.UNDEFINEDwoman1undefinedNaN", expected = true)
+    }
+
+    @Test
+    fun shouldFailOpaqueIdWithIllegalSymboles() {
+        opaqueIdTest("real&true", expected = false)
+    }
+
+    @Test
+    fun shouldPassValidOpaqueId() {
+        opaqueIdTest("i-am_the.invisible~woman", expected = true)
+    }
+
+    // User IDs
+    private fun userIdTest(id: String, localpart: String, domain: String, expected: Boolean) {
+        val result = findMentions("Hello $id :D")
+
+        result.values.any {
+            it.match == id
+        } shouldBe expected
+
+        if (expected) {
+            result.size shouldBe 1
+            (result.entries.first { it.value.match == id }.value as Mention.User).userId shouldBe UserId(
+                localpart,
+                domain
+            )
+        } else {
+            result.size shouldBe 0
+        }
+    }
+
+    @Test
+    fun shouldPassValidUserIdentifier() {
+        userIdTest("@a9._=-/+:example.com", "a9._=-/+", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassValidUserIdentifierWithLongDomain() {
+        userIdTest(
+            "@demo.test:example.eu.timp.mock.abc.xyz",
+            "demo.test",
+            "example.eu.timp.mock.abc.xyz",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassValidUserIdentifierWithSpecialCharacters() {
+        userIdTest("@user:sub.example.com:8000", "user", "sub.example.com:8000", expected = true)
+    }
+
+    @Test
+    fun shouldPassValidUserIdentifierWithIPV4() {
+        userIdTest("@user:1.1.1.1", "user", "1.1.1.1", expected = true)
+    }
+
+    @Test
+    fun shouldPassValidUserIdentifierWithIPV6() {
+        userIdTest(
+            "@user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            "user",
+            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldFailUserOver255Bytes() {
+        userIdTest("@${"users".repeat(50)}:example.com", "users".repeat(50), "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailUserLocalpartContainingUppsercase() {
+        userIdTest("@User:example.com", "User", "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailUserLocalpartContainingIllegalSymbole() {
+        userIdTest("@user&:example.com", "user&", "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailInvalidUserDomain() {
+        userIdTest("@user:ex&mple.com", "user", "ex&mple.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailInvalidUserIPV6WithIllegalCharacters() {
+        userIdTest("@user:[2001:8a2e:0370:733G]", "user", "[2001:8a2e:0370:733G]", expected = false)
+    }
+
+    // Room IDs
+    private fun roomIdTest(id: String, localpart: String, domain: String, expected: Boolean) {
+        val result = findMentions("omw to $id now")
+
+        result.values.any {
+            it.match == id
+        } shouldBe expected
+
+        if (expected) {
+            result.size shouldBe 1
+            (result.entries.first { it.value.match == id }.value as Mention.Room).roomId shouldBe RoomId(
+                localpart,
+                domain
+            )
+        } else {
+            result.size shouldBe 0
+        }
+    }
+
+    @Test
+    fun shouldPassRoomIdentifier() {
+        roomIdTest("!a9._~B-:example.com", "a9._~B-", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomIdentifierWithPort() {
+        roomIdTest("!room:sub.example.com:8000", "room", "sub.example.com:8000", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomIdentifierWithIPV4() {
+        roomIdTest("!room:1.1.1.1", "room", "1.1.1.1", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomIdentifierWithIPV6() {
+        roomIdTest(
+            "!room:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            "room",
+            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldFailRoomIdOver255Bytes() {
+        roomIdTest("!${"roomi".repeat(50)}:example.com", "roomi".repeat(50), "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailRoomIdWithIllegalSymboleInLocalpart() {
+        roomIdTest("!room&:example.com", "room&", "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailRoomIdWithNonOpaqueLocalpart() {
+        roomIdTest("!ro+om:example.com", "ro+om", "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailRoomIdWithIllegalSymboleInDomain() {
+        roomIdTest("!room:ex&mple.com", "room", "ex&ample.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailRoomIdIPV6WithIllegalCharacters() {
+        roomIdTest("!room:[2001:8a2e:0370:733G]", "room", "[2001:8a2e:0370:733G]", expected = false)
+    }
+
+    // Room Alias
+    private fun roomAliasTest(id: String, localpart: String, domain: String, expected: Boolean) {
+        val result = findMentions("omw to $id now")
+
+        result.values.any {
+            it.match == id
+        } shouldBe expected
+
+        if (expected) {
+            result.size shouldBe 1
+            (result.entries.first { it.value.match == id }.value as Mention.RoomAlias).roomAliasId shouldBe RoomAliasId(
+                localpart,
+                domain
+            )
+        } else {
+            result.size shouldBe 0
+        }
+    }
+
+    @Test
+    fun shouldPassRoomAlias() {
+        roomAliasTest("#a9._=-/+:example.com", "a9._=-/+", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomAliasWithPort() {
+        roomAliasTest("#room:sub.example.com:8000", "room", "sub.example.com:8000", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomAliasWithIPV4() {
+        roomAliasTest("#room:1.1.1.1", "room", "1.1.1.1", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomAliasWithIPV6() {
+        roomAliasTest(
+            "#room:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            "room",
+            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldFailRoomAliasOver255Bytes() {
+        roomAliasTest("#${"alias".repeat(50)}:example.com", "alias".repeat(50), "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailRoomAliasWithIllegalSymboleInLocalpart() {
+        roomAliasTest("#roo:m:example.com", "room&", "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailInvalidRoomAliasDomain() {
+        roomAliasTest("#room:ex&mple.com", "room", "ex&mple.com", expected = false)
+    }
+
+    @Test
+    fun failFailRoomAliasIPV6WithIllegalCharacters() {
+        roomAliasTest("#room:[2001:8a2e:0370:733G]", "room", "[2001:8a2e:0370:733G]", expected = false)
+    }
+
+    // Event IDs
+    private fun eventIdTest(id: String, expected: Boolean) {
+        val result = findMentions("You can find it at $id :)")
+
+        result.values.any {
+            it.match == id
+        } shouldBe expected
+
+        if (expected) {
+            result.size shouldBe 1
+
+            val mention = result.entries.first { it.value.match == id }.value
+            if (mention !is Mention.Event) {
+                fail("Wrong Mention type")
+            } else {
+                mention.eventId shouldBe EventId(id)
+            }
+        }
+    }
+
+    @Test
+    fun matchValidEventIdentifier() {
+        eventIdTest("\$event", expected = true)
+    }
+
+    @Test
+    fun shouldFailEventIdWithSpace() {
+        eventIdTest("\$eve t", expected = false)
+    }
+
+    @Test
+    fun shouldFailNonOpaqueEventId() {
+        eventIdTest("\$e+vent", expected = false)
+    }
+
+    // URIs
+    private object UriTest {
+        fun user(uri: String, localpart: String, domain: String, expected: Boolean) {
+            val result = findMentions("Hello $uri :D")
+
+            result.values.any {
+                it.match == uri
+            } shouldBe expected
+
+            if (expected) {
+                result.size shouldBe 1
+                (result.entries.first { it.value.match == uri }.value as Mention.User).userId shouldBe UserId(
+                    localpart,
+                    domain
+                )
+            } else {
+                result.size shouldBe 0
+            }
+        }
+
+        fun roomId(uri: String, localpart: String, domain: String, expected: Boolean) {
+            val result = findMentions("omw to $uri now")
+
+            result.values.any {
+                it.match == uri
+            } shouldBe expected
+
+            if (expected) {
+                result.size shouldBe 1
+                (result.entries.first { it.value.match == uri }.value as Mention.Room).roomId shouldBe RoomId(
+                    localpart,
+                    domain
+                )
+            }
+        }
+
+        fun roomAlias(uri: String, localpart: String, domain: String, expected: Boolean) {
+            val result = findMentions("omw to $uri now")
+
+            result.values.any {
+                it.match == uri
+            } shouldBe expected
+
+            if (expected) {
+                result.size shouldBe 1
+                (result.entries.first { it.value.match == uri }.value as Mention.RoomAlias).roomAliasId shouldBe RoomAliasId(
+                    localpart,
+                    domain
+                )
+            } else {
+                result.size shouldBe 0
+            }
+        }
+
+        fun event(uri: String, localpart: String, domain: String, id: String, expected: Boolean) {
+            val result = findMentions("You can find it at $uri :)")
+
+            result.values.any {
+                it.match == uri
+            } shouldBe expected
+
+            if (expected) {
+                result.size shouldBe 1
+
+                val mention = result.entries.first { it.value.match == uri }.value
+                if (mention !is Mention.Event) {
+                    fail("Wrong Mention type")
+                } else {
+                    mention.eventId shouldBe EventId("$$id")
+                    mention.roomId shouldBe RoomId(localpart, domain)
+                }
+            } else {
+                result.size shouldBe 0
+            }
+        }
+    }
+
+    // URIs: User ID
+    @Test
+    fun shouldPassUserURIWithActionQuery() {
+        UriTest.user("matrix:u/user:example.com?action=chat", "user", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassUserURIWithinAnchorTagWithActionQuery() {
+        UriTest.user(
+            "<a href=\"matrix:u/alice:example.org?action=chat\">Alice</a>",
+            "alice",
+            "example.org",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassUserURIWithViaQuery() {
+        UriTest.user("matrix:u/user:example.com?via=example.com", "user", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassUserURIwithViaAndActionQuery() {
+        UriTest.user("matrix:u/user:example.com?via=example.com&action=chat", "user", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassUserURIWithActionAndViaQuery() {
+        UriTest.user("matrix:u/user:example.com?action=chat&via=example.com", "user", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassUserURI() {
+        UriTest.user("matrix:u/user:example.com", "user", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassUriURIWithinAnchorTag() {
+        UriTest.user(
+            "<a href=\"matrix:u/demobot8:demo.example.de\">Dr. Karl Tanaka (Demo Bot)</a>",
+            "demobot8",
+            "demo.example.de",
+            expected = true
+        )
+    }
+
+    // URIs: Room Alias
+    @Test
+    fun shouldPassRoomAliasURIWithActionQuery() {
+        UriTest.roomAlias("matrix:r/room:example.com?action=join", "room", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomAliasURIWithViaQuery() {
+        UriTest.roomAlias("matrix:r/room:example.com?via=example.com", "room", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomAliasURIWithViaAndActionQuery() {
+        UriTest.roomAlias(
+            "matrix:r/room:example.com?via=example.com&action=join",
+            "room",
+            "example.com",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassRoomAliasURIWIthActionAndViaQuery() {
+        UriTest.roomAlias(
+            "matrix:r/room:example.com?action=chat&via=example.com",
+            "room",
+            "example.com",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassRoomAliasURI() {
+        UriTest.roomAlias("matrix:r/room:example.com", "room", "example.com", expected = true)
+    }
+
+    // URIs: Room ID
+    @Test
+    fun shouldPassRoomIdURIWithActionQuery() {
+        UriTest.roomId("matrix:roomid/room:example.com?action=join", "room", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomIdURIWithUnkownQuery() {
+        UriTest.roomId("matrix:roomid/room:example.com?actiooon=message", "room", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldFailRoomIdURIWithIllegalQuery() {
+        UriTest.roomId("matrix:roomid/room:example.com?actioné=messager", "room", "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldFailRoomIdURIWithReservedQuery() {
+        UriTest.roomId("matrix:roomid/room:example.com?m.action=join", "room", "example.com", expected = false)
+    }
+
+    @Test
+    fun shouldPassRoomIdURIWithViaQuery() {
+        UriTest.roomId("matrix:roomid/room:example.com?via=example.com", "room", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassRoomIdURIWithViaAndActionQuery() {
+        UriTest.roomId(
+            "matrix:roomid/room:example.com?via=example.com&action=join",
+            "room",
+            "example.com",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassRoomIdURIWithActionAndViaQuery() {
+        UriTest.roomId(
+            "matrix:roomid/room:example.com?action=chat&via=example.com",
+            "room",
+            "example.com",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassRoomIdURI() {
+        UriTest.roomId("matrix:roomid/room:example.com", "room", "example.com", expected = true)
+    }
+
+    // URIs: Event ID
+    @Test
+    fun shouldPassEventURIWithActionQuery() {
+        UriTest.event(
+            "matrix:roomid/room:example.com/e/event?action=join",
+            "room",
+            "example.com",
+            "event",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassEventURIWithViaQuery() {
+        UriTest.event(
+            "matrix:roomid/room:example.com/e/event?via=example.com",
+            "room",
+            "example.com",
+            "event",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassEventURIWithViaAndActionQuery() {
+        UriTest.event(
+            "matrix:roomid/room:example.com/e/event?via=example.com&action=join",
+            "room",
+            "example.com",
+            "event",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassEventURIWithActionAndViaQuery() {
+        UriTest.event(
+            "matrix:roomid/room:example.com/e/event?action=chat&via=example.com",
+            "room",
+            "example.com",
+            "event",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassEventURI() {
+        UriTest.event("matrix:roomid/room:example.com/e/event", "room", "example.com", "event", expected = true)
+    }
+
+    // Permalinks (matrix.to)
+    object PermalinkTest {
+        fun user(permalink: String, localpart: String, domain: String, expected: Boolean) {
+            val result = findMentions("Hello $permalink :D")
+
+            result.values.any {
+                it.match == permalink
+            } shouldBe expected
+
+            if (expected) {
+                result.size shouldBe 1
+                (result.entries.first { it.value.match == permalink }.value as Mention.User).userId shouldBe UserId(
+                    localpart,
+                    domain
+                )
+            } else {
+                result.size shouldBe 0
+            }
+        }
+
+        fun roomId(permalink: String, localpart: String, domain: String, expected: Boolean) {
+            val result = findMentions("omw to $permalink now")
+
+            result.values.any {
+                it.match == permalink
+            } shouldBe expected
+
+            if (expected) {
+                result.size shouldBe 1
+                (result.entries.first { it.value.match == permalink }.value as Mention.Room).roomId shouldBe RoomId(
+                    localpart,
+                    domain
+                )
+            } else {
+                result.size shouldBe 0
+            }
+        }
+
+        fun roomAlias(permalink: String, localpart: String, domain: String, expected: Boolean) {
+            val result = findMentions("omw to $permalink now")
+
+            result.values.any {
+                it.match == permalink
+            } shouldBe expected
+
+            if (expected) {
+                result.size shouldBe 1
+                (result.entries.first { it.value.match == permalink }.value as Mention.RoomAlias).roomAliasId shouldBe RoomAliasId(
+                    localpart,
+                    domain
+                )
+            } else {
+                result.size shouldBe 0
+            }
+        }
+
+        fun event(permalink: String, localpart: String, domain: String, id: String, expected: Boolean) {
+            val result = findMentions("You can find it at $permalink :)")
+
+            result.values.any {
+                it.match == permalink
+            } shouldBe expected
+
+            if (expected) {
+                result.size shouldBe 1
+
+                val mention = result.entries.first { it.value.match == permalink }.value
+                if (mention !is Mention.Event) {
+                    fail("Wrong Mention type")
+                } else {
+                    mention.eventId shouldBe EventId("$$id")
+                    mention.roomId shouldBe RoomId(localpart, domain)
+                }
+            } else {
+                result.size shouldBe 0
+            }
+        }
+    }
+
+    // Permalink: User ID
+    @Test
+    fun shouldPassUserPermalinkWithinAnchorTag() {
+        PermalinkTest.user(
+            "<a href=\"https://matrix.to/#/@user:example.com\">Hallo</a>",
+            "user",
+            "example.com",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassEncodedUserPermalinkWithinAnchorTag() {
+        PermalinkTest.user(
+            "<a href=\"https://matrix.to/#/%40user%3Aexample.com\">Hallo</a>",
+            "user",
+            "example.com",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassUserPermalink() {
+        PermalinkTest.user("https://matrix.to/#/@user:example.com", "user", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassEncodedUserPermalink() {
+        PermalinkTest.user("https://matrix.to/#/%40alice%3Aexample.org", "alice", "example.org", expected = true)
+    }
+
+    @Test
+    fun shouldPassUsersPermalinksWithinAnchorTag() {
+        val karl = "<a href=\"https://matrix.to/#/@demobot8:demo.example.de\">Dr. Karl Tanaka (Demo Bot)</a>"
+        val wolfgang =
+            "<a href=\"https://matrix.to/#/@demobot2:demo.example.de\">Dr. Wolfgang Reidorf (Demo Bot)</a>"
+
+        val message = "$karl und $wolfgang wie geht's euch?"
+
+        val result = findMentions(message)
+        result.size shouldBe 2
+
+        result.values.any {
+            it.match == karl
+        } shouldBe true
+        (result.entries.first { it.value.match == karl }.value as Mention.User).userId shouldBe UserId(
+            "demobot8",
+            "demo.example.de"
+        )
+
+        result.values.any {
+            it.match == wolfgang
+        } shouldBe true
+        (result.entries.first { it.value.match == wolfgang }.value as Mention.User).userId shouldBe UserId(
+            "demobot2",
+            "demo.example.de"
+        )
+    }
+
+    // Permalink: Room Alias
+    @Test
+    fun shouldPassRoomAliasPermalinkWithinAnchorTag() {
+        PermalinkTest.roomAlias(
+            "<a href=\"https://matrix.to/#/#room:example.com\">Hallo</a>",
+            "room",
+            "example.com",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassRoomAliasPermalink() {
+        PermalinkTest.roomAlias("https://matrix.to/#/#room:example.com", "room", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassEncodedRoomAliasPermalink() {
+        PermalinkTest.roomAlias(
+            "https://matrix.to/#/%23somewhere%3Aexample.org",
+            "somewhere",
+            "example.org",
+            expected = true
+        )
+    }
+
+    // Permalink: Room ID
+    @Test
+    fun shouldPassRoomIdPermalinkWithinAnchorTag() {
+        PermalinkTest.roomId(
+            "<a href=\"https://matrix.to/#/!room:example.com\">Hallo</a>",
+            "room",
+            "example.com",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassRoomIdPermalink() {
+        PermalinkTest.roomId("https://matrix.to/#/!room:example.com", "room", "example.com", expected = true)
+    }
+
+    @Test
+    fun shouldPassEncodedRoomIdPermalink() {
+        PermalinkTest.roomId(
+            "https://matrix.to/#/!somewhere%3Aexample.org?via=elsewhere.ca",
+            "somewhere",
+            "example.org",
+            expected = true
+        )
+    }
+
+    // Permalink: Event ID
+    @Test
+    fun shouldPassEventIDPermalinkWithinAnchorTag() {
+        PermalinkTest.event(
+            "<a href=\"https://matrix.to/#/!room:example.com/\$event\">Hallo</a>",
+            "room",
+            "example.com",
+            "event",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassEventIDPermalink() {
+        PermalinkTest.event(
+            "https://matrix.to/#/!room:example.com/\$event",
+            "room",
+            "example.com",
+            "event",
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassEncodedEventIDPermalink() {
+        PermalinkTest.event(
+            "https://matrix.to/#/!somewhere%3Aexample.org/%24event%3Aexample.org?via=elsewhere.ca",
+            "somewhere",
+            "example.org",
+            "event%3Aexample.org",
+            expected = true
+        )
+    }
+
+    // Parameters
+    fun parameterTest(uri: String, params: Parameters, expected: Boolean) {
+        val mentions = findMentions(uri)
+
+        mentions.values.forEach {
+            (it.parameters == params) shouldBe expected
+        }
+    }
+
+    fun makeParameters(params: Map<String, String>): Parameters {
+        return Parameters.build {
+            params.forEach { (key, value) ->
+                this.append(key, value)
+            }
+        }
+    }
+
+    @Test
+    fun shouldPassValidViaParameter() {
+        parameterTest(
+            "matrix:roomid/somewhere%3Aexample.org/%24event%3Aexample.org?via=elsewhere.ca",
+            makeParameters(mapOf("via" to "elsewhere.ca")),
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassActionParameter() {
+        parameterTest(
+            "matrix:roomid/room:example.com/e/event?via=example.com&action=join",
+            makeParameters(mapOf("action" to "join", "via" to "example.com")),
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassActionAndViaParameter() {
+        parameterTest(
+            "matrix:roomid/somewhere%3Aexample.org?action=chat&via=example.com",
+            makeParameters(mapOf("action" to "chat", "via" to "example.com")),
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldPassCustomParameter() {
+        parameterTest(
+            "matrix:r/somewhere:example.org?foo=bar",
+            makeParameters(mapOf("foo" to "bar")),
+            expected = true
+        )
+    }
+
+    @Test
+    fun shouldFailCustomParameterWithIllegalCharacter() {
+        parameterTest(
+            "matrix:u/mario:esempio.it?actionaté=mammamia",
+            makeParameters(mapOf("actionaté" to "mammamia")),
+            expected = false
+        )
+    }
+
+    @Test
+    fun shouldFailCustomParameterWithIllegalStart() {
+        parameterTest(
+            "matrix:u/user:homeserver.рф?m.vector=matrix",
+            makeParameters(mapOf("m.vector" to "matrix")),
+            expected = false
+        )
+    }
+
+    @Test
+    fun shouldPassCustomParametersWithLastOneBeingIllegal() {
+        parameterTest(
+            "matrix:u/user:example.com?foo=bar&actionaté=mammamia",
+            makeParameters(mapOf("foo" to "bar")),
+            expected = true
+        )
+    }
+
+    // Negative Edgecase
+    private fun negativeTest(id: String, matcher: Regex? = null) {
+        val message = "Hello $id :D"
 
         val result = matcher?.findAll(message)?.toList()?.size
             ?: findMentions(message).size
@@ -62,330 +1063,48 @@ class MatrixRegexTest {
         result shouldBe 0
     }
 
-    // General
-    @Test
-    fun notMatchInvalidIPV4WithCharacters() {
-        negativeTest("1.1.1.Abc", MatrixRegex.IPv4)
-    }
-
-    // Users
-    @Test
-    fun matchValidUserIdentifier() {
-        positiveUserIdTest("@a9._=-/+:example.com", "a9._=-/+", "example.com")
-        positiveUserIdTest("@demo.test:example.eu.timp.mock.abc.xyz", "demo.test", "example.eu.timp.mock.abc.xyz")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithMatrixToLink() {
-        positiveUserIdTest("<a href=\"https://matrix.to/#/@user:example.com\">Hallo</a>", "user", "example.com")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithMatrixToLinkWithoutHref() {
-        positiveUserIdTest("https://matrix.to/#/@user:example.com", "user", "example.com")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithMatrixULinkAndActionAttribute() {
-        positiveUserIdTest("matrix:u/user:example.com?action=chat", "user", "example.com")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithMatrixULinkAndViaAttribute() {
-        positiveUserIdTest("matrix:u/user:example.com?via=example.com", "user", "example.com")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithMatrixULinkViaAndActionAttribute() {
-        positiveUserIdTest("matrix:u/user:example.com?via=example.com&action=chat", "user", "example.com")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithMatrixULinkActionAndViaAttribute() {
-        positiveUserIdTest("matrix:u/user:example.com?action=chat&via=example.com", "user", "example.com")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithMatrixULink() {
-        positiveUserIdTest("matrix:u/user:example.com", "user", "example.com")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithSpecialCharacters() {
-        positiveUserIdTest("@user:sub.example.com:8000", "user", "sub.example.com:8000")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithIPV4() {
-        positiveUserIdTest("@user:1.1.1.1", "user", "1.1.1.1")
-    }
-
-    @Test
-    fun matchValidUserIdentifierWithIPV6() {
-        positiveUserIdTest(
-            "@user:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
-            "user",
-            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"
-        )
-    }
-
-    @Test
-    fun notMatchInvalidUserLocalpart() {
-        negativeTest("@user&:example.com")
-    }
-
-    @Test
-    fun notMatchInvalidUserDomain() {
-        negativeTest("@user:ex&mple.com")
-    }
-
-    @Test
-    fun notMatchInvalidUserIPV6WithIllegalCharacters() {
-        negativeTest("@user:[2001:8a2e:0370:733G]")
-    }
-
+    // Negative Edgecase: User ID
     @Test
     fun notMatchIncompleteUserHtmlTag() {
-        negativeTest("""<a href="https://matrix.to/#/@user:example.com"""", MatrixRegex.userHtmlAnchor)
+        negativeTest("""<a href="https://matrix.to/#/@user:example.com"""", MatrixRegex.userIdPermalinkAnchor)
     }
 
     @Test
     fun notMatchInvalidUserHtmlLinkTag() {
-        negativeTest("<b href=\"https://matrix.to/#/@user:example.com>User</b>", MatrixRegex.userHtmlAnchor)
+        negativeTest("<b href=\"https://matrix.to/#/@user:example.com>User</b>", MatrixRegex.userIdPermalinkAnchor)
     }
 
-    // Room Alias
-    @Test
-    fun matchValidRoomAlias() {
-        positiveRoomAliasTest("#a9._=-/+:example.com", "a9._=-/+", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithMatrixToLink() {
-        positiveRoomAliasTest("<a href=\"https://matrix.to/#/#room:example.com\">Hallo</a>", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithMatrixToLinkWithoutHref() {
-        positiveRoomAliasTest("https://matrix.to/#/#room:example.com", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithMatrixULinkAndActionAttribute() {
-        positiveRoomAliasTest("matrix:r/room:example.com?action=join", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithMatrixULinkAndViaAttribute() {
-        positiveRoomAliasTest("matrix:r/room:example.com?via=example.com", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithMatrixULinkViaAndActionAttribute() {
-        positiveRoomAliasTest("matrix:r/room:example.com?via=example.com&action=join", "room", "example.com")
-    }
-
-    fun matchValidRoomAliasWithMatrixULinkActionAndViaAttribute() {
-        positiveRoomAliasTest("matrix:r/room:example.com?action=chat&via=example.com", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithMatrixULink() {
-        positiveRoomAliasTest("matrix:r/room:example.com", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithSpecialCharacters() {
-        positiveRoomAliasTest("#room:sub.example.com:8000", "room", "sub.example.com:8000")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithIPV4() {
-        positiveRoomAliasTest("#room:1.1.1.1", "room", "1.1.1.1")
-    }
-
-    @Test
-    fun matchValidRoomAliasWithIPV6() {
-        positiveRoomAliasTest(
-            "#room:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
-            "room",
-            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"
-        )
-    }
-
-    @Test
-    fun notMatchInvalidRoomAliasLocalpart() {
-        negativeTest("#room&:example.com")
-    }
-
-    @Test
-    fun notMatchInvalidRoomAliasDomain() {
-        negativeTest("#room:ex&mple.com")
-    }
-
-    @Test
-    fun notMatchInvalidRoomAliasIPV6WithIllegalCharacters() {
-        negativeTest("#room:[2001:8a2e:0370:733G]")
-    }
-
+    // Negative Edgecase: Anchors
     @Test
     fun notMatchIncompleteRoomAliasHtmlTag() {
-        negativeTest("""<a href="https://matrix.to/#/#room:example.com"""", MatrixRegex.roomHtmlAnchor)
+        negativeTest("""<a href="https://matrix.to/#/#room:example.com"""", MatrixRegex.roomAliasPermalinkAnchor)
     }
 
     @Test
     fun notMatchInvalidRoomAliasHtmlLinkTag() {
-        negativeTest("<b href=\"https://matrix.to/#/#room:example.com>Room</b>", MatrixRegex.roomHtmlAnchor)
-    }
-
-    // Room IDs
-    @Test
-    fun matchValidRoomIdentifier() {
-        positiveRoomIdTest("!a9._=-/+:example.com", "a9._=-/+", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithMatrixToLink() {
-        positiveRoomIdTest("<a href=\"https://matrix.to/#/!room:example.com\">Hallo</a>", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithMatrixToLinkWithoutHref() {
-        positiveRoomIdTest("https://matrix.to/#/!room:example.com", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithMatrixULinkAndActionAttribute() {
-        positiveRoomIdTest("matrix:roomid/room:example.com?action=join", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithMatrixULinkAndViaAttribute() {
-        positiveRoomIdTest("matrix:roomid/room:example.com?via=example.com", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithMatrixULinkViaAndActionAttribute() {
-        positiveRoomIdTest("matrix:roomid/room:example.com?via=example.com&action=join", "room", "example.com")
-    }
-
-    fun matchValidRoomIdentifierWithMatrixULinkActionAndViaAttribute() {
-        positiveRoomIdTest("matrix:roomid/room:example.com?action=chat&via=example.com", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithMatrixULink() {
-        positiveRoomIdTest("matrix:roomid/room:example.com", "room", "example.com")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithSpecialCharacters() {
-        positiveRoomIdTest("!room:sub.example.com:8000", "room", "sub.example.com:8000")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithIPV4() {
-        positiveRoomIdTest("!room:1.1.1.1", "room", "1.1.1.1")
-    }
-
-    @Test
-    fun matchValidRoomIdentifierWithIPV6() {
-        positiveRoomIdTest(
-            "!room:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
-            "room",
-            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"
-        )
-    }
-
-    @Test
-    fun notMatchInvalidRoomIdLocalpart() {
-        negativeTest("!ro om&:example.com")
-    }
-
-    @Test
-    fun notMatchInvalidRoomIdDomain() {
-        negativeTest("!room:ex&mple.com")
-    }
-
-    @Test
-    fun notMatchInvalidRoomIdIPV6WithIllegalCharacters() {
-        negativeTest("!room:[2001:8a2e:0370:733G]")
+        negativeTest("<b href=\"https://matrix.to/#/#room:example.com>Room</b>", MatrixRegex.roomAliasPermalinkAnchor)
     }
 
     @Test
     fun notMatchIncompleteRoomIdHtmlTag() {
-        negativeTest("""<a href="https://matrix.to/#/!room:example.com"""", MatrixRegex.roomHtmlAnchor)
+        negativeTest("""<a href="https://matrix.to/#/!room:example.com"""", MatrixRegex.roomIdPermalinkAnchor)
     }
 
     @Test
     fun notMatchInvalidRoomIdHtmlLinkTag() {
-        negativeTest("<b href=\"https://matrix.to/#/!room:example.com>User</b>", MatrixRegex.roomHtmlAnchor)
-    }
-
-    // Event IDs
-    @Test
-    fun matchValidEventIdentifier() {
-        positiveEventIdTest("\$event", "\$event")
-    }
-
-    @Test
-    fun matchValidEventIdentifierWithMatrixToLink() {
-        positiveEventIdTest(
-            "<a href=\"https://matrix.to/#/!room:example.com/\$event\">Hallo</a>",
-            "\$event",
-            "!room:example.com"
-        )
-    }
-
-    @Test
-    fun matchValidEventIdentifierWithMatrixToLinkWithoutHref() {
-        positiveEventIdTest("https://matrix.to/#/!room:example.com/\$event", "\$event", "!room:example.com")
-    }
-
-    @Test
-    fun matchValidEventIdentifierWithMatrixULinkAndActionAttribute() {
-        positiveEventIdTest("matrix:roomid/room:example.com/e/event?action=join", "\$event", "!room:example.com")
-    }
-
-    @Test
-    fun matchValidEventIdentifierWithMatrixULinkAndViaAttribute() {
-        positiveEventIdTest("matrix:roomid/room:example.com/e/event?via=example.com", "\$event", "!room:example.com")
-    }
-
-    @Test
-    fun matchValidEventIdentifierWithMatrixULinkViaAndActionAttribute() {
-        positiveEventIdTest(
-            "matrix:roomid/room:example.com/e/event?via=example.com&action=join",
-            "\$event",
-            "!room:example.com"
-        )
-    }
-
-    fun matchValidEventIdentifierWithMatrixULinkActionAndViaAttribute() {
-        positiveEventIdTest(
-            "matrix:roomid/room:example.com/e/event?action=chat&via=example.com",
-            "\$event",
-            "!room:example.com"
-        )
-    }
-
-    @Test
-    fun matchValidEventIdentifierWithMatrixULink() {
-        positiveEventIdTest("matrix:roomid/room:example.com/e/event", "\$event", "!room:example.com")
-    }
-
-    @Test
-    fun notMatchInvalidEventIdLocalpart() {
-        negativeTest("!eve t:example.com")
+        negativeTest("<b href=\"https://matrix.to/#/!room:example.com>User</b>", MatrixRegex.roomIdPermalinkAnchor)
     }
 
     @Test
     fun notMatchIncompleteEventIdHtmlTag() {
-        negativeTest("<a href=\"https://matrix.to/#/!room:example.com/\$event", MatrixRegex.roomHtmlAnchor)
+        negativeTest("<a href=\"https://matrix.to/#/!room:example.com/\$event", MatrixRegex.eventIdPermalinkAnchor)
     }
 
     @Test
     fun notMatchInvalidEventIdHtmlLinkTag() {
-        negativeTest("<b href=\"https://matrix.to/#/!room:example.com/\$event>Event</b>", MatrixRegex.roomHtmlAnchor)
+        negativeTest(
+            "<b href=\"https://matrix.to/#/!room:example.com/\$event>Event</b>",
+            MatrixRegex.eventIdPermalinkAnchor
+        )
     }
 }

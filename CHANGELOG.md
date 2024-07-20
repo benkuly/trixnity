@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- cleaned up `MatrixRegex`
 - upgrade gradle to 8.9
 - close Okio streams by default
 - Make `refresh_token` required on [`/_matrix/client/v3/refresh`](https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3refresh).
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- parsing and scanning of mentions
 - fixed wrong calculation of canLoadBefore and canLoadAfter in Timeline, when room with upgrades is used
 - close JavaScript streams correctly
 
