@@ -26,7 +26,7 @@ suspend fun MessageBuilder.file(
 
         encryptedFile = mediaService.prepareUploadEncryptedMedia(file)
         info = FileInfo(
-            mimeType = type.toString(),
+            mimeType = type?.toString(),
             size = size,
             thumbnailUrl = null,
             thumbnailFile = thumbnailFile,
@@ -37,7 +37,7 @@ suspend fun MessageBuilder.file(
         url = mediaService.prepareUploadMedia(file, type)
         val (thumbnailUrl, thumbnailInfo) = mediaService.prepareUploadThumbnail(file, type) ?: Pair(null, null)
         info = FileInfo(
-            mimeType = type.toString(),
+            mimeType = type?.toString(),
             size = size,
             thumbnailUrl = thumbnailUrl,
             thumbnailFile = null,

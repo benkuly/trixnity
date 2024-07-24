@@ -30,7 +30,7 @@ suspend fun MessageBuilder.image(
         info = ImageInfo(
             height = height,
             width = width,
-            mimeType = type.toString(),
+            mimeType = type?.toString(),
             size = size,
             thumbnailUrl = null,
             thumbnailFile = thumbnailFile,
@@ -43,7 +43,7 @@ suspend fun MessageBuilder.image(
         info = ImageInfo(
             height = height,
             width = width,
-            mimeType = type.toString(),
+            mimeType = type?.toString(),
             size = size,
             thumbnailUrl = thumbnailUrl,
             thumbnailFile = null,
