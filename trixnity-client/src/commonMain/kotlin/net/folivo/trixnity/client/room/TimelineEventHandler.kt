@@ -135,78 +135,78 @@ class TimelineEventHandlerImpl(
         limit: Long
     ): Result<Unit> = timelineMutex.withLock(roomId) {
         kotlin.runCatching {
-            tm.transaction {
-                val isLastEventId = roomStore.get(roomId).first()?.lastEventId == startEventId
+            val isLastEventId = roomStore.get(roomId).first()?.lastEventId == startEventId
 
-                val startEvent = roomTimelineStore.get(startEventId, roomId).first() ?: return@transaction
-                val previousToken: String?
-                val previousHasGap: Boolean
-                val previousEvent: EventId?
-                val previousEventChunk: List<RoomEvent<*>>?
-                val nextToken: String?
-                val nextHasGap: Boolean
-                val nextEvent: EventId?
-                val nextEventChunk: List<RoomEvent<*>>?
+            val startEvent = roomTimelineStore.get(startEventId, roomId).first() ?: return@runCatching
+            val previousToken: String?
+            val previousHasGap: Boolean
+            val previousEvent: EventId?
+            val previousEventChunk: List<RoomEvent<*>>?
+            val nextToken: String?
+            val nextHasGap: Boolean
+            val nextEvent: EventId?
+            val nextEventChunk: List<RoomEvent<*>>?
 
-                var insertNewEvents = false
+            var insertNewEvents = false
 
-                val startGap = startEvent.gap
-                val startGapBatchBefore = startGap?.batchBefore
-                val startGapBatchAfter = startGap?.batchAfter
+            val startGap = startEvent.gap
+            val startGapBatchBefore = startGap?.batchBefore
+            val startGapBatchAfter = startGap?.batchAfter
 
-                val possiblyPreviousEvent = roomTimelineStore.getPrevious(startEvent)
-                if (startGapBatchBefore != null) {
-                    insertNewEvents = true
-                    log.debug { "fetch missing events before $startEventId" }
-                    val destinationBatch = possiblyPreviousEvent?.gap?.batchAfter
-                    val response = api.room.getEvents(
-                        roomId = roomId,
-                        from = startGapBatchBefore,
-                        to = destinationBatch,
-                        dir = GetEvents.Direction.BACKWARDS,
-                        limit = limit,
-                        filter = LAZY_LOAD_MEMBERS_FILTER
-                    ).getOrThrow()
-                    previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
-                    previousEvent = possiblyPreviousEvent?.eventId
-                    previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
-                    previousHasGap = response.end != null &&
-                            response.end != destinationBatch &&
-                            response.chunk?.none { it.id == previousEvent } == true
-                } else {
-                    previousToken = null
-                    previousEvent = possiblyPreviousEvent?.eventId
-                    previousEventChunk = null
-                    previousHasGap = false
-                }
+            val possiblyPreviousEvent = roomTimelineStore.getPrevious(startEvent)
+            if (startGapBatchBefore != null) {
+                insertNewEvents = true
+                log.debug { "fetch missing events before $startEventId" }
+                val destinationBatch = possiblyPreviousEvent?.gap?.batchAfter
+                val response = api.room.getEvents(
+                    roomId = roomId,
+                    from = startGapBatchBefore,
+                    to = destinationBatch,
+                    dir = GetEvents.Direction.BACKWARDS,
+                    limit = limit,
+                    filter = LAZY_LOAD_MEMBERS_FILTER
+                ).getOrThrow()
+                previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
+                previousEvent = possiblyPreviousEvent?.eventId
+                previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
+                previousHasGap = response.end != null &&
+                        response.end != destinationBatch &&
+                        response.chunk?.none { it.id == previousEvent } == true
+            } else {
+                previousToken = null
+                previousEvent = possiblyPreviousEvent?.eventId
+                previousEventChunk = null
+                previousHasGap = false
+            }
 
-                val possiblyNextEvent = roomTimelineStore.getNext(startEvent)?.first()
-                if (startGapBatchAfter != null && !isLastEventId) {
-                    insertNewEvents = true
-                    log.debug { "fetch missing events after $startEventId" }
-                    val destinationBatch = possiblyNextEvent?.gap?.batchBefore
-                    val response = api.room.getEvents(
-                        roomId = roomId,
-                        from = startGapBatchAfter,
-                        to = destinationBatch,
-                        dir = GetEvents.Direction.FORWARDS,
-                        limit = limit,
-                        filter = LAZY_LOAD_MEMBERS_FILTER
-                    ).getOrThrow()
-                    nextToken = response.end
-                    nextEvent = possiblyNextEvent?.eventId
-                    nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
-                    nextHasGap = response.end != null &&
-                            response.end != destinationBatch &&
-                            response.chunk?.none { it.id == nextEvent } == true
-                } else {
-                    nextToken = startGapBatchAfter
-                    nextEvent = possiblyNextEvent?.eventId
-                    nextEventChunk = null
-                    nextHasGap = isLastEventId
-                }
+            val possiblyNextEvent = roomTimelineStore.getNext(startEvent)?.first()
+            if (startGapBatchAfter != null && !isLastEventId) {
+                insertNewEvents = true
+                log.debug { "fetch missing events after $startEventId" }
+                val destinationBatch = possiblyNextEvent?.gap?.batchBefore
+                val response = api.room.getEvents(
+                    roomId = roomId,
+                    from = startGapBatchAfter,
+                    to = destinationBatch,
+                    dir = GetEvents.Direction.FORWARDS,
+                    limit = limit,
+                    filter = LAZY_LOAD_MEMBERS_FILTER
+                ).getOrThrow()
+                nextToken = response.end
+                nextEvent = possiblyNextEvent?.eventId
+                nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
+                nextHasGap = response.end != null &&
+                        response.end != destinationBatch &&
+                        response.chunk?.none { it.id == nextEvent } == true
+            } else {
+                nextToken = startGapBatchAfter
+                nextEvent = possiblyNextEvent?.eventId
+                nextEventChunk = null
+                nextHasGap = isLastEventId
+            }
 
-                if (insertNewEvents)
+            if (insertNewEvents)
+                tm.transaction {
                     roomTimelineStore.addEventsToTimeline(
                         startEvent = startEvent,
                         roomId = roomId,
@@ -231,7 +231,7 @@ class TimelineEventHandlerImpl(
                             list
                         },
                     )
-            }
+                }
         }
     }
 

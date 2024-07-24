@@ -26,7 +26,7 @@ suspend fun MessageBuilder.audio(
         url = null
         info = AudioInfo(
             duration = duration,
-            mimeType = type.toString(),
+            mimeType = type?.toString(),
             size = size,
         )
     } else {
@@ -34,7 +34,7 @@ suspend fun MessageBuilder.audio(
         url = mediaService.prepareUploadMedia(audio, type)
         info = AudioInfo(
             duration = duration,
-            mimeType = type.toString(),
+            mimeType = type?.toString(),
             size = size,
         )
     }
