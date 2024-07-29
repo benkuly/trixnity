@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - smaller transaction scope on gap filling
+- optimized cache to update cache value before persisting into database
 
 ### Deprecated
 
