@@ -13,9 +13,6 @@ gradle-app.setting
 # Cache of project
 .gradletasknamecache
 
-# idea
-.idea/
-
 # Android NDK/CMake
 .cxx
 
