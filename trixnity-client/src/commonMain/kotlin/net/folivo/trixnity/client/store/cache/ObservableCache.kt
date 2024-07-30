@@ -168,21 +168,34 @@ internal open class ObservableCacheBase<K, V>(
                 .also { log.trace { "$name: no cache hit for key $key" } }
         }
         cacheEntry.first() // resets expire duration by increasing subscription count for a moment
-        val newValue = cacheEntry.updateAndGet {
-            log.trace { "update cache entry" }
-            val oldValue = when (it) {
-                is CacheValue.Init -> get?.invoke()
-                is CacheValue.Value -> it.value
-            }
-            val newValue = if (updater != null) updater(oldValue) else oldValue
-            if (persist != null && (oldValue != newValue || get == null)) persist(newValue)
-            CacheValue.Value(newValue)
-        }.valueOrNull()
+        val newValue = cacheEntry.updateAndGet(updater, get, persist)
         if (removeFromCacheOnNull && updater != null && newValue == null) {
             log.trace { "$name: remove value from cache with key $key because it is stale and is allowed to remove (will never be not-null again)" }
             values.remove(key, true)
         }
         return cacheEntry.filterIsInstance<CacheValue.Value<V?>>().map { it.value }
+    }
+
+    private suspend fun <V> MutableStateFlow<CacheValue<V?>>.updateAndGet(
+        updater: (suspend (oldValue: V?) -> V?)? = null,
+        get: (suspend () -> V?)? = null,
+        persist: (suspend (newValue: V?) -> Unit)? = null,
+    ): V? {
+        while (true) {
+            val oldRawValue = value
+            val oldValue = when (oldRawValue) {
+                is CacheValue.Init -> get?.invoke()
+                is CacheValue.Value -> oldRawValue.value
+            }
+            val newValue = if (updater != null) updater(oldValue) else oldValue
+            val newRawValue = CacheValue.Value(newValue)
+            if (compareAndSet(oldRawValue, newRawValue)) {
+                // There is a tiny chance, that on concurrent persists the wrong value is persisted.
+                // In trixnity-client this is very unlikely to happen as entities of the same type are usually updated sequentially.
+                if (persist != null && (oldValue != newValue || get == null)) persist(newValue)
+                return newValue
+            }
+        }
     }
 }
 
