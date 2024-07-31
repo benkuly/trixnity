@@ -615,6 +615,7 @@ class RoomServiceImpl(
 
     override suspend fun abortSendMessage(transactionId: String) {
         roomOutboxMessageStore.update(transactionId) { null }
+        log.debug { "removed message with id $transactionId" }
     }
 
     override suspend fun retrySendMessage(transactionId: String) {
