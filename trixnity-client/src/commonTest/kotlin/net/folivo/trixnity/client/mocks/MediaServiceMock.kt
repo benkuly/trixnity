@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.mocks
 
 import io.ktor.http.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
@@ -65,12 +66,14 @@ class MediaServiceMock : MediaService {
 
     var returnUploadMedia: Result<String> = Result.success("")
     val uploadMediaCalled = MutableStateFlow<String?>(null)
+    val uploadTimer = MutableStateFlow<Long>(0)
     override suspend fun uploadMedia(
         cacheUri: String,
         progress: MutableStateFlow<FileTransferProgress?>?,
         keepMediaInCache: Boolean
     ): Result<String> {
         uploadMediaCalled.value = cacheUri
+        delay(uploadTimer.value)
         return returnUploadMedia
     }
 }

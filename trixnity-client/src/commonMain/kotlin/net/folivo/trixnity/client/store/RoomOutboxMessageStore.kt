@@ -34,4 +34,7 @@ class RoomOutboxMessageStore(
 
     suspend fun get(transactionId: String): RoomOutboxMessage<*>? =
         roomOutboxMessageCache.read(transactionId).first()
+
+    fun getAsFlow(transactionId: String): Flow<RoomOutboxMessage<*>?> =
+        roomOutboxMessageCache.read(transactionId)
 }

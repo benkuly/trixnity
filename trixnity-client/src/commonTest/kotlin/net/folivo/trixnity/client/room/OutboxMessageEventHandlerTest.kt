@@ -3,7 +3,7 @@ package net.folivo.trixnity.client.room
 import io.kotest.assertions.nondeterministic.continually
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.retry
-import io.kotest.assertions.until.until
+import io.kotest.assertions.nondeterministic.until
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
@@ -11,13 +11,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.http.*
 import io.ktor.util.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
@@ -195,6 +193,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                     RoomMessageEventContent.TextBased.Text("hi")
                 )
             val sendMessageEventCalled = MutableStateFlow(0)
+            roomOutboxMessageStore.update(message.transactionId) {message}
             apiConfig.endpoints {
                 matrixJsonEndpoint(
                     SendMessageEvent(room, "m.room.message", "transaction1"),
@@ -346,6 +345,62 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages.first().sentAt shouldBe null
+            }
+            job.cancel()
+        }
+        should("not send message if sending was aborted during upload") {
+            val mxcUrl = "mxc://dino"
+            val cacheUrl = "cache://unicorn"
+            val message1 =
+                RoomOutboxMessage(
+                    "abortedMessage",
+                    room,
+                    RoomMessageEventContent.FileBased.Image("hi.png", url = cacheUrl)
+                )
+            val message2 =
+                RoomOutboxMessage(
+                    "unabortedMessage",
+                    room,
+                    RoomMessageEventContent.TextBased.Text("Nachricht")
+                )
+            roomOutboxMessageStore.deleteAll()
+            roomOutboxMessageStore.update(message1.transactionId) { message1 }
+            roomOutboxMessageStore.update(message2.transactionId) { message2 }
+            mediaServiceMock.returnUploadMedia = Result.success(mxcUrl)
+            mediaServiceMock.uploadTimer.value = 3_000
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    SendMessageEvent(room, "m.room.message", "abortedMessage"),
+                ) {
+                    it shouldBe RoomMessageEventContent.FileBased.Image("hi.png", url = mxcUrl)
+                    SendEventResponse(EventId("event"))
+                }
+                matrixJsonEndpoint(
+                    SendMessageEvent(room, "m.room.message", "unabortedMessage"),
+                )
+                {
+                    it shouldBe RoomMessageEventContent.TextBased.Text("Nachricht")
+                    SendEventResponse(EventId("event"))
+                }
+            }
+            currentSyncState.value = SyncState.STARTED
+
+            val job = launch(Dispatchers.Default) { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
+
+            until(50.milliseconds) {
+                job.isActive
+            }
+            launch {
+                delay(100)
+                roomOutboxMessageStore.update(message1.transactionId) { null }
+            }
+            currentSyncState.value = SyncState.RUNNING
+            mediaServiceMock.uploadMediaCalled.onEach { println(it) }.first { it == cacheUrl }
+
+            eventually(5.seconds) {// we need this, because the cache may not be fast enough
+                val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+                outboxMessages shouldHaveSize 1
+                outboxMessages[0].sentAt shouldNotBe null
             }
             job.cancel()
         }
