@@ -61,3 +61,5 @@ dependencyResolutionManagement {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version ("0.8.0") // https://github.com/gradle/foojay-toolchains/tags
 }
+
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

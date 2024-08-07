@@ -3,6 +3,8 @@ import org.jetbrains.kotlin.konan.target.HostManager
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    trixnity.general
+    trixnity.publish
 }
 
 kotlin {
@@ -19,9 +21,9 @@ kotlin {
         commonMain {}
         commonTest {
             dependencies {
-                implementation(project(":trixnity-client"))
-                implementation(project(":trixnity-client:trixnity-client-repository-exposed"))
-                implementation(project(":trixnity-client:trixnity-client-repository-realm"))
+                implementation(projects.trixnityClient)
+                implementation(projects.trixnityClient.trixnityClientRepositoryExposed)
+                implementation(projects.trixnityClient.trixnityClientRepositoryRealm)
                 implementation(kotlin("test"))
                 implementation(libs.kotest.common)
                 implementation(libs.kotest.assertions.core)

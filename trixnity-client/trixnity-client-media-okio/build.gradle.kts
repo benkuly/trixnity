@@ -1,6 +1,8 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    trixnity.general
+    trixnity.publish
 }
 
 kotlin {
@@ -15,7 +17,7 @@ kotlin {
         }
         commonMain {
             dependencies {
-                implementation(project(":trixnity-client"))
+                implementation(projects.trixnityClient)
 
                 api(libs.okio)
                 implementation(libs.oshai.logging)

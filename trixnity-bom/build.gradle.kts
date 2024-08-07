@@ -1,6 +1,7 @@
 plugins {
     `java-platform`
     `maven-publish`
+    trixnity.general
 }
 
 javaPlatform {
