@@ -87,7 +87,8 @@ private val body: ShouldSpec.() -> Unit = {
             keyBackup,
             keyStore,
             globalAccountDataStore,
-            CurrentSyncState(currentSyncState)
+            CurrentSyncState(currentSyncState),
+            Clock.System
         )
     }
 

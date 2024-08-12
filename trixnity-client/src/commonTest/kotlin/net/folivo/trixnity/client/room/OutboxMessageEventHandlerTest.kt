@@ -2,8 +2,8 @@ package net.folivo.trixnity.client.room
 
 import io.kotest.assertions.nondeterministic.continually
 import io.kotest.assertions.nondeterministic.eventually
-import io.kotest.assertions.retry
 import io.kotest.assertions.nondeterministic.until
+import io.kotest.assertions.retry
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
@@ -78,6 +78,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             defaultOutboxMessageMediaUploaderMappings,
             CurrentSyncState(currentSyncState),
             TransactionManagerMock(),
+            Clock.System,
         )
     }
 
@@ -193,7 +194,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                     RoomMessageEventContent.TextBased.Text("hi")
                 )
             val sendMessageEventCalled = MutableStateFlow(0)
-            roomOutboxMessageStore.update(message.transactionId) {message}
+            roomOutboxMessageStore.update(message.transactionId) { message }
             apiConfig.endpoints {
                 matrixJsonEndpoint(
                     SendMessageEvent(room, "m.room.message", "transaction1"),

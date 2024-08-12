@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.room.RoomService
@@ -46,6 +47,7 @@ class ActiveUserVerificationImpl(
     keyStore: KeyStore,
     private val room: RoomService,
     keyTrust: KeyTrustService,
+    private val clock: Clock,
 ) : ActiveUserVerification, ActiveVerificationImpl(
     request,
     requestIsFromOurOwn,
@@ -111,12 +113,12 @@ class ActiveUserVerificationImpl(
                 }
         }
         // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
-        while (isVerificationRequestActive(timestamp, state.value)) {
+        while (isVerificationRequestActive(timestamp, clock, state.value)) {
             delay(500)
         }
         timelineJob.cancel()
 
-        if (isVerificationTimedOut(timestamp, state.value)) {
+        if (isVerificationTimedOut(timestamp, clock, state.value)) {
             cancel(Code.Timeout, "verification timed out")
         }
     }

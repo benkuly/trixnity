@@ -28,7 +28,8 @@ fun createRoomModule() = module {
             roomOutboxMessageStore = get(),
             outboxMessageMediaUploaderMappings = get(),
             currentSyncState = get(),
-            tm = get()
+            tm = get(),
+            clock = get(),
         )
     }
     singleOf(::RoomAccountDataEventHandler) {

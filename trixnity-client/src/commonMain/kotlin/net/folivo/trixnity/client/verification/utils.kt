@@ -12,21 +12,21 @@ import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.minutes
 
-fun isVerificationRequestActive(timestamp: Long): Boolean {
-    val timegap = Clock.System.now() - Instant.fromEpochMilliseconds(timestamp)
+fun isVerificationRequestActive(timestamp: Long, clock: Clock): Boolean {
+    val timegap = clock.now() - Instant.fromEpochMilliseconds(timestamp)
     return timegap < 10.minutes && timegap > (-5).minutes
 }
 
-fun isVerificationRequestActive(timestamp: Long, state: ActiveVerificationState): Boolean {
+fun isVerificationRequestActive(timestamp: Long, clock: Clock, state: ActiveVerificationState): Boolean {
     return state !is Done && state !is Cancel
             && state !is AcceptedByOtherDevice && state !is Undefined
-            && isVerificationRequestActive(timestamp)
+            && isVerificationRequestActive(timestamp, clock)
 }
 
-fun isVerificationTimedOut(timestamp: Long, state: ActiveVerificationState): Boolean {
+fun isVerificationTimedOut(timestamp: Long, clock: Clock, state: ActiveVerificationState): Boolean {
     return state !is Done && state !is Cancel
             && state !is AcceptedByOtherDevice && state !is Undefined
-            && !isVerificationRequestActive(timestamp)
+            && !isVerificationRequestActive(timestamp, clock)
 }
 
 internal suspend fun createSasCommitment(

@@ -38,6 +38,7 @@ import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.ORDINARY
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
@@ -156,6 +157,7 @@ class OlmEncryptionServiceImpl(
     private val store: OlmStore,
     private val requests: OlmEncryptionServiceRequestHandler,
     private val signService: SignService,
+    private val clock: Clock,
 ) : OlmEncryptionService {
 
     private val ownUserId: UserId = userInfo.userId
@@ -264,7 +266,9 @@ class OlmEncryptionServiceImpl(
                             sessionId = session.sessionId,
                             senderKey = identityKey,
                             pickled = session.pickle(store.getOlmPickleKey()),
-                            lastUsedAt = Clock.System.now()
+                            createdAt = clock.now(),
+                            lastUsedAt = clock.now(),
+                            initiatedByThisDevice = true,
                         )
                     }
                 } catch (olmLibraryException: OlmLibraryException) {
@@ -278,19 +282,17 @@ class OlmEncryptionServiceImpl(
                             store.getOlmPickleKey(),
                             lastUsedOlmStoredOlmSessions.pickled
                         )
-                    ) { session ->
+                    ) { olmSession ->
                         encryptionResult = encryptWithOlmSession(
-                            olmSession = session,
+                            olmSession = olmSession,
                             content = content,
                             userId = userId,
                             identityKey = identityKey,
                             signingKey = signingKey,
                         )
-                        StoredOlmSession(
-                            sessionId = session.sessionId,
-                            senderKey = identityKey,
-                            pickled = session.pickle(store.getOlmPickleKey()),
-                            lastUsedAt = Clock.System.now()
+                        lastUsedOlmStoredOlmSessions.copy(
+                            pickled = olmSession.pickle(store.getOlmPickleKey()),
+                            lastUsedAt = clock.now()
                         )
                     }
                 } catch (olmLibraryException: OlmLibraryException) {
@@ -351,7 +353,7 @@ class OlmEncryptionServiceImpl(
             }
 
             suspend fun createRecoveryOlmSession(storedSessions: Set<StoredOlmSession>?) {
-                if (!hasCreatedTooManyOlmSessions(storedSessions)) {
+                if (!hasCreatedTooManyOlmOutboundSessions(storedSessions)) {
                     encryptOlm(DummyEventContent, userId, deviceId, true)
                         .fold(
                             onSuccess = { dummyEvent ->
@@ -361,6 +363,8 @@ class OlmEncryptionServiceImpl(
                             },
                             onFailure = { log.warn(it) { "could not encrypt dummy event (userId=$userId, deviceId=$deviceId)" } }
                         )
+                } else {
+                    log.warn { "already created a recovery session recently and therefore skip creating a new one" }
                 }
             }
 
@@ -390,11 +394,9 @@ class OlmEncryptionServiceImpl(
                             }
                         }?.let { decrypted ->
                             decryptionResult = decryptWithOlmSession(decrypted)
-                            StoredOlmSession(
-                                sessionId = olmSession.sessionId,
-                                senderKey = senderIdentityKey,
+                            storedSession.copy(
                                 pickled = olmSession.pickle(store.getOlmPickleKey()),
-                                lastUsedAt = Clock.System.now()
+                                lastUsedAt = clock.now()
                             )
                         }
                     }
@@ -403,7 +405,7 @@ class OlmEncryptionServiceImpl(
                     throw DecryptOlmError.OlmLibraryError(olmLibraryException)
                 }
             } ?: if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
-                if (hasCreatedTooManyOlmSessions(storedSessions))
+                if (hasCreatedTooManyOlmInboundSessions(storedSessions))
                     throw DecryptOlmError.TooManySessions
                 lateinit var newStoredOlmSession: StoredOlmSession
                 try {
@@ -425,7 +427,8 @@ class OlmEncryptionServiceImpl(
                                 sessionId = olmSession.sessionId,
                                 senderKey = senderIdentityKey,
                                 pickled = olmSession.pickle(store.getOlmPickleKey()),
-                                lastUsedAt = Clock.System.now()
+                                createdAt = clock.now(),
+                                lastUsedAt = clock.now()
                             )
                             olmAccount.pickle(store.getOlmPickleKey())
                         }
@@ -445,13 +448,22 @@ class OlmEncryptionServiceImpl(
             .also { log.trace { "decrypted event: $it" } }
     }.onFailure { log.warn(it) { "decrypt olm failed" } }
 
-    private fun hasCreatedTooManyOlmSessions(storedSessions: Set<StoredOlmSession>?): Boolean {
-        val now = Clock.System.now()
+    private fun hasCreatedTooManyOlmInboundSessions(storedSessions: Set<StoredOlmSession>?): Boolean {
+        val now = clock.now()
         return (storedSessions?.size ?: 0) >= 3 && storedSessions
             ?.sortedByDescending { it.createdAt }
             ?.takeLast(3)
             ?.map { it.createdAt.plus(1, DateTimeUnit.HOUR) <= now }
             ?.all { true } == true
+    }
+
+    private fun hasCreatedTooManyOlmOutboundSessions(storedSessions: Set<StoredOlmSession>?): Boolean {
+        val now = clock.now()
+        val lastSessionCreatedAt = storedSessions
+            ?.filter { it.initiatedByThisDevice }
+            ?.minByOrNull { it.createdAt }
+            ?.createdAt
+        return lastSessionCreatedAt != null && (now - lastSessionCreatedAt) < 10.seconds
     }
 
     private fun Set<StoredOlmSession>?.addOrUpdateNewAndRemoveOldSessions(newSession: StoredOlmSession): Set<StoredOlmSession> {
@@ -527,7 +539,7 @@ class OlmEncryptionServiceImpl(
             val (encryptionResult, pickledSession) = if (
                 storedSession == null
                 || rotationPeriodMs != null && (storedSession
-                    .createdAt.plus(rotationPeriodMs, MILLISECOND) <= Clock.System.now())
+                    .createdAt.plus(rotationPeriodMs, MILLISECOND) <= clock.now())
                 || rotationPeriodMsgs != null && (storedSession.encryptedMessageCount >= rotationPeriodMsgs)
             ) {
                 log.debug { "encrypt megolm event with new session" }

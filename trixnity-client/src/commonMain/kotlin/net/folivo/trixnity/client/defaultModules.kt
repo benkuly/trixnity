@@ -2,6 +2,7 @@ package net.folivo.trixnity.client
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
@@ -40,6 +41,10 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
+fun createClockModule() = module {
+    single<Clock> { Clock.System }
+}
+
 fun createDefaultEventContentSerializerMappingsModule() = module {
     single<EventContentSerializerMappings> { DefaultEventContentSerializerMappings }
 }
@@ -64,6 +69,7 @@ fun createDefaultMatrixJsonModule() = module {
 }
 
 fun createDefaultTrixnityModules() = listOf(
+    createClockModule(),
     createDefaultEventContentSerializerMappingsModule(),
     createDefaultOutboxMessageMediaUploaderMappingsModule(),
     createDefaultMatrixJsonModule(),
@@ -90,6 +96,7 @@ fun createDefaultModules() = createDefaultTrixnityModules()
  *
  */
 fun createTrixnityBotModules() = listOf(
+    createClockModule(),
     createDefaultEventContentSerializerMappingsModule(),
     createDefaultOutboxMessageMediaUploaderMappingsModule(),
     createDefaultMatrixJsonModule(),
@@ -158,7 +165,8 @@ fun createTrixnityBotModules() = listOf(
                 roomOutboxMessageStore = get(),
                 outboxMessageMediaUploaderMappings = get(),
                 currentSyncState = get(),
-                tm = get()
+                tm = get(),
+                clock = get(),
             )
         }
         single<RoomService> {
