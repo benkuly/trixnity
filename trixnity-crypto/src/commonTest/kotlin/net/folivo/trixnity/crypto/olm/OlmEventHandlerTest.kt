@@ -72,6 +72,7 @@ class OlmEventHandlerTest : ShouldSpec({
             SignServiceMock().apply { signCurve25519Key = Key.SignedCurve25519Key(null, "", mapOf()) },
             olmEventHandlerRequestHandlerMock,
             olmStoreMock,
+            Clock.System,
         )
     }
 

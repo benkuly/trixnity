@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.verification
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -33,6 +34,7 @@ class ActiveDeviceVerificationImpl(
     private val olmEncryptionService: OlmEncryptionService,
     keyTrust: KeyTrustService,
     keyStore: KeyStore,
+    private val clock: Clock,
 ) : ActiveDeviceVerification, ActiveVerificationImpl(
     request,
     requestIsOurs,
@@ -69,10 +71,10 @@ class ActiveDeviceVerificationImpl(
             olmDecrypter.subscribe(::handleOlmDecryptedVerificationRequestEvents)
         try {
             // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
-            while (isVerificationRequestActive(timestamp, state.value)) {
+            while (isVerificationRequestActive(timestamp, clock, state.value)) {
                 delay(500)
             }
-            if (isVerificationTimedOut(timestamp, state.value)) {
+            if (isVerificationTimedOut(timestamp, clock, state.value)) {
                 cancel(Timeout, "verification timed out")
             }
         } finally {
@@ -93,7 +95,7 @@ class ActiveDeviceVerificationImpl(
     private suspend fun handleVerificationStepEvent(step: VerificationStep, sender: UserId) {
         val eventTransactionId = step.transactionId
         if (eventTransactionId != null && eventTransactionId == transactionId
-            && isVerificationRequestActive(timestamp, state.value)
+            && isVerificationRequestActive(timestamp, clock, state.value)
         ) {
             if (step is VerificationReadyEventContent) {
                 val cancelDeviceIds = theirDeviceIds - step.fromDevice

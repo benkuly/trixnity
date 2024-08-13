@@ -113,7 +113,8 @@ private val body: ShouldSpec.() -> Unit = {
             keyService = keyServiceMock,
             keyTrustService = keyTrustServiceMock,
             keySecretService = keySecretServiceMock,
-            currentSyncState = CurrentSyncState(currentSyncState)
+            currentSyncState = CurrentSyncState(currentSyncState),
+            clock = Clock.System,
         )
         cut.startInCoroutineScope(scope)
     }

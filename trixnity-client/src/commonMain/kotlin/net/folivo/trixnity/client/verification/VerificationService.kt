@@ -122,6 +122,7 @@ class VerificationServiceImpl(
     private val keyTrustService: KeyTrustService,
     private val keySecretService: KeySecretService,
     private val currentSyncState: CurrentSyncState,
+    private val clock: Clock,
 ) : VerificationService, EventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
@@ -148,7 +149,7 @@ class VerificationServiceImpl(
         val content = event.content
         when (event) {
             is ToDeviceEvent -> {
-                if (isVerificationRequestActive(content.timestamp)) {
+                if (isVerificationRequestActive(content.timestamp, clock)) {
                     log.info { "got new device verification request from ${event.sender}" }
                     if (_activeDeviceVerification.value != null) {
                         log.info { "already have an active device verification -> cancelling new verification request" }
@@ -165,6 +166,7 @@ class VerificationServiceImpl(
                             olmEncryptionService = olmEncryptionService,
                             keyStore = keyStore,
                             keyTrust = keyTrustService,
+                            clock = clock,
                         ).cancel()
                     } else {
                         _activeDeviceVerification.value =
@@ -181,6 +183,7 @@ class VerificationServiceImpl(
                                 olmEncryptionService = olmEncryptionService,
                                 keyTrust = keyTrustService,
                                 keyStore = keyStore,
+                                clock = clock,
                             )
                     }
                 } else {
@@ -195,7 +198,7 @@ class VerificationServiceImpl(
     private suspend fun handleOlmDecryptedDeviceVerificationRequestEvents(event: DecryptedOlmEventContainer) {
         when (val content = event.decrypted.content) {
             is VerificationRequestToDeviceEventContent -> {
-                if (isVerificationRequestActive(content.timestamp)) {
+                if (isVerificationRequestActive(content.timestamp, clock)) {
                     log.info { "got new device verification request from ${event.decrypted.sender}" }
                     if (_activeDeviceVerification.value != null) {
                         log.info { "already have an active device verification -> cancelling new verification request" }
@@ -212,6 +215,7 @@ class VerificationServiceImpl(
                             olmEncryptionService = olmEncryptionService,
                             keyTrust = keyTrustService,
                             keyStore = keyStore,
+                            clock = clock,
                         ).cancel("already have an active device verification")
                     } else {
                         _activeDeviceVerification.value =
@@ -228,6 +232,7 @@ class VerificationServiceImpl(
                                 olmEncryptionService = olmEncryptionService,
                                 keyTrust = keyTrustService,
                                 keyStore = keyStore,
+                                clock = clock,
                             )
                     }
                 }
@@ -266,7 +271,7 @@ class VerificationServiceImpl(
     ): Result<ActiveDeviceVerification> = kotlin.runCatching {
         log.info { "create new device verification request to $theirUserId ($theirDeviceIds)" }
         val request = VerificationRequestToDeviceEventContent(
-            ownDeviceId, supportedMethods, Clock.System.now().toEpochMilliseconds(), SecureRandom.nextString(22)
+            ownDeviceId, supportedMethods, clock.now().toEpochMilliseconds(), SecureRandom.nextString(22)
         )
         api.user.sendToDevice(mapOf(theirUserId to theirDeviceIds.toSet().associateWith {
             olmEncryptionService.encryptOlm(request, theirUserId, it).getOrNull() ?: request
@@ -284,6 +289,7 @@ class VerificationServiceImpl(
             olmEncryptionService = olmEncryptionService,
             keyTrust = keyTrustService,
             keyStore = keyStore,
+            clock = clock,
         ).also { newDeviceVerification ->
             _activeDeviceVerification.getAndUpdate { newDeviceVerification }?.cancel()
         }
@@ -311,7 +317,7 @@ class VerificationServiceImpl(
                 request = request,
                 requestIsFromOurOwn = true,
                 requestEventId = eventId,
-                requestTimestamp = Clock.System.now().toEpochMilliseconds(),
+                requestTimestamp = clock.now().toEpochMilliseconds(),
                 ownUserId = ownUserId,
                 ownDeviceId = ownDeviceId,
                 theirUserId = theirUserId,
@@ -322,6 +328,7 @@ class VerificationServiceImpl(
                 keyStore = keyStore,
                 room = roomService,
                 keyTrust = keyTrustService,
+                clock = clock,
             ).also { auv -> activeUserVerifications.update { it + auv } }
         }
     }
@@ -432,7 +439,7 @@ class VerificationServiceImpl(
                     .filter { it?.content != null }.first()
             } ?: return null
         val request = timelineEvent.content?.getOrNull() as? VerificationRequest ?: return null
-        return if (isVerificationRequestActive(timelineEvent.event.originTimestamp)) {
+        return if (isVerificationRequestActive(timelineEvent.event.originTimestamp, clock)) {
             getActiveUserVerificationMutex.withLock {
                 val cache =
                     activeUserVerifications.value.find { it.roomId == roomId && it.relatesTo?.eventId == eventId }
@@ -455,6 +462,7 @@ class VerificationServiceImpl(
                             keyStore = keyStore,
                             room = roomService,
                             keyTrust = keyTrustService,
+                            clock = clock,
                         ).also { auv -> activeUserVerifications.update { it + auv } }
                     } else null
                 }

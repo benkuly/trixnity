@@ -40,6 +40,7 @@ class OutgoingSecretKeyRequestEventHandler(
     private val keyStore: KeyStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val currentSyncState: CurrentSyncState,
+    private val clock: Clock,
 ) : EventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
@@ -82,7 +83,7 @@ class OutgoingSecretKeyRequestEventHandler(
             api.user.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
                 .onSuccess {
                     keyStore.addSecretKeyRequest(
-                        StoredSecretKeyRequest(request, receiverDeviceIds, Clock.System.now())
+                        StoredSecretKeyRequest(request, receiverDeviceIds, clock.now())
                     )
                 }.getOrThrow()
         }
@@ -175,7 +176,7 @@ class OutgoingSecretKeyRequestEventHandler(
 
     internal suspend fun cancelOldOutgoingKeyRequests() {
         keyStore.getAllSecretKeyRequests().forEach {
-            if ((it.createdAt + 1.days) < Clock.System.now()) {
+            if ((it.createdAt + 1.days) < clock.now()) {
                 it.cancelRequest()
             }
         }

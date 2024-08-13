@@ -77,6 +77,7 @@ private val body: ShouldSpec.() -> Unit = {
             keyStore,
             olmCryptoStore,
             CurrentSyncState(MutableStateFlow(SyncState.RUNNING)),
+            Clock.System,
         )
     }
 

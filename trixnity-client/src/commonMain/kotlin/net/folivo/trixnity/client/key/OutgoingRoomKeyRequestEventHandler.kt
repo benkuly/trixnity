@@ -46,6 +46,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
     private val keyStore: KeyStore,
     private val olmCryptoStore: OlmCryptoStore,
     private val currentSyncState: CurrentSyncState,
+    private val clock: Clock,
 ) : EventHandler, OutgoingRoomKeyRequestEventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
@@ -106,7 +107,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
 
     internal suspend fun cancelOldOutgoingKeyRequests() {
         keyStore.getAllRoomKeyRequests().forEach {
-            if ((it.createdAt + 1.days) < Clock.System.now()) {
+            if ((it.createdAt + 1.days) < clock.now()) {
                 it.cancelRequest()
             }
         }
@@ -158,7 +159,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                 api.user.sendToDevice(mapOf(ownUserId to receiverDeviceIds.associateWith { request }))
                     .onSuccess {
                         keyStore.addRoomKeyRequest(
-                            StoredRoomKeyRequest(request, receiverDeviceIds, Clock.System.now())
+                            StoredRoomKeyRequest(request, receiverDeviceIds, clock.now())
                         )
                     }.getOrThrow()
             }

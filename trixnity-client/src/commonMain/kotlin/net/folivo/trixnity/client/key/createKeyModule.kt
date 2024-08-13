@@ -35,7 +35,8 @@ fun createKeyModule() = module {
             keyBackupService = get(named<KeyBackupService>()),
             keyStore = get(),
             globalAccountDataStore = get(),
-            currentSyncState = get()
+            currentSyncState = get(),
+            clock = get(),
         )
     }
     singleOf(::KeySecretServiceImpl) { bind<KeySecretService>() }

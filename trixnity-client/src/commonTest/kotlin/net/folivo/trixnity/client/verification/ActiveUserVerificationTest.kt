@@ -80,6 +80,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             keyStore = keyStore,
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
+            clock = Clock.System,
         )
     }
 
@@ -279,6 +280,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             keyStore = keyStore,
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
+            clock = Clock.System,
         )
         cut.startLifecycle(this)
         cut.state.first { it == AcceptedByOtherDevice } shouldBe AcceptedByOtherDevice
@@ -316,6 +318,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             keyStore = keyStore,
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
+            clock = Clock.System,
         )
         cut.startLifecycle(this)
         cut.state.first { it == Undefined } shouldBe Undefined

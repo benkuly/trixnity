@@ -38,6 +38,7 @@ class OlmEventHandler(
     private val signService: SignService,
     private val requestHandler: OlmEventHandlerRequestHandler,
     private val store: OlmStore,
+    private val clock: Clock,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -57,7 +58,7 @@ class OlmEventHandler(
     internal suspend fun forgetOldFallbackKey() {
         store.getForgetFallbackKeyAfter().collect { forgetFallbackKeyAfter ->
             if (forgetFallbackKeyAfter != null) {
-                val wait = forgetFallbackKeyAfter - Clock.System.now()
+                val wait = forgetFallbackKeyAfter - clock.now()
                 log.debug { "wait for $wait and then forget old fallback key" }
                 delay(wait)
                 store.updateOlmAccount { pickledOlmAccount ->
@@ -103,7 +104,7 @@ class OlmEventHandler(
                             )
                         }.toSet())
                             // we can forget the old fallback key, when we had to generate a new one
-                            .also { store.updateForgetFallbackKeyAfter { Clock.System.now() + 1.hours } }
+                            .also { store.updateForgetFallbackKeyAfter { clock.now() + 1.hours } }
                     } else null
 
                 if (newOneTimeKeys != null || newFallbackKeys != null) {
