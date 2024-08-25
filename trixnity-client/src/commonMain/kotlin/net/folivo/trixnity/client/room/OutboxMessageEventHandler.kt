@@ -94,13 +94,13 @@ class OutboxMessageEventHandler(
                             launch {
                                 for (outboxMessage in outboxMessagesInRoom) {
                                     val sendMessage = async { sendOutboxMessage(outboxMessage, roomId) }
-                                    val checkAborted = async { checkWhetherAborted(outboxMessage) }
+                                    val checkCancelled = async { checkWhetherCancelled(outboxMessage) }
                                     select {
                                         sendMessage.onAwait {}
-                                        checkAborted.onAwait {}
+                                        checkCancelled.onAwait {}
                                     }
-                                    if (sendMessage.isActive) sendMessage.cancel()
-                                    if (checkAborted.isActive) checkAborted.cancel()
+                                    sendMessage.cancel()
+                                    checkCancelled.cancel()
                                 }
                             }
                         }
@@ -110,9 +110,9 @@ class OutboxMessageEventHandler(
     }
 
 
-    private suspend fun checkWhetherAborted(outboxMessage: RoomOutboxMessage<*>) {
+    private suspend fun checkWhetherCancelled(outboxMessage: RoomOutboxMessage<*>) {
         roomOutboxMessageStore.getAsFlow(outboxMessage.transactionId).first { it == null }
-        log.debug { "abort sending of ${outboxMessage.transactionId}" }
+        log.debug { "cancel sending of ${outboxMessage.transactionId}" }
     }
 
     private suspend fun sendOutboxMessage(outboxMessage: RoomOutboxMessage<*>, roomId: RoomId) {
