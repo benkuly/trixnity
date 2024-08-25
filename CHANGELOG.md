@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - if already created a recovery olm session recently, skip creating a new one
+- fixed typo in url of GetHierarchy
 
 ### Security
 
