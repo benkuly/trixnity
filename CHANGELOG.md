@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Allow message sending to be cancelled while the message is sent
-
 ### Changed
 
 ### Deprecated
@@ -19,10 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## 4.6.2
+
+### Added
+
+- Allow message sending to be cancelled while the message is sent
+
+### Fixed
+
 - if already created a recovery olm session recently, skip creating a new one
 - fixed typo in url of GetHierarchy
-
-### Security
 
 ## 4.6.1
 
