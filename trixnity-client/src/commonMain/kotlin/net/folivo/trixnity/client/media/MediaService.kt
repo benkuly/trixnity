@@ -23,7 +23,6 @@ import net.folivo.trixnity.crypto.core.decryptAes256Ctr
 import net.folivo.trixnity.crypto.core.encryptAes256Ctr
 import net.folivo.trixnity.crypto.core.sha256
 import net.folivo.trixnity.utils.*
-import kotlin.time.Duration
 
 private val log = KotlinLogging.logger {}
 
@@ -92,15 +91,13 @@ class MediaServiceImpl(
 
     private suspend fun MediaApiClient.downloadDependingOnServerVersion(
         mxcUri: String,
-        allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
-        timeout: Duration = Duration.INFINITE,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> =
         if (serverVersionsStore.getServerVersions().versions.contains(MATRIX_SPEC_1_11)) {
-            download(mxcUri, allowRemote, progress, timeout, downloadHandler)
+            download(mxcUri, progress = progress, downloadHandler = downloadHandler)
         } else {
-            downloadLegacy(mxcUri, allowRemote, progress, timeout, downloadHandler)
+            downloadLegacy(mxcUri, progress = progress, downloadHandler = downloadHandler)
         }
 
     private suspend fun getMedia(
@@ -177,15 +174,20 @@ class MediaServiceImpl(
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
-        allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
-        timeout: Duration = Duration.INFINITE,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> =
         if (serverVersionsStore.getServerVersions().versions.contains(MATRIX_SPEC_1_11)) {
-            downloadThumbnail(mxcUri, width, height, method, allowRemote, progress, timeout, downloadHandler)
+            downloadThumbnail(mxcUri, width, height, method, progress = progress, downloadHandler = downloadHandler)
         } else {
-            downloadThumbnailLegacy(mxcUri, width, height, method, allowRemote, progress, timeout, downloadHandler)
+            downloadThumbnailLegacy(
+                mxcUri,
+                width,
+                height,
+                method,
+                progress = progress,
+                downloadHandler = downloadHandler
+            )
         }
 
     override suspend fun getThumbnail(

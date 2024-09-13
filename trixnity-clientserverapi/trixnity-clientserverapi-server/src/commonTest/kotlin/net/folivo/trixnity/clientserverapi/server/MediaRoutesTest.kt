@@ -170,7 +170,7 @@ class MediaRoutesTest {
                 )
             )
         val response =
-            client.get("/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga?allow_remote=false") {
+            client.get("/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -184,7 +184,6 @@ class MediaRoutesTest {
             handlerMock.downloadMedia(assert {
                 it.endpoint.serverName shouldBe "matrix.org:443"
                 it.endpoint.mediaId shouldBe "ascERGshawAWawugaAcauga"
-                it.endpoint.allowRemote shouldBe false
             })
         }
     }
@@ -202,7 +201,7 @@ class MediaRoutesTest {
                 )
             )
         val response =
-            client.get("/_matrix/client/v1/media/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false") {
+            client.get("/_matrix/client/v1/media/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -219,7 +218,6 @@ class MediaRoutesTest {
                 it.endpoint.width shouldBe 64
                 it.endpoint.height shouldBe 64
                 it.endpoint.method shouldBe ThumbnailResizingMethod.SCALE
-                it.endpoint.allowRemote shouldBe false
             })
         }
     }

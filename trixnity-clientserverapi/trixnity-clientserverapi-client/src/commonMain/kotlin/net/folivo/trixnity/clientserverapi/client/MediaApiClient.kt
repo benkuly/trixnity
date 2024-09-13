@@ -60,7 +60,6 @@ interface MediaApiClient {
      */
     suspend fun download(
         mxcUri: String,
-        allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         timeout: Duration = Duration.INFINITE,
         downloadHandler: suspend (Media) -> Unit
@@ -89,7 +88,6 @@ interface MediaApiClient {
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
-        allowRemote: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         timeout: Duration = Duration.INFINITE,
         downloadHandler: suspend (Media) -> Unit
@@ -187,7 +185,6 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
 
     override suspend fun download(
         mxcUri: String,
-        allowRemote: Boolean?,
         progress: MutableStateFlow<FileTransferProgress?>?,
         timeout: Duration,
         downloadHandler: suspend (Media) -> Unit
@@ -197,7 +194,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
             .let { it.substringBefore("/") to it.substringAfter("/") }
         return httpClient.withRequest(
-            endpoint = DownloadMedia(serverName, mediaId, allowRemote),
+            endpoint = DownloadMedia(serverName, mediaId),
             requestBuilder = {
                 method = HttpMethod.Get
                 timeout {
@@ -255,7 +252,6 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
-        allowRemote: Boolean?,
         progress: MutableStateFlow<FileTransferProgress?>?,
         timeout: Duration,
         downloadHandler: suspend (Media) -> Unit
@@ -271,7 +267,6 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
                 width = width,
                 height = height,
                 method = method,
-                allowRemote = allowRemote,
             ),
             requestBuilder = {
                 this.method = HttpMethod.Get
