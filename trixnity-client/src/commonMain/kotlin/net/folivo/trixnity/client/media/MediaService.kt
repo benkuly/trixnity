@@ -9,7 +9,9 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.client.store.MediaCacheMapping
 import net.folivo.trixnity.client.store.MediaCacheMappingStore
+import net.folivo.trixnity.client.store.ServerVersionsStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.MediaApiClient
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
@@ -21,6 +23,7 @@ import net.folivo.trixnity.crypto.core.decryptAes256Ctr
 import net.folivo.trixnity.crypto.core.encryptAes256Ctr
 import net.folivo.trixnity.crypto.core.sha256
 import net.folivo.trixnity.utils.*
+import kotlin.time.Duration
 
 private val log = KotlinLogging.logger {}
 
@@ -67,9 +70,11 @@ interface MediaService {
 class MediaServiceImpl(
     private val api: MatrixClientServerApiClient,
     private val mediaStore: MediaStore,
+    private val serverVersionsStore: ServerVersionsStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
 ) : MediaService {
     companion object {
+        private const val MATRIX_SPEC_1_11 = "v1.11"
         const val UPLOAD_MEDIA_CACHE_URI_PREFIX = "upload://"
         const val UPLOAD_MEDIA_MXC_URI_PREFIX = "mxc://"
         const val maxFileSizeForThumbnail = 1024 * 50_000 // = 50MB
@@ -85,6 +90,19 @@ class MediaServiceImpl(
         log.debug { "completed save media to store: $uri" }
     }
 
+    private suspend fun MediaApiClient.downloadDependingOnServerVersion(
+        mxcUri: String,
+        allowRemote: Boolean? = null,
+        progress: MutableStateFlow<FileTransferProgress?>? = null,
+        timeout: Duration = Duration.INFINITE,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit> =
+        if (serverVersionsStore.getServerVersions().versions.contains(MATRIX_SPEC_1_11)) {
+            download(mxcUri, allowRemote, progress, timeout, downloadHandler)
+        } else {
+            downloadLegacy(mxcUri, allowRemote, progress, timeout, downloadHandler)
+        }
+
     private suspend fun getMedia(
         uri: String,
         saveToCache: Boolean,
@@ -97,11 +115,11 @@ class MediaServiceImpl(
                 if (existingMedia == null) {
                     log.debug { "download media: $uri" }
                     if (sha256Hash == null) {
-                        api.media.download(uri, progress = progress) {
+                        api.media.downloadDependingOnServerVersion(uri, progress = progress) {
                             it.saveMedia(uri) { this }
                         }.getOrThrow()
                     } else {
-                        api.media.download(uri, progress = progress) {
+                        api.media.downloadDependingOnServerVersion(uri, progress = progress) {
                             it.saveMedia(uri) {
                                 val sha256ByteFlow = sha256()
                                 sha256ByteFlow.onCompletion {
@@ -154,6 +172,22 @@ class MediaServiceImpl(
         )
     }
 
+    private suspend fun MediaApiClient.downloadThumbnailDependingOnServerVersion(
+        mxcUri: String,
+        width: Long,
+        height: Long,
+        method: ThumbnailResizingMethod,
+        allowRemote: Boolean? = null,
+        progress: MutableStateFlow<FileTransferProgress?>? = null,
+        timeout: Duration = Duration.INFINITE,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit> =
+        if (serverVersionsStore.getServerVersions().versions.contains(MATRIX_SPEC_1_11)) {
+            downloadThumbnail(mxcUri, width, height, method, allowRemote, progress, timeout, downloadHandler)
+        } else {
+            downloadThumbnailLegacy(mxcUri, width, height, method, allowRemote, progress, timeout, downloadHandler)
+        }
+
     override suspend fun getThumbnail(
         uri: String,
         width: Long,
@@ -165,7 +199,7 @@ class MediaServiceImpl(
         val thumbnailUrl = "$uri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
         val existingMedia = mediaStore.getMedia(thumbnailUrl)
         if (existingMedia == null) {
-            api.media.downloadThumbnail(uri, width, height, method, progress = progress) {
+            api.media.downloadThumbnailDependingOnServerVersion(uri, width, height, method, progress = progress) {
                 it.saveMedia(thumbnailUrl) { this }
             }.getOrThrow()
             requireNotNull(mediaStore.getMedia(thumbnailUrl)) { "media should not be null, because it has just been saved" }

@@ -48,6 +48,13 @@ suspend fun getInMemoryAccountStore(scope: CoroutineScope) = AccountStore(
     scope
 ).apply { init() }
 
+suspend fun getInMemoryServerVersionsStore(scope: CoroutineScope) = ServerVersionsStore(
+    mockMatrixClientServerApiClient().first,
+    InMemoryServerVersionsRepository().also { it.save(1, ServerVersions(listOf("v1.11"), mapOf())) },
+    RepositoryTransactionManagerMock(),
+    scope
+).apply { init() }
+
 suspend fun getInMemoryRoomAccountDataStore(scope: CoroutineScope) = RoomAccountDataStore(
     InMemoryRoomAccountDataRepository(),
     RepositoryTransactionManagerMock(),

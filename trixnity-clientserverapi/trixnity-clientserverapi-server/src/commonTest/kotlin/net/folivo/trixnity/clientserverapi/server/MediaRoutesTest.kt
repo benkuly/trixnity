@@ -51,7 +51,7 @@ class MediaRoutesTest {
         initCut()
         everySuspend { handlerMock.getMediaConfig(any()) }
             .returns(GetMediaConfig.Response(maxUploadSize = 50000000))
-        val response = client.get("/_matrix/media/v3/config") { bearerAuth("token") }
+        val response = client.get("/_matrix/client/v1/media/config") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -170,7 +170,7 @@ class MediaRoutesTest {
                 )
             )
         val response =
-            client.get("/_matrix/media/v3/download/matrix.org:443/ascERGshawAWawugaAcauga?allow_remote=false") {
+            client.get("/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga?allow_remote=false") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -202,7 +202,7 @@ class MediaRoutesTest {
                 )
             )
         val response =
-            client.get("/_matrix/media/v3/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false") {
+            client.get("/_matrix/client/v1/media/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
@@ -234,7 +234,7 @@ class MediaRoutesTest {
                     imageUrl = "mxc://example.com/ascERGshawAWawugaAcauga"
                 )
             )
-        val response = client.get("/_matrix/media/v3/preview_url?url=someUrl") { bearerAuth("token") }
+        val response = client.get("/_matrix/client/v1/media/preview_url?url=someUrl") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)

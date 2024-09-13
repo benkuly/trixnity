@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixmediav3downloadservernamemediaid">matrix spec</a>
  */
 @Serializable
-@Resource("/_matrix/media/v3/download/{serverName}/{mediaId}")
+@Resource("/_matrix/client/v1/media/download/{serverName}/{mediaId}")
 @HttpMethod(GET)
 data class DownloadMedia(
     @SerialName("serverName") val serverName: String,

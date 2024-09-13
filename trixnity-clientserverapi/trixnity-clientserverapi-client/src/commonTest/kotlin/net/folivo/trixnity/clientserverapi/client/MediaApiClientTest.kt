@@ -21,7 +21,7 @@ class MediaApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/media/v3/config", request.url.fullPath)
+                    assertEquals("/_matrix/client/v1/media/config", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """
@@ -146,7 +146,7 @@ class MediaApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/media/v3/download/matrix.org:443/ascERGshawAWawugaAcauga?allow_remote=false",
+                        "/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga?allow_remote=false",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -180,7 +180,7 @@ class MediaApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/media/v3/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false",
+                        "/_matrix/client/v1/media/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -216,7 +216,7 @@ class MediaApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/media/v3/preview_url?url=someUrl", request.url.fullPath)
+                    assertEquals("/_matrix/client/v1/media/preview_url?url=someUrl", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """

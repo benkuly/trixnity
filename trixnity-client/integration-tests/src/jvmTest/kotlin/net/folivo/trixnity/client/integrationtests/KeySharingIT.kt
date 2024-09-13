@@ -28,7 +28,6 @@ import net.folivo.trixnity.client.verification.VerificationService.SelfVerificat
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
@@ -81,8 +80,6 @@ class KeySharingIT {
             val bootstrap = startedClient1.client.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
                 bootstrap.result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.Step<Unit>>()
-                    .authenticate(Password(IdentifierType.User("user1"), startedClient1.password)).getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
             val roomId = withClue("user1 invites user2, so user2 gets user1s keys") {
