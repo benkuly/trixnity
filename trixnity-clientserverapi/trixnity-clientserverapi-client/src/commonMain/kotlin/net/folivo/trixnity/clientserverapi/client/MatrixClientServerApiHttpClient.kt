@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 class MatrixClientServerApiHttpClient(
-    private val baseUrl: Url? = null,
+    val baseUrl: Url? = null,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     accessToken: MutableStateFlow<String?>,

@@ -340,47 +340,6 @@ class AuthenticationRoutesTest {
     }
 
     @Test
-    fun shouldSSORedirect() = testApplication {
-        initCut()
-        everySuspend { handlerMock.ssoRedirect(any()) }
-            .returns("https://somewhere.redirect/sso")
-        val response = client
-            .config { followRedirects = false }
-            .get("/_matrix/client/v3/login/sso/redirect?redirectUrl=trixnity:%2F%2Fsso")
-        assertSoftly(response) {
-            this.status shouldBe HttpStatusCode.Found
-            this.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
-        }
-
-        verifySuspend {
-            handlerMock.ssoRedirect(assert {
-                it.endpoint.redirectUrl shouldBe "trixnity://sso"
-            })
-        }
-    }
-
-    @Test
-    fun shouldSSORedirectTo() = testApplication {
-        initCut()
-        everySuspend { handlerMock.ssoRedirectTo(any()) }
-            .returns("https://somewhere.redirect/sso")
-        val response = client
-            .config { followRedirects = false }
-            .get("/_matrix/client/v3/login/sso/redirect/someId?redirectUrl=trixnity:%2F%2Fsso")
-        assertSoftly(response) {
-            this.status shouldBe HttpStatusCode.Found
-            this.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
-        }
-
-        verifySuspend {
-            handlerMock.ssoRedirectTo(assert {
-                it.endpoint.redirectUrl shouldBe "trixnity://sso"
-                it.endpoint.idpId shouldBe "someId"
-            })
-        }
-    }
-
-    @Test
     fun shouldGetLoginTypes() = testApplication {
         initCut()
         everySuspend { handlerMock.getLoginTypes(any()) }

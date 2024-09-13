@@ -1,5 +1,6 @@
 package net.folivo.trixnity.clientserverapi.client
 
+import io.ktor.http.*
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.core.model.UserId
 
@@ -64,20 +65,10 @@ interface AuthenticationApiClient {
         isAppservice: Boolean = false // TODO why is the spec so inconsistent?
     ): Result<UIA<Register.Response>>
 
-    /**
-     * @see [SSORedirect]
-     */
-    suspend fun ssoRedirect(
+    fun getSsoUrl(
         redirectUrl: String,
-    ): Result<Unit>
-
-    /**
-     * @see [SSORedirectTo]
-     */
-    suspend fun ssoRedirect(
-        redirectUrl: String,
-        idpId: String,
-    ): Result<Unit>
+        idpId: String? = null,
+    ): String
 
     /**
      * @see [GetLoginTypes]
@@ -260,10 +251,12 @@ class AuthenticationApiClientImpl(
             )
         )
 
-    override suspend fun ssoRedirect(redirectUrl: String) = httpClient.request(SSORedirect(redirectUrl))
-
-    override suspend fun ssoRedirect(redirectUrl: String, idpId: String) =
-        httpClient.request(SSORedirectTo(idpId, redirectUrl))
+    override fun getSsoUrl(redirectUrl: String, idpId: String?): String =
+        URLBuilder().apply {
+            httpClient.baseUrl?.let { takeFrom(it) }
+            path(*listOfNotNull("/_matrix/client/v3/login/sso/redirect", idpId).toTypedArray())
+            parameters.append("redirectUrl", redirectUrl)
+        }.toString()
 
     override suspend fun getLoginTypes(): Result<Set<LoginType>> =
         httpClient.request(GetLoginTypes).mapCatching { it.flows }
