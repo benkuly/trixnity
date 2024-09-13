@@ -9,11 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add AuthenticationApiClient.getSsoUrl
+
 ### Changed
 
 ### Deprecated
 
 ### Removed
+
+- Not usable SSO endpoints in AuthenticationApiClient
 
 ### Fixed
 

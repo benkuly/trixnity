@@ -1,10 +1,8 @@
 package net.folivo.trixnity.clientserverapi.client
 
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
-import io.ktor.client.plugins.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.test.runTest
@@ -307,52 +305,6 @@ class AuthenticationApiClientTest {
         ).getOrThrow()
         require(result is UIA.Success)
         assertEquals(response, result.value)
-    }
-
-    @Test
-    fun shouldSsoRedirect() = runTest {
-        val matrixRestClient = MatrixClientServerApiClientImpl(
-            baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
-                addHandler { request ->
-                    assertEquals(
-                        "/_matrix/client/v3/login/sso/redirect?redirectUrl=trixnity%3A%2F%2Fsso",
-                        request.url.fullPath
-                    )
-                    assertEquals(HttpMethod.Get, request.method)
-                    respond(
-                        "",
-                        HttpStatusCode.Found,
-                        headersOf(HttpHeaders.Location, "https://somewhere.redirect/sso")
-                    )
-                }
-            })
-        shouldThrow<RedirectResponseException> {
-            matrixRestClient.authentication.ssoRedirect("trixnity://sso").getOrThrow()
-        }.response.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
-    }
-
-    @Test
-    fun shouldSsoRedirectTo() = runTest {
-        val matrixRestClient = MatrixClientServerApiClientImpl(
-            baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
-                addHandler { request ->
-                    assertEquals(
-                        "/_matrix/client/v3/login/sso/redirect/someId?redirectUrl=trixnity%3A%2F%2Fsso",
-                        request.url.fullPath
-                    )
-                    assertEquals(HttpMethod.Get, request.method)
-                    respond(
-                        "",
-                        HttpStatusCode.Found,
-                        headersOf(HttpHeaders.Location, "https://somewhere.redirect/sso")
-                    )
-                }
-            })
-        shouldThrow<RedirectResponseException> {
-            matrixRestClient.authentication.ssoRedirect("trixnity://sso", "someId").getOrThrow()
-        }.response.headers[HttpHeaders.Location] shouldBe "https://somewhere.redirect/sso"
     }
 
     @Test
