@@ -24,6 +24,7 @@ data class DownloadThumbnail(
     @SerialName("allow_remote") val allowRemote: Boolean? = null,
     @SerialName("allow_redirect") val allowRedirect: Boolean? = null,
     @SerialName("timeout_ms") val timeoutMs: Long? = null,
+    @SerialName("animated") val animated: Boolean? = null,
 ) : MatrixEndpoint<Unit, Media> {
     @Transient
     override val requestContentType = ContentType.Application.Json
