@@ -27,6 +27,11 @@ sealed interface AuthenticationType {
         override val name = "m.login.sso"
     }
 
+    @Serializable(with = TermsOfServiceAuthenticationSerializer::class)
+    data object TermsOfService : AuthenticationType {
+        override val name = "m.login.terms"
+    }
+
     @Serializable(with = EmailIdentityAuthenticationSerializer::class)
     data object EmailIdentity : AuthenticationType {
         override val name = "m.login.email.identity"
@@ -87,6 +92,19 @@ sealed interface AuthenticationType {
         }
 
         override fun serialize(encoder: Encoder, value: SSO) {
+            encoder.encodeString(value.name)
+        }
+    }
+
+    object TermsOfServiceAuthenticationSerializer : KSerializer<TermsOfService> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("TermsOfServiceAuthenticationSerializer", PrimitiveKind.STRING)
+
+        override fun deserialize(decoder: Decoder): TermsOfService {
+            return TermsOfService
+        }
+
+        override fun serialize(encoder: Encoder, value: TermsOfService) {
             encoder.encodeString(value.name)
         }
     }
@@ -166,6 +184,7 @@ object AuthenticationTypeSerializer : KSerializer<AuthenticationType> {
             AuthenticationType.Password.name -> AuthenticationType.Password
             AuthenticationType.Recaptcha.name -> AuthenticationType.Recaptcha
             AuthenticationType.SSO.name -> AuthenticationType.SSO
+            AuthenticationType.TermsOfService.name -> AuthenticationType.TermsOfService
             AuthenticationType.EmailIdentity.name -> AuthenticationType.EmailIdentity
             AuthenticationType.Msisdn.name -> AuthenticationType.Msisdn
             AuthenticationType.Dummy.name -> AuthenticationType.Dummy

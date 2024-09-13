@@ -9,6 +9,8 @@ import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.*
@@ -109,7 +111,30 @@ class MatrixUIAEndpointRouteTest {
                     ResponseWithUIA.Step(
                         UIAState(
                             flows = setOf(UIAState.FlowInformation(listOf(AuthenticationType.Password))),
-                            session = "session"
+                            session = "session",
+                            parameter = mapOf(
+                                AuthenticationType.Unknown("example.type.baz") to UIAState.Parameter.Unknown(
+                                    buildJsonObject {
+                                        put("example_key", JsonPrimitive("foobar"))
+                                    }
+                                ),
+                                AuthenticationType.TermsOfService to UIAState.Parameter.TermsOfService(
+                                    mapOf(
+                                        "terms_of_service" to UIAState.Parameter.TermsOfService.PolicyDefinition(
+                                            "1.2", mapOf(
+                                                "en" to UIAState.Parameter.TermsOfService.PolicyDefinition.PolicyTranslation(
+                                                    "Terms of Service",
+                                                    "https://example.org/somewhere/terms-1.2-en.html"
+                                                ),
+                                                "fr" to UIAState.Parameter.TermsOfService.PolicyDefinition.PolicyTranslation(
+                                                    "Conditions d'utilisation",
+                                                    "https://example.org/somewhere/terms-1.2-fr.html"
+                                                ),
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
                         )
                     )
                 }
@@ -119,7 +144,39 @@ class MatrixUIAEndpointRouteTest {
             contentType(ContentType.Application.Json)
             setBody("""{"includeDino":true}""")
         }
-        response.body<String>() shouldBe """{"completed":[],"flows":[{"stages":["m.login.password"]}],"session":"session"}"""
+        response.body<String>() shouldBe """
+            {
+              "completed": [],
+              "flows": [
+                {
+                  "stages": [
+                    "m.login.password"
+                  ]
+                }
+              ],
+              "params": {
+                "example.type.baz": {
+                  "example_key": "foobar"
+                },
+                "m.login.terms": {
+                  "policies": {
+                    "terms_of_service": {
+                      "version": "1.2",
+                      "en": {
+                        "name": "Terms of Service",
+                        "url": "https://example.org/somewhere/terms-1.2-en.html"
+                      },
+                      "fr": {
+                        "name": "Conditions d'utilisation",
+                        "url": "https://example.org/somewhere/terms-1.2-fr.html"
+                      }
+                    }
+                  }
+                }
+              },
+              "session": "session"
+            }
+        """.trimToFlatJson()
         response.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response.status shouldBe HttpStatusCode.Unauthorized
     }
