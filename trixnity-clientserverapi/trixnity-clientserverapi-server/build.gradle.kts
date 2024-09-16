@@ -2,6 +2,8 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.mokkery)
+    trixnity.general
+    trixnity.publish
 }
 
 kotlin {
@@ -15,8 +17,8 @@ kotlin {
         }
         commonMain {
             dependencies {
-                api(project(":trixnity-api-server"))
-                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
+                api(projects.trixnityApiServer)
+                api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
                 api(libs.ktor.server.auth)
                 implementation(libs.ktor.server.cors)

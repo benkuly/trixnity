@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    trixnity.general
 }
 
 kotlin {
@@ -15,8 +16,8 @@ kotlin {
         }
         commonMain {
             dependencies {
-                api(project(":trixnity-core"))
-                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
+                api(projects.trixnityCore)
+                api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
                 implementation(libs.oshai.logging)
 

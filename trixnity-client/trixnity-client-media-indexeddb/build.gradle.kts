@@ -1,6 +1,8 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    trixnity.general
+    trixnity.publish
 }
 
 kotlin {
@@ -13,7 +15,7 @@ kotlin {
         }
         jsMain {
             dependencies {
-                implementation(project(":trixnity-client"))
+                implementation(projects.trixnityClient)
 
                 api(libs.juulLabs.indexeddb)
                 implementation(libs.oshai.logging)

@@ -1,6 +1,8 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    trixnity.general
+    trixnity.publish
 }
 
 kotlin {
@@ -15,7 +17,7 @@ kotlin {
         }
         commonMain {
             dependencies {
-                api(project(":trixnity-core"))
+                api(projects.trixnityCore)
 
                 api(libs.ktor.client.core)
                 implementation(libs.ktor.client.contentNegotiation)
@@ -28,7 +30,7 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation(project(":test-utils"))
+                implementation(projects.testUtils)
 
                 implementation(libs.ktor.client.mock)
                 implementation(libs.kotest.assertions.core)
