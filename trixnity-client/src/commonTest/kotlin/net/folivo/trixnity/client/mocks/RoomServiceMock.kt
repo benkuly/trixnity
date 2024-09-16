@@ -111,6 +111,11 @@ class RoomServiceMock : RoomService {
         return sentMessages.value.size.toString()
     }
 
+    override suspend fun cancelSendMessage(transactionId: String) {
+        throw NotImplementedError()
+    }
+
+    @Deprecated("replaced by cancelSendMessage", replaceWith = ReplaceWith("cancelSendMessage(transactionId)"))
     override suspend fun abortSendMessage(transactionId: String) {
         throw NotImplementedError()
     }

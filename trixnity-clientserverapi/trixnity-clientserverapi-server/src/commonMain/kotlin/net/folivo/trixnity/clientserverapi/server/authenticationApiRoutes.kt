@@ -1,7 +1,5 @@
 package net.folivo.trixnity.clientserverapi.server
 
-import io.ktor.http.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.server.matrixEndpoint
@@ -20,16 +18,6 @@ internal fun Route.authenticationApiRoutes(
     matrixEndpoint(json, contentMappings, handler::getMsisdnRequestTokenForPassword)
     matrixEndpoint(json, contentMappings, handler::getMsisdnRequestTokenForRegistration)
     matrixUIAEndpoint(json, contentMappings, handler::register)
-    matrixEndpoint(json, contentMappings) {
-        val redirectUrl = handler.ssoRedirect(this)
-        call.response.header(HttpHeaders.Location, redirectUrl)
-        call.response.status(HttpStatusCode.Found)
-    }
-    matrixEndpoint(json, contentMappings) {
-        val redirectUrl = handler.ssoRedirectTo(this)
-        call.response.header(HttpHeaders.Location, redirectUrl)
-        call.response.status(HttpStatusCode.Found)
-    }
     matrixEndpoint(json, contentMappings, handler::getLoginTypes)
     matrixEndpoint(json, contentMappings, handler::login)
     matrixEndpoint(json, contentMappings, handler::logout)

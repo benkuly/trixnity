@@ -22,9 +22,12 @@ fun ShouldSpec.olmSessionRepositoryTest(diReceiver: () -> Koin) {
     should("olmSessionRepositoryTest: save, get and delete") {
         val key1 = Curve25519Key(null, "curve1")
         val key2 = Curve25519Key(null, "curve2")
-        val session1 = StoredOlmSession(key1, "session1", fromEpochMilliseconds(1234), pickled = "1")
-        val session2 = StoredOlmSession(key2, "session2", fromEpochMilliseconds(1234), pickled = "2")
-        val session3 = StoredOlmSession(key2, "session3", fromEpochMilliseconds(1234), pickled = "2")
+        val session1 =
+            StoredOlmSession(key1, "session1", fromEpochMilliseconds(1234), fromEpochMilliseconds(1234), pickled = "1")
+        val session2 =
+            StoredOlmSession(key2, "session2", fromEpochMilliseconds(1234), fromEpochMilliseconds(1234), pickled = "2")
+        val session3 =
+            StoredOlmSession(key2, "session3", fromEpochMilliseconds(1234), fromEpochMilliseconds(1234), pickled = "2")
 
         rtm.writeTransaction {
             cut.save(key1, setOf(session1))

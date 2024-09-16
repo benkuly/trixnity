@@ -92,6 +92,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             olmEncryptionService = olmEncryptionServiceMock,
             keyTrust = KeyTrustServiceMock(),
             keyStore = keyStore,
+            clock = Clock.System,
         )
     }
 
@@ -142,6 +143,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             olmEncryptionService = olmEncryptionServiceMock,
             keyTrust = KeyTrustServiceMock(),
             keyStore = keyStore,
+            clock = Clock.System,
         )
         cut.startLifecycle(this)
         cut.cancel()
@@ -300,6 +302,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             olmEncryptionService = olmEncryptionServiceMock,
             keyTrust = KeyTrustServiceMock(),
             keyStore = keyStore,
+            clock = Clock.System,
         )
         cut.startLifecycle(this)
         api.sync.startOnce(

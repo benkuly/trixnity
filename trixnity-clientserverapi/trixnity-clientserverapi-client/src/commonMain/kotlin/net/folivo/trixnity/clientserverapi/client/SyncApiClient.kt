@@ -129,6 +129,7 @@ class SyncApiClientImpl(
     private val httpClient: MatrixClientServerApiHttpClient,
     private val syncLoopDelay: Duration,
     private val syncLoopErrorDelay: Duration,
+    private val clock: Clock = Clock.System,
 ) : ClientEventEmitterImpl<SyncEvents>(), SyncApiClient {
 
     override suspend fun sync(
@@ -361,9 +362,9 @@ class SyncApiClientImpl(
     }
 
     private suspend fun <T> measureTime(block: suspend () -> T): Pair<T, Duration> {
-        val start = Clock.System.now()
+        val start = clock.now()
         val result = block()
-        val stop = Clock.System.now()
+        val stop = clock.now()
         return result to (stop - start)
     }
 

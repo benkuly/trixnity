@@ -18,7 +18,7 @@ import net.folivo.trixnity.core.model.events.m.room.JoinRulesEventContent
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixclientv1roomsroomidhierarchy">matrix spec</a>
  */
 @Serializable
-@Resource("/_matrix/client/v3/rooms/{roomId}/hierarchy")
+@Resource("/_matrix/client/v1/rooms/{roomId}/hierarchy")
 @HttpMethod(GET)
 data class GetHierarchy(
     @SerialName("roomId") val roomId: RoomId,

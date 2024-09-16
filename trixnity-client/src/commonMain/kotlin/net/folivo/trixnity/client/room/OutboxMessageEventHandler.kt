@@ -3,11 +3,14 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.*
 import io.ktor.http.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
@@ -40,6 +43,7 @@ class OutboxMessageEventHandler(
     private val outboxMessageMediaUploaderMappings: OutboxMessageMediaUploaderMappings,
     private val currentSyncState: CurrentSyncState,
     private val tm: TransactionManager,
+    private val clock: Clock,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -51,7 +55,7 @@ class OutboxMessageEventHandler(
         val outboxMessages = roomOutboxMessageStore.getAll().first().mapNotNull { it.value.first() }
         val removeOutboxMessages = outboxMessages.mapNotNull {
             // a sync means, that the message must have been received. we just give the ui a bit time to update.
-            val deleteBeforeTimestamp = Clock.System.now() - config.deleteSentOutboxMessageDelay
+            val deleteBeforeTimestamp = clock.now() - config.deleteSentOutboxMessageDelay
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
                 log.debug { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
                 it.transactionId
@@ -90,13 +94,13 @@ class OutboxMessageEventHandler(
                             launch {
                                 for (outboxMessage in outboxMessagesInRoom) {
                                     val sendMessage = async { sendOutboxMessage(outboxMessage, roomId) }
-                                    val checkAborted = async { checkWhetherAborted(outboxMessage) }
+                                    val checkCancelled = async { checkWhetherCancelled(outboxMessage) }
                                     select {
-                                        sendMessage.onAwait{}
-                                        checkAborted.onAwait{}
+                                        sendMessage.onAwait {}
+                                        checkCancelled.onAwait {}
                                     }
-                                    if (sendMessage.isActive) sendMessage.cancel()
-                                    if (checkAborted.isActive) checkAborted.cancel()
+                                    sendMessage.cancel()
+                                    checkCancelled.cancel()
                                 }
                             }
                         }
@@ -106,9 +110,9 @@ class OutboxMessageEventHandler(
     }
 
 
-    private suspend fun checkWhetherAborted(outboxMessage: RoomOutboxMessage<*>) {
+    private suspend fun checkWhetherCancelled(outboxMessage: RoomOutboxMessage<*>) {
         roomOutboxMessageStore.getAsFlow(outboxMessage.transactionId).first { it == null }
-        log.debug { "abort sending of ${outboxMessage.transactionId}" }
+        log.debug { "cancel sending of ${outboxMessage.transactionId}" }
     }
 
     private suspend fun sendOutboxMessage(outboxMessage: RoomOutboxMessage<*>, roomId: RoomId) {
@@ -178,7 +182,7 @@ class OutboxMessageEventHandler(
             return
         }
         roomOutboxMessageStore.update(outboxMessage.transactionId) {
-            it?.copy(sentAt = Clock.System.now(), eventId = eventId)
+            it?.copy(sentAt = clock.now(), eventId = eventId)
         }
         if (config.setOwnMessagesAsFullyRead) {
             try {

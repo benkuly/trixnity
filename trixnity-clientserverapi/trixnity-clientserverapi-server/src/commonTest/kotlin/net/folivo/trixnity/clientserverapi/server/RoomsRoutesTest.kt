@@ -1969,7 +1969,7 @@ class RoomsRoutesTest {
                 )
             )
         val response =
-            client.get("/_matrix/client/v3/rooms/!room:server/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true") {
+            client.get("/_matrix/client/v1/rooms/!room:server/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true") {
                 bearerAuth("token")
             }
         assertSoftly(response) {

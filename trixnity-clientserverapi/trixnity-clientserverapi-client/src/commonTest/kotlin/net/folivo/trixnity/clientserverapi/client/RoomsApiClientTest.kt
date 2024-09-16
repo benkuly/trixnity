@@ -1933,7 +1933,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/rooms/!room:server/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true",
+                        "/_matrix/client/v1/rooms/!room:server/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)

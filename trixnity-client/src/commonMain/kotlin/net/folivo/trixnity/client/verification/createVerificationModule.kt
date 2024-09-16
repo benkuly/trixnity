@@ -19,6 +19,7 @@ fun createVerificationModule() = module {
             keyTrustService = get(),
             keySecretService = get(),
             currentSyncState = get(),
+            clock = get(),
         )
     }.apply {
         bind<VerificationService>()

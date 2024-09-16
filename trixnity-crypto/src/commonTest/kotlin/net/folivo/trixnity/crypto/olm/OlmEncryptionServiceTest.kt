@@ -41,6 +41,7 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.mocks.ClockMock
 import net.folivo.trixnity.crypto.mocks.OlmEncryptionServiceRequestHandlerMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
@@ -50,6 +51,7 @@ import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class OlmEncryptionServiceTest : ShouldSpec(body)
 
@@ -68,6 +70,7 @@ private val body: ShouldSpec.() -> Unit = {
 
     lateinit var olmStoreMock: OlmStoreMock
     lateinit var olmEncryptionServiceRequestHandlerMock: OlmEncryptionServiceRequestHandlerMock
+    lateinit var clockMock: ClockMock
     val mockSignService = SignServiceMock()
 
     lateinit var cut: OlmEncryptionServiceImpl
@@ -122,6 +125,7 @@ private val body: ShouldSpec.() -> Unit = {
         )
         olmStoreMock.olmAccount.value = aliceAccount.pickle("")
         olmStoreMock.devices[room] = mapOf(alice to setOf(aliceDeviceId), bob to setOf(bobDeviceId))
+        clockMock = ClockMock()
 
         mockSignService.returnVerify = VerifyResult.Valid
 
@@ -146,6 +150,7 @@ private val body: ShouldSpec.() -> Unit = {
             olmStoreMock,
             olmEncryptionServiceRequestHandlerMock,
             mockSignService,
+            clockMock,
         )
     }
 
@@ -499,6 +504,111 @@ private val body: ShouldSpec.() -> Unit = {
             olmStoreMock.olmSessions[bobCurveKey].shouldNotBeNull() shouldNotContain storedOlmSession1
         }
     }
+    should("not create multiple recovery sessions in short time") {
+        mockClaimKeys()
+        freeAfter(
+            OlmSession.createOutbound(
+                aliceAccount,
+                bobCurveKey.value,
+                bobAccount.getOneTimeKey()
+            )
+        ) { aliceSession ->
+            val firstMessage = aliceSession.encrypt("first message")
+            freeAfter(
+                OlmSession.createInbound(bobAccount, firstMessage.cipherText)
+            ) { bobSession ->
+                bobSession.decrypt(firstMessage)
+                bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
+            }
+            val storedOlmSession = StoredOlmSession(
+                bobCurveKey,
+                aliceSession.sessionId,
+                Clock.System.now(),
+                Clock.System.now(),
+                aliceSession.pickle("")
+            )
+            olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
+
+            // first recovery trigger
+            cut.decryptOlm(
+                ClientEvent.ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            aliceCurveKey.value to CiphertextInfo("junk", ORDINARY)
+                        ),
+                        senderKey = bobCurveKey
+                    ), bob
+                )
+            ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+
+            // second recovery trigger
+            cut.decryptOlm(
+                ClientEvent.ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            aliceCurveKey.value to CiphertextInfo("junk", ORDINARY)
+                        ),
+                        senderKey = bobCurveKey
+                    ), bob
+                )
+            ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+
+            olmEncryptionServiceRequestHandlerMock.sendToDeviceParams shouldHaveSize 1
+        }
+    }
+    should("create multiple recovery sessions after some time") {
+        mockClaimKeys()
+        freeAfter(
+            OlmSession.createOutbound(
+                aliceAccount,
+                bobCurveKey.value,
+                bobAccount.getOneTimeKey()
+            )
+        ) { aliceSession ->
+            val firstMessage = aliceSession.encrypt("first message")
+            freeAfter(
+                OlmSession.createInbound(bobAccount, firstMessage.cipherText)
+            ) { bobSession ->
+                bobSession.decrypt(firstMessage)
+                bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
+            }
+            val storedOlmSession = StoredOlmSession(
+                bobCurveKey,
+                aliceSession.sessionId,
+                Clock.System.now(),
+                Clock.System.now(),
+                aliceSession.pickle("")
+            )
+            olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
+
+            // first recovery trigger
+            cut.decryptOlm(
+                ClientEvent.ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            aliceCurveKey.value to CiphertextInfo("junk", ORDINARY)
+                        ),
+                        senderKey = bobCurveKey
+                    ), bob
+                )
+            ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+
+            clockMock.nowValue += 11.seconds
+            // second recovery trigger
+            cut.decryptOlm(
+                ClientEvent.ToDeviceEvent(
+                    OlmEncryptedToDeviceEventContent(
+                        ciphertext = mapOf(
+                            aliceCurveKey.value to CiphertextInfo("junk", ORDINARY)
+                        ),
+                        senderKey = bobCurveKey
+                    ), bob
+                )
+            ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
+
+            olmEncryptionServiceRequestHandlerMock.sendToDeviceParams shouldHaveSize 2
+        }
+    }
     suspend fun handleManipulation(manipulatedOlmEvent: DecryptedOlmEvent<RoomKeyEventContent>) {
         freeAfter(
             OlmSession.createOutbound(
@@ -656,7 +766,7 @@ private val body: ShouldSpec.() -> Unit = {
         olmStoreMock.outboundMegolmSession[room] =
             StoredOutboundMegolmSession(
                 roomId = room,
-                createdAt = Clock.System.now() - 24.milliseconds,
+                createdAt = clockMock.nowValue - 24.milliseconds,
                 pickled = "is irrelevant"
             )
         shouldEncryptMessage(EncryptionEventContent(rotationPeriodMs = 24), 2)

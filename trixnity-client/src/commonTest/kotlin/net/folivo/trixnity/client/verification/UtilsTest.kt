@@ -13,26 +13,35 @@ class UtilsTest : ShouldSpec({
 
     context("isVerificationRequestActive") {
         should("return false, when older then 10 minutes") {
-            isVerificationRequestActive((Clock.System.now() - 11.minutes).toEpochMilliseconds()) shouldBe false
+            isVerificationRequestActive(
+                (Clock.System.now() - 11.minutes).toEpochMilliseconds(),
+                Clock.System
+            ) shouldBe false
         }
         should("return false, when older newer 10 minutes") {
-            isVerificationRequestActive((Clock.System.now() + 6.minutes).toEpochMilliseconds()) shouldBe false
+            isVerificationRequestActive(
+                (Clock.System.now() + 6.minutes).toEpochMilliseconds(),
+                Clock.System
+            ) shouldBe false
         }
         should("return false, when state is cancel") {
             isVerificationRequestActive(
                 Clock.System.now().toEpochMilliseconds(),
+                Clock.System,
                 ActiveVerificationState.Cancel(VerificationCancelEventContent(Code.User, "", null, null), false)
             ) shouldBe false
         }
         should("return false, when state is done") {
             isVerificationRequestActive(
                 Clock.System.now().toEpochMilliseconds(),
+                Clock.System,
                 ActiveVerificationState.Done
             ) shouldBe false
         }
         should("return true, when active") {
             isVerificationRequestActive(
                 Clock.System.now().toEpochMilliseconds(),
+                Clock.System,
                 ActiveVerificationState.Ready("", setOf(), null, "t") {}
             ) shouldBe true
         }
