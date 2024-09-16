@@ -166,7 +166,7 @@ class MediaRoutesTest {
                     content = ByteReadChannel("test"),
                     contentLength = 4L,
                     contentType = ContentType.Text.Plain,
-                    filename = "testFile.txt"
+                    contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.txt")
                 )
             )
         val response =
@@ -177,7 +177,7 @@ class MediaRoutesTest {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Text.Plain
             this.contentLength() shouldBe 4
-            this.headers[HttpHeaders.ContentDisposition] shouldBe "testFile.txt"
+            this.headers[HttpHeaders.ContentDisposition] shouldBe "attachment; filename=testFile.txt"
             this.body<ByteReadChannel>().readUTF8Line() shouldBe "test"
         }
         verifySuspend {
@@ -197,7 +197,8 @@ class MediaRoutesTest {
                     content = ByteReadChannel("test"),
                     contentLength = 4L,
                     contentType = ContentType.Text.Plain,
-                    filename = "testFile.txt"
+                    contentDisposition = ContentDisposition("attachment")
+                        .withParameter("filename", "testFile.txt")
                 )
             )
         val response =
@@ -208,7 +209,7 @@ class MediaRoutesTest {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Text.Plain
             this.contentLength() shouldBe 4
-            this.headers[HttpHeaders.ContentDisposition] shouldBe "testFile.txt"
+            this.headers[HttpHeaders.ContentDisposition] shouldBe "attachment; filename=testFile.txt"
             this.body<ByteReadChannel>().readUTF8Line() shouldBe "test"
         }
         verifySuspend {

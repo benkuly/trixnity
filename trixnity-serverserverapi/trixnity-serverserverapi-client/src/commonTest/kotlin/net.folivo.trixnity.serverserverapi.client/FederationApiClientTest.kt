@@ -1970,4 +1970,55 @@ class FederationApiClientTest {
             originTimestamp = 1432735824653,
         )
     }
+
+    // TODO
+//    @Test
+//    fun shouldDownloadMediaStream() = runTest {
+//        val matrixRestClient = MatrixServerServerApiClientImpl(
+//            hostname = "hostname",
+//            getDelegatedDestination = { host, port -> host to port },
+//            sign = { Key.Ed25519Key("key", "value") },
+//            getRoomVersion = { "3" },
+//            httpClientFactory = mockEngineFactory {
+//                addHandler { request ->
+//                    assertEquals(
+//                        "/_matrix/federation/v1/media/download/mediaId123",
+//                        request.url.fullPath
+//                    )
+//                    assertEquals(HttpMethod.Get, request.method)
+//                    respond(
+//                        """
+//                            Content-type: application/json
+//
+//                            {}
+//                            --boundary
+//                            Content-Length: 22
+//                            Content-Type: text/plain
+//                            Content-Disposition: attachment; filename=example.txt
+//
+//                            a multiline
+//                            text file
+//                           --boundary--
+//
+//                        """.trimIndent(),
+//                        HttpStatusCode.OK,
+//                        headersOf(
+//                            HttpHeaders.ContentType,
+//                            ContentType.MultiPart.Mixed.withParameter("boundary", "boundary").toString()
+//                        )
+//                    )
+//                }
+//            })
+//        matrixRestClient.federation.downloadMedia("mediaId123") { media ->
+//            media.shouldBeInstanceOf<Media.Stream>()
+//            media.content.toByteArray().decodeToString() shouldBe "a multiline\ntext file"
+//            media.contentLength shouldBe 22
+//            media.contentType shouldBe ContentType.Text.Plain
+//            media.contentDisposition shouldBe ContentDisposition("attachment").withParameter("filename", "example.txt")
+//        }.getOrThrow()
+//    }
+
+    // TODO downloadMediaRedirect
+    // TODO downloadThumbnailStream
+    // TODO downloadThumbnailRedirect
 }

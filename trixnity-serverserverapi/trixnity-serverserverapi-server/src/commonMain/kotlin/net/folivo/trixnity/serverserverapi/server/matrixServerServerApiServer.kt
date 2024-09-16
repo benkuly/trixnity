@@ -21,6 +21,7 @@ fun Application.matrixServerServerApiServer(
     installMatrixSignatureAuth("matrix-signature-auth", hostname = hostname) {
         this.authenticationFunction = signatureAuthenticationFunction
     }
+    install(ConvertMediaPlugin)
     matrixApiServer(json) {
         authenticate("matrix-signature-auth") {
             routes()

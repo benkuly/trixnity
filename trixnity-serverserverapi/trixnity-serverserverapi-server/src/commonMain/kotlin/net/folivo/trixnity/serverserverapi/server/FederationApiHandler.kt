@@ -136,4 +136,14 @@ interface FederationApiHandler {
      * @see [TimestampToEvent]
      */
     suspend fun timestampToEvent(context: MatrixEndpointContext<TimestampToEvent, Unit, TimestampToEvent.Response>): TimestampToEvent.Response
+
+    /**
+     * @see [DownloadMedia]
+     */
+    suspend fun downloadMedia(context: MatrixEndpointContext<DownloadMedia, Unit, Media>): Media
+
+    /**
+     * @see [DownloadThumbnail]
+     */
+    suspend fun downloadThumbnail(context: MatrixEndpointContext<DownloadThumbnail, Unit, Media>): Media
 }

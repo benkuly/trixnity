@@ -5,6 +5,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.clientserverapi.model.media.*
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 interface MediaApiClient {
     /**
@@ -61,7 +62,7 @@ interface MediaApiClient {
     suspend fun download(
         mxcUri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
-        timeout: Duration = Duration.INFINITE,
+        timeout: Duration? = null,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit>
 
@@ -88,8 +89,9 @@ interface MediaApiClient {
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
+        animated: Boolean? = null,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
-        timeout: Duration = Duration.INFINITE,
+        timeout: Duration? = null,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit>
 
@@ -128,7 +130,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         progress: MutableStateFlow<FileTransferProgress?>?,
         timeout: Duration,
     ): Result<UploadMedia.Response> =
-        httpClient.request(UploadMedia(media.filename), media) {
+        httpClient.request(UploadMedia(media.contentDisposition?.parameter("filename")), media) {
             timeout {
                 requestTimeoutMillis = timeout.inWholeMilliseconds
             }
@@ -145,7 +147,13 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         progress: MutableStateFlow<FileTransferProgress?>?,
         timeout: Duration,
     ): Result<Unit> =
-        httpClient.request(UploadMediaByContentUri(serverName, mediaId, media.filename), media) {
+        httpClient.request(
+            UploadMediaByContentUri(
+                serverName,
+                mediaId,
+                media.contentDisposition?.parameter("filename")
+            ), media
+        ) {
             timeout {
                 requestTimeoutMillis = timeout.inWholeMilliseconds
             }
@@ -168,7 +176,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
             .let { it.substringBefore("/") to it.substringAfter("/") }
         return httpClient.withRequest(
-            endpoint = DownloadMediaLegacy(serverName, mediaId, allowRemote),
+            endpoint = DownloadMediaLegacy(serverName, mediaId, allowRemote, timeoutMs = timeout.inWholeMilliseconds),
             requestBuilder = {
                 method = HttpMethod.Get
                 timeout {
@@ -186,7 +194,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
     override suspend fun download(
         mxcUri: String,
         progress: MutableStateFlow<FileTransferProgress?>?,
-        timeout: Duration,
+        timeout: Duration?,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> {
         val uri = Url(mxcUri)
@@ -194,11 +202,12 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
             .let { it.substringBefore("/") to it.substringAfter("/") }
         return httpClient.withRequest(
-            endpoint = DownloadMedia(serverName, mediaId),
+            endpoint = DownloadMedia(serverName, mediaId, timeout?.inWholeMilliseconds),
             requestBuilder = {
                 method = HttpMethod.Get
                 timeout {
-                    requestTimeoutMillis = timeout.inWholeMilliseconds
+                    requestTimeoutMillis =
+                        timeout?.plus(10.seconds)?.inWholeMilliseconds ?: Duration.INFINITE.inWholeMilliseconds
                 }
                 if (progress != null)
                     onDownload { transferred, total ->
@@ -232,6 +241,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
                 height = height,
                 method = method,
                 allowRemote = allowRemote,
+                timeoutMs = timeout.inWholeMilliseconds,
             ),
             requestBuilder = {
                 this.method = HttpMethod.Get
@@ -252,8 +262,9 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         width: Long,
         height: Long,
         method: ThumbnailResizingMethod,
+        animated: Boolean?,
         progress: MutableStateFlow<FileTransferProgress?>?,
-        timeout: Duration,
+        timeout: Duration?,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> {
         val uri = Url(mxcUri)
@@ -267,11 +278,14 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
                 width = width,
                 height = height,
                 method = method,
+                animated = animated,
+                timeoutMs = timeout?.inWholeMilliseconds
             ),
             requestBuilder = {
                 this.method = HttpMethod.Get
                 timeout {
-                    requestTimeoutMillis = timeout.inWholeMilliseconds
+                    requestTimeoutMillis =
+                        timeout?.plus(10.seconds)?.inWholeMilliseconds ?: Duration.INFINITE.inWholeMilliseconds
                 }
                 if (progress != null)
                     onDownload { transferred, total ->

@@ -5,13 +5,15 @@ import dev.mokkery.answering.returns
 import dev.mokkery.matcher.any
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.testing.*
+import io.ktor.utils.io.*
 import io.ktor.utils.io.charsets.*
-import io.ktor.utils.io.charsets.Charsets.UTF_8
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
@@ -37,8 +39,10 @@ import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
 import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
+import net.folivo.trixnity.serverserverapi.model.federation.ThumbnailResizingMethod.SCALE
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.text.Charsets.UTF_8
 
 class FederationRoutesTest {
     private val json = createMatrixEventAndDataUnitJson({ "3" })
@@ -51,6 +55,7 @@ class FederationRoutesTest {
             installMatrixSignatureAuth(hostname = "") {
                 authenticationFunction = { SignatureAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
             }
+            install(ConvertMediaPlugin)
             matrixApiServer(json) {
                 federationApiRoutes(handlerMock, json, mapping)
             }
@@ -1938,6 +1943,168 @@ class FederationRoutesTest {
                 it.endpoint.roomId shouldBe RoomId("room", "server")
                 it.endpoint.timestamp shouldBe 24
                 it.endpoint.dir shouldBe TimestampToEvent.Direction.FORWARDS
+            })
+        }
+    }
+
+    @Test
+    fun downloadMediaStream() = testApplication {
+        initCut()
+        everySuspend { handlerMock.downloadMedia(any()) }
+            .returns(
+                Media.Stream(
+                    ByteReadChannel("a multiline\r\ntext file"),
+                    22,
+                    ContentType.Text.Plain,
+                    ContentDisposition("attachment").withParameter("filename", "example.txt"),
+                )
+            )
+        val response =
+            client.get("/_matrix/federation/v1/media/download/mediaId123") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType()?.toString() shouldStartWith ContentType.MultiPart.Mixed.toString()
+            val boundary = this.contentType()?.parameter("boundary")
+            this.body<String>() shouldBe """
+                --$boundary
+                Content-Type: application/json
+                
+                {}
+                --$boundary
+                Content-Length: 22
+                Content-Type: text/plain
+                Content-Disposition: attachment; filename=example.txt
+                
+                a multiline
+                text file
+                --$boundary--
+                
+            """.trimIndent().replace("\n", "\r\n")
+        }
+        verifySuspend {
+            handlerMock.downloadMedia(assert {
+                it.endpoint.mediaId shouldBe "mediaId123"
+            })
+        }
+    }
+
+    @Test
+    fun downloadMediaRedirect() = testApplication {
+        initCut()
+        everySuspend { handlerMock.downloadMedia(any()) }
+            .returns(
+                Media.Redirect("https://example.org/mediablabla")
+            )
+        val response =
+            client.get("/_matrix/federation/v1/media/download/mediaId123") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType()?.toString() shouldStartWith ContentType.MultiPart.Mixed.toString()
+            val boundary = this.contentType()?.parameter("boundary")
+            this.body<String>() shouldBe """
+                --$boundary
+                Content-Type: application/json
+                
+                {}
+                --$boundary
+                Location: https://example.org/mediablabla
+                
+                
+                --$boundary--
+                
+            """.trimIndent().replace("\n", "\r\n")
+        }
+        verifySuspend {
+            handlerMock.downloadMedia(assert {
+                it.endpoint.mediaId shouldBe "mediaId123"
+            })
+        }
+    }
+
+    @Test
+    fun downloadThumbnailStream() = testApplication {
+        initCut()
+        everySuspend { handlerMock.downloadThumbnail(any()) }
+            .returns(
+                Media.Stream(
+                    ByteReadChannel("a multiline\r\ntext file"),
+                    22,
+                    ContentType.Text.Plain,
+                    ContentDisposition("attachment").withParameter("filename", "example.txt"),
+                )
+            )
+        val response =
+            client.get("/_matrix/federation/v1/media/thumbnail/mediaId123?width=64&height=64&method=scale") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType()?.toString() shouldStartWith ContentType.MultiPart.Mixed.toString()
+            val boundary = this.contentType()?.parameter("boundary")
+            this.body<String>() shouldBe """
+                --$boundary
+                Content-Type: application/json
+                
+                {}
+                --$boundary
+                Content-Length: 22
+                Content-Type: text/plain
+                Content-Disposition: attachment; filename=example.txt
+                
+                a multiline
+                text file
+                --$boundary--
+                
+            """.trimIndent().replace("\n", "\r\n")
+        }
+        verifySuspend {
+            handlerMock.downloadThumbnail(assert {
+                it.endpoint.mediaId shouldBe "mediaId123"
+                it.endpoint.width shouldBe 64
+                it.endpoint.height shouldBe 64
+                it.endpoint.method shouldBe SCALE
+            })
+        }
+    }
+
+    @Test
+    fun downloadThumbnailRedirect() = testApplication {
+        initCut()
+        everySuspend { handlerMock.downloadThumbnail(any()) }
+            .returns(
+                Media.Redirect("https://example.org/mediablabla")
+            )
+        val response =
+            client.get("/_matrix/federation/v1/media/thumbnail/mediaId123?width=64&height=64&method=scale") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType()?.toString() shouldStartWith ContentType.MultiPart.Mixed.toString()
+            val boundary = this.contentType()?.parameter("boundary")
+            this.body<String>() shouldBe """
+                --$boundary
+                Content-Type: application/json
+                
+                {}
+                --$boundary
+                Location: https://example.org/mediablabla
+                
+                
+                --$boundary--
+                
+            """.trimIndent().replace("\n", "\r\n")
+        }
+        verifySuspend {
+            handlerMock.downloadThumbnail(assert {
+                it.endpoint.mediaId shouldBe "mediaId123"
+                it.endpoint.width shouldBe 64
+                it.endpoint.height shouldBe 64
+                it.endpoint.method shouldBe SCALE
             })
         }
     }

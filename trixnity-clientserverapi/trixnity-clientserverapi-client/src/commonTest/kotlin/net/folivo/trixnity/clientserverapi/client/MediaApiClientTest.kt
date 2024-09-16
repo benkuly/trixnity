@@ -95,7 +95,7 @@ class MediaApiClientTest {
                 content = ByteReadChannel("test"),
                 contentLength = 4,
                 contentType = ContentType.Text.Plain,
-                filename = "testFile.txt"
+                contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.txt")
             ),
             progress = progress
         ).getOrThrow()
@@ -132,7 +132,7 @@ class MediaApiClientTest {
                 content = ByteReadChannel("test"),
                 contentLength = 4,
                 contentType = ContentType.Text.Plain,
-                filename = "testFile.txt"
+                contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.txt")
             ),
             progress = progress
         ).getOrThrow()

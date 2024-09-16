@@ -1,5 +1,6 @@
 package net.folivo.trixnity.serverserverapi.client
 
+import io.ktor.client.plugins.*
 import io.ktor.http.*
 import net.folivo.trixnity.api.client.MatrixApiClient
 import net.folivo.trixnity.core.model.EventId
@@ -10,6 +11,8 @@ import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.serverserverapi.model.federation.*
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 interface FederationApiClient {
     /**
@@ -225,6 +228,28 @@ interface FederationApiClient {
         timestamp: Long,
         dir: TimestampToEvent.Direction = TimestampToEvent.Direction.FORWARDS,
     ): Result<TimestampToEvent.Response>
+
+    /**
+     * @see [DownloadMedia]
+     */
+    suspend fun downloadMedia(
+        mediaId: String,
+        timeout: Duration? = null,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit>
+
+    /**
+     * @see [DownloadThumbnail]
+     */
+    suspend fun downloadThumbnail(
+        mediaId: String,
+        width: Long,
+        height: Long,
+        method: ThumbnailResizingMethod,
+        animated: Boolean? = null,
+        timeout: Duration? = null,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit>
 }
 
 class FederationApiClientImpl(
@@ -391,4 +416,49 @@ class FederationApiClientImpl(
         dir: TimestampToEvent.Direction
     ): Result<TimestampToEvent.Response> =
         httpClient.request(TimestampToEvent(roomId, timestamp, dir))
+
+    override suspend fun downloadMedia(
+        mediaId: String,
+        timeout: Duration?,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit> =
+        httpClient.withRequest(
+            endpoint = DownloadMedia(mediaId, timeout?.inWholeMilliseconds),
+            requestBuilder = {
+                method = HttpMethod.Get
+                timeout {
+                    requestTimeoutMillis =
+                        timeout?.plus(10.seconds)?.inWholeMilliseconds ?: Duration.INFINITE.inWholeMilliseconds
+                }
+            },
+            responseHandler = downloadHandler
+        )
+
+    override suspend fun downloadThumbnail(
+        mediaId: String,
+        width: Long,
+        height: Long,
+        method: ThumbnailResizingMethod,
+        animated: Boolean?,
+        timeout: Duration?,
+        downloadHandler: suspend (Media) -> Unit
+    ): Result<Unit> =
+        httpClient.withRequest(
+            endpoint = DownloadThumbnail(
+                mediaId = mediaId,
+                width = width,
+                height = height,
+                method = method,
+                animated = animated,
+                timeoutMs = timeout?.inWholeMilliseconds
+            ),
+            requestBuilder = {
+                this.method = HttpMethod.Get
+                timeout {
+                    requestTimeoutMillis =
+                        timeout?.plus(10.seconds)?.inWholeMilliseconds ?: Duration.INFINITE.inWholeMilliseconds
+                }
+            },
+            responseHandler = downloadHandler
+        )
 }
