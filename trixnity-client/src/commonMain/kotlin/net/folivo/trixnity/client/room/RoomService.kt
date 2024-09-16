@@ -148,7 +148,9 @@ interface RoomService {
         builder: suspend MessageBuilder.() -> Unit
     ): String
 
+    @Deprecated("replaced by cancelSendMessage", replaceWith = ReplaceWith("cancelSendMessage(transactionId)"))
     suspend fun abortSendMessage(transactionId: String)
+    suspend fun cancelSendMessage(transactionId: String)
 
     suspend fun retrySendMessage(transactionId: String)
 
@@ -613,10 +615,13 @@ class RoomServiceImpl(
         return transactionId
     }
 
-    override suspend fun abortSendMessage(transactionId: String) {
+    override suspend fun cancelSendMessage(transactionId: String) {
         roomOutboxMessageStore.update(transactionId) { null }
         log.debug { "removed message with id $transactionId" }
     }
+
+    @Deprecated("replaced by cancelSendMessage", replaceWith = ReplaceWith("cancelSendMessage(transactionId)"))
+    override suspend fun abortSendMessage(transactionId: String) = cancelSendMessage(transactionId)
 
     override suspend fun retrySendMessage(transactionId: String) {
         roomOutboxMessageStore.update(transactionId) { it?.copy(sendError = null) }
