@@ -2,6 +2,7 @@ plugins {
     `java-platform`
     `maven-publish`
     trixnity.general
+    trixnity.publish
 }
 
 javaPlatform {
