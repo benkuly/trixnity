@@ -7,106 +7,11 @@ buildscript {
 plugins {
     `maven-publish`
     signing
-    alias(libs.plugins.dokka)
+    id(libs.plugins.dokka.get().pluginId)
     alias(libs.plugins.realm).apply(false)
     alias(libs.plugins.download).apply(false)
     alias(libs.plugins.kotest).apply(false)
     alias(libs.plugins.mokkery).apply(false)
-}
-
-allprojects {
-    group = "net.folivo"
-    version = withVersionSuffix("4.6.3")
-
-    if (System.getenv("WITH_LOCK")?.toBoolean() == true) {
-        dependencyLocking {
-            lockAllConfigurations()
-        }
-
-        val dependenciesForAll by tasks.registering(DependencyReportTask::class) { }
-    }
-}
-
-subprojects {
-    if (project.name.startsWith("trixnity-")) {
-        apply(plugin = "org.jetbrains.dokka")
-        apply(plugin = "maven-publish")
-        apply(plugin = "signing")
-
-        val dokkaJar by tasks.registering(Jar::class) {
-            dependsOn(tasks.dokkaHtml)
-            from(tasks.dokkaHtml.flatMap { it.outputDirectory })
-            archiveClassifier.set("javadoc")
-            onlyIf { isCI }
-        }
-
-        publishing {
-            repositories {
-                maven {
-                    name = "Release"
-                    val repositoryId = System.getenv("OSSRH_REPOSITORY_ID")
-                    url = uri("https://oss.sonatype.org/service/local/staging/deployByRepositoryId/$repositoryId")
-                    credentials {
-                        username = System.getenv("OSSRH_USERNAME")
-                        password = System.getenv("OSSRH_PASSWORD")
-                    }
-                }
-                maven {
-                    url = uri("${System.getenv("CI_API_V4_URL")}/projects/26519650/packages/maven")
-                    name = "Snapshot"
-                    credentials(HttpHeaderCredentials::class) {
-                        name = "Job-Token"
-                        value = System.getenv("CI_JOB_TOKEN")
-                    }
-                    authentication {
-                        create("header", HttpHeaderAuthentication::class)
-                    }
-                }
-            }
-            publications.configureEach {
-                if (this is MavenPublication) {
-                    pom {
-                        name.set(project.name)
-                        description.set("Multiplatform Kotlin SDK for matrix-protocol")
-                        url.set("https://gitlab.com/trixnity/trixnity")
-                        licenses {
-                            license {
-                                name.set("Apache License 2.0")
-                                url.set("https://www.apache.org/licenses/LICENSE-2.0")
-                            }
-                        }
-                        developers {
-                            developer {
-                                id.set("benkuly")
-                            }
-                        }
-                        scm {
-                            url.set("https://gitlab.com/trixnity/trixnity")
-                        }
-                    }
-                    if (isCI) artifact(dokkaJar)
-                }
-            }
-        }
-        signing {
-            isRequired = isRelease
-            useInMemoryPgpKeys(
-                System.getenv("OSSRH_PGP_KEY_ID"),
-                System.getenv("OSSRH_PGP_KEY"),
-                System.getenv("OSSRH_PGP_PASSWORD")
-            )
-            sign(publishing.publications)
-        }
-        // Workaround for gradle issue:
-        // https://github.com/gradle/gradle/issues/26132
-        // https://youtrack.jetbrains.com/issue/KT-61313/Kotlin-MPP-Gradle-Signing-plugin-Task-linkDebugTestLinuxX64-uses-this-output-of-task-signLinuxX64Publication
-        // https://github.com/gradle/gradle/issues/26091
-        // https://youtrack.jetbrains.com/issue/KT-46466/Kotlin-MPP-publishing-Gradle-7-disables-optimizations-because-of-task-dependencies
-        val signingTasks = tasks.withType<Sign>()
-        tasks.withType<AbstractPublishToMaven>().configureEach {
-            mustRunAfter(signingTasks)
-        }
-    }
 }
 
 val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")

@@ -7,6 +7,8 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.kotest)
+    trixnity.general
+    trixnity.publish
 }
 
 val opensslBinariesDirs = TrixnityOpensslBinariesDirs(project, libs.versions.trixnityOpensslBinaries.get())
@@ -69,7 +71,7 @@ kotlin {
         }
         commonMain {
             dependencies {
-                api(project(":trixnity-utils"))
+                api(projects.trixnityUtils)
 
                 implementation(libs.oshai.logging)
             }

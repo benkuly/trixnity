@@ -1,5 +1,7 @@
 plugins {
     kotlin("multiplatform")
+    trixnity.general
+    trixnity.publish
 }
 
 kotlin {

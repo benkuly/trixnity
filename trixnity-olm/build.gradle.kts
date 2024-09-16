@@ -9,6 +9,8 @@ plugins {
     alias(libs.plugins.download)
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    trixnity.general
+    trixnity.publish
 }
 
 val olmBinariesDirs = TrixnityOlmBinariesDirs(project, libs.versions.trixnityOlmBinaries.get())
@@ -145,7 +147,7 @@ kotlin {
         }
         commonMain {
             dependencies {
-                implementation(project(":trixnity-crypto-core"))
+                implementation(projects.trixnityCryptoCore)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.ktor.utils)
                 implementation(libs.oshai.logging)

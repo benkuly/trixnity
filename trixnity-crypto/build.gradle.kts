@@ -2,6 +2,8 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.kotest)
+    trixnity.general
+    trixnity.publish
 }
 
 kotlin {
@@ -16,10 +18,10 @@ kotlin {
         }
         commonMain {
             dependencies {
-                api(project(":trixnity-core"))
-                api(project(":trixnity-crypto-core"))
-                api(project(":trixnity-olm"))
-                api(project(":trixnity-clientserverapi:trixnity-clientserverapi-model"))
+                api(projects.trixnityCore)
+                api(projects.trixnityCryptoCore)
+                api(projects.trixnityOlm)
+                api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.oshai.logging)
