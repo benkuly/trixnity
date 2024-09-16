@@ -349,7 +349,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             }
             job.cancel()
         }
-        should("not send message if sending was aborted during upload") {
+        should("not send message if sending was cancelled during upload") {
             val mxcUrl = "mxc://dino"
             val cacheUrl = "cache://unicorn"
             val message1 =
