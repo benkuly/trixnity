@@ -15,7 +15,7 @@ val ConvertMediaPlugin = createRouteScopedPlugin("ConvertMediaPlugin") {
                 content = body,
                 contentLength = call.request.contentLength(),
                 contentType = call.request.contentType(),
-                filename = call.request.header(HttpHeaders.ContentDisposition)
+                contentDisposition = call.request.header(HttpHeaders.ContentDisposition)?.let(ContentDisposition::parse)
             )
         }
     }
@@ -27,7 +27,9 @@ val ConvertMediaPlugin = createRouteScopedPlugin("ConvertMediaPlugin") {
                 override val contentType = body.contentType
                 override val contentLength = body.contentLength
                 override val headers =
-                    body.filename?.let { it1 -> headersOf(HttpHeaders.ContentDisposition, it1) } ?: headersOf()
+                    body.contentDisposition
+                        ?.let { headersOf(HttpHeaders.ContentDisposition, it.toString()) }
+                        ?: headersOf()
             }
         }
     }

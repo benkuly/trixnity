@@ -20,6 +20,7 @@ suspend fun createExposedRepositoriesModule(
     newSuspendedTransaction(Dispatchers.IO, database) {
         val allTables = arrayOf(
             ExposedAccount,
+            ExposedServerVersions,
             ExposedCrossSigningKeys,
             ExposedDeviceKeys,
             ExposedGlobalAccountData,
@@ -52,6 +53,7 @@ suspend fun createExposedRepositoriesModule(
         single { database }
         singleOf(::ExposedRepositoryTransactionManager) { bind<RepositoryTransactionManager>() }
         singleOf(::ExposedAccountRepository) { bind<AccountRepository>() }
+        singleOf(::ExposedServerVersionsRepository) { bind<ServerVersionsRepository>() }
         singleOf(::ExposedOutdatedKeysRepository) { bind<OutdatedKeysRepository>() }
         singleOf(::ExposedDeviceKeysRepository) { bind<DeviceKeysRepository>() }
         singleOf(::ExposedCrossSigningKeysRepository) { bind<CrossSigningKeysRepository>() }

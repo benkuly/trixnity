@@ -7,5 +7,5 @@ data class Media(
     val content: ByteReadChannel,
     val contentLength: Long?,
     val contentType: ContentType?,
-    val filename: String?,
+    val contentDisposition: ContentDisposition?,
 )

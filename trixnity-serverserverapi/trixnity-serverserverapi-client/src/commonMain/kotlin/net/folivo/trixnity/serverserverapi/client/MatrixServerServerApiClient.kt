@@ -31,6 +31,7 @@ class MatrixServerServerApiClientImpl(
             it()
             install(MatrixSignatureAuthPlugin(hostname, sign, json))
             install(MatrixDestinationPlugin(getDelegatedDestination))
+            install(ConvertMediaPlugin)
         }
     }
 

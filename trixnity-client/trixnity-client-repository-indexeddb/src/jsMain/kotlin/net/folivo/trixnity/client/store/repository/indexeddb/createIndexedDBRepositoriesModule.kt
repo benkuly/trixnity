@@ -27,6 +27,7 @@ suspend fun createIndexedDBRepositoriesModule(
         }
         single<RepositoryTransactionManager> { IndexedDBRepositoryTransactionManager(get(), allStoreNames) }
         singleOf(::IndexedDBAccountRepository) { bind<AccountRepository>() }
+        singleOf(::IndexedServerVersionsRepository) { bind<ServerVersionsRepository>() }
         singleOf(::IndexedDBCrossSigningKeysRepository) { bind<CrossSigningKeysRepository>() }
         singleOf(::IndexedDBDeviceKeysRepository) { bind<DeviceKeysRepository>() }
         singleOf(::IndexedDBGlobalAccountDataRepository) { bind<GlobalAccountDataRepository>() }
@@ -56,6 +57,7 @@ suspend fun createIndexedDBRepositoriesModule(
 
 internal val allStoreNames = arrayOf(
     IndexedDBAccountRepository.objectStoreName,
+    IndexedServerVersionsRepository.objectStoreName,
     IndexedDBCrossSigningKeysRepository.objectStoreName,
     IndexedDBDeviceKeysRepository.objectStoreName,
     IndexedDBGlobalAccountDataRepository.objectStoreName,
@@ -83,8 +85,9 @@ internal val allStoreNames = arrayOf(
 )
 
 internal suspend fun createDatabase(databaseName: String) =
-    openDatabase(databaseName, 3) { database, oldVersion, _ ->
+    openDatabase(databaseName, 4) { database, oldVersion, _ ->
         IndexedDBAccountRepository.apply { migrate(database, oldVersion) }
+        IndexedServerVersionsRepository.apply { migrate(database, oldVersion) }
         IndexedDBCrossSigningKeysRepository.apply { migrate(database, oldVersion) }
         IndexedDBDeviceKeysRepository.apply { migrate(database, oldVersion) }
         IndexedDBGlobalAccountDataRepository.apply { migrate(database, oldVersion) }

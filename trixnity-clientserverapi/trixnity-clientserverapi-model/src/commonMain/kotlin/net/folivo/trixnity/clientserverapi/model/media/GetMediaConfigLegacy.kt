@@ -6,14 +6,17 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.WithoutAuth
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixmediav3config">matrix spec</a>
  */
 @Serializable
-@Resource("/_matrix/client/v1/media/config")
+@Resource("/_matrix/media/v3/config")
 @HttpMethod(GET)
-object GetMediaConfig : MatrixEndpoint<Unit, GetMediaConfig.Response> {
+@WithoutAuth
+@Deprecated("use GetMediaConfig instead")
+object GetMediaConfigLegacy : MatrixEndpoint<Unit, GetMediaConfigLegacy.Response> {
     @Serializable
     data class Response(
         @SerialName("m.upload.size") val maxUploadSize: Long

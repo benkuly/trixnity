@@ -51,7 +51,7 @@ class MediaRoutesTest {
         initCut()
         everySuspend { handlerMock.getMediaConfig(any()) }
             .returns(GetMediaConfig.Response(maxUploadSize = 50000000))
-        val response = client.get("/_matrix/media/v3/config") { bearerAuth("token") }
+        val response = client.get("/_matrix/client/v1/media/config") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
@@ -166,25 +166,24 @@ class MediaRoutesTest {
                     content = ByteReadChannel("test"),
                     contentLength = 4L,
                     contentType = ContentType.Text.Plain,
-                    filename = "testFile.txt"
+                    contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.txt")
                 )
             )
         val response =
-            client.get("/_matrix/media/v3/download/matrix.org:443/ascERGshawAWawugaAcauga?allow_remote=false") {
+            client.get("/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Text.Plain
             this.contentLength() shouldBe 4
-            this.headers[HttpHeaders.ContentDisposition] shouldBe "testFile.txt"
+            this.headers[HttpHeaders.ContentDisposition] shouldBe "attachment; filename=testFile.txt"
             this.body<ByteReadChannel>().readUTF8Line() shouldBe "test"
         }
         verifySuspend {
             handlerMock.downloadMedia(assert {
                 it.endpoint.serverName shouldBe "matrix.org:443"
                 it.endpoint.mediaId shouldBe "ascERGshawAWawugaAcauga"
-                it.endpoint.allowRemote shouldBe false
             })
         }
     }
@@ -198,18 +197,19 @@ class MediaRoutesTest {
                     content = ByteReadChannel("test"),
                     contentLength = 4L,
                     contentType = ContentType.Text.Plain,
-                    filename = "testFile.txt"
+                    contentDisposition = ContentDisposition("attachment")
+                        .withParameter("filename", "testFile.txt")
                 )
             )
         val response =
-            client.get("/_matrix/media/v3/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false") {
+            client.get("/_matrix/client/v1/media/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale") {
                 bearerAuth("token")
             }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Text.Plain
             this.contentLength() shouldBe 4
-            this.headers[HttpHeaders.ContentDisposition] shouldBe "testFile.txt"
+            this.headers[HttpHeaders.ContentDisposition] shouldBe "attachment; filename=testFile.txt"
             this.body<ByteReadChannel>().readUTF8Line() shouldBe "test"
         }
         verifySuspend {
@@ -219,7 +219,6 @@ class MediaRoutesTest {
                 it.endpoint.width shouldBe 64
                 it.endpoint.height shouldBe 64
                 it.endpoint.method shouldBe ThumbnailResizingMethod.SCALE
-                it.endpoint.allowRemote shouldBe false
             })
         }
     }
@@ -234,7 +233,7 @@ class MediaRoutesTest {
                     imageUrl = "mxc://example.com/ascERGshawAWawugaAcauga"
                 )
             )
-        val response = client.get("/_matrix/media/v3/preview_url?url=someUrl") { bearerAuth("token") }
+        val response = client.get("/_matrix/client/v1/media/preview_url?url=someUrl") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)

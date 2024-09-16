@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationType
@@ -247,9 +247,24 @@ class MatrixClientServerApiHttpClientTest {
                                       "stages":["m.login.sso","m.login.recaptcha"]
                                     }
                                   ],
-                                  "params":{
-                                      "example.type.baz":{
-                                          "example_key":"foobar"
+                                  "params": {
+                                      "example.type.baz": {
+                                          "example_key": "foobar"
+                                      },
+                                      "m.login.terms": {
+                                          "policies": {
+                                              "terms_of_service": {
+                                                  "version": "1.2",
+                                                  "en": {
+                                                      "name": "Terms of Service",
+                                                      "url": "https://example.org/somewhere/terms-1.2-en.html"
+                                                  },
+                                                  "fr": {
+                                                      "name": "Conditions d'utilisation",
+                                                      "url": "https://example.org/somewhere/terms-1.2-fr.html"
+                                                  }
+                                              }
+                                          }
                                       }
                                   },
                                   "session":"session1"
@@ -298,11 +313,23 @@ class MatrixClientServerApiHttpClientTest {
                 UIAState.FlowInformation(listOf(AuthenticationType.Password)),
                 UIAState.FlowInformation(listOf(AuthenticationType.SSO, AuthenticationType.Recaptcha)),
             ),
-            parameter = JsonObject(
-                mapOf(
-                    "example.type.baz" to JsonObject(
-                        mapOf(
-                            "example_key" to JsonPrimitive("foobar")
+            parameter = mapOf(
+                AuthenticationType.Unknown("example.type.baz") to UIAState.Parameter.Unknown(
+                    buildJsonObject {
+                        put("example_key", JsonPrimitive("foobar"))
+                    }
+                ),
+                AuthenticationType.TermsOfService to UIAState.Parameter.TermsOfService(
+                    mapOf(
+                        "terms_of_service" to UIAState.Parameter.TermsOfService.PolicyDefinition(
+                            "1.2", mapOf(
+                                "en" to UIAState.Parameter.TermsOfService.PolicyDefinition.PolicyTranslation(
+                                    "Terms of Service", "https://example.org/somewhere/terms-1.2-en.html"
+                                ),
+                                "fr" to UIAState.Parameter.TermsOfService.PolicyDefinition.PolicyTranslation(
+                                    "Conditions d'utilisation", "https://example.org/somewhere/terms-1.2-fr.html"
+                                ),
+                            )
                         )
                     )
                 )
@@ -344,9 +371,24 @@ class MatrixClientServerApiHttpClientTest {
                                                   "stages":["m.login.sso","m.login.recaptcha"]
                                                 }
                                               ],
-                                              "params":{
-                                                  "example.type.baz":{
-                                                      "example_key":"foobar"
+                                              "params": {
+                                                  "example.type.baz": {
+                                                      "example_key": "foobar"
+                                                  },
+                                                  "m.login.terms": {
+                                                      "policies": {
+                                                          "terms_of_service": {
+                                                              "version": "1.2",
+                                                              "en": {
+                                                                  "name": "Terms of Service",
+                                                                  "url": "https://example.org/somewhere/terms-1.2-en.html"
+                                                              },
+                                                              "fr": {
+                                                                  "name": "Conditions d'utilisation",
+                                                                  "url": "https://example.org/somewhere/terms-1.2-fr.html"
+                                                              }
+                                                          }
+                                                      }
                                                   }
                                               },
                                               "session":"session1"
@@ -385,9 +427,24 @@ class MatrixClientServerApiHttpClientTest {
                                                   "stages":["m.login.sso","m.login.recaptcha"]
                                                 }
                                               ],
-                                              "params":{
-                                                  "example.type.baz":{
-                                                      "example_key":"foobar"
+                                              "params": {
+                                                  "example.type.baz": {
+                                                      "example_key": "foobar"
+                                                  },
+                                                  "m.login.terms": {
+                                                      "policies": {
+                                                          "terms_of_service": {
+                                                              "version": "1.2",
+                                                              "en": {
+                                                                  "name": "Terms of Service",
+                                                                  "url": "https://example.org/somewhere/terms-1.2-en.html"
+                                                              },
+                                                              "fr": {
+                                                                  "name": "Conditions d'utilisation",
+                                                                  "url": "https://example.org/somewhere/terms-1.2-fr.html"
+                                                              }
+                                                          }
+                                                      }
                                                   }
                                               },
                                               "session":"session1"
@@ -436,11 +493,23 @@ class MatrixClientServerApiHttpClientTest {
                 UIAState.FlowInformation(listOf(AuthenticationType.Password)),
                 UIAState.FlowInformation(listOf(AuthenticationType.SSO, AuthenticationType.Recaptcha)),
             ),
-            parameter = JsonObject(
-                mapOf(
-                    "example.type.baz" to JsonObject(
-                        mapOf(
-                            "example_key" to JsonPrimitive("foobar")
+            parameter = mapOf(
+                AuthenticationType.Unknown("example.type.baz") to UIAState.Parameter.Unknown(
+                    buildJsonObject {
+                        put("example_key", JsonPrimitive("foobar"))
+                    }
+                ),
+                AuthenticationType.TermsOfService to UIAState.Parameter.TermsOfService(
+                    mapOf(
+                        "terms_of_service" to UIAState.Parameter.TermsOfService.PolicyDefinition(
+                            "1.2", mapOf(
+                                "en" to UIAState.Parameter.TermsOfService.PolicyDefinition.PolicyTranslation(
+                                    "Terms of Service", "https://example.org/somewhere/terms-1.2-en.html"
+                                ),
+                                "fr" to UIAState.Parameter.TermsOfService.PolicyDefinition.PolicyTranslation(
+                                    "Conditions d'utilisation", "https://example.org/somewhere/terms-1.2-fr.html"
+                                ),
+                            )
                         )
                     )
                 )

@@ -125,9 +125,6 @@ class CrossSigningIT {
             val bootstrap = withClue("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
-                        .shouldBeInstanceOf<UIA.Step<Unit>>()
-                        .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password))
-                        .getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
                 }
             }
@@ -149,8 +146,6 @@ class CrossSigningIT {
 
             withClue("bootstrap client3") {
                 client3.key.bootstrapCrossSigning().result.getOrThrow()
-                    .shouldBeInstanceOf<UIA.Step<Unit>>()
-                    .authenticate(AuthenticationRequest.Password(IdentifierType.User("user3"), password)).getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
 
@@ -290,9 +285,6 @@ class CrossSigningIT {
             withClue("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
-                        .shouldBeInstanceOf<UIA.Step<Unit>>()
-                        .authenticate(AuthenticationRequest.Password(IdentifierType.User("user1"), password))
-                        .getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
                 }
             }

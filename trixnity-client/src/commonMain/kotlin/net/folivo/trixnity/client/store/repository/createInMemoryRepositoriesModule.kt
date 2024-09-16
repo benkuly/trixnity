@@ -7,6 +7,7 @@ fun createInMemoryRepositoriesModule() = module {
     single<RepositoryTransactionManager> { NoOpRepositoryTransactionManager }
 
     singleOf<AccountRepository>(::InMemoryAccountRepository)
+    singleOf<ServerVersionsRepository>(::InMemoryServerVersionsRepository)
     singleOf<OutdatedKeysRepository>(::InMemoryOutdatedKeysRepository)
     singleOf<DeviceKeysRepository>(::InMemoryDeviceKeysRepository)
     singleOf<CrossSigningKeysRepository>(::InMemoryCrossSigningKeysRepository)

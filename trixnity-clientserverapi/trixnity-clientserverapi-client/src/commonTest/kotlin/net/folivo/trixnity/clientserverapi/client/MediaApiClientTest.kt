@@ -21,7 +21,7 @@ class MediaApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/media/v3/config", request.url.fullPath)
+                    assertEquals("/_matrix/client/v1/media/config", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """
@@ -95,7 +95,7 @@ class MediaApiClientTest {
                 content = ByteReadChannel("test"),
                 contentLength = 4,
                 contentType = ContentType.Text.Plain,
-                filename = "testFile.txt"
+                contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.txt")
             ),
             progress = progress
         ).getOrThrow()
@@ -132,7 +132,7 @@ class MediaApiClientTest {
                 content = ByteReadChannel("test"),
                 contentLength = 4,
                 contentType = ContentType.Text.Plain,
-                filename = "testFile.txt"
+                contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.txt")
             ),
             progress = progress
         ).getOrThrow()
@@ -146,7 +146,7 @@ class MediaApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/media/v3/download/matrix.org:443/ascERGshawAWawugaAcauga?allow_remote=false",
+                        "/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -163,7 +163,6 @@ class MediaApiClientTest {
         val progress = MutableStateFlow<FileTransferProgress?>(null)
         matrixRestClient.media.download(
             mxcUri = "mxc://matrix.org:443/ascERGshawAWawugaAcauga",
-            allowRemote = false,
             progress = progress
         ) { result ->
             result.content.toByteArray().decodeToString() shouldBe "test"
@@ -180,7 +179,7 @@ class MediaApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/media/v3/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale&allow_remote=false",
+                        "/_matrix/client/v1/media/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Get, request.method)
@@ -200,7 +199,6 @@ class MediaApiClientTest {
             width = 64,
             height = 64,
             method = ThumbnailResizingMethod.SCALE,
-            allowRemote = false,
             progress = progress
         ) { result ->
             result.content.toByteArray().decodeToString() shouldBe "test"
@@ -216,7 +214,7 @@ class MediaApiClientTest {
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
-                    assertEquals("/_matrix/media/v3/preview_url?url=someUrl", request.url.fullPath)
+                    assertEquals("/_matrix/client/v1/media/preview_url?url=someUrl", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
                         """

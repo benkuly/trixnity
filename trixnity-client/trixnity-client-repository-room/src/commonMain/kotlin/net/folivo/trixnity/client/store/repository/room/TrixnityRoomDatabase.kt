@@ -7,6 +7,7 @@ import androidx.room.TypeConverters
 @Database(
     entities = [
         RoomAccount::class,
+        RoomServerVersions::class,
         RoomCrossSigningKeys::class,
         RoomDeviceKeys::class,
         RoomGlobalAccountData::class,
@@ -45,6 +46,7 @@ import androidx.room.TypeConverters
 )
 abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun account(): AccountDao
+    abstract fun serverVersions(): ServerVersionsDao
     abstract fun crossSigningKeys(): CrossSigningKeysDao
     abstract fun deviceKeys(): DeviceKeysDao
     abstract fun globalAccountData(): GlobalAccountDataDao

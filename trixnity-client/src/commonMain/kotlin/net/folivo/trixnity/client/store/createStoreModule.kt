@@ -8,6 +8,7 @@ import org.koin.dsl.module
 fun createStoreModule() = module {
     singleOf(::TransactionManagerImpl).bind<TransactionManager>()
     singleOf(::AccountStore)
+    singleOf(::ServerVersionsStore)
     singleOf(::GlobalAccountDataStore)
     single {
         KeyStore(

@@ -10,11 +10,15 @@ internal fun Route.mediaApiRoutes(
     json: Json,
     contentMappings: EventContentSerializerMappings,
 ) {
+    matrixEndpoint(json, contentMappings, handler::getMediaConfigLegacy)
     matrixEndpoint(json, contentMappings, handler::getMediaConfig)
     matrixEndpoint(json, contentMappings, handler::createMedia)
     matrixEndpoint(json, contentMappings, handler::uploadMedia)
     matrixEndpoint(json, contentMappings, handler::uploadMediaByContentUri)
+    matrixEndpoint(json, contentMappings, handler::downloadMediaLegacy)
     matrixEndpoint(json, contentMappings, handler::downloadMedia)
+    matrixEndpoint(json, contentMappings, handler::downloadThumbnailLegacy)
     matrixEndpoint(json, contentMappings, handler::downloadThumbnail)
+    matrixEndpoint(json, contentMappings, handler::getUrlPreviewLegacy)
     matrixEndpoint(json, contentMappings, handler::getUrlPreview)
 }

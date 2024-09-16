@@ -23,9 +23,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import net.folivo.trixnity.client.getInMemoryMediaCacheMapping
+import net.folivo.trixnity.client.getInMemoryServerVersionsStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.MediaCacheMapping
 import net.folivo.trixnity.client.store.MediaCacheMappingStore
+import net.folivo.trixnity.client.store.ServerVersionsStore
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -38,6 +40,7 @@ class MediaServiceTest : ShouldSpec({
     timeout = 60_000
 
     lateinit var mediaCacheMappingStore: MediaCacheMappingStore
+    lateinit var serverVersionsStore: ServerVersionsStore
     lateinit var mediaStore: InMemoryMediaStore
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
@@ -51,10 +54,11 @@ class MediaServiceTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         mediaCacheMappingStore = getInMemoryMediaCacheMapping(scope)
+        serverVersionsStore = getInMemoryServerVersionsStore(scope)
         mediaStore = InMemoryMediaStore()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = MediaServiceImpl(api, mediaStore, mediaCacheMappingStore)
+        cut = MediaServiceImpl(api, mediaStore, serverVersionsStore, mediaCacheMappingStore)
     }
     afterTest {
         scope.cancel()
@@ -68,7 +72,7 @@ class MediaServiceTest : ShouldSpec({
             should("download and cache") {
                 apiConfig.endpoints {
                     addHandler {
-                        it.url.encodedPath shouldBe "/_matrix/media/v3/download/example.com/abc"
+                        it.url.encodedPath shouldBe "/_matrix/client/v1/media/download/example.com/abc"
                         respond(ByteReadChannel("test"), HttpStatusCode.OK)
                     }
                 }
@@ -106,7 +110,7 @@ class MediaServiceTest : ShouldSpec({
         should("download, cache and decrypt") {
             apiConfig.endpoints {
                 addHandler {
-                    it.url.encodedPath shouldBe "/_matrix/media/v3/download/example.com/abc"
+                    it.url.encodedPath shouldBe "/_matrix/client/v1/media/download/example.com/abc"
                     respond(rawFile, HttpStatusCode.OK)
                 }
             }
@@ -116,7 +120,7 @@ class MediaServiceTest : ShouldSpec({
         should("download, not cache and decrypt") {
             apiConfig.endpoints {
                 addHandler {
-                    it.url.encodedPath shouldBe "/_matrix/media/v3/download/example.com/abc"
+                    it.url.encodedPath shouldBe "/_matrix/client/v1/media/download/example.com/abc"
                     respond(rawFile, HttpStatusCode.OK)
                 }
             }
@@ -127,7 +131,7 @@ class MediaServiceTest : ShouldSpec({
         should("validate hash") {
             apiConfig.endpoints {
                 addHandler {
-                    it.url.encodedPath shouldBe "/_matrix/media/v3/download/example.com/abc"
+                    it.url.encodedPath shouldBe "/_matrix/client/v1/media/download/example.com/abc"
                     respond(rawFile, HttpStatusCode.OK)
                 }
             }
@@ -146,7 +150,7 @@ class MediaServiceTest : ShouldSpec({
         should("download and cache") {
             apiConfig.endpoints {
                 addHandler {
-                    it.url.encodedPath shouldBe "/_matrix/media/v3/thumbnail/example.com/abc"
+                    it.url.encodedPath shouldBe "/_matrix/client/v1/media/thumbnail/example.com/abc"
                     respond(ByteReadChannel("test"), HttpStatusCode.OK)
                 }
             }

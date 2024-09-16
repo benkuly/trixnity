@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add AuthenticationApiClient.getSsoUrl
+- Support for Matrix 1.11
 - Allow message sending to be cancelled while the message is sent
 
 ### Changed
