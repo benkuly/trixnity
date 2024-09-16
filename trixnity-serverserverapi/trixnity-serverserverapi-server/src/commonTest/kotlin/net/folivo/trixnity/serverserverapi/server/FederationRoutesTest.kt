@@ -13,7 +13,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.charsets.*
+import io.ktor.utils.io.charsets.Charsets.UTF_8
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
@@ -42,7 +42,6 @@ import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Resp
 import net.folivo.trixnity.serverserverapi.model.federation.ThumbnailResizingMethod.SCALE
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.text.Charsets.UTF_8
 
 class FederationRoutesTest {
     private val json = createMatrixEventAndDataUnitJson({ "3" })
@@ -1851,7 +1850,7 @@ class FederationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe """
                 {
                   "device_keys":{
@@ -1930,7 +1929,7 @@ class FederationRoutesTest {
             }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
             this.body<String>() shouldBe """
                {
                   "event_id": "$143273582443PhrSn:example.org",
