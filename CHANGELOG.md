@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Allow message sending to be cancelled while the message is sent
 
 ### Changed
+
+- internal: precompiled gradle plugins
 
 ### Deprecated
 
@@ -40,7 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - close Okio streams by default
 - Make `refresh_token` required
   on [`/_matrix/client/v3/refresh`](https://spec.matrix.org/v1.11/client-server-api/#post_matrixclientv3refresh).
-- [`/_matrix/client/v3/register/available`](https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3registeravailable)
+- [
+  `/_matrix/client/v3/register/available`](https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3registeravailable)
   returns the correct json body on 200.
 - Allow to have individual timeouts when calling `getTimelineEvent` in parallel. Previously the first one calling
   defined the timeouts.
