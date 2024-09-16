@@ -22,6 +22,7 @@ class RepositoryTestSuite : ShouldSpec({
                 IndexedDBRepositoryTransactionManager(get(), allStoreNames, testMode = true)
             }
             singleOf(::IndexedDBAccountRepository) { bind<AccountRepository>() }
+            singleOf(::IndexedServerVersionsRepository) { bind<ServerVersionsRepository>() }
             singleOf(::IndexedDBCrossSigningKeysRepository) { bind<CrossSigningKeysRepository>() }
             singleOf(::IndexedDBDeviceKeysRepository) { bind<DeviceKeysRepository>() }
             singleOf(::IndexedDBGlobalAccountDataRepository) { bind<GlobalAccountDataRepository>() }
