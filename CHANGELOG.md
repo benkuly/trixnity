@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - internal: precompiled gradle plugins
+- Simplify room name calculation
 
 ### Deprecated
 
@@ -26,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Not usable SSO endpoints in AuthenticationApiClient
 
 ### Fixed
+
+- Wrong room name calculation when homeserver does not send complete room summary
 
 ### Security
 

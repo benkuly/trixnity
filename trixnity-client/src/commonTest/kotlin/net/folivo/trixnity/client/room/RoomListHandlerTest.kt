@@ -39,7 +39,7 @@ class RoomListHandlerTest : ShouldSpec({
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
 
-    var forgetRooms = mutableListOf<RoomId>()
+    val forgetRooms = mutableListOf<RoomId>()
 
     lateinit var cut: RoomListHandler
 
@@ -57,6 +57,7 @@ class RoomListHandlerTest : ShouldSpec({
             roomStateStore = roomStateStore,
             globalAccountDataStore = globalAccountDataStore,
             forgetRoomService = { forgetRooms.add(it) },
+            userInfo = simpleUserInfo,
             tm = TransactionManagerMock(),
             config = config,
         )
@@ -357,6 +358,7 @@ class RoomListHandlerTest : ShouldSpec({
             }
         }
     }
+    // TODO this need to be completely rewritten as it is too complicated for the actual code that is tested
     context("displayName") {
         val user1 = UserId("user1", "server")
         val user2 = UserId("user2", "server")
@@ -456,6 +458,7 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 1,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user1),
                                     summary = roomSummary
                                 )
                             }
@@ -468,6 +471,7 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 1,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user1, user2),
                                     summary = roomSummary
                                 )
                             }
@@ -488,7 +492,8 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 2,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
-                                    otherUsersCount = 3,
+                                    heroes = listOf(),
+                                    otherUsersCount = 4,
                                     summary = roomSummary
                                 )
                             }
@@ -501,7 +506,8 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 2,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
-                                    otherUsersCount = 2,
+                                    otherUsersCount = 4,
+                                    heroes = listOf(user1),
                                     summary = roomSummary
                                 )
                             }
@@ -514,7 +520,8 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 2,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
-                                    otherUsersCount = 1,
+                                    heroes = listOf(user1, user2),
+                                    otherUsersCount = 4,
                                     summary = roomSummary
                                 )
                             }
@@ -551,8 +558,9 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 0,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user2),
                                     isEmpty = true,
-                                    otherUsersCount = 1,
+                                    otherUsersCount = 0,
                                     summary = roomSummary
                                 )
                             }
@@ -565,6 +573,7 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 0,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user2, user3),
                                     isEmpty = true,
                                     summary = roomSummary
                                 )
@@ -586,8 +595,9 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 0,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user2),
                                     isEmpty = true,
-                                    otherUsersCount = 3,
+                                    otherUsersCount = 0,
                                     summary = roomSummary
                                 )
                             }
@@ -600,8 +610,9 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 0,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user2, user3),
                                     isEmpty = true,
-                                    otherUsersCount = 2,
+                                    otherUsersCount = 0,
                                     summary = roomSummary
                                 )
                             }
@@ -637,6 +648,7 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 0,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user1),
                                     isEmpty = true,
                                     summary = roomSummary
                                 )
@@ -653,6 +665,7 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 0,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user1, user2),
                                     isEmpty = true,
                                     summary = roomSummary
                                 )
@@ -675,8 +688,9 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 0,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user1),
                                     isEmpty = true,
-                                    otherUsersCount = 3,
+                                    otherUsersCount = 0,
                                     summary = roomSummary
                                 )
                             }
@@ -689,8 +703,9 @@ class RoomListHandlerTest : ShouldSpec({
                                     invitedMemberCount = 0,
                                 )
                                 cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+                                    heroes = listOf(user1, user2),
                                     isEmpty = true,
-                                    otherUsersCount = 2,
+                                    otherUsersCount = 0,
                                     summary = roomSummary
                                 )
                             }
