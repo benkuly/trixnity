@@ -15,12 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- internal: precompiled gradle plugins
+- Upgraded Kotlin to 2.0.10
+- Internal: precompiled gradle plugins
 - Simplify room name calculation
 
 ### Deprecated
 
-- abortSendMessage -> cancelSendMessage
+- AbortSendMessage -> cancelSendMessage
 
 ### Removed
 
