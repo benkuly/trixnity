@@ -45,13 +45,19 @@ fun Application.installMatrixApiServer(json: Json) {
                 is SerializationException ->
                     call.respond(
                         HttpStatusCode.BadRequest,
-                        json.encodeToJsonElement(ErrorResponseSerializer, ErrorResponse.BadJson(cause.message))
+                        json.encodeToJsonElement(
+                            ErrorResponseSerializer,
+                            ErrorResponse.BadJson(cause.message ?: "unknown")
+                        )
                     )
 
                 else -> {
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        json.encodeToJsonElement(ErrorResponseSerializer, ErrorResponse.Unknown(cause.message))
+                        json.encodeToJsonElement(
+                            ErrorResponseSerializer,
+                            ErrorResponse.Unknown(cause.message ?: "unknown")
+                        )
                     )
                 }
             }

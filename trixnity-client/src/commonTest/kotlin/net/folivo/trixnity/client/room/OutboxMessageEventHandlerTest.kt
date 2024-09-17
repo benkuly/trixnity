@@ -264,7 +264,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 ) {
                     call++
                     when (call) {
-                        1 -> throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown())
+                        1 -> throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown(""))
                         else -> SendEventResponse(EventId("event"))
                     }
 
@@ -324,7 +324,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                     when (call) {
                         1 -> throw MatrixServerException(
                             HttpStatusCode.TooManyRequests,
-                            ErrorResponse.LimitExceeded(),
+                            ErrorResponse.LimitExceeded(""),
                             300,
                         )
 

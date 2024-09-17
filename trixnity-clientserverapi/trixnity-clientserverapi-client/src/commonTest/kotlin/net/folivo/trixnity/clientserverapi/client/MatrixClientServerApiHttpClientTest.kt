@@ -172,7 +172,7 @@ class MatrixClientServerApiHttpClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler {
                     respond(
-                        """{"errcode": "M_NOT_FOUND"}""",
+                        """{"errcode": "M_NOT_FOUND", "error": "not found"}""",
                         HttpStatusCode.NotFound,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -363,6 +363,7 @@ class MatrixClientServerApiHttpClientTest {
                                         """
                                             {
                                               "errcode": "M_NOT_FOUND",
+                                              "error":"",
                                               "flows":[
                                                 {
                                                   "stages":["m.login.password"]
@@ -419,6 +420,7 @@ class MatrixClientServerApiHttpClientTest {
                                         """
                                             {
                                               "errcode": "M_NOT_FOUND",
+                                              "error":"",
                                               "flows":[
                                                 {
                                                   "stages":["m.login.password"]
@@ -522,14 +524,14 @@ class MatrixClientServerApiHttpClientTest {
         ).getOrThrow()
         result1.shouldBeInstanceOf<UIA.Error<*>>()
         result1.state shouldBe expectedUIAState
-        result1.errorResponse shouldBe ErrorResponse.NotFound()
+        result1.errorResponse shouldBe ErrorResponse.NotFound("")
         result1.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
                 "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         val result2 = result1.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
             .getOrThrow()
         result2.shouldBeInstanceOf<UIA.Error<*>>()
         result2.state shouldBe expectedUIAState
-        result2.errorResponse shouldBe ErrorResponse.NotFound()
+        result2.errorResponse shouldBe ErrorResponse.NotFound("")
         result2.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
                 "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         result2.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))

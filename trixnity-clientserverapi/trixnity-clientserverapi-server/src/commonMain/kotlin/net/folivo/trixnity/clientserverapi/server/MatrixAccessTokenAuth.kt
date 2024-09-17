@@ -37,11 +37,14 @@ class MatrixAccessTokenAuth internal constructor(
             context.challenge("MatrixAccessTokenAuth", cause) { challenge, challengeCall ->
                 when (cause) {
                     NoCredentials ->
-                        challengeCall.respond<ErrorResponse>(HttpStatusCode.Unauthorized, ErrorResponse.MissingToken())
+                        challengeCall.respond<ErrorResponse>(
+                            HttpStatusCode.Unauthorized,
+                            ErrorResponse.MissingToken("missing token")
+                        )
 
                     InvalidCredentials -> challengeCall.respond<ErrorResponse>(
                         HttpStatusCode.Unauthorized,
-                        ErrorResponse.UnknownToken()
+                        ErrorResponse.UnknownToken("invalid token")
                     )
 
                     is Error -> challengeCall.respond<ErrorResponse>(

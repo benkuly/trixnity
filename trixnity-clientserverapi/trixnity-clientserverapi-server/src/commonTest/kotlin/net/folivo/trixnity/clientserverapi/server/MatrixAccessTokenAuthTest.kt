@@ -69,7 +69,7 @@ class MatrixAccessTokenAuthTest {
         testEndpoint()
         val result = client.get("/test")
         result.status shouldBe HttpStatusCode.Unauthorized
-        result.body<String>() shouldBe """{"errcode":"M_MISSING_TOKEN"}"""
+        result.body<String>() shouldBe """{"errcode":"M_MISSING_TOKEN","error":"missing token"}"""
     }
 
     @Test
@@ -79,7 +79,7 @@ class MatrixAccessTokenAuthTest {
         }
         val result = client.get("/test?access_token=wrong")
         result.status shouldBe HttpStatusCode.Unauthorized
-        result.body<String>() shouldBe """{"errcode":"M_UNKNOWN_TOKEN","soft_logout":false}"""
+        result.body<String>() shouldBe """{"errcode":"M_UNKNOWN_TOKEN","error":"invalid token","soft_logout":false}"""
     }
 
     @Test
@@ -89,7 +89,7 @@ class MatrixAccessTokenAuthTest {
         }
         val result = client.get("/test?access_token=wrong")
         result.status shouldBe HttpStatusCode.Unauthorized
-        result.body<String>() shouldBe """{"errcode":"M_UNKNOWN_TOKEN","soft_logout":false}"""
+        result.body<String>() shouldBe """{"errcode":"M_UNKNOWN_TOKEN","error":"invalid token","soft_logout":false}"""
     }
 
     @Test

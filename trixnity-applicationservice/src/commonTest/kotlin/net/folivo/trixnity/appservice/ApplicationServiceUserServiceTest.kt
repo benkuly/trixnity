@@ -166,7 +166,7 @@ class ApplicationServiceUserServiceTest {
                     setDisplayNameCalled = true
                     throw MatrixServerException(
                         HttpStatusCode.BadRequest,
-                        ErrorResponse.Unknown()
+                        ErrorResponse.Unknown("")
                     )
                 }
             })
