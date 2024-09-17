@@ -12,7 +12,9 @@ import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
@@ -32,6 +34,7 @@ class RoomListHandler(
     private val roomStateStore: RoomStateStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val forgetRoomService: ForgetRoomService,
+    private val userInfo: UserInfo,
     private val tm: TransactionManager,
     private val config: MatrixClientConfiguration,
 ) : EventHandler {
@@ -119,7 +122,7 @@ class RoomListHandler(
                 roomId = roomId,
                 nameEventContent = nameEvents.await()[roomId],
                 canonicalAliasEventContent = canonicalAliasEvents.await()[roomId],
-                roomSummary = roomInfo.summary
+                roomSummary = roomInfo.summary,
             )
             val mergeRoom = createMergeRoom(
                 roomId = roomId,
@@ -157,7 +160,12 @@ class RoomListHandler(
                 membership = Membership.INVITE,
                 lastRelevantEvent = null,
                 unreadMessageCount = null,
-                name = null,
+                name = calculateDisplayName(
+                    roomId = roomId,
+                    nameEventContent = nameEvents.await()[roomId],
+                    canonicalAliasEventContent = canonicalAliasEvents.await()[roomId],
+                    roomSummary = null,
+                ),
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -300,68 +308,47 @@ class RoomListHandler(
             nameFromAliasEvent.isNullOrEmpty().not() ->
                 RoomDisplayName(explicitName = nameFromAliasEvent, summary = mergedRoomSummary)
 
-            else -> {
+            else -> coroutineScope {
+                val allMembers = async(start = CoroutineStart.LAZY) {
+                    (roomStateStore.get<MemberEventContent>(roomId).first() - userInfo.userId.full)
+                        .mapNotNull { (key, value) -> value.first()?.content?.let { key to it } }
+                }
+                val joinedMembers = async(start = CoroutineStart.LAZY) {
+                    allMembers.await()
+                        .filter { it.second.membership == Membership.INVITE || it.second.membership == Membership.JOIN }
+                }
+                val leftMembers = async(start = CoroutineStart.LAZY) {
+                    allMembers.await()
+                        .filter { it.second.membership == Membership.BAN || it.second.membership == Membership.LEAVE }
+                }
                 val heroes = mergedRoomSummary?.heroes
-                val joinedMemberCount = mergedRoomSummary?.joinedMemberCount
-                val invitedMemberCount = mergedRoomSummary?.invitedMemberCount
-                if (heroes == null || joinedMemberCount == null || invitedMemberCount == null) {
-                    log.debug { "calculate room display name cancelled, because there are missing information (e.g. due to an invite)" }
-                    return null
+                    ?: joinedMembers.await().take(NUM_HEROES).map { UserId(it.first) }.takeIf { it.isNotEmpty() }
+                    ?: leftMembers.await().take(NUM_HEROES).map { UserId(it.first) }
+
+                val joinedMemberCount = kotlin.run {
+                    val invitedMemberCount = mergedRoomSummary?.invitedMemberCount?.toInt() ?: 0
+                    val joinedMemberCount = mergedRoomSummary?.joinedMemberCount?.toInt() ?: 0
+
+                    if (invitedMemberCount == 0 && joinedMemberCount == 0) joinedMembers.await().size
+                    else invitedMemberCount + joinedMemberCount
                 }
-                val us = 1
 
-                log.debug { "calculate room display name of $roomId (heroes=$heroes, joinedMemberCount=$joinedMemberCount, invitedMemberCount=$invitedMemberCount)" }
+                log.debug { "calculate room display name of $roomId (heroes=$heroes, joinedMemberCount=$joinedMemberCount" }
+                val isEmpty = joinedMemberCount <= 1
+                val otherUsersCount =
+                    if (joinedMemberCount > 1 && (heroes.isEmpty() || heroes.size < joinedMemberCount - 1)) joinedMemberCount
+                    else 0
 
-                if (joinedMemberCount + invitedMemberCount <= 1) {
-                    // the room contains us or nobody
-                    when {
-                        heroes.isEmpty() -> RoomDisplayName(isEmpty = true, summary = mergedRoomSummary)
-                        else -> {
-                            val isCompletelyEmpty = joinedMemberCount + invitedMemberCount <= 0
-                            val leftMembersCount =
-                                roomStateStore.membersCount(
-                                    roomId,
-                                    Membership.LEAVE,
-                                    Membership.BAN
-                                ) - if (isCompletelyEmpty) us else 0
-                            when {
-                                leftMembersCount <= heroes.size ->
-                                    RoomDisplayName(
-                                        isEmpty = true,
-                                        summary = mergedRoomSummary
-                                    )
+                leftMembers.cancel()
+                joinedMembers.cancel()
+                allMembers.cancel()
 
-                                else -> {
-                                    RoomDisplayName(
-                                        isEmpty = true,
-                                        otherUsersCount = leftMembersCount - heroes.size,
-                                        summary = mergedRoomSummary
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    when {
-                        //case ist not specified in the Spec, so this catches server misbehavior
-                        heroes.isEmpty() ->
-                            RoomDisplayName(
-                                otherUsersCount = joinedMemberCount + invitedMemberCount - us,
-                                summary = mergedRoomSummary
-                            )
-
-                        joinedMemberCount + invitedMemberCount - us <= heroes.size ->
-                            RoomDisplayName(
-                                summary = mergedRoomSummary
-                            )
-
-                        else ->
-                            RoomDisplayName(
-                                otherUsersCount = joinedMemberCount + invitedMemberCount - heroes.size - us,
-                                summary = mergedRoomSummary
-                            )
-                    }
-                }
+                RoomDisplayName(
+                    heroes = heroes,
+                    otherUsersCount = otherUsersCount,
+                    isEmpty = isEmpty,
+                    summary = mergedRoomSummary
+                )
             }
         }
         return roomName
@@ -408,4 +395,8 @@ class RoomListHandler(
             .flatMap { entry -> entry.value?.map { it to entry.key }.orEmpty() }
             .groupBy { it.first }
             .mapValues { entry -> entry.value.map { it.second } }
+
+    companion object {
+        private const val NUM_HEROES = 5
+    }
 }
