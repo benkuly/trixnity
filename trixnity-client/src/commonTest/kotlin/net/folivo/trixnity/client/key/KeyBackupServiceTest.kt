@@ -436,7 +436,7 @@ private val body: ShouldSpec.() -> Unit = {
                             when (call) {
                                 1 -> throw MatrixServerException(
                                     HttpStatusCode.InternalServerError,
-                                    ErrorResponse.Unknown()
+                                    ErrorResponse.Unknown("")
                                 )
 
                                 else -> {
@@ -642,7 +642,7 @@ private val body: ShouldSpec.() -> Unit = {
             apiConfig.endpoints {
                 matrixJsonEndpoint(SetRoomsKeyBackup("1")) {
                     setRoomKeyBackupDataCalled1.value = true
-                    throw MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.WrongRoomKeysVersion())
+                    throw MatrixServerException(HttpStatusCode.Forbidden, ErrorResponse.WrongRoomKeysVersion(""))
                 }
                 matrixJsonEndpoint(SetRoomsKeyBackup("2")) {
                     setRoomKeyBackupDataCalled2.value = true

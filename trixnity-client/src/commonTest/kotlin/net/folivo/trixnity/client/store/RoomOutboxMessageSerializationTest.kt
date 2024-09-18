@@ -8,7 +8,6 @@ import net.folivo.trixnity.client.trimToFlatJson
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
 class RoomOutboxMessageSerializationTest : ShouldSpec({
@@ -20,7 +19,7 @@ class RoomOutboxMessageSerializationTest : ShouldSpec({
         roomId = RoomId("room", "server"),
         content = RoomMessageEventContent.TextBased.Text("dino"),
         sentAt = Instant.fromEpochMilliseconds(24),
-        sendError = RoomOutboxMessage.SendError.BadRequest(ErrorResponse.Forbidden()),
+        sendError = RoomOutboxMessage.SendError.BadRequest(ErrorResponse.Forbidden("")),
         keepMediaInCache = true,
     )
     val roomOutboxMessageJson = """
@@ -29,7 +28,7 @@ class RoomOutboxMessageSerializationTest : ShouldSpec({
             "roomId":"!room:server",
             "content":{"body":"dino","msgtype":"m.text"},
             "sentAt":"1970-01-01T00:00:00.024Z",
-            "sendError":{"type":"bad_request","errorResponse":{"errcode":"M_FORBIDDEN"}},
+            "sendError":{"type":"bad_request","errorResponse":{"errcode":"M_FORBIDDEN","error":""}},
             "keepMediaInCache":true
         }
         """.trimToFlatJson()

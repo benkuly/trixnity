@@ -31,9 +31,15 @@ class MatrixQueryParameterOrBearerAuthenticationProvider internal constructor(
             context.challenge("MatrixQueryParameterAuth", cause) { challenge, call ->
                 when (cause) {
                     AuthenticationFailedCause.NoCredentials ->
-                        call.respond<ErrorResponse>(HttpStatusCode.Unauthorized, ErrorResponse.Unauthorized())
+                        call.respond<ErrorResponse>(
+                            HttpStatusCode.Unauthorized,
+                            ErrorResponse.Unauthorized("missing token")
+                        )
 
-                    else -> call.respond<ErrorResponse>(HttpStatusCode.Forbidden, ErrorResponse.Forbidden())
+                    else -> call.respond<ErrorResponse>(
+                        HttpStatusCode.Forbidden,
+                        ErrorResponse.Forbidden("invalid token")
+                    )
                 }
                 challenge.complete()
             }

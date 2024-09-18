@@ -16,8 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Upgraded Kotlin to 2.0.10
-- Internal: precompiled gradle plugins
 - Simplify room name calculation
+- internal: precompiled gradle plugins
+- Update ErrorResponse to contain non-nullable `error` field
 
 ### Deprecated
 

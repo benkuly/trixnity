@@ -45,12 +45,12 @@ class TestApplicationServiceApiServerHandler : ApplicationServiceApiServerHandle
 
     override suspend fun hasUser(userId: UserId) {
         requestedUser = userId
-        if (!hasUser) throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound())
+        if (!hasUser) throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound(""))
     }
 
     override suspend fun hasRoomAlias(roomAlias: RoomAliasId) {
         requestedRoom = roomAlias
-        if (!hasRoom) throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound())
+        if (!hasRoom) throw MatrixServerException(HttpStatusCode.NotFound, ErrorResponse.NotFound(""))
     }
 
     override suspend fun ping(txnId: String?) {
