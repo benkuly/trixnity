@@ -1,5 +1,5 @@
 group = "net.folivo"
-version = withVersionSuffix("4.6.3")
+version = withVersionSuffix("4.7.0")
 
 if (System.getenv("WITH_LOCK")?.toBoolean() == true) {
     dependencyLocking {
