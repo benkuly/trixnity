@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.7.0
+
+### Added
+
 - Add AuthenticationApiClient.getSsoUrl
 - Support for Matrix 1.11
 - Allow message sending to be cancelled while the message is sent
@@ -31,8 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Wrong room name calculation when homeserver does not send complete room summary
-
-### Security
 
 ## 4.6.2
 
