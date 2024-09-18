@@ -7,10 +7,8 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 data class RoomDisplayName(
     val explicitName: String? = null,
+    val heroes: List<UserId> = emptyList(),
+    val otherUsersCount: Int = 0,
     val isEmpty: Boolean = false,
-    val otherUsersCount: Long = 0,
-    val summary: RoomSummary?
-) {
-    val heroes: List<UserId>
-        get() = summary?.heroes ?: listOf()
-}
+    internal val summary: RoomSummary?,
+)
