@@ -321,7 +321,7 @@ class RoomListHandler(
                     allMembers.await()
                         .filter { it.second.membership == Membership.BAN || it.second.membership == Membership.LEAVE }
                 }
-                val heroes = mergedRoomSummary?.heroes
+                val heroes = (mergedRoomSummary?.heroes?.let { it - userInfo.userId })
                     ?: joinedMembers.await().take(NUM_HEROES).map { UserId(it.first) }.takeIf { it.isNotEmpty() }
                     ?: leftMembers.await().take(NUM_HEROES).map { UserId(it.first) }
 
