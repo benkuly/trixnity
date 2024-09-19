@@ -38,6 +38,7 @@ fun createStoreModule() = module {
         RootStore(
             listOfNotNull(
                 getOrNull<AccountStore>(),
+                getOrNull<ServerVersionsStore>(),
                 getOrNull<GlobalAccountDataStore>(),
                 getOrNull<KeyStore>(),
                 getOrNull<MediaCacheMappingStore>(),
