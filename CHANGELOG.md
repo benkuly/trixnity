@@ -17,10 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## 4.7.1
+
+### Fixed
+
 - Remove own userId from heroes in room name
 - Fix server versions not received leading to stuck media downloads
-
-### Security
 
 ## 4.7.0
 
