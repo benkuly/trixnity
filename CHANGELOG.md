@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix server versions not received leading to stuck media downloads
+
 ### Security
 
 ## 4.7.0

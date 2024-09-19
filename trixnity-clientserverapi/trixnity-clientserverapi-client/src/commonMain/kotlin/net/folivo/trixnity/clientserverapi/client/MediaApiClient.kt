@@ -205,10 +205,11 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
             endpoint = DownloadMedia(serverName, mediaId, timeout?.inWholeMilliseconds),
             requestBuilder = {
                 method = HttpMethod.Get
-                timeout {
-                    requestTimeoutMillis =
-                        timeout?.plus(10.seconds)?.inWholeMilliseconds ?: Duration.INFINITE.inWholeMilliseconds
-                }
+                if (timeout != null)
+                    timeout {
+                        requestTimeoutMillis =
+                            timeout.plus(10.seconds).inWholeMilliseconds
+                    }
                 if (progress != null)
                     onDownload { transferred, total ->
                         progress.value = FileTransferProgress(transferred, total)
@@ -283,10 +284,10 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
             ),
             requestBuilder = {
                 this.method = HttpMethod.Get
-                timeout {
-                    requestTimeoutMillis =
-                        timeout?.plus(10.seconds)?.inWholeMilliseconds ?: Duration.INFINITE.inWholeMilliseconds
-                }
+                if (timeout != null)
+                    timeout {
+                        requestTimeoutMillis = timeout.plus(10.seconds).inWholeMilliseconds
+                    }
                 if (progress != null)
                     onDownload { transferred, total ->
                         progress.value = FileTransferProgress(transferred, total)

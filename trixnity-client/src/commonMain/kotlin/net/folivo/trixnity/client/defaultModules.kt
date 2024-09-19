@@ -18,6 +18,7 @@ import net.folivo.trixnity.client.notification.createNotificationModule
 import net.folivo.trixnity.client.room.*
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
+import net.folivo.trixnity.client.server.createServerModule
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEventSerializer
@@ -70,6 +71,7 @@ fun createDefaultMatrixJsonModule() = module {
 
 fun createDefaultTrixnityModules() = listOf(
     createClockModule(),
+    createServerModule(),
     createDefaultEventContentSerializerMappingsModule(),
     createDefaultOutboxMessageMediaUploaderMappingsModule(),
     createDefaultMatrixJsonModule(),
@@ -97,6 +99,7 @@ fun createDefaultModules() = createDefaultTrixnityModules()
  */
 fun createTrixnityBotModules() = listOf(
     createClockModule(),
+    createServerModule(),
     createDefaultEventContentSerializerMappingsModule(),
     createDefaultOutboxMessageMediaUploaderMappingsModule(),
     createDefaultMatrixJsonModule(),
