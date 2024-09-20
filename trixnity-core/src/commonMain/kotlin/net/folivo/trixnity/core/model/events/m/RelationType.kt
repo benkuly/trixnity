@@ -43,6 +43,7 @@ sealed interface RelationType {
             Replace.name -> Replace
             Reply.name -> Reply
             Thread.name -> Thread
+            Annotation.name -> Annotation
             else -> Unknown(name)
         }
     }
