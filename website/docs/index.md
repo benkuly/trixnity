@@ -12,6 +12,6 @@ modules.
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization) for the
 serialization/deserialization.
 
-Trixnity aims to be strongly typed, customizable and easy to use. You can
+Trixnity aims to be reactive, strongly typed, customizable and easy to use. You can
 register custom events and Trixnity will take
 care, that you can send and receive that type.

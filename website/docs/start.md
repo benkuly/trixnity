@@ -46,7 +46,7 @@ the [integration tests](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnit
 For a messenger implementation you can take a look into the community
 project [Smalk](https://gitlab.com/terrakok/smalk).
 
-If you you just want to implement a messenger without having to dive to deep into trixnity-client and Matrix, consider
+If you you just want to implement a messenger without having to dive too deep into trixnity-client and Matrix, consider
 using [trixnity-messenger](https://gitlab.com/connect2x/trixnity-messenger).
 
 ## dev builds
