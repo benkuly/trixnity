@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Corrected an issue deserializing message relationships for annotations
+
 ### Security
 
 ## 4.6.2
