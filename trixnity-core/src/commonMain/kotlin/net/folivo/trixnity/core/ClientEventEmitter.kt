@@ -76,7 +76,7 @@ abstract class ClientEventEmitterImpl<T : List<ClientEvent<*>>> : ClientEventEmi
     override suspend fun emit(events: T) {
         _subscribers.value.forEach { prioritySubscribers ->
             coroutineScope {
-                log.trace { "process value in subscribers ${prioritySubscribers.subscribers}" }
+                log.trace { "process events in subscribers with priority ${prioritySubscribers.priority}" }
                 prioritySubscribers.subscribers.forEach { subscriber ->
                     launch { subscriber(events) }
                 }
