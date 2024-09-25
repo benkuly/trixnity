@@ -21,22 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.7.2
 
-### Added
-
 ### Changed
 
 - internal: Simplify RoomListHandler
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
 - Corrected an issue deserializing message relationships for annotations
 - Deadlock in Timeline loading
-
-### Security
 
 ## 4.7.1
 
