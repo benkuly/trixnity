@@ -1,8 +1,14 @@
 package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.*
@@ -49,46 +55,6 @@ class RoomListHandler(
 
         val syncRooms = syncEvents.syncResponse.room
 
-        val createEvents =
-            async(start = CoroutineStart.LAZY) {
-                syncEvents
-                    .filterContent<CreateEventContent>()
-                    .mapNotNull { event -> event.roomIdOrNull?.let { it to event.content } }
-                    .toList()
-                    .toMap()
-            }
-        val nameEvents =
-            async(start = CoroutineStart.LAZY) {
-                syncEvents
-                    .filterContent<NameEventContent>()
-                    .mapNotNull { event -> event.roomIdOrNull?.let { it to event.content } }
-                    .toList()
-                    .toMap()
-            }
-        val canonicalAliasEvents =
-            async(start = CoroutineStart.LAZY) {
-                syncEvents
-                    .filterContent<CanonicalAliasEventContent>()
-                    .mapNotNull { event -> event.roomIdOrNull?.let { it to event.content } }
-                    .toList()
-                    .toMap()
-            }
-        val encryptionEnabled =
-            async(start = CoroutineStart.LAZY) {
-                syncEvents
-                    .filterContent<EncryptionEventContent>()
-                    .mapNotNull { it.roomIdOrNull }
-                    .toSet()
-            }
-        val nextRoomIds =
-            async(start = CoroutineStart.LAZY) {
-                syncEvents
-                    .filterContent<TombstoneEventContent>()
-                    .mapNotNull { event -> event.roomIdOrNull?.let { it to event.content.replacementRoom } }
-                    .toList()
-                    .toMap()
-            }
-
         suspend fun createMergeRoom(
             roomId: RoomId,
             membership: Membership,
@@ -96,9 +62,10 @@ class RoomListHandler(
             unreadMessageCount: Long?,
             name: RoomDisplayName?,
         ): (Room?) -> Room {
-            val createEventContent = createEvents.await()[roomId]
-            val encrypted = encryptionEnabled.await().contains(roomId)
-            val nextRoomId = nextRoomIds.await()[roomId]
+            val createEventContent = roomStateStore.getByStateKey<CreateEventContent>(roomId).first()?.content
+            val encrypted = roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first() != null
+            val nextRoomId =
+                roomStateStore.getByStateKey<TombstoneEventContent>(roomId).first()?.content?.replacementRoom
             val lastRelevantEventTimestamp = lastRelevantEvent?.originTimestamp
                 ?.let { Instant.fromEpochMilliseconds(it) }
             return { oldRoom ->
@@ -120,8 +87,9 @@ class RoomListHandler(
             val lastRelevantEvent = roomInfo.timeline?.events?.lastOrNull { config.lastRelevantEventFilter(it) }
             val name = calculateDisplayName(
                 roomId = roomId,
-                nameEventContent = nameEvents.await()[roomId],
-                canonicalAliasEventContent = canonicalAliasEvents.await()[roomId],
+                nameEventContent = roomStateStore.getByStateKey<NameEventContent>(roomId).first()?.content,
+                canonicalAliasEventContent = roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId)
+                    .first()?.content,
                 roomSummary = roomInfo.summary,
             )
             val mergeRoom = createMergeRoom(
@@ -162,8 +130,9 @@ class RoomListHandler(
                 unreadMessageCount = null,
                 name = calculateDisplayName(
                     roomId = roomId,
-                    nameEventContent = nameEvents.await()[roomId],
-                    canonicalAliasEventContent = canonicalAliasEvents.await()[roomId],
+                    nameEventContent = roomStateStore.getByStateKey<NameEventContent>(roomId).first()?.content,
+                    canonicalAliasEventContent = roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId)
+                        .first()?.content,
                     roomSummary = null,
                 ),
             )
@@ -181,8 +150,6 @@ class RoomListHandler(
                 }
             }
         }
-
-        coroutineContext.cancelChildren()
     }
 
     private suspend fun updateIsDirectAndAvatarUrls(
@@ -192,8 +159,8 @@ class RoomListHandler(
         val directEvent = syncEvents.filterContent<DirectEventContent>().firstOrNull()?.content
         val syncRooms = syncEvents.syncResponse.room
 
-        val allRooms =
-            async(start = CoroutineStart.LAZY) {
+        val allRooms by lazy {
+            async {
                 this@RoomListHandler.roomStore.getAll().first().keys +
                         syncRooms?.run {
                             this.join?.keys.orEmpty() +
@@ -202,21 +169,27 @@ class RoomListHandler(
                                     this.invite?.keys.orEmpty()
                         }.orEmpty()
             }
-        val allDirectRooms =
-            async(start = CoroutineStart.LAZY) {
+        }
+
+        val allDirectRooms by lazy {
+            async {
                 (directEvent ?: this@RoomListHandler.globalAccountDataStore.get<DirectEventContent>().first()?.content)
                     ?.mapWithRoomIdKeys()
             }
-        val avatarEvents =
-            async(start = CoroutineStart.LAZY) {
+        }
+
+        val avatarEvents by lazy {
+            async {
                 syncEvents
                     .filterContent<AvatarEventContent>()
                     .mapNotNull { event -> event.roomIdOrNull?.let { it to event.content } }
                     .toList()
                     .toMap()
             }
-        val memberEvents =
-            async(start = CoroutineStart.LAZY) {
+        }
+
+        val memberEvents by lazy {
+            async {
                 syncEvents
                     .filterContent<MemberEventContent>()
                     .toList()
@@ -227,6 +200,7 @@ class RoomListHandler(
                         entry.value.mapNotNull { event -> event.stateKeyOrNull?.let { it to event.content } }.toMap()
                     }
             }
+        }
 
         coroutineScope {
             if (directEvent != null) {
@@ -274,8 +248,6 @@ class RoomListHandler(
                 }
             }
         }
-
-        coroutineContext.cancelChildren()
     }
 
     internal suspend fun calculateDisplayName(
@@ -309,17 +281,23 @@ class RoomListHandler(
                 RoomDisplayName(explicitName = nameFromAliasEvent, summary = mergedRoomSummary)
 
             else -> coroutineScope {
-                val allMembers = async(start = CoroutineStart.LAZY) {
-                    (roomStateStore.get<MemberEventContent>(roomId).first() - userInfo.userId.full)
-                        .mapNotNull { (key, value) -> value.first()?.content?.let { key to it } }
+                val allMembers by lazy {
+                    async {
+                        (roomStateStore.get<MemberEventContent>(roomId).first() - userInfo.userId.full)
+                            .mapNotNull { (key, value) -> value.first()?.content?.let { key to it } }
+                    }
                 }
-                val joinedMembers = async(start = CoroutineStart.LAZY) {
-                    allMembers.await()
-                        .filter { it.second.membership == Membership.INVITE || it.second.membership == Membership.JOIN }
+                val joinedMembers by lazy {
+                    async {
+                        allMembers.await()
+                            .filter { it.second.membership == Membership.INVITE || it.second.membership == Membership.JOIN }
+                    }
                 }
-                val leftMembers = async(start = CoroutineStart.LAZY) {
-                    allMembers.await()
-                        .filter { it.second.membership == Membership.BAN || it.second.membership == Membership.LEAVE }
+                val leftMembers by lazy {
+                    async {
+                        allMembers.await()
+                            .filter { it.second.membership == Membership.BAN || it.second.membership == Membership.LEAVE }
+                    }
                 }
                 val heroes = (mergedRoomSummary?.heroes?.let { it - userInfo.userId })
                     ?: joinedMembers.await().take(NUM_HEROES).map { UserId(it.first) }.takeIf { it.isNotEmpty() }
@@ -338,10 +316,6 @@ class RoomListHandler(
                 val otherUsersCount =
                     if (joinedMemberCount > 1 && (heroes.isEmpty() || heroes.size < joinedMemberCount - 1)) joinedMemberCount
                     else 0
-
-                leftMembers.cancel()
-                joinedMembers.cancel()
-                allMembers.cancel()
 
                 RoomDisplayName(
                     heroes = heroes,

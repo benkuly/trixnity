@@ -97,7 +97,7 @@ class OutdatedKeysHandler(
         // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
         if (syncState != SyncState.INITIAL_SYNC) {
             val stopTrackingKeys = mutableSetOf<UserId>()
-            val joinedEncryptedRooms = async(start = CoroutineStart.LAZY) { roomStore.encryptedJoinedRooms() }
+            val joinedEncryptedRooms by lazy { async { roomStore.encryptedJoinedRooms() } }
 
             events.forEach { event ->
                 val room = roomStore.get(event.roomId).first()
@@ -122,7 +122,6 @@ class OutdatedKeysHandler(
                 stop = stopTrackingKeys,
                 reason = "member event"
             )
-            joinedEncryptedRooms.cancelAndJoin()
         }
     }
 
@@ -172,15 +171,17 @@ class OutdatedKeysHandler(
             deviceKeys = userIds.associateWith { emptySet() },
         ).getOrThrow()
 
-        val joinedEncryptedRooms = async(start = CoroutineStart.LAZY) { roomStore.encryptedJoinedRooms() }
-        val membershipsAllowedToReceiveKey = async(start = CoroutineStart.LAZY) {
-            val historyVisibilities =
-                roomStateStore.getByRooms<HistoryVisibilityEventContent>(joinedEncryptedRooms.await())
-                    .mapNotNull { event ->
-                        event.roomIdOrNull?.let { it to event.content.historyVisibility }
-                    }
-                    .toMap()
-            joinedEncryptedRooms.await().associateWith { historyVisibilities[it].membershipsAllowedToReceiveKey }
+        val joinedEncryptedRooms by lazy { async { roomStore.encryptedJoinedRooms() } }
+        val membershipsAllowedToReceiveKey by lazy {
+            async {
+                val historyVisibilities =
+                    roomStateStore.getByRooms<HistoryVisibilityEventContent>(joinedEncryptedRooms.await())
+                        .mapNotNull { event ->
+                            event.roomIdOrNull?.let { it to event.content.historyVisibility }
+                        }
+                        .toMap()
+                joinedEncryptedRooms.await().associateWith { historyVisibilities[it].membershipsAllowedToReceiveKey }
+            }
         }
 
         userIds.chunked(25).forEach { userIdChunk ->
@@ -237,8 +238,6 @@ class OutdatedKeysHandler(
             }
             yield()
         }
-        joinedEncryptedRooms.cancelAndJoin()
-        membershipsAllowedToReceiveKey.cancelAndJoin()
         log.debug { "finished update outdated keys of $userIds" }
     }
 
