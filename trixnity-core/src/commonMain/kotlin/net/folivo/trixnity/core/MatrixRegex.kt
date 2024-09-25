@@ -1,10 +1,7 @@
 package net.folivo.trixnity.core
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import net.folivo.trixnity.core.model.*
-
-private val log = KotlinLogging.logger {}
 
 object MatrixRegex {
     // Decode/Encode Grammar
@@ -112,19 +109,14 @@ object MatrixRegex {
     private val eventIdUriAnchor by lazy { getAnchor(eventUriRegex, 255).toRegex() }
 
     fun findMentions(message: String): Map<IntRange, Mention> {
-        log.trace { message }
-
         val mentions = findUserIdMentions(message)
             .plus(findRoomIdMentions(message))
             .plus(findRoomAliasMentions(message))
             .plus(findEventMentions(message))
 
-        log.trace { mentions }
-
         val uniqueMentions = mentions.filter { mention ->
             mentions.forEach {
                 if (it.key.contains(mention.key)) {
-                    log.trace { "${mention.value.match} was removed" }
                     return@filter false
                 }
             }
@@ -132,16 +124,11 @@ object MatrixRegex {
             true
         }
 
-        log.trace { uniqueMentions }
-
         return uniqueMentions
     }
 
     private fun findUserIdMentions(message: String): Map<IntRange, Mention> {
         fun handleMention(result: List<String>, options: List<String>): Mention.User {
-            log.trace { "User: $result" }
-            log.trace { result.size }
-
             val match = result[0]
             val localpart = result[1]
             val domain = result[2]
@@ -164,9 +151,6 @@ object MatrixRegex {
             result: List<String>,
             options: List<String>
         ): Mention.Room {
-            log.trace { "Room ID: $result" }
-            log.trace { result.size }
-
             val match = result[0]
             val localpart = result[1]
             val domain = result[2]
@@ -186,9 +170,6 @@ object MatrixRegex {
 
     private fun findRoomAliasMentions(message: String): Map<IntRange, Mention> {
         fun handleMention(result: List<String>, options: List<String>): Mention.RoomAlias {
-            log.trace { "Room Alias: $result" }
-            log.trace { result.size }
-
             val match = result[0]
             val localpart = result[1]
             val domain = result[2]
@@ -210,9 +191,6 @@ object MatrixRegex {
         val ids = eventId.findAll(message).associate {
             val result = it.groupValues.filter(String::isNotBlank)
 
-            log.trace { "Event: $result" }
-            log.trace { result.size }
-
             val match = result[0]
             val eventId = result[1]
 
@@ -223,9 +201,6 @@ object MatrixRegex {
             val (result, options) = it.groupValues.filter(String::isNotBlank).let {
                 it.take(3) to it.drop(3)
             }
-
-            log.trace { "Event: $result" }
-            log.trace { result.size }
 
             val match = result[0]
             val roomId = result[1].replaceFirst("roomid/", "!")
@@ -239,9 +214,6 @@ object MatrixRegex {
             val (result, options) = it.groupValues.filter(String::isNotBlank).let {
                 it.take(3) to it.drop(3)
             }
-
-            log.trace { "Event: $result" }
-            log.trace { result.size }
 
             val match = result[0]
             val roomId = result[1].replaceFirst("roomid/", "!")
@@ -261,8 +233,6 @@ object MatrixRegex {
             val (result, options) = it.groupValues.filter(String::isNotBlank).let {
                 it.take(3) to it.drop(3)
             }
-            log.trace { "Event: $result" }
-            log.trace { result.size }
 
             val match = result[0]
             val roomId = result[1]
@@ -276,8 +246,6 @@ object MatrixRegex {
             val (result, options) = it.groupValues.filter(String::isNotBlank).let {
                 it.take(3) to it.drop(3)
             }
-            log.trace { "Event: $result" }
-            log.trace { result.size }
 
             val match = result[0]
             val roomId = result[1]
