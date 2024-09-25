@@ -78,6 +78,7 @@ class OlmEventHandler(
         val oneTimeKeysCount = change.oneTimeKeysCount
         val fallbackKeyTypes = change.fallbackKeyTypes
         store.updateOlmAccount { pickledOlmAccount ->
+            log.trace { "handle change of own olm keys server count" }
             freeAfter(
                 OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount)
             ) { olmAccount ->
@@ -116,6 +117,8 @@ class OlmEventHandler(
                     olmAccount.markKeysAsPublished()
                     olmAccount.pickle(store.getOlmPickleKey())
                 } else pickledOlmAccount
+            }.also {
+                log.trace { "finished handle change of own olm keys server count" }
             }
         }
     }
