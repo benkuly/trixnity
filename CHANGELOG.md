@@ -11,7 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Simplify RoomListHandler
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.7.2
+
+### Added
+
+### Changed
+
+- internal: Simplify RoomListHandler
 
 ### Deprecated
 
