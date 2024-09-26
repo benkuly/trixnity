@@ -12,12 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Don't decrypt events when searching for one via `getTimelineEvent`
+- Reaction aggregation now exposes the entire timeline event for each reaction, not just the user id
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- Incorrect handling of reaction redactions and reactions
 
 ### Security
 

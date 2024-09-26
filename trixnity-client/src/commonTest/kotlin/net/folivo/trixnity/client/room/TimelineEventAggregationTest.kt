@@ -133,27 +133,41 @@ class TimelineEventAggregationTest : ShouldSpec({
                     TimelineEventAggregation.Replace(EventId("3"), listOf(EventId("2"), EventId("3")))
         }
     }
+
     context(RoomService::getTimelineEventReactionAggregation.name) {
+        val originalEvent = timelineEvent("1", 1)
+        val reactionUser2Thumbs1 = timelineEvent(
+            "2", 2, UserId("2", "server"),
+            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+        )
+        val reactionUser2Thumbs2 = timelineEvent(
+            "3", 3, UserId("2", "server"),
+            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+        )
+        val reactionUser2Unicorn = timelineEvent(
+            "4", 4, UserId("2", "server"),
+            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🦄"))
+        )
+        val reactionUser1Thumbs = timelineEvent(
+            "5", 5,
+            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+        )
+        val reactionUser3Thumbs = timelineEvent(
+            "6", 6, UserId("3", "server"),
+            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+        )
+        val reactionUser3Dog = timelineEvent(
+            "7", 7, UserId("3", "server"),
+            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🐈"))
+        )
         beforeTest {
             roomTimelineStore.addAll(
                 listOf(
-                    timelineEvent("1", 1),
-                    timelineEvent(
-                        "2", 2, UserId("2", "server"),
-                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
-                    ),
-                    timelineEvent(
-                        "3", 3, UserId("2", "server"),
-                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
-                    ),
-                    timelineEvent(
-                        "4", 4, UserId("2", "server"),
-                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🦄"))
-                    ),
-                    timelineEvent(
-                        "5", 5,
-                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
-                    )
+                    originalEvent,
+                    reactionUser2Thumbs1,
+                    reactionUser2Thumbs2,
+                    reactionUser2Unicorn,
+                    reactionUser1Thumbs
                 )
             )
             roomTimelineStore.addRelation(
@@ -193,8 +207,13 @@ class TimelineEventAggregationTest : ShouldSpec({
             cut.getTimelineEventReactionAggregation(room, EventId("1")).first() shouldBe
                     TimelineEventAggregation.Reaction(
                         mapOf(
-                            "👍" to setOf(UserId("sender", "server"), UserId("2", "server")),
-                            "🦄" to setOf(UserId("2", "server"))
+                            "👍" to setOf(
+                                reactionUser1Thumbs,
+                                reactionUser2Thumbs2,
+                            ),
+                            "🦄" to setOf(
+                                reactionUser2Unicorn,
+                            )
                         )
                     )
         }
@@ -209,10 +228,7 @@ class TimelineEventAggregationTest : ShouldSpec({
             receivedValues.first { it == 1 }
             roomTimelineStore.addAll(
                 listOf(
-                    timelineEvent(
-                        "6", 6, UserId("3", "server"),
-                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
-                    )
+                    reactionUser3Thumbs
                 )
             )
             roomTimelineStore.addRelation(
@@ -227,10 +243,7 @@ class TimelineEventAggregationTest : ShouldSpec({
             receivedValues.first { it == 2 }
             roomTimelineStore.addAll(
                 listOf(
-                    timelineEvent(
-                        "7", 7, UserId("3", "server"),
-                        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🐈"))
-                    )
+                    reactionUser3Dog
                 )
             )
             roomTimelineStore.addRelation(
@@ -245,21 +258,40 @@ class TimelineEventAggregationTest : ShouldSpec({
             result.await() shouldBe listOf(
                 TimelineEventAggregation.Reaction(
                     mapOf(
-                        "👍" to setOf(UserId("sender", "server"), UserId("2", "server")),
-                        "🦄" to setOf(UserId("2", "server"))
+                        "👍" to setOf(
+                            reactionUser1Thumbs,
+                            reactionUser2Thumbs2,
+                        ),
+                        "🦄" to setOf(
+                            reactionUser2Unicorn,
+                        )
                     )
                 ),
                 TimelineEventAggregation.Reaction(
                     mapOf(
-                        "👍" to setOf(UserId("sender", "server"), UserId("2", "server"), UserId("3", "server")),
-                        "🦄" to setOf(UserId("2", "server"))
+                        "👍" to setOf(
+                            reactionUser1Thumbs,
+                            reactionUser2Thumbs2,
+                            reactionUser3Thumbs
+                        ),
+                        "🦄" to setOf(
+                            reactionUser2Unicorn,
+                        )
                     )
                 ),
                 TimelineEventAggregation.Reaction(
                     mapOf(
-                        "👍" to setOf(UserId("sender", "server"), UserId("2", "server"), UserId("3", "server")),
-                        "🦄" to setOf(UserId("2", "server")),
-                        "🐈" to setOf(UserId("3", "server"))
+                        "👍" to setOf(
+                            reactionUser1Thumbs,
+                            reactionUser2Thumbs2,
+                            reactionUser3Thumbs
+                        ),
+                        "🦄" to setOf(
+                            reactionUser2Unicorn,
+                        ),
+                        "🐈" to setOf(
+                            reactionUser3Dog
+                        )
                     )
                 ),
             )

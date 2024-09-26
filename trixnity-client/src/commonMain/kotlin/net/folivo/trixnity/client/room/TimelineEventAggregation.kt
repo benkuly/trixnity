@@ -2,15 +2,18 @@ package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformLatest
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.eventId
+import net.folivo.trixnity.client.store.originTimestamp
 import net.folivo.trixnity.client.store.relatesTo
 import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.replace
@@ -24,7 +27,7 @@ sealed interface TimelineEventAggregation {
      */
     data class Replace(val replacedBy: EventId?, val history: List<EventId>) : TimelineEventAggregation
 
-    data class Reaction(val reactions: Map<String, Set<UserId>>) : TimelineEventAggregation
+    data class Reaction(val reactions: Map<String, Set<TimelineEvent>>) : TimelineEventAggregation
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -66,28 +69,42 @@ fun RoomService.getTimelineEventReplaceAggregation(
 fun RoomService.getTimelineEventReactionAggregation(
     roomId: RoomId,
     eventId: EventId,
-): Flow<TimelineEventAggregation.Reaction> =
-    getTimelineEventRelations(roomId, eventId, RelationType.Annotation)
-        .map { it?.keys.orEmpty() }
+): Flow<TimelineEventAggregation.Reaction> {
+    val result = getTimelineEventRelations(roomId, eventId, RelationType.Annotation)
+        .flatMapLatest { reactionMap ->
+            combine(reactionMap?.values.orEmpty()) {
+                it.mapNotNull { reaction -> reaction?.eventId }
+            }
+        }
         .map { relations ->
-            val reactions = coroutineScope {
+            coroutineScope {
                 // TODO fetching every single TimelineEvent from store is very inefficient and does not scale
                 relations.map {
                     async {
-                        withTimeoutOrNull(1.minutes) { getTimelineEvent(roomId, it).first() }
+                        withTimeoutOrNull(1.minutes) {
+                            getTimelineEvent(roomId, it).first()
+                        }
                     }
-                }.awaitAll()
-            }.filterNotNull()
-                .mapNotNull {
-                    val relatesTo = it.relatesTo
-                    if (relatesTo is RelatesTo.Annotation) {
-                        val key = relatesTo.key
-                        if (key != null) key to it.sender
-                        else null
-                    } else null
-                }
-                .distinct()
-                .groupBy { it.first }
-                .mapValues { entry -> entry.value.map { it.second }.toSet() }
+                }.awaitAll().filterNotNull()
+            }
+        }.map { reactions ->
+            reactions.mapNotNull {
+                val relatesTo = it.relatesTo
+                if (relatesTo is RelatesTo.Annotation) {
+                    val key = relatesTo.key
+                    if (key != null) key to it
+                    else null
+                } else null
+            }.groupBy { (reaction, _) ->
+                reaction
+            }.mapValues { (_, events) ->
+                events.map { (_, event) -> event }
+                    .groupBy { it.sender }
+                    .map { (_, senderEvents) -> senderEvents.maxBy { it.originTimestamp } }
+                    .toSet()
+            }
+        }.map { reactions ->
             TimelineEventAggregation.Reaction(reactions)
         }
+    return result
+}
