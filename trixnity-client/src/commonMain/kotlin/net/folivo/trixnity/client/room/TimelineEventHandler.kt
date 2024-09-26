@@ -5,7 +5,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -125,10 +124,10 @@ class TimelineEventHandlerImpl(
                         nextEvent = null,
                         nextEventChunk = events.drop(1),
                         processTimelineEventsBeforeSave = { list ->
-                            list.alsoAddRelationFromTimelineEvents()
                             useDecryptedOutboxMessagesForOwnTimelineEvents(list)
                         }
                     )
+                    events.alsoAddRelationFromTimelineEvents()
                 }
                 doAfter()
             }
@@ -225,7 +224,6 @@ class TimelineEventHandlerImpl(
                         nextEvent = nextEvent,
                         nextEventChunk = nextEventChunk,
                         processTimelineEventsBeforeSave = { list ->
-                            list.alsoAddRelationFromTimelineEvents()
                             list.forEach {
                                 val event = it.event
                                 val content = event.content
@@ -237,6 +235,8 @@ class TimelineEventHandlerImpl(
                             list
                         },
                     )
+                    previousEventChunk?.alsoAddRelationFromTimelineEvents()
+                    nextEventChunk?.alsoAddRelationFromTimelineEvents()
                 }
         }
     }
@@ -307,10 +307,8 @@ class TimelineEventHandlerImpl(
         }
     }
 
-    private suspend fun List<TimelineEvent>.alsoAddRelationFromTimelineEvents() = also { events ->
-        events.asFlow().map { it.event }.filterIsInstance<MessageEvent<MessageEventContent>>()
-            .collect(::addRelation)
-    }
+    private suspend fun List<RoomEvent<*>>.alsoAddRelationFromTimelineEvents() =
+        asFlow().filterIsInstance<MessageEvent<MessageEventContent>>().collect(::addRelation)
 
     internal suspend fun addRelation(event: MessageEvent<MessageEventContent>) {
         val relatesTo = event.content.relatesTo
