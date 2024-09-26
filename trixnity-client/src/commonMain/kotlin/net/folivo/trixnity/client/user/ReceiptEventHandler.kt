@@ -32,7 +32,7 @@ class ReceiptEventHandler(
             tm.transaction {
                 receiptEvents.forEach { receiptEvent ->
                     receiptEvent.roomIdOrNull?.let { roomId ->
-                        log.debug { "set read receipts of room $roomId" }
+                        log.trace { "set read receipts of room $roomId" }
                         data class UserReceipt(
                             val userId: UserId,
                             val type: ReceiptType,

@@ -303,13 +303,13 @@ class SyncApiClientImpl(
                 }.also { coroutineContext.cancelChildren() }
             }
         }
-        log.debug { "received sync response after about $measuredSyncDuration with token $batchToken" }
+        log.info { "received sync response after about $measuredSyncDuration with token $batchToken" }
 
         withTransaction {
             val measuredProcessDuration = measureTime {
                 processSyncResponse(response)
             }
-            log.debug { "processed sync response in about $measuredProcessDuration with token $batchToken" }
+            log.info { "processed sync response in about $measuredProcessDuration with token $batchToken" }
 
             setBatchToken(response.nextBatch)
         }
