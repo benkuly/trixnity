@@ -10,7 +10,6 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 fun createRoomModule() = module {
-    singleOf(::TimelineMutex)
     singleOf(::RoomListHandler) {
         bind<EventHandler>()
         named<RoomListHandler>()

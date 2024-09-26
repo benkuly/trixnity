@@ -23,6 +23,7 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.subscribeEvent
 import net.folivo.trixnity.core.unsubscribeOnCompletion
+import net.folivo.trixnity.utils.KeyedMutex
 
 private val log = KotlinLogging.logger {}
 
@@ -39,7 +40,6 @@ class TimelineEventHandlerImpl(
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
-    private val timelineMutex: TimelineMutex,
     private val tm: TransactionManager,
 ) : EventHandler, TimelineEventHandler {
     companion object {
@@ -51,38 +51,34 @@ class TimelineEventHandlerImpl(
         api.sync.subscribe(Priority.STORE_TIMELINE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
     }
 
+    private val timelineMutex = KeyedMutex<RoomId>()
+
     internal suspend fun handleSyncResponse(syncEvents: SyncEvents) {
         val syncResponse = syncEvents.syncResponse
         syncResponse.room?.join?.entries?.forEach { room ->
             val roomId = room.key
             room.value.timeline?.also {
-                timelineMutex.withLock(roomId) {
-                    tm.transaction {
-                        addEventsToTimelineAtEnd(
-                            roomId = roomId,
-                            newEvents = it.events,
-                            previousBatch = it.previousBatch,
-                            nextBatch = syncResponse.nextBatch,
-                            hasGapBefore = it.limited ?: false
-                        )
-                        it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
-                    }
+                addEventsToTimelineAtEnd(
+                    roomId = roomId,
+                    newEvents = it.events,
+                    previousBatch = it.previousBatch,
+                    nextBatch = syncResponse.nextBatch,
+                    hasGapBefore = it.limited ?: false
+                ) {
+                    it.events?.lastOrNull()?.also { event -> setLastEventId(event) }
                 }
             }
         }
         syncResponse.room?.leave?.entries?.forEach { room ->
             room.value.timeline?.also {
-                timelineMutex.withLock(room.key) {
-                    tm.transaction {
-                        addEventsToTimelineAtEnd(
-                            roomId = room.key,
-                            newEvents = it.events,
-                            previousBatch = it.previousBatch,
-                            nextBatch = syncResponse.nextBatch,
-                            hasGapBefore = it.limited ?: false
-                        )
-                        it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
-                    }
+                addEventsToTimelineAtEnd(
+                    roomId = room.key,
+                    newEvents = it.events,
+                    previousBatch = it.previousBatch,
+                    nextBatch = syncResponse.nextBatch,
+                    hasGapBefore = it.limited ?: false
+                ) {
+                    it.events?.lastOrNull()?.let { event -> setLastEventId(event) }
                 }
             }
         }
@@ -93,43 +89,49 @@ class TimelineEventHandlerImpl(
         newEvents: List<RoomEvent<*>>?,
         previousBatch: String?,
         nextBatch: String,
-        hasGapBefore: Boolean
+        hasGapBefore: Boolean,
+        doAfter: suspend () -> Unit,
     ) {
-        val events = roomTimelineStore.filterDuplicateEvents(newEvents)
-        if (!events.isNullOrEmpty()) {
-            log.debug { "add events to timeline at end of $roomId" }
-            val lastEventId = roomStore.get(roomId).first()?.lastEventId
-            suspend fun useDecryptedOutboxMessagesForOwnTimelineEvents(timelineEvents: List<TimelineEvent>) =
-                timelineEvents.map {
-                    if (it.event.isEncrypted) {
-                        it.event.unsigned?.transactionId?.let { transactionId ->
-                            roomOutboxMessageStore.get(transactionId)?.let { roomOutboxMessage ->
-                                it.copy(content = Result.success(roomOutboxMessage.content))
-                            }
-                        } ?: it
-                    } else it
+        timelineMutex.withLock(roomId) {
+            tm.transaction {
+                val events = roomTimelineStore.filterDuplicateEvents(newEvents)
+                if (!events.isNullOrEmpty()) {
+                    log.debug { "add events to timeline at end of $roomId" }
+                    val lastEventId = roomStore.get(roomId).first()?.lastEventId
+                    suspend fun useDecryptedOutboxMessagesForOwnTimelineEvents(timelineEvents: List<TimelineEvent>) =
+                        timelineEvents.map {
+                            if (it.event.isEncrypted) {
+                                it.event.unsigned?.transactionId?.let { transactionId ->
+                                    roomOutboxMessageStore.get(transactionId)?.let { roomOutboxMessage ->
+                                        it.copy(content = Result.success(roomOutboxMessage.content))
+                                    }
+                                } ?: it
+                            } else it
+                        }
+                    roomTimelineStore.addEventsToTimeline(
+                        startEvent = TimelineEvent(
+                            event = events.first(),
+                            previousEventId = null,
+                            nextEventId = null,
+                            gap = null
+                        ),
+                        roomId = roomId,
+                        previousToken = previousBatch,
+                        previousHasGap = hasGapBefore,
+                        previousEvent = lastEventId,
+                        previousEventChunk = null,
+                        nextToken = nextBatch,
+                        nextHasGap = true,
+                        nextEvent = null,
+                        nextEventChunk = events.drop(1),
+                        processTimelineEventsBeforeSave = { list ->
+                            list.alsoAddRelationFromTimelineEvents()
+                            useDecryptedOutboxMessagesForOwnTimelineEvents(list)
+                        }
+                    )
                 }
-            roomTimelineStore.addEventsToTimeline(
-                startEvent = TimelineEvent(
-                    event = events.first(),
-                    previousEventId = null,
-                    nextEventId = null,
-                    gap = null
-                ),
-                roomId = roomId,
-                previousToken = previousBatch,
-                previousHasGap = hasGapBefore,
-                previousEvent = lastEventId,
-                previousEventChunk = null,
-                nextToken = nextBatch,
-                nextHasGap = true,
-                nextEvent = null,
-                nextEventChunk = events.drop(1),
-                processTimelineEventsBeforeSave = { list ->
-                    list.alsoAddRelationFromTimelineEvents()
-                    useDecryptedOutboxMessagesForOwnTimelineEvents(list)
-                }
-            )
+                doAfter()
+            }
         }
     }
 

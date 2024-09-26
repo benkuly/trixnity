@@ -51,7 +51,7 @@ interface RoomService {
      * Returns the [TimelineEvent] and starts decryption. If it is not found locally, the algorithm will try to find
      * the event by traversing the events from the end of the timeline (i.e. from the last sent event).
      * This can include filling sync gaps from the server and thus might take a while.
-     * Please consider wrapping this call in a timeout.
+     * Please consider changing the [config].
      */
     fun getTimelineEvent(
         roomId: RoomId,
@@ -278,6 +278,7 @@ class RoomServiceImpl(
                                     direction = BACKWARDS,
                                     config = {
                                         apply(cfg)
+                                        decryptionTimeout = ZERO
                                     }
                                 ).map { it.first() }.firstOrNull { it.eventId == eventId }
                                     .also { log.trace { "getTimelineEvent: found TimelineEvent $eventId" } }
@@ -440,7 +441,7 @@ class RoomServiceImpl(
                             } else null
 
                         // check for break conditions
-                        log.trace { "getTimelineEvents: size=$size minSize=$minSize maxSize=$maxSize direction=${direction.name} predecessor=$predecessor successor=$successor currentTimelineEvent=$currentTimelineEvent" }
+                        log.trace { "getTimelineEvents: size=$size minSize=$minSize maxSize=$maxSize direction=${direction.name} predecessor=$predecessor successor=$successor currentTimelineEvent=${currentTimelineEvent.eventId}" }
                         if (direction == BACKWARDS && currentTimelineEvent.isFirst && predecessor == null) {
                             log.debug { "getTimelineEvents: reached start of timeline $currentRoomId" }
                             emit(FollowTimelineResult.Stop)
