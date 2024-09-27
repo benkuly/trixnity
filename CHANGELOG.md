@@ -9,12 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add `via` parameter on join and knock requests (MSC4156)
+
 ### Changed
 
 - Don't decrypt events when searching for one via `getTimelineEvent`
 - Reaction aggregation now exposes the entire timeline event for each reaction, not just the user id
 
 ### Deprecated
+
+- Deprecate `server_name` query parameter on join and knock requests in favour of `via` (MSC4156)
 
 ### Removed
 
