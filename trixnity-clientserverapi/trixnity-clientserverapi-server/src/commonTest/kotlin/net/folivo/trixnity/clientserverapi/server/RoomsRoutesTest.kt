@@ -1074,7 +1074,7 @@ class RoomsRoutesTest {
         everySuspend { handlerMock.joinRoom(any()) }
             .returns(JoinRoom.Response(RoomId("room", "server")))
         val response =
-            client.post("/_matrix/client/v3/join/!room:server?server_name=server1.com&server_name=server2.com") {
+            client.post("/_matrix/client/v3/join/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -1102,6 +1102,7 @@ class RoomsRoutesTest {
         verifySuspend {
             handlerMock.joinRoom(assert {
                 it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
+                it.endpoint.via shouldBe setOf("server1.com", "server2.com")
                 it.endpoint.serverNames shouldBe setOf("server1.com", "server2.com")
                 it.requestBody shouldBe JoinRoom.Request(
                     thirdPartySigned = Signed(
@@ -1127,7 +1128,7 @@ class RoomsRoutesTest {
         everySuspend { handlerMock.knockRoom(any()) }
             .returns(KnockRoom.Response(RoomId("room", "server")))
         val response =
-            client.post("/_matrix/client/v3/knock/!room:server?server_name=server1.com&server_name=server2.com") {
+            client.post("/_matrix/client/v3/knock/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com") {
                 bearerAuth("token")
                 contentType(ContentType.Application.Json)
                 setBody("""{"reason":"reason"}""")
@@ -1140,6 +1141,7 @@ class RoomsRoutesTest {
         verifySuspend {
             handlerMock.knockRoom(assert {
                 it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
+                it.endpoint.via shouldBe setOf("server1.com", "server2.com")
                 it.endpoint.serverNames shouldBe setOf("server1.com", "server2.com")
                 it.requestBody shouldBe KnockRoom.Request("reason")
             })

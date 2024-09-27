@@ -267,7 +267,7 @@ interface RoomApiClient {
      */
     suspend fun joinRoom(
         roomId: RoomId,
-        serverNames: Set<String>? = null,
+        via: Set<String>? = null,
         reason: String? = null,
         thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>? = null,
         asUserId: UserId? = null
@@ -278,7 +278,7 @@ interface RoomApiClient {
      */
     suspend fun joinRoom(
         roomAliasId: RoomAliasId,
-        serverNames: Set<String>? = null,
+        via: Set<String>? = null,
         reason: String? = null,
         thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>? = null,
         asUserId: UserId? = null
@@ -289,7 +289,7 @@ interface RoomApiClient {
      */
     suspend fun knockRoom(
         roomId: RoomId,
-        serverNames: Set<String>? = null,
+        via: Set<String>? = null,
         reason: String? = null,
         asUserId: UserId? = null
     ): Result<RoomId>
@@ -299,7 +299,7 @@ interface RoomApiClient {
      */
     suspend fun knockRoom(
         roomAliasId: RoomAliasId,
-        serverNames: Set<String>? = null,
+        via: Set<String>? = null,
         reason: String? = null,
         asUserId: UserId? = null
     ): Result<RoomId>
@@ -748,42 +748,42 @@ class RoomApiClientImpl(
 
     override suspend fun joinRoom(
         roomId: RoomId,
-        serverNames: Set<String>?,
+        via: Set<String>?,
         reason: String?,
         thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>?,
         asUserId: UserId?
     ): Result<RoomId> =
-        httpClient.request(JoinRoom(roomId.full, serverNames, asUserId), JoinRoom.Request(reason, thirdPartySigned))
+        httpClient.request(JoinRoom(roomId.full, via, asUserId = asUserId), JoinRoom.Request(reason, thirdPartySigned))
             .mapCatching { it.roomId }
 
     override suspend fun joinRoom(
         roomAliasId: RoomAliasId,
-        serverNames: Set<String>?,
+        via: Set<String>?,
         reason: String?,
         thirdPartySigned: Signed<JoinRoom.Request.ThirdParty, String>?,
         asUserId: UserId?
     ): Result<RoomId> =
         httpClient.request(
-            JoinRoom(roomAliasId.full, serverNames, asUserId),
+            JoinRoom(roomAliasId.full, via, asUserId = asUserId),
             JoinRoom.Request(reason, thirdPartySigned)
         ).mapCatching { it.roomId }
 
     override suspend fun knockRoom(
         roomId: RoomId,
-        serverNames: Set<String>?,
+        via: Set<String>?,
         reason: String?,
         asUserId: UserId?
     ): Result<RoomId> =
-        httpClient.request(KnockRoom(roomId.full, serverNames, asUserId), KnockRoom.Request(reason))
+        httpClient.request(KnockRoom(roomId.full, via, asUserId = asUserId), KnockRoom.Request(reason))
             .mapCatching { it.roomId }
 
     override suspend fun knockRoom(
         roomAliasId: RoomAliasId,
-        serverNames: Set<String>?,
+        via: Set<String>?,
         reason: String?,
         asUserId: UserId?
     ): Result<RoomId> =
-        httpClient.request(KnockRoom(roomAliasId.full, serverNames, asUserId), KnockRoom.Request(reason))
+        httpClient.request(KnockRoom(roomAliasId.full, via, asUserId = asUserId), KnockRoom.Request(reason))
             .mapCatching { it.roomId }
 
     override suspend fun forgetRoom(

@@ -959,7 +959,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/join/!room:server?server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/join/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -988,7 +988,7 @@ class RoomsApiClientTest {
             })
         val result = matrixRestClient.room.joinRoom(
             roomId = RoomId("room", "server"),
-            serverNames = setOf("server1.com", "server2.com"),
+            via = setOf("server1.com", "server2.com"),
             thirdPartySigned = Signed(
                 JoinRoom.Request.ThirdParty(
                     sender = UserId("alice", "server"),
@@ -1012,7 +1012,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/join/%23alias:server?server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/join/%23alias:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1041,7 +1041,7 @@ class RoomsApiClientTest {
             })
         val result = matrixRestClient.room.joinRoom(
             roomAliasId = RoomAliasId("alias", "server"),
-            serverNames = setOf("server1.com", "server2.com"),
+            via = setOf("server1.com", "server2.com"),
             thirdPartySigned = Signed(
                 JoinRoom.Request.ThirdParty(
                     sender = UserId("alice", "server"),
@@ -1065,7 +1065,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/knock/!room:server?server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/knock/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1085,7 +1085,7 @@ class RoomsApiClientTest {
             })
         val result = matrixRestClient.room.knockRoom(
             roomId = RoomId("room", "server"),
-            serverNames = setOf("server1.com", "server2.com"),
+            via = setOf("server1.com", "server2.com"),
             reason = "reason"
         ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)
@@ -1099,7 +1099,7 @@ class RoomsApiClientTest {
             httpClientFactory = mockEngineFactory {
                 addHandler { request ->
                     assertEquals(
-                        "/_matrix/client/v3/knock/%23alias:server?server_name=server1.com&server_name=server2.com",
+                        "/_matrix/client/v3/knock/%23alias:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
                         request.url.fullPath
                     )
                     assertEquals(HttpMethod.Post, request.method)
@@ -1119,7 +1119,7 @@ class RoomsApiClientTest {
             })
         val result = matrixRestClient.room.knockRoom(
             roomAliasId = RoomAliasId("alias", "server"),
-            serverNames = setOf("server1.com", "server2.com"),
+            via = setOf("server1.com", "server2.com"),
             reason = "reason"
         ).getOrThrow()
         assertEquals(RoomId("room", "server"), result)

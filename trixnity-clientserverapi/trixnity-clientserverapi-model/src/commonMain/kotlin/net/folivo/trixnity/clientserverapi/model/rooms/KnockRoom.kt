@@ -17,7 +17,9 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(POST)
 data class KnockRoom(
     @SerialName("roomIdOrRoomAliasId") val roomIdOrRoomAliasId: String,
-    @SerialName("server_name") val serverNames: Set<String>? = null,
+    @SerialName("via") val via: Set<String>? = null,
+    @Deprecated("use via instead", ReplaceWith("via"))
+    @SerialName("server_name") val serverNames: Set<String>? = via,
     @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<KnockRoom.Request, KnockRoom.Response> {
     @Serializable
