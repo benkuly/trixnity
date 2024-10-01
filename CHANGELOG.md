@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Don't decrypt events when searching for one via `getTimelineEvent`
 - Reaction aggregation now exposes the entire timeline event for each reaction, not just the user id
-- internal: upgrade Dockerfile (use Adoptium Temurin JDK)
+- internal: upgrade Dockerfile (use Adoptium Temurin JDK) and install binutils, fakeroot, flatpak and rpm for compose
+  multiplatform
 
 ### Deprecated
 

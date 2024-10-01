@@ -14,7 +14,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y apt-utils && \
     apt-get upgrade -y && \
-    apt-get install -y locales docker.io wget unzip libncurses6 libcurl4-openssl-dev apt-transport-https gpg
+    apt-get install -y locales docker.io wget unzip libncurses6 libcurl4-openssl-dev binutils fakeroot rpm flatpak flatpak-builder apt-transport-https gpg
 
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
