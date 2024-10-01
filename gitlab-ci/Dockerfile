@@ -7,14 +7,14 @@ ARG ANDROID_PLATFORM=35
 ARG ANDROID_BUILD_TOOLS=35.0.0
 
 ENV ANDROID_HOME=/android
-
 ARG ANDROID_SDK_MANAGER=${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
 ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && \
     apt-get install -y apt-utils && \
     apt-get upgrade -y && \
-    apt-get install -y locales docker.io wget unzip libncurses6 libcurl4-openssl-dev openjdk-11-jdk-headless openjdk-21-jdk-headless
+    apt-get install -y locales docker.io wget unzip libncurses6 libcurl4-openssl-dev apt-transport-https gpg
 
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
@@ -27,7 +27,12 @@ RUN install -d -m 0755 /etc/apt/keyrings && \
     echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | tee -a /etc/apt/sources.list.d/mozilla.list > /dev/null && \
     echo "Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n\n" | tee /etc/apt/preferences.d/mozilla > /dev/null && \
     apt-get update && \
-    apt-get -y install firefox
+    apt-get install -y firefox
+
+RUN wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor | tee /etc/apt/trusted.gpg.d/adoptium.gpg > /dev/null && \
+    echo "deb https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
+    apt-get update && \
+    apt-get install -y temurin-11-jdk temurin-21-jdk
 
 RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
     wget https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CLI_TOOLS}_latest.zip && \
