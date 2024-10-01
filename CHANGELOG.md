@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.7.3
+
+### Added
+
 - Add `via` parameter on join and knock requests (MSC4156)
 
 ### Changed
@@ -21,13 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Deprecate `server_name` query parameter on join and knock requests in favour of `via` (MSC4156)
 
-### Removed
-
 ### Fixed
 
 - Incorrect handling of reaction redactions and reactions
-
-### Security
 
 ## 4.7.2
 
