@@ -15,6 +15,14 @@ class InputStreamExtensionsTest : ShouldSpec() {
                 val byteArrayFlow = byteArrayFlowFromInputStream { data.inputStream() }
                 assertContentEquals(data, byteArrayFlow.toByteArray())
             }
+            should("consume ByteArrayFlow twice") {
+                val data = "hello".toByteArray()
+                val byteArrayFlow = byteArrayFlowFromInputStream { data.inputStream() }
+                val first = byteArrayFlow.toByteArray()
+                val second = byteArrayFlow.toByteArray()
+                assertContentEquals(data, first)
+                assertContentEquals(first, second)
+            }
             should("work with InputStreams where data is not available yet") {
                 val outputStream = PipedOutputStream()
                 val byteArrayFlow = byteArrayFlowFromInputStream { PipedInputStream(outputStream) }
