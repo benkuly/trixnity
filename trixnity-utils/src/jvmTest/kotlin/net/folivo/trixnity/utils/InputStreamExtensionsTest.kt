@@ -12,13 +12,12 @@ class InputStreamExtensionsTest : ShouldSpec() {
         context("byteArrayFlowFromInputStream") {
             should("convert ByteArrayInputStream to ByteArrayFlow") {
                 val data = "hello".toByteArray()
-                val byteArrayFlow = byteArrayFlowFromInputStream(data.inputStream())
+                val byteArrayFlow = byteArrayFlowFromInputStream { data.inputStream() }
                 assertContentEquals(data, byteArrayFlow.toByteArray())
             }
             should("work with InputStreams where data is not available yet") {
                 val outputStream = PipedOutputStream()
-                val inputStream = PipedInputStream(outputStream)
-                val byteArrayFlow = byteArrayFlowFromInputStream(inputStream)
+                val byteArrayFlow = byteArrayFlowFromInputStream { PipedInputStream(outputStream) }
 
                 val write = async(Dispatchers.IO, start = CoroutineStart.LAZY) {
                     outputStream.write("he".toByteArray())
