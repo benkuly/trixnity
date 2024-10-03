@@ -2,16 +2,29 @@ package net.folivo.trixnity.utils
 
 import io.kotest.core.spec.style.ShouldSpec
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.onEach
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import java.io.OutputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import kotlin.test.assertContentEquals
 import kotlin.time.Duration.Companion.milliseconds
 
-class InputStreamExtensionsTest : ShouldSpec() {
+class StreamExtensionsTest : ShouldSpec() {
     init {
+        context("OutputStream.write") {
+            should("write content from ByteArrayFlow to OutputStream") {
+                val data = "hello".toByteArray()
+                val byteArrayFlow = data.toByteArrayFlow()
+                val outputStream = ByteArrayOutputStream()
+                outputStream.write(byteArrayFlow)
+
+                outputStream.toByteArray() contentEquals data
+
+                outputStream.write(byteArrayFlow)
+
+                outputStream.toByteArray() contentEquals (data + data)
+            }
+        }
         context("byteArrayFlowFromInputStream") {
             should("convert ByteArrayInputStream to ByteArrayFlow") {
                 val data = "hello".toByteArray()
