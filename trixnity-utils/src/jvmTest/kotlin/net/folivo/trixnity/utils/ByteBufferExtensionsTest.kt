@@ -12,6 +12,12 @@ class ByteBufferExtensionsTest : ShouldSpec() {
                 val byteArrayFlow = ByteBuffer.wrap(data).toByteArrayFlow()
                 assertContentEquals(data, byteArrayFlow.toByteArray())
             }
+            should("be consumable multiple times") {
+                val data = "hello".toByteArray()
+                val byteArrayFlow = ByteBuffer.wrap(data).toByteArrayFlow()
+                assertContentEquals(data, byteArrayFlow.toByteArray())
+                assertContentEquals(data, byteArrayFlow.toByteArray())
+            }
         }
     }
 }
