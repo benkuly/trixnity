@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `via` parameter on join and knock requests (MSC4156)
+- Add utils for converting between Input-/OutputStream and ByteArrayFlow
+- Add extensions for creating ByteArrayFlow from ByteBuffer
 
 ### Changed
 
