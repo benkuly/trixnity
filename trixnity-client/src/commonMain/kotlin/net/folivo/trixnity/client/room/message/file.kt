@@ -14,7 +14,7 @@ suspend fun MessageBuilder.file(
     formattedBody: String? = null,
     fileName: String? = null,
     type: ContentType? = null,
-    size: Int? = null,
+    size: Long? = null,
 ) {
     val info: FileInfo?
     val url: String?

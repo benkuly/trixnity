@@ -14,8 +14,8 @@ suspend fun MessageBuilder.audio(
     formattedBody: String? = null,
     fileName: String? = null,
     type: ContentType? = null,
-    size: Int? = null,
-    duration: Int? = null
+    size: Long? = null,
+    duration: Long? = null
 ) {
     val info: AudioInfo?
     val url: String?

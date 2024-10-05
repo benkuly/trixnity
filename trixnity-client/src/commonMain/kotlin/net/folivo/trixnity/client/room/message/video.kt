@@ -14,10 +14,10 @@ suspend fun MessageBuilder.video(
     formattedBody: String? = null,
     fileName: String? = null,
     type: ContentType? = null,
-    size: Int? = null,
+    size: Long? = null,
     height: Int? = null,
     width: Int? = null,
-    duration: Int? = null
+    duration: Long? = null
 ) {
     val info: VideoInfo?
     val url: String?

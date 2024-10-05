@@ -14,7 +14,7 @@ suspend fun MessageBuilder.image(
     formattedBody: String? = null,
     fileName: String? = null,
     type: ContentType? = null,
-    size: Int? = null,
+    size: Long? = null,
     height: Int? = null,
     width: Int? = null
 ) {

@@ -1,11 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
+import androidx.room.*
 import net.folivo.trixnity.client.store.MediaCacheMapping
 import net.folivo.trixnity.client.store.repository.MediaCacheMappingRepository
 
@@ -13,7 +8,7 @@ import net.folivo.trixnity.client.store.repository.MediaCacheMappingRepository
 data class RoomMediaCacheMapping(
     @PrimaryKey val cacheUri: String,
     val mxcUri: String?,
-    val size: Int?,
+    val size: Long?,
     val contentType: String?,
 )
 
