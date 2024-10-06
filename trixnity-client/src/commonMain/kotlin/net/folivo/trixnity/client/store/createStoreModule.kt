@@ -8,7 +8,7 @@ import org.koin.dsl.module
 fun createStoreModule() = module {
     singleOf(::TransactionManagerImpl).bind<TransactionManager>()
     singleOf(::AccountStore)
-    singleOf(::ServerVersionsStore)
+    singleOf(::ServerDataStore)
     singleOf(::GlobalAccountDataStore)
     single {
         KeyStore(
@@ -38,7 +38,7 @@ fun createStoreModule() = module {
         RootStore(
             listOfNotNull(
                 getOrNull<AccountStore>(),
-                getOrNull<ServerVersionsStore>(),
+                getOrNull<ServerDataStore>(),
                 getOrNull<GlobalAccountDataStore>(),
                 getOrNull<KeyStore>(),
                 getOrNull<MediaCacheMappingStore>(),

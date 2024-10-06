@@ -52,7 +52,7 @@ interface MatrixClient {
     val displayName: StateFlow<String?>
     val avatarUrl: StateFlow<String?>
 
-    val serverVersions: StateFlow<ServerVersions?>
+    val serverData: StateFlow<ServerData?>
 
     val syncState: StateFlow<SyncState>
     val initialSyncDone: StateFlow<Boolean>
@@ -369,7 +369,7 @@ suspend fun MatrixClient.Companion.loginWith(
         di = di,
         rootStore = rootStore,
         accountStore = accountStore,
-        serverVersionsStore = di.get(),
+        serverDataStore = di.get(),
         mediaStore = di.get(),
         mediaCacheMappingStore = di.get(),
         eventHandlers = di.getAll(),
@@ -475,7 +475,7 @@ suspend fun MatrixClient.Companion.fromStore(
                 di = di,
                 rootStore = rootStore,
                 accountStore = accountStore,
-                serverVersionsStore = di.get(),
+                serverDataStore = di.get(),
                 mediaStore = di.get(),
                 mediaCacheMappingStore = di.get(),
                 eventHandlers = di.getAll(),
@@ -511,7 +511,7 @@ class MatrixClientImpl internal constructor(
     override val di: Koin,
     private val rootStore: RootStore,
     private val accountStore: AccountStore,
-    serverVersionsStore: ServerVersionsStore,
+    serverDataStore: ServerDataStore,
     private val mediaStore: MediaStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
     private val eventHandlers: List<EventHandler>,
@@ -524,7 +524,7 @@ class MatrixClientImpl internal constructor(
         .stateIn(coroutineScope, Eagerly, null)
     override val avatarUrl: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.avatarUrl }
         .stateIn(coroutineScope, Eagerly, null)
-    override val serverVersions: StateFlow<ServerVersions?> = serverVersionsStore.getServerVersionsFlow()
+    override val serverData: StateFlow<ServerData?> = serverDataStore.getServerDataFlow()
         .stateIn(coroutineScope, Eagerly, null)
 
     override val syncState = api.sync.currentSyncState

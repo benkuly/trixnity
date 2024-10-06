@@ -23,11 +23,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import net.folivo.trixnity.client.getInMemoryMediaCacheMapping
-import net.folivo.trixnity.client.getInMemoryServerVersionsStore
+import net.folivo.trixnity.client.getInMemoryServerDataStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.store.MediaCacheMapping
 import net.folivo.trixnity.client.store.MediaCacheMappingStore
-import net.folivo.trixnity.client.store.ServerVersionsStore
+import net.folivo.trixnity.client.store.ServerDataStore
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -40,7 +40,7 @@ class MediaServiceTest : ShouldSpec({
     timeout = 60_000
 
     lateinit var mediaCacheMappingStore: MediaCacheMappingStore
-    lateinit var serverVersionsStore: ServerVersionsStore
+    lateinit var serverDataStore: ServerDataStore
     lateinit var mediaStore: InMemoryMediaStore
     lateinit var scope: CoroutineScope
     val json = createMatrixEventJson()
@@ -54,11 +54,11 @@ class MediaServiceTest : ShouldSpec({
     beforeTest {
         scope = CoroutineScope(Dispatchers.Default)
         mediaCacheMappingStore = getInMemoryMediaCacheMapping(scope)
-        serverVersionsStore = getInMemoryServerVersionsStore(scope)
+        serverDataStore = getInMemoryServerDataStore(scope)
         mediaStore = InMemoryMediaStore()
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
-        cut = MediaServiceImpl(api, mediaStore, serverVersionsStore, mediaCacheMappingStore)
+        cut = MediaServiceImpl(api, mediaStore, serverDataStore, mediaCacheMappingStore)
     }
     afterTest {
         scope.cancel()
@@ -87,7 +87,7 @@ class MediaServiceTest : ShouldSpec({
                 cut.getMedia(cacheUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
             }
             should("prefer cache, but use mxcUri, when already uploaded") {
-                mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) { MediaCacheMapping(cacheUri, mxcUri) }
+                mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) { MediaCacheMapping(cacheUri, mxcUri, 4) }
                 mediaStore.addMedia(mxcUri, "test".encodeToByteArray().toByteArrayFlow())
                 cut.getMedia(cacheUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
             }
@@ -254,7 +254,7 @@ class MediaServiceTest : ShouldSpec({
             }
             mediaStore.addMedia(cacheUri, "test".encodeToByteArray().toByteArrayFlow())
             mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
-                MediaCacheMapping(cacheUri, null, null, Plain.toString())
+                MediaCacheMapping(cacheUri, null, 4, Plain.toString())
             }
 
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
@@ -262,7 +262,7 @@ class MediaServiceTest : ShouldSpec({
             mediaCacheMappingStore.getMediaCacheMapping(cacheUri) shouldBe MediaCacheMapping(
                 cacheUri,
                 mxcUri,
-                null,
+                4,
                 Plain.toString()
             )
             mediaStore.getMedia(cacheUri) shouldBe null
@@ -280,7 +280,7 @@ class MediaServiceTest : ShouldSpec({
             }
             mediaStore.addMedia(cacheUri, "test".encodeToByteArray().toByteArrayFlow())
             mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
-                MediaCacheMapping(cacheUri, null, null, Plain.toString())
+                MediaCacheMapping(cacheUri, null, 4, Plain.toString())
             }
 
             cut.uploadMedia(cacheUri, keepMediaInCache = false).getOrThrow() shouldBe mxcUri
@@ -302,13 +302,23 @@ class MediaServiceTest : ShouldSpec({
             }
             mediaStore.addMedia(cacheUri, "test".encodeToByteArray().toByteArrayFlow())
             mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
-                MediaCacheMapping(cacheUri, null, null, Plain.toString())
+                MediaCacheMapping(cacheUri, null, 4, Plain.toString())
             }
 
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
             cut.uploadMedia(cacheUri).getOrThrow() shouldBe mxcUri
 
             calledCount shouldBe 1
+        }
+        should("contain exception when file too large") {
+            val oldServerData = serverDataStore.getServerData()
+            serverDataStore.setServerData(oldServerData.copy(mediaConfig = oldServerData.mediaConfig.copy(maxUploadSize = 4)))
+            mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) {
+                MediaCacheMapping(cacheUri, null, 5, Plain.toString())
+            }
+            shouldThrow<MediaTooLargeException> {
+                cut.uploadMedia(cacheUri).getOrThrow()
+            }
         }
     }
 })

@@ -16,6 +16,6 @@ import net.folivo.trixnity.core.MatrixEndpoint
 object GetMediaConfig : MatrixEndpoint<Unit, GetMediaConfig.Response> {
     @Serializable
     data class Response(
-        @SerialName("m.upload.size") val maxUploadSize: Long
+        @SerialName("m.upload.size") val maxUploadSize: Long? = null
     )
 }

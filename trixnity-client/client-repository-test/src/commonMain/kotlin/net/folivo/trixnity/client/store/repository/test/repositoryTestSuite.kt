@@ -48,7 +48,7 @@ fun ShouldSpec.repositoryTestSuite(
     ) { di }
 
     accountRepositoryTest { di }
-    serverVersionsRepositoryTest { di }
+    serverDataRepositoryTest { di }
     crossSigningKeysRepositoryTest { di }
     deviceKeysKeysRepositoryTest { di }
     globalAccountDataRepositoryTest { di }
