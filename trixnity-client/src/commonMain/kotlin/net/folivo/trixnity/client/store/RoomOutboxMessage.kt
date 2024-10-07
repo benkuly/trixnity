@@ -75,13 +75,6 @@ data class RoomOutboxMessage<T : MessageEventContent>(
         @SerialName("encryption_algorithm_not_supported")
         data object EncryptionAlgorithmNotSupported : SendError
 
-        /**
-         * The room does not exist locally. You should wait that a created room exist locally before sending messages.
-         */
-        @Serializable
-        @SerialName("room_not_found_locally")
-        data object RoomDataNotFoundLocally : SendError
-
         @Serializable
         @SerialName("unknown")
         data class Unknown(

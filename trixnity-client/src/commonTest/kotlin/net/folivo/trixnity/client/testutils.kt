@@ -11,6 +11,8 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
+import net.folivo.trixnity.clientserverapi.model.server.GetVersions
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -48,8 +50,13 @@ suspend fun getInMemoryAccountStore(scope: CoroutineScope) = AccountStore(
     scope
 ).apply { init() }
 
-suspend fun getInMemoryServerVersionsStore(scope: CoroutineScope) = ServerVersionsStore(
-    InMemoryServerVersionsRepository().also { it.save(1, ServerVersions(listOf("v1.11"), mapOf())) },
+suspend fun getInMemoryServerDataStore(scope: CoroutineScope) = ServerDataStore(
+    InMemoryServerDataRepository().also {
+        it.save(
+            1,
+            ServerData(GetVersions.Response(listOf("v1.11"), mapOf()), GetMediaConfig.Response(10_000))
+        )
+    },
     RepositoryTransactionManagerMock(),
     scope
 ).apply { init() }

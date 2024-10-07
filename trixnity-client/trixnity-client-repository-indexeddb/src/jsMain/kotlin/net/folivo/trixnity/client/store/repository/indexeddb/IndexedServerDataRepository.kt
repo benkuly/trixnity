@@ -4,21 +4,21 @@ import com.juul.indexeddb.Database
 import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import net.folivo.trixnity.client.store.ServerVersions
-import net.folivo.trixnity.client.store.repository.ServerVersionsRepository
+import net.folivo.trixnity.client.store.ServerData
+import net.folivo.trixnity.client.store.repository.ServerDataRepository
 
-internal class IndexedServerVersionsRepository(json: Json) : ServerVersionsRepository,
-    IndexedDBFullRepository<Long, ServerVersions>(
+internal class IndexedServerDataRepository(json: Json) : ServerDataRepository,
+    IndexedDBFullRepository<Long, ServerData>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.toString()) },
         valueSerializer = serializer(),
         json = json
     ) {
     companion object {
-        const val objectStoreName = "server_versions"
+        const val objectStoreName = "server_data"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
             when {
-                oldVersion < 4 ->
+                oldVersion < 5 ->
                     createIndexedDBMinimalStoreRepository(database, objectStoreName)
             }
         }

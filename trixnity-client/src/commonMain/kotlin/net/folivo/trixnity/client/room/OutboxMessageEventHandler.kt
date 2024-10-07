@@ -17,6 +17,7 @@ import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenNotNull
 import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.media.MediaTooLargeException
 import net.folivo.trixnity.client.room.outbox.OutboxMessageMediaUploaderMappings
 import net.folivo.trixnity.client.room.outbox.findUploaderOrFallback
 import net.folivo.trixnity.client.store.RoomOutboxMessage
@@ -128,15 +129,23 @@ class OutboxMessageEventHandler(
                     outboxMessage.keepMediaInCache,
                 ).getOrThrow()
             }
-        } catch (exception: MatrixServerException) {
-            val sendError = when (exception.statusCode) {
-                HttpStatusCode.Forbidden -> SendError.NoMediaPermission
-                HttpStatusCode.PayloadTooLarge -> SendError.MediaTooLarge
-                HttpStatusCode.BadRequest -> SendError.BadRequest(exception.errorResponse)
-                HttpStatusCode.TooManyRequests -> throw exception
+        } catch (exception: Exception) {
+            val sendError = when (exception) {
+                is MatrixServerException -> when (exception.statusCode) {
+                    HttpStatusCode.Forbidden -> SendError.NoMediaPermission
+                    HttpStatusCode.PayloadTooLarge -> SendError.MediaTooLarge
+                    HttpStatusCode.BadRequest -> SendError.BadRequest(exception.errorResponse)
+                    HttpStatusCode.TooManyRequests -> throw exception
+                    else -> {
+                        log.error(exception) { "could not upload media" }
+                        SendError.Unknown(exception.errorResponse)
+                    }
+                }
+
+                is MediaTooLargeException -> SendError.MediaTooLarge
                 else -> {
                     log.error(exception) { "could not upload media" }
-                    SendError.Unknown(exception.errorResponse)
+                    throw exception
                 }
             }
             roomOutboxMessageStore.update(outboxMessage.transactionId) {

@@ -7,8 +7,8 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 fun createServerModule() = module {
-    singleOf(::ServerVersionsService) {
+    singleOf(::ServerDataService) {
         bind<EventHandler>()
-        named<ServerVersionsService>()
+        named<ServerDataService>()
     }
 }

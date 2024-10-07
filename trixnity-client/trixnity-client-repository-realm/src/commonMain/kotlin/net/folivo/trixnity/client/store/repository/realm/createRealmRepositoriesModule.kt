@@ -21,7 +21,7 @@ fun createRealmRepositoriesModule(
     val realmConfiguration = RealmConfiguration.Builder(
         schema = setOf(
             RealmAccount::class,
-            RealmServerVersions::class,
+            RealmServerData::class,
             RealmCrossSigningKeys::class,
             RealmDeviceKeys::class,
             RealmGlobalAccountData::class,
@@ -62,7 +62,7 @@ fun createRealmRepositoriesModule(
         }
         singleOf(::RealmRepositoryTransactionManager) { bind<RepositoryTransactionManager>() }
         singleOf(::RealmAccountRepository) { bind<AccountRepository>() }
-        singleOf(::RealmServerVersionsRepository) { bind<ServerVersionsRepository>() }
+        singleOf(::RealmServerDataRepository) { bind<ServerDataRepository>() }
         singleOf(::RealmOutdatedKeysRepository) { bind<OutdatedKeysRepository>() }
         singleOf(::RealmDeviceKeysRepository) { bind<DeviceKeysRepository>() }
         singleOf(::RealmCrossSigningKeysRepository) { bind<CrossSigningKeysRepository>() }

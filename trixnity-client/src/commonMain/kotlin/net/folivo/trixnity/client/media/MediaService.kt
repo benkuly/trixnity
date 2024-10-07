@@ -9,7 +9,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import net.folivo.trixnity.client.store.MediaCacheMapping
 import net.folivo.trixnity.client.store.MediaCacheMappingStore
-import net.folivo.trixnity.client.store.ServerVersionsStore
+import net.folivo.trixnity.client.store.ServerDataStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MediaApiClient
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
@@ -69,7 +69,7 @@ interface MediaService {
 class MediaServiceImpl(
     private val api: MatrixClientServerApiClient,
     private val mediaStore: MediaStore,
-    private val serverVersionsStore: ServerVersionsStore,
+    private val serverDataStore: ServerDataStore,
     private val mediaCacheMappingStore: MediaCacheMappingStore,
 ) : MediaService {
     companion object {
@@ -94,7 +94,7 @@ class MediaServiceImpl(
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> =
-        if (serverVersionsStore.getServerVersions().versions.contains(MATRIX_SPEC_1_11)) {
+        if (serverDataStore.getServerData().versions.versions.contains(MATRIX_SPEC_1_11)) {
             download(mxcUri, progress = progress, downloadHandler = downloadHandler)
         } else {
             downloadLegacy(mxcUri, progress = progress, downloadHandler = downloadHandler)
@@ -177,7 +177,7 @@ class MediaServiceImpl(
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> =
-        if (serverVersionsStore.getServerVersions().versions.contains(MATRIX_SPEC_1_11)) {
+        if (serverDataStore.getServerData().versions.versions.contains(MATRIX_SPEC_1_11)) {
             downloadThumbnail(mxcUri, width, height, method, progress = progress, downloadHandler = downloadHandler)
         } else {
             downloadThumbnailLegacy(
@@ -215,7 +215,7 @@ class MediaServiceImpl(
             mediaStore.addMedia(cacheUri, content.onEach { fileSize += it.size })
             mediaCacheMappingStore.saveMediaCacheMapping(
                 cacheUri,
-                MediaCacheMapping(cacheUri, size = fileSize, contentType = contentType.toString())
+                MediaCacheMapping(cacheUri, size = fileSize, contentType = contentType?.toString())
             )
         }
     }
@@ -292,6 +292,8 @@ class MediaServiceImpl(
 
         val uploadMediaCache = requireNotNull(mediaCacheMappingStore.getMediaCacheMapping(cacheUri))
         val cachedMxcUri = uploadMediaCache.mxcUri
+        if (uploadMediaCache.size > (serverDataStore.getServerData().mediaConfig.maxUploadSize ?: Long.MAX_VALUE))
+            throw MediaTooLargeException
 
         return if (cachedMxcUri == null) {
             val content =
@@ -300,8 +302,15 @@ class MediaServiceImpl(
             api.media.upload(
                 Media(
                     content = content.toByteReadChannel(),
-                    contentLength = uploadMediaCache.size?.toLong(),
-                    contentType = uploadMediaCache.contentType?.let { ContentType.parse(it) }
+                    contentLength = uploadMediaCache.size,
+                    contentType = uploadMediaCache.contentType
+                        ?.let {
+                            try {
+                                ContentType.parse(it)
+                            } catch (exception: Exception) {
+                                null
+                            }
+                        }
                         ?: ContentType.Application.OctetStream,
                     null
                 ),

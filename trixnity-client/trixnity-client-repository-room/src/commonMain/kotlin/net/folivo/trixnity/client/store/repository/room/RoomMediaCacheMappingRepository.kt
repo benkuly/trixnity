@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.repository.MediaCacheMappingRepository
 data class RoomMediaCacheMapping(
     @PrimaryKey val cacheUri: String,
     val mxcUri: String?,
-    val size: Long?,
+    val size: Long,
     val contentType: String?,
 )
 

@@ -8,27 +8,27 @@ import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.client.store.ServerVersions
-import net.folivo.trixnity.client.store.repository.ServerVersionsRepository
+import net.folivo.trixnity.client.store.ServerData
+import net.folivo.trixnity.client.store.repository.ServerDataRepository
 
-internal class RealmServerVersions : RealmObject {
+internal class RealmServerData : RealmObject {
     @PrimaryKey
     var id: Long = 0
     var value: String = ""
 }
 
-internal class RealmServerVersionsRepository(
+internal class RealmServerDataRepository(
     private val json: Json,
-) : ServerVersionsRepository {
-    override suspend fun get(key: Long): ServerVersions? = withRealmRead {
+) : ServerDataRepository {
+    override suspend fun get(key: Long): ServerData? = withRealmRead {
         findByKey(key).find()?.copyFromRealm()?.let {
             json.decodeFromString(it.value)
         }
     }
 
-    override suspend fun save(key: Long, value: ServerVersions): Unit = withRealmWrite {
+    override suspend fun save(key: Long, value: ServerData): Unit = withRealmWrite {
         copyToRealm(
-            RealmServerVersions().apply {
+            RealmServerData().apply {
                 id = key
                 this.value = json.encodeToString(value)
             },
@@ -42,9 +42,9 @@ internal class RealmServerVersionsRepository(
     }
 
     override suspend fun deleteAll() = withRealmWrite {
-        val existing = query<RealmServerVersions>().find()
+        val existing = query<RealmServerData>().find()
         delete(existing)
     }
 
-    private fun TypedRealm.findByKey(key: Long) = query<RealmServerVersions>("id == $0", key).first()
+    private fun TypedRealm.findByKey(key: Long) = query<RealmServerData>("id == $0", key).first()
 }

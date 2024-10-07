@@ -9,7 +9,7 @@ internal object ExposedMediaCacheMapping : Table("media_cache_mapping") {
     val cacheUri = varchar("cache_uri", length = 768)
     override val primaryKey = PrimaryKey(cacheUri)
     val mxcUri = text("mxc_uri").nullable()
-    val size = long("size").nullable()
+    val size = long("size")
     val contentType = text("content_type").nullable()
 }
 

@@ -23,7 +23,7 @@ fun createRoomRepositoriesModule(
 
     /* Bind the Trixnity required interfaces */
     singleOf(::RoomAccountRepository) { bind<AccountRepository>() }
-    singleOf(::RoomServerVersionsRepository) { bind<ServerVersionsRepository>() }
+    singleOf(::RoomServerDataRepository) { bind<ServerDataRepository>() }
     singleOf(::RoomCrossSigningKeysRepository) { bind<CrossSigningKeysRepository>() }
     singleOf(::RoomDeviceKeysRepository) { bind<DeviceKeysRepository>() }
     singleOf(::RoomGlobalAccountDataRepository) { bind<GlobalAccountDataRepository>() }
