@@ -302,8 +302,15 @@ class MediaServiceImpl(
             api.media.upload(
                 Media(
                     content = content.toByteReadChannel(),
-                    contentLength = uploadMediaCache.size?.toLong(),
-                    contentType = uploadMediaCache.contentType?.let { ContentType.parse(it) }
+                    contentLength = uploadMediaCache.size,
+                    contentType = uploadMediaCache.contentType
+                        ?.let {
+                            try {
+                                ContentType.parse(it)
+                            } catch (exception: Exception) {
+                                null
+                            }
+                        }
                         ?: ContentType.Application.OctetStream,
                     null
                 ),

@@ -142,13 +142,12 @@ class OutboxMessageEventHandler(
                     }
                 }
 
-                MediaTooLargeException -> SendError.MediaTooLarge
+                is MediaTooLargeException -> SendError.MediaTooLarge
                 else -> {
                     log.error(exception) { "could not upload media" }
-                    SendError.Unknown(null, exception.message ?: exception::class.simpleName ?: "unknown")
+                    throw exception
                 }
             }
-
             roomOutboxMessageStore.update(outboxMessage.transactionId) {
                 it?.copy(sendError = sendError)
             }
