@@ -33,7 +33,7 @@ internal class ExposedKeyChainLinkRepository : KeyChainLinkRepository {
 
     override suspend fun getBySigningKey(signingUserId: UserId, signingKey: Key.Ed25519Key): Set<KeyChainLink> =
         withExposedRead {
-            ExposedKeyChainLink.select {
+            ExposedKeyChainLink.selectAll().where {
                 ExposedKeyChainLink.signingUserId.eq(signingUserId.full) and
                         ExposedKeyChainLink.signingKeyId.eq(signingKey.keyId ?: "") and
                         ExposedKeyChainLink.signingKeyValue.eq(signingKey.value)

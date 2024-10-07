@@ -18,15 +18,17 @@ class RoomOutboxMessageSerializationTest : ShouldSpec({
         transactionId = "t1",
         roomId = RoomId("room", "server"),
         content = RoomMessageEventContent.TextBased.Text("dino"),
+        createdAt = Instant.fromEpochMilliseconds(12),
         sentAt = Instant.fromEpochMilliseconds(24),
         sendError = RoomOutboxMessage.SendError.BadRequest(ErrorResponse.Forbidden("")),
         keepMediaInCache = true,
     )
     val roomOutboxMessageJson = """
         {
-            "transactionId":"t1",
             "roomId":"!room:server",
+            "transactionId":"t1",
             "content":{"body":"dino","msgtype":"m.text"},
+            "createdAt":"1970-01-01T00:00:00.012Z",
             "sentAt":"1970-01-01T00:00:00.024Z",
             "sendError":{"type":"bad_request","errorResponse":{"errcode":"M_FORBIDDEN","error":""}},
             "keepMediaInCache":true

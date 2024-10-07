@@ -24,6 +24,7 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessage.SendError
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.client.store.TransactionManager
+import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -59,23 +60,23 @@ class OutboxMessageEventHandler(
             val deleteBeforeTimestamp = clock.now() - config.deleteSentOutboxMessageDelay
             if (it.sentAt != null && it.sentAt < deleteBeforeTimestamp) {
                 log.debug { "remove outbox message with transaction ${it.transactionId} (sent ${it.sentAt}), because it should be already synced" }
-                it.transactionId
+                it.roomId to it.transactionId
             } else null
         }
         if (removeOutboxMessages.isNotEmpty())
             tm.transaction {
-                removeOutboxMessages.forEach { roomOutboxMessageStore.update(it) { null } }
+                removeOutboxMessages.forEach { roomOutboxMessageStore.update(it.first, it.second) { null } }
             }
     }
 
-    internal suspend fun processOutboxMessages(outboxMessages: Flow<Map<String, Flow<RoomOutboxMessage<*>?>>>) {
+    internal suspend fun processOutboxMessages(outboxMessages: Flow<Map<RoomOutboxMessageRepositoryKey, Flow<RoomOutboxMessage<*>?>>>) {
         currentSyncState.retryLoopWhenSyncIs(
             SyncState.RUNNING,
             onError = { log.warn(it) { "failed sending outbox messages" } },
             onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
         ) {
             log.debug { "start sending outbox messages" }
-            val alreadyProcessedOutboxMessages = mutableSetOf<String>()
+            val alreadyProcessedOutboxMessages = mutableSetOf<RoomOutboxMessageRepositoryKey>()
             outboxMessages
                 .map { outbox ->
                     // we need to filterKeys twice, because input and output of flattenNotNull are not in sync, and we do not want to flatten unnecessary
@@ -89,7 +90,9 @@ class OutboxMessageEventHandler(
                         .also { alreadyProcessedOutboxMessages.addAll(outbox.keys) }
                 }
                 .collect { outboxMessages ->
-                    val outboxMessagesGroupedByRoom = outboxMessages.groupBy { it.roomId }
+                    val outboxMessagesGroupedByRoom = outboxMessages
+                        .groupBy { it.roomId }
+                        .mapValues { m -> m.value.sortedBy { it.createdAt } }
                     coroutineScope {
                         outboxMessagesGroupedByRoom.forEach { (roomId, outboxMessagesInRoom) ->
                             launch {
@@ -112,7 +115,7 @@ class OutboxMessageEventHandler(
 
 
     private suspend fun checkWhetherCancelled(outboxMessage: RoomOutboxMessage<*>) {
-        roomOutboxMessageStore.getAsFlow(outboxMessage.transactionId).first { it == null }
+        roomOutboxMessageStore.getAsFlow(outboxMessage.roomId, outboxMessage.transactionId).first { it == null }
         log.debug { "cancel sending of ${outboxMessage.transactionId}" }
     }
 
@@ -148,7 +151,7 @@ class OutboxMessageEventHandler(
                     throw exception
                 }
             }
-            roomOutboxMessageStore.update(outboxMessage.transactionId) {
+            roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                 it?.copy(sendError = sendError)
             }
             return
@@ -158,7 +161,7 @@ class OutboxMessageEventHandler(
         val content = when {
             contentResult == null -> {
                 log.warn { "cannot send message, because encryption algorithm not supported" }
-                roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                     it?.copy(sendError = SendError.EncryptionAlgorithmNotSupported)
                 }
                 return
@@ -166,7 +169,7 @@ class OutboxMessageEventHandler(
 
             contentResult.isFailure -> {
                 log.warn(contentResult.exceptionOrNull()) { "cannot send message" }
-                roomOutboxMessageStore.update(outboxMessage.transactionId) {
+                roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                     it?.copy(sendError = SendError.EncryptionError(contentResult.exceptionOrNull()?.message))
                 }
                 return
@@ -185,12 +188,12 @@ class OutboxMessageEventHandler(
                 HttpStatusCode.TooManyRequests -> throw exception
                 else -> SendError.Unknown(exception.errorResponse)
             }
-            roomOutboxMessageStore.update(outboxMessage.transactionId) {
+            roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                 it?.copy(sendError = sendError)
             }
             return
         }
-        roomOutboxMessageStore.update(outboxMessage.transactionId) {
+        roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
             it?.copy(sentAt = clock.now(), eventId = eventId)
         }
         if (config.setOwnMessagesAsFullyRead) {

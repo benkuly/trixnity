@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
@@ -17,7 +16,7 @@ internal object ExposedCrossSigningKeys : Table("cross_signing_keys") {
 
 internal class ExposedCrossSigningKeysRepository(private val json: Json) : CrossSigningKeysRepository {
     override suspend fun get(key: UserId): Set<StoredCrossSigningKeys>? = withExposedRead {
-        ExposedCrossSigningKeys.select { ExposedCrossSigningKeys.userId eq key.full }.firstOrNull()?.let {
+        ExposedCrossSigningKeys.selectAll().where { ExposedCrossSigningKeys.userId eq key.full }.firstOrNull()?.let {
             it[ExposedCrossSigningKeys.value].let { deviceKeys ->
                 json.decodeFromString<Set<StoredCrossSigningKeys>>(deviceKeys)
             }

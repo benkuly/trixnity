@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredSecretKeyRequest
@@ -21,7 +20,7 @@ class ExposedSecretKeyRequestRepository(private val json: Json) : SecretKeyReque
     }
 
     override suspend fun get(key: String): StoredSecretKeyRequest? = withExposedRead {
-        ExposedSecretKeyRequest.select { ExposedSecretKeyRequest.id eq key }.firstOrNull()?.let {
+        ExposedSecretKeyRequest.selectAll().where { ExposedSecretKeyRequest.id eq key }.firstOrNull()?.let {
             json.decodeFromString(it[ExposedSecretKeyRequest.value])
         }
     }

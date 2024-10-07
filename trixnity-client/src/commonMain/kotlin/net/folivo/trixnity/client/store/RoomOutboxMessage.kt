@@ -16,9 +16,10 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 
 @Serializable
 data class RoomOutboxMessage<T : MessageEventContent>(
-    val transactionId: String,
     val roomId: RoomId,
+    val transactionId: String,
     val content: T,
+    val createdAt: Instant,
     val sentAt: Instant? = null,
     val eventId: EventId? = null,
     val sendError: SendError? = null,

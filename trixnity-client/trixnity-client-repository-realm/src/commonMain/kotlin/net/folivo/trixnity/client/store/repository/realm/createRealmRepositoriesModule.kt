@@ -37,7 +37,7 @@ fun createRealmRepositoriesModule(
             RealmRoom::class,
             RealmRoomAccountData::class,
             RealmRoomKeyRequest::class,
-            RealmRoomOutboxMessage::class,
+            RealmRoomOutboxMessage2::class,
             RealmRoomState::class,
             RealmRoomUser::class,
             RealmRoomUserReceipts::class,

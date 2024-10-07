@@ -85,7 +85,7 @@ internal val allStoreNames = arrayOf(
 )
 
 internal suspend fun createDatabase(databaseName: String) =
-    openDatabase(databaseName, 5) { database, oldVersion, _ ->
+    openDatabase(databaseName, 6) { database, oldVersion, _ ->
         IndexedDBAccountRepository.apply { migrate(database, oldVersion) }
         IndexedServerDataRepository.apply { migrate(database, oldVersion) }
         IndexedDBCrossSigningKeysRepository.apply { migrate(database, oldVersion) }

@@ -18,7 +18,7 @@ internal object ExposedRoomUserReceipts : Table("room_user_receipts") {
 
 internal class ExposedRoomUserReceiptsRepository(private val json: Json) : RoomUserReceiptsRepository {
     override suspend fun get(firstKey: RoomId, secondKey: UserId): RoomUserReceipts? = withExposedRead {
-        ExposedRoomUserReceipts.select {
+        ExposedRoomUserReceipts.selectAll().where {
             ExposedRoomUserReceipts.roomId.eq(firstKey.full) and ExposedRoomUserReceipts.userId.eq(
                 secondKey.full
             )

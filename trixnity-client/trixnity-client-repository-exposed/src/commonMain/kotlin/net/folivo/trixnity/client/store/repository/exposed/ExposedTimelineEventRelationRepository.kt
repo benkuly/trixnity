@@ -20,7 +20,7 @@ internal object ExposedTimelineEventRelation : Table("room_timeline_event_relati
 internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRepository {
     override suspend fun get(firstKey: TimelineEventRelationKey): Map<EventId, TimelineEventRelation> =
         withExposedRead {
-            ExposedTimelineEventRelation.select {
+            ExposedTimelineEventRelation.selectAll().where {
                 ExposedTimelineEventRelation.relatedEventId.eq(firstKey.relatedEventId.full) and
                         ExposedTimelineEventRelation.roomId.eq(firstKey.roomId.full) and
                         ExposedTimelineEventRelation.relationType.eq(firstKey.relationType.name)
@@ -43,7 +43,7 @@ internal class ExposedTimelineEventRelationRepository : TimelineEventRelationRep
         firstKey: TimelineEventRelationKey,
         secondKey: EventId
     ): TimelineEventRelation? = withExposedRead {
-        ExposedTimelineEventRelation.select {
+        ExposedTimelineEventRelation.selectAll().where {
             ExposedTimelineEventRelation.relatedEventId.eq(firstKey.relatedEventId.full) and
                     ExposedTimelineEventRelation.roomId.eq(firstKey.roomId.full) and
                     ExposedTimelineEventRelation.relationType.eq(firstKey.relationType.name) and

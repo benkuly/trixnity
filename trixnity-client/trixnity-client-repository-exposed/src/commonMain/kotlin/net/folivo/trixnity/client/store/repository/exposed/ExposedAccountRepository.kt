@@ -7,7 +7,7 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.upsert
 
 internal object ExposedAccount : LongIdTable("account") {
@@ -25,7 +25,7 @@ internal object ExposedAccount : LongIdTable("account") {
 
 internal class ExposedAccountRepository : AccountRepository {
     override suspend fun get(key: Long): Account? = withExposedRead {
-        ExposedAccount.select { ExposedAccount.id eq key }.firstOrNull()?.let {
+        ExposedAccount.selectAll().where { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
                 olmPickleKey = it[ExposedAccount.olmPickleKey],
                 baseUrl = it[ExposedAccount.baseUrl],
@@ -45,7 +45,7 @@ internal class ExposedAccountRepository : AccountRepository {
         ExposedAccount.upsert {
             it[id] = key
             it[olmPickleKey] = value.olmPickleKey
-            it[baseUrl] = value.baseUrl?.toString()
+            it[baseUrl] = value.baseUrl
             it[userId] = value.userId?.full
             it[deviceId] = value.deviceId
             it[accessToken] = value.accessToken
@@ -53,7 +53,7 @@ internal class ExposedAccountRepository : AccountRepository {
             it[filterId] = value.filterId
             it[backgroundFilterId] = value.backgroundFilterId
             it[displayName] = value.displayName
-            it[avatarUrl] = value.avatarUrl?.toString()
+            it[avatarUrl] = value.avatarUrl
         }
     }
 

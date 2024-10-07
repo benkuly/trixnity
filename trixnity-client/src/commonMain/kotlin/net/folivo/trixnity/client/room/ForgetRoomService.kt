@@ -15,6 +15,7 @@ class ForgetRoomServiceImpl(
     private val roomStateStore: RoomStateStore,
     private val roomAccountDataStore: RoomAccountDataStore,
     private val roomTimelineStore: RoomTimelineStore,
+    private val roomOutboxMessageStore: RoomOutboxMessageStore,
 ) : ForgetRoomService {
     override suspend fun invoke(roomId: RoomId) {
         if (roomStore.get(roomId).first()?.membership == Membership.LEAVE) {
@@ -23,6 +24,7 @@ class ForgetRoomServiceImpl(
             roomStateStore.deleteByRoomId(roomId)
             roomAccountDataStore.deleteByRoomId(roomId)
             roomUserStore.deleteByRoomId(roomId)
+            roomOutboxMessageStore.deleteByRoomId(roomId)
         }
     }
 

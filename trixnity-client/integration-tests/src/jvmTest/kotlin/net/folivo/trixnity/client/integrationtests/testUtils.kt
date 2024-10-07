@@ -138,4 +138,4 @@ suspend fun startClientFromStore(
 }
 
 suspend fun RoomService.waitForOutboxSent() =
-    getOutbox().flattenValues().first { outbox -> outbox.all { it.sentAt != null } }
+    getOutbox().flatten().first { outbox -> outbox.all { it.sentAt != null } }

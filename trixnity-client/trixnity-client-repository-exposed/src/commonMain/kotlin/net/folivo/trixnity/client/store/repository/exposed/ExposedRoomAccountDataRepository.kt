@@ -24,7 +24,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
 
     override suspend fun get(firstKey: RoomAccountDataRepositoryKey): Map<String, RoomAccountDataEvent<*>> =
         withExposedRead {
-            ExposedRoomAccountData.select {
+            ExposedRoomAccountData.selectAll().where {
                 ExposedRoomAccountData.roomId.eq(firstKey.roomId.full) and
                         ExposedRoomAccountData.type.eq(firstKey.type)
             }.associate {

@@ -9,6 +9,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
@@ -501,11 +502,12 @@ class TimelineEventHandlerTest : ShouldSpec({
         context("outbox messages") {
             should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
                 roomStore.update(room) { Room(roomId = room, lastEventId = event1.id) }
-                roomOutboxMessageStore.update("transactionId1") {
+                roomOutboxMessageStore.update(room, "transactionId1") {
                     RoomOutboxMessage(
-                        "transactionId1",
                         room,
-                        RoomMessageEventContent.TextBased.Text("Hello!")
+                        "transactionId1",
+                        RoomMessageEventContent.TextBased.Text("Hello!"),
+                        Clock.System.now()
                     )
                 }
                 val eventId1 = EventId("\$event1")

@@ -196,6 +196,7 @@ fun createTrixnityBotModules() = listOf(
                 typingEventHandler = object : TypingEventHandler {
                     override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> = MutableStateFlow(mapOf())
                 },
+                clock = get(),
                 currentSyncState = get(),
                 scope = get(),
                 config = get(),

@@ -15,7 +15,7 @@ internal object ExposedMediaCacheMapping : Table("media_cache_mapping") {
 
 internal class ExposedMediaCacheMappingRepository : MediaCacheMappingRepository {
     override suspend fun get(key: String): MediaCacheMapping? = withExposedRead {
-        ExposedMediaCacheMapping.select { ExposedMediaCacheMapping.cacheUri eq key }.firstOrNull()?.let {
+        ExposedMediaCacheMapping.selectAll().where { ExposedMediaCacheMapping.cacheUri eq key }.firstOrNull()?.let {
             MediaCacheMapping(
                 key,
                 it[ExposedMediaCacheMapping.mxcUri],

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
@@ -17,7 +16,7 @@ internal object ExposedOlmSession : Table("olm_session") {
 
 internal class ExposedOlmSessionRepository(private val json: Json) : OlmSessionRepository {
     override suspend fun get(key: Key.Curve25519Key): Set<StoredOlmSession>? = withExposedRead {
-        ExposedOlmSession.select { ExposedOlmSession.senderKey eq key.value }.firstOrNull()
+        ExposedOlmSession.selectAll().where { ExposedOlmSession.senderKey eq key.value }.firstOrNull()
             ?.let { json.decodeFromString(it[ExposedOlmSession.value]) }
     }
 

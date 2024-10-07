@@ -15,13 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- support files larger than 2.1GB
+- Support files larger than 2.1GB
+- Outbox API returns a sorted list
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- Delete outbox on room forget
 
 ### Security
 

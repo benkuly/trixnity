@@ -19,7 +19,7 @@ internal object ExposedInboundMegolmMessageIndex : Table("inbound_megolm_message
 internal class ExposedInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRepository {
     override suspend fun get(key: InboundMegolmMessageIndexRepositoryKey): StoredInboundMegolmMessageIndex? =
         withExposedRead {
-            ExposedInboundMegolmMessageIndex.select {
+            ExposedInboundMegolmMessageIndex.selectAll().where {
                 ExposedInboundMegolmMessageIndex.sessionId.eq(key.sessionId) and
                         ExposedInboundMegolmMessageIndex.roomId.eq(key.roomId.full) and
                         ExposedInboundMegolmMessageIndex.messageIndex.eq(key.messageIndex)

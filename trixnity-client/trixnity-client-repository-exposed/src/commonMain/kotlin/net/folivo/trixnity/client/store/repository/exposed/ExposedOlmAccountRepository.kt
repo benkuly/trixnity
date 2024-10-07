@@ -5,8 +5,8 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.upsert
-import org.jetbrains.exposed.sql.select
 
 internal object ExposedOlmAccount : LongIdTable("olm_account") {
     val pickled = text("pickled")
@@ -14,7 +14,7 @@ internal object ExposedOlmAccount : LongIdTable("olm_account") {
 
 internal class ExposedOlmAccountRepository : OlmAccountRepository {
     override suspend fun get(key: Long): String? = withExposedRead {
-        ExposedOlmAccount.select { ExposedOlmAccount.id eq key }.firstOrNull()
+        ExposedOlmAccount.selectAll().where { ExposedOlmAccount.id eq key }.firstOrNull()
             ?.let { it[ExposedOlmAccount.pickled] }
     }
 

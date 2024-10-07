@@ -309,10 +309,10 @@ class VerificationServiceImpl(
             val transactionId = roomService.sendMessage(roomId) {
                 content(request)
             }
-            val eventId = roomService.getOutbox()
-                .flatMapLatest { it[transactionId] ?: flowOf(null) }
+            val eventId = roomService.getOutbox(roomId, transactionId)
                 .mapNotNull { it?.eventId }
                 .first()
+            
             ActiveUserVerificationImpl(
                 request = request,
                 requestIsFromOurOwn = true,

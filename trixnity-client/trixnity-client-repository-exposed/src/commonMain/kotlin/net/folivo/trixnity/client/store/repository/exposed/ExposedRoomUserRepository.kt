@@ -18,7 +18,8 @@ internal object ExposedRoomUser : Table("room_user") {
 
 internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepository {
     override suspend fun get(firstKey: RoomId, secondKey: UserId): RoomUser? = withExposedRead {
-        ExposedRoomUser.select { ExposedRoomUser.roomId.eq(firstKey.full) and ExposedRoomUser.userId.eq(secondKey.full) }
+        ExposedRoomUser.selectAll()
+            .where { ExposedRoomUser.roomId.eq(firstKey.full) and ExposedRoomUser.userId.eq(secondKey.full) }
             .firstOrNull()?.let {
                 json.decodeFromString(it[ExposedRoomUser.value])
             }
@@ -42,7 +43,7 @@ internal class ExposedRoomUserRepository(private val json: Json) : RoomUserRepos
     }
 
     override suspend fun get(firstKey: RoomId): Map<UserId, RoomUser> = withExposedRead {
-        ExposedRoomUser.select { ExposedRoomUser.roomId eq firstKey.full }
+        ExposedRoomUser.selectAll().where { ExposedRoomUser.roomId eq firstKey.full }
             .map { json.decodeFromString<RoomUser>(it[ExposedRoomUser.value]) }
             .associateBy { it.userId }
     }

@@ -6,8 +6,8 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.upsert
-import org.jetbrains.exposed.sql.select
 
 internal object ExposedOlmForgetFallbackKeyAfter : LongIdTable("olm_forget_fallback_key_after") {
     val value = long("value")
@@ -15,7 +15,7 @@ internal object ExposedOlmForgetFallbackKeyAfter : LongIdTable("olm_forget_fallb
 
 internal class ExposedOlmForgetFallbackKeyAfterRepository : OlmForgetFallbackKeyAfterRepository {
     override suspend fun get(key: Long): Instant? = withExposedRead {
-        ExposedOlmForgetFallbackKeyAfter.select { ExposedOlmForgetFallbackKeyAfter.id eq key }.firstOrNull()
+        ExposedOlmForgetFallbackKeyAfter.selectAll().where { ExposedOlmForgetFallbackKeyAfter.id eq key }.firstOrNull()
             ?.let { it[ExposedOlmForgetFallbackKeyAfter.value] }
             ?.let { Instant.fromEpochMilliseconds(it) }
     }
