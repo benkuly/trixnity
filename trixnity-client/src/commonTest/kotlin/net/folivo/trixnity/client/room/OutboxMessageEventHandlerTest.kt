@@ -25,6 +25,7 @@ import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderM
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.client.store.RoomStore
+import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
@@ -89,13 +90,14 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
     context(OutboxMessageEventHandler::removeOldOutboxMessages.name) {
         should("remove old outbox messages") {
             val content = RoomMessageEventContent.TextBased.Text("")
-            val outbox1 = RoomOutboxMessage("transaction1", room, content)
-            val outbox2 = RoomOutboxMessage("transaction2", room, content, Clock.System.now() - 11.seconds)
-            val outbox3 = RoomOutboxMessage("transaction3", room, content, Clock.System.now())
+            val outbox1 = RoomOutboxMessage(room, "transaction1", content, Clock.System.now())
+            val outbox2 =
+                RoomOutboxMessage(room, "transaction2", content, Clock.System.now(), Clock.System.now() - 11.seconds)
+            val outbox3 = RoomOutboxMessage(room, "transaction3", content, Clock.System.now(), Clock.System.now())
 
-            roomOutboxMessageStore.update(outbox1.transactionId) { outbox1 }
-            roomOutboxMessageStore.update(outbox2.transactionId) { outbox2 }
-            roomOutboxMessageStore.update(outbox3.transactionId) { outbox3 }
+            roomOutboxMessageStore.update(outbox1.roomId, outbox1.transactionId) { outbox1 }
+            roomOutboxMessageStore.update(outbox2.roomId, outbox2.transactionId) { outbox2 }
+            roomOutboxMessageStore.update(outbox3.roomId, outbox3.transactionId) { outbox3 }
 
             eventually(3.seconds) {// we need this, because the cache may not be fast enough
                 cut.removeOldOutboxMessages()
@@ -109,14 +111,20 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val cacheUrl = "cache://unicorn"
             val message1 =
                 RoomOutboxMessage(
-                    "transaction1",
                     room,
-                    RoomMessageEventContent.FileBased.Image("hi.png", url = cacheUrl)
+                    "transaction1",
+                    RoomMessageEventContent.FileBased.Image("hi.png", url = cacheUrl),
+                    Clock.System.now(),
                 )
             val message2 =
-                RoomOutboxMessage("transaction2", room, RoomMessageEventContent.TextBased.Text("hi"))
-            roomOutboxMessageStore.update(message1.transactionId) { message1 }
-            roomOutboxMessageStore.update(message2.transactionId) { message2 }
+                RoomOutboxMessage(
+                    room,
+                    "transaction2",
+                    RoomMessageEventContent.TextBased.Text("hi"),
+                    Clock.System.now()
+                )
+            roomOutboxMessageStore.update(message1.roomId, message1.transactionId) { message1 }
+            roomOutboxMessageStore.update(message2.roomId, message2.transactionId) { message2 }
             mediaServiceMock.returnUploadMedia = Result.success(mxcUrl)
             var sendMessageEventCalled = false
             apiConfig.endpoints {
@@ -155,8 +163,8 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         should("encrypt events in encrypted rooms") {
             currentSyncState.value = SyncState.RUNNING
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
-            roomOutboxMessageStore.update(message.transactionId) { message }
+                RoomOutboxMessage(room, "transaction", RoomMessageEventContent.TextBased.Text("hi"), Clock.System.now())
+            roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
             val megolmEventContent =
                 MegolmEncryptedMessageEventContent(
                     "cipher",
@@ -189,12 +197,13 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         should("not send messages multiple times") {
             val message =
                 RoomOutboxMessage(
-                    "transaction1",
                     room,
-                    RoomMessageEventContent.TextBased.Text("hi")
+                    "transaction1",
+                    RoomMessageEventContent.TextBased.Text("hi"),
+                    Clock.System.now(),
                 )
             val sendMessageEventCalled = MutableStateFlow(0)
-            roomOutboxMessageStore.update(message.transactionId) { message }
+            roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
             apiConfig.endpoints {
                 matrixJsonEndpoint(
                     SendMessageEvent(room, "m.room.message", "transaction1"),
@@ -208,8 +217,8 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val job = launch(Dispatchers.Default) {
                 cut.processOutboxMessages(
                     flowOf(
-                        mapOf(message.transactionId to flowOf(message)),
-                        mapOf(message.transactionId to flowOf(message)),
+                        mapOf(RoomOutboxMessageRepositoryKey(message.roomId, message.transactionId) to flowOf(message)),
+                        mapOf(RoomOutboxMessageRepositoryKey(message.roomId, message.transactionId) to flowOf(message)),
                     )
                 )
             }
@@ -227,8 +236,8 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         }
         should("retry on sending error") {
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
-            roomOutboxMessageStore.update(message.transactionId) { message }
+                RoomOutboxMessage(room, "transaction", RoomMessageEventContent.TextBased.Text("hi"), Clock.System.now())
+            roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
             var call = 0
             apiConfig.endpoints {
                 matrixJsonEndpoint(
@@ -255,8 +264,8 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         }
         should("not retry on MatrixServerException") {
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
-            roomOutboxMessageStore.update(message.transactionId) { message }
+                RoomOutboxMessage(room, "transaction", RoomMessageEventContent.TextBased.Text("hi"), Clock.System.now())
+            roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
             var call = 0
             apiConfig.endpoints {
                 matrixJsonEndpoint(
@@ -284,8 +293,8 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         }
         should("not retry on ResponseException") {
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
-            roomOutboxMessageStore.update(message.transactionId) { message }
+                RoomOutboxMessage(room, "transaction", RoomMessageEventContent.TextBased.Text("hi"), Clock.System.now())
+            roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
             var call = 0
             apiConfig.endpoints {
                 matrixJsonEndpoint(
@@ -313,8 +322,8 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         }
         should("retry on MatrixServerException rate limit") {
             val message =
-                RoomOutboxMessage("transaction", room, RoomMessageEventContent.TextBased.Text("hi"), null)
-            roomOutboxMessageStore.update(message.transactionId) { message }
+                RoomOutboxMessage(room, "transaction", RoomMessageEventContent.TextBased.Text("hi"), Clock.System.now())
+            roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
             var call = 0
             apiConfig.endpoints {
                 matrixJsonEndpoint(
@@ -354,19 +363,21 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val cacheUrl = "cache://unicorn"
             val message1 =
                 RoomOutboxMessage(
-                    "abortedMessage",
                     room,
-                    RoomMessageEventContent.FileBased.Image("hi.png", url = cacheUrl)
+                    "abortedMessage",
+                    RoomMessageEventContent.FileBased.Image("hi.png", url = cacheUrl),
+                    Clock.System.now(),
                 )
             val message2 =
                 RoomOutboxMessage(
-                    "unabortedMessage",
                     room,
-                    RoomMessageEventContent.TextBased.Text("Nachricht")
+                    "unabortedMessage",
+                    RoomMessageEventContent.TextBased.Text("Nachricht"),
+                    Clock.System.now(),
                 )
             roomOutboxMessageStore.deleteAll()
-            roomOutboxMessageStore.update(message1.transactionId) { message1 }
-            roomOutboxMessageStore.update(message2.transactionId) { message2 }
+            roomOutboxMessageStore.update(message1.roomId, message1.transactionId) { message1 }
+            roomOutboxMessageStore.update(message2.roomId, message2.transactionId) { message2 }
             mediaServiceMock.returnUploadMedia = Result.success(mxcUrl)
             mediaServiceMock.uploadTimer.value = 3_000
             apiConfig.endpoints {
@@ -393,7 +404,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             }
             launch {
                 delay(100)
-                roomOutboxMessageStore.update(message1.transactionId) { null }
+                roomOutboxMessageStore.update(message1.roomId, message1.transactionId) { null }
             }
             currentSyncState.value = SyncState.RUNNING
             mediaServiceMock.uploadMediaCalled.onEach { println(it) }.first { it == cacheUrl }

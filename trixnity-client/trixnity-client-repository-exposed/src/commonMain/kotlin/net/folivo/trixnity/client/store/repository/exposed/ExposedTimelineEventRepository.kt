@@ -18,11 +18,11 @@ internal object ExposedTimelineEvent : Table("room_timeline_event") {
 
 internal class ExposedTimelineEventRepository(private val json: Json) : TimelineEventRepository {
     override suspend fun get(key: TimelineEventKey): TimelineEvent? = withExposedRead {
-        ExposedTimelineEvent.select {
-            ExposedTimelineEvent.eventId.eq(key.eventId.full) and ExposedTimelineEvent.roomId.eq(key.roomId.full)
-        }.firstOrNull()?.let {
-            json.decodeFromString(it[ExposedTimelineEvent.value])
-        }
+        ExposedTimelineEvent.selectAll()
+            .where { ExposedTimelineEvent.eventId.eq(key.eventId.full) and ExposedTimelineEvent.roomId.eq(key.roomId.full) }
+            .firstOrNull()?.let {
+                json.decodeFromString(it[ExposedTimelineEvent.value])
+            }
     }
 
     override suspend fun deleteByRoomId(roomId: RoomId): Unit = withExposedWrite {

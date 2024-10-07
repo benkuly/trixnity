@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.media.MediaService
@@ -148,11 +149,9 @@ interface RoomService {
         builder: suspend MessageBuilder.() -> Unit
     ): String
 
-    @Deprecated("replaced by cancelSendMessage", replaceWith = ReplaceWith("cancelSendMessage(transactionId)"))
-    suspend fun abortSendMessage(transactionId: String)
-    suspend fun cancelSendMessage(transactionId: String)
+    suspend fun cancelSendMessage(roomId: RoomId, transactionId: String)
 
-    suspend fun retrySendMessage(transactionId: String)
+    suspend fun retrySendMessage(roomId: RoomId, transactionId: String)
 
     /**
      * Upgraded rooms ([Room.hasBeenReplaced]) should not be rendered.
@@ -174,7 +173,9 @@ interface RoomService {
         key: String = "",
     ): Flow<C?>
 
-    fun getOutbox(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>>
+    fun getOutbox(): Flow<List<Flow<RoomOutboxMessage<*>?>>>
+    fun getOutbox(roomId: RoomId): Flow<List<Flow<RoomOutboxMessage<*>?>>>
+    fun getOutbox(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?>
 
     fun <C : StateEventContent> getState(
         roomId: RoomId,
@@ -200,6 +201,7 @@ class RoomServiceImpl(
     private val forgetRoomService: ForgetRoomService,
     private val userInfo: UserInfo,
     private val timelineEventHandler: TimelineEventHandler,
+    private val clock: Clock,
     private val config: MatrixClientConfiguration,
     typingEventHandler: TypingEventHandler,
     private val currentSyncState: CurrentSyncState,
@@ -604,11 +606,12 @@ class RoomServiceImpl(
         val content = MessageBuilder(roomId, this, mediaService, userInfo.userId).build(builder)
         requireNotNull(content) { "you must add some sort of content for sending a message" }
         val transactionId = SecureRandom.nextString(22)
-        roomOutboxMessageStore.update(transactionId) {
+        roomOutboxMessageStore.update(roomId, transactionId) {
             RoomOutboxMessage(
                 transactionId = transactionId,
                 roomId = roomId,
                 content = content,
+                createdAt = clock.now(),
                 sentAt = null,
                 keepMediaInCache = keepMediaInCache,
             )
@@ -616,16 +619,13 @@ class RoomServiceImpl(
         return transactionId
     }
 
-    override suspend fun cancelSendMessage(transactionId: String) {
-        roomOutboxMessageStore.update(transactionId) { null }
+    override suspend fun cancelSendMessage(roomId: RoomId, transactionId: String) {
+        roomOutboxMessageStore.update(roomId, transactionId) { null }
         log.debug { "removed message with id $transactionId" }
     }
 
-    @Deprecated("replaced by cancelSendMessage", replaceWith = ReplaceWith("cancelSendMessage(transactionId)"))
-    override suspend fun abortSendMessage(transactionId: String) = cancelSendMessage(transactionId)
-
-    override suspend fun retrySendMessage(transactionId: String) {
-        roomOutboxMessageStore.update(transactionId) { it?.copy(sendError = null) }
+    override suspend fun retrySendMessage(roomId: RoomId, transactionId: String) {
+        roomOutboxMessageStore.update(roomId, transactionId) { it?.copy(sendError = null) }
     }
 
     override fun getAll(): Flow<Map<RoomId, Flow<Room?>>> = roomStore.getAll()
@@ -645,7 +645,23 @@ class RoomServiceImpl(
             .map { it?.content }
     }
 
-    override fun getOutbox(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>> = roomOutboxMessageStore.getAll()
+    override fun getOutbox(): Flow<List<Flow<RoomOutboxMessage<*>?>>> =
+        roomOutboxMessageStore.getAll().map { outbox ->
+            outbox.values.map { it.filterNotNull().first() to it }
+                .sortedBy { it.first.createdAt }
+                .map { it.second }
+        }.distinctUntilChanged()
+
+    override fun getOutbox(roomId: RoomId): Flow<List<Flow<RoomOutboxMessage<*>?>>> =
+        roomOutboxMessageStore.getAll().map { outbox ->
+            outbox.values.map { it.filterNotNull().first() to it }
+                .filter { it.first.roomId == roomId }
+                .sortedBy { it.first.createdAt }
+                .map { it.second }
+        }.distinctUntilChanged()
+
+    override fun getOutbox(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?> =
+        roomOutboxMessageStore.get(roomId, transactionId)
 
     override fun <C : StateEventContent> getState(
         roomId: RoomId,

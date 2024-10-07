@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.OutdatedKeysRepository
@@ -9,8 +8,8 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.upsert
-import org.jetbrains.exposed.sql.select
 
 internal object ExposedOutdatedKeys : LongIdTable("outdated_keys") {
     val value = text("value")
@@ -18,7 +17,7 @@ internal object ExposedOutdatedKeys : LongIdTable("outdated_keys") {
 
 internal class ExposedOutdatedKeysRepository(private val json: Json) : OutdatedKeysRepository {
     override suspend fun get(key: Long): Set<UserId>? = withExposedRead {
-        ExposedOutdatedKeys.select { ExposedOutdatedKeys.id eq key }.firstOrNull()?.let {
+        ExposedOutdatedKeys.selectAll().where { ExposedOutdatedKeys.id eq key }.firstOrNull()?.let {
             it[ExposedOutdatedKeys.value].let { outdated -> json.decodeFromString<Set<UserId>>(outdated) }
         }
     }

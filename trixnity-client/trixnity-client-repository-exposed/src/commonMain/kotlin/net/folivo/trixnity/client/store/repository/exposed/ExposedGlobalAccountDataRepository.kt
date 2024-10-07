@@ -20,14 +20,14 @@ internal class ExposedGlobalAccountDataRepository(private val json: Json) : Glob
         ?: throw IllegalArgumentException("could not find event serializer")
 
     override suspend fun get(firstKey: String): Map<String, GlobalAccountDataEvent<*>> = withExposedRead {
-        ExposedGlobalAccountData.select { ExposedGlobalAccountData.type.eq(firstKey) }.associate {
+        ExposedGlobalAccountData.selectAll().where { ExposedGlobalAccountData.type.eq(firstKey) }.associate {
             it[ExposedGlobalAccountData.key] to json.decodeFromString(serializer, it[ExposedGlobalAccountData.event])
         }
     }
 
     override suspend fun get(firstKey: String, secondKey: String): GlobalAccountDataEvent<*>? =
         withExposedRead {
-            ExposedGlobalAccountData.select {
+            ExposedGlobalAccountData.selectAll().where {
                 ExposedGlobalAccountData.type.eq(firstKey) and
                         ExposedGlobalAccountData.key.eq(secondKey)
             }.firstOrNull()?.let {

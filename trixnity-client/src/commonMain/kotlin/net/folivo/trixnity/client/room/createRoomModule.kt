@@ -85,6 +85,7 @@ fun createRoomModule() = module {
             userInfo = get(),
             timelineEventHandler = get(named<TimelineEventHandlerImpl>()),
             typingEventHandler = get(named<TypingEventHandlerImpl>()),
+            clock = get(),
             currentSyncState = get(),
             scope = get(),
             config = get(),

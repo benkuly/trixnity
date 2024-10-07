@@ -2,11 +2,12 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
+import net.folivo.trixnity.client.store.cache.FullDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
+import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
+import net.folivo.trixnity.core.model.RoomId
 
 class RoomOutboxMessageStore(
     roomOutboxMessageRepository: RoomOutboxMessageRepository,
@@ -14,12 +15,14 @@ class RoomOutboxMessageStore(
     storeScope: CoroutineScope,
     config: MatrixClientConfiguration,
 ) : Store {
-    private val roomOutboxMessageCache = FullRepositoryObservableCache(
+    private val roomOutboxMessageCache = FullDeleteByRoomIdRepositoryObservableCache(
         roomOutboxMessageRepository,
         tm,
         storeScope,
         config.cacheExpireDurations.roomOutboxMessage,
-    ) { it.transactionId }
+        { RoomOutboxMessageRepositoryKey(it.roomId, it.transactionId) }) {
+        it.roomId
+    }
 
     override suspend fun clearCache() = deleteAll()
 
@@ -27,14 +30,21 @@ class RoomOutboxMessageStore(
         roomOutboxMessageCache.deleteAll()
     }
 
-    fun getAll(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>> = roomOutboxMessageCache.readAll()
+    fun getAll(): Flow<Map<RoomOutboxMessageRepositoryKey, Flow<RoomOutboxMessage<*>?>>> =
+        roomOutboxMessageCache.readAll()
 
-    suspend fun update(transactionId: String, updater: suspend (RoomOutboxMessage<*>?) -> RoomOutboxMessage<*>?) =
-        roomOutboxMessageCache.write(transactionId, updater = updater)
+    suspend fun update(
+        roomId: RoomId,
+        transactionId: String,
+        updater: suspend (RoomOutboxMessage<*>?) -> RoomOutboxMessage<*>?
+    ) =
+        roomOutboxMessageCache.write(RoomOutboxMessageRepositoryKey(roomId, transactionId), updater = updater)
 
-    suspend fun get(transactionId: String): RoomOutboxMessage<*>? =
-        roomOutboxMessageCache.read(transactionId).first()
+    fun get(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?> =
+        roomOutboxMessageCache.read(RoomOutboxMessageRepositoryKey(roomId, transactionId))
 
-    fun getAsFlow(transactionId: String): Flow<RoomOutboxMessage<*>?> =
-        roomOutboxMessageCache.read(transactionId)
+    fun getAsFlow(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?> =
+        roomOutboxMessageCache.read(RoomOutboxMessageRepositoryKey(roomId, transactionId))
+
+    suspend fun deleteByRoomId(roomId: RoomId) = roomOutboxMessageCache.deleteByRoomId(roomId)
 }

@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.mocks
 
 import kotlinx.coroutines.flow.*
+import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.room.GetTimelineEventConfig
 import net.folivo.trixnity.client.room.GetTimelineEventsConfig
 import net.folivo.trixnity.client.room.RoomService
@@ -111,16 +112,11 @@ class RoomServiceMock : RoomService {
         return sentMessages.value.size.toString()
     }
 
-    override suspend fun cancelSendMessage(transactionId: String) {
+    override suspend fun cancelSendMessage(roomId: RoomId, transactionId: String) {
         throw NotImplementedError()
     }
 
-    @Deprecated("replaced by cancelSendMessage", replaceWith = ReplaceWith("cancelSendMessage(transactionId)"))
-    override suspend fun abortSendMessage(transactionId: String) {
-        throw NotImplementedError()
-    }
-
-    override suspend fun retrySendMessage(transactionId: String) {
+    override suspend fun retrySendMessage(roomId: RoomId, transactionId: String) {
         throw NotImplementedError()
     }
 
@@ -146,8 +142,17 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    val outbox = MutableStateFlow(mapOf<String, Flow<RoomOutboxMessage<*>?>>())
-    override fun getOutbox(): Flow<Map<String, Flow<RoomOutboxMessage<*>?>>> = outbox
+    val outbox = MutableStateFlow(listOf<Flow<RoomOutboxMessage<*>?>>())
+    override fun getOutbox(): Flow<List<Flow<RoomOutboxMessage<*>?>>> = outbox
+    override fun getOutbox(roomId: RoomId): Flow<List<Flow<RoomOutboxMessage<*>?>>> =
+        outbox.map { outbox ->
+            outbox.map { it.filterNotNull().first() to it }
+                .filter { it.first.roomId == roomId }
+                .map { it.second }
+        }.distinctUntilChanged()
+
+    override fun getOutbox(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?> =
+        outbox.flatten().map { it.find { it.roomId == roomId && it.transactionId == transactionId } }
 
     data class GetStateKey(
         val roomId: RoomId,

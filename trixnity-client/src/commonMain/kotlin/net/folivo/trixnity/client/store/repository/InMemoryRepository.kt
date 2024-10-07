@@ -158,7 +158,11 @@ class InMemoryInboundMegolmSessionRepository : InboundMegolmSessionRepository,
 class InMemoryRoomRepository : RoomRepository, InMemoryFullRepository<RoomId, Room>()
 
 class InMemoryRoomOutboxMessageRepository : RoomOutboxMessageRepository,
-    InMemoryFullRepository<String, RoomOutboxMessage<*>>()
+    InMemoryFullRepository<RoomOutboxMessageRepositoryKey, RoomOutboxMessage<*>>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterKeys { it.roomId != roomId } }
+    }
+}
 
 class InMemoryKeyChainLinkRepository : KeyChainLinkRepository {
     private val values = MutableStateFlow<Set<KeyChainLink>>(setOf())

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredDeviceKeys
@@ -17,7 +16,7 @@ internal object ExposedDeviceKeys : Table("device_keys") {
 
 internal class ExposedDeviceKeysRepository(private val json: Json) : DeviceKeysRepository {
     override suspend fun get(key: UserId): Map<String, StoredDeviceKeys>? = withExposedRead {
-        ExposedDeviceKeys.select { ExposedDeviceKeys.userId eq key.full }.firstOrNull()?.let {
+        ExposedDeviceKeys.selectAll().where { ExposedDeviceKeys.userId eq key.full }.firstOrNull()?.let {
             it[ExposedDeviceKeys.value].let { deviceKeys ->
                 json.decodeFromString<Map<String, StoredDeviceKeys>>(deviceKeys)
             }

@@ -101,9 +101,10 @@ class TimelineEventHandlerImpl(
                         timelineEvents.map {
                             if (it.event.isEncrypted) {
                                 it.event.unsigned?.transactionId?.let { transactionId ->
-                                    roomOutboxMessageStore.get(transactionId)?.let { roomOutboxMessage ->
-                                        it.copy(content = Result.success(roomOutboxMessage.content))
-                                    }
+                                    roomOutboxMessageStore.get(roomId, transactionId).first()
+                                        ?.let { roomOutboxMessage ->
+                                            it.copy(content = Result.success(roomOutboxMessage.content))
+                                        }
                                 } ?: it
                             } else it
                         }

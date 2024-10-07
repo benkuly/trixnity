@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredRoomKeyRequest
@@ -21,7 +20,7 @@ class ExposedRoomKeyRequestRepository(private val json: Json) : RoomKeyRequestRe
     }
 
     override suspend fun get(key: String): StoredRoomKeyRequest? = withExposedRead {
-        ExposedRoomKeyRequest.select { ExposedRoomKeyRequest.id eq key }.firstOrNull()?.let {
+        ExposedRoomKeyRequest.selectAll().where { ExposedRoomKeyRequest.id eq key }.firstOrNull()?.let {
             json.decodeFromString(it[ExposedRoomKeyRequest.value])
         }
     }

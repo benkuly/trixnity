@@ -3,14 +3,17 @@ package net.folivo.trixnity.client.store.repository.exposed
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
+import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
-internal object ExposedRoomOutboxMessage : Table("room_outbox") {
+internal object ExposedRoomOutboxMessage : Table("room_outbox_2") {
     val transactionId = varchar("transaction_id", length = 255)
-    override val primaryKey = PrimaryKey(transactionId)
+    val roomId = varchar("roomId", length = 255)
+    override val primaryKey = PrimaryKey(roomId, transactionId)
     val value = text("value")
     val contentType = text("content_type")
 }
@@ -29,16 +32,19 @@ internal class ExposedRoomOutboxMessageRepository(
         ExposedRoomOutboxMessage.selectAll().map(::mapToRoomOutboxMessage)
     }
 
-    override suspend fun get(key: String): RoomOutboxMessage<*>? = withExposedRead {
-        ExposedRoomOutboxMessage.select { ExposedRoomOutboxMessage.transactionId eq key }.firstOrNull()
+    override suspend fun get(key: RoomOutboxMessageRepositoryKey): RoomOutboxMessage<*>? = withExposedRead {
+        ExposedRoomOutboxMessage.selectAll().where {
+            ExposedRoomOutboxMessage.roomId.eq(key.roomId.full) and ExposedRoomOutboxMessage.transactionId.eq(key.transactionId)
+        }.firstOrNull()
             ?.let(::mapToRoomOutboxMessage)
     }
 
-    override suspend fun save(key: String, value: RoomOutboxMessage<*>): Unit = withExposedWrite {
+    override suspend fun save(key: RoomOutboxMessageRepositoryKey, value: RoomOutboxMessage<*>) = withExposedWrite {
         val mapping = mappings.message.find { it.kClass.isInstance(value.content) }
         requireNotNull(mapping)
         ExposedRoomOutboxMessage.upsert {
-            it[transactionId] = key
+            it[roomId] = key.roomId.full
+            it[transactionId] = key.transactionId
             @Suppress("UNCHECKED_CAST")
             it[ExposedRoomOutboxMessage.value] = json.encodeToString(
                 RoomOutboxMessage.serializer(mapping.serializer),
@@ -48,11 +54,15 @@ internal class ExposedRoomOutboxMessageRepository(
         }
     }
 
-    override suspend fun delete(key: String): Unit = withExposedWrite {
-        ExposedRoomOutboxMessage.deleteWhere { transactionId eq key }
+    override suspend fun delete(key: RoomOutboxMessageRepositoryKey) = withExposedWrite {
+        ExposedRoomOutboxMessage.deleteWhere { roomId.eq(key.roomId.full) and transactionId.eq(key.transactionId) }
     }
 
     override suspend fun deleteAll(): Unit = withExposedWrite {
         ExposedRoomOutboxMessage.deleteAll()
+    }
+
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        ExposedRoomOutboxMessage.deleteWhere { ExposedRoomOutboxMessage.roomId.eq(roomId.full) }
     }
 }

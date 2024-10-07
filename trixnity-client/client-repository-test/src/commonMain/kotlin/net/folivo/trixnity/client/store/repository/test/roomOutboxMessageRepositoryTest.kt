@@ -4,10 +4,12 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
+import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.koin.core.Koin
@@ -21,11 +23,20 @@ fun ShouldSpec.roomOutboxMessageRepositoryTest(diReceiver: () -> Koin) {
         rtm = di.get()
     }
     should("roomOutboxMessageRepositoryTest: save, get and delete") {
-        val roomId = RoomId("room", "server")
-        val key1 = "transaction1"
-        val key2 = "transaction2"
-        val message1 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.TextBased.Text("hi"), null)
-        val message2 = RoomOutboxMessage(key2, roomId, RoomMessageEventContent.FileBased.Image("hi"), null)
+        val key1 = RoomOutboxMessageRepositoryKey(RoomId("room", "server"), "transaction1")
+        val key2 = RoomOutboxMessageRepositoryKey(RoomId("room", "server"), "transaction2")
+        val message1 = RoomOutboxMessage(
+            key1.roomId,
+            key1.transactionId,
+            RoomMessageEventContent.TextBased.Text("hi"),
+            Clock.System.now()
+        )
+        val message2 = RoomOutboxMessage(
+            key2.roomId,
+            key2.transactionId,
+            RoomMessageEventContent.FileBased.Image("hi"),
+            Clock.System.now()
+        )
         val message2Copy = message2.copy(sentAt = fromEpochMilliseconds(24))
 
         rtm.writeTransaction {
@@ -46,16 +57,56 @@ fun ShouldSpec.roomOutboxMessageRepositoryTest(diReceiver: () -> Koin) {
         }
     }
     should("roomOutboxMessageRepositoryTest: get all") {
-        val roomId = RoomId("room", "server")
-        val key1 = "transaction1"
-        val key2 = "transaction2"
-        val message1 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.TextBased.Text("hi"), null)
-        val message2 = RoomOutboxMessage(key1, roomId, RoomMessageEventContent.FileBased.Image("hi"), null)
+        val key1 = RoomOutboxMessageRepositoryKey(RoomId("room1", "server"), "transaction1")
+        val key2 = RoomOutboxMessageRepositoryKey(RoomId("room2", "server"), "transaction2")
+        val message1 = RoomOutboxMessage(
+            key1.roomId,
+            key1.transactionId,
+            RoomMessageEventContent.TextBased.Text("hi"),
+            Clock.System.now()
+        )
+        val message2 = RoomOutboxMessage(
+            key2.roomId,
+            key2.transactionId,
+            RoomMessageEventContent.FileBased.Image("hi"),
+            Clock.System.now()
+        )
 
         rtm.writeTransaction {
             cut.save(key1, message1)
             cut.save(key2, message2)
             cut.getAll() shouldHaveSize 2
+        }
+    }
+    should("roomOutboxMessageRepositoryTest: delete by roomId") {
+        val key1 = RoomOutboxMessageRepositoryKey(RoomId("room1", "server"), "transaction1")
+        val key2 = RoomOutboxMessageRepositoryKey(RoomId("room2", "server"), "transaction2")
+        val key3 = RoomOutboxMessageRepositoryKey(RoomId("room2", "server"), "transaction3")
+        val message1 = RoomOutboxMessage(
+            key1.roomId,
+            key1.transactionId,
+            RoomMessageEventContent.TextBased.Text("hi"),
+            Clock.System.now()
+        )
+        val message2 = RoomOutboxMessage(
+            key2.roomId,
+            key2.transactionId,
+            RoomMessageEventContent.FileBased.Image("hi"),
+            Clock.System.now()
+        )
+        val message3 = RoomOutboxMessage(
+            key3.roomId,
+            key3.transactionId,
+            RoomMessageEventContent.FileBased.Image("hi"),
+            Clock.System.now()
+        )
+
+        rtm.writeTransaction {
+            cut.save(key1, message1)
+            cut.save(key2, message2)
+            cut.save(key3, message3)
+            cut.deleteByRoomId(key2.roomId)
+            cut.getAll().map { it.transactionId } shouldBe listOf(key1.transactionId)
         }
     }
 }

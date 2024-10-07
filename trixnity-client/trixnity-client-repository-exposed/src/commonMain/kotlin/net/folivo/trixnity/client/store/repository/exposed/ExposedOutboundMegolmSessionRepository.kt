@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.OutboundMegolmSessionRepository
@@ -17,7 +16,7 @@ internal object ExposedOutboundMegolmSession : Table("outbound_megolm_session") 
 
 internal class ExposedOutboundMegolmSessionRepository(private val json: Json) : OutboundMegolmSessionRepository {
     override suspend fun get(key: RoomId): StoredOutboundMegolmSession? = withExposedRead {
-        ExposedOutboundMegolmSession.select { ExposedOutboundMegolmSession.roomId eq key.full }.firstOrNull()
+        ExposedOutboundMegolmSession.selectAll().where { ExposedOutboundMegolmSession.roomId eq key.full }.firstOrNull()
             ?.let {
                 json.decodeFromString(it[ExposedOutboundMegolmSession.value])
             }

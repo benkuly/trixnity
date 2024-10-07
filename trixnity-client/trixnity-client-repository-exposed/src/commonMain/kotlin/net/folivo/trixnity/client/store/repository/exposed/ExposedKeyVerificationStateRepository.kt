@@ -1,11 +1,10 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.KeyVerificationState
-import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
 import net.folivo.trixnity.client.store.repository.KeyVerificationStateKey
+import net.folivo.trixnity.client.store.repository.KeyVerificationStateRepository
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
@@ -18,7 +17,7 @@ internal object ExposedKeyVerificationState : Table("key_verification_state") {
 
 internal class ExposedKeyVerificationStateRepository(private val json: Json) : KeyVerificationStateRepository {
     override suspend fun get(key: KeyVerificationStateKey): KeyVerificationState? = withExposedRead {
-        ExposedKeyVerificationState.select {
+        ExposedKeyVerificationState.selectAll().where {
             ExposedKeyVerificationState.keyId.eq(key.keyId) and
                     ExposedKeyVerificationState.keyAlgorithm.eq(key.keyAlgorithm.name)
         }.firstOrNull()?.let {

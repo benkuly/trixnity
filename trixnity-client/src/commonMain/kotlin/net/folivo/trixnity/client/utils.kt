@@ -8,6 +8,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.previousRoomId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -71,6 +72,23 @@ inline fun <K, reified V> Flow<Map<K, Flow<V?>>>.flattenValues(
     }.flatMapLatest { map ->
         if (map.isEmpty()) flowOf(listOf())
         else combine(map.values) { transform -> transform.filterNotNull() }
+    }.conflate()
+
+/**
+ * A change of the outer flow results in new collect of the inner flows. Because this is an expensive operation,
+ * the outer flow is throttled by default.
+ */
+@JvmName("flattenList")
+@OptIn(ExperimentalCoroutinesApi::class)
+inline fun <reified V> Flow<List<Flow<V?>>>.flatten(
+    throttle: Duration = 200.milliseconds,
+): Flow<List<V>> =
+    transform {
+        emit(it)
+        delay(throttle)
+    }.flatMapLatest { map ->
+        if (map.isEmpty()) flowOf(listOf())
+        else combine(map) { transform -> transform.filterNotNull() }
     }.conflate()
 
 /**

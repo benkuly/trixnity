@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
@@ -20,7 +21,6 @@ import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 
 class ForgetRoomsTest : ShouldSpec({
     timeout = 15_000
@@ -31,6 +31,7 @@ class ForgetRoomsTest : ShouldSpec({
     lateinit var roomStateStore: RoomStateStore
     lateinit var roomAccountDataStore: RoomAccountDataStore
     lateinit var roomTimelineStore: RoomTimelineStore
+    lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
     lateinit var scope: CoroutineScope
 
     lateinit var cut: ForgetRoomServiceImpl
@@ -42,12 +43,14 @@ class ForgetRoomsTest : ShouldSpec({
         roomStateStore = getInMemoryRoomStateStore(scope)
         roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
         roomTimelineStore = getInMemoryRoomTimelineStore(scope)
+        roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
         cut = ForgetRoomServiceImpl(
             roomStore = roomStore,
             roomUserStore = roomUserStore,
             roomStateStore = roomStateStore,
             roomAccountDataStore = roomAccountDataStore,
             roomTimelineStore = roomTimelineStore,
+            roomOutboxMessageStore = roomOutboxMessageStore
         )
     }
 
@@ -110,6 +113,13 @@ class ForgetRoomsTest : ShouldSpec({
             roomUserStore.update(UserId("1"), room) { roomUser(room, 1) }
             roomUserStore.update(UserId("2"), room) { roomUser(room, 2) }
 
+            roomOutboxMessageStore.update(room, "t1") {
+                RoomOutboxMessage(
+                    room, "t1", RoomMessageEventContent.TextBased.Text("hi"),
+                    Clock.System.now()
+                )
+            }
+
             roomStore.getAll().first { it.size == 1 }
 
             cut(room)
@@ -132,6 +142,8 @@ class ForgetRoomsTest : ShouldSpec({
 
             roomUserStore.get(UserId("1"), room).first() shouldBe null
             roomUserStore.get(UserId("2"), room).first() shouldBe null
+
+            roomOutboxMessageStore.get(room, "t1").first() shouldBe null
         }
         should("not forget rooms when membershipt is not leave") {
             roomStore.update(room) { simpleRoom.copy(room) }

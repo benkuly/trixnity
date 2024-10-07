@@ -41,7 +41,7 @@ private class FullRepositoryObservableCacheIndex<K>(
     }
 }
 
-internal class FullRepositoryObservableCache<K, V>(
+internal open class FullRepositoryObservableCache<K, V>(
     repository: FullRepository<K, V>,
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,

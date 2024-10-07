@@ -1,41 +1,45 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
+import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMapping
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
-@Entity(tableName = "RoomOutboxMessage")
+@Entity(
+    tableName = "RoomOutboxMessage2",
+    primaryKeys = ["roomId", "transactionId"]
+)
 data class RoomRoomOutboxMessage(
-    @PrimaryKey val transactionId: String,
+    val roomId: RoomId,
+    val transactionId: String,
     val value: String,
     val contentType: String,
 )
 
 @Dao
 interface RoomOutboxMessageDao {
-    @Query("SELECT * FROM RoomOutboxMessage WHERE transactionId = :transactionId LIMIT 1")
-    suspend fun get(transactionId: String): RoomRoomOutboxMessage?
+    @Query("SELECT * FROM RoomOutboxMessage2 WHERE roomId = :roomId AND transactionId = :transactionId LIMIT 1")
+    suspend fun get(roomId: RoomId, transactionId: String): RoomRoomOutboxMessage?
 
-    @Query("SELECT * FROM RoomOutboxMessage")
+    @Query("SELECT * FROM RoomOutboxMessage2")
     suspend fun getAll(): List<RoomRoomOutboxMessage>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: RoomRoomOutboxMessage)
 
-    @Query("DELETE FROM RoomOutboxMessage WHERE transactionId = :transactionId")
-    suspend fun delete(transactionId: String)
+    @Query("DELETE FROM RoomOutboxMessage2 WHERE roomId = :roomId AND transactionId = :transactionId")
+    suspend fun delete(roomId: RoomId, transactionId: String)
 
-    @Query("DELETE FROM RoomOutboxMessage")
+    @Query("DELETE FROM RoomOutboxMessage2 WHERE roomId = :roomId")
+    suspend fun delete(roomId: RoomId)
+
+    @Query("DELETE FROM RoomOutboxMessage2")
     suspend fun deleteAll()
 }
 
@@ -46,18 +50,19 @@ internal class RoomRoomOutboxMessageRepository(
 ) : RoomOutboxMessageRepository {
     private val dao = db.roomOutboxMessage()
 
-    override suspend fun get(key: String): RoomOutboxMessage<*>? =
-        dao.get(key)?.toModel()
+    override suspend fun get(key: RoomOutboxMessageRepositoryKey): RoomOutboxMessage<*>? =
+        dao.get(key.roomId, key.transactionId)?.toModel()
 
     override suspend fun getAll(): List<RoomOutboxMessage<*>> =
         dao.getAll().map { it.toModel() }
 
-    override suspend fun save(key: String, value: RoomOutboxMessage<*>) {
+    override suspend fun save(key: RoomOutboxMessageRepositoryKey, value: RoomOutboxMessage<*>) {
         val mapping = getMappingOrThrow { it.kClass.isInstance(value.content) }
         @Suppress("UNCHECKED_CAST")
         dao.insert(
             RoomRoomOutboxMessage(
-                transactionId = key,
+                roomId = key.roomId,
+                transactionId = key.transactionId,
                 value = json.encodeToString(
                     RoomOutboxMessage.serializer(mapping.serializer as KSerializer<MessageEventContent>),
                     value as RoomOutboxMessage<MessageEventContent>,
@@ -67,12 +72,16 @@ internal class RoomRoomOutboxMessageRepository(
         )
     }
 
-    override suspend fun delete(key: String) {
-        dao.delete(key)
+    override suspend fun delete(key: RoomOutboxMessageRepositoryKey) {
+        dao.delete(key.roomId, key.transactionId)
     }
 
     override suspend fun deleteAll() {
         dao.deleteAll()
+    }
+
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        dao.delete(roomId)
     }
 
     private fun RoomRoomOutboxMessage.toModel(): RoomOutboxMessage<*> =

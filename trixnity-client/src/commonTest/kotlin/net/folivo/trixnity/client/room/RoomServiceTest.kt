@@ -10,6 +10,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
@@ -77,6 +78,7 @@ class RoomServiceTest : ShouldSpec({
             forgetRoomService = {},
             userInfo = simpleUserInfo,
             timelineEventHandler = TimelineEventHandlerMock(),
+            clock = Clock.System,
             config = MatrixClientConfiguration(),
             typingEventHandler = TypingEventHandlerImpl(api),
             currentSyncState = CurrentSyncState(currentSyncState),

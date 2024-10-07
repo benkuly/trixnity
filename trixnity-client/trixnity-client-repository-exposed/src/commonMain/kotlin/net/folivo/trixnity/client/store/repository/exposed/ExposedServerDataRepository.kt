@@ -8,7 +8,7 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.upsert
 
 internal object ExposedServerData : LongIdTable("server_data") {
@@ -17,7 +17,7 @@ internal object ExposedServerData : LongIdTable("server_data") {
 
 internal class ExposedServerDataRepository(private val json: Json) : ServerDataRepository {
     override suspend fun get(key: Long): ServerData? = withExposedRead {
-        ExposedServerData.select { ExposedServerData.id eq key }.firstOrNull()?.let {
+        ExposedServerData.selectAll().where { ExposedServerData.id eq key }.firstOrNull()?.let {
             it[ExposedServerData.value].let { outdated -> json.decodeFromString<ServerData>(outdated) }
         }
     }

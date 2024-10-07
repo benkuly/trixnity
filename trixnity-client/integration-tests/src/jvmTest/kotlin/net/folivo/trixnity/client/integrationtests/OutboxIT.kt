@@ -79,13 +79,14 @@ class OutboxIT {
                 client.room.sendMessage(room) { text("message $it") }
             }
 
-            client.room.getOutbox().flattenValues().first { outbox -> outbox.none { it.sentAt != null } }
-            client.room.getOutbox().flattenValues().first { it.isEmpty() }
+            client.room.getOutbox().flatten().first { outbox -> outbox.none { it.sentAt != null } }
+            client.room.getOutbox().flatten().first { it.isEmpty() }
             client.stop()
 
-            val exposedRoomOutbox = object : Table("room_outbox") {
-                val transactionId = varchar("transaction_id", length = 65535)
-                override val primaryKey = PrimaryKey(transactionId)
+            val exposedRoomOutbox = object : Table("room_outbox_2") {
+                val transactionId = varchar("transaction_id", length = 255)
+                val roomId = varchar("roomId", length = 255)
+                override val primaryKey = PrimaryKey(roomId, transactionId)
             }
             newSuspendedTransaction(Dispatchers.IO, database) {
                 exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()

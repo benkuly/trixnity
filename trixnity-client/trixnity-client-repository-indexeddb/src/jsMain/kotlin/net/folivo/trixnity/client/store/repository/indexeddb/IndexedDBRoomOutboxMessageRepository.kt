@@ -1,6 +1,8 @@
 package net.folivo.trixnity.client.store.repository.indexeddb
 
 import com.juul.indexeddb.Database
+import com.juul.indexeddb.Key
+import com.juul.indexeddb.KeyPath
 import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -14,11 +16,14 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
+import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 @Serializable
 internal class IndexedDBRoomOutboxMessage<T : MessageEventContent>(
+    val roomId: RoomId,
     val value: RoomOutboxMessage<T>,
     val contentType: String,
 )
@@ -55,27 +60,30 @@ internal class IndexedDBRoomOutboxMessageRepository(
     }
 
     private val internalRepository =
-        object : IndexedDBFullRepository<String, IndexedDBRoomOutboxMessage<*>>(
+        object : IndexedDBFullRepository<RoomOutboxMessageRepositoryKey, IndexedDBRoomOutboxMessage<*>>(
             objectStoreName = objectStoreName,
-            keySerializer = { arrayOf(it) },
+            keySerializer = { arrayOf(it.roomId.full, it.transactionId) },
             valueSerializer = serializer,
             json = json
         ) {
-            override fun serializeKey(key: String): String = this@IndexedDBRoomOutboxMessageRepository.serializeKey(key)
+            override fun serializeKey(key: RoomOutboxMessageRepositoryKey): String =
+                this@IndexedDBRoomOutboxMessageRepository.serializeKey(key)
         }
 
     companion object {
-        const val objectStoreName = "room_outbox_message"
+        const val objectStoreName = "room_outbox_message_2"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
             when {
-                oldVersion < 1 ->
-                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
+                oldVersion < 6 ->
+                    createIndexedDBMinimalStoreRepository(database, objectStoreName) {
+                        createIndex("roomId", KeyPath("roomId"), unique = false)
+                    }
             }
         }
     }
 
 
-    override suspend fun get(key: String): RoomOutboxMessage<*>? =
+    override suspend fun get(key: RoomOutboxMessageRepositoryKey): RoomOutboxMessage<*>? =
         internalRepository.get(key)?.value
 
     override suspend fun getAll(): List<RoomOutboxMessage<*>> = withIndexedDBRead { store ->
@@ -85,15 +93,22 @@ internal class IndexedDBRoomOutboxMessageRepository(
             .toList()
     }
 
-    override suspend fun save(key: String, value: RoomOutboxMessage<*>) {
+    override suspend fun save(key: RoomOutboxMessageRepositoryKey, value: RoomOutboxMessage<*>) {
         val contentType = mappings.message.find { it.kClass.isInstance(value.content) }?.type
         checkNotNull(contentType)
-        internalRepository.save(key, IndexedDBRoomOutboxMessage(value, contentType))
+        internalRepository.save(key, IndexedDBRoomOutboxMessage(key.roomId, value, contentType))
     }
 
-    override suspend fun delete(key: String) =
+    override suspend fun delete(key: RoomOutboxMessageRepositoryKey) =
         internalRepository.delete(key)
 
     override suspend fun deleteAll() =
         internalRepository.deleteAll()
+
+    override suspend fun deleteByRoomId(roomId: RoomId) = withIndexedDBWrite { store ->
+        store.index("roomId").openCursor(Key(roomId.full), autoContinue = true)
+            .collect {
+                store.delete(Key(it.primaryKey))
+            }
+    }
 }

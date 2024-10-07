@@ -418,13 +418,14 @@ private val body: ShouldSpec.() -> Unit = {
                 val result = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
                 val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
                 roomServiceMock.outbox.value =
-                    mapOf(
-                        "1" to flowOf(
+                    listOf(
+                        flowOf(
                             RoomOutboxMessage(
                                 transactionId = "1",
                                 roomId = roomId,
                                 content = message,
                                 eventId = EventId("bla"),
+                                createdAt = Clock.System.now(),
                             )
                         )
                     )
@@ -441,13 +442,14 @@ private val body: ShouldSpec.() -> Unit = {
                 val result = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
                 val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
                 roomServiceMock.outbox.value =
-                    mapOf(
-                        "1" to flowOf(
+                    listOf(
+                        flowOf(
                             RoomOutboxMessage(
                                 transactionId = "1",
                                 roomId = roomId,
                                 content = message,
                                 eventId = EventId("bla"),
+                                createdAt = Clock.System.now(),
                             )
                         )
                     )
