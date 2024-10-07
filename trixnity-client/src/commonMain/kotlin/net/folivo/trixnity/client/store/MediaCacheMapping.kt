@@ -7,6 +7,6 @@ import kotlinx.serialization.Serializable
 data class MediaCacheMapping(
     val cacheUri: String,
     val mxcUri: String? = null,
-    val size: Int = 0,
+    val size: Long = 0,
     val contentType: String? = ContentType.Application.OctetStream.toString(),
 )

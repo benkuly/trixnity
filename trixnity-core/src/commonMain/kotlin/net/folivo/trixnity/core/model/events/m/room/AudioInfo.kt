@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AudioInfo(
     @SerialName("duration")
-    val duration: Int? = null,
+    val duration: Long? = null,
     @SerialName("mimetype")
     override val mimeType: String? = null,
     @SerialName("size")
-    override val size: Int? = null,
+    override val size: Long? = null,
 ) : FileBasedInfo

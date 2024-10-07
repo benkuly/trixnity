@@ -8,7 +8,7 @@ data class FileInfo(
     @SerialName("mimetype")
     override val mimeType: String? = null,
     @SerialName("size")
-    override val size: Int? = null,
+    override val size: Long? = null,
     @SerialName("thumbnail_url")
     val thumbnailUrl: String? = null,
     @SerialName("thumbnail_file")

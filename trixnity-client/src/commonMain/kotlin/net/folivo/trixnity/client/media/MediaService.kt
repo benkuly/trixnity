@@ -211,7 +211,7 @@ class MediaServiceImpl(
 
     override suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String {
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${SecureRandom.nextString(22)}".also { cacheUri ->
-            var fileSize = 0
+            var fileSize = 0L
             mediaStore.addMedia(cacheUri, content.onEach { fileSize += it.size })
             mediaCacheMappingStore.saveMediaCacheMapping(
                 cacheUri,
@@ -236,8 +236,8 @@ class MediaServiceImpl(
         return cacheUri to ThumbnailInfo(
             width = thumbnail.width,
             height = thumbnail.height,
-            mimeType = thumbnail.contentType?.toString(),
-            size = thumbnail.file.size
+            mimeType = thumbnail.contentType.toString(),
+            size = thumbnail.file.size.toLong()
         )
     }
 
@@ -279,7 +279,7 @@ class MediaServiceImpl(
             width = thumbnail.width,
             height = thumbnail.height,
             mimeType = thumbnail.contentType.toString(),
-            size = thumbnail.file.size
+            size = thumbnail.file.size.toLong()
         )
     }
 

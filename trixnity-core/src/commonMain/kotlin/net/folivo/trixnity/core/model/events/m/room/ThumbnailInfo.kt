@@ -12,5 +12,5 @@ data class ThumbnailInfo(
     @SerialName("mimetype")
     val mimeType: String? = null,
     @SerialName("size")
-    val size: Int? = null
+    val size: Long? = null
 )
