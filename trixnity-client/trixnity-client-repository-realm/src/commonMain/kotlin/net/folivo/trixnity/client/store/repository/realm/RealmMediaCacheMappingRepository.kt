@@ -13,7 +13,7 @@ internal class RealmMediaCacheMapping : RealmObject {
     @PrimaryKey
     var cacheUri: String = ""
     var mxcUri: String? = null
-    var size: Int? = null
+    var size: Long? = null
     var contentType: String? = null
 }
 

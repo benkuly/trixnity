@@ -8,7 +8,7 @@ import java.io.OutputStream
 import kotlin.coroutines.CoroutineContext
 
 suspend fun ByteArrayFlow.writeTo(outputStream: OutputStream, coroutineContext: CoroutineContext = ioContext) =
-    withContext(ioContext) {
+    withContext(coroutineContext) {
         outputStream.use {
             collect { data ->
                 it.write(data)
