@@ -273,7 +273,8 @@ class TimelineEventHandlerImpl(
                                     oldEvent.roomId,
                                     oldEvent.originTimestamp,
                                     UnsignedRoomEventData.UnsignedMessageEventData(
-                                        redactedBecause = redactionEvent
+                                        redactedBecause = redactionEvent,
+                                        transactionId = oldEvent.unsigned?.transactionId,
                                     )
                                 ),
                                 content = Result.success(newContent),
@@ -295,7 +296,8 @@ class TimelineEventHandlerImpl(
                                     oldEvent.roomId,
                                     oldEvent.originTimestamp,
                                     UnsignedRoomEventData.UnsignedStateEventData(
-                                        redactedBecause = redactionEvent
+                                        redactedBecause = redactionEvent,
+                                        transactionId = oldEvent.unsigned?.transactionId,
                                     ),
                                     oldEvent.stateKey,
                                 ),
