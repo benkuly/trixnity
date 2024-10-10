@@ -85,7 +85,6 @@ tasks.withType<ExternalNativeBuildTask> {
 android {
     namespace = "net.folivo.trixnity.olm"
     compileSdk = libs.versions.androidTargetSdk.get().toInt()
-    buildToolsVersion = libs.versions.androidBuildTools.get()
     defaultConfig {
         minSdk = libs.versions.androidMinSdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
