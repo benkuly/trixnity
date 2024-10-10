@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support files larger than 2.1GB
 - Outbox API returns a sorted list
 - Keep transaction id for redacted messages
+- internal: new Docker images
 
 ### Deprecated
 
