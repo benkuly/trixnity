@@ -1,15 +1,15 @@
 [versions]
 ### build ###
-kotlin = "2.0.10" # https://github.com/JetBrains/kotlin/releases
-ksp = "2.0.10-1.0.24" # https://github.com/google/ksp/releases
-kotlinWrappers = "1.0.0-pre.774" # https://github.com/JetBrains/kotlin-wrappers/releases
+kotlin = "2.0.20" # https://github.com/JetBrains/kotlin/releases
+ksp = "2.0.20-1.0.25" # https://github.com/google/ksp/releases
+kotlinWrappers = "1.0.0-pre.817" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "1.9.20" # https://github.com/Kotlin/dokka/releases
-androidGradlePlugin = "8.4.2" # https://developer.android.com/reference/tools/gradle-api
+androidGradlePlugin = "8.5.2" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 
 ### kotlinx ###
 kotlinxCoroutines = "1.9.0" # https://github.com/Kotlin/kotlinx.coroutines/releases
-kotlinxSerialization = "1.7.1" # https://github.com/Kotlin/kotlinx.serialization/releases
+kotlinxSerialization = "1.7.3" # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinxDatetime = "0.6.1" # https://github.com/Kotlin/kotlinx-datetime/releases
 
 ### native bindings ###
@@ -20,36 +20,36 @@ jna = "5.14.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
 ktor = "2.3.12" # https://github.com/ktorio/ktor/releases
-koin = "3.5.6" # https://github.com/InsertKoinIO/koin/tags
+koin = "4.0.0" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.9.1" # https://square.github.io/okio/changelog/
 arrow = "1.2.4" # https://github.com/arrow-kt/arrow/releases
 korlibs = "4.0.10" # https://github.com/korlibs/korge/releases
 
 ### databases ###
-exposed = "0.53.0" # https://github.com/JetBrains/Exposed/releases
-hikari = "5.1.0" # https://github.com/brettwooldridge/HikariCP/tags
+exposed = "0.55.0" # https://github.com/JetBrains/Exposed/releases
+hikari = "6.0.0" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.3.232" # https://github.com/h2database/h2database/releases
 postgres = "42.7.4" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.7.1" # https://github.com/JuulLabs/indexeddb/releases
-realm = "2.2.0" # https://github.com/realm/realm-kotlin/tags
-androidxRoom = "2.7.0-alpha07" # https://developer.android.com/jetpack/androidx/releases/room
-androidxSqlite = "2.5.0-alpha07" # https://developer.android.com/jetpack/androidx/releases/sqlite
+realm = "3.0.0" # https://github.com/realm/realm-kotlin/tags
+androidxRoom = "2.7.0-alpha09" # https://developer.android.com/jetpack/androidx/releases/room
+androidxSqlite = "2.5.0-alpha09" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
 ### logging ###
 oshaiKotlinLogging = "7.0.0" # https://github.com/oshai/kotlin-logging/releases
-logback = "1.5.8" # https://github.com/qos-ch/logback/tags
+logback = "1.5.9" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
 kotest = "5.9.1" # https://github.com/kotest/kotest/releases
-mokkery = "2.3.0" # https://github.com/lupuuss/Mokkery/releases
-testContainers = "1.20.1" # https://github.com/testcontainers/testcontainers-java/releases
+mokkery = "2.4.0" # https://github.com/lupuuss/Mokkery/releases
+testContainers = "1.20.2" # https://github.com/testcontainers/testcontainers-java/releases
 androidxTestRunner = "1.6.2" # https://developer.android.com/jetpack/androidx/releases/test
 
 ### android ###
 # make sure to update Dockerfile, when you change a version here!
 androidTargetSdk = "35"
 androidMinSdk = "24"
-androidBuildTools = "35.0.0"
+androidBuildTools = "35.0.2"
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
