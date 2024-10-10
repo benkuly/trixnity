@@ -16,7 +16,7 @@ kotlinxDatetime = "0.6.1" # https://github.com/Kotlin/kotlinx-datetime/releases
 olm = "3.2.15" # https://gitlab.matrix.org/matrix-org/olm/-/releases
 trixnityOlmBinaries = "2.0.1" # https://gitlab.com/trixnity/trixnity-olm-binaries/-/releases
 trixnityOpensslBinaries = "1.0.4" # https://gitlab.com/trixnity/trixnity-openssl-binaries/-/releases
-jna = "5.14.0" # https://github.com/java-native-access/jna/tags
+jna = "5.15.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
 ktor = "2.3.12" # https://github.com/ktorio/ktor/releases
