@@ -301,7 +301,7 @@ suspend fun MatrixClient.Companion.loginWith(
             single { mediaStore }
         })
         modules(repositoriesModule)
-        modules(config.modules)
+        modules(config.modulesFactory())
     }
     val di = koinApplication.koin
 
@@ -421,7 +421,7 @@ suspend fun MatrixClient.Companion.fromStore(
             single { mediaStore }
         })
         modules(repositoriesModule)
-        modules(config.modules)
+        modules(config.modulesFactory())
     }
     val di = koinApplication.koin
 

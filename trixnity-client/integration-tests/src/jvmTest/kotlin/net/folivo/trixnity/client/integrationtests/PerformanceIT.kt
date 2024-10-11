@@ -108,7 +108,7 @@ class PerformanceIT {
                     "bot", baseUrl = baseUrl,
                     repositoriesModule = createExposedRepositoriesModule(matrixPostgresql2.getDatabase()),
                 ) {
-                    modules = createTrixnityBotModules()
+                    modulesFactory = { createTrixnityBotModules() }
                 }.client
             },
             { baseUrl ->
@@ -116,7 +116,7 @@ class PerformanceIT {
                     "inMemoryBot", baseUrl = baseUrl,
                     repositoriesModule = createInMemoryRepositoriesModule(),
                 ) {
-                    modules = createTrixnityBotModules()
+                    modulesFactory = { createTrixnityBotModules() }
                 }.client
             }
         )
@@ -193,7 +193,7 @@ class PerformanceIT {
 
             val prepareTestClients = (1..roomsCount).withLimitedParallelism { i ->
                 registerAndStartClient("prepare-$i", "prepare-$i", baseUrl, createInMemoryRepositoriesModule()) {
-                    modules = createTrixnityBotModules()
+                    modulesFactory = { createTrixnityBotModules() }
                     cacheExpireDurations = MatrixClientConfiguration.CacheExpireDurations.default(5.seconds)
                 }.client
             }
@@ -323,7 +323,7 @@ class PerformanceIT {
     fun fullClientVsBotModeThroughput(): Unit =
         runBlocking(Dispatchers.Default) {
             val fullClientSyncTime = throughput()
-            val botSyncTime = throughput { modules = createTrixnityBotModules() }
+            val botSyncTime = throughput { modulesFactory = { createTrixnityBotModules() } }
             val diff = (botSyncTime / fullClientSyncTime) * 100
             println("################################")
             println("fullClientSyncTime: $fullClientSyncTime")
