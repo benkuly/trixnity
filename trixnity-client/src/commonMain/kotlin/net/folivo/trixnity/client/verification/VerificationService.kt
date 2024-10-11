@@ -169,7 +169,7 @@ class VerificationServiceImpl(
                             clock = clock,
                         ).cancel()
                     } else {
-                        _activeDeviceVerification.value =
+                        _activeDeviceVerification.getAndUpdate {
                             ActiveDeviceVerificationImpl(
                                 request = event.content,
                                 requestIsOurs = false,
@@ -185,6 +185,7 @@ class VerificationServiceImpl(
                                 keyStore = keyStore,
                                 clock = clock,
                             )
+                        }?.cancel()
                     }
                 } else {
                     log.warn { "Received device verification request that is not active anymore: $event" }
@@ -312,7 +313,7 @@ class VerificationServiceImpl(
             val eventId = roomService.getOutbox(roomId, transactionId)
                 .mapNotNull { it?.eventId }
                 .first()
-            
+
             ActiveUserVerificationImpl(
                 request = request,
                 requestIsFromOurOwn = true,
