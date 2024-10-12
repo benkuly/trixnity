@@ -9,7 +9,7 @@ downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-downlo
 
 ### kotlinx ###
 kotlinxCoroutines = "1.9.0" # https://github.com/Kotlin/kotlinx.coroutines/releases
-kotlinxSerialization = "1.7.3" # https://github.com/Kotlin/kotlinx.serialization/releases
+kotlinxSerialization = "1.7.1" # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinxDatetime = "0.6.1" # https://github.com/Kotlin/kotlinx-datetime/releases
 
 ### native bindings ###
@@ -31,7 +31,7 @@ hikari = "6.0.0" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.3.232" # https://github.com/h2database/h2database/releases
 postgres = "42.7.4" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.7.1" # https://github.com/JuulLabs/indexeddb/releases
-realm = "3.0.0" # https://github.com/realm/realm-kotlin/tags
+realm = "2.2.0" # https://github.com/realm/realm-kotlin/tags
 androidxRoom = "2.7.0-alpha09" # https://developer.android.com/jetpack/androidx/releases/room
 androidxSqlite = "2.5.0-alpha09" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
