@@ -8,9 +8,12 @@ The client can be customized via dependency injection:
 
 ```kotlin
 matrixClient.login(...){
-    modules = createDefaultTrixnityModules() + customModule
+    modulesFactory = { createDefaultTrixnityModules() + createCustomModule() }
 }
 ```
+
+Be aware to always create new modules because a module saves your class instances and therefore is reused, which we
+don't want!
 
 ## Custom events
 

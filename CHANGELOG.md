@@ -18,9 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support files larger than 2.1GB
 - Outbox API returns a sorted list
 - Keep transaction id for redacted messages
-- Upgrade Kotlin to 2.0.20
+- internal: new Docker images
+- updated openssl and libolm (Android 15 support)
+- internal: upgrade dependencies
 
 ### Deprecated
+
+- `modules` replaced by `modulesFactory`
 
 ### Removed
 
