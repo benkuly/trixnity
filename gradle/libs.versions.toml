@@ -16,11 +16,11 @@ kotlinxDatetime = "0.6.1" # https://github.com/Kotlin/kotlinx-datetime/releases
 olm = "3.2.15" # https://gitlab.matrix.org/matrix-org/olm/-/releases
 trixnityOlmBinaries = "2.0.2" # https://gitlab.com/trixnity/trixnity-olm-binaries/-/releases
 trixnityOpensslBinaries = "1.0.5" # https://gitlab.com/trixnity/trixnity-openssl-binaries/-/releases
-jna = "5.14.0" # https://github.com/java-native-access/jna/tags
+jna = "5.15.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
 ktor = "2.3.12" # https://github.com/ktorio/ktor/releases
-koin = "4.0.0" # https://github.com/InsertKoinIO/koin/tags
+koin = "3.5.6" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.9.1" # https://square.github.io/okio/changelog/
 arrow = "1.2.4" # https://github.com/arrow-kt/arrow/releases
 korlibs = "4.0.10" # https://github.com/korlibs/korge/releases
