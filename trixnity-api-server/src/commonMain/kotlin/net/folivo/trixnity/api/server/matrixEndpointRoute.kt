@@ -2,12 +2,12 @@ package net.folivo.trixnity.api.server
 
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.application.hooks.*
 import io.ktor.server.request.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
-import io.ktor.util.pipeline.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
@@ -87,22 +87,24 @@ inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE>
 
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <reified ENDPOINT : MatrixEndpoint<*, *>> Route.matrixEndpointResource(
-    crossinline block: suspend PipelineContext<Unit, ApplicationCall>.(ENDPOINT) -> Unit
+    crossinline block: suspend RoutingContext.(ENDPOINT) -> Unit
 ) = resource<ENDPOINT> {
     val annotations = serializer<ENDPOINT>().descriptor.annotations
     val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
         ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
     val withoutAuthOptional = annotations.filterIsInstance<WithoutAuth>().firstOrNull()?.optional
     method(io.ktor.http.HttpMethod(endpointHttpMethod.type.name)) {
-        intercept(ApplicationCallPipeline.Plugins) {
-            call.attributes.put(
-                withoutAuthAttributeKey, when (withoutAuthOptional) {
-                    true -> AuthRequired.OPTIONAL
-                    false -> AuthRequired.NO
-                    null -> AuthRequired.YES
-                }
-            )
-        }
+        install(createRouteScopedPlugin("AuthAttributeKeyPlugin") {
+            on(CallSetup) { call ->
+                call.attributes.put(
+                    withoutAuthAttributeKey, when (withoutAuthOptional) {
+                        true -> AuthRequired.OPTIONAL
+                        false -> AuthRequired.NO
+                        null -> AuthRequired.YES
+                    }
+                )
+            }
+        })
         handle<ENDPOINT> { endpoint ->
             block(endpoint)
         }

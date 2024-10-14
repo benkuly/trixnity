@@ -21,7 +21,7 @@ fun Application.matrixClientServerApiServer(
     }
     matrixApiServer(json) {
         createChild(object : RouteSelector() {
-            override fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation =
+            override suspend fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation =
                 RouteSelectorEvaluation.Transparent
         }).apply {
             installMatrixClientServerApiServer()

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep transaction id for redacted messages
 - internal: new Docker images
 - updated openssl and libolm (Android 15 support)
+- upgrade to Ktor 3
 
 ### Deprecated
 

@@ -202,14 +202,14 @@ internal inline fun <reified ENDPOINT : MatrixEndpoint<*, *>> getExpectedRequest
 
 @PublishedApi
 internal fun Url.matches(other: Url): Boolean {
-    return pathSegments.size == other.pathSegments.size
-            && pathSegments.mapIndexed { index, pathSegment ->
+    return rawSegments.size == other.rawSegments.size
+            && rawSegments.mapIndexed { index, pathSegment ->
         when {
             pathSegment == "*" -> true
-            pathSegment.endsWith("*") -> other.pathSegments.getOrNull(index)
+            pathSegment.endsWith("*") -> other.rawSegments.getOrNull(index)
                 ?.startsWith(pathSegment.dropLast(1)) == true
 
-            else -> pathSegment == other.pathSegments.getOrNull(index)
+            else -> pathSegment == other.rawSegments.getOrNull(index)
         }
     }.all { it }
             && parameters.toMap().all {
