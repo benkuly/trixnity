@@ -48,6 +48,7 @@ fun createRealmRepositoriesModule(
             RealmMediaCacheMapping::class,
         )
     ).apply {
+        schemaVersion(1)
         config()
     }.build()
     val realm = Realm.open(realmConfiguration)
