@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.8.0
+
+### Added
+
 - Add utils for converting between Input-/OutputStream and ByteArrayFlow
 - Add extensions for creating ByteArrayFlow from ByteBuffer
 - Check server media config before uploading any media.
@@ -25,14 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `modules` replaced by `modulesFactory`
 
-### Removed
-
 ### Fixed
 
 - Delete outbox on room forget
 - Missing schema version in Realm prevented automatic migrations
-
-### Security
 
 ## 4.7.3
 
