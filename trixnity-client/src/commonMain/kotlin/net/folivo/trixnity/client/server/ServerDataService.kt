@@ -29,13 +29,20 @@ class ServerDataService(
                             .onFailure { log.warn(it) { "failed get media config" } }
                             .getOrNull()
                     }
+                    val newCapabilitiesAsync = async {
+                        api.server.getCapabilities()
+                            .onFailure { log.warn(it) { "failed get server capabilities" } }
+                            .getOrNull()
+                    }
                     val newVersions = newVersionsAsync.await()
                     val newMediaConfig = newMediaConfigAsync.await()
+                    val newCapabilities = newCapabilitiesAsync.await()
                     if (newVersions != null && newMediaConfig != null) {
                         serverDataStore.setServerData(
                             ServerData(
                                 newVersions,
                                 newMediaConfig,
+                                newCapabilities,
                             )
                         )
                         delay(1.days)

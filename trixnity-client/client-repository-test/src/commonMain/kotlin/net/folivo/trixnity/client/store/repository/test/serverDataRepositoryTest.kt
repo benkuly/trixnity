@@ -6,6 +6,9 @@ import net.folivo.trixnity.client.store.ServerData
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.ServerDataRepository
 import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
+import net.folivo.trixnity.clientserverapi.model.server.Capabilities
+import net.folivo.trixnity.clientserverapi.model.server.Capability
+import net.folivo.trixnity.clientserverapi.model.server.GetCapabilities
 import net.folivo.trixnity.clientserverapi.model.server.GetVersions
 import org.koin.core.Koin
 
@@ -19,7 +22,13 @@ fun ShouldSpec.serverDataRepositoryTest(diReceiver: () -> Koin) {
     }
     should("serverDataRepositoryTest: save, get and delete") {
         val serverData =
-            ServerData(GetVersions.Response(listOf("v1.11"), mapOf("features" to true)), GetMediaConfig.Response(1234))
+            ServerData(
+                GetVersions.Response(listOf("v1.11"), mapOf("features" to true)),
+                GetMediaConfig.Response(1234),
+                GetCapabilities.Response(
+                    Capabilities(setOf(Capability.ChangePassword(false)))
+                )
+            )
         rtm.writeTransaction {
             cut.save(1, serverData)
             cut.get(1) shouldBe serverData
