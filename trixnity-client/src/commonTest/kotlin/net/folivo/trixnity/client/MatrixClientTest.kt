@@ -19,10 +19,8 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.Event
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
@@ -340,7 +338,52 @@ class MatrixClientTest : ShouldSpec({
                     httpClientFactory = {
                         HttpClient(MockEngine) {
                             it()
-                            engine { addHandler { respond("", HttpStatusCode.BadRequest) } }
+                            engine {
+                                addHandler { request ->
+                                    val path = request.url.fullPath
+                                    when {
+                                        path.startsWith("/_matrix/client/v3/sync?filter=backgroundFilter&set_presence=offline&since=sync&timeout=0") -> {
+                                            assertEquals(HttpMethod.Get, request.method)
+                                            respond(
+                                                json.encodeToString(serverResponse),
+                                                HttpStatusCode.OK,
+                                                headersOf(
+                                                    HttpHeaders.ContentType,
+                                                    ContentType.Application.Json.toString()
+                                                )
+                                            )
+                                        }
+
+                                        path == "/_matrix/client/v3/profile/${userId.full}" -> {
+                                            respond(
+                                                """{"displayname":"bobby","avatar_url":"mxc://localhost/abcdef"}""",
+                                                HttpStatusCode.OK,
+                                                headersOf(
+                                                    HttpHeaders.ContentType,
+                                                    ContentType.Application.Json.toString(),
+                                                )
+                                            )
+                                        }
+
+                                        path == "/_matrix/client/v3/keys/upload" -> {
+                                            assertEquals(HttpMethod.Post, request.method)
+                                            respond(
+                                                """{"one_time_key_counts":{"ed25519":1}}""",
+                                                HttpStatusCode.OK,
+                                                headersOf(
+                                                    HttpHeaders.ContentType,
+                                                    ContentType.Application.Json.toString()
+                                                )
+                                            )
+                                        }
+
+                                        else -> {
+                                            println(path)
+                                            respond("", HttpStatusCode.BadRequest)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 },
@@ -354,13 +397,25 @@ class MatrixClientTest : ShouldSpec({
         }
         should("$LOGGED_OUT_SOFT when access token is null, but sync batch token not") {
             val accountStore = cut.di.get<AccountStore>()
-            accountStore.updateAccount { it.copy(accessToken = null) }
+            accountStore.updateAccount { it?.copy(accessToken = null) }
             cut.loginState.first { it == LOGGED_OUT_SOFT }
         }
         should("$LOGGED_OUT when access token and sync batch token are null") {
             val accountStore = cut.di.get<AccountStore>()
-            accountStore.updateAccount { it.copy(accessToken = null, syncBatchToken = null) }
+            accountStore.updateAccount { it?.copy(accessToken = null, syncBatchToken = null) }
             cut.loginState.first { it == LOGGED_OUT }
+        }
+        should("$LOCKED when locked") {
+            val accountStore = cut.di.get<AccountStore>()
+            accountStore.updateAccount { it?.copy(isLocked = true) }
+            cut.loginState.first { it == LOCKED }
+        }
+        should("$LOGGED_IN when not locked anymore") {
+            val accountStore = cut.di.get<AccountStore>()
+            accountStore.updateAccount { it?.copy(isLocked = true) }
+            cut.loginState.first { it == LOCKED }
+            cut.syncOnce().getOrThrow()
+            cut.loginState.first { it == LOGGED_IN }
         }
     }
     context(MatrixClientImpl::logout.name) {
@@ -407,7 +462,7 @@ class MatrixClientTest : ShouldSpec({
                 },
             ).getOrThrow().shouldNotBeNull()
             val accountStore = cut.di.get<AccountStore>()
-            accountStore.updateAccount { it.copy(accessToken = null, syncBatchToken = "sync") }
+            accountStore.updateAccount { it?.copy(accessToken = null, syncBatchToken = "sync") }
             cut.loginState.first { it == LOGGED_OUT_SOFT }
             cut.logout().getOrThrow()
 

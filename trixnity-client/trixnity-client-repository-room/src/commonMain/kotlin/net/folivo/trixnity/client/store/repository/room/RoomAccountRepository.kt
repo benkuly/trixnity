@@ -18,6 +18,7 @@ data class RoomAccount(
     val backgroundFilterId: String? = null,
     val displayName: String? = null,
     val avatarUrl: String? = null,
+    val isLocked: Boolean = false,
 )
 
 @Dao
@@ -44,16 +45,17 @@ internal class RoomAccountRepository(
     override suspend fun get(key: Long): Account? =
         dao.get(key)?.let { entity ->
             Account(
-                olmPickleKey = entity.olmPickleKey,
-                baseUrl = entity.baseUrl,
-                userId = entity.userId,
-                deviceId = entity.deviceId,
+                olmPickleKey = entity.olmPickleKey ?: throw IllegalStateException("olmPickleKey not existent"),
+                baseUrl = entity.baseUrl ?: throw IllegalStateException("baseUrl not existent"),
+                userId = entity.userId ?: throw IllegalStateException("userId not existent"),
+                deviceId = entity.deviceId ?: throw IllegalStateException("deviceId not existent"),
                 accessToken = entity.accessToken,
                 syncBatchToken = entity.syncBatchToken,
                 filterId = entity.filterId,
                 backgroundFilterId = entity.backgroundFilterId,
                 displayName = entity.displayName,
                 avatarUrl = entity.avatarUrl,
+                isLocked = entity.isLocked,
             )
         }
 
@@ -71,6 +73,7 @@ internal class RoomAccountRepository(
                 backgroundFilterId = value.backgroundFilterId,
                 displayName = value.displayName,
                 avatarUrl = value.avatarUrl,
+                isLocked = value.isLocked,
             )
         )
     }

@@ -49,7 +49,7 @@ interface MatrixClientServerApiClient {
 
 class MatrixClientServerApiClientImpl(
     baseUrl: Url? = null,
-    onLogout: suspend (isSoft: Boolean) -> Unit = {},
+    onLogout: suspend (LogoutInfo) -> Unit = { },
     override val eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
