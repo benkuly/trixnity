@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support Matrix 1.12
+- Generic return type for downloads in MediaApiClient
 
 ### Changed
 
