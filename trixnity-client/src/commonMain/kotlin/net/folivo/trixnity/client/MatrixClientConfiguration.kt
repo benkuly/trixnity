@@ -89,7 +89,7 @@ data class MatrixClientConfiguration(
      * ```
      */
     @Deprecated("replace with modulesFactory")
-    var modules: List<Module> = createDefaultTrixnityModules(),
+    var modules: List<Module>? = null,
 
     /**
      * Inject and override modules into Trixnity. You should always apply [createDefaultTrixnityModules] first.
