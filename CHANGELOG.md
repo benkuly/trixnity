@@ -9,12 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support Matrix 1.12
-- Generic return type for downloads in MediaApiClient
-
 ### Changed
-
-- internal: Upgrade dependencies
 
 ### Deprecated
 
@@ -22,10 +17,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## 4.9.0
+
+### Added
+
+- Support Matrix 1.12
+- Generic return type for downloads in MediaApiClient
+
+### Changed
+
+- internal: Upgrade dependencies
+
+### Fixed
+
 - Don't send content type when there is no body.
 - Fixed blocking outbox.
-
-### Security
 
 ## 4.8.1
 
