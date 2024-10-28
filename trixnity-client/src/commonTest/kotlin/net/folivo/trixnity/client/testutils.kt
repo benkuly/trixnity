@@ -48,7 +48,10 @@ suspend fun getInMemoryAccountStore(scope: CoroutineScope) = AccountStore(
     InMemoryAccountRepository(),
     RepositoryTransactionManagerMock(),
     scope
-).apply { init() }
+).apply {
+    init()
+    updateAccount { Account("", "", UserId("user", "server"), "", null, null, null, null, null, null, false) }
+}
 
 suspend fun getInMemoryServerDataStore(scope: CoroutineScope) = ServerDataStore(
     InMemoryServerDataRepository().also {

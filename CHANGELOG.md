@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support Matrix 1.12
+- Generic return type for downloads in MediaApiClient
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.8.1
+
+### Fixed
+
+- Deprecated modules never loaded
+
+## 4.8.0
+
+### Added
+
 - Add utils for converting between Input-/OutputStream and ByteArrayFlow
 - Add extensions for creating ByteArrayFlow from ByteBuffer
 - Check server media config before uploading any media.
@@ -19,20 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Outbox API returns a sorted list
 - Keep transaction id for redacted messages
 - internal: new Docker images
-- updated openssl and libolm (Android 15 support)
-- internal: upgrade dependencies
+- updated openssl and libolm (prepare Android 15 support)
 
 ### Deprecated
 
 - `modules` replaced by `modulesFactory`
 
-### Removed
-
 ### Fixed
 
 - Delete outbox on room forget
-
-### Security
+- Missing schema version in Realm prevented automatic migrations
 
 ## 4.7.3
 

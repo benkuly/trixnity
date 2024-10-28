@@ -8,10 +8,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.clientserverapi.model.server.GetCapabilities
-import net.folivo.trixnity.clientserverapi.model.server.GetVersions
-import net.folivo.trixnity.clientserverapi.model.server.Search
-import net.folivo.trixnity.clientserverapi.model.server.WhoIs
+import net.folivo.trixnity.clientserverapi.model.server.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -49,9 +46,11 @@ class ServerApiClientTest {
     @Test
     fun shouldGetCapabilities() = runTest {
         val response = GetCapabilities.Response(
-            capabilities = GetCapabilities.Response.Capabilities(
-                GetCapabilities.Response.Capabilities.ChangePasswordCapability(true),
-                GetCapabilities.Response.Capabilities.RoomVersionsCapability("5", mapOf())
+            capabilities = Capabilities(
+                setOf(
+                    Capability.ChangePassword(true),
+                    Capability.RoomVersions("5", mapOf())
+                )
             )
         )
         val matrixRestClient = MatrixClientServerApiClientImpl(

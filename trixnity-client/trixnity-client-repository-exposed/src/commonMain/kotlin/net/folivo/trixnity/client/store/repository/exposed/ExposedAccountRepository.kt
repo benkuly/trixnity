@@ -21,22 +21,26 @@ internal object ExposedAccount : LongIdTable("account") {
     val backgroundFilterId = text("background_filter_id").nullable()
     val displayName = text("display_name").nullable()
     val avatarUrl = text("avatar_url").nullable()
+    val isLocked = bool("is_locked").nullable()
 }
 
 internal class ExposedAccountRepository : AccountRepository {
     override suspend fun get(key: Long): Account? = withExposedRead {
         ExposedAccount.selectAll().where { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
-                olmPickleKey = it[ExposedAccount.olmPickleKey],
-                baseUrl = it[ExposedAccount.baseUrl],
-                userId = it[ExposedAccount.userId]?.let { it1 -> UserId(it1) },
-                deviceId = it[ExposedAccount.deviceId],
+                olmPickleKey = it[ExposedAccount.olmPickleKey]
+                    ?: throw IllegalStateException("olmPickleKey not found"),
+                baseUrl = it[ExposedAccount.baseUrl] ?: throw IllegalStateException("baseUrl not found"),
+                userId = it[ExposedAccount.userId]?.let { it1 -> UserId(it1) }
+                    ?: throw IllegalStateException("userId not found"),
+                deviceId = it[ExposedAccount.deviceId] ?: throw IllegalStateException("deviceId not found"),
                 accessToken = it[ExposedAccount.accessToken],
                 syncBatchToken = it[ExposedAccount.syncBatchToken],
                 filterId = it[ExposedAccount.filterId],
                 backgroundFilterId = it[ExposedAccount.backgroundFilterId],
                 displayName = it[ExposedAccount.displayName],
                 avatarUrl = it[ExposedAccount.avatarUrl],
+                isLocked = it[ExposedAccount.isLocked] ?: false,
             )
         }
     }
@@ -46,7 +50,7 @@ internal class ExposedAccountRepository : AccountRepository {
             it[id] = key
             it[olmPickleKey] = value.olmPickleKey
             it[baseUrl] = value.baseUrl
-            it[userId] = value.userId?.full
+            it[userId] = value.userId.full
             it[deviceId] = value.deviceId
             it[accessToken] = value.accessToken
             it[syncBatchToken] = value.syncBatchToken
@@ -54,6 +58,7 @@ internal class ExposedAccountRepository : AccountRepository {
             it[backgroundFilterId] = value.backgroundFilterId
             it[displayName] = value.displayName
             it[avatarUrl] = value.avatarUrl
+            it[isLocked] = value.isLocked
         }
     }
 
