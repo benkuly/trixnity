@@ -647,14 +647,16 @@ class RoomServiceImpl(
 
     override fun getOutbox(): Flow<List<Flow<RoomOutboxMessage<*>?>>> =
         roomOutboxMessageStore.getAll().map { outbox ->
-            outbox.values.map { it.filterNotNull().first() to it }
+            outbox.values
+                .mapNotNull { outboxElement -> outboxElement.first()?.let { it to outboxElement } }
                 .sortedBy { it.first.createdAt }
                 .map { it.second }
         }.distinctUntilChanged()
 
     override fun getOutbox(roomId: RoomId): Flow<List<Flow<RoomOutboxMessage<*>?>>> =
         roomOutboxMessageStore.getAll().map { outbox ->
-            outbox.values.map { it.filterNotNull().first() to it }
+            outbox.values
+                .mapNotNull { outboxElement -> outboxElement.first()?.let { it to outboxElement } }
                 .filter { it.first.roomId == roomId }
                 .sortedBy { it.first.createdAt }
                 .map { it.second }
