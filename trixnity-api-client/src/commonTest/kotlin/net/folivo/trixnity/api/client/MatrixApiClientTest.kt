@@ -8,7 +8,6 @@ import io.ktor.http.ContentType.*
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -21,7 +20,6 @@ import net.folivo.trixnity.testutils.mockEngineFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class MatrixApiClientTest {
 
     private val json = createMatrixEventJson()
@@ -51,7 +49,10 @@ class MatrixApiClientTest {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
                     assertEquals("localhost", request.url.host)
-                    assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
+                    val contentType = request.body.contentType?.toString()
+                        ?: request.body.headers[HttpHeaders.ContentType]
+                        ?: request.headers[HttpHeaders.ContentType]
+                    assertEquals(Application.Json.toString(), contentType)
                     assertEquals(Post, request.method)
                     assertEquals("""{"includeDino":true}""", request.body.toByteArray().decodeToString())
                     respond(
@@ -116,6 +117,10 @@ class MatrixApiClientTest {
                 addHandler { request ->
                     assertEquals("/path", request.url.fullPath)
                     assertEquals("localhost", request.url.host)
+                    val contentType = request.body.contentType?.toString()
+                        ?: request.body.headers[HttpHeaders.ContentType]
+                        ?: request.headers[HttpHeaders.ContentType]
+                    assertEquals(null, contentType)
                     assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
                     assertEquals(Get, request.method)
                     respond("""{"status":"ok"}""", HttpStatusCode.OK)
