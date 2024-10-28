@@ -82,5 +82,6 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     globalAccountDataOf<IgnoredUserListEventContent>("m.ignored_user_list")
 
     roomAccountDataOf<FullyReadEventContent>("m.fully_read")
+    roomAccountDataOf<MarkedUnreadEventContent>("m.marked_unread")
     roomAccountDataOf<TagEventContent>("m.tag")
 }

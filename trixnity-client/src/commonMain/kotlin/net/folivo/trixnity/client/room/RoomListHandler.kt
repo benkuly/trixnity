@@ -23,6 +23,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.events.stateKeyOrNull
@@ -39,6 +40,7 @@ class RoomListHandler(
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
+    private val roomAccountDataStore: RoomAccountDataStore,
     private val forgetRoomService: ForgetRoomService,
     private val userInfo: UserInfo,
     private val tm: TransactionManager,
@@ -60,6 +62,7 @@ class RoomListHandler(
             membership: Membership,
             lastRelevantEvent: ClientEvent.RoomEvent<*>?,
             unreadMessageCount: Long?,
+            markedUnread: Boolean?,
             name: RoomDisplayName?,
         ): (Room?) -> Room {
             val createEventContent = roomStateStore.getByStateKey<CreateEventContent>(roomId).first()?.content
@@ -76,6 +79,7 @@ class RoomListHandler(
                     lastRelevantEventId = lastRelevantEvent?.id ?: oldRoom?.lastRelevantEventId,
                     lastRelevantEventTimestamp = lastRelevantEventTimestamp ?: oldRoom?.lastRelevantEventTimestamp,
                     unreadMessageCount = unreadMessageCount ?: oldRoom?.unreadMessageCount ?: 0,
+                    markedUnread = markedUnread ?: oldRoom?.markedUnread ?: false,
                     nextRoomId = nextRoomId ?: oldRoom?.nextRoomId,
                     name = name ?: oldRoom?.name,
                 )
@@ -97,6 +101,7 @@ class RoomListHandler(
                 membership = Membership.JOIN,
                 lastRelevantEvent = lastRelevantEvent,
                 unreadMessageCount = unreadMessageCount,
+                markedUnread = roomAccountDataStore.get<MarkedUnreadEventContent>(roomId).first()?.content?.unread,
                 name = name,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
@@ -107,7 +112,8 @@ class RoomListHandler(
                 roomId = roomId,
                 membership = Membership.LEAVE,
                 lastRelevantEvent = lastRelevantEvent,
-                unreadMessageCount = null,
+                unreadMessageCount = 0,
+                markedUnread = false,
                 name = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
@@ -117,7 +123,8 @@ class RoomListHandler(
                 roomId = roomId,
                 membership = Membership.KNOCK,
                 lastRelevantEvent = null,
-                unreadMessageCount = null,
+                unreadMessageCount = 0,
+                markedUnread = false,
                 name = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
@@ -127,7 +134,8 @@ class RoomListHandler(
                 roomId = roomId,
                 membership = Membership.INVITE,
                 lastRelevantEvent = null,
-                unreadMessageCount = null,
+                unreadMessageCount = 0,
+                markedUnread = false,
                 name = calculateDisplayName(
                     roomId = roomId,
                     nameEventContent = roomStateStore.getByStateKey<NameEventContent>(roomId).first()?.content,

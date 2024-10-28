@@ -25,12 +25,17 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
+data class LogoutInfo(
+    val isSoft: Boolean,
+    val isLocked: Boolean,
+)
+
 class MatrixClientServerApiHttpClient(
     val baseUrl: Url? = null,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     accessToken: MutableStateFlow<String?>,
-    private val onLogout: suspend (isSoft: Boolean) -> Unit = {},
+    private val onLogout: suspend (LogoutInfo) -> Unit = { },
     httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
 ) : MatrixApiClient(
     eventContentSerializerMappings,
@@ -56,8 +61,13 @@ class MatrixClientServerApiHttpClient(
     }
 ) {
     override suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {
-        if (response.status == HttpStatusCode.Unauthorized && errorResponse is ErrorResponse.UnknownToken) {
-            onLogout(errorResponse.softLogout)
+        if (response.status == HttpStatusCode.Unauthorized) {
+            when (errorResponse) {
+                is ErrorResponse.UnknownToken -> onLogout(LogoutInfo(errorResponse.softLogout, false))
+                is ErrorResponse.UserLocked -> onLogout(LogoutInfo(errorResponse.softLogout, true))
+                else -> {}
+            }
+
         }
     }
 
@@ -129,7 +139,10 @@ class MatrixClientServerApiHttpClient(
                 if (errorCode != null) {
                     val error = json.decodeFromJsonElement<ErrorResponse>(responseObject)
                     if (error is ErrorResponse.UnknownToken) {
-                        onLogout(error.softLogout)
+                        onLogout(LogoutInfo(error.softLogout, false))
+                    }
+                    if (error is ErrorResponse.UserLocked) {
+                        onLogout(LogoutInfo(error.softLogout, true))
                     }
                     UIA.Error(state, error, getFallbackUrl, authenticate)
                 } else {

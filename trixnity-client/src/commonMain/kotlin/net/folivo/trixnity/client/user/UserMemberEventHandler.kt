@@ -184,7 +184,7 @@ class UserMemberEventHandler(
             api.user.getProfile(userInfo.userId)
                 .onSuccess {
                     accountStore.updateAccount { account ->
-                        account.copy(
+                        account?.copy(
                             displayName = it.displayName,
                             avatarUrl = it.avatarUrl
                         )

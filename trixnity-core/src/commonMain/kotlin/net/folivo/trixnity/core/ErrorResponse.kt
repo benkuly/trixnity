@@ -34,6 +34,16 @@ sealed interface ErrorResponse {
     ) : ErrorResponse
 
     /**
+     * The account has been locked and cannot be used at this time.
+     */
+    @Serializable
+    @SerialName("M_USER_LOCKED")
+    data class UserLocked(
+        override val error: String,
+        @SerialName("soft_logout") val softLogout: Boolean = false
+    ) : ErrorResponse
+
+    /**
      * No access token was specified for the request.
      */
     @Serializable

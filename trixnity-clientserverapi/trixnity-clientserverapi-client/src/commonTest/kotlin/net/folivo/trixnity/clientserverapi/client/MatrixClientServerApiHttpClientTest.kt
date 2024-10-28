@@ -104,7 +104,7 @@ class MatrixClientServerApiHttpClientTest {
 
     @Test
     fun itShouldCallOnLogout() = runTest {
-        var onLogout: Boolean? = null
+        var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
@@ -134,7 +134,42 @@ class MatrixClientServerApiHttpClientTest {
             error.errorResponse::class
         )
         assertEquals("Only unicorns accepted", error.errorResponse.error)
-        onLogout shouldBe true
+        onLogout shouldBe LogoutInfo(true, false)
+    }
+
+    @Test
+    fun itShouldCallOnLogoutOnLocked() = runTest {
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler {
+                    respond(
+                        """{
+                            "errcode": "M_USER_LOCKED",
+                            "error": "you are blocked",
+                            "soft_logout": true
+                       }""".trimIndent(),
+                        HttpStatusCode.Unauthorized,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            onLogout = { onLogout = it },
+            json = json,
+            eventContentSerializerMappings = mappings,
+            accessToken = MutableStateFlow("token")
+        )
+        val error = shouldThrow<MatrixServerException> {
+            cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
+        }
+        assertEquals(HttpStatusCode.Unauthorized, error.statusCode)
+        assertEquals(
+            ErrorResponse.UserLocked::class,
+            error.errorResponse::class
+        )
+        assertEquals("you are blocked", error.errorResponse.error)
+        onLogout shouldBe LogoutInfo(true, true)
     }
 
     @Test
@@ -195,7 +230,7 @@ class MatrixClientServerApiHttpClientTest {
 
     @Test
     fun uiaRequestShouldCallOnLogout() = runTest {
-        var onLogout: Boolean? = null
+        var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
             httpClientFactory = mockEngineFactory {
@@ -223,7 +258,40 @@ class MatrixClientServerApiHttpClientTest {
             ErrorResponse.UnknownToken::class,
             error.errorResponse::class
         )
-        onLogout shouldBe true
+        onLogout shouldBe LogoutInfo(true, false)
+    }
+
+    @Test
+    fun uiaRequestShouldCallOnLogoutOnLock() = runTest {
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientFactory = mockEngineFactory {
+                addHandler {
+                    respond(
+                        """{ 
+                                "errcode": "M_USER_LOCKED",
+                                "error": "your are locked",
+                                "soft_logout": true
+                            }""".trimIndent(),
+                        HttpStatusCode.Unauthorized,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            onLogout = { onLogout = it },
+            json = json,
+            eventContentSerializerMappings = mappings,
+            accessToken = MutableStateFlow("token")
+        )
+
+        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+            .shouldBeInstanceOf<UIA.Error<*>>()
+        assertEquals(
+            ErrorResponse.UserLocked::class,
+            error.errorResponse::class
+        )
+        onLogout shouldBe LogoutInfo(true, true)
     }
 
     @Test

@@ -23,22 +23,24 @@ internal class RealmAccount : RealmObject {
     var backgroundFilterId: String? = null
     var displayName: String? = null
     var avatarUrl: String? = null
+    var isLocked: Boolean = false
 }
 
 internal class RealmAccountRepository : AccountRepository {
     override suspend fun get(key: Long): Account? = withRealmRead {
         findByKey(key).find()?.copyFromRealm()?.let { realmAccount ->
             Account(
-                olmPickleKey = realmAccount.olmPickleKey,
-                baseUrl = realmAccount.baseUrl,
-                userId = realmAccount.userId?.let { UserId(it) },
-                deviceId = realmAccount.deviceId,
+                olmPickleKey = realmAccount.olmPickleKey ?: throw IllegalStateException("olmPickleKey not found"),
+                baseUrl = realmAccount.baseUrl ?: throw IllegalStateException("baseUrl not found"),
+                userId = realmAccount.userId?.let { UserId(it) } ?: throw IllegalStateException("userId not found"),
+                deviceId = realmAccount.deviceId ?: throw IllegalStateException("deviceId not found"),
                 accessToken = realmAccount.accessToken,
                 syncBatchToken = realmAccount.syncBatchToken,
                 filterId = realmAccount.filterId,
                 backgroundFilterId = realmAccount.backgroundFilterId,
                 displayName = realmAccount.displayName,
                 avatarUrl = realmAccount.avatarUrl,
+                isLocked = realmAccount.isLocked
             )
         }
     }
@@ -49,7 +51,7 @@ internal class RealmAccountRepository : AccountRepository {
                 id = key
                 olmPickleKey = value.olmPickleKey
                 baseUrl = value.baseUrl
-                userId = value.userId?.full
+                userId = value.userId.full
                 deviceId = value.deviceId
                 accessToken = value.accessToken
                 syncBatchToken = value.syncBatchToken
@@ -57,6 +59,7 @@ internal class RealmAccountRepository : AccountRepository {
                 backgroundFilterId = value.backgroundFilterId
                 displayName = value.displayName
                 avatarUrl = value.avatarUrl
+                isLocked = value.isLocked
             },
             UpdatePolicy.ALL
         )

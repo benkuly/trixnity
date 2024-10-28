@@ -23,6 +23,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 
@@ -34,6 +35,7 @@ class RoomListHandlerTest : ShouldSpec({
     lateinit var roomStore: RoomStore
     lateinit var roomStateStore: RoomStateStore
     lateinit var globalAccountDataStore: GlobalAccountDataStore
+    lateinit var roomAccountDataStore: RoomAccountDataStore
 
     lateinit var config: MatrixClientConfiguration
     lateinit var scope: CoroutineScope
@@ -48,6 +50,7 @@ class RoomListHandlerTest : ShouldSpec({
         roomStore = getInMemoryRoomStore(scope)
         roomStateStore = getInMemoryRoomStateStore(scope)
         globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
+        roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
         config = MatrixClientConfiguration()
         val (api, _) = mockMatrixClientServerApiClient(json)
         forgetRooms.clear()
@@ -56,6 +59,7 @@ class RoomListHandlerTest : ShouldSpec({
             roomStore = roomStore,
             roomStateStore = roomStateStore,
             globalAccountDataStore = globalAccountDataStore,
+            roomAccountDataStore = roomAccountDataStore,
             forgetRoomService = { forgetRooms.add(it) },
             userInfo = simpleUserInfo,
             tm = TransactionManagerMock(),
@@ -86,6 +90,33 @@ class RoomListHandlerTest : ShouldSpec({
                     )
                 )
                 roomStore.get(roomId).first()?.unreadMessageCount shouldBe 24
+            }
+        }
+        context("markedUnread") {
+            should("not mark as unread when not set") {
+                cut.updateRoomList(
+                    SyncEvents(
+                        Sync.Response(
+                            nextBatch = "",
+                            room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom()))
+                        ),
+                        emptyList()
+                    )
+                )
+                roomStore.get(roomId).first()?.markedUnread shouldBe false
+            }
+            should("mark as unread when set") {
+                roomAccountDataStore.save(ClientEvent.RoomAccountDataEvent(MarkedUnreadEventContent(true), roomId))
+                cut.updateRoomList(
+                    SyncEvents(
+                        Sync.Response(
+                            nextBatch = "",
+                            room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom()))
+                        ),
+                        emptyList()
+                    )
+                )
+                roomStore.get(roomId).first()?.markedUnread shouldBe true
             }
         }
         context("lastRelevantEventId") {
