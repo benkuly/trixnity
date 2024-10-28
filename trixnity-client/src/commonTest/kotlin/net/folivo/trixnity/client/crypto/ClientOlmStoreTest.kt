@@ -35,7 +35,7 @@ private val body: ShouldSpec.() -> Unit = {
         scope = CoroutineScope(Dispatchers.Default)
         keyStore = getInMemoryKeyStore(scope)
         cut = ClientOlmStore(
-            accountStore = getInMemoryAccountStore(scope).apply { updateAccount { it.copy(olmPickleKey = "") } },
+            accountStore = getInMemoryAccountStore(scope).apply { updateAccount { it?.copy(olmPickleKey = "") } },
             olmCryptoStore = getInMemoryOlmStore(scope),
             keyStore = keyStore,
             roomStateStore = getInMemoryRoomStateStore(scope),

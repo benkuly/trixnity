@@ -266,7 +266,7 @@ class SyncApiClientImpl(
         log.info { "stopped single sync with success" }
         _currentSyncState.value = STOPPED
     }.onFailure {
-        log.info { "stopped single sync with failure" }
+        log.warn(it) { "stopped single sync with failure" }
         _currentSyncState.value = STOPPED
     }
 

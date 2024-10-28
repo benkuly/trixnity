@@ -23,6 +23,7 @@ data class Room(
     val membership: Membership = Membership.JOIN,
     val membersLoaded: Boolean = false,
     val nextRoomId: RoomId? = null,
+    val markedUnread: Boolean = false,
 )
 
 val Room.previousRoomId: RoomId? get() = createEventContent?.predecessor?.roomId

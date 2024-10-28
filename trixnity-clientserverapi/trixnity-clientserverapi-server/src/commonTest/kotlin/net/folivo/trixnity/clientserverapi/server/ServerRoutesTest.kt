@@ -12,10 +12,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import net.folivo.trixnity.api.server.matrixApiServer
-import net.folivo.trixnity.clientserverapi.model.server.GetCapabilities
-import net.folivo.trixnity.clientserverapi.model.server.GetVersions
-import net.folivo.trixnity.clientserverapi.model.server.Search
-import net.folivo.trixnity.clientserverapi.model.server.WhoIs
+import net.folivo.trixnity.clientserverapi.model.server.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -78,9 +75,11 @@ class ServerRoutesTest {
         everySuspend { handlerMock.getCapabilities(any()) }
             .returns(
                 GetCapabilities.Response(
-                    capabilities = GetCapabilities.Response.Capabilities(
-                        GetCapabilities.Response.Capabilities.ChangePasswordCapability(true),
-                        GetCapabilities.Response.Capabilities.RoomVersionsCapability("5", mapOf())
+                    capabilities = Capabilities(
+                        setOf(
+                            Capability.ChangePassword(true),
+                            Capability.RoomVersions("5", mapOf())
+                        )
                     )
                 )
             )
@@ -97,15 +96,6 @@ class ServerRoutesTest {
                     "m.room_versions": {
                       "default": "5",
                       "available": {}
-                    },
-                    "m.set_displayname": {
-                      "enabled": true
-                    },
-                    "m.set_avatar_url": {
-                      "enabled": true
-                    },
-                    "m.3pid_changes": {
-                      "enabled": true
                     }
                   }
                 }

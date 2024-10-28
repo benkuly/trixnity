@@ -16,8 +16,8 @@ class AccountStore(
 
     suspend fun getAccount() = accountCache.read(1).first()
     fun getAccountAsFlow() = accountCache.read(1)
-    suspend fun updateAccount(updater: suspend (Account) -> Account) = accountCache.write(1) { account ->
-        updater(account ?: Account(null, null, null, null, null, null, null, null, null, null))
+    suspend fun updateAccount(updater: suspend (Account?) -> Account?) = accountCache.write(1) { account ->
+        updater(account)
     }
 
     override suspend fun clearCache() {}

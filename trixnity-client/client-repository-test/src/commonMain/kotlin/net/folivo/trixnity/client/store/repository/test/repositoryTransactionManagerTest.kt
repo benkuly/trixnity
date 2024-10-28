@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import net.folivo.trixnity.core.model.UserId
 import org.koin.core.Koin
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -30,7 +31,7 @@ fun ShouldSpec.repositoryTransactionManagerTest(
     }
 
     suspend fun testWrite(key: Int) {
-        cut.save(key.toLong(), Account(null, null, null, null, null, null, null, null, null, null))
+        cut.save(key.toLong(), Account("", "", UserId("userId"), "", null, null, null, null, null, null, false))
     }
 
     suspend fun testRead(key: Int) = cut.get(key.toLong())

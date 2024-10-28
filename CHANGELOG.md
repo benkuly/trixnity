@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support Matrix 1.12
+- Generic return type for downloads in MediaApiClient
+
 ### Changed
 
 ### Deprecated
@@ -39,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Outbox API returns a sorted list
 - Keep transaction id for redacted messages
 - internal: new Docker images
-- updated openssl and libolm (Android 15 support)
+- updated openssl and libolm (prepare Android 15 support)
 
 ### Deprecated
 
