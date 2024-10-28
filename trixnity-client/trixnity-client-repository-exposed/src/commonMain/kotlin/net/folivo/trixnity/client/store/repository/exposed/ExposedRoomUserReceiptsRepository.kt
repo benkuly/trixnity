@@ -46,7 +46,7 @@ internal class ExposedRoomUserReceiptsRepository(private val json: Json) : RoomU
     }
 
     override suspend fun get(firstKey: RoomId): Map<UserId, RoomUserReceipts> = withExposedRead {
-        ExposedRoomUserReceipts.select { ExposedRoomUserReceipts.roomId eq firstKey.full }
+        ExposedRoomUserReceipts.selectAll().where { ExposedRoomUserReceipts.roomId eq firstKey.full }
             .map { json.decodeFromString<RoomUserReceipts>(it[ExposedRoomUserReceipts.value]) }
             .associateBy { it.userId }
     }

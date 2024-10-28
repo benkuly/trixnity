@@ -40,7 +40,7 @@ internal class ExposedRoomAccountDataRepository(private val json: Json) : RoomAc
         firstKey: RoomAccountDataRepositoryKey,
         secondKey: String
     ): RoomAccountDataEvent<*>? = withExposedRead {
-        ExposedRoomAccountData.select {
+        ExposedRoomAccountData.selectAll().where {
             ExposedRoomAccountData.roomId.eq(firstKey.roomId.full) and
                     ExposedRoomAccountData.type.eq(firstKey.type) and
                     ExposedRoomAccountData.key.eq(secondKey)
