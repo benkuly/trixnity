@@ -29,11 +29,11 @@ internal class ExposedAccountRepository : AccountRepository {
         ExposedAccount.selectAll().where { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
                 olmPickleKey = it[ExposedAccount.olmPickleKey]
-                    ?: throw IllegalStateException("olmPickleKey not existent"),
-                baseUrl = it[ExposedAccount.baseUrl] ?: throw IllegalStateException("baseUrl not existent"),
+                    ?: throw IllegalStateException("olmPickleKey not found"),
+                baseUrl = it[ExposedAccount.baseUrl] ?: throw IllegalStateException("baseUrl not found"),
                 userId = it[ExposedAccount.userId]?.let { it1 -> UserId(it1) }
-                    ?: throw IllegalStateException("userId not existent"),
-                deviceId = it[ExposedAccount.deviceId] ?: throw IllegalStateException("deviceId not existent"),
+                    ?: throw IllegalStateException("userId not found"),
+                deviceId = it[ExposedAccount.deviceId] ?: throw IllegalStateException("deviceId not found"),
                 accessToken = it[ExposedAccount.accessToken],
                 syncBatchToken = it[ExposedAccount.syncBatchToken],
                 filterId = it[ExposedAccount.filterId],

@@ -30,10 +30,10 @@ internal class RealmAccountRepository : AccountRepository {
     override suspend fun get(key: Long): Account? = withRealmRead {
         findByKey(key).find()?.copyFromRealm()?.let { realmAccount ->
             Account(
-                olmPickleKey = realmAccount.olmPickleKey ?: throw IllegalStateException("olmPickleKey not existent"),
-                baseUrl = realmAccount.baseUrl ?: throw IllegalStateException("baseUrl not existent"),
-                userId = realmAccount.userId?.let { UserId(it) } ?: throw IllegalStateException("userId not existent"),
-                deviceId = realmAccount.deviceId ?: throw IllegalStateException("deviceId not existent"),
+                olmPickleKey = realmAccount.olmPickleKey ?: throw IllegalStateException("olmPickleKey not found"),
+                baseUrl = realmAccount.baseUrl ?: throw IllegalStateException("baseUrl not found"),
+                userId = realmAccount.userId?.let { UserId(it) } ?: throw IllegalStateException("userId not found"),
+                deviceId = realmAccount.deviceId ?: throw IllegalStateException("deviceId not found"),
                 accessToken = realmAccount.accessToken,
                 syncBatchToken = realmAccount.syncBatchToken,
                 filterId = realmAccount.filterId,
