@@ -17,9 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix media config fetching when Matrix server does not support 1.11
-
 ### Security
+
+## 4.9.1
+
+### Fixed
+
+- Fix media config fetching when Matrix server does not support 1.11
 
 ## 4.9.0
 
