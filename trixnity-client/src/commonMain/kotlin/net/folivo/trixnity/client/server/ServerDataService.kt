@@ -48,7 +48,7 @@ class ServerDataService(
                     }
                     val newMediaConfig = newMediaConfigAsync.await()
                     val newCapabilities = newCapabilitiesAsync.await()
-                    if (newVersions != null && newMediaConfig != null) {
+                    if (newVersions != null && newMediaConfig != null && newCapabilities != null) {
                         serverDataStore.setServerData(
                             ServerData(
                                 newVersions,
