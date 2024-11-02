@@ -46,7 +46,7 @@ internal interface ObservableCacheStore<K, V> {
 /**
  * An index to track which entries have been added to or removed from the cache.
  */
-internal interface ObservableMapIndex<K> {
+internal interface ObservableCacheIndex<K> {
     /**
      * Called, when an entry is added to the cache.
      */
@@ -68,6 +68,8 @@ internal interface ObservableMapIndex<K> {
      * Get the subscription count on an index entry, which uses an entry of the cache.
      */
     suspend fun getSubscriptionCount(key: K): Flow<Int>
+
+    suspend fun collectStatistic(): ObservableCacheIndexStatistic?
 }
 
 /**
@@ -149,7 +151,7 @@ internal open class ObservableCacheBase<K, V>(
         addIndex(RemoverJobExecutingIndex(name, values, cacheScope, expireDuration))
     }
 
-    fun addIndex(index: ObservableMapIndex<K>) {
+    fun addIndex(index: ObservableCacheIndex<K>) {
         values.indexes.update { it + index }
     }
 
@@ -197,6 +199,19 @@ internal open class ObservableCacheBase<K, V>(
             }
         }
     }
+
+    internal suspend fun collectStatistic(): ObservableCacheStatistic {
+        val (all, subscribed) = values.internalRead {
+            count() to values.count { it.subscriptionCount.value > 0 }
+        }
+        return ObservableCacheStatistic(
+            name = name,
+            all = all,
+            subscribed = subscribed,
+            indexes = values.indexes.value.mapNotNull { it.collectStatistic() }
+        )
+    }
+
 }
 
 private class RemoverJobExecutingIndex<K, V>(
@@ -204,7 +219,7 @@ private class RemoverJobExecutingIndex<K, V>(
     private val values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>>,
     private val cacheScope: CoroutineScope,
     private val expireDuration: Duration = 1.minutes,
-) : ObservableMapIndex<K> {
+) : ObservableCacheIndex<K> {
     private val infiniteCache = expireDuration.isInfinite()
     override suspend fun onPut(key: K) {
         if (infiniteCache.not()) {
@@ -233,5 +248,8 @@ private class RemoverJobExecutingIndex<K, V>(
 
     override suspend fun onRemove(key: K, stale: Boolean) {}
     override suspend fun onRemoveAll() {}
-    override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = MutableStateFlow(0)
+    override suspend fun collectStatistic(): ObservableCacheIndexStatistic? = null
+
+    private val zeroStateFlow = MutableStateFlow(0)
+    override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = zeroStateFlow
 }

@@ -14,9 +14,9 @@ import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
+private class DeleteByRoomIdRepositoryObservableCacheIndex<K>(
     private val keyMapper: (K) -> RoomId,
-) : ObservableMapIndex<K> {
+) : ObservableCacheIndex<K> {
 
     private val values = ConcurrentObservableMap<RoomId, ConcurrentObservableSet<K>>()
 
@@ -45,6 +45,8 @@ private class DeleteByRoomIdRepositoryObservableMapIndex<K>(
     suspend fun getMapping(roomId: RoomId): Set<K> =
         values.getOrPut(roomId) { ConcurrentObservableSet() }
             .values.first()
+
+    override suspend fun collectStatistic(): ObservableCacheIndexStatistic? = null
 }
 
 internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
@@ -60,8 +62,8 @@ internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
     expireDuration = expireDuration,
 ) {
 
-    private val roomIdIndex: DeleteByRoomIdRepositoryObservableMapIndex<K> =
-        DeleteByRoomIdRepositoryObservableMapIndex(roomIdMapper)
+    private val roomIdIndex: DeleteByRoomIdRepositoryObservableCacheIndex<K> =
+        DeleteByRoomIdRepositoryObservableCacheIndex(roomIdMapper)
 
     init {
         addIndex(roomIdIndex)
@@ -99,8 +101,8 @@ internal class FullDeleteByRoomIdRepositoryObservableCache<K, V>(
     valueToKeyMapper = valueToKeyMapper
 ) {
 
-    private val roomIdIndex: DeleteByRoomIdRepositoryObservableMapIndex<K> =
-        DeleteByRoomIdRepositoryObservableMapIndex(roomIdMapper)
+    private val roomIdIndex: DeleteByRoomIdRepositoryObservableCacheIndex<K> =
+        DeleteByRoomIdRepositoryObservableCacheIndex(roomIdMapper)
 
     init {
         addIndex(roomIdIndex)
@@ -135,8 +137,8 @@ internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
     cacheScope = cacheScope,
     expireDuration = expireDuration,
 ) {
-    private val roomIdIndex: DeleteByRoomIdRepositoryObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> =
-        DeleteByRoomIdRepositoryObservableMapIndex(roomIdMapper)
+    private val roomIdIndex: DeleteByRoomIdRepositoryObservableCacheIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> =
+        DeleteByRoomIdRepositoryObservableCacheIndex(roomIdMapper)
 
     init {
         addIndex(roomIdIndex)
