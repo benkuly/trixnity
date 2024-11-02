@@ -301,7 +301,7 @@ class ObservableCacheTest : ShouldSpec({
         ) : ObservableCache<String, String, InMemoryObservableCacheStore<String, String>>(
             name, store, cacheScope, expireDuration
         ) {
-            val index = object : ObservableMapIndex<String> {
+            val index = object : ObservableCacheIndex<String> {
                 var onPut = MutableStateFlow<String?>(null)
                 override suspend fun onPut(key: String) {
                     onPut.value = key

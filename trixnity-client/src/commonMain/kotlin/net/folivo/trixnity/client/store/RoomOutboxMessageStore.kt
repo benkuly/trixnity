@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.FullDeleteByRoomIdRepositoryObservableCache
+import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
@@ -13,6 +14,7 @@ class RoomOutboxMessageStore(
     roomOutboxMessageRepository: RoomOutboxMessageRepository,
     tm: RepositoryTransactionManager,
     storeScope: CoroutineScope,
+    statisticCollector: ObservableCacheStatisticCollector,
     config: MatrixClientConfiguration,
 ) : Store {
     private val roomOutboxMessageCache = FullDeleteByRoomIdRepositoryObservableCache(
@@ -22,7 +24,7 @@ class RoomOutboxMessageStore(
         config.cacheExpireDurations.roomOutboxMessage,
         { RoomOutboxMessageRepositoryKey(it.roomId, it.transactionId) }) {
         it.roomId
-    }
+    }.also(statisticCollector::addCache)
 
     override suspend fun clearCache() = deleteAll()
 
