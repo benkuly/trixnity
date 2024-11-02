@@ -9,7 +9,7 @@ import kotlin.time.Duration.Companion.minutes
 
 private class FullRepositoryObservableCacheIndex<K>(
     private val loadFromStore: suspend () -> Unit,
-) : ObservableCacheIndex<K> {
+) : ObservableMapIndex<K> {
 
     private val allKeys = ConcurrentObservableSet<K>()
     private val subscribers = MutableStateFlow(0)
@@ -39,13 +39,6 @@ private class FullRepositoryObservableCacheIndex<K>(
             .onCompletion { subscribers.update { it - 1 } }
         )
     }
-
-    override suspend fun collectStatistic(): ObservableCacheIndexStatistic =
-        ObservableCacheIndexStatistic(
-            name = "Full",
-            all = allKeys.size(),
-            subscribed = subscribers.value.coerceAtMost(1),
-        )
 }
 
 internal open class FullRepositoryObservableCache<K, V>(

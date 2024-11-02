@@ -15,9 +15,9 @@ data class MapRepositoryCoroutinesCacheKey<K1, K2>(
     val secondKey: K2,
 )
 
-private class MapRepositoryObservableCacheIndex<K1, K2>(
+private class MapRepositoryObservableIndex<K1, K2>(
     private val loadFromStore: suspend (key: K1) -> Unit,
-) : ObservableCacheIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
+) : ObservableMapIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
     private data class MapRepositoryObservableMapIndexValue<K2>(
         val keys: ConcurrentObservableSet<K2> = ConcurrentObservableSet(),
         val fullyLoadedFromStore: Boolean = false,
@@ -69,17 +69,6 @@ private class MapRepositoryObservableCacheIndex<K1, K2>(
                     .onCompletion { value.subscribers.update { it - 1 } }
             )
         }
-
-    override suspend fun collectStatistic(): ObservableCacheIndexStatistic {
-        val (all, subscribed) = values.internalRead {
-            count() to values.count { it.subscribers.value > 0 }
-        }
-        return ObservableCacheIndexStatistic(
-            name = "Map",
-            all = all,
-            subscribed = subscribed,
-        )
-    }
 }
 
 internal open class MapRepositoryObservableCache<K1, K2, V>(
@@ -95,8 +84,8 @@ internal open class MapRepositoryObservableCache<K1, K2, V>(
     expireDuration = expireDuration,
     values = values,
 ) {
-    private val mapRepositoryIndex: MapRepositoryObservableCacheIndex<K1, K2> =
-        MapRepositoryObservableCacheIndex { key ->
+    private val mapRepositoryIndex: MapRepositoryObservableIndex<K1, K2> =
+        MapRepositoryObservableIndex { key ->
             log.trace { "load map from database by first key $key" }
             store.getByFirstKey(key).forEach { value ->
                 updateAndGet(

@@ -46,7 +46,7 @@ internal interface ObservableCacheStore<K, V> {
 /**
  * An index to track which entries have been added to or removed from the cache.
  */
-interface ObservableCacheIndex<K> {
+internal interface ObservableMapIndex<K> {
     /**
      * Called, when an entry is added to the cache.
      */
@@ -68,8 +68,6 @@ interface ObservableCacheIndex<K> {
      * Get the subscription count on an index entry, which uses an entry of the cache.
      */
     suspend fun getSubscriptionCount(key: K): Flow<Int>
-
-    suspend fun collectStatistic(): ObservableCacheIndexStatistic?
 }
 
 /**
@@ -80,7 +78,7 @@ interface ObservableCacheIndex<K> {
  * @param expireDuration Duration to wait until entries from cache are when not used anymore.
  * @param removeFromCacheOnNull removes an entry from the cache, when the value is null.
  */
-internal sealed class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
+internal open class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
     name: String,
     protected val store: S,
     cacheScope: CoroutineScope,
@@ -140,7 +138,7 @@ internal sealed class ObservableCache<K, V, S : ObservableCacheStore<K, V>>(
     }
 }
 
-sealed class ObservableCacheBase<K, V>(
+internal open class ObservableCacheBase<K, V>(
     protected val name: String,
     protected val cacheScope: CoroutineScope,
     protected val expireDuration: Duration = 1.minutes,
@@ -151,7 +149,7 @@ sealed class ObservableCacheBase<K, V>(
         addIndex(RemoverJobExecutingIndex(name, values, cacheScope, expireDuration))
     }
 
-    fun addIndex(index: ObservableCacheIndex<K>) {
+    fun addIndex(index: ObservableMapIndex<K>) {
         values.indexes.update { it + index }
     }
 
@@ -199,19 +197,6 @@ sealed class ObservableCacheBase<K, V>(
             }
         }
     }
-
-    internal suspend fun collectStatistic(): ObservableCacheStatistic {
-        val (all, subscribed) = values.internalRead {
-            count() to values.count { it.subscriptionCount.value > 0 }
-        }
-        return ObservableCacheStatistic(
-            name = name,
-            all = all,
-            subscribed = subscribed,
-            indexes = values.indexes.value.mapNotNull { it.collectStatistic() }
-        )
-    }
-
 }
 
 private class RemoverJobExecutingIndex<K, V>(
@@ -219,7 +204,7 @@ private class RemoverJobExecutingIndex<K, V>(
     private val values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>>,
     private val cacheScope: CoroutineScope,
     private val expireDuration: Duration = 1.minutes,
-) : ObservableCacheIndex<K> {
+) : ObservableMapIndex<K> {
     private val infiniteCache = expireDuration.isInfinite()
     override suspend fun onPut(key: K) {
         if (infiniteCache.not()) {
@@ -248,8 +233,5 @@ private class RemoverJobExecutingIndex<K, V>(
 
     override suspend fun onRemove(key: K, stale: Boolean) {}
     override suspend fun onRemoveAll() {}
-    override suspend fun collectStatistic(): ObservableCacheIndexStatistic? = null
-
-    private val zeroStateFlow = MutableStateFlow(0)
-    override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = zeroStateFlow
+    override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = MutableStateFlow(0)
 }

@@ -6,7 +6,6 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
 import net.folivo.trixnity.client.store.cache.MinimalDeleteByRoomIdRepositoryObservableCache
-import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -17,7 +16,6 @@ class RoomTimelineStore(
     timelineEventRelationRepository: TimelineEventRelationRepository,
     tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
-    statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope,
 ) : Store {
     private val timelineEventCache = MinimalDeleteByRoomIdRepositoryObservableCache(
@@ -25,14 +23,14 @@ class RoomTimelineStore(
         tm,
         storeScope,
         config.cacheExpireDurations.timelineEvent
-    ) { it.roomId }.also(statisticCollector::addCache)
+    ) { it.roomId }
     private val timelineEventRelationCache =
         MapDeleteByRoomIdRepositoryObservableCache(
             timelineEventRelationRepository,
             tm,
             storeScope,
             config.cacheExpireDurations.timelineEventRelation
-        ) { it.firstKey.roomId }.also(statisticCollector::addCache)
+        ) { it.firstKey.roomId }
 
 
     override suspend fun clearCache() = deleteAll()

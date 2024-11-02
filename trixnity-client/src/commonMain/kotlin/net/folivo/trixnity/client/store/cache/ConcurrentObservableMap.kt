@@ -10,7 +10,7 @@ import kotlin.contracts.contract
 internal class ConcurrentObservableMap<K, V> {
     private val _values = concurrentMutableMap<K, V>()
 
-    val indexes = MutableStateFlow(listOf<ObservableCacheIndex<K>>())
+    val indexes = MutableStateFlow(listOf<ObservableMapIndex<K>>())
 
     sealed interface CompareAndSetResult {
         data object TryAgain : CompareAndSetResult
@@ -94,8 +94,6 @@ internal class ConcurrentObservableMap<K, V> {
     suspend fun get(key: K): V? = _values.read { get(key) }
 
     suspend fun getAll(): Map<K, V> = _values.read { toMap() }
-
-    internal suspend fun <R> internalRead(reader: suspend Map<K, V>.() -> R) = _values.read(reader)
 
     suspend fun removeAll() = _values.write {
         clear()

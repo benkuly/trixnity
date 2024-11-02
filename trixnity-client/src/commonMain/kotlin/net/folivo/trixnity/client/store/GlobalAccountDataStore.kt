@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
 import net.folivo.trixnity.client.store.cache.MapRepositoryObservableCache
-import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.GlobalAccountDataRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
@@ -22,7 +21,6 @@ class GlobalAccountDataStore(
     tm: RepositoryTransactionManager,
     private val contentMappings: EventContentSerializerMappings,
     config: MatrixClientConfiguration,
-    statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope,
 ) : Store {
     private val globalAccountDataCache =
@@ -31,7 +29,7 @@ class GlobalAccountDataStore(
             tm,
             storeScope,
             config.cacheExpireDurations.globalAccountDate
-        ).also(statisticCollector::addCache)
+        )
 
     override suspend fun clearCache() = deleteAll()
 

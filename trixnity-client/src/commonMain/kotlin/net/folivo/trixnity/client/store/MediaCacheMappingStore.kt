@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
-import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.MediaCacheMappingRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 
@@ -12,7 +11,6 @@ class MediaCacheMappingStore(
     mediaCacheMappingRepository: MediaCacheMappingRepository,
     tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
-    statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope
 ) : Store {
     override suspend fun clearCache() = deleteAll()
@@ -25,7 +23,7 @@ class MediaCacheMappingStore(
         tm,
         storeScope,
         config.cacheExpireDurations.mediaCacheMapping
-    ).also(statisticCollector::addCache)
+    )
 
     suspend fun getMediaCacheMapping(cacheUri: String): MediaCacheMapping? =
         uploadMediaCache.read(cacheUri).first()

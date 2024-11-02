@@ -8,7 +8,6 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
-import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
@@ -29,7 +28,6 @@ class KeyStore(
     roomKeyRequestRepository: RoomKeyRequestRepository,
     private val tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
-    statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope
 ) : Store {
     private val outdatedKeysCache =
@@ -38,45 +36,45 @@ class KeyStore(
             tm = tm,
             cacheScope = storeScope,
             expireDuration = Duration.INFINITE
-        ).also(statisticCollector::addCache)
+        )
     private val secretsCache =
         MinimalRepositoryObservableCache(
             repository = secretsRepository,
             tm = tm,
             cacheScope = storeScope,
             expireDuration = Duration.INFINITE
-        ).also(statisticCollector::addCache)
+        )
     private val deviceKeysCache =
         MinimalRepositoryObservableCache(
             repository = deviceKeysRepository,
             tm = tm,
             cacheScope = storeScope,
             expireDuration = config.cacheExpireDurations.deviceKeys
-        ).also(statisticCollector::addCache)
+        )
     private val crossSigningKeysCache = MinimalRepositoryObservableCache(
         repository = crossSigningKeysRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = config.cacheExpireDurations.crossSigningKeys
-    ).also(statisticCollector::addCache)
+    )
     private val keyVerificationStateCache = MinimalRepositoryObservableCache(
         repository = keyVerificationStateRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = config.cacheExpireDurations.keyVerificationState
-    ).also(statisticCollector::addCache)
+    )
     private val secretKeyRequestCache = FullRepositoryObservableCache(
         repository = secretKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = config.cacheExpireDurations.secretKeyRequest
-    ) { it.content.requestId }.also(statisticCollector::addCache)
+    ) { it.content.requestId }
     private val roomKeyRequestCache = FullRepositoryObservableCache(
         repository = roomKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
         expireDuration = config.cacheExpireDurations.roomKeyRequest
-    ) { it.content.requestId }.also(statisticCollector::addCache)
+    ) { it.content.requestId }
 
     override suspend fun clearCache() {
         tm.writeTransaction {
