@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.InMemoryRoomRepository
 import net.folivo.trixnity.client.store.repository.RoomRepository
 import net.folivo.trixnity.core.model.RoomId
@@ -24,7 +25,13 @@ class RoomStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         roomRepository = InMemoryRoomRepository()
-        cut = RoomStore(roomRepository, RepositoryTransactionManagerMock(), storeScope, MatrixClientConfiguration())
+        cut = RoomStore(
+            roomRepository,
+            RepositoryTransactionManagerMock(),
+            MatrixClientConfiguration(),
+            ObservableCacheStatisticCollector(),
+            storeScope
+        )
     }
     afterTest {
         storeScope.cancel()

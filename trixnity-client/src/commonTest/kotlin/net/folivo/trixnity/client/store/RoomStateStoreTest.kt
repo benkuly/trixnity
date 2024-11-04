@@ -13,6 +13,7 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.flattenNotNull
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.InMemoryRoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepository
 import net.folivo.trixnity.client.store.repository.RoomStateRepositoryKey
@@ -41,6 +42,7 @@ class RoomStateStoreTest : ShouldSpec({
             RepositoryTransactionManagerMock(),
             DefaultEventContentSerializerMappings,
             MatrixClientConfiguration(),
+            ObservableCacheStatisticCollector(),
             storeScope
         )
     }

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.InMemoryRoomUserReceiptsRepository
 import net.folivo.trixnity.client.store.repository.InMemoryRoomUserRepository
 import net.folivo.trixnity.client.store.repository.RoomUserRepository
@@ -33,6 +34,7 @@ class RoomUserStoreTest : ShouldSpec({
             InMemoryRoomUserReceiptsRepository(),
             RepositoryTransactionManagerMock(),
             MatrixClientConfiguration(),
+            ObservableCacheStatisticCollector(),
             storeScope
         )
     }

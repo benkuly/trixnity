@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.InMemoryAccountRepository
 import net.folivo.trixnity.core.model.UserId
@@ -20,7 +21,12 @@ class AccountStoreTest : ShouldSpec({
     beforeTest {
         storeScope = CoroutineScope(Dispatchers.Default)
         repository = InMemoryAccountRepository()
-        cut = AccountStore(repository, RepositoryTransactionManagerMock(), storeScope)
+        cut = AccountStore(
+            repository,
+            RepositoryTransactionManagerMock(),
+            ObservableCacheStatisticCollector(),
+            storeScope
+        )
     }
     afterTest {
         storeScope.cancel()
