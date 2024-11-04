@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Log cache statistics to find possibly memory leaks
-
 ### Changed
 
 ### Deprecated
@@ -19,9 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed memory leak in cache due not cancelled coroutines
-
 ### Security
+
+## 4.9.2
+
+### Added
+
+- Log cache statistics to find possibly memory leaks
+
+### Fixed
+
+- Fixed memory leak in cache due not cancelled coroutines
 
 ## 4.9.1
 
