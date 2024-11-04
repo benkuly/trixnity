@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.cache
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -240,6 +241,7 @@ private class RemoverJobExecutingIndex<K, V>(
                     if (subscriptionCount == 0 && (stale || indexSubscriptionCount == 0)) {
                         log.trace { "$name: remove value from cache with key $key" }
                         values.remove(key, stale)
+                        cancel("key $key removed from cache")
                     }
                 }
             }

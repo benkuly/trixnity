@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed memory leak in cache due not cancelled coroutines
+
 ### Security
 
 ## 4.9.1
