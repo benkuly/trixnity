@@ -697,6 +697,7 @@ class MatrixClientImpl internal constructor(
 
     override suspend fun stop(wait: Boolean) {
         started.value = false
+        api.httpClient.baseClient.close()
         coroutineScope.cancel("stopped MatrixClient")
         if (wait) coroutineScope.coroutineContext.job.join()
     }
