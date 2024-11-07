@@ -94,16 +94,6 @@ data class TimelineState<T>(
     val elements: List<T> = listOf(),
 
     /**
-     * Lower bound of loaded events in this timeline.
-     */
-    val lastLoadedEventIdBefore: EventId? = null,
-
-    /**
-     * Upper bound of loaded events in this timeline.
-     */
-    val lastLoadedEventIdAfter: EventId? = null,
-
-    /**
      * True when timeline initialization has been finished.
      */
     val isInitialized: Boolean = false,
@@ -133,6 +123,7 @@ data class TimelineStateChange<T>(
     val elementsBeforeChange: List<T> = listOf(),
     val elementsAfterChange: List<T> = listOf(),
     val newElements: List<T> = listOf(),
+    val removedElements: List<T> = listOf(),
 )
 
 /**
@@ -196,8 +187,6 @@ abstract class TimelineBase<T>(
             ) { canLoadBefore, canLoadAfter ->
                 TimelineState(
                     elements = internalState.elements,
-                    lastLoadedEventIdBefore = internalState.lastLoadedEventBefore?.first()?.eventId,
-                    lastLoadedEventIdAfter = internalState.lastLoadedEventAfter?.first()?.eventId,
                     isInitialized = internalState.isInitialized,
                     isLoadingBefore = internalState.isLoadingBefore,
                     isLoadingAfter = internalState.isLoadingAfter,
@@ -336,10 +325,11 @@ abstract class TimelineBase<T>(
             }
         }
 
-    override suspend fun dropBefore(roomId: RoomId, eventId: EventId): TimelineStateChange<T> = // FIXME test
+    override suspend fun dropBefore(roomId: RoomId, eventId: EventId): TimelineStateChange<T> =
         editSemaphore.withPermit(2) {
             lateinit var elementsBeforeChange: List<T>
             lateinit var elementsAfterChange: List<T>
+            lateinit var removedElements: List<T>
             internalState.update {
                 val index = it.events.indexOfFirst { it.eventId == eventId && it.roomId == roomId }
                 val dropCount =
@@ -352,6 +342,7 @@ abstract class TimelineBase<T>(
                 else log.debug { "dropped $dropCount before" }
                 elementsBeforeChange = it.elements
                 elementsAfterChange = it.elements.drop(dropCount)
+                removedElements = it.elements.take(dropCount)
                 val eventsAfterChange = it.events.drop(dropCount)
                 it.copy(
                     events = eventsAfterChange,
@@ -362,13 +353,15 @@ abstract class TimelineBase<T>(
             TimelineStateChange(
                 elementsBeforeChange = elementsBeforeChange,
                 elementsAfterChange = elementsAfterChange,
+                removedElements = removedElements,
             )
         }
 
-    override suspend fun dropAfter(roomId: RoomId, eventId: EventId): TimelineStateChange<T> = // FIXME test
+    override suspend fun dropAfter(roomId: RoomId, eventId: EventId): TimelineStateChange<T> =
         editSemaphore.withPermit(2) {
             lateinit var elementsBeforeChange: List<T>
             lateinit var elementsAfterChange: List<T>
+            lateinit var removedElements: List<T>
             internalState.update {
                 val index = it.events.indexOfFirst { it.eventId == eventId && it.roomId == roomId }
                 val dropCount =
@@ -381,6 +374,7 @@ abstract class TimelineBase<T>(
                 else log.debug { "dropped $dropCount after" }
                 elementsBeforeChange = it.elements
                 elementsAfterChange = it.elements.dropLast(dropCount)
+                removedElements = it.elements.takeLast(dropCount)
                 val eventsAfterChange = it.events.dropLast(dropCount)
                 it.copy(
                     events = eventsAfterChange,
@@ -391,6 +385,7 @@ abstract class TimelineBase<T>(
             TimelineStateChange(
                 elementsBeforeChange = elementsBeforeChange,
                 elementsAfterChange = elementsAfterChange,
+                removedElements = removedElements,
             )
         }
 
