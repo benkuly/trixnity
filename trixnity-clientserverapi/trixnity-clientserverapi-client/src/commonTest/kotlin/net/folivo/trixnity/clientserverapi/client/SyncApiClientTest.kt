@@ -35,7 +35,7 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.core.subscribeEachEvent
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -69,7 +69,7 @@ class SyncApiClientTest {
     fun shouldSyncOnce() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=1234",
@@ -294,7 +294,7 @@ class SyncApiClientTest {
     fun shouldSyncOnceAndHandleLongTimeout() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/sync?filter=someFilter&full_state=true&set_presence=online&since=someSince&timeout=200",
@@ -327,7 +327,7 @@ class SyncApiClientTest {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
                         0 -> {
@@ -398,7 +398,7 @@ class SyncApiClientTest {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
                         0 -> {
@@ -468,7 +468,7 @@ class SyncApiClientTest {
     fun shouldSyncLoopWithTimeoutStateAndInitialSyncState() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
@@ -531,7 +531,7 @@ class SyncApiClientTest {
     fun shouldSyncLoopWithoutInitialSyncState() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=ananas&timeout=0",
@@ -599,7 +599,7 @@ class SyncApiClientTest {
         val requestCount = MutableStateFlow(1)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
                         1 -> {
@@ -656,7 +656,7 @@ class SyncApiClientTest {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
                         0 -> {
@@ -704,7 +704,7 @@ class SyncApiClientTest {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
                         0 -> {
@@ -788,7 +788,7 @@ class SyncApiClientTest {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
                         0, 1 -> {
@@ -972,7 +972,7 @@ class SyncApiClientTest {
 
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
                         json.encodeToString(inChannel.receive()),
@@ -1061,7 +1061,7 @@ class SyncApiClientTest {
 
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
                         json.encodeToString(inChannel.receive()),
@@ -1126,7 +1126,7 @@ class SyncApiClientTest {
         )
         val matrixClientServerApiClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
                         json.encodeToString(response),
@@ -1173,7 +1173,7 @@ class SyncApiClientTest {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
                         0 -> {
@@ -1224,7 +1224,7 @@ class SyncApiClientTest {
         val requestCount = MutableStateFlow(0)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(withDefaultResponse = false) {
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
                         0 -> {

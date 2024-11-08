@@ -2,6 +2,7 @@ package net.folivo.trixnity.api.client
 
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.resources.*
@@ -21,9 +22,10 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 open class MatrixApiClient(
     val contentMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     val json: Json = createMatrixEventJson(contentMappings),
-    httpClientFactory: (HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
-) {
-    val baseClient: HttpClient = httpClientFactory {
+    httpClientEngine: HttpClientEngine? = null,
+    httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
+) : AutoCloseable {
+    private val finalHttpClientConfig: HttpClientConfig<*>.() -> Unit = {
         install(ContentNegotiation) {
             json(json)
         }
@@ -33,7 +35,14 @@ open class MatrixApiClient(
         }
         expectSuccess = true
         followRedirects = false
+
+        httpClientConfig?.invoke(this)
+
+        install(PlatformUserAgentPlugin)
     }
+    val baseClient: HttpClient =
+        if (httpClientEngine == null) HttpClient(finalHttpClientConfig)
+        else HttpClient(httpClientEngine, finalHttpClientConfig)
 
     open suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {}
 
@@ -122,6 +131,10 @@ open class MatrixApiClient(
                 }
             )
         }
+    }
+
+    override fun close() {
+        baseClient.close()
     }
 }
 

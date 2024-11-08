@@ -98,10 +98,8 @@ class TimelineEventIT {
 
     @AfterTest
     fun afterEach() {
-        runBlocking {
-            client1.stop()
-            client2.stop()
-        }
+        client1.close()
+        client2.close()
     }
 
     @Test
@@ -158,7 +156,7 @@ class TimelineEventIT {
                 .shouldNotBeNull()
 
             client.stopSync(true)
-            client.stop()
+            client.close()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
                 val roomId = varchar("room_id", length = 255)
@@ -200,7 +198,7 @@ class TimelineEventIT {
                 .shouldNotBeNull()
 
             client.stopSync(true)
-            client.stop()
+            client.close()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
                 val roomId = varchar("room_id", length = 255)

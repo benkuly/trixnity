@@ -4,15 +4,13 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class MatrixServerServerApiClientTest {
 
     @Test
@@ -27,7 +25,7 @@ class MatrixServerServerApiClientTest {
             },
             sign = { Key.Ed25519Key("ABC", "signature") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.url.host shouldBe "otherHostDelegate"
                     request.url.port shouldBe 443
@@ -53,7 +51,7 @@ class MatrixServerServerApiClientTest {
                 Key.Ed25519Key("ABC", "signature")
             },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",destination="otherHost:80",key="ed25519:ABC",sig="signature""""
                     request.body.toByteArray().decodeToString() shouldBe """{"key":"value"}"""
@@ -81,7 +79,7 @@ class MatrixServerServerApiClientTest {
                 Key.Ed25519Key("ABC", "signature")
             },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",destination="otherHost:80",key="ed25519:ABC",sig="signature""""
                     endpointCalled = true

@@ -2,15 +2,13 @@ package net.folivo.trixnity.clientserverapi.client
 
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.devices.Device
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class DevicesApiClientTest {
 
     @Test
@@ -29,7 +27,7 @@ class DevicesApiClientTest {
         """.trimIndent()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/devices", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -66,7 +64,7 @@ class DevicesApiClientTest {
         """.trimIndent()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/devices/ABCDEF", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -93,7 +91,7 @@ class DevicesApiClientTest {
     fun shouldUpdateDevice() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/devices/ABCDEF", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -119,7 +117,7 @@ class DevicesApiClientTest {
         """.trimToFlatJson()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/delete_devices", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
@@ -139,7 +137,7 @@ class DevicesApiClientTest {
     fun shouldDeleteDevice() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/devices/ABCDEFG", request.url.fullPath)
                     assertEquals(HttpMethod.Delete, request.method)

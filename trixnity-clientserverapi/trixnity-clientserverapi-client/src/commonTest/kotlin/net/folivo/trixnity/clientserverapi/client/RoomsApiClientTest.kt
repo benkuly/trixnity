@@ -4,7 +4,6 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
@@ -29,13 +28,13 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-@OptIn(ExperimentalSerializationApi::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalSerializationApi::class)
 class RoomsApiClientTest {
 
     private val json = createMatrixEventJson()
@@ -54,7 +53,7 @@ class RoomsApiClientTest {
         val serializer = json.serializersModule.getContextual(StateEvent::class)
         requireNotNull(serializer)
         val matrixRestClient = MatrixClientServerApiClientImpl(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/event/${'$'}event?user_id=%40user%3Aserver",
@@ -91,7 +90,7 @@ class RoomsApiClientTest {
         requireNotNull(serializer)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/event/${'$'}event",
@@ -118,7 +117,7 @@ class RoomsApiClientTest {
         val response = NameEventContent("name")
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/state/m.room.name/",
@@ -165,7 +164,7 @@ class RoomsApiClientTest {
         requireNotNull(serializer)
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/rooms/!room:server/state", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -211,7 +210,7 @@ class RoomsApiClientTest {
         )
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/members?at=someAt&membership=join",
@@ -252,7 +251,7 @@ class RoomsApiClientTest {
         )
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/joined_members",
@@ -297,7 +296,7 @@ class RoomsApiClientTest {
         )
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/messages?from=from&dir=f&limit=10",
@@ -324,7 +323,7 @@ class RoomsApiClientTest {
     fun shouldGetRelations() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event?from=from&limit=10",
@@ -380,7 +379,7 @@ class RoomsApiClientTest {
     fun shouldGetRelationsByRelationType() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event/m.reference?from=from&limit=10",
@@ -437,7 +436,7 @@ class RoomsApiClientTest {
     fun shouldGetRelationsByRelationTypeAndEventType() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v1/rooms/!room:server/relations/${'$'}1event/m.reference/m.room.message?from=from&limit=10",
@@ -494,7 +493,7 @@ class RoomsApiClientTest {
     fun shouldGetThreads() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v1/rooms/!room:server/threads?from=from&include=all&limit=10",
@@ -549,7 +548,7 @@ class RoomsApiClientTest {
         val response = SendEventResponse(EventId("event"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/state/m.room.name/someStateKey",
@@ -578,7 +577,7 @@ class RoomsApiClientTest {
     fun shouldHaveErrorWhenNoEventTypeFoundOnSendingStateEvent() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory { addHandler { respondOk() } })
+            httpClientEngine = scopedMockEngine { addHandler { respondOk() } })
         val eventContent = object : StateEventContent {
             val banana: String = "yeah"
             override val externalUrl = null
@@ -602,7 +601,7 @@ class RoomsApiClientTest {
         val response = SendEventResponse(EventId("event"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/send/m.room.message/someTxnId",
@@ -633,7 +632,7 @@ class RoomsApiClientTest {
     fun shouldHaveErrorWhenNoEventTypeFoundOnSendingRoomEvent() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory { addHandler { respondOk() } })
+            httpClientEngine = scopedMockEngine { addHandler { respondOk() } })
         val eventContent = object : MessageEventContent {
             val banana: String = "yeah"
             override val relatesTo = RelatesTo.Reference(EventId("$1event"))
@@ -658,7 +657,7 @@ class RoomsApiClientTest {
         val response = SendEventResponse(EventId("event"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/redact/${'$'}eventToRedact/someTxnId",
@@ -687,7 +686,7 @@ class RoomsApiClientTest {
         val response = CreateRoom.Response(RoomId("room", "server"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/createRoom", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
@@ -735,7 +734,7 @@ class RoomsApiClientTest {
     fun shouldSetRoomAlias() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/directory/room/%23unicorns:server",
@@ -764,7 +763,7 @@ class RoomsApiClientTest {
         )
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/directory/room/%23unicorns:server",
@@ -786,7 +785,7 @@ class RoomsApiClientTest {
     fun shouldGetRoomAliases() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/aliases",
@@ -819,7 +818,7 @@ class RoomsApiClientTest {
     fun shouldDeleteRoomAlias() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/directory/room/%23unicorns:server",
@@ -845,7 +844,7 @@ class RoomsApiClientTest {
         )
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/joined_rooms",
@@ -867,7 +866,7 @@ class RoomsApiClientTest {
     fun shouldInviteUser() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/invite",
@@ -889,7 +888,7 @@ class RoomsApiClientTest {
     fun shouldKickUser() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/kick",
@@ -911,7 +910,7 @@ class RoomsApiClientTest {
     fun shouldBanUser() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/ban",
@@ -933,7 +932,7 @@ class RoomsApiClientTest {
     fun shouldUnbanUser() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/unban",
@@ -956,7 +955,7 @@ class RoomsApiClientTest {
         val response = JoinRoom.Response(RoomId("room", "server"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/join/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
@@ -1009,7 +1008,7 @@ class RoomsApiClientTest {
         val response = JoinRoom.Response(RoomId("room", "server"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/join/%23alias:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
@@ -1062,7 +1061,7 @@ class RoomsApiClientTest {
         val response = KnockRoom.Response(RoomId("room", "server"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/knock/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
@@ -1096,7 +1095,7 @@ class RoomsApiClientTest {
         val response = KnockRoom.Response(RoomId("room", "server"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/knock/%23alias:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com",
@@ -1129,7 +1128,7 @@ class RoomsApiClientTest {
     fun shouldLeaveRoom() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/leave",
@@ -1150,7 +1149,7 @@ class RoomsApiClientTest {
     fun shouldForgetRoom() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/forget",
@@ -1171,7 +1170,7 @@ class RoomsApiClientTest {
     fun shouldSetReceipt() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/receipt/m.read/${'$'}event",
@@ -1193,7 +1192,7 @@ class RoomsApiClientTest {
     fun shouldSetReadMarkers() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/read_markers",
@@ -1223,7 +1222,7 @@ class RoomsApiClientTest {
     fun shouldGetAccountData() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_read",
@@ -1249,7 +1248,7 @@ class RoomsApiClientTest {
     fun shouldGetAccountDataWithKey() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_readkey",
@@ -1276,7 +1275,7 @@ class RoomsApiClientTest {
     fun shouldSetAccountData() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_read",
@@ -1305,7 +1304,7 @@ class RoomsApiClientTest {
     fun shouldSetAccountDataWithKey() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@alice:example.com/rooms/!room:server/account_data/m.fully_readkey",
@@ -1335,7 +1334,7 @@ class RoomsApiClientTest {
     fun shouldSetUserIsTyping() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/typing/@alice:example.com",
@@ -1365,7 +1364,7 @@ class RoomsApiClientTest {
     fun shouldGetDirectoryVisibility() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/directory/list/room/!room:server",
@@ -1391,7 +1390,7 @@ class RoomsApiClientTest {
     fun shouldSetDirectoryVisibility() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/directory/list/room/!room:server",
@@ -1416,7 +1415,7 @@ class RoomsApiClientTest {
     fun shouldGetPublicRooms() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/publicRooms?limit=5&server=example&since=since",
@@ -1472,7 +1471,7 @@ class RoomsApiClientTest {
     fun shouldGetPublicRoomsWithFilter() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/publicRooms?server=example",
@@ -1544,7 +1543,7 @@ class RoomsApiClientTest {
     fun shouldGetTags() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@user:server/rooms/!room:server/tags",
@@ -1584,7 +1583,7 @@ class RoomsApiClientTest {
     fun shouldSetTag() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@user:server/rooms/!room:server/tags/m.dino",
@@ -1609,7 +1608,7 @@ class RoomsApiClientTest {
     fun shouldDeleteTag() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@user:server/rooms/!room:server/tags/m.dino",
@@ -1630,7 +1629,7 @@ class RoomsApiClientTest {
     fun shouldGetEventContext() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/context/event?filter=filter&limit=10",
@@ -1877,7 +1876,7 @@ class RoomsApiClientTest {
         val response = SendEventResponse(EventId("event"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/report/${'$'}eventToRedact",
@@ -1907,7 +1906,7 @@ class RoomsApiClientTest {
     fun shouldUpgradeRoom() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/rooms/!room:server/upgrade",
@@ -1930,7 +1929,7 @@ class RoomsApiClientTest {
     fun shouldGetHierarchy() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v1/rooms/!room:server/hierarchy?from=from&limit=10&max_depth=4&suggested_only=true",
@@ -2012,7 +2011,7 @@ class RoomsApiClientTest {
     fun shouldTimestampToEvent() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v1/rooms/!room:server/timestamp_to_event?ts=24&dir=f",

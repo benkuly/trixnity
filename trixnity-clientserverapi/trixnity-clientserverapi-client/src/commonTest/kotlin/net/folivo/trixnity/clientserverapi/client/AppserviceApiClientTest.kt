@@ -6,7 +6,7 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.appservice.Ping
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,7 +16,7 @@ class AppserviceApiClientTest {
     fun shouldPing() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v1/appservice/appId/ping", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)

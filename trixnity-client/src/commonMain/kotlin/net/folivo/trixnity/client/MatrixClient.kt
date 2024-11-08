@@ -37,7 +37,7 @@ import kotlin.time.Duration
 
 private val log = KotlinLogging.logger {}
 
-interface MatrixClient {
+interface MatrixClient : AutoCloseable {
     companion object
 
     val userId: UserId
@@ -107,14 +107,6 @@ interface MatrixClient {
     suspend fun stopSync(wait: Boolean = false)
 
     suspend fun cancelSync(wait: Boolean = false)
-
-    /**
-     * Stop the MatrixClient and its [CoroutineScope].
-     * It should be called to clean up all resources used by [MatrixClient] (including databases).
-     *
-     * After calling this, this instance should not be used anymore!
-     */
-    suspend fun stop(wait: Boolean = false)
 
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
@@ -275,14 +267,16 @@ suspend fun MatrixClient.Companion.loginWith(
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
 
-    val loginApi = MatrixClientServerApiClientImpl(
+    val (loginInfo, displayName, avatarUrl) = MatrixClientServerApiClientImpl(
         baseUrl = baseUrl,
-        httpClientFactory = config.httpClientFactory,
-    )
-    val loginInfo = getLoginInfo(loginApi).getOrThrow()
-    val (userId, deviceId, accessToken) = loginInfo
-    loginApi.accessToken.value = accessToken
-    val (displayName, avatarUrl) = loginApi.user.getProfile(userId).getOrThrow()
+        httpClientEngine = config.httpClientEngine,
+        httpClientConfig = config.httpClientConfig,
+    ).use { loginApi ->
+        val loginInfo = getLoginInfo(loginApi).getOrThrow()
+        loginApi.accessToken.value = loginInfo.accessToken
+        val (displayName, avatarUrl) = loginApi.user.getProfile(loginInfo.userId).getOrThrow()
+        Triple(loginInfo, displayName, avatarUrl)
+    }
 
     val mediaStore = mediaStoreFactory(loginInfo)
     val repositoriesModule = repositoriesModuleFactory(loginInfo)
@@ -315,7 +309,8 @@ suspend fun MatrixClient.Companion.loginWith(
 
     val api = MatrixClientServerApiClientImpl(
         baseUrl = baseUrl,
-        httpClientFactory = config.httpClientFactory,
+        httpClientEngine = config.httpClientEngine,
+        httpClientConfig = config.httpClientConfig,
         onLogout = { onLogout(it, accountStore) },
         json = di.get(),
         eventContentSerializerMappings = di.get(),
@@ -324,14 +319,14 @@ suspend fun MatrixClient.Companion.loginWith(
     )
     val olmPickleKey = ""
 
-    api.accessToken.value = accessToken
+    api.accessToken.value = loginInfo.accessToken
     accountStore.updateAccount {
         Account(
             olmPickleKey = olmPickleKey,
             baseUrl = baseUrl.toString(),
-            accessToken = accessToken,
-            userId = userId,
-            deviceId = deviceId,
+            accessToken = loginInfo.accessToken,
+            userId = loginInfo.userId,
+            deviceId = loginInfo.deviceId,
             displayName = displayName,
             avatarUrl = avatarUrl,
             backgroundFilterId = null,
@@ -348,12 +343,12 @@ suspend fun MatrixClient.Companion.loginWith(
             ?: OlmAccount.create()
                 .also { olmAccount -> olmCryptoStore.updateOlmAccount { olmAccount.pickle(olmPickleKey) } }
     ) {
-        Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
-                Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
+        Key.Ed25519Key(loginInfo.deviceId, it.identityKeys.ed25519) to
+                Key.Curve25519Key(loginInfo.deviceId, it.identityKeys.curve25519)
     }
 
     koinApplication.modules(module {
-        single { UserInfo(userId, deviceId, signingKey, identityKey) }
+        single { UserInfo(loginInfo.userId, loginInfo.deviceId, signingKey, identityKey) }
         single<MatrixClientServerApiClient> { api }
         single { CurrentSyncState(api.sync.currentSyncState) }
     })
@@ -365,8 +360,8 @@ suspend fun MatrixClient.Companion.loginWith(
         keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value))
     }
     val matrixClient = MatrixClientImpl(
-        userId = userId,
-        deviceId = deviceId,
+        userId = loginInfo.userId,
+        deviceId = loginInfo.deviceId,
         baseUrl = baseUrl,
         identityKey = identityKey,
         signingKey = signingKey,
@@ -384,7 +379,7 @@ suspend fun MatrixClient.Companion.loginWith(
     api.key.setKeys(deviceKeys = selfSignedDeviceKeys)
         .onFailure { matrixClient.deleteAll() }
         .getOrThrow()
-    keyStore.updateOutdatedKeys { it + userId }
+    keyStore.updateOutdatedKeys { it + loginInfo.userId }
     matrixClient.also {
         log.trace { "finished creating MatrixClient" }
     }
@@ -446,7 +441,8 @@ suspend fun MatrixClient.Companion.fromStore(
     if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
         val api = MatrixClientServerApiClientImpl(
             baseUrl = baseUrl,
-            httpClientFactory = config.httpClientFactory,
+            httpClientEngine = config.httpClientEngine,
+            httpClientConfig = config.httpClientConfig,
             onLogout = { onLogout(it, accountStore) },
             json = di.get(),
             eventContentSerializerMappings = di.get(),
@@ -695,11 +691,10 @@ class MatrixClientImpl internal constructor(
         api.sync.cancel(wait)
     }
 
-    override suspend fun stop(wait: Boolean) {
+    override fun close() {
         started.value = false
-        api.httpClient.baseClient.close()
+        api.close()
         coroutineScope.cancel("stopped MatrixClient")
-        if (wait) coroutineScope.coroutineContext.job.join()
     }
 
     override suspend fun setDisplayName(displayName: String?): Result<Unit> {

@@ -60,10 +60,8 @@ class KeyBackupIT {
 
     @AfterTest
     fun afterEach() {
-        runBlocking {
-            startedClient1.client.stop()
-            startedClient2.client.stop()
-        }
+        startedClient1.client.close()
+        startedClient2.client.close()
     }
 
     @Test
@@ -141,7 +139,7 @@ class KeyBackupIT {
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextBased.Text("hi from client1", mentions = Mentions()))
 
-                client3.stop()
+                client3.close()
             }
         }
     }

@@ -33,8 +33,24 @@ dependencies {
 }
 ```
 
+### Ktor Client engine
+
 Modules containing `-client` in the name (for example `trixnity-client` or `trixnity-clientserverapi-client`) also need
 a Ktor client engine, that can be found [here](https://ktor.io/docs/http-client-engines.html).
+
+### Close a Client
+
+Many classes and functions in Trixnity have optional `httpClientEngine` and `httpClientConfig` parameters. These allow
+to reuse a `HttpClientEngine` (which is highly recommended) and configure the underlying `HttpClient`.
+
+Additionally, you should always `close()` a class or use `use`, when not needed anymore. For example
+
+```kotlin
+httpClient.close()
+MatrixClientServerApiClientImpl().use {
+    // do something
+}
+```
 
 ## Examples
 

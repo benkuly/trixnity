@@ -23,7 +23,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -34,7 +34,7 @@ class UsersApiClientTest {
     fun shouldSetDisplayName() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -56,7 +56,7 @@ class UsersApiClientTest {
     fun shouldGetDisplayName() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/profile/@user:server/displayname", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -74,7 +74,7 @@ class UsersApiClientTest {
     fun shouldSetAvatarUrl() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/profile/@user:server/avatar_url", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -96,7 +96,7 @@ class UsersApiClientTest {
     fun shouldGetAvatarUrl() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/profile/@user:server/avatar_url", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -117,7 +117,7 @@ class UsersApiClientTest {
     fun shouldGetProfile() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/profile/@user:server", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -138,7 +138,7 @@ class UsersApiClientTest {
     fun shouldSetNullForMissingProfileValues() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/profile/@user:server", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -159,7 +159,7 @@ class UsersApiClientTest {
     fun shouldSetPresence() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/presence/@user:server/status", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -185,7 +185,7 @@ class UsersApiClientTest {
     fun shouldGetPresence() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/presence/@user:server/status", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -209,7 +209,7 @@ class UsersApiClientTest {
     fun shouldSendToDeviceUnsafe() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/sendToDevice/m.room_key/txnId", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -253,7 +253,7 @@ class UsersApiClientTest {
     fun shouldPreventSendToDeviceUnsafeWhenNoEvent() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory { })
+            httpClientEngine = scopedMockEngine { })
         shouldThrow<IllegalArgumentException> {
             matrixRestClient.user.sendToDeviceUnsafe(
                 mapOf(UserId("@alice:example.com") to mapOf()),
@@ -266,7 +266,7 @@ class UsersApiClientTest {
     fun shouldPreventSendToDeviceUnsafeWhenDifferentEvents() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory { })
+            httpClientEngine = scopedMockEngine { })
         shouldThrow<IllegalArgumentException> {
             matrixRestClient.user.sendToDeviceUnsafe(
                 mapOf(
@@ -297,7 +297,7 @@ class UsersApiClientTest {
     fun shouldSendToDeviceWhenNoEvent() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory { })
+            httpClientEngine = scopedMockEngine { })
         matrixRestClient.user.sendToDevice(
             mapOf(UserId("@alice:example.com") to mapOf()),
         )
@@ -308,7 +308,7 @@ class UsersApiClientTest {
         val endpointsCalled = MutableStateFlow(setOf<String>())
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory(false) {
+            httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     request.method shouldBe HttpMethod.Put
                     when {
@@ -384,7 +384,7 @@ class UsersApiClientTest {
     fun shouldSetFilter() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/user/@dino:server/filter", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
@@ -415,7 +415,7 @@ class UsersApiClientTest {
     fun shouldGetFilter() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/user/@dino:server/filter/0", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -445,7 +445,7 @@ class UsersApiClientTest {
     fun shouldGetAccountData() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@alice:example.com/account_data/m.direct",
@@ -473,7 +473,7 @@ class UsersApiClientTest {
     fun shouldGetAccountDataWithKey() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1",
@@ -496,7 +496,7 @@ class UsersApiClientTest {
     fun shouldSetAccountData() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@alice:example.com/account_data/m.direct",
@@ -528,7 +528,7 @@ class UsersApiClientTest {
     fun shouldSetAccountDataWithKey() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user/@alice:example.com/account_data/m.secret_storage.key.key1",
@@ -557,7 +557,7 @@ class UsersApiClientTest {
     fun shouldSearchUsers() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/user_directory/search",
