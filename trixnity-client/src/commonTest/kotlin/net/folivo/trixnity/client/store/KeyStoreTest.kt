@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
@@ -58,6 +59,7 @@ class KeyStoreTest : ShouldSpec({
             roomKeyRequestRepository,
             RepositoryTransactionManagerMock(),
             MatrixClientConfiguration(),
+            ObservableCacheStatisticCollector(),
             storeScope
         )
     }

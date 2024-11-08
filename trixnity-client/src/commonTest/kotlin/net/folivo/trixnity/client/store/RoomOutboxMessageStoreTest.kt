@@ -10,6 +10,7 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
+import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.InMemoryRoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
@@ -30,10 +31,11 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
         cut = RoomOutboxMessageStore(
             roomOutboxMessageRepository,
             RepositoryTransactionManagerMock(),
-            storeScope,
             MatrixClientConfiguration().apply {
                 cacheExpireDurations = MatrixClientConfiguration.CacheExpireDurations.default(50.milliseconds)
-            }
+            },
+            ObservableCacheStatisticCollector(),
+            storeScope
         )
     }
     afterTest {

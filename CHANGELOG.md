@@ -9,6 +9,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Log rate limits.
+- Allow to drop elements from `Timeline` to support infinite timelines.
+
+### Changed
+
+- Close HttpClient on stop().
+- Allow to configure HttpClientEngine. This allows to reuse it, which spares a lot of resources when spawning many
+  clients.
+- Upgrade to Ktor 3
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.9.2
+
+### Added
+
+- Log cache statistics to find possibly memory leaks
+
+### Fixed
+
+- Fixed memory leak in cache due not cancelled coroutines
+
+## 4.9.1
+
+### Fixed
+
+- Fix media config fetching when Matrix server does not support 1.11
+
+## 4.9.0
+
+### Added
+
+- Support Matrix 1.12
+- Generic return type for downloads in MediaApiClient
+
+### Changed
+
+- internal: Upgrade dependencies
+
+### Fixed
+
+- Don't send content type when there is no body.
+- Fixed blocking outbox.
+
+## 4.8.1
+
+### Fixed
+
+- Deprecated modules never loaded
+
+## 4.8.0
+
+### Added
+
 - Add utils for converting between Input-/OutputStream and ByteArrayFlow
 - Add extensions for creating ByteArrayFlow from ByteBuffer
 - Check server media config before uploading any media.
@@ -19,20 +79,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Outbox API returns a sorted list
 - Keep transaction id for redacted messages
 - internal: new Docker images
-- updated openssl and libolm (Android 15 support)
-- upgrade to Ktor 3
+- updated openssl and libolm (prepare Android 15 support)
 
 ### Deprecated
 
 - `modules` replaced by `modulesFactory`
 
-### Removed
-
 ### Fixed
 
 - Delete outbox on room forget
-
-### Security
+- Missing schema version in Realm prevented automatic migrations
 
 ## 4.7.3
 

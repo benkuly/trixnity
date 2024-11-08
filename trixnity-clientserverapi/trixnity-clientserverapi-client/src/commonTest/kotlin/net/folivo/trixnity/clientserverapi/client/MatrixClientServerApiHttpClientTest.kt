@@ -3,13 +3,11 @@ package net.folivo.trixnity.clientserverapi.client
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
@@ -28,11 +26,10 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class MatrixClientServerApiHttpClientTest {
 
     private val json = createMatrixEventJson()
@@ -79,7 +76,7 @@ class MatrixClientServerApiHttpClientTest {
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
                     assertEquals("matrix.host", request.url.host)
@@ -104,10 +101,10 @@ class MatrixClientServerApiHttpClientTest {
 
     @Test
     fun itShouldCallOnLogout() = runTest {
-        var onLogout: Boolean? = null
+        var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
                         """{
@@ -134,14 +131,49 @@ class MatrixClientServerApiHttpClientTest {
             error.errorResponse::class
         )
         assertEquals("Only unicorns accepted", error.errorResponse.error)
-        onLogout shouldBe true
+        onLogout shouldBe LogoutInfo(true, false)
+    }
+
+    @Test
+    fun itShouldCallOnLogoutOnLocked() = runTest {
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler {
+                    respond(
+                        """{
+                            "errcode": "M_USER_LOCKED",
+                            "error": "you are blocked",
+                            "soft_logout": true
+                       }""".trimIndent(),
+                        HttpStatusCode.Unauthorized,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            onLogout = { onLogout = it },
+            json = json,
+            eventContentSerializerMappings = mappings,
+            accessToken = MutableStateFlow("token")
+        )
+        val error = shouldThrow<MatrixServerException> {
+            cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
+        }
+        assertEquals(HttpStatusCode.Unauthorized, error.statusCode)
+        assertEquals(
+            ErrorResponse.UserLocked::class,
+            error.errorResponse::class
+        )
+        assertEquals("you are blocked", error.errorResponse.error)
+        onLogout shouldBe LogoutInfo(true, true)
     }
 
     @Test
     fun uiaRequestShouldReturnSuccess() = runTest {
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
                     assertEquals("matrix.host", request.url.host)
@@ -169,7 +201,7 @@ class MatrixClientServerApiHttpClientTest {
     fun uiaRequestShouldReturnError() = runTest {
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
                         """{"errcode": "M_NOT_FOUND", "error": "not found"}""",
@@ -195,10 +227,10 @@ class MatrixClientServerApiHttpClientTest {
 
     @Test
     fun uiaRequestShouldCallOnLogout() = runTest {
-        var onLogout: Boolean? = null
+        var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
                         """{ 
@@ -223,7 +255,40 @@ class MatrixClientServerApiHttpClientTest {
             ErrorResponse.UnknownToken::class,
             error.errorResponse::class
         )
-        onLogout shouldBe true
+        onLogout shouldBe LogoutInfo(true, false)
+    }
+
+    @Test
+    fun uiaRequestShouldCallOnLogoutOnLock() = runTest {
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler {
+                    respond(
+                        """{ 
+                                "errcode": "M_USER_LOCKED",
+                                "error": "your are locked",
+                                "soft_logout": true
+                            }""".trimIndent(),
+                        HttpStatusCode.Unauthorized,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            onLogout = { onLogout = it },
+            json = json,
+            eventContentSerializerMappings = mappings,
+            accessToken = MutableStateFlow("token")
+        )
+
+        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+            .shouldBeInstanceOf<UIA.Error<*>>()
+        assertEquals(
+            ErrorResponse.UserLocked::class,
+            error.errorResponse::class
+        )
+        onLogout shouldBe LogoutInfo(true, true)
     }
 
     @Test
@@ -231,7 +296,7 @@ class MatrixClientServerApiHttpClientTest {
         var requestCount = 0
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     when (requestCount) {
                         0 -> {
@@ -346,21 +411,18 @@ class MatrixClientServerApiHttpClientTest {
         var requestCount = 0
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = {
-                HttpClient(MockEngine) {
-                    it()
-                    engine {
-                        addHandler { request ->
-                            when (requestCount) {
-                                0 -> {
-                                    requestCount++
-                                    request.body.toByteArray().decodeToString() shouldBe """
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (requestCount) {
+                        0 -> {
+                            requestCount++
+                            request.body.toByteArray().decodeToString() shouldBe """
                                         {
                                           "includeDino":true
                                         }
                                         """.trimToFlatJson()
-                                    respond(
-                                        """
+                            respond(
+                                """
                                             {
                                               "errcode": "M_NOT_FOUND",
                                               "error":"",
@@ -395,14 +457,14 @@ class MatrixClientServerApiHttpClientTest {
                                               "session":"session1"
                                             }
                                             """.trimIndent(),
-                                        HttpStatusCode.Unauthorized,
-                                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                                    )
-                                }
+                                HttpStatusCode.Unauthorized,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
 
-                                1 -> {
-                                    requestCount++
-                                    request.body.toByteArray().decodeToString() shouldBe """
+                        1 -> {
+                            requestCount++
+                            request.body.toByteArray().decodeToString() shouldBe """
                                         {
                                           "includeDino":true,
                                           "auth":{
@@ -416,8 +478,8 @@ class MatrixClientServerApiHttpClientTest {
                                           }
                                         }
                                         """.trimToFlatJson()
-                                    respond(
-                                        """
+                            respond(
+                                """
                                             {
                                               "errcode": "M_NOT_FOUND",
                                               "error":"",
@@ -452,14 +514,14 @@ class MatrixClientServerApiHttpClientTest {
                                               "session":"session1"
                                             }
                                             """.trimIndent(),
-                                        HttpStatusCode.Unauthorized,
-                                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                                    )
-                                }
+                                HttpStatusCode.Unauthorized,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
 
-                                else -> {
-                                    requestCount++
-                                    request.body.toByteArray().decodeToString() shouldBe """
+                        else -> {
+                            requestCount++
+                            request.body.toByteArray().decodeToString() shouldBe """
                                         {
                                           "includeDino":true,
                                           "auth":{
@@ -473,13 +535,11 @@ class MatrixClientServerApiHttpClientTest {
                                           }
                                         }
                                         """.trimToFlatJson()
-                                    respond(
-                                        """{"status":"ok"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                                    )
-                                }
-                            }
+                            respond(
+                                """{"status":"ok"}""",
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
                         }
                     }
                 }

@@ -4,7 +4,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState.CAN_BE_CREATED
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
@@ -17,10 +16,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
+import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class ApplicationServiceUserServiceTest {
 
     private val json = createMatrixEventJson()
@@ -32,7 +30,7 @@ class ApplicationServiceUserServiceTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) { requestBody ->
                     assertSoftly(requestBody.request) {
                         it.type shouldBe "m.login.application_service"
@@ -63,7 +61,7 @@ class ApplicationServiceUserServiceTest {
     fun `should have error when register fails`() = runTest {
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
                     throw MatrixServerException(
                         HttpStatusCode.InternalServerError,
@@ -87,7 +85,7 @@ class ApplicationServiceUserServiceTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
                     throw MatrixServerException(
                         HttpStatusCode.BadRequest,
@@ -115,7 +113,7 @@ class ApplicationServiceUserServiceTest {
     fun `should have error when saving by user service fails`() = runTest {
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
                     ResponseWithUIA.Success(Register.Response(userId))
                 }
@@ -136,7 +134,7 @@ class ApplicationServiceUserServiceTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
                     ResponseWithUIA.Success(Register.Response(userId))
                 }
@@ -158,7 +156,7 @@ class ApplicationServiceUserServiceTest {
         var setDisplayNameCalled = false
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) {
                     ResponseWithUIA.Success(Register.Response(userId))
                 }

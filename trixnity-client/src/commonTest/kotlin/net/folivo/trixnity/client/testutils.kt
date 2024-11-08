@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
@@ -23,7 +24,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
-import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
+import net.folivo.trixnity.testutils.mockEngineWithEndpoints
 
 fun String.trimToFlatJson() =
     this.trimIndent().lines().filter { it.isNotEmpty() }.joinToString("") { it.replace(": ", ":").trim() }
@@ -39,7 +40,7 @@ fun mockMatrixClientServerApiClient(
     val config = PortableMockEngineConfig()
     val api = MatrixClientServerApiClientImpl(
         json = json,
-        httpClientFactory = mockEngineFactoryWithEndpoints(json, contentMappings, portableConfig = config)
+        httpClientEngine = mockEngineWithEndpoints(json, contentMappings, portableConfig = config)
     )
     return api to config
 }
@@ -47,8 +48,12 @@ fun mockMatrixClientServerApiClient(
 suspend fun getInMemoryAccountStore(scope: CoroutineScope) = AccountStore(
     InMemoryAccountRepository(),
     RepositoryTransactionManagerMock(),
+    ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply {
+    init()
+    updateAccount { Account("", "", UserId("user", "server"), "", null, null, null, null, null, null, false) }
+}
 
 suspend fun getInMemoryServerDataStore(scope: CoroutineScope) = ServerDataStore(
     InMemoryServerDataRepository().also {
@@ -58,6 +63,7 @@ suspend fun getInMemoryServerDataStore(scope: CoroutineScope) = ServerDataStore(
         )
     },
     RepositoryTransactionManagerMock(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
@@ -66,6 +72,7 @@ suspend fun getInMemoryRoomAccountDataStore(scope: CoroutineScope) = RoomAccount
     RepositoryTransactionManagerMock(),
     DefaultEventContentSerializerMappings,
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
@@ -74,6 +81,7 @@ suspend fun getInMemoryGlobalAccountDataStore(scope: CoroutineScope) = GlobalAcc
     RepositoryTransactionManagerMock(),
     DefaultEventContentSerializerMappings,
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
@@ -86,6 +94,7 @@ suspend fun getInMemoryOlmStore(scope: CoroutineScope) = OlmCryptoStore(
     InMemoryOutboundMegolmSessionRepository(),
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
@@ -100,14 +109,16 @@ suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
     InMemoryRoomKeyRequestRepository(),
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryRoomStore(scope: CoroutineScope) = RoomStore(
     InMemoryRoomRepository(),
     RepositoryTransactionManagerMock(),
-    scope,
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
+    scope,
 ).apply { init() }
 
 suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineStore(
@@ -115,6 +126,7 @@ suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineSt
     InMemoryTimelineEventRelationRepository(),
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
@@ -123,6 +135,7 @@ suspend fun getInMemoryRoomStateStore(scope: CoroutineScope) = RoomStateStore(
     RepositoryTransactionManagerMock(),
     DefaultEventContentSerializerMappings,
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
@@ -131,6 +144,7 @@ suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
     InMemoryRoomUserReceiptsRepository(),
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
@@ -138,14 +152,16 @@ suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMapp
     InMemoryMediaCacheMappingRepository(),
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
     scope
 ).apply { init() }
 
 suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutboxMessageStore(
     InMemoryRoomOutboxMessageRepository(),
     RepositoryTransactionManagerMock(),
-    scope,
     MatrixClientConfiguration(),
+    ObservableCacheStatisticCollector(),
+    scope,
 ).apply { init() }
 
 suspend fun ShouldSpecContainerScope.clearOutdatedKeys(keyStoreBuilder: () -> KeyStore) {

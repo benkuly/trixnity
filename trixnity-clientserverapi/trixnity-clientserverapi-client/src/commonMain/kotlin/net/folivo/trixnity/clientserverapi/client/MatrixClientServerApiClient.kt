@@ -1,19 +1,18 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import io.ktor.client.*
+import io.ktor.client.engine.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-interface MatrixClientServerApiClient {
+interface MatrixClientServerApiClient : AutoCloseable {
     val accessToken: MutableStateFlow<String?>
-    val httpClient: MatrixClientServerApiHttpClient
 
     val appservice: AppserviceApiClient
     val authentication: AuthenticationApiClient
@@ -49,22 +48,24 @@ interface MatrixClientServerApiClient {
 
 class MatrixClientServerApiClientImpl(
     baseUrl: Url? = null,
-    onLogout: suspend (isSoft: Boolean) -> Unit = {},
+    onLogout: suspend (LogoutInfo) -> Unit = { },
     override val eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
     syncLoopDelay: Duration = 2.seconds,
-    syncLoopErrorDelay: Duration = 5.seconds
+    syncLoopErrorDelay: Duration = 5.seconds,
+    httpClientEngine: HttpClientEngine? = null,
+    httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixClientServerApiClient {
     override val accessToken = MutableStateFlow<String?>(null)
 
-    override val httpClient = MatrixClientServerApiHttpClient(
+    private val httpClient = MatrixClientServerApiHttpClient(
         baseUrl,
         eventContentSerializerMappings,
         json,
         accessToken,
         onLogout,
-        httpClientFactory
+        httpClientEngine,
+        httpClientConfig
     )
 
     override val appservice: AppserviceApiClient = AppserviceApiClientImpl(httpClient)
@@ -78,4 +79,8 @@ class MatrixClientServerApiClientImpl(
     override val media = MediaApiClientImpl(httpClient)
     override val device = DeviceApiClientImpl(httpClient)
     override val push = PushApiClientImpl(httpClient)
+
+    override fun close() {
+        httpClient.close()
+    }
 }

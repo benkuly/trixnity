@@ -5,6 +5,7 @@ import kotlinx.coroutines.*
 import net.folivo.trixnity.client.store.ServerData
 import net.folivo.trixnity.client.store.ServerDataStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
 import net.folivo.trixnity.core.EventHandler
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
@@ -15,6 +16,10 @@ class ServerDataService(
     private val api: MatrixClientServerApiClient,
     private val serverDataStore: ServerDataStore,
 ) : EventHandler {
+    companion object {
+        private const val MATRIX_SPEC_1_11 = "v1.11"
+    }
+
     override fun startInCoroutineScope(scope: CoroutineScope) {
         scope.launch {
             while (true) {
@@ -24,18 +29,31 @@ class ServerDataService(
                             .onFailure { log.warn(it) { "failed get server version" } }
                             .getOrNull()
                     }
-                    val newMediaConfigAsync = async {
-                        api.media.getConfig()
-                            .onFailure { log.warn(it) { "failed get media config" } }
+
+                    val newCapabilitiesAsync = async {
+                        api.server.getCapabilities()
+                            .onFailure { log.warn(it) { "failed get server capabilities" } }
                             .getOrNull()
                     }
                     val newVersions = newVersionsAsync.await()
+                    val newMediaConfigAsync = async {
+                        if (newVersions != null) {
+                            if (newVersions.versions.contains(MATRIX_SPEC_1_11)) {
+                                api.media.getConfig()
+                            } else {
+                                api.media.getConfigLegacy().map { GetMediaConfig.Response(it.maxUploadSize) }
+                            }.onFailure { log.warn(it) { "failed get media config" } }
+                                .getOrNull()
+                        } else null
+                    }
                     val newMediaConfig = newMediaConfigAsync.await()
-                    if (newVersions != null && newMediaConfig != null) {
+                    val newCapabilities = newCapabilitiesAsync.await()
+                    if (newVersions != null && newMediaConfig != null && newCapabilities != null) {
                         serverDataStore.setServerData(
                             ServerData(
                                 newVersions,
                                 newMediaConfig,
+                                newCapabilities,
                             )
                         )
                         delay(1.days)

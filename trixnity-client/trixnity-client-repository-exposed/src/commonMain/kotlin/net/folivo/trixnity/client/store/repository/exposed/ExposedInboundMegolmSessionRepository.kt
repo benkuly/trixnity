@@ -32,7 +32,7 @@ internal class ExposedInboundMegolmSessionRepository(private val json: Json) : I
     }
 
     override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> = withExposedRead {
-        ExposedInboundMegolmSession.select { ExposedInboundMegolmSession.hasBeenBackedUp.eq(false) }
+        ExposedInboundMegolmSession.selectAll().where { ExposedInboundMegolmSession.hasBeenBackedUp.eq(false) }
             .map { it.mapToStoredInboundMegolmSession() }
             .toSet()
     }

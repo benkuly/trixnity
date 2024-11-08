@@ -37,7 +37,10 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -95,10 +98,8 @@ class TimelineEventIT {
 
     @AfterTest
     fun afterEach() {
-        runBlocking {
-            client1.stop()
-            client2.stop()
-        }
+        client1.close()
+        client2.close()
     }
 
     @Test
@@ -155,7 +156,7 @@ class TimelineEventIT {
                 .shouldNotBeNull()
 
             client.stopSync(true)
-            client.stop()
+            client.close()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
                 val roomId = varchar("room_id", length = 255)
@@ -197,7 +198,7 @@ class TimelineEventIT {
                 .shouldNotBeNull()
 
             client.stopSync(true)
-            client.stop()
+            client.close()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
                 val roomId = varchar("room_id", length = 255)
@@ -206,9 +207,9 @@ class TimelineEventIT {
                 val value = text("value")
             }
             newSuspendedTransaction(Dispatchers.IO, database) {
-                exposedTimelineEvent.select {
-                    exposedTimelineEvent.eventId.eq(eventId.full) and exposedTimelineEvent.roomId.eq(room.full)
-                }.firstOrNull()?.get(exposedTimelineEvent.value).shouldNotContain("dino")
+                exposedTimelineEvent.selectAll()
+                    .where { exposedTimelineEvent.eventId.eq(eventId.full) and exposedTimelineEvent.roomId.eq(room.full) }
+                    .firstOrNull()?.get(exposedTimelineEvent.value).shouldNotContain("dino")
             }
         }
     }

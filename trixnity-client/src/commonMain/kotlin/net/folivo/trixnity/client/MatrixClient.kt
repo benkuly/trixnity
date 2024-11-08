@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
 import net.folivo.trixnity.client.utils.retryWhen
+import net.folivo.trixnity.clientserverapi.client.LogoutInfo
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -18,11 +19,13 @@ import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.Filters
+import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.subscribeAsFlow
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
@@ -34,7 +37,7 @@ import kotlin.time.Duration
 
 private val log = KotlinLogging.logger {}
 
-interface MatrixClient {
+interface MatrixClient : AutoCloseable {
     companion object
 
     val userId: UserId
@@ -63,6 +66,7 @@ interface MatrixClient {
         LOGGED_IN,
         LOGGED_OUT_SOFT,
         LOGGED_OUT,
+        LOCKED,
     }
 
     data class LoginInfo(
@@ -103,14 +107,6 @@ interface MatrixClient {
     suspend fun stopSync(wait: Boolean = false)
 
     suspend fun cancelSync(wait: Boolean = false)
-
-    /**
-     * Stop the MatrixClient and its [CoroutineScope].
-     * It should be called to clean up all resources used by [MatrixClient] (including databases).
-     *
-     * After calling this, this instance should not be used anymore!
-     */
-    suspend fun stop(wait: Boolean = false)
 
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
@@ -271,14 +267,16 @@ suspend fun MatrixClient.Companion.loginWith(
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
 
-    val loginApi = MatrixClientServerApiClientImpl(
+    val (loginInfo, displayName, avatarUrl) = MatrixClientServerApiClientImpl(
         baseUrl = baseUrl,
-        httpClientFactory = config.httpClientFactory,
-    )
-    val loginInfo = getLoginInfo(loginApi).getOrThrow()
-    val (userId, deviceId, accessToken) = loginInfo
-    loginApi.accessToken.value = accessToken
-    val (displayName, avatarUrl) = loginApi.user.getProfile(userId).getOrThrow()
+        httpClientEngine = config.httpClientEngine,
+        httpClientConfig = config.httpClientConfig,
+    ).use { loginApi ->
+        val loginInfo = getLoginInfo(loginApi).getOrThrow()
+        loginApi.accessToken.value = loginInfo.accessToken
+        val (displayName, avatarUrl) = loginApi.user.getProfile(loginInfo.userId).getOrThrow()
+        Triple(loginInfo, displayName, avatarUrl)
+    }
 
     val mediaStore = mediaStoreFactory(loginInfo)
     val repositoriesModule = repositoriesModuleFactory(loginInfo)
@@ -301,7 +299,7 @@ suspend fun MatrixClient.Companion.loginWith(
             single { mediaStore }
         })
         modules(repositoriesModule)
-        modules(config.modulesFactory())
+        modules(config.modules ?: config.modulesFactory())
     }
     val di = koinApplication.koin
 
@@ -311,7 +309,8 @@ suspend fun MatrixClient.Companion.loginWith(
 
     val api = MatrixClientServerApiClientImpl(
         baseUrl = baseUrl,
-        httpClientFactory = config.httpClientFactory,
+        httpClientEngine = config.httpClientEngine,
+        httpClientConfig = config.httpClientConfig,
         onLogout = { onLogout(it, accountStore) },
         json = di.get(),
         eventContentSerializerMappings = di.get(),
@@ -320,19 +319,20 @@ suspend fun MatrixClient.Companion.loginWith(
     )
     val olmPickleKey = ""
 
-    api.accessToken.value = accessToken
+    api.accessToken.value = loginInfo.accessToken
     accountStore.updateAccount {
         Account(
             olmPickleKey = olmPickleKey,
             baseUrl = baseUrl.toString(),
-            accessToken = accessToken,
-            userId = userId,
-            deviceId = deviceId,
+            accessToken = loginInfo.accessToken,
+            userId = loginInfo.userId,
+            deviceId = loginInfo.deviceId,
             displayName = displayName,
             avatarUrl = avatarUrl,
             backgroundFilterId = null,
             filterId = null,
-            syncBatchToken = null
+            syncBatchToken = null,
+            isLocked = false,
         )
     }
 
@@ -343,12 +343,12 @@ suspend fun MatrixClient.Companion.loginWith(
             ?: OlmAccount.create()
                 .also { olmAccount -> olmCryptoStore.updateOlmAccount { olmAccount.pickle(olmPickleKey) } }
     ) {
-        Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
-                Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
+        Key.Ed25519Key(loginInfo.deviceId, it.identityKeys.ed25519) to
+                Key.Curve25519Key(loginInfo.deviceId, it.identityKeys.curve25519)
     }
 
     koinApplication.modules(module {
-        single { UserInfo(userId, deviceId, signingKey, identityKey) }
+        single { UserInfo(loginInfo.userId, loginInfo.deviceId, signingKey, identityKey) }
         single<MatrixClientServerApiClient> { api }
         single { CurrentSyncState(api.sync.currentSyncState) }
     })
@@ -360,8 +360,8 @@ suspend fun MatrixClient.Companion.loginWith(
         keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value))
     }
     val matrixClient = MatrixClientImpl(
-        userId = userId,
-        deviceId = deviceId,
+        userId = loginInfo.userId,
+        deviceId = loginInfo.deviceId,
         baseUrl = baseUrl,
         identityKey = identityKey,
         signingKey = signingKey,
@@ -379,7 +379,7 @@ suspend fun MatrixClient.Companion.loginWith(
     api.key.setKeys(deviceKeys = selfSignedDeviceKeys)
         .onFailure { matrixClient.deleteAll() }
         .getOrThrow()
-    keyStore.updateOutdatedKeys { it + userId }
+    keyStore.updateOutdatedKeys { it + loginInfo.userId }
     matrixClient.also {
         log.trace { "finished creating MatrixClient" }
     }
@@ -421,7 +421,7 @@ suspend fun MatrixClient.Companion.fromStore(
             single { mediaStore }
         })
         modules(repositoriesModule)
-        modules(config.modulesFactory())
+        modules(config.modules ?: config.modulesFactory())
     }
     val di = koinApplication.koin
 
@@ -441,7 +441,8 @@ suspend fun MatrixClient.Companion.fromStore(
     if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
         val api = MatrixClientServerApiClientImpl(
             baseUrl = baseUrl,
-            httpClientFactory = config.httpClientFactory,
+            httpClientEngine = config.httpClientEngine,
+            httpClientConfig = config.httpClientConfig,
             onLogout = { onLogout(it, accountStore) },
             json = di.get(),
             eventContentSerializerMappings = di.get(),
@@ -452,7 +453,7 @@ suspend fun MatrixClient.Companion.fromStore(
             val (identifier, password, token, loginType) = onSoftLogin()
             api.authentication.login(identifier, password, token, loginType, deviceId)
                 .getOrThrow().accessToken
-                .also { accountStore.updateAccount { account -> account.copy(accessToken = it) } }
+                .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
         }
         if (accessToken != null) {
             api.accessToken.value = accessToken
@@ -489,14 +490,15 @@ suspend fun MatrixClient.Companion.fromStore(
 }
 
 private suspend fun onLogout(
-    soft: Boolean,
+    logoutInfo: LogoutInfo,
     accountStore: AccountStore
 ) {
-    log.debug { "This device has been logged out (soft=$soft)." }
+    log.debug { "This device has been logged out ($logoutInfo)." }
     accountStore.updateAccount {
-        it.copy(
-            accessToken = null,
-            syncBatchToken = if (soft) it.syncBatchToken else null
+        it?.copy(
+            accessToken = if (logoutInfo.isLocked) it.accessToken else null,
+            syncBatchToken = if (logoutInfo.isSoft) it.syncBatchToken else null,
+            isLocked = logoutInfo.isLocked
         )
     }
 }
@@ -537,6 +539,7 @@ class MatrixClientImpl internal constructor(
     override val loginState: StateFlow<LoginState?> =
         accountStore.getAccountAsFlow().map { account ->
             when {
+                account?.isLocked == true -> LOCKED
                 account?.accessToken != null -> LOGGED_IN
                 account?.syncBatchToken != null -> LOGGED_OUT_SOFT
                 else -> LOGGED_OUT
@@ -556,7 +559,7 @@ class MatrixClientImpl internal constructor(
             allHandlersStarted.first { it }
             log.debug { "all EventHandler started" }
             launch {
-                loginState.collect {
+                loginState.collectLatest {
                     log.info { "login state: $it" }
                     when (it) {
                         LOGGED_OUT_SOFT -> {
@@ -568,6 +571,12 @@ class MatrixClientImpl internal constructor(
                             log.info { "stop sync and delete all" }
                             stopSync(true)
                             rootStore.deleteAll()
+                        }
+
+                        LOCKED -> {
+                            log.info { "account is locked - waiting for successful sync for unlocking" }
+                            api.sync.subscribeAsFlow(ClientEventEmitter.Priority.FIRST).first()
+                            accountStore.updateAccount { it?.copy(isLocked = false) }
                         }
 
                         else -> {}
@@ -589,7 +598,7 @@ class MatrixClientImpl internal constructor(
                         )
                     ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
                 }
-                accountStore.updateAccount { it.copy(filterId = newFilterId) }
+                accountStore.updateAccount { it?.copy(filterId = newFilterId) }
             }
             val backgroundFilterId = accountStore.getAccount()?.backgroundFilterId
             if (backgroundFilterId == null) {
@@ -605,7 +614,7 @@ class MatrixClientImpl internal constructor(
                         )
                     ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
                 }
-                accountStore.updateAccount { it.copy(backgroundFilterId = newFilterId) }
+                accountStore.updateAccount { it?.copy(backgroundFilterId = newFilterId) }
             }
             started.value = true
         }
@@ -631,7 +640,7 @@ class MatrixClientImpl internal constructor(
      */
     override suspend fun clearCache(): Result<Unit> = kotlin.runCatching {
         stopSync(true)
-        accountStore.updateAccount { it.copy(syncBatchToken = null) }
+        accountStore.updateAccount { it?.copy(syncBatchToken = null) }
         rootStore.clearCache()
         startSync()
     }
@@ -650,7 +659,7 @@ class MatrixClientImpl internal constructor(
             filter = checkNotNull(accountStore.getAccount()?.filterId),
             setPresence = presence,
             getBatchToken = { accountStore.getAccount()?.syncBatchToken },
-            setBatchToken = { accountStore.updateAccount { account -> account.copy(syncBatchToken = it) } },
+            setBatchToken = { accountStore.updateAccount { account -> account?.copy(syncBatchToken = it) } },
             scope = coroutineScope,
         )
     }
@@ -668,7 +677,7 @@ class MatrixClientImpl internal constructor(
             filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
             setPresence = presence,
             getBatchToken = { accountStore.getAccount()?.syncBatchToken },
-            setBatchToken = { accountStore.updateAccount { account -> account.copy(syncBatchToken = it) } },
+            setBatchToken = { accountStore.updateAccount { account -> account?.copy(syncBatchToken = it) } },
             timeout = timeout,
             runOnce = runOnce
         )
@@ -682,21 +691,21 @@ class MatrixClientImpl internal constructor(
         api.sync.cancel(wait)
     }
 
-    override suspend fun stop(wait: Boolean) {
+    override fun close() {
         started.value = false
+        api.close()
         coroutineScope.cancel("stopped MatrixClient")
-        if (wait) coroutineScope.coroutineContext.job.join()
     }
 
     override suspend fun setDisplayName(displayName: String?): Result<Unit> {
         return api.user.setDisplayName(userId, displayName).map {
-            accountStore.updateAccount { it.copy(displayName = displayName) }
+            accountStore.updateAccount { it?.copy(displayName = displayName) }
         }
     }
 
     override suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit> {
         return api.user.setAvatarUrl(userId, avatarUrl).map {
-            accountStore.updateAccount { it.copy(avatarUrl = avatarUrl) }
+            accountStore.updateAccount { it?.copy(avatarUrl = avatarUrl) }
         }
     }
 }

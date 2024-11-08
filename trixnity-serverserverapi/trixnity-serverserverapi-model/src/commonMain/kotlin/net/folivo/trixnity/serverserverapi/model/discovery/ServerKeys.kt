@@ -8,7 +8,7 @@ data class ServerKeys(
     @SerialName("server_name")
     val serverName: String,
     @SerialName("valid_until_ts")
-    val validUntil: Long? = null,
+    val validUntil: Long,
     @SerialName("old_verify_keys")
     val oldVerifyKeys: Map<String, OldVerifyKey>? = null,
     @SerialName("verify_keys")

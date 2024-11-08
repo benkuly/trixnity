@@ -4,22 +4,20 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.authentication.DiscoveryInformation
 import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class DiscoveryApiClientTest {
     @Test
     fun shouldGetWellKnown() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/.well-known/matrix/client", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -53,7 +51,7 @@ class DiscoveryApiClientTest {
     fun shouldGetWellKnownRegardlessOfContentType() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/.well-known/matrix/client", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -86,7 +84,7 @@ class DiscoveryApiClientTest {
     fun shouldGetSupport() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/.well-known/matrix/support", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)

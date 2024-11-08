@@ -8,7 +8,6 @@ import io.ktor.http.ContentType.*
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -17,11 +16,10 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class MatrixApiClientTest {
 
     private val json = createMatrixEventJson()
@@ -47,11 +45,14 @@ class MatrixApiClientTest {
     @Test
     fun itShouldDoNormalRequest() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
                     assertEquals("localhost", request.url.host)
-                    assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
+                    val contentType = request.body.contentType?.toString()
+                        ?: request.body.headers[HttpHeaders.ContentType]
+                        ?: request.headers[HttpHeaders.ContentType]
+                    assertEquals(Application.Json.toString(), contentType)
                     assertEquals(Post, request.method)
                     assertEquals("""{"includeDino":true}""", request.body.toByteArray().decodeToString())
                     respond(
@@ -78,7 +79,7 @@ class MatrixApiClientTest {
     @Test
     fun itShouldAllowSendUnitPostRequest() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
                     assertEquals("localhost", request.url.host)
@@ -112,10 +113,14 @@ class MatrixApiClientTest {
     @Test
     fun itShouldForceJsonResponseDeserialization() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/path", request.url.fullPath)
                     assertEquals("localhost", request.url.host)
+                    val contentType = request.body.contentType?.toString()
+                        ?: request.body.headers[HttpHeaders.ContentType]
+                        ?: request.headers[HttpHeaders.ContentType]
+                    assertEquals(null, contentType)
                     assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
                     assertEquals(Get, request.method)
                     respond("""{"status":"ok"}""", HttpStatusCode.OK)
@@ -130,7 +135,7 @@ class MatrixApiClientTest {
     @Test
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
                         """{
@@ -158,7 +163,7 @@ class MatrixApiClientTest {
     @Test
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
                         "NO_UNICORN",

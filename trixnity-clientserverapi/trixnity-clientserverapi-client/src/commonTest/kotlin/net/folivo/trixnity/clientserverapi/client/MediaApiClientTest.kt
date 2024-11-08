@@ -5,21 +5,19 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.media.*
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class MediaApiClientTest {
     @Test
     fun shouldGetConfig() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v1/media/config", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -42,7 +40,7 @@ class MediaApiClientTest {
     fun shouldCreateMedia() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/media/v1/create", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
@@ -71,7 +69,7 @@ class MediaApiClientTest {
     fun shouldUploadFile() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/media/v3/upload?filename=testFile.txt", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
@@ -107,7 +105,7 @@ class MediaApiClientTest {
     fun shouldUploadFileByContentUri() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/media/v3/upload/example.com/AQwafuaFswefuhsfAFAgsw?filename=testFile.txt",
@@ -143,7 +141,7 @@ class MediaApiClientTest {
     fun shouldDownloadFile() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga",
@@ -176,7 +174,7 @@ class MediaApiClientTest {
     fun shouldDownloadThumbnail() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v1/media/thumbnail/matrix.org:443/ascERGshawAWawugaAcauga?width=64&height=64&method=scale",
@@ -212,7 +210,7 @@ class MediaApiClientTest {
     fun shouldGetUrlPreview() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v1/media/preview_url?url=someUrl", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)

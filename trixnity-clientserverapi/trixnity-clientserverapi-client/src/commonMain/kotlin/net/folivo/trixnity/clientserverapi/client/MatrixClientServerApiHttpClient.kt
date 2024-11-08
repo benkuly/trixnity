@@ -1,7 +1,9 @@
 package net.folivo.trixnity.clientserverapi.client
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.resources.*
 import io.ktor.client.request.*
@@ -15,7 +17,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.api.client.MatrixApiClient
-import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.clientserverapi.model.uia.*
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
@@ -25,39 +26,58 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
+private val log = KotlinLogging.logger { }
+
+data class LogoutInfo(
+    val isSoft: Boolean,
+    val isLocked: Boolean,
+)
+
 class MatrixClientServerApiHttpClient(
     val baseUrl: Url? = null,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     accessToken: MutableStateFlow<String?>,
-    private val onLogout: suspend (isSoft: Boolean) -> Unit = {},
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
+    private val onLogout: suspend (LogoutInfo) -> Unit = { },
+    httpClientEngine: HttpClientEngine? = null,
+    httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixApiClient(
     eventContentSerializerMappings,
     json,
+    httpClientEngine,
     {
-        httpClientFactory {
-            it()
-            install(DefaultRequest) {
-                accessToken.value?.let { bearerAuth(it) }
-                if (baseUrl != null) url.takeFrom(baseUrl)
-            }
-            install(ConvertMediaPlugin)
-            install(HttpRequestRetry) {
-                retryIf { _, httpResponse ->
-                    httpResponse.status == HttpStatusCode.TooManyRequests
-                }
-                retryOnExceptionIf { _, throwable ->
-                    throwable is MatrixServerException && throwable.statusCode == HttpStatusCode.TooManyRequests
-                }
-                exponentialDelay(maxDelayMs = 30_000, respectRetryAfterHeader = true)
-            }
+        install(DefaultRequest) {
+            accessToken.value?.let { bearerAuth(it) }
+            if (baseUrl != null) url.takeFrom(baseUrl)
         }
+        install(ConvertMediaPlugin)
+        install(HttpRequestRetry) {
+            retryIf { httpRequest, httpResponse ->
+                (httpResponse.status == HttpStatusCode.TooManyRequests)
+                    .also { if (it) log.warn { "rate limit exceeded for ${httpRequest.method} ${httpRequest.url}" } }
+            }
+            retryOnExceptionIf { _, throwable ->
+                (throwable is MatrixServerException && throwable.statusCode == HttpStatusCode.TooManyRequests)
+                    .also {
+                        if (it) {
+                            log.warn(if (log.isDebugEnabled()) throwable else null) { "rate limit exceeded" }
+                        }
+                    }
+            }
+            exponentialDelay(maxDelayMs = 30_000, respectRetryAfterHeader = true)
+        }
+
+        httpClientConfig?.invoke(this)
     }
 ) {
     override suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {
-        if (response.status == HttpStatusCode.Unauthorized && errorResponse is ErrorResponse.UnknownToken) {
-            onLogout(errorResponse.softLogout)
+        if (response.status == HttpStatusCode.Unauthorized) {
+            when (errorResponse) {
+                is ErrorResponse.UnknownToken -> onLogout(LogoutInfo(errorResponse.softLogout, false))
+                is ErrorResponse.UserLocked -> onLogout(LogoutInfo(errorResponse.softLogout, true))
+                else -> {}
+            }
+
         }
     }
 
@@ -129,7 +149,10 @@ class MatrixClientServerApiHttpClient(
                 if (errorCode != null) {
                     val error = json.decodeFromJsonElement<ErrorResponse>(responseObject)
                     if (error is ErrorResponse.UnknownToken) {
-                        onLogout(error.softLogout)
+                        onLogout(LogoutInfo(error.softLogout, false))
+                    }
+                    if (error is ErrorResponse.UserLocked) {
+                        onLogout(LogoutInfo(error.softLogout, true))
                     }
                     UIA.Error(state, error, getFallbackUrl, authenticate)
                 } else {
