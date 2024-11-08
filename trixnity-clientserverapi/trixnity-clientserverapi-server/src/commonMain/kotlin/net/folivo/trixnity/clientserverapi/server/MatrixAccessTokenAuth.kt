@@ -64,7 +64,10 @@ class MatrixAccessTokenAuth internal constructor(
 typealias AccessTokenAuthenticationFunction = suspend (UserAccessTokenCredentials) -> AccessTokenAuthenticationFunctionResult
 
 data class UserAccessTokenCredentials(val accessToken: String) : Credential
-data class AccessTokenAuthenticationFunctionResult(val principal: Principal?, val cause: AuthenticationFailedCause?)
+data class AccessTokenAuthenticationFunctionResult(
+    val principal: UserIdPrincipal?,
+    val cause: AuthenticationFailedCause?
+)
 
 private fun ApplicationRequest.getAccessToken(): UserAccessTokenCredentials? {
     return when (val authHeader = parseAuthorizationHeader()) {

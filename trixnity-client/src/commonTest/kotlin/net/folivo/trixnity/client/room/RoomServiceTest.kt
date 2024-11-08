@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.room
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.retry
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -181,32 +180,32 @@ class RoomServiceTest : ShouldSpec({
             }
         }
         context("should just return event") {
-            withData(
-                mapOf(
-                    "with already encrypted event" to encryptedTimelineEvent.copy(
-                        content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
-                    ),
-                    "with encryption error" to encryptedTimelineEvent.copy(
-                        content = Result.failure(TimelineEventContentError.DecryptionTimeout)
-                    ),
-                    "without RoomEvent" to encryptedTimelineEvent.copy(
-                        event = nameEvent(1)
-                    ),
-                    "without MegolmEncryptedEventContent" to encryptedTimelineEvent.copy(
-                        event = textEvent(1)
-                    )
+            mapOf(
+                "with already encrypted event" to encryptedTimelineEvent.copy(
+                    content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
+                ),
+                "with encryption error" to encryptedTimelineEvent.copy(
+                    content = Result.failure(TimelineEventContentError.DecryptionTimeout)
+                ),
+                "without RoomEvent" to encryptedTimelineEvent.copy(
+                    event = nameEvent(1)
+                ),
+                "without MegolmEncryptedEventContent" to encryptedTimelineEvent.copy(
+                    event = textEvent(1)
                 )
-            ) { timelineEvent ->
-                roomTimelineStore.addAll(listOf(timelineEvent))
-                cut.getTimelineEvent(room, eventId).first() shouldBe timelineEvent
+            ).forEach { (testName, timelineEvent) ->
+                should(testName) {
+                    roomTimelineStore.addAll(listOf(timelineEvent))
+                    cut.getTimelineEvent(room, eventId).first() shouldBe timelineEvent
 
-                // event gets changed later (e.g. redaction)
-                roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
-                val result = cut.getTimelineEvent(room, eventId)
-                delay(20)
-                roomTimelineStore.addAll(listOf(timelineEvent))
-                delay(20)
-                result.first() shouldBe timelineEvent
+                    // event gets changed later (e.g. redaction)
+                    roomTimelineStore.addAll(listOf(encryptedTimelineEvent))
+                    val result = cut.getTimelineEvent(room, eventId)
+                    delay(20)
+                    roomTimelineStore.addAll(listOf(timelineEvent))
+                    delay(20)
+                    result.first() shouldBe timelineEvent
+                }
             }
         }
         context("event can be decrypted") {

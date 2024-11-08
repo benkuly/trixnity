@@ -43,7 +43,6 @@ kotlin {
                 implementation(libs.kotest.common)
                 implementation(libs.kotest.framework.engine)
                 implementation(libs.kotest.assertions.core)
-                implementation(libs.kotest.framework.datatest)
             }
         }
         jvmTest {

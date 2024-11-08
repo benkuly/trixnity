@@ -8,7 +8,6 @@ import io.ktor.server.auth.AuthenticationFailedCause.*
 import io.ktor.server.plugins.doublereceive.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import io.ktor.util.*
 import io.ktor.utils.io.*
 import net.folivo.trixnity.api.server.AuthRequired
 import net.folivo.trixnity.api.server.withoutAuthAttributeKey
@@ -74,7 +73,7 @@ data class SignedRequestAuthenticationBody(
     val origin: String,
 )
 
-data class SignatureAuthenticationFunctionResult(val principal: Principal?, val cause: AuthenticationFailedCause?)
+data class SignatureAuthenticationFunctionResult(val principal: UserIdPrincipal?, val cause: AuthenticationFailedCause?)
 
 typealias SignatureAuthenticationFunction = suspend (SignedRequestAuthenticationBody) -> SignatureAuthenticationFunctionResult
 
