@@ -804,41 +804,43 @@ private val body: ShouldSpec.() -> Unit = {
             context("master key is present") {
                 context("at least one device key is not cross signed") {
                     context("mark master key as ${KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned::class.simpleName}") {
-                        withData(
+                        mapOf(
                             KeySignatureTrustLevel.CrossSigned(true) to true,
                             KeySignatureTrustLevel.CrossSigned(false) to false,
-                        ) { (levelBefore, expectedVerified) ->
-                            keyTrustServiceMock.returnCalculateDeviceKeysTrustLevel =
-                                KeySignatureTrustLevel.NotCrossSigned
-                            apiConfig.endpoints {
-                                matrixJsonEndpoint(GetKeys()) {
-                                    GetKeys.Response(
-                                        mapOf(),
-                                        mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
-                                        mapOf(), mapOf(), mapOf()
+                        ).forEach { (levelBefore, expectedVerified) ->
+                            should("levelBefore=$levelBefore, expectedVerified=$expectedVerified") {
+                                keyTrustServiceMock.returnCalculateDeviceKeysTrustLevel =
+                                    KeySignatureTrustLevel.NotCrossSigned
+                                apiConfig.endpoints {
+                                    matrixJsonEndpoint(GetKeys()) {
+                                        GetKeys.Response(
+                                            mapOf(),
+                                            mapOf(alice to mapOf(aliceDevice2 to aliceKey2)),
+                                            mapOf(), mapOf(), mapOf()
+                                        )
+                                    }
+                                }
+                                keyStore.updateCrossSigningKeys(alice) {
+                                    setOf(
+                                        StoredCrossSigningKeys(
+                                            Signed(
+                                                CrossSigningKeys(
+                                                    alice,
+                                                    setOf(CrossSigningKeysUsage.MasterKey),
+                                                    keysOf(Key.Ed25519Key("mk_id", "mk_value"))
+                                                ),
+                                                mapOf()
+                                            ), levelBefore
+                                        )
                                     )
                                 }
-                            }
-                            keyStore.updateCrossSigningKeys(alice) {
-                                setOf(
-                                    StoredCrossSigningKeys(
-                                        Signed(
-                                            CrossSigningKeys(
-                                                alice,
-                                                setOf(CrossSigningKeysUsage.MasterKey),
-                                                keysOf(Key.Ed25519Key("mk_id", "mk_value"))
-                                            ),
-                                            mapOf()
-                                        ), levelBefore
-                                    )
+                                keyStore.updateOutdatedKeys { setOf(alice) }
+                                keyStore.getOutdatedKeysFlow().first { it.isEmpty() }
+                                keyStore.getCrossSigningKey(alice, CrossSigningKeysUsage.MasterKey)
+                                    ?.trustLevel shouldBe KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(
+                                    expectedVerified
                                 )
                             }
-                            keyStore.updateOutdatedKeys { setOf(alice) }
-                            keyStore.getOutdatedKeysFlow().first { it.isEmpty() }
-                            keyStore.getCrossSigningKey(alice, CrossSigningKeysUsage.MasterKey)
-                                ?.trustLevel shouldBe KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(
-                                expectedVerified
-                            )
                         }
                     }
                     context("keep trust level") {
