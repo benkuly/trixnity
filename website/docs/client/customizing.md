@@ -8,7 +8,7 @@ The client can be customized via dependency injection:
 
 ```kotlin
 matrixClient.login(...){
-    modulesFactory = { createDefaultTrixnityModules() + createCustomModule() }
+    modulesFactories += ::createCustomModule
 }
 ```
 
@@ -39,7 +39,7 @@ val customMappings = createEventContentSerializerMappings {
 }
 
 // add the module to MatrixClient as shown above
-val customMappingsModule = module {
+fun createCustomModule() = module {
     single<EventContentSerializerMappings> {
         DefaultEventContentSerializerMappings + customMappings
     }

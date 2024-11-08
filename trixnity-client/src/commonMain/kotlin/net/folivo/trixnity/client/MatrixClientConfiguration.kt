@@ -93,7 +93,7 @@ data class MatrixClientConfiguration(
      * modules = createDefaultTrixnityModules() + createCustomModule()
      * ```
      */
-    @Deprecated("replace with modulesFactory")
+    @Deprecated("replace with modulesFactories")
     var modules: List<Module>? = null,
 
     /**
@@ -106,7 +106,20 @@ data class MatrixClientConfiguration(
      * modulesFactory = { createDefaultTrixnityModules() + createCustomModule() }
      * ```
      */
-    var modulesFactory: () -> List<Module> = { createDefaultTrixnityModules() },
+    @Deprecated("replace with modulesFactories")
+    var modulesFactory: (() -> List<Module>)? = null,
+
+    /**
+     * Inject and override modules into Trixnity. By default this is [createDefaultTrixnityModules].
+     *
+     * Be aware to always create new modules because a module stores your class instances and therefore is reused, which we don't want!
+     *
+     * For example:
+     * ```kotlin
+     * modulesFactories += createCustomModule()
+     * ```
+     */
+    var modulesFactories: List<ModuleFactory> = createTrixnityDefaultModuleFactories(),
 ) {
     data class SyncLoopDelays(
         val syncLoopDelay: Duration,
