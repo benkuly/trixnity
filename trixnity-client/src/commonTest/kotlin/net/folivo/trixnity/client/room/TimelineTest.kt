@@ -20,12 +20,13 @@ import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 class TimelineTest : ShouldSpec({
     timeout = 5_000
 
+    val roomId = RoomId("room", "server")
     lateinit var roomServiceMock: RoomServiceMock
     lateinit var cut: SimpleTimeline
 
     beforeTest {
         roomServiceMock = RoomServiceMock()
-        cut = TimelineImpl(RoomId("room", "server"), roomService = roomServiceMock) { it }
+        cut = TimelineImpl(roomId, roomService = roomServiceMock) { it }
     }
 
     fun timelineEvent(id: String): TimelineEvent =
@@ -34,7 +35,7 @@ class TimelineTest : ShouldSpec({
                 RoomMessageEventContent.TextBased.Text(id),
                 EventId(id),
                 UserId("sender", "server"),
-                RoomId("room", "server"),
+                roomId,
                 1234
             ),
             gap = null,
@@ -52,8 +53,6 @@ class TimelineTest : ShouldSpec({
             val state = cut.state.first()
             state.elements.map { it.first().eventId.full } shouldBe expectedResult
             state.isInitialized shouldBe true
-            state.lastLoadedEventIdBefore?.full shouldBe "1"
-            state.lastLoadedEventIdAfter?.full shouldBe "1"
         }
         should("not suspend infinite, when no element before or after start") {
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
@@ -64,8 +63,6 @@ class TimelineTest : ShouldSpec({
             val state = cut.state.first()
             state.elements.map { it.first().eventId.full } shouldBe expectedResult
             state.isInitialized shouldBe true
-            state.lastLoadedEventIdBefore?.full shouldBe "3"
-            state.lastLoadedEventIdAfter?.full shouldBe "3"
         }
     }
     context(SimpleTimeline::loadBefore.name) {
@@ -78,8 +75,6 @@ class TimelineTest : ShouldSpec({
             cut.loadBefore().newElements.map { it.first().eventId.full } shouldBe listOf("1", "2")
             val state = cut.state.first()
             state.elements.map { it.first().eventId.full } shouldBe listOf("1", "2", "3")
-            state.lastLoadedEventIdBefore?.full shouldBe "1"
-            state.lastLoadedEventIdAfter?.full shouldBe "3"
             state.isLoadingBefore shouldBe false
         }
     }
@@ -93,9 +88,39 @@ class TimelineTest : ShouldSpec({
             cut.loadAfter().newElements.map { it.first().eventId.full } shouldBe listOf("2", "1")
             val state = cut.state.first()
             state.elements.map { it.first().eventId.full } shouldBe listOf("3", "2", "1")
-            state.lastLoadedEventIdBefore?.full shouldBe "3"
-            state.lastLoadedEventIdAfter?.full shouldBe "1"
             state.isLoadingAfter shouldBe false
+        }
+    }
+    context(SimpleTimeline::dropBefore.name) {
+        should("drop events before") {
+            roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
+            roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent("3")))
+            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            roomServiceMock.returnGetTimelineEvents =
+                flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
+
+            cut.loadBefore()
+
+            cut.dropBefore(roomId, EventId("2")).removedElements.map { it.first().eventId.full } shouldBe listOf("1")
+            val state = cut.state.first()
+            state.elements.map { it.first().eventId.full } shouldBe listOf("2", "3")
+            state.isLoadingBefore shouldBe false
+        }
+    }
+    context(SimpleTimeline::dropAfter.name) {
+        should("drop events after") {
+            roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
+            roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent("3")))
+            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            roomServiceMock.returnGetTimelineEvents =
+                flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
+
+            cut.loadAfter()
+
+            cut.dropBefore(roomId, EventId("2")).removedElements.map { it.first().eventId.full } shouldBe listOf("3")
+            val state = cut.state.first()
+            state.elements.map { it.first().eventId.full } shouldBe listOf("2", "1")
+            state.isLoadingBefore shouldBe false
         }
     }
     context(TimelineState<TimelineEvent>::canLoadBefore.name) {
@@ -115,13 +140,13 @@ class TimelineTest : ShouldSpec({
 
             cut.state.first().canLoadBefore shouldBe true
         }
-        should("be true when upgraded") {
+        should("be true when upgraded before") {
             val timelineEvent = timelineEvent("3").copy(
                 event = StateEvent(
                     CreateEventContent(predecessor = CreateEventContent.PreviousRoom(RoomId("bla"), EventId("bla"))),
                     EventId("3"),
                     UserId("sender", "server"),
-                    RoomId("room", "server"),
+                    roomId,
                     1,
                     stateKey = ""
                 ), previousEventId = EventId("bla")
@@ -150,8 +175,7 @@ class TimelineTest : ShouldSpec({
 
             cut.state.first().canLoadAfter shouldBe true
         }
-        should("be true when upgraded") {
-
+        should("be true when upgraded after") {
             val timelineEvent = timelineEvent("3")
             roomServiceMock.state.value = mapOf(
                 RoomServiceMock.GetStateKey(
@@ -161,7 +185,7 @@ class TimelineTest : ShouldSpec({
                     TombstoneEventContent("", RoomId("")),
                     EventId("3"),
                     UserId("sender", "server"),
-                    RoomId("room", "server"),
+                    roomId,
                     1,
                     stateKey = ""
                 )

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Allow to drop elements from `Timeline` to support infinite timelines.
+
 ### Changed
 
 - Close HttpClient on stop().
