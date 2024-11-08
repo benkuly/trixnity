@@ -36,6 +36,7 @@ import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
 import org.koin.core.module.dsl.singleOf
@@ -69,7 +70,8 @@ fun createDefaultMatrixJsonModule() = module {
     }
 }
 
-fun createDefaultTrixnityModules() = listOf(
+@Deprecated("replace with createTrixnityDefaultModuleFactories")
+fun createDefaultTrixnityModules(): List<Module> = listOf(
     createClockModule(),
     createServerModule(),
     createDefaultEventContentSerializerMappingsModule(),
@@ -85,8 +87,21 @@ fun createDefaultTrixnityModules() = listOf(
     createNotificationModule(),
 )
 
-@Deprecated("use createDefaultTrixnityModules instead", ReplaceWith("createDefaultTrixnityModules()"))
-fun createDefaultModules() = createDefaultTrixnityModules()
+fun createTrixnityDefaultModuleFactories(): List<ModuleFactory> = listOf(
+    ::createClockModule,
+    ::createServerModule,
+    ::createDefaultEventContentSerializerMappingsModule,
+    ::createDefaultOutboxMessageMediaUploaderMappingsModule,
+    ::createDefaultMatrixJsonModule,
+    ::createStoreModule,
+    ::createRoomModule,
+    ::createUserModule,
+    ::createKeyModule,
+    ::createCryptoModule,
+    ::createVerificationModule,
+    ::createMediaModule,
+    ::createNotificationModule,
+)
 
 /**
  * Use this module, if you want to create a bot with basic functionality. You don't have access to some data usually provided
@@ -97,7 +112,8 @@ fun createDefaultModules() = createDefaultTrixnityModules()
  * and use the first non-null result. For sending events asynchronously you can still use the outbox.
  *
  */
-fun createTrixnityBotModules() = listOf(
+@Deprecated("replace with createTrixnityBotModuleFactories")
+fun createTrixnityBotModules(): List<Module> = listOf(
     createClockModule(),
     createServerModule(),
     createDefaultEventContentSerializerMappingsModule(),
@@ -216,6 +232,141 @@ fun createTrixnityBotModules() = listOf(
                 userInfo = get(),
                 mappings = get(),
             )
+        }
+    }
+)
+
+/**
+ * Use this, if you want to create a bot with basic functionality. You don't have access to some data usually provided
+ * by Trixnity (for example [RoomUser] or [TimelineEvent]).
+ *
+ * Instead, you need to manually listen to the sync events via [SyncApiClient] (can be received via [MatrixClient.api]).
+ * You can encrypt and decrypt events by iterating through all [RoomEventEncryptionService] (can be received via [MatrixClient.roomEventEncryptionServices])
+ * and use the first non-null result. For sending events asynchronously you can still use the outbox.
+ *
+ */
+fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
+    ::createClockModule,
+    ::createServerModule,
+    ::createDefaultEventContentSerializerMappingsModule,
+    ::createDefaultOutboxMessageMediaUploaderMappingsModule,
+    ::createDefaultMatrixJsonModule,
+    ::createStoreModule,
+    ::createKeyModule,
+    ::createCryptoModule,
+    ::createMediaModule,
+    {
+        module {
+            singleOf(::RoomListHandler) {
+                bind<EventHandler>()
+                named<RoomListHandler>()
+            }
+            singleOf(::RoomStateEventHandler) {
+                bind<EventHandler>()
+                named<RoomStateEventHandler>()
+            }
+            singleOf(::RoomAccountDataEventHandler) {
+                bind<EventHandler>()
+                named<RoomAccountDataEventHandler>()
+            }
+            singleOf(::GlobalAccountDataEventHandler) {
+                bind<EventHandler>()
+                named<GlobalAccountDataEventHandler>()
+            }
+            singleOf(::DirectRoomEventHandler) {
+                bind<EventHandler>()
+                named<DirectRoomEventHandler>()
+            }
+            singleOf(::RoomUpgradeHandler) {
+                bind<EventHandler>()
+                named<RoomUpgradeHandler>()
+            }
+            singleOf(::ForgetRoomServiceImpl) {
+                bind<ForgetRoomService>()
+            }
+            single<LoadMembersService> {
+                LoadMembersServiceImpl(
+                    roomStore = get(),
+                    lazyMemberEventHandlers = getAll(),
+                    currentSyncState = get(),
+                    api = get(),
+                    scope = get(),
+                )
+            }
+            single<RoomEventEncryptionService>(named<MegolmRoomEventEncryptionService>()) {
+                MegolmRoomEventEncryptionService(
+                    roomStore = get(),
+                    loadMembersService = get(),
+                    roomStateStore = get(),
+                    olmCryptoStore = get(),
+                    keyBackupService = get(named<KeyBackupService>()),
+                    outgoingRoomKeyRequestEventHandler = get(named<OutgoingRoomKeyRequestEventHandler>()),
+                    olmEncryptionService = get(),
+                )
+            }
+            singleOf(::UnencryptedRoomEventEncryptionService) {
+                bind<RoomEventEncryptionService>()
+                named<UnencryptedRoomEventEncryptionService>()
+            }
+            single<EventHandler>(named<OutboxMessageEventHandler>()) {
+                OutboxMessageEventHandler(
+                    config = get(),
+                    api = get(),
+                    roomEventEncryptionServices = getAll(),
+                    mediaService = get(),
+                    roomOutboxMessageStore = get(),
+                    outboxMessageMediaUploaderMappings = get(),
+                    currentSyncState = get(),
+                    tm = get(),
+                    clock = get(),
+                )
+            }
+            single<RoomService> {
+                RoomServiceImpl(
+                    api = get(),
+                    roomStore = get(),
+                    roomStateStore = get(),
+                    roomAccountDataStore = get(),
+                    roomTimelineStore = get(),
+                    roomOutboxMessageStore = get(),
+                    roomEventEncryptionServices = getAll(),
+                    forgetRoomService = get(),
+                    mediaService = get(),
+                    userInfo = get(),
+                    timelineEventHandler = object : TimelineEventHandler {
+                        override suspend fun unsafeFillTimelineGaps(
+                            startEventId: EventId,
+                            roomId: RoomId,
+                            limit: Long
+                        ): Result<Unit> {
+                            throw IllegalStateException("TimelineEvents are not supported in bot mode")
+                        }
+                    },
+                    typingEventHandler = object : TypingEventHandler {
+                        override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> = MutableStateFlow(mapOf())
+                    },
+                    clock = get(),
+                    currentSyncState = get(),
+                    scope = get(),
+                    config = get(),
+                )
+            }
+            single<UserService> {
+                UserServiceImpl(
+                    roomStore = get(),
+                    roomUserStore = get(),
+                    roomStateStore = get(),
+                    roomTimelineStore = get(),
+                    globalAccountDataStore = get(),
+                    loadMembersService = get(),
+                    presenceEventHandler = object : PresenceEventHandler {
+                        override val userPresence: StateFlow<Map<UserId, PresenceEventContent>> =
+                            MutableStateFlow(mapOf())
+                    },
+                    userInfo = get(),
+                    mappings = get(),
+                )
+            }
         }
     }
 )

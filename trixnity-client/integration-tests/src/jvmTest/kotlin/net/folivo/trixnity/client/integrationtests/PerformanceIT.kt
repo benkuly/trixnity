@@ -15,7 +15,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.createTrixnityBotModules
+import net.folivo.trixnity.client.createTrixnityBotModuleFactories
 import net.folivo.trixnity.client.room.decrypt
 import net.folivo.trixnity.client.room.encrypt
 import net.folivo.trixnity.client.roomEventEncryptionServices
@@ -108,7 +108,7 @@ class PerformanceIT {
                     "bot", baseUrl = baseUrl,
                     repositoriesModule = createExposedRepositoriesModule(matrixPostgresql2.getDatabase()),
                 ) {
-                    modulesFactory = { createTrixnityBotModules() }
+                    modulesFactories = createTrixnityBotModuleFactories()
                 }.client
             },
             { baseUrl ->
@@ -116,7 +116,7 @@ class PerformanceIT {
                     "inMemoryBot", baseUrl = baseUrl,
                     repositoriesModule = createInMemoryRepositoriesModule(),
                 ) {
-                    modulesFactory = { createTrixnityBotModules() }
+                    modulesFactories = createTrixnityBotModuleFactories()
                 }.client
             }
         )
@@ -193,7 +193,7 @@ class PerformanceIT {
 
             val prepareTestClients = (1..roomsCount).withLimitedParallelism { i ->
                 registerAndStartClient("prepare-$i", "prepare-$i", baseUrl, createInMemoryRepositoriesModule()) {
-                    modulesFactory = { createTrixnityBotModules() }
+                    modulesFactories = createTrixnityBotModuleFactories()
                     cacheExpireDurations = MatrixClientConfiguration.CacheExpireDurations.default(5.seconds)
                 }.client
             }
@@ -323,7 +323,7 @@ class PerformanceIT {
     fun fullClientVsBotModeThroughput(): Unit =
         runBlocking(Dispatchers.Default) {
             val fullClientSyncTime = throughput()
-            val botSyncTime = throughput { modulesFactory = { createTrixnityBotModules() } }
+            val botSyncTime = throughput { modulesFactories = createTrixnityBotModuleFactories() }
             val diff = (botSyncTime / fullClientSyncTime) * 100
             println("################################")
             println("fullClientSyncTime: $fullClientSyncTime")

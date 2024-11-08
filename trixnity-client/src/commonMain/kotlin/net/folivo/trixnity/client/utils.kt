@@ -8,9 +8,12 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.previousRoomId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import org.koin.core.module.Module
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+
+typealias ModuleFactory = () -> Module
 
 fun String.toMxcUri(): Url =
     Url(this).also { require(it.protocol.name == "mxc") { "uri protocol was not mxc" } }
