@@ -1,5 +1,6 @@
 package net.folivo.trixnity.clientserverapi.client
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -25,6 +26,8 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
+private val log = KotlinLogging.logger { }
+
 data class LogoutInfo(
     val isSoft: Boolean,
     val isLocked: Boolean,
@@ -49,11 +52,17 @@ class MatrixClientServerApiHttpClient(
             }
             install(ConvertMediaPlugin)
             install(HttpRequestRetry) {
-                retryIf { _, httpResponse ->
-                    httpResponse.status == HttpStatusCode.TooManyRequests
+                retryIf { httpRequest, httpResponse ->
+                    (httpResponse.status == HttpStatusCode.TooManyRequests)
+                        .also { if (it) log.warn { "rate limit exceeded for ${httpRequest.method} ${httpRequest.url}" } }
                 }
                 retryOnExceptionIf { _, throwable ->
-                    throwable is MatrixServerException && throwable.statusCode == HttpStatusCode.TooManyRequests
+                    (throwable is MatrixServerException && throwable.statusCode == HttpStatusCode.TooManyRequests)
+                        .also {
+                            if (it) {
+                                log.warn(if (log.isDebugEnabled()) throwable else null) { "rate limit exceeded" }
+                            }
+                        }
                 }
                 exponentialDelay(maxDelayMs = 30_000, respectRetryAfterHeader = true)
             }
