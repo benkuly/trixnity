@@ -19,7 +19,7 @@ trixnityOpensslBinaries = "1.0.5" # https://gitlab.com/trixnity/trixnity-openssl
 jna = "5.15.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
-ktor = "3.0.0" # https://github.com/ktorio/ktor/releases
+ktor = "3.0.1" # https://github.com/ktorio/ktor/releases
 koin = "3.5.6" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.9.1" # https://square.github.io/okio/changelog/
 arrow = "1.2.4" # https://github.com/arrow-kt/arrow/releases
