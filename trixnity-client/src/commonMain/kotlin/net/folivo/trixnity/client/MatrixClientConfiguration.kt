@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client
 
 import io.ktor.client.*
+import io.ktor.client.engine.*
 import kotlinx.coroutines.CoroutineName
-import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.model.users.Filters
@@ -76,9 +76,14 @@ data class MatrixClientConfiguration(
     var syncOnceFilter: Filters = Filters(presence = Filters.EventFilter(limit = 0)),
 
     /**
-     * Set custom [HttpClient].
+     * Specify a [HttpClientEngine]. This should be reused in an application.
      */
-    var httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
+    var httpClientEngine: HttpClientEngine? = null,
+
+    /**
+     * Configure the underlying [HttpClient].
+     */
+    var httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 
     /**
      * Inject and override modules into Trixnity. You should always apply [createDefaultTrixnityModules] first.

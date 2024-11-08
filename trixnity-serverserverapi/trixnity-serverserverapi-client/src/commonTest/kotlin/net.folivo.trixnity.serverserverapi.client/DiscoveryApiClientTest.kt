@@ -3,7 +3,6 @@ package net.folivo.trixnity.serverserverapi.client
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -11,11 +10,10 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.serverserverapi.model.discovery.*
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class DiscoveryApiClientTest {
     @Test
     fun shouldGetWellKnown() = runTest {
@@ -24,7 +22,7 @@ class DiscoveryApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/.well-known/matrix/server", request.url.encodedPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -50,7 +48,7 @@ class DiscoveryApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/.well-known/matrix/server", request.url.encodedPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -75,7 +73,7 @@ class DiscoveryApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/version", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -109,7 +107,7 @@ class DiscoveryApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/key/v2/server", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -173,7 +171,7 @@ class DiscoveryApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/key/v2/query", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
@@ -266,7 +264,7 @@ class DiscoveryApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/key/v2/query/example.org?minimum_valid_until_ts=1234567890",

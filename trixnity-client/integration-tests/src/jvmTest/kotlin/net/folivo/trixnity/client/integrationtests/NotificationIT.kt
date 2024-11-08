@@ -54,10 +54,8 @@ class NotificationIT {
 
     @AfterTest
     fun afterEach() {
-        runBlocking {
-            startedClient1.client.stop()
-            startedClient2.client.stop()
-        }
+        startedClient1.client.close()
+        startedClient2.client.close()
         scope.cancel()
     }
 

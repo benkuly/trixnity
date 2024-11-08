@@ -4,7 +4,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
@@ -15,10 +14,9 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
+import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class ApplicationServiceRoomServiceTest {
 
     private val json = createMatrixEventJson()
@@ -30,7 +28,7 @@ class ApplicationServiceRoomServiceTest {
     fun `should create and save room`() = runTest {
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(CreateRoom()) { requestBody ->
                     assertSoftly(requestBody) {
                         it.roomAliasLocalPart shouldBe roomAlias.localpart
@@ -53,7 +51,7 @@ class ApplicationServiceRoomServiceTest {
     fun `should have error when creation fails`() = runTest {
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(CreateRoom()) {
                     throw MatrixServerException(
                         HttpStatusCode.InternalServerError,
@@ -75,7 +73,7 @@ class ApplicationServiceRoomServiceTest {
     fun `should have error when saving by room service fails`() = runTest {
         val api = MatrixClientServerApiClientImpl(
             json = json,
-            httpClientFactory = mockEngineFactoryWithEndpoints(json, mappings) {
+            httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(CreateRoom()) {
                     CreateRoom.Response(roomId)
                 }

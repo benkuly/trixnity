@@ -87,11 +87,9 @@ class SasVerificationIT {
 
     @AfterTest
     fun afterEach() {
-        runBlocking {
-            client1.stop()
-            client2.stop()
-            client3.stop()
-        }
+        client1.close()
+        client2.close()
+        client3.close()
     }
 
     @Test

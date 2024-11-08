@@ -1,27 +1,25 @@
 package net.folivo.trixnity.testutils
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.*
+import io.ktor.client.engine.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.job
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
 private val log = KotlinLogging.logger {}
 
-fun mockEngineFactory(
+fun CoroutineScope.scopedMockEngine(
     withDefaultResponse: Boolean = true,
     configure: MockEngineConfig.() -> Unit = {}
-): (HttpClientConfig<*>.() -> Unit) -> HttpClient = {
-    HttpClient(MockEngine) {
-        it()
-        engine {
-            configure()
-            if (withDefaultResponse)
-                defaultMockEngineHandler()
-        }
-    }
-}
+): HttpClientEngine =
+    MockEngine.create {
+        configure()
+        if (withDefaultResponse)
+            defaultMockEngineHandler()
+    }.also { engine -> coroutineContext.job.invokeOnCompletion { engine.close() } }
 
 data class MockEngineEndpointsConfig(
     val json: Json,
@@ -43,12 +41,29 @@ class PortableMockEngineConfig {
         }
 }
 
-fun mockEngineFactoryWithEndpoints(
+fun mockEngineWithEndpoints(
     json: Json,
     contentMappings: EventContentSerializerMappings,
     portableConfig: PortableMockEngineConfig? = null,
     configure: MockEngineEndpointsConfig.() -> Unit = {}
-): (HttpClientConfig<*>.() -> Unit) -> HttpClient = mockEngineFactory(false) {
+): HttpClientEngine = MockEngine.create {
+    val config = MockEngineEndpointsConfig(json, contentMappings).apply { configure() }
+    portableConfig?.config = config
+    addHandler { request ->
+        config.requestHandlers.firstNotNullOfOrNull { it(this, request) }
+            ?: run {
+                log.error { "request $request not defined in mock engine config. Configured are: ${requestHandlers.map { it::class.toString() }}" }
+                throw IllegalStateException("request $request not defined in mock engine config. Configured are: ${requestHandlers.map { it::class.toString() }}")
+            }
+    }
+}
+
+fun CoroutineScope.scopedMockEngineWithEndpoints(
+    json: Json,
+    contentMappings: EventContentSerializerMappings,
+    portableConfig: PortableMockEngineConfig? = null,
+    configure: MockEngineEndpointsConfig.() -> Unit = {}
+): HttpClientEngine = scopedMockEngine(false) {
     val config = MockEngineEndpointsConfig(json, contentMappings).apply { configure() }
     portableConfig?.config = config
     addHandler { request ->

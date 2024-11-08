@@ -75,7 +75,7 @@ class IndexedDBRepositoryTransactionManager(
         coroutineScope {
             val existingReadTransaction = coroutineContext[IndexedDBReadTransaction]
             val existingWriteTransaction = coroutineContext[IndexedDBWriteTransaction]
-            if (existingReadTransaction != null && existingWriteTransaction != null) block() // just re-use existing transaction (nested)
+            if (existingReadTransaction != null && existingWriteTransaction != null) block() // just reuse existing transaction (nested)
             else mutex.withLock {
                 val writeTransaction = IndexedDBWriteTransaction(database, testMode)
                 withContext(IndexedDBReadTransaction(database) + writeTransaction) {

@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.client.engine.java.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
@@ -43,6 +44,7 @@ fun synapseDocker() =
             withNetwork(Network.SHARED)
         }
 
+private val javaHttpClientEngine = Java.create() // reuse engine in all tests
 private const val defaultPassword = "user$1passw0rd"
 
 suspend fun MatrixClientServerApiClient.register(
@@ -86,6 +88,7 @@ suspend fun registerAndStartClient(
         getLoginInfo = { it.register(username, defaultPassword, name) },
         configuration = {
             this.name = name
+            httpClientEngine = javaHttpClientEngine
             configuration()
         },
     ).getOrThrow()
@@ -110,6 +113,7 @@ suspend fun startClient(
         mediaStore = InMemoryMediaStore(),
         configuration = {
             this.name = name
+            httpClientEngine = javaHttpClientEngine
             configuration()
         },
     ).getOrThrow()
@@ -128,6 +132,7 @@ suspend fun startClientFromStore(
         mediaStore = InMemoryMediaStore(),
         configuration = {
             this.name = name
+            httpClientEngine = javaHttpClientEngine
             configuration()
         },
     ).getOrThrow()

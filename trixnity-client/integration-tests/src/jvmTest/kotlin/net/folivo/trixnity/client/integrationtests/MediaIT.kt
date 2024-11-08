@@ -55,9 +55,7 @@ class MediaIT {
 
     @AfterTest
     fun afterEach() {
-        runBlocking {
-            client.stop()
-        }
+        client.close()
     }
 
     @Test
