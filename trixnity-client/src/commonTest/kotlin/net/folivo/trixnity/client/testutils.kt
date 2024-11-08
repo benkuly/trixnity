@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
-import net.folivo.trixnity.testutils.mockEngineFactoryWithEndpoints
+import net.folivo.trixnity.testutils.mockEngineWithEndpoints
 
 fun String.trimToFlatJson() =
     this.trimIndent().lines().filter { it.isNotEmpty() }.joinToString("") { it.replace(": ", ":").trim() }
@@ -40,7 +40,7 @@ fun mockMatrixClientServerApiClient(
     val config = PortableMockEngineConfig()
     val api = MatrixClientServerApiClientImpl(
         json = json,
-        httpClientFactory = mockEngineFactoryWithEndpoints(json, contentMappings, portableConfig = config)
+        httpClientEngine = mockEngineWithEndpoints(json, contentMappings, portableConfig = config)
     )
     return api to config
 }

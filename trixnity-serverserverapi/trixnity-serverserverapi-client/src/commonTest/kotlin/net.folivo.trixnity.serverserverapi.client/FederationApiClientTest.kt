@@ -21,7 +21,7 @@ import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
 import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -85,7 +85,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/send/someTransactionId", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -164,7 +164,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/event_auth/!room:server/$1event", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -192,7 +192,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/backfill/!room:server?v=%241event&limit=10",
@@ -227,7 +227,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/get_missing_events/!room:server", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
@@ -281,7 +281,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/event/$1event", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -313,7 +313,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/state/!room:server?event_id=%241event",
@@ -346,7 +346,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/state_ids/!room:server?event_id=%241event",
@@ -379,7 +379,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/make_join/!room:server/@alice:example.com?ver=3",
@@ -441,7 +441,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v2/send_join/!room:server/$1event", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -581,7 +581,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/make_knock/!room:server/@alice:example.com?ver=3",
@@ -641,7 +641,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/send_knock/!room:server/$1event", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -748,7 +748,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v2/invite/!room:server/$1event", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -905,7 +905,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/make_leave/!room:server/@alice:example.com",
@@ -965,7 +965,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v2/send_leave/!room:server/$1event", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -1038,7 +1038,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/3pid/onbind", request.url.fullPath)
                     assertEquals(HttpMethod.Put, request.method)
@@ -1106,7 +1106,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/exchange_third_party_invite/!room:server",
@@ -1197,7 +1197,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/publicRooms?include_all_networks=false&limit=5&since=since&third_party_instance_id=instance",
@@ -1262,7 +1262,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/publicRooms",
@@ -1340,7 +1340,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/hierarchy/!room:server?suggested_only=true",
@@ -1477,7 +1477,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/query/directory?room_alias=%23alias%3Aserver",
@@ -1520,7 +1520,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/query/profile?user_id=%40user%3Aserver&field=displayname",
@@ -1555,7 +1555,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/openid/userinfo?access_token=token",
@@ -1587,7 +1587,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/user/devices/@alice:example.com",
@@ -1721,7 +1721,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/user/keys/claim",
@@ -1798,7 +1798,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/user/keys/query",
@@ -1942,7 +1942,7 @@ class FederationApiClientTest {
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
             getRoomVersion = { "3" },
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/federation/v1/timestamp_to_event/!room:server?ts=24&dir=f",
@@ -1979,7 +1979,7 @@ class FederationApiClientTest {
 //            getDelegatedDestination = { host, port -> host to port },
 //            sign = { Key.Ed25519Key("key", "value") },
 //            getRoomVersion = { "3" },
-//            httpClientFactory = mockEngineFactory {
+//            httpClientEngine = mockEngineFactory {
 //                addHandler { request ->
 //                    assertEquals(
 //                        "/_matrix/federation/v1/media/download/mediaId123",

@@ -3,6 +3,7 @@ package net.folivo.trixnity.clientserverapi.client
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.resources.*
 import io.ktor.client.request.*
@@ -16,7 +17,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.api.client.MatrixApiClient
-import net.folivo.trixnity.api.client.defaultTrixnityHttpClientFactory
 import net.folivo.trixnity.clientserverapi.model.uia.*
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
@@ -39,34 +39,35 @@ class MatrixClientServerApiHttpClient(
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     accessToken: MutableStateFlow<String?>,
     private val onLogout: suspend (LogoutInfo) -> Unit = { },
-    httpClientFactory: (config: HttpClientConfig<*>.() -> Unit) -> HttpClient = defaultTrixnityHttpClientFactory(),
+    httpClientEngine: HttpClientEngine? = null,
+    httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixApiClient(
     eventContentSerializerMappings,
     json,
+    httpClientEngine,
     {
-        httpClientFactory {
-            it()
-            install(DefaultRequest) {
-                accessToken.value?.let { bearerAuth(it) }
-                if (baseUrl != null) url.takeFrom(baseUrl)
-            }
-            install(ConvertMediaPlugin)
-            install(HttpRequestRetry) {
-                retryIf { httpRequest, httpResponse ->
-                    (httpResponse.status == HttpStatusCode.TooManyRequests)
-                        .also { if (it) log.warn { "rate limit exceeded for ${httpRequest.method} ${httpRequest.url}" } }
-                }
-                retryOnExceptionIf { _, throwable ->
-                    (throwable is MatrixServerException && throwable.statusCode == HttpStatusCode.TooManyRequests)
-                        .also {
-                            if (it) {
-                                log.warn(if (log.isDebugEnabled()) throwable else null) { "rate limit exceeded" }
-                            }
-                        }
-                }
-                exponentialDelay(maxDelayMs = 30_000, respectRetryAfterHeader = true)
-            }
+        install(DefaultRequest) {
+            accessToken.value?.let { bearerAuth(it) }
+            if (baseUrl != null) url.takeFrom(baseUrl)
         }
+        install(ConvertMediaPlugin)
+        install(HttpRequestRetry) {
+            retryIf { httpRequest, httpResponse ->
+                (httpResponse.status == HttpStatusCode.TooManyRequests)
+                    .also { if (it) log.warn { "rate limit exceeded for ${httpRequest.method} ${httpRequest.url}" } }
+            }
+            retryOnExceptionIf { _, throwable ->
+                (throwable is MatrixServerException && throwable.statusCode == HttpStatusCode.TooManyRequests)
+                    .also {
+                        if (it) {
+                            log.warn(if (log.isDebugEnabled()) throwable else null) { "rate limit exceeded" }
+                        }
+                    }
+            }
+            exponentialDelay(maxDelayMs = 30_000, respectRetryAfterHeader = true)
+        }
+
+        httpClientConfig?.invoke(this)
     }
 ) {
     override suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {

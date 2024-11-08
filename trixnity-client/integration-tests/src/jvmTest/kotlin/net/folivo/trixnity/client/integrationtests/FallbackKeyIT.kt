@@ -49,11 +49,9 @@ class FallbackKeyIT {
 
     @AfterTest
     fun afterEach() {
-        runBlocking {
-            startedClient1.client.stop()
-            startedClient2.client.stop()
-            startedClient3.client.stop()
-        }
+        startedClient1.client.close()
+        startedClient2.client.close()
+        startedClient3.client.close()
     }
 
     @Test

@@ -238,13 +238,13 @@ class PerformanceIT {
                     encryptedEvent.shouldNotBeNull()
                     api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
                 }
-                it.stop()
+                it.close()
             }
             log.info { "all messages sent" }
 
             val messagesResults = clients.measureSyncSpeed(decrypt)
 
-            clients.forEach { it.stop() }
+            clients.forEach { it.close() }
             synapse.stop()
             synapsePostgresql.stop()
 
@@ -429,7 +429,7 @@ class PerformanceIT {
                         sendingClient.api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
                         sentMessages.getAndUpdate { it + 1 }
                     }
-                    sendingClient.stop()
+                    sendingClient.close()
                     currentParallelRequestsCount.update { it - 1 }
                 }
             }
@@ -505,7 +505,7 @@ class PerformanceIT {
 
         progressJob.cancelAndJoin()
         autoJoinAndAnswerJob.cancelAndJoin()
-        receivingClient.stop()
+        receivingClient.close()
 
         val allMessagesCount = requestsCount * messagesPerRequestCount * 2
         val allRoomEventsCount = totalRoomEvents.value

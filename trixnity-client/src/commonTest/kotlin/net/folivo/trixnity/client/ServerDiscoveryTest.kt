@@ -2,9 +2,11 @@ package net.folivo.trixnity.client
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.ktor.client.*
+import io.ktor.client.engine.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.job
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
@@ -13,18 +15,14 @@ import kotlin.test.fail
 class ServerDiscoveryTest : ShouldSpec({
     timeout = 10_000
 
-    fun createMockEngineFactory(config: MockEngineConfig.() -> Unit): (HttpClientConfig<*>.() -> Unit) -> HttpClient = {
-        HttpClient(MockEngine) {
-            it()
-            engine {
-                config()
-            }
-        }
-    }
+    fun CoroutineScope.scopedMockEngine(config: MockEngineConfig.() -> Unit): HttpClientEngine =
+        MockEngine.create {
+            config()
+        }.also { engine -> coroutineContext.job.invokeOnCompletion { engine.close() } }
 
     context(String::serverDiscovery.name) {
         should("find server from UserId") {
-            val httpClientFactory = createMockEngineFactory {
+            val httpClientEngine = scopedMockEngine {
                 addHandler {
                     when (it.url) {
                         Url("https://someHost.org/.well-known/matrix/client") -> respond(
@@ -47,11 +45,11 @@ class ServerDiscoveryTest : ShouldSpec({
                     }
                 }
             }
-            UserId("@someUser:someHost.org").serverDiscovery(httpClientFactory)
+            UserId("@someUser:someHost.org").serverDiscovery(httpClientEngine)
                 .getOrThrow() shouldBe Url("https://matrix.someHost.org")
         }
         should("find server") {
-            val httpClientFactory = createMockEngineFactory {
+            val httpClientEngine = scopedMockEngine {
                 addHandler {
                     when (it.url) {
                         Url("https://someHost.org/.well-known/matrix/client") -> respond(
@@ -74,11 +72,11 @@ class ServerDiscoveryTest : ShouldSpec({
                     }
                 }
             }
-            "https://someHost.org".serverDiscovery(httpClientFactory)
+            "https://someHost.org".serverDiscovery(httpClientEngine)
                 .getOrThrow() shouldBe Url("https://matrix.someHost.org")
         }
         should("find server with port") {
-            val httpClientFactory = createMockEngineFactory {
+            val httpClientEngine = scopedMockEngine {
                 addHandler {
                     when (it.url) {
                         Url("https://someHost:8008/.well-known/matrix/client") -> respond(
@@ -101,11 +99,11 @@ class ServerDiscoveryTest : ShouldSpec({
                     }
                 }
             }
-            "https://someHost:8008".serverDiscovery(httpClientFactory)
+            "https://someHost:8008".serverDiscovery(httpClientEngine)
                 .getOrThrow() shouldBe Url("https://otherHost:8008")
         }
         should("allow http") {
-            val httpClientFactory = createMockEngineFactory {
+            val httpClientEngine = scopedMockEngine {
                 addHandler {
                     when (it.url) {
                         Url("http://someHost:8008/.well-known/matrix/client") -> respond(
@@ -128,11 +126,11 @@ class ServerDiscoveryTest : ShouldSpec({
                     }
                 }
             }
-            "http://someHost:8008".serverDiscovery(httpClientFactory)
+            "http://someHost:8008".serverDiscovery(httpClientEngine)
                 .getOrThrow() shouldBe Url("http://otherHost:8008")
         }
         should("not fail when cannot get discovery information (use url as is)") {
-            val httpClientFactory = createMockEngineFactory {
+            val httpClientEngine = scopedMockEngine {
                 addHandler {
                     when (it.url) {
                         Url("http://someHost:8008/.well-known/matrix/client") -> respondError(HttpStatusCode.NotFound)
@@ -145,11 +143,11 @@ class ServerDiscoveryTest : ShouldSpec({
                     }
                 }
             }
-            "http://someHost:8008".serverDiscovery(httpClientFactory)
+            "http://someHost:8008".serverDiscovery(httpClientEngine)
                 .getOrThrow() shouldBe Url("http://someHost:8008")
         }
         should("fail when cannot get version") {
-            val httpClientFactory = createMockEngineFactory {
+            val httpClientEngine = scopedMockEngine {
                 addHandler {
                     when (it.url) {
                         Url("https://someHost:8008/.well-known/matrix/client") -> respond(
@@ -168,7 +166,7 @@ class ServerDiscoveryTest : ShouldSpec({
                     }
                 }
             }
-            "https://someHost:8008".serverDiscovery(httpClientFactory)
+            "https://someHost:8008".serverDiscovery(httpClientEngine)
                 .exceptionOrNull() shouldBe MatrixServerException(
                 HttpStatusCode.NotFound,
                 ErrorResponse.CustomErrorResponse("UNKNOWN", "Not Found")

@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.push.PushCondition.*
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.PushRuleKind
 import net.folivo.trixnity.core.model.push.PushRuleSet
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -45,7 +45,7 @@ class PushApiClientTest {
         """.trimIndent()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/pushers", request.url.fullPath)
                     assertEquals(HttpMethod.Get, request.method)
@@ -100,7 +100,7 @@ class PushApiClientTest {
         """.trimToFlatJson()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/pushers/set", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
@@ -166,7 +166,7 @@ class PushApiClientTest {
         """.trimIndent()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/notifications?from=from&limit=24&only=only",
@@ -400,7 +400,7 @@ class PushApiClientTest {
         """.trimIndent()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/pushrules/",
@@ -535,7 +535,7 @@ class PushApiClientTest {
         """.trimIndent()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/pushrules/scope/content/ruleId",
@@ -585,7 +585,7 @@ class PushApiClientTest {
         """.trimToFlatJson()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/pushrules/scope/content/ruleId?before=before&after=after",
@@ -618,7 +618,7 @@ class PushApiClientTest {
     fun shouldDeletePushRule() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/pushrules/scope/content/ruleId",
@@ -650,7 +650,7 @@ class PushApiClientTest {
         """.trimIndent()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/pushrules/scope/content/ruleId/actions",
@@ -683,7 +683,7 @@ class PushApiClientTest {
         """.trimToFlatJson()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/pushrules/scope/content/ruleId/actions",
@@ -715,7 +715,7 @@ class PushApiClientTest {
         """.trimIndent()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/pushrules/scope/content/ruleId/enabled",
@@ -742,7 +742,7 @@ class PushApiClientTest {
         """.trimToFlatJson()
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/pushrules/scope/content/ruleId/enabled",

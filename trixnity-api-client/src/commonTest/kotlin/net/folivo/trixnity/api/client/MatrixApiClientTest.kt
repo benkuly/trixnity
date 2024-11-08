@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -45,7 +45,7 @@ class MatrixApiClientTest {
     @Test
     fun itShouldDoNormalRequest() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
                     assertEquals("localhost", request.url.host)
@@ -79,7 +79,7 @@ class MatrixApiClientTest {
     @Test
     fun itShouldAllowSendUnitPostRequest() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/path/1?requestParam=2", request.url.fullPath)
                     assertEquals("localhost", request.url.host)
@@ -113,7 +113,7 @@ class MatrixApiClientTest {
     @Test
     fun itShouldForceJsonResponseDeserialization() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/path", request.url.fullPath)
                     assertEquals("localhost", request.url.host)
@@ -135,7 +135,7 @@ class MatrixApiClientTest {
     @Test
     fun itShouldCatchNotOkResponseAndThrowMatrixServerException() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
                         """{
@@ -163,7 +163,7 @@ class MatrixApiClientTest {
     @Test
     fun itShouldCatchAllOtherNotOkResponseAndThrowMatrixServerException() = runTest {
         val cut = MatrixApiClient(
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
                         "NO_UNICORN",

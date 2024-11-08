@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Log rate limits.
+- Allow to drop elements from `Timeline` to support infinite timelines.
 
 ### Changed
 
-- Close base HttpClient on stop().
+- Close HttpClient on stop().
+- Allow to configure HttpClientEngine. This allows to reuse it, which spares a lot of resources when spawning many
+  clients.
 
 ### Deprecated
 

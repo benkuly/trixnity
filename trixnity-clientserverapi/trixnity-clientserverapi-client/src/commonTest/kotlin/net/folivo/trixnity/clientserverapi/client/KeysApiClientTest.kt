@@ -5,7 +5,6 @@ import io.kotest.matchers.string.shouldBeEmpty
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -20,11 +19,10 @@ import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm.Curve25519
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm.SignedCurve25519
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
-import net.folivo.trixnity.testutils.mockEngineFactory
+import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class KeysApiClientTest {
 
     private val alice = UserId("@alice:example.com")
@@ -33,7 +31,7 @@ class KeysApiClientTest {
     fun shouldSetDeviceKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/keys/upload",
@@ -169,7 +167,7 @@ class KeysApiClientTest {
     fun shouldGetKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/keys/query",
@@ -330,7 +328,7 @@ class KeysApiClientTest {
     fun shouldQueryKeysAndSkipMalformedKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/keys/query",
@@ -433,7 +431,7 @@ class KeysApiClientTest {
     fun shouldClaimKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/keys/claim",
@@ -492,7 +490,7 @@ class KeysApiClientTest {
     fun shouldGetKeyChanges() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/keys/changes?from=s72594_4483_1934&to=s75689_5632_2435",
@@ -534,7 +532,7 @@ class KeysApiClientTest {
     fun shouldSetCrossSigningKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/keys/device_signing/upload",
@@ -637,7 +635,7 @@ class KeysApiClientTest {
     fun shouldAddSignatures() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/keys/signatures/upload",
@@ -778,7 +776,7 @@ class KeysApiClientTest {
     fun shouldGetRoomKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys?version=1",
@@ -840,7 +838,7 @@ class KeysApiClientTest {
     fun shouldGetRoomKeysFromRoom() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys/!room:example.org?version=1",
@@ -895,7 +893,7 @@ class KeysApiClientTest {
     fun shouldGetRoomKeysFromRoomAndSession() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1",
@@ -943,7 +941,7 @@ class KeysApiClientTest {
     fun shouldSetRoomKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys?version=1",
@@ -1015,7 +1013,7 @@ class KeysApiClientTest {
     fun shouldSetRoomKeysWithRoom() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys/!room:example.org?version=1",
@@ -1080,7 +1078,7 @@ class KeysApiClientTest {
     fun shouldSetRoomKeysWithRoomAndSession() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1",
@@ -1138,7 +1136,7 @@ class KeysApiClientTest {
     fun shouldDeleteRoomKeys() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys?version=1",
@@ -1169,7 +1167,7 @@ class KeysApiClientTest {
     fun shouldDeleteRoomKeysFromRoom() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys/!room:example.org?version=1",
@@ -1201,7 +1199,7 @@ class KeysApiClientTest {
     fun shouldDeleteRoomKeysFromRoomAndSession() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/keys/!room:example.org/+ess%2FionId1?version=1",
@@ -1234,7 +1232,7 @@ class KeysApiClientTest {
     fun shouldGetRoomKeysVersion() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/version",
@@ -1285,7 +1283,7 @@ class KeysApiClientTest {
     fun shouldGetRoomKeysVersionFromVersion() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/version/1",
@@ -1336,7 +1334,7 @@ class KeysApiClientTest {
     fun shouldSetRoomKeysVersion() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/version",
@@ -1386,7 +1384,7 @@ class KeysApiClientTest {
     fun shouldSetRoomKeysVersionWithVersion() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/version/1",
@@ -1435,7 +1433,7 @@ class KeysApiClientTest {
     fun shouldDeleteRoomKeysVersion() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            httpClientFactory = mockEngineFactory {
+            httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
                         "/_matrix/client/v3/room_keys/version/1",

@@ -72,10 +72,8 @@ class UsersIT {
 
     @AfterTest
     fun afterEach() {
-        runBlocking {
-            client1.stop()
-            client2.stop()
-        }
+        client1.close()
+        client2.close()
     }
 
     @Test

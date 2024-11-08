@@ -52,7 +52,7 @@ class ExposedRepositoryTransactionManager(private val database: Database) : Repo
     override suspend fun writeTransaction(block: suspend () -> Unit) = coroutineScope {
         val existingReadTransaction = coroutineContext[ExposedReadTransaction]?.transaction
         val existingWriteTransaction = coroutineContext[ExposedWriteTransaction]?.transaction
-        if (existingReadTransaction != null && existingWriteTransaction != null) block() // just re-use existing transaction (nested)
+        if (existingReadTransaction != null && existingWriteTransaction != null) block() // just reuse existing transaction (nested)
         else {
             val dispatcher = newLimitedDispatcher()
             newSuspendedTransaction(db = database) {
@@ -65,7 +65,7 @@ class ExposedRepositoryTransactionManager(private val database: Database) : Repo
 
     override suspend fun <T> readTransaction(block: suspend () -> T): T = coroutineScope {
         val existingReadTransaction = coroutineContext[ExposedReadTransaction]?.transaction
-        if (existingReadTransaction != null) block() // just re-use existing transaction (nested)
+        if (existingReadTransaction != null) block() // just reuse existing transaction (nested)
         else {
             val dispatcher = newLimitedDispatcher()
             newSuspendedTransaction(db = database) {// currently there is no readonly transaction possible in exposed
