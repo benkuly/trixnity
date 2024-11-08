@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Log rate limits.
 - Allow to drop elements from `Timeline` to support infinite timelines.
 
 ### Changed
