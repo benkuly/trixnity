@@ -94,7 +94,7 @@ data class MatrixClientConfiguration(
     /**
      * Inject and override modules into Trixnity. You should always apply [createDefaultTrixnityModules] first.
      *
-     * Be aware to always create new modules because a module saves your class instances and therefore is reused, which we don't want!
+     * Be aware to always create new modules because a module stores your class instances and therefore is reused, which we don't want!
      *
      * For example:
      * ```kotlin
