@@ -110,7 +110,7 @@ data class MatrixClientConfiguration(
     var modulesFactory: (() -> List<Module>)? = null,
 
     /**
-     * Inject and override modules into Trixnity. By default this is [createDefaultTrixnityModules].
+     * Inject and override modules into Trixnity. By default, this is [createDefaultTrixnityModules].
      *
      * Be aware to always create new modules because a module stores your class instances and therefore is reused, which we don't want!
      *
