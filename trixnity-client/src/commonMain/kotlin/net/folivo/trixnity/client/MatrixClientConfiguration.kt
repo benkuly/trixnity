@@ -116,7 +116,7 @@ data class MatrixClientConfiguration(
      *
      * For example:
      * ```kotlin
-     * modulesFactories += createCustomModule()
+     * modulesFactories += ::createCustomModule
      * ```
      */
     var modulesFactories: List<ModuleFactory> = createTrixnityDefaultModuleFactories(),
