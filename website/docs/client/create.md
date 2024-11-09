@@ -33,3 +33,10 @@ matrixClient.stop() // important to fully stop the client!
 
 To get the `baseUrl` via server discovery you can use the `.serverDiscovery()`
 extension on `UserId`s or `String`s.
+
+### Add HttpClientEngine
+
+Although Ktors `HttpClient`s used by Trixnity automatically use a `HttpClientEngine` defined in the
+classpath, it is highly recommended to explicitly set a shared(!) `HttpClientEngine` in the configuration. Only that
+way, it can be shared between all `MatrixClient` instances. Otherwise, each `MatrixClient` creates a new
+`HttpClientEngine`, which can lead to performance issues on heavy usage of the SDK.
