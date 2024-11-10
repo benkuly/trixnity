@@ -133,7 +133,6 @@ data class TimelineStateChange<T>(
  *
  */
 abstract class TimelineBase<T>(
-    val maxSize: Int = 100,
     val transformer: suspend (Flow<TimelineEvent>) -> T,
 ) : Timeline<T> {
     protected abstract suspend fun internalInit(
@@ -421,10 +420,9 @@ abstract class TimelineBase<T>(
 
 class TimelineImpl<T>(
     private val roomId: RoomId,
-    maxSize: Int = 100,
     private val roomService: RoomService,
     transformer: suspend (Flow<TimelineEvent>) -> T,
-) : TimelineBase<T>(maxSize, transformer) {
+) : TimelineBase<T>(transformer) {
     override suspend fun internalInit(
         startFrom: EventId,
         configStart: GetTimelineEventConfig.() -> Unit,
