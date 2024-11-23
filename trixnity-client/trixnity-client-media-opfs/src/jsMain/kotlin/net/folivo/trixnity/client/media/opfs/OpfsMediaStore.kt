@@ -24,6 +24,7 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
     }
 
     private fun fileSystemSafe(url: String) = url.encodeToByteArray().toByteString().sha256().base64Url()
+
     private suspend fun FileSystemDirectoryHandle.resolveUrl(url: String, create: Boolean = false) =
         getFileHandle(fileSystemSafe(url), jso { this.create = create })
 
@@ -41,14 +42,18 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
     override suspend fun getMedia(url: String): ByteArrayFlow? = basePathLock.withLock(url) {
         val fileHandle = try {
             basePath.resolveUrl(url).getFile()
-        } catch (throwable: Throwable) {
+        } catch (_: Throwable) {
             return@withLock null
         }
         byteArrayFlowFromReadableStream { fileHandle.stream() }
     }
 
     override suspend fun deleteMedia(url: String) = basePathLock.withLock(url) {
-        basePath.removeEntry(fileSystemSafe(url))
+        try {
+            basePath.removeEntry(fileSystemSafe(url))
+        } catch (_: Throwable) {
+            // throws when not found
+        }
     }
 
     override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = basePathLock.withLock(oldUrl) {
@@ -57,11 +62,13 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
             val writableFileStream = basePath.resolveUrl(newUrl, true).createWritable()
             try {
                 writableFileStream.write(source)
+                basePath.removeEntry(fileSystemSafe(oldUrl))
             } catch (throwable: Throwable) {
                 basePath.removeEntry(fileSystemSafe(newUrl))
                 throw throwable
+            } finally {
+                writableFileStream.close()
             }
         }
-        basePath.removeEntry(fileSystemSafe(oldUrl))
     }
 }
