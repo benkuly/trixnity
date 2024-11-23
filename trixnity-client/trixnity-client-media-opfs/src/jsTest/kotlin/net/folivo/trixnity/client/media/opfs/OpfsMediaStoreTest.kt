@@ -4,7 +4,7 @@ import io.kotest.matchers.shouldBe
 import js.iterable.AsyncIterableIterator
 import js.objects.jso
 import js.typedarrays.Uint8Array
-import js.typedarrays.toUint8Array
+import js.typedarrays.asInt8Array
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.TestResult
@@ -28,7 +28,6 @@ class OpfsMediaStoreTest {
             testBody()
         } catch (throwable: Throwable) {
             throwable.printStackTrace()
-            throw throwable
         } finally {
             for (entry in basePath.values()) {
                 basePath.removeEntry(entry.name)
@@ -71,11 +70,9 @@ class OpfsMediaStoreTest {
     @Test
     fun shouldGetMedia() = runThisTest {
         cut.init()
-        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
-            .apply {
-                write("hi".encodeToByteArray().toUint8Array())
-                close()
-            }
+        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=").createWritable().apply {
+            write("hi".encodeToByteArray().asInt8Array())
+        }
         cut.getMedia("url1")?.toByteArray()?.decodeToString() shouldBe "hi"
     }
 
@@ -88,11 +85,9 @@ class OpfsMediaStoreTest {
     @Test
     fun shouldDeleteMedia() = runThisTest {
         cut.init()
-        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
-            .apply {
-                write("hi".encodeToByteArray().toUint8Array())
-                close()
-            }
+        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=").createWritable().apply {
+            write("hi".encodeToByteArray().asInt8Array())
+        }
         cut.deleteMedia("url1")
         basePath.values().toList().size shouldBe 0
     }
@@ -107,11 +102,9 @@ class OpfsMediaStoreTest {
     @Test
     fun shouldChangeMediaUrl() = runThisTest {
         cut.init()
-        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
-            .apply {
-                write("hi".encodeToByteArray().toUint8Array())
-                close()
-            }
+        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=").createWritable().apply {
+            write("hi".encodeToByteArray().asInt8Array())
+        }
         cut.changeMediaUrl("url1", "url2")
         Uint8Array(
             basePath.getFileHandle("hnKdljIEgbx_eKM0uMgfIWYx_slrDvGQQFN8QUQ4QGg=").getFile().arrayBuffer()
