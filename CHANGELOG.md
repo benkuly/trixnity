@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed OPFS streams not closed.
+
 ### Security
 
 ## 4.10.0
