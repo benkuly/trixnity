@@ -118,6 +118,13 @@ class OpfsMediaStoreTest {
         ).toByteArray().decodeToString() shouldBe "hi"
     }
 
+    @Test
+    fun shouldChangeMediaUrlWhenFileNotExists() = runThisTest {
+        cut.init()
+        cut.changeMediaUrl("url1", "url2")
+        basePath.values().toList().size shouldBe 0
+    }
+
     private suspend fun <V> AsyncIterableIterator<V>.toList(): List<V> {
         val list = mutableListOf<V>()
         for (entry in this) {

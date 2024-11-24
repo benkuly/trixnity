@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.media.opfs
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import js.objects.jso
 import js.typedarrays.Uint8Array
 import net.folivo.trixnity.client.media.MediaStore
@@ -10,6 +11,8 @@ import net.folivo.trixnity.utils.writeTo
 import okio.ByteString.Companion.toByteString
 import web.fs.FileSystemDirectoryHandle
 import web.streams.WritableStream
+
+private val log = KotlinLogging.logger {}
 
 class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaStore {
 
@@ -57,17 +60,17 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
     }
 
     override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = basePathLock.withLock(oldUrl) {
-        val source = basePath.resolveUrl(oldUrl).getFile()
         basePathLock.withLock(newUrl) {
             val writableFileStream = basePath.resolveUrl(newUrl, true).createWritable()
             try {
+                val source = basePath.resolveUrl(oldUrl).getFile()
                 writableFileStream.write(source)
                 basePath.removeEntry(fileSystemSafe(oldUrl))
-            } catch (throwable: Throwable) {
-                basePath.removeEntry(fileSystemSafe(newUrl))
-                throw throwable
-            } finally {
                 writableFileStream.close()
+            } catch (throwable: Throwable) {
+                writableFileStream.close()
+                basePath.removeEntry(fileSystemSafe(newUrl))
+                log.error(throwable) { "could not change media url" }
             }
         }
     }
