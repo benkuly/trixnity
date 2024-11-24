@@ -36,6 +36,7 @@ suspend fun ByteArrayFlow.writeTo(writableStream: WritableStream<Uint8Array>) {
     } finally {
         writer.close()
     }
+    writer.close()
 }
 
 suspend fun WritableStream<Uint8Array>.write(content: ByteArrayFlow) = content.writeTo(this)
