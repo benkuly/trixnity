@@ -238,7 +238,7 @@ class IndexedDBMediaStoreTest {
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
         val platformMedia = cut.getMedia("url1").shouldNotBeNull()
         val tmpFile = platformMedia.getTemporaryFile().getOrThrow()
-        tmpFile.release()
+        tmpFile.delete()
         database.transaction(TMP_MEDIA_OBJECT_STORE_NAME) {
             val tmpStore = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
             tmpStore.getAll().size shouldBe 0

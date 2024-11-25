@@ -10,6 +10,6 @@ interface OpfsPlatformMedia : PlatformMedia {
 
     interface TemporaryFile {
         val file: File
-        suspend fun release()
+        suspend fun delete()
     }
 }

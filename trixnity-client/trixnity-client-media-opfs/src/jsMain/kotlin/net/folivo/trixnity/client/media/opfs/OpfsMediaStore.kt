@@ -169,7 +169,7 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
         override val file: File,
         private val fileName: String,
     ) : OpfsPlatformMedia.TemporaryFile {
-        override suspend fun release() {
+        override suspend fun delete() {
             try {
                 val tmpPath = tmpPath()
                 tmpPath.removeEntry(fileName)

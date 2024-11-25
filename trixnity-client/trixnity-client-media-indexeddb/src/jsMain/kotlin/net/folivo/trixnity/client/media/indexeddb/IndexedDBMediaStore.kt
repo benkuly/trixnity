@@ -151,7 +151,7 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
         override val file: Blob,
         private val key: String,
     ) : IndexeddbPlatformMedia.TemporaryFile {
-        override suspend fun release() {
+        override suspend fun delete() {
             try {
                 database.writeTransaction(TMP_MEDIA_OBJECT_STORE_NAME) {
                     val store = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)

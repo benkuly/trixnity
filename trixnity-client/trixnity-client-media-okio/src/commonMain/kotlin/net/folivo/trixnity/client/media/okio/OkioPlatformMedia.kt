@@ -10,6 +10,6 @@ interface OkioPlatformMedia : PlatformMedia {
 
     interface TemporaryFile {
         val path: Path
-        suspend fun release()
+        suspend fun delete()
     }
 }

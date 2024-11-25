@@ -10,6 +10,6 @@ interface IndexeddbPlatformMedia : PlatformMedia {
 
     interface TemporaryFile {
         val file: Blob
-        suspend fun release()
+        suspend fun delete()
     }
 }

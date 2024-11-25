@@ -161,7 +161,7 @@ class OkioMediaStore(
     private inner class OkioPlatformMediaTemporaryFileImpl(
         override val path: Path
     ) : OkioPlatformMedia.TemporaryFile {
-        override suspend fun release() {
+        override suspend fun delete() {
             withContext(coroutineContext) {
                 fileSystem.delete(path)
             }

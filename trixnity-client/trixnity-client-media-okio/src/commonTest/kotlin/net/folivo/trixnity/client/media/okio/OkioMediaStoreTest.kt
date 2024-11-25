@@ -175,7 +175,7 @@ class OkioMediaStoreTest {
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
         val platformMedia = cut.getMedia("url1").shouldNotBeNull()
         val tmpFile = platformMedia.getTemporaryFile().getOrThrow()
-        tmpFile.release()
+        tmpFile.delete()
         fileSystem.listOrNull(tmpPath)?.size shouldBe 0
     }
 }
