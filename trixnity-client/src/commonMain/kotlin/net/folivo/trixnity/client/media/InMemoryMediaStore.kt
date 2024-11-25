@@ -12,8 +12,14 @@ class InMemoryMediaStore : MediaStore {
         media.update { it + (url to content.toByteArray()) }
     }
 
-    override suspend fun getMedia(url: String): ByteArrayFlow? =
-        media.value[url]?.toByteArrayFlow()
+    private inner class InMemoryPlatformMedia(private val delegate: ByteArrayFlow) : PlatformMedia,
+        ByteArrayFlow by delegate {
+        override fun transformByteArrayFlow(transformer: (ByteArrayFlow) -> ByteArrayFlow): PlatformMedia =
+            InMemoryPlatformMedia(delegate.let(transformer))
+    }
+
+    override suspend fun getMedia(url: String): PlatformMedia? =
+        media.value[url]?.toByteArrayFlow()?.let(::InMemoryPlatformMedia)
 
     override suspend fun deleteMedia(url: String) {
         media.update { it - url }

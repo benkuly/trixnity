@@ -51,7 +51,7 @@ suspend fun getInMemoryAccountStore(scope: CoroutineScope) = AccountStore(
     ObservableCacheStatisticCollector(),
     scope
 ).apply {
-    init()
+    init(scope)
     updateAccount { Account("", "", UserId("user", "server"), "", null, null, null, null, null, null, false) }
 }
 
@@ -65,7 +65,7 @@ suspend fun getInMemoryServerDataStore(scope: CoroutineScope) = ServerDataStore(
     RepositoryTransactionManagerMock(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryRoomAccountDataStore(scope: CoroutineScope) = RoomAccountDataStore(
     InMemoryRoomAccountDataRepository(),
@@ -74,7 +74,7 @@ suspend fun getInMemoryRoomAccountDataStore(scope: CoroutineScope) = RoomAccount
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryGlobalAccountDataStore(scope: CoroutineScope) = GlobalAccountDataStore(
     InMemoryGlobalAccountDataRepository(),
@@ -83,7 +83,7 @@ suspend fun getInMemoryGlobalAccountDataStore(scope: CoroutineScope) = GlobalAcc
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryOlmStore(scope: CoroutineScope) = OlmCryptoStore(
     InMemoryOlmAccountRepository(),
@@ -96,7 +96,7 @@ suspend fun getInMemoryOlmStore(scope: CoroutineScope) = OlmCryptoStore(
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
     InMemoryOutdatedKeysRepository(),
@@ -111,7 +111,7 @@ suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryRoomStore(scope: CoroutineScope) = RoomStore(
     InMemoryRoomRepository(),
@@ -119,7 +119,7 @@ suspend fun getInMemoryRoomStore(scope: CoroutineScope) = RoomStore(
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope,
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineStore(
     InMemoryTimelineEventRepository(),
@@ -128,7 +128,7 @@ suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineSt
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryRoomStateStore(scope: CoroutineScope) = RoomStateStore(
     InMemoryRoomStateRepository(),
@@ -137,7 +137,7 @@ suspend fun getInMemoryRoomStateStore(scope: CoroutineScope) = RoomStateStore(
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
     InMemoryRoomUserRepository(),
@@ -146,7 +146,7 @@ suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMappingStore(
     InMemoryMediaCacheMappingRepository(),
@@ -154,7 +154,7 @@ suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMapp
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutboxMessageStore(
     InMemoryRoomOutboxMessageRepository(),
@@ -162,7 +162,7 @@ suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutbo
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope,
-).apply { init() }
+).apply { init(scope) }
 
 suspend fun ShouldSpecContainerScope.clearOutdatedKeys(keyStoreBuilder: () -> KeyStore) {
     lateinit var coroutineScope: CoroutineScope

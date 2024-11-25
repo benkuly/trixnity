@@ -40,7 +40,7 @@ class OlmCryptoStore(
         MutableStateFlow<Map<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>>(mapOf())
 
     val notBackedUpInboundMegolmSessions = _notBackedUpInboundMegolmSessions.asStateFlow()
-    override suspend fun init() {
+    override suspend fun init(coroutineScope: CoroutineScope) {
         storeScope.launch(start = UNDISPATCHED) {
             _notBackedUpInboundMegolmSessions.value =
                 tm.readTransaction { inboundMegolmSessionRepository.getByNotBackedUp() }

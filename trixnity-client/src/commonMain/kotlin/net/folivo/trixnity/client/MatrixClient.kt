@@ -304,7 +304,7 @@ suspend fun MatrixClient.Companion.loginWith(
     val di = koinApplication.koin
 
     val rootStore = di.get<RootStore>()
-    rootStore.init()
+    rootStore.init(coroutineScope)
     val accountStore = di.get<AccountStore>()
 
     val api = MatrixClientServerApiClientImpl(
@@ -426,7 +426,7 @@ suspend fun MatrixClient.Companion.fromStore(
     val di = koinApplication.koin
 
     val rootStore = di.get<RootStore>()
-    rootStore.init()
+    rootStore.init(coroutineScope)
 
     val accountStore = di.get<AccountStore>()
     val olmCryptoStore = di.get<OlmCryptoStore>()

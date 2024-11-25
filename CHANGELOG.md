@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Allow to create temporary files from media.
+
 ### Changed
+
+- use Blob in media-indexeddb
 
 ### Deprecated
 

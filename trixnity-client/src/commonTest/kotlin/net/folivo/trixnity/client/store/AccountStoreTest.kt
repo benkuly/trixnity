@@ -49,7 +49,7 @@ class AccountStoreTest : ShouldSpec({
                 )
             )
 
-            cut.init()
+            cut.init(this)
 
             cut.getAccount().shouldNotBeNull().run {
                 olmPickleKey shouldBe ""

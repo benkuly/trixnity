@@ -41,20 +41,18 @@ internal class IndexedDBRoomStateRepository(
     ) {
     companion object {
         const val objectStoreName = "room_state"
-        suspend fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBTwoDimensionsStoreRepository(
-                        database = database,
-                        objectStoreName = objectStoreName,
-                        keyPath = KeyPath("roomId", "type", "stateKey"),
-                        firstKeyIndexName = "roomId|type",
-                        firstKeyIndexKeyPath = KeyPath("roomId", "type"),
-                    ) {
-                        createIndex("roomId", KeyPath("roomId"), unique = false)
-                        createIndex("type|stateKey", KeyPath("type", "stateKey"), unique = false)
-                    }
-            }
+        fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
+            if (oldVersion < 1)
+                createIndexedDBTwoDimensionsStoreRepository(
+                    database = database,
+                    objectStoreName = objectStoreName,
+                    keyPath = KeyPath("roomId", "type", "stateKey"),
+                    firstKeyIndexName = "roomId|type",
+                    firstKeyIndexKeyPath = KeyPath("roomId", "type"),
+                ) {
+                    createIndex("roomId", KeyPath("roomId"), unique = false)
+                    createIndex("type|stateKey", KeyPath("type", "stateKey"), unique = false)
+                }
         }
     }
 
