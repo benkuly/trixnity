@@ -5,6 +5,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
+import korlibs.io.async.delay
+import korlibs.time.milliseconds
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
@@ -399,6 +401,7 @@ class MatrixClientTest : ShouldSpec({
             val accountStore = cut.di.get<AccountStore>()
             accountStore.updateAccount { it?.copy(isLocked = true) }
             cut.loginState.first { it == LOCKED }
+            delay(50.milliseconds) // give it a moment to listen to sync
             cut.syncOnce().getOrThrow()
             cut.loginState.first { it == LOGGED_IN }
         }
