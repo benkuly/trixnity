@@ -1,11 +1,12 @@
 package net.folivo.trixnity.client.media.opfs
 
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import js.iterable.AsyncIterableIterator
 import js.objects.jso
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
@@ -15,15 +16,20 @@ import net.folivo.trixnity.utils.toByteArrayFlow
 import web.fs.FileSystemDirectoryHandle
 import web.navigator.navigator
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 class OpfsMediaStoreTest {
 
     lateinit var cut: OpfsMediaStore
     lateinit var basePath: FileSystemDirectoryHandle
+    lateinit var tmpPath: FileSystemDirectoryHandle
+    lateinit var coroutineScope: CoroutineScope
 
-    fun runThisTest(testBody: suspend TestScope.() -> Unit): TestResult = runTest {
+    fun test(testBody: suspend TestScope.() -> Unit): TestResult = runTest {
         basePath = navigator.storage.getDirectory()
+        tmpPath = basePath.getDirectoryHandle("tmp", jso { create = true })
         cut = OpfsMediaStore(basePath)
+        coroutineScope = CoroutineScope(Dispatchers.Default)
         try {
             testBody()
         } catch (throwable: Throwable) {
@@ -31,46 +37,47 @@ class OpfsMediaStoreTest {
             throw throwable
         } finally {
             for (entry in basePath.values()) {
-                basePath.removeEntry(entry.name)
+                basePath.removeEntry(entry.name, jso { recursive = true })
             }
+            coroutineScope.cancel()
         }
     }
 
     @Test
-    fun shouldDeleteAll() = runThisTest {
-        cut.init()
+    fun shouldDeleteAll() = test {
+        cut.init(coroutineScope)
         basePath.getFileHandle("url1", jso { create = true })
         basePath.getFileHandle("url2", jso { create = true })
-        basePath.values().toList().size shouldBe 2
+        basePath.values().toList().size shouldBe 3
         cut.deleteAll()
         basePath.values().toList().size shouldBe 0
     }
 
     @Test
-    fun shouldAddMedia() = runThisTest {
-        cut.init()
+    fun shouldAddMedia() = test {
+        cut.init(coroutineScope)
         cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
-        basePath.values().toList().forEach { println(it.name + " ") }
+        basePath.values().toList()
         Uint8Array(
             basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=").getFile().arrayBuffer()
         ).toByteArray().decodeToString() shouldBe "hi"
     }
 
     @Test
-    fun shouldNotAddMediaOnException() = runThisTest {
-        cut.init()
+    fun shouldNotAddMediaOnException() = test {
+        cut.init(coroutineScope)
         val file = MutableSharedFlow<ByteArray>()
         val job = async {
             cut.addMedia("url1", file)
         }
         file.emit("h".encodeToByteArray())
         job.cancel()
-        basePath.values().toList().size shouldBe 0
+        basePath.values().toList().size shouldBe 1
     }
 
     @Test
-    fun shouldGetMedia() = runThisTest {
-        cut.init()
+    fun shouldGetMedia() = test {
+        cut.init(coroutineScope)
         basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
@@ -80,33 +87,33 @@ class OpfsMediaStoreTest {
     }
 
     @Test
-    fun shouldGetMediaWhenFileNotExists() = runThisTest {
-        cut.init()
+    fun shouldGetMediaWhenFileNotExists() = test {
+        cut.init(coroutineScope)
         cut.getMedia("url1")?.toByteArray()?.decodeToString() shouldBe null
     }
 
     @Test
-    fun shouldDeleteMedia() = runThisTest {
-        cut.init()
+    fun shouldDeleteMedia() = test {
+        cut.init(coroutineScope)
         basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
                 close()
             }
         cut.deleteMedia("url1")
-        basePath.values().toList().size shouldBe 0
+        basePath.values().toList().size shouldBe 1
     }
 
     @Test
-    fun shouldDeleteMediaWhenFileNotExists() = runThisTest {
-        cut.init()
+    fun shouldDeleteMediaWhenFileNotExists() = test {
+        cut.init(coroutineScope)
         cut.deleteMedia("url1")
-        basePath.values().toList().size shouldBe 0
+        basePath.values().toList().size shouldBe 1
     }
 
     @Test
-    fun shouldChangeMediaUrl() = runThisTest {
-        cut.init()
+    fun shouldChangeMediaUrl() = test {
+        cut.init(coroutineScope)
         basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
@@ -119,10 +126,73 @@ class OpfsMediaStoreTest {
     }
 
     @Test
-    fun shouldChangeMediaUrlWhenFileNotExists() = runThisTest {
-        cut.init()
+    fun shouldChangeMediaUrlWhenFileNotExists() = test {
+        cut.init(coroutineScope)
         cut.changeMediaUrl("url1", "url2")
-        basePath.values().toList().size shouldBe 0
+        basePath.values().toList().size shouldBe 1
+    }
+
+    @Test
+    fun shouldDeleteTmpDirectoryOnStartup() = test {
+        tmpPath.getFileHandle("tmp_file_1", jso { create = true }).createWritable()
+            .apply {
+                write("hi".encodeToByteArray().toUint8Array())
+                close()
+            }
+        tmpPath.values().toList().size shouldBe 1
+        cut.init(coroutineScope)
+        tmpPath.values().toList().size shouldBe 0
+    }
+
+    @Test
+    fun shouldDeleteTmpDirectoryOnShutdown() = test {
+        cut.init(coroutineScope)
+        tmpPath.getFileHandle("tmp_file_1", jso { create = true }).createWritable()
+            .apply {
+                write("hi".encodeToByteArray().toUint8Array())
+                close()
+            }
+        tmpPath.values().toList().size shouldBe 1
+        coroutineScope.cancel()
+        withContext(Dispatchers.Default) {
+            delay(50.milliseconds)
+        }
+        tmpPath.values().toList().size shouldBe 0
+    }
+
+    @Test
+    fun shouldCreateTemporaryFile() = test {
+        cut.init(coroutineScope)
+        cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
+        val platformMedia = cut.getMedia("url1").shouldNotBeNull()
+        tmpPath.values().toList().size shouldBe 0
+        val tmpFile = platformMedia.getTemporaryFile().getOrThrow()
+        tmpPath.values().toList().size shouldBe 1
+        Uint8Array(tmpFile.file.arrayBuffer()).toByteArray().decodeToString() shouldBe "hi"
+    }
+
+    @Test
+    fun shouldCreateTransformedTemporaryFile() = test {
+        cut.init(coroutineScope)
+        cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
+        val platformMedia = cut.getMedia("url1").shouldNotBeNull()
+        tmpPath.values().toList().size shouldBe 0
+        val tmpFile = platformMedia
+            .transformByteArrayFlow { "###encrypted###".encodeToByteArray().toByteArrayFlow() }
+            .getTemporaryFile()
+            .getOrThrow()
+        tmpPath.values().toList().size shouldBe 1
+        Uint8Array(tmpFile.file.arrayBuffer()).toByteArray().decodeToString() shouldBe "###encrypted###"
+    }
+
+    @Test
+    fun shouldDeleteTemporaryFile() = test {
+        cut.init(coroutineScope)
+        cut.addMedia("url1", "hi".encodeToByteArray().toByteArrayFlow())
+        val platformMedia = cut.getMedia("url1").shouldNotBeNull()
+        val tmpFile = platformMedia.getTemporaryFile().getOrThrow()
+        tmpFile.release()
+        tmpPath.values().toList().size shouldBe 0
     }
 
     private suspend fun <V> AsyncIterableIterator<V>.toList(): List<V> {

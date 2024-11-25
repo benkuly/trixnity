@@ -4,6 +4,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.client.media.MediaService
+import net.folivo.trixnity.client.media.PlatformMedia
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
@@ -15,7 +16,7 @@ class MediaServiceMock : MediaService {
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteArrayFlow> {
+    ): Result<PlatformMedia> {
         throw NotImplementedError()
     }
 
@@ -23,7 +24,7 @@ class MediaServiceMock : MediaService {
         encryptedFile: EncryptedFile,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteArrayFlow> {
+    ): Result<PlatformMedia> {
         throw NotImplementedError()
     }
 
@@ -34,7 +35,7 @@ class MediaServiceMock : MediaService {
         method: ThumbnailResizingMethod,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteArrayFlow> {
+    ): Result<PlatformMedia> {
         throw NotImplementedError()
     }
 

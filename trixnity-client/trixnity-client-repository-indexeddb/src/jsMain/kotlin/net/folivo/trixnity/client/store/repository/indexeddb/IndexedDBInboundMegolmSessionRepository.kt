@@ -47,11 +47,9 @@ internal class IndexedDBInboundMegolmSessionRepository(
     companion object {
         const val objectStoreName = "inbound_megolm_session"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 -> {
-                    database.createObjectStore(objectStoreName).apply {
-                        createIndex("hasBeenBackedUp", KeyPath("hasBeenBackedUp"), unique = false)
-                    }
+            if (oldVersion < 1) {
+                database.createObjectStore(objectStoreName).apply {
+                    createIndex("hasBeenBackedUp", KeyPath("hasBeenBackedUp"), unique = false)
                 }
             }
         }

@@ -17,10 +17,7 @@ internal class IndexedServerDataRepository(json: Json) : ServerDataRepository,
     companion object {
         const val objectStoreName = "server_data"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 5 ->
-                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
-            }
+            if (oldVersion < 5) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }
 }

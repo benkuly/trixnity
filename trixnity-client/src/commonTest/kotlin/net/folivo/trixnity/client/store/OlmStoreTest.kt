@@ -48,7 +48,7 @@ class OlmStoreTest : ShouldSpec({
         should("load values from database") {
             olmAccountRepository.save(1, "olm_account")
 
-            cut.init()
+            cut.init(this)
 
             cut.updateOlmAccount { "olm_account" }
         }
@@ -86,7 +86,7 @@ class OlmStoreTest : ShouldSpec({
                 )
             )
 
-            cut.init()
+            cut.init(this)
 
             cut.updateOlmAccount { "olm_account" }
 

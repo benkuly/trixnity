@@ -32,22 +32,20 @@ internal class IndexedDBKeyChainLinkRepository(
     companion object {
         const val objectStoreName = "key_chain_link"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 -> {
-                    database.createObjectStore(
-                        objectStoreName,
-                        KeyPath(
-                            "signingUserId",
-                            "signingKeyId",
-                            "signingKeyValue",
-                            "signedUserId",
-                            "signedKeyId",
-                            "signedKeyValue"
-                        )
-                    ).apply {
-                        createIndex("signing", KeyPath("signingUserId", "signingKeyId", "signingKeyValue"), false)
-                        createIndex("signed", KeyPath("signedUserId", "signedKeyId", "signedKeyValue"), false)
-                    }
+            if (oldVersion < 1) {
+                database.createObjectStore(
+                    objectStoreName,
+                    KeyPath(
+                        "signingUserId",
+                        "signingKeyId",
+                        "signingKeyValue",
+                        "signedUserId",
+                        "signedKeyId",
+                        "signedKeyValue"
+                    )
+                ).apply {
+                    createIndex("signing", KeyPath("signingUserId", "signingKeyId", "signingKeyValue"), false)
+                    createIndex("signed", KeyPath("signedUserId", "signedKeyId", "signedKeyValue"), false)
                 }
             }
         }

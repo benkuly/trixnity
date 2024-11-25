@@ -35,16 +35,14 @@ internal class IndexedDBRoomUserRepository(
     companion object {
         const val objectStoreName = "room_user"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBTwoDimensionsStoreRepository(
-                        database = database,
-                        objectStoreName = objectStoreName,
-                        keyPath = KeyPath("roomId", "userId"),
-                        firstKeyIndexName = "roomId",
-                        firstKeyIndexKeyPath = KeyPath("roomId"),
-                    )
-            }
+            if (oldVersion < 1)
+                createIndexedDBTwoDimensionsStoreRepository(
+                    database = database,
+                    objectStoreName = objectStoreName,
+                    keyPath = KeyPath("roomId", "userId"),
+                    firstKeyIndexName = "roomId",
+                    firstKeyIndexKeyPath = KeyPath("roomId"),
+                )
         }
     }
 

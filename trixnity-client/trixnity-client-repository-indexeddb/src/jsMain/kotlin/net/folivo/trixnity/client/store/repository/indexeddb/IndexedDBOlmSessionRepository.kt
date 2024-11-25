@@ -20,10 +20,7 @@ internal class IndexedDBOlmSessionRepository(
     companion object {
         const val objectStoreName = "olm_session"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
-            }
+            if (oldVersion < 1) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }
 }

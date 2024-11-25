@@ -38,18 +38,16 @@ internal class IndexedDBRoomAccountDataRepository(
     companion object {
         const val objectStoreName = "room_account_data"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBTwoDimensionsStoreRepository(
-                        database = database,
-                        objectStoreName = objectStoreName,
-                        keyPath = KeyPath("roomId", "type", "key"),
-                        firstKeyIndexName = "roomId|type",
-                        firstKeyIndexKeyPath = KeyPath("roomId", "type"),
-                    ) {
-                        createIndex("roomId", KeyPath("roomId"), unique = false)
-                    }
-            }
+            if (oldVersion < 1)
+                createIndexedDBTwoDimensionsStoreRepository(
+                    database = database,
+                    objectStoreName = objectStoreName,
+                    keyPath = KeyPath("roomId", "type", "key"),
+                    firstKeyIndexName = "roomId|type",
+                    firstKeyIndexKeyPath = KeyPath("roomId", "type"),
+                ) {
+                    createIndex("roomId", KeyPath("roomId"), unique = false)
+                }
         }
     }
 

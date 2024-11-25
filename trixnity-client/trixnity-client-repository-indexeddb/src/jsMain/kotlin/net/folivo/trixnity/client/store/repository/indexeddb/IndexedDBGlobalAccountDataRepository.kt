@@ -34,16 +34,14 @@ internal class IndexedDBGlobalAccountDataRepository(
     companion object {
         const val objectStoreName = "global_account_data"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBTwoDimensionsStoreRepository(
-                        database = database,
-                        objectStoreName = objectStoreName,
-                        keyPath = KeyPath("type", "key"),
-                        firstKeyIndexName = "type",
-                        firstKeyIndexKeyPath = KeyPath("type"),
-                    )
-            }
+            if (oldVersion < 1)
+                createIndexedDBTwoDimensionsStoreRepository(
+                    database = database,
+                    objectStoreName = objectStoreName,
+                    keyPath = KeyPath("type", "key"),
+                    firstKeyIndexName = "type",
+                    firstKeyIndexKeyPath = KeyPath("type"),
+                )
         }
     }
 }

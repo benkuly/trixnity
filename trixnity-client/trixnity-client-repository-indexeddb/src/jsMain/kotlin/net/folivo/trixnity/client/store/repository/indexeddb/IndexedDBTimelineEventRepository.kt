@@ -24,10 +24,8 @@ internal class IndexedDBTimelineEventRepository(
     companion object {
         const val objectStoreName = "timeline_event"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 -> createIndexedDBMinimalStoreRepository(database, objectStoreName) {
-                    createIndex("roomId", KeyPath("event.room_id"), unique = false)
-                }
+            if (oldVersion < 1) createIndexedDBMinimalStoreRepository(database, objectStoreName) {
+                createIndex("roomId", KeyPath("event.room_id"), unique = false)
             }
         }
     }

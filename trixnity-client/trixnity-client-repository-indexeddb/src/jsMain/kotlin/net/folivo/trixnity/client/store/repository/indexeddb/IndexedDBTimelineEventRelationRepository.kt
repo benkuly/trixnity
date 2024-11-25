@@ -52,18 +52,16 @@ internal class IndexedDBTimelineEventRelationRepository(
     companion object {
         const val objectStoreName = "timeline_event_relation"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBTwoDimensionsStoreRepository(
-                        database = database,
-                        objectStoreName = objectStoreName,
-                        keyPath = KeyPath("roomId", "relatedEventId", "relationType", "eventId"),
-                        firstKeyIndexName = "roomId|relatedEventId|relationType",
-                        firstKeyIndexKeyPath = KeyPath("roomId", "relatedEventId", "relationType"),
-                    ) {
-                        createIndex("roomId", KeyPath("roomId"), unique = false)
-                    }
-            }
+            if (oldVersion < 1)
+                createIndexedDBTwoDimensionsStoreRepository(
+                    database = database,
+                    objectStoreName = objectStoreName,
+                    keyPath = KeyPath("roomId", "relatedEventId", "relationType", "eventId"),
+                    firstKeyIndexName = "roomId|relatedEventId|relationType",
+                    firstKeyIndexKeyPath = KeyPath("roomId", "relatedEventId", "relationType"),
+                ) {
+                    createIndex("roomId", KeyPath("roomId"), unique = false)
+                }
         }
     }
 
