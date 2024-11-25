@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.media.okio
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.utils.ByteArrayFlow
@@ -10,6 +11,8 @@ import okio.ByteString.Companion.toByteString
 import okio.FileSystem
 import okio.Path
 import kotlin.coroutines.CoroutineContext
+
+private val log = KotlinLogging.logger { }
 
 class OkioMediaStore(
     private val basePath: Path,
@@ -68,7 +71,11 @@ class OkioMediaStore(
     override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = withContext(coroutineContext) {
         basePathLock.withLock(oldUrl) {
             basePathLock.withLock(newUrl) {
-                fileSystem.atomicMove(basePath.resolveUrl(oldUrl), basePath.resolveUrl(newUrl))
+                try {
+                    fileSystem.atomicMove(basePath.resolveUrl(oldUrl), basePath.resolveUrl(newUrl))
+                } catch (exception: Exception) {
+                    log.error(exception) { "could not change media url" }
+                }
             }
         }
     }

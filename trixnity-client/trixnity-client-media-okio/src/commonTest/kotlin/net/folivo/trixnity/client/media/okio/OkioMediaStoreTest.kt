@@ -109,4 +109,11 @@ class OkioMediaStoreTest {
         cut.changeMediaUrl("url1", "url2")
         fileSystem.read(basePath.resolve("hnKdljIEgbx_eKM0uMgfIWYx_slrDvGQQFN8QUQ4QGg=")) { readUtf8() } shouldBe "hi"
     }
+
+    @Test
+    fun shouldChangeMediaUrlWhenFileNotExists() = runTest {
+        cut.init()
+        cut.changeMediaUrl("url1", "url2")
+        fileSystem.listOrNull(basePath)?.size shouldBe 1
+    }
 }

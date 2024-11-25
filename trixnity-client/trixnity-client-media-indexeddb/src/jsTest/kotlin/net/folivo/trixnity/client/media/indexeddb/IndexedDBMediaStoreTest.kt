@@ -124,4 +124,14 @@ class IndexedDBMediaStoreTest {
             store.get(Key(file2)).unsafeCast<ByteArray?>()?.decodeToString() shouldBe "hi"
         }
     }
+
+    @Test
+    fun shouldChangeMediaUrlWhenFileNotExists() = test {
+        cut.init()
+        cut.changeMediaUrl(file1, file2)
+        database.transaction(MEDIA_OBJECT_STORE_NAME) {
+            val store = objectStore(MEDIA_OBJECT_STORE_NAME)
+            store.getAll().size shouldBe 0
+        }
+    }
 }
