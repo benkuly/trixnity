@@ -7,9 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.datetime.Clock
@@ -28,9 +26,11 @@ import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKe
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
@@ -119,16 +119,44 @@ class OutboxMessageEventHandler(
         log.debug { "cancel sending of ${outboxMessage.transactionId}" }
     }
 
-    private suspend fun sendOutboxMessage(outboxMessage: RoomOutboxMessage<*>, roomId: RoomId) {
+    private suspend fun sendOutboxMessage(outboxMessage: RoomOutboxMessage<*>, roomId: RoomId) = coroutineScope {
         log.trace { "send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
         val originalContent = outboxMessage.content
         val uploader =
             outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)
         val uploadedContent = try {
-            uploader(originalContent) { cacheUri ->
+            uploader(originalContent) { cacheUri: String, thumbnailLoaded: Boolean ->
+                val uploadProgress = MutableStateFlow<FileTransferProgress?>(null)
+                val hasThumbnail =
+                    originalContent is RoomMessageEventContent.FileBased.Image || originalContent is RoomMessageEventContent.FileBased.File || originalContent is RoomMessageEventContent.FileBased.Video
+                if (hasThumbnail) {
+                    val thumbnailSize = when (originalContent) {
+                        is RoomMessageEventContent.FileBased.File -> originalContent.info?.thumbnailInfo?.size ?: 0
+
+                        is RoomMessageEventContent.FileBased.Video -> originalContent.info?.thumbnailInfo?.size ?: 0
+
+                        is RoomMessageEventContent.FileBased.Image -> originalContent.info?.thumbnailInfo?.size ?: 0
+
+                        else -> 0
+                    }
+                    val totalSize = (originalContent.info?.size ?: 0) + thumbnailSize
+                    launch {
+                        uploadProgress.collectLatest { progress ->
+                            println("Updating progress")
+                            outboxMessage.mediaUploadProgress.value = progress?.let {
+                                FileTransferProgress(
+                                    if (thumbnailLoaded) progress.transferred + thumbnailSize else progress.transferred,
+                                    totalSize
+                                )
+                            }
+                        }
+                    }
+
+
+                }
                 mediaService.uploadMedia(
                     cacheUri,
-                    outboxMessage.mediaUploadProgress,
+                    if (hasThumbnail) uploadProgress else outboxMessage.mediaUploadProgress,
                     outboxMessage.keepMediaInCache,
                 ).getOrThrow()
             }
@@ -154,7 +182,7 @@ class OutboxMessageEventHandler(
             roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                 it?.copy(sendError = sendError)
             }
-            return
+            return@coroutineScope
         }
         val contentResult = roomEventEncryptionServices.encrypt(uploadedContent, roomId)
 
@@ -164,7 +192,7 @@ class OutboxMessageEventHandler(
                 roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                     it?.copy(sendError = SendError.EncryptionAlgorithmNotSupported)
                 }
-                return
+                return@coroutineScope
             }
 
             contentResult.isFailure -> {
@@ -172,7 +200,7 @@ class OutboxMessageEventHandler(
                 roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                     it?.copy(sendError = SendError.EncryptionError(contentResult.exceptionOrNull()?.message))
                 }
-                return
+                return@coroutineScope
             }
 
             else -> contentResult.getOrThrow()
@@ -191,7 +219,7 @@ class OutboxMessageEventHandler(
             roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                 it?.copy(sendError = sendError)
             }
-            return
+            return@coroutineScope
         }
         roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
             it?.copy(sentAt = clock.now(), eventId = eventId)
@@ -208,6 +236,7 @@ class OutboxMessageEventHandler(
             "finished send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})"
         }
     }
+
 }
 
 

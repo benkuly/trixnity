@@ -4,5 +4,5 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 
 typealias UploadAndTransformMessageEventContent = suspend (
     content: MessageEventContent,
-    upload: suspend (cacheUri: String) -> String
+    upload: suspend (cacheUri: String, thumbnailUploaded: Boolean) -> String
 ) -> MessageEventContent
