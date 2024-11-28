@@ -9,11 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Allow to create temporary files from media.
-
 ### Changed
-
-- use Blob in media-indexeddb
 
 ### Deprecated
 
@@ -21,10 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## 4.11.0
+
+### Added
+
+- Allow to create temporary files from media.
+
+### Changed
+
+- Use Blob in media-indexeddb.
+
+### Fixed
+
 - Fixed OPFS streams not closed.
 - Catch more MediaStore exceptions.
-
-### Security
 
 ## 4.10.0
 
