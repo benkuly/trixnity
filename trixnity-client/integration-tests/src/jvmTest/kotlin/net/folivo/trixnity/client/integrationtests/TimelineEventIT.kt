@@ -103,14 +103,37 @@ class TimelineEventIT {
     }
 
     @Test
+    fun shouldBeAbleToReadMessagesBeforeJoin(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(30_000) {
+            val room = client1.api.room.createRoom(
+                invite = setOf(client2.userId),
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
+            ).getOrThrow()
+            client1.room.getById(room).first { it?.encrypted == true }
+            client1.room.sendMessage(room) { text("Hello!") }
+            client1.room.waitForOutboxSent()
+
+            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.api.room.joinRoom(room).getOrThrow()
+            client2.room.getById(room).first { it?.membership == JOIN }
+
+            val lastEventId = client2.room.getById(room).map { it?.lastEventId }.filterNotNull().first()
+            val timeline = client2.room.getTimeline(room)
+            timeline.init(lastEventId)
+            timeline.state.first().elements.map { it.map { it.content }.filterNotNull().first().getOrThrow() }
+                .any { it is RoomMessageEventContent.TextBased.Text && it.body == "Hello!" } shouldBe true
+        }
+    }
+
+    @Test
     fun shouldStartEncryptedRoomAndSendMessages(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(
                 invite = setOf(client2.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            client1.room.sendMessage(room) { text("Hello!") }
             client1.room.getById(room).first { it?.encrypted == true }
+            client1.room.sendMessage(room) { text("Hello!") }
             client1.room.waitForOutboxSent()
 
             val collectMessages = async {
