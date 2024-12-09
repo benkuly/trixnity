@@ -75,17 +75,16 @@ class OutdatedKeysHandler(
                 val startTrackingKeys = deviceList?.changed?.filter { keyStore.isTracked(it) }?.toSet().orEmpty()
                     .let { if (trackOwnKey) it + userInfo.userId else it } // always track own key
                 val stopTrackingKeys = deviceList?.left.orEmpty() - userInfo.userId // always track own key
-
-                trackKeys(
-                    start = startTrackingKeys,
-                    stop = stopTrackingKeys,
-                    reason = "device list"
+                updateKeyTracking(
+                    startTracking = startTrackingKeys,
+                    stopTracking = stopTrackingKeys,
+                    reason = "device list",
                 )
             } else if (trackOwnKey) {
-                trackKeys(
-                    start = setOf(userInfo.userId),
-                    stop = setOf(),
-                    reason = "device list"
+                updateKeyTracking(
+                    startTracking = setOf(userInfo.userId),
+                    stopTracking = setOf(),
+                    reason = "device list",
                 )
             }
         }
@@ -98,39 +97,41 @@ class OutdatedKeysHandler(
         if (syncState != SyncState.INITIAL_SYNC) {
             val stopTrackingKeys = mutableSetOf<UserId>()
             val joinedEncryptedRooms by lazy { async { roomStore.encryptedJoinedRooms() } }
-
             events.forEach { event ->
-                val room = roomStore.get(event.roomId).first()
-                if (room?.encrypted == true) {
-                    log.trace { "update keys from changed membership (event=$event)" }
-                    val userId = UserId(event.stateKey)
-                    if (keyStore.isTracked(userId)) {
-                        val isActiveMemberOfAnyOtherEncryptedRoom =
-                            roomStateStore.getByRooms<MemberEventContent>(joinedEncryptedRooms.await(), userId.full)
-                                .any {
-                                    val membership = it.content.membership
+                roomStore.get(event.roomId).first()?.let { room ->
+                    if (room.encrypted) {
+                        log.trace { "update keys from changed membership (event=$event)" }
+                        val userId = UserId(event.stateKey)
+                        if (userId != userInfo.userId && keyStore.isTracked(userId)) {
+                            val isActiveMemberOfAnyOtherEncryptedRoom =
+                                roomStateStore.getByRooms<MemberEventContent>(
+                                    joinedEncryptedRooms.await(),
+                                    userId.full,
+                                ).any { event ->
+                                    val membership = event.content.membership
                                     membership == Membership.JOIN || membership == Membership.INVITE
                                 }
-                        if (!isActiveMemberOfAnyOtherEncryptedRoom) {
-                            stopTrackingKeys.add(userId)
+                            if (!isActiveMemberOfAnyOtherEncryptedRoom) {
+                                stopTrackingKeys.add(userId)
+                            }
                         }
                     }
                 }
             }
-            trackKeys(
-                start = setOf(),
-                stop = stopTrackingKeys,
-                reason = "member event"
+            updateKeyTracking(
+                startTracking = setOf(),
+                stopTracking = stopTrackingKeys,
+                reason = "member event",
             )
         }
     }
 
-    private suspend fun trackKeys(start: Set<UserId>, stop: Set<UserId>, reason: String) {
-        if (start.isNotEmpty() || stop.isNotEmpty()) {
+    private suspend fun updateKeyTracking(startTracking: Set<UserId>, stopTracking: Set<UserId>, reason: String) {
+        if (startTracking.isNotEmpty() || stopTracking.isNotEmpty()) {
             tm.transaction {
-                log.debug { "change tracking keys because of $reason (start=$start stop=$stop)" }
-                keyStore.updateOutdatedKeys { it + start - stop }
-                stop.forEach { userId ->
+                log.debug { "change tracking keys because of $reason (start=$startTracking stop=$stopTracking)" }
+                keyStore.updateOutdatedKeys { it + startTracking - stopTracking }
+                stopTracking.forEach { userId ->
                     keyStore.deleteDeviceKeys(userId)
                     keyStore.deleteCrossSigningKeys(userId)
                 }
@@ -139,7 +140,7 @@ class OutdatedKeysHandler(
     }
 
     private val loopSyncStates = setOf(SyncState.STARTED, SyncState.INITIAL_SYNC, SyncState.RUNNING)
-    internal suspend fun updateLoop() {
+    private suspend fun updateLoop() {
         val requestedState =
             combine(
                 currentSyncState,

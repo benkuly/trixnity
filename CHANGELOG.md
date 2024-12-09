@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed bug where own device keys are removed when leaving all rooms 
+
 ### Security
 
 ## 4.11.0
