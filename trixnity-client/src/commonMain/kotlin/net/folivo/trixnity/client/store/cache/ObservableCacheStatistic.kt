@@ -59,11 +59,10 @@ class ObservableCacheStatisticCollector : EventHandler {
             }
     }
 
-    fun List<ObservableCacheStatistic>.format() = map { statistic ->
-        val indexNames = statistic.indexes.map { it.name }.joinToString("|") { "%-16s".format(it) }
-        val indexAll = statistic.indexes.map { it.all }.joinToString("|") { "%-16s".format(it) }
-        val indexSubscribed =
-            statistic.indexes.map { it.all }.joinToString("|") { "%-16s".format(it) }
+    fun List<ObservableCacheStatistic>.format() = joinToString("\n") { statistic ->
+        val indexNames = statistic.indexes.map { it.name }.joinToString("|") { padMax(it) }
+        val indexAll = statistic.indexes.map { it.all }.joinToString("|") { padMax(it.toString()) }
+        val indexSubscribed = statistic.indexes.map { it.all }.joinToString("|") { padMax(it.toString()) }
         """
             ------------------------------------------------------------
             Name:               ${statistic.name}
@@ -74,5 +73,13 @@ class ObservableCacheStatisticCollector : EventHandler {
                 All entries:        $indexAll
                 Subscribed entries: $indexSubscribed
         """.trimIndent()
-    }.joinToString("\n")
+    }
+
+    private fun padMax(input: String, length: Int = 16): String {
+        return when {
+            input.length > length -> input.substring(0, length)
+            input.length < length -> input.padEnd(length)
+            else -> input
+        }
+    }
 }
