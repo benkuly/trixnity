@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.key
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import korlibs.io.async.async
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine

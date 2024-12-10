@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.room
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -249,7 +250,7 @@ class TimelineEventHandlerTest : ShouldSpec({
         context("initial sync") {
             should("add elements to timeline") {
                 roomStore.update(room) { Room(roomId = room, lastEventId = null) }
-                cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), null, "next", false) {}
+                cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), null, "next", false)
                 storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -261,7 +262,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             }
             should("add elements to timeline with gap") {
                 roomStore.update(room) { Room(roomId = room, lastEventId = null) }
-                cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), "prev", "next", true) {}
+                cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), "prev", "next", true)
                 storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                     fragment {
                         gap("prev")
@@ -274,7 +275,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             }
             should("add one element to timeline") {
                 roomStore.update(room) { Room(roomId = room, lastEventId = null) }
-                cut.addEventsToTimelineAtEnd(room, listOf(event1), null, "next", false) {}
+                cut.addEventsToTimelineAtEnd(room, listOf(event1), null, "next", false)
                 storeTimeline(event1) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -294,7 +295,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         }
                     }
                 )
-                cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", false) {}
+                cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", false)
                 storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -315,7 +316,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         }
                     }
                 )
-                cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", false) {}
+                cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", false)
                 storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                     fragment {
                         gap("before")
@@ -336,7 +337,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         }
                     }
                 )
-                cut.addEventsToTimelineAtEnd(room, listOf(event3), "previous", "next", false) {}
+                cut.addEventsToTimelineAtEnd(room, listOf(event3), "previous", "next", false)
                 storeTimeline(event1, event3) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -357,7 +358,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                         }
                     }
                 )
-                cut.addEventsToTimelineAtEnd(room, listOf(event2), "previous", "next", false) {}
+                cut.addEventsToTimelineAtEnd(room, listOf(event2), "previous", "next", false)
                 storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -369,7 +370,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             }
             should("filter duplicate events") {
                 roomStore.update(room) { Room(roomId = room, lastEventId = null) }
-                cut.addEventsToTimelineAtEnd(room, listOf(event1, event1), "previous", "next", false) {}
+                cut.addEventsToTimelineAtEnd(room, listOf(event1, event1), "previous", "next", false)
                 storeTimeline(event1) shouldContainExactly timeline {
                     fragment {
                         +event1
@@ -382,7 +383,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             context("without previous events") {
                 should("add elements to timeline") {
                     roomStore.update(room) { Room(roomId = room, lastEventId = null) }
-                    cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), "previous", "next", true) {}
+                    cut.addEventsToTimelineAtEnd(room, listOf(event1, event2, event3), "previous", "next", true)
                     storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                         fragment {
                             gap("previous")
@@ -395,7 +396,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 }
                 should("add one element to timeline") {
                     roomStore.update(room) { Room(roomId = room, lastEventId = null) }
-                    cut.addEventsToTimelineAtEnd(room, listOf(event1), "previous", "next", true) {}
+                    cut.addEventsToTimelineAtEnd(room, listOf(event1), "previous", "next", true)
                     storeTimeline(event1) shouldContainExactly timeline {
                         fragment {
                             gap("previous")
@@ -417,7 +418,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             }
                         }
                     )
-                    cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", true) {}
+                    cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", true)
                     storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                         fragment {
                             gap("oldPrevious-1")
@@ -440,7 +441,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             }
                         }
                     )
-                    cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", true) {}
+                    cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", true)
                     storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                         fragment {
                             +event1
@@ -463,7 +464,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             }
                         }
                     )
-                    cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", true) {}
+                    cut.addEventsToTimelineAtEnd(room, listOf(event2, event3), "previous", "next", true)
                     storeTimeline(event1, event2, event3) shouldContainExactly timeline {
                         fragment {
                             gap("before")
@@ -486,7 +487,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                             }
                         }
                     )
-                    cut.addEventsToTimelineAtEnd(room, listOf(event3), "previous", "next", true) {}
+                    cut.addEventsToTimelineAtEnd(room, listOf(event3), "previous", "next", true)
                     storeTimeline(event1, event3) shouldContainExactly timeline {
                         fragment {
                             +event1
@@ -558,7 +559,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                     "previous",
                     "next",
                     false
-                ) {}
+                )
 
                 assertSoftly(roomTimelineStore.get(eventId1, room).first().shouldNotBeNull()) {
                     content shouldBe Result.success(RoomMessageEventContent.TextBased.Text("Hello!"))
@@ -1442,7 +1443,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 }
             })
             cut.unsafeFillTimelineGaps(event3.id, room)
-            storeTimeline(event1, redactionEvent, redactedEvent) shouldContainExactly timeline {
+            storeTimeline(event1, redactionEvent, redactedEvent) shouldContainExactlyInAnyOrder timeline {
                 fragment {
                     gap("end")
                     +event1

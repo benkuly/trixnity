@@ -5,8 +5,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import korlibs.io.async.delay
-import korlibs.time.milliseconds
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
@@ -36,6 +35,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.test.assertEquals
 import kotlin.test.fail
+import kotlin.time.Duration.Companion.milliseconds
 
 class MatrixClientTest : ShouldSpec({
     timeout = 30_000

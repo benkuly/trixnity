@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.cache
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import korlibs.io.lang.format
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive

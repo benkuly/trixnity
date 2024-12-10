@@ -62,7 +62,7 @@ interface AuthenticationApiClient {
         deviceId: String? = null,
         initialDeviceDisplayName: String? = null,
         inhibitLogin: Boolean? = null,
-        isAppservice: Boolean = false // TODO why is the spec so inconsistent?
+        isAppservice: Boolean = false,
     ): Result<UIA<Register.Response>>
 
     fun getSsoUrl(
@@ -237,7 +237,7 @@ class AuthenticationApiClientImpl(
         deviceId: String?,
         initialDeviceDisplayName: String?,
         inhibitLogin: Boolean?,
-        isAppservice: Boolean  // TODO why is the spec so inconsistent?
+        isAppservice: Boolean,
     ): Result<UIA<Register.Response>> =
         httpClient.uiaRequest(
             Register(accountType),

@@ -2,9 +2,9 @@ package net.folivo.trixnity.client.room
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import korlibs.io.async.async
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
