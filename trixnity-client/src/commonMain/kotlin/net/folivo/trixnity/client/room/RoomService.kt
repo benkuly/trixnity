@@ -20,9 +20,12 @@ import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
@@ -31,7 +34,8 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
 import net.folivo.trixnity.core.subscribeAsFlow
 import net.folivo.trixnity.crypto.core.SecureRandom
-import net.folivo.trixnity.utils.*
+import net.folivo.trixnity.utils.KeyedMutex
+import net.folivo.trixnity.utils.nextString
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
@@ -645,21 +649,35 @@ class RoomServiceImpl(
             .map { it?.content }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getOutbox(): Flow<List<Flow<RoomOutboxMessage<*>?>>> =
-        roomOutboxMessageStore.getAll().map { outbox ->
-            outbox.values
-                .mapNotNull { outboxElement -> outboxElement.first()?.let { it to outboxElement } }
-                .sortedBy { it.first.createdAt }
-                .map { it.second }
+        roomOutboxMessageStore.getAll().flatMapLatest { outbox ->
+            if (outbox.isEmpty()) flowOf(emptyList())
+            else {
+                val innerFlowsWithCreatedAt = outbox.values.map { entry -> entry.map { entry to it?.createdAt } }
+                combine(innerFlowsWithCreatedAt) { innerFlowsWithCreatedAtArray ->
+                    innerFlowsWithCreatedAtArray
+                        .mapNotNull { entry -> entry.second?.let { entry.first to entry.second } }
+                        .sortedBy { it.second }
+                        .map { it.first }
+                }
+            }
         }.distinctUntilChanged()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getOutbox(roomId: RoomId): Flow<List<Flow<RoomOutboxMessage<*>?>>> =
-        roomOutboxMessageStore.getAll().map { outbox ->
-            outbox.values
-                .mapNotNull { outboxElement -> outboxElement.first()?.let { it to outboxElement } }
-                .filter { it.first.roomId == roomId }
-                .sortedBy { it.first.createdAt }
-                .map { it.second }
+        roomOutboxMessageStore.getAll().flatMapLatest { outbox ->
+            val roomOutbox = outbox.filterKeys { it.roomId == roomId }.values
+            if (roomOutbox.isEmpty()) flowOf(emptyList())
+            else {
+                val innerFlowsWithCreatedAt = roomOutbox.map { entry -> entry.map { entry to it?.createdAt } }
+                combine(innerFlowsWithCreatedAt) { innerFlowsWithCreatedAtArray ->
+                    innerFlowsWithCreatedAtArray
+                        .mapNotNull { entry -> entry.second?.let { entry.first to entry.second } }
+                        .sortedBy { it.second }
+                        .map { it.first }
+                }
+            }
         }.distinctUntilChanged()
 
     override fun getOutbox(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?> =

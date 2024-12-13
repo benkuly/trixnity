@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed bug where own device keys are removed when leaving all rooms
 - Don't fail when setting read marker fails in outbox
+- Fix outbox may filter elements from cache, that are initial null.
 
 ### Security
 
