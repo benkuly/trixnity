@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.plugins.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
@@ -197,12 +196,10 @@ class OutboxMessageEventHandler(
             it?.copy(sentAt = clock.now(), eventId = eventId)
         }
         if (config.setOwnMessagesAsFullyRead) {
-            try {
-                api.room.setReadMarkers(roomId, eventId, eventId).getOrThrow()
-            } catch (exception: ResponseException) {
-                if (exception.response.status == HttpStatusCode.TooManyRequests) throw exception
-                log.warn(exception) { "could not set read marker for sent message $eventId in $roomId" }
-            }
+            api.room.setReadMarkers(roomId, eventId, eventId)
+                .onFailure { exception ->
+                    log.warn(exception) { "could not set read marker for sent message $eventId in $roomId" }
+                }
         }
         log.trace {
             "finished send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})"
