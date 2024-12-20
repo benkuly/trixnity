@@ -15,15 +15,13 @@ typealias Relations = @Serializable(with = RelationsSerializer::class) Map<Relat
 val Map<RelationType, ServerAggregation>.replace: ServerAggregation.Replace?
     get() {
         val aggregation = this[RelationType.Replace]
-        return if (aggregation is ServerAggregation.Replace) aggregation
-        else null
+        return aggregation as? ServerAggregation.Replace
     }
 
 val Map<RelationType, ServerAggregation>.thread: ServerAggregation.Thread?
     get() {
         val aggregation = this[RelationType.Thread]
-        return if (aggregation is ServerAggregation.Thread) aggregation
-        else null
+        return aggregation as? ServerAggregation.Thread
     }
 
 sealed interface ServerAggregation {

@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.integrationtests
 
+import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -10,14 +11,12 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.flattenValues
-import net.folivo.trixnity.client.loginWith
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
-import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.getTimeline
 import net.folivo.trixnity.client.room.getTimelineEventsAround
+import net.folivo.trixnity.client.room.message.replace
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -31,6 +30,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -122,6 +122,66 @@ class TimelineEventIT {
             timeline.init(lastEventId)
             timeline.state.first().elements.map { it.map { it.content }.filterNotNull().first().getOrThrow() }
                 .any { it is RoomMessageEventContent.TextBased.Text && it.body == "Hello!" } shouldBe true
+        }
+    }
+
+    @Test
+    fun shouldHandleReplaceAndRedactions(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(30_000) {
+            val room = client1.api.room.createRoom(
+                invite = setOf(client2.userId),
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
+            ).getOrThrow()
+            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.api.room.joinRoom(room).getOrThrow()
+            client2.room.getById(room).first { it?.membership == JOIN }
+
+            val txnA = client2.room.sendMessage(room) { text("A") }
+            val eventIdA = client2.room.getOutbox(room).flatten()
+                .map { it.find { it.transactionId == txnA && it.eventId != null }?.eventId }.filterNotNull().first()
+            val txnB = client2.room.sendMessage(room) {
+                replace(eventIdA)
+                text("B")
+            }
+            val eventIdB = client2.room.getOutbox(room).flatten()
+                .map { it.find { it.transactionId == txnB && it.eventId != null }?.eventId }.filterNotNull().first()
+            val txnC = client2.room.sendMessage(room) {
+                replace(eventIdA)
+                text("C")
+            }
+            val eventIdC = client2.room.getOutbox(room).flatten()
+                .map { it.find { it.transactionId == txnC && it.eventId != null }?.eventId }.filterNotNull().first()
+            val txnD = client2.room.sendMessage(room) {
+                replace(eventIdA)
+                text("D")
+            }
+            val eventIdD = client2.room.getOutbox(room).flatten()
+                .map { it.find { it.transactionId == txnD && it.eventId != null }?.eventId }.filterNotNull().first()
+
+            client1.room.getById(room).first { it?.lastEventId == eventIdD }
+            val coroutineScope = CoroutineScope(Dispatchers.Default)
+            val timelineEvent = client1.room.getTimelineEvent(room, eventIdA).filterNotNull().stateIn(coroutineScope)
+            withClue("wait for D") {
+                timelineEvent.map { it.content?.getOrNull() }
+                    .first { (it as? RoomMessageEventContent.TextBased.Text)?.body == "D" }
+            }
+            client2.api.room.redactEvent(room, eventIdD).getOrThrow()
+            withClue("wait for C") {
+                timelineEvent.map { it.content?.getOrNull() }
+                    .first { (it as? RoomMessageEventContent.TextBased.Text)?.body == "C" }
+            }
+            client2.api.room.redactEvent(room, eventIdC).getOrThrow()
+            withClue("wait for B") {
+                timelineEvent.map { it.content?.getOrNull() }
+                    .first { (it as? RoomMessageEventContent.TextBased.Text)?.body == "B" }
+            }
+            client2.api.room.redactEvent(room, eventIdA).getOrThrow()
+            withClue("wait for redact") {
+                timelineEvent.map { it.content?.getOrNull() }
+                    .first { it is RedactedEventContent }
+            }
+
+            coroutineScope.cancel()
         }
     }
 

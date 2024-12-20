@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
@@ -95,5 +96,17 @@ class RoomTimelineStore(
         ) {
             null
         }
+    }
+
+    suspend fun deleteRelations(
+        relatedEventId: EventId,
+        roomId: RoomId,
+        relationType: RelationType,
+    ) {
+        timelineEventRelationCache.readByFirstKey(TimelineEventRelationKey(relatedEventId, roomId, relationType))
+            .first()
+            .values
+            .mapNotNull { it.first() }
+            .forEach { deleteRelation(it) }
     }
 }

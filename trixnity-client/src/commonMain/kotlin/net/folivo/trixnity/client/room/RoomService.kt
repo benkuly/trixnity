@@ -245,11 +245,11 @@ class RoomServiceImpl(
     ): Flow<TimelineEvent?> {
         val cfg = GetTimelineEventConfig().apply(config).copy()
         return roomTimelineStore.get(eventId, roomId)
-            .transformLatest { timelineEvent ->
+            .flatMapLatest { timelineEvent ->
                 val event = timelineEvent?.event
                 if (cfg.allowReplaceContent && event is MessageEvent) {
                     val replacedByFlow = getTimelineEventReplaceAggregation(roomId, eventId).map { it.replacedBy }
-                    emitAll(replacedByFlow.flatMapLatest { replacedBy ->
+                    replacedByFlow.flatMapLatest { replacedBy ->
                         if (replacedBy != null) {
                             getTimelineEvent(roomId, replacedBy)
                                 .map { replacedByTimelineEvent ->
@@ -266,8 +266,8 @@ class RoomServiceImpl(
                                     timelineEvent.copy(content = newContent)
                                 }
                         } else flowOf(timelineEvent)
-                    })
-                } else emit(timelineEvent)
+                    }
+                } else flowOf(timelineEvent)
             }
             .transformLatest { timelineEvent ->
                 emit(timelineEvent)

@@ -17,14 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix message replacements not redacted.
+
 ### Security
 
 ## 4.11.1
 
 ### Fixed
 
-- Fixed bug where own device keys are removed when leaving all rooms
-- Don't fail when setting read marker fails in outbox
+- Fixed bug where own device keys are removed when leaving all rooms.
+- Don't fail when setting read marker fails in outbox.
 - Fix outbox may filter elements from cache, that are initial null.
 
 ## 4.11.0

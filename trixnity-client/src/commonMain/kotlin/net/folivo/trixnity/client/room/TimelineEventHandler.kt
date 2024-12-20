@@ -21,6 +21,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
+import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.subscribeEvent
 import net.folivo.trixnity.core.unsubscribeOnCompletion
@@ -344,6 +345,7 @@ class TimelineEventHandlerImpl(
                 )
             )
         }
+        roomTimelineStore.deleteRelations(redactedEvent.id, redactedEvent.roomId, RelationType.Replace)
     }
 
     private suspend fun RoomTimelineStore.filterDuplicateEvents(

@@ -1,17 +1,8 @@
 package net.folivo.trixnity.client.room
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.transformLatest
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.eventId
-import net.folivo.trixnity.client.store.originTimestamp
-import net.folivo.trixnity.client.store.relatesTo
-import net.folivo.trixnity.client.store.sender
+import kotlinx.coroutines.flow.*
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -36,7 +27,12 @@ fun RoomService.getTimelineEventReplaceAggregation(
     eventId: EventId,
 ): Flow<TimelineEventAggregation.Replace> =
     getTimelineEventRelations(roomId, eventId, RelationType.Replace)
-        .map { it?.keys }
+        .flatMapLatest { replaceMap ->
+            if (replaceMap.isNullOrEmpty()) flowOf(emptyList())
+            else combine(replaceMap.values) {
+                it.mapNotNull { replace -> replace?.eventId }
+            }
+        }
         .transformLatest { relations ->
             val serverAggregation = getTimelineEvent(roomId, eventId) {
                 allowReplaceContent = false
@@ -61,18 +57,22 @@ fun RoomService.getTimelineEventReplaceAggregation(
                     decryptionTimeout = ZERO
                 }.first()
             }.filter { it.event.sender == timelineEvent?.sender }
-                .sortedBy { it.event.originTimestamp }
-                .map { it.eventId }
+                .sortedWith(
+                    compareBy<TimelineEvent> { it.originTimestamp }
+                        .thenBy { it.eventId.full }
+                ).map { it.eventId }
             TimelineEventAggregation.Replace(history.lastOrNull(), history)
         }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 fun RoomService.getTimelineEventReactionAggregation(
     roomId: RoomId,
     eventId: EventId,
 ): Flow<TimelineEventAggregation.Reaction> {
     val result = getTimelineEventRelations(roomId, eventId, RelationType.Annotation)
         .flatMapLatest { reactionMap ->
-            combine(reactionMap?.values.orEmpty()) {
+            if (reactionMap.isNullOrEmpty()) flowOf(emptyList())
+            else combine(reactionMap.values) {
                 it.mapNotNull { reaction -> reaction?.eventId }
             }
         }

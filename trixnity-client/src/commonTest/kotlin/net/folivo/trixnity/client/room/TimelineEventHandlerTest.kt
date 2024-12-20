@@ -1569,5 +1569,34 @@ class TimelineEventHandlerTest : ShouldSpec({
             roomTimelineStore.getRelations(EventId("$1other"), room, RelationType.Reference).flattenNotNull().first()
                 .shouldNotBeNull().shouldBeEmpty()
         }
+        should("delete replace relations") {
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("$1other1"),
+                    RelationType.Replace,
+                    EventId("$1event")
+                )
+            )
+            roomTimelineStore.addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("$1other2"),
+                    RelationType.Replace,
+                    EventId("$1event")
+                )
+            )
+            cut.redactRelation(
+                MessageEvent(
+                    RoomMessageEventContent.TextBased.Text("hi"),
+                    EventId("$1event"),
+                    UserId("sender", "server"),
+                    room,
+                    1234,
+                )
+            )
+            roomTimelineStore.getRelations(EventId("$1event"), room, RelationType.Replace).flattenNotNull().first()
+                .shouldNotBeNull().shouldBeEmpty()
+        }
     }
 })
