@@ -17,9 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix message replacements not redacted.
-
 ### Security
+
+## 4.11.2
+
+### Fixed
+
+- Fix message replacements not redacted.
 
 ## 4.11.1
 
