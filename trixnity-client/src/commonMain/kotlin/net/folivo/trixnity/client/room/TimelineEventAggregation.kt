@@ -28,23 +28,18 @@ fun RoomService.getTimelineEventReplaceAggregation(
 ): Flow<TimelineEventAggregation.Replace> =
     getTimelineEventRelations(roomId, eventId, RelationType.Replace)
         .flatMapLatest { replaceMap ->
-            if (replaceMap.isNullOrEmpty()) flowOf(emptyList())
+            if (replaceMap.isNullOrEmpty()) flowOf(emptySet())
             else combine(replaceMap.values) {
-                it.mapNotNull { replace -> replace?.eventId }
+                it.mapNotNull { replace -> replace?.eventId }.toSet()
             }
         }
-        .transformLatest { relations ->
+        .map { relations ->
             val serverAggregation = getTimelineEvent(roomId, eventId) {
                 allowReplaceContent = false
                 decryptionTimeout = ZERO
             }.first()?.event?.unsigned?.relations?.replace?.eventId
-            emit(
-                when {
-                    relations == null -> setOfNotNull(serverAggregation)
-                    serverAggregation == null -> relations
-                    else -> relations + serverAggregation
-                }
-            )
+            if (serverAggregation != null) relations + serverAggregation
+            else relations
         }
         .map { relations ->
             val timelineEvent = getTimelineEvent(roomId, eventId) {
