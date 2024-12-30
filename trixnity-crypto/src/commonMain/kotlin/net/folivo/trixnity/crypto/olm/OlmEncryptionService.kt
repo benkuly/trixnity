@@ -171,7 +171,7 @@ class OlmEncryptionServiceImpl(
         block: suspend (Set<StoredOlmSession>?) -> StoredOlmSession
     ) {
         contract {
-            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+            callsInPlace(block, InvocationKind.AT_MOST_ONCE)
         }
         store.updateOlmSessions(identityKey) { storedSessions ->
             val newStoredSession = block(storedSessions)

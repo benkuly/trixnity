@@ -1,9 +1,9 @@
 [versions]
 ### build ###
 kotlin = "2.0.21" # https://github.com/JetBrains/kotlin/releases
-ksp = "2.0.21-1.0.27" # https://github.com/google/ksp/releases
+ksp = "2.0.21-1.0.28" # https://github.com/google/ksp/releases
 kotlinWrappers = "1.0.0-pre.774" # https://github.com/JetBrains/kotlin-wrappers/releases
-dokka = "1.9.20" # https://github.com/Kotlin/dokka/releases
+dokka = "2.0.0" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.5.2" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 
@@ -16,38 +16,38 @@ kotlinxDatetime = "0.6.1" # https://github.com/Kotlin/kotlinx-datetime/releases
 olm = "3.2.15" # https://gitlab.matrix.org/matrix-org/olm/-/releases
 trixnityOlmBinaries = "2.0.2" # https://gitlab.com/trixnity/trixnity-olm-binaries/-/releases
 trixnityOpensslBinaries = "1.0.5" # https://gitlab.com/trixnity/trixnity-openssl-binaries/-/releases
-jna = "5.15.0" # https://github.com/java-native-access/jna/tags
+jna = "5.16.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
-ktor = "3.0.1" # https://github.com/ktorio/ktor/releases
-koin = "4.0.0" # https://github.com/InsertKoinIO/koin/tags
+ktor = "3.0.3" # https://github.com/ktorio/ktor/releases
+koin = "4.0.1" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.9.1" # https://square.github.io/okio/changelog/
 arrow = "1.2.4" # https://github.com/arrow-kt/arrow/releases
 korlibs = "4.0.10" # https://github.com/korlibs/korge/releases
 
 ### databases ###
-exposed = "0.56.0" # https://github.com/JetBrains/Exposed/releases
-hikari = "6.1.0" # https://github.com/brettwooldridge/HikariCP/tags
+exposed = "0.57.0" # https://github.com/JetBrains/Exposed/releases
+hikari = "6.2.1" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.3.232" # https://github.com/h2database/h2database/releases
 postgres = "42.7.4" # https://github.com/pgjdbc/pgjdbc/releases
-juulLabsIndexeddb = "0.7.1" # https://github.com/JuulLabs/indexeddb/releases
+juulLabsIndexeddb = "0.9.0" # https://github.com/JuulLabs/indexeddb/releases
 realm = "3.0.0" # https://github.com/realm/realm-kotlin/tags
-androidxRoom = "2.7.0-alpha11" # https://developer.android.com/jetpack/androidx/releases/room
-androidxSqlite = "2.5.0-alpha11" # https://developer.android.com/jetpack/androidx/releases/sqlite
+androidxRoom = "2.7.0-alpha12" # https://developer.android.com/jetpack/androidx/releases/room
+androidxSqlite = "2.5.0-alpha12" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
 ### logging ###
-oshaiKotlinLogging = "7.0.0" # https://github.com/oshai/kotlin-logging/releases
-logback = "1.5.12" # https://github.com/qos-ch/logback/tags
+oshaiKotlinLogging = "7.0.3" # https://github.com/oshai/kotlin-logging/releases
+logback = "1.5.15" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
 kotest = "6.0.0.M1" # https://github.com/kotest/kotest/releases
-mokkery = "2.5.0" # https://github.com/lupuuss/Mokkery/releases
-testContainers = "1.20.3" # https://github.com/testcontainers/testcontainers-java/releases
+mokkery = "2.5.1" # https://github.com/lupuuss/Mokkery/releases
+testContainers = "1.20.4" # https://github.com/testcontainers/testcontainers-java/releases
 androidxTestRunner = "1.6.2" # https://developer.android.com/jetpack/androidx/releases/test
 
 ### android ###
 # make sure to update Dockerfile, when you change a version here!
-androidTargetSdk = "34"
+androidTargetSdk = "35"
 androidMinSdk = "24"
 
 [libraries]
