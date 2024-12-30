@@ -30,7 +30,9 @@ import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
@@ -76,6 +78,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             roomOutboxMessageStore,
             defaultOutboxMessageMediaUploaderMappings,
             CurrentSyncState(currentSyncState),
+            UserInfo(UserId("user", "server"), "device", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = "")),
             TransactionManagerMock(),
             Clock.System,
         )
