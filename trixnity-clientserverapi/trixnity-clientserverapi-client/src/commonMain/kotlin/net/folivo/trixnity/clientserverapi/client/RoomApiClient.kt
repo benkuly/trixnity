@@ -480,7 +480,7 @@ interface RoomApiClient {
      */
     suspend fun getHierarchy(
         roomId: RoomId,
-        from: String,
+        from: String? = null,
         limit: Long? = null,
         maxDepth: Long? = null,
         suggestedOnly: Boolean = false,
@@ -939,7 +939,7 @@ class RoomApiClientImpl(
 
     override suspend fun getHierarchy(
         roomId: RoomId,
-        from: String,
+        from: String?,
         limit: Long?,
         maxDepth: Long?,
         suggestedOnly: Boolean,
