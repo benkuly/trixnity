@@ -26,9 +26,9 @@ data class MatrixClientConfiguration(
     var storeTimelineEventContentUnencrypted: Boolean = true,
 
     /**
-     * Sets the own bookmark to the latest messages sent by this client.
+     * Sets the own read marker to the latest messages sent by this client.
      */
-    var setOwnMessagesAsFullyRead: Boolean = false,
+    var markOwnMessageAsRead: Boolean = false,
 
     /**
      * Automatically join upgraded rooms.

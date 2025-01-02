@@ -1,5 +1,6 @@
 package net.folivo.trixnity.core.model.events.m
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -9,6 +10,8 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+
+private val log = KotlinLogging.logger { }
 
 typealias Relations = @Serializable(with = RelationsSerializer::class) Map<RelationType, ServerAggregation>
 
@@ -63,11 +66,16 @@ object RelationsSerializer : KSerializer<Relations> {
         return aggregationsJson
             .mapKeys { (key, _) -> RelationType.of(key) }
             .mapValues { (relationType, json) ->
-                when (relationType) {
-                    is RelationType.Replace -> decoder.json.decodeFromJsonElement<ServerAggregation.Replace>(json)
-                    is RelationType.Thread -> decoder.json.decodeFromJsonElement<ServerAggregation.Thread>(json)
-                    is RelationType.Unknown -> ServerAggregation.Unknown(relationType, json)
-                    else -> ServerAggregation.Unknown(relationType, json)
+                try {
+                    when (relationType) {
+                        is RelationType.Replace -> decoder.json.decodeFromJsonElement<ServerAggregation.Replace>(json)
+                        is RelationType.Thread -> decoder.json.decodeFromJsonElement<ServerAggregation.Thread>(json)
+                        is RelationType.Unknown -> ServerAggregation.Unknown(relationType, json)
+                        else -> ServerAggregation.Unknown(relationType, json)
+                    }
+                } catch (e: Exception) {
+                    log.warn(e) { "malformed relation" }
+                    ServerAggregation.Unknown(relationType, json)
                 }
             }
     }

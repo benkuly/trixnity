@@ -184,6 +184,7 @@ fun createTrixnityBotModules(): List<Module> = listOf(
                 roomOutboxMessageStore = get(),
                 outboxMessageMediaUploaderMappings = get(),
                 currentSyncState = get(),
+                userInfo = get(),
                 tm = get(),
                 clock = get(),
             )
@@ -317,6 +318,7 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                     roomOutboxMessageStore = get(),
                     outboxMessageMediaUploaderMappings = get(),
                     currentSyncState = get(),
+                    userInfo = get(),
                     tm = get(),
                     clock = get(),
                 )
