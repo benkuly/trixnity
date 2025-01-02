@@ -1,13 +1,13 @@
-import org.jetbrains.dokka.gradle.DokkaTask
-
-apply(plugin = "org.jetbrains.dokka")
-apply(plugin = "maven-publish")
-apply(plugin = "signing")
+plugins {
+    id("org.jetbrains.dokka")
+    id("maven-publish")
+    id("signing")
+}
 
 val dokkaJar by tasks.registering(Jar::class) {
-    dependsOn(tasks.dokkaHtml)
-    from(tasks.dokkaHtml.flatMap { it.outputDirectory })
-    archiveClassifier.set("javadoc")
+    dependsOn("dokkaGenerate")
+    from(dokka.dokkaPublications.html.flatMap { it.outputDirectory })
+    archiveClassifier.set("html-docs")
     onlyIf { isCI }
 }
 
@@ -77,10 +77,6 @@ val signingTasks = tasks.withType<Sign>()
 tasks.withType<AbstractPublishToMaven>().configureEach {
     mustRunAfter(signingTasks)
 }
-
-// manual accessors
-val TaskContainer.dokkaHtml: TaskProvider<DokkaTask>
-    get() = named<DokkaTask>("dokkaHtml")
 
 fun Project.publishing(configure: Action<PublishingExtension>) = extensions.configure("publishing", configure)
 

@@ -64,9 +64,36 @@ val trixnityBinaries by tasks.registering {
     dependsOn(extractOpensslBinaries)
 }
 
+dependencies {
+    dokka(projects.trixnityUtils)
+    dokka(projects.trixnityCore)
+    dokka(projects.trixnityCryptoCore)
+    dokka(projects.trixnityCrypto)
+    dokka(projects.trixnityOlm)
+    dokka(projects.trixnityApiClient)
+    dokka(projects.trixnityApiServer)
+    dokka(projects.trixnityClientserverapi.trixnityClientserverapiModel)
+    dokka(projects.trixnityClientserverapi.trixnityClientserverapiClient)
+    dokka(projects.trixnityClientserverapi.trixnityClientserverapiServer)
+    dokka(projects.trixnityServerserverapi.trixnityServerserverapiModel)
+    dokka(projects.trixnityServerserverapi.trixnityServerserverapiClient)
+    dokka(projects.trixnityServerserverapi.trixnityServerserverapiServer)
+    dokka(projects.trixnityApplicationserviceapi.trixnityApplicationserviceapiModel)
+    dokka(projects.trixnityApplicationserviceapi.trixnityApplicationserviceapiServer)
+    dokka(projects.trixnityClient)
+    dokka(projects.trixnityClient.trixnityClientMediaOkio)
+    dokka(projects.trixnityClient.trixnityClientMediaIndexeddb)
+    dokka(projects.trixnityClient.trixnityClientMediaOpfs)
+    dokka(projects.trixnityClient.trixnityClientRepositoryExposed)
+    dokka(projects.trixnityClient.trixnityClientRepositoryIndexeddb)
+    dokka(projects.trixnityClient.trixnityClientRepositoryRealm)
+    dokka(projects.trixnityClient.trixnityClientRepositoryRoom)
+    dokka(projects.trixnityApplicationservice)
+}
+
 val dokkaHtmlToWebsite by tasks.registering(Copy::class) {
-    from(layout.buildDirectory.dir("dokka/htmlMultiModule"))
+    from(layout.buildDirectory.dir("dokka/html"))
     into(layout.projectDirectory.dir("website/static/api"))
     outputs.cacheIf { true }
-    dependsOn(":dokkaHtmlMultiModule")
+    dependsOn(":dokkaGenerate")
 }
