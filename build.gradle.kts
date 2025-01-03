@@ -8,7 +8,6 @@ plugins {
     `maven-publish`
     signing
     id(libs.plugins.dokka.get().pluginId)
-    alias(libs.plugins.realm).apply(false)
     alias(libs.plugins.download).apply(false)
     alias(libs.plugins.kotest).apply(false)
     alias(libs.plugins.mokkery).apply(false)
@@ -86,7 +85,6 @@ dependencies {
     dokka(projects.trixnityClient.trixnityClientMediaOpfs)
     dokka(projects.trixnityClient.trixnityClientRepositoryExposed)
     dokka(projects.trixnityClient.trixnityClientRepositoryIndexeddb)
-    dokka(projects.trixnityClient.trixnityClientRepositoryRealm)
     dokka(projects.trixnityClient.trixnityClientRepositoryRoom)
     dokka(projects.trixnityApplicationservice)
 }

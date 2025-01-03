@@ -73,14 +73,11 @@ class IndexedDBRepositoryTransactionManager(
 
     override suspend fun writeTransaction(block: suspend () -> Unit) {
         coroutineScope {
-            val existingReadTransaction = coroutineContext[IndexedDBReadTransaction]
             val existingWriteTransaction = coroutineContext[IndexedDBWriteTransaction]
-            if (existingReadTransaction != null && existingWriteTransaction != null) block() // just reuse existing transaction (nested)
+            if (existingWriteTransaction != null) block() // just reuse existing transaction (nested)
             else mutex.withLock {
                 val writeTransaction = IndexedDBWriteTransaction(database, testMode)
-                withContext(IndexedDBReadTransaction(database) + writeTransaction) {
-                    block()
-                }
+                withContext(IndexedDBReadTransaction(database) + writeTransaction) { block() }
                 if (testMode.not()) {
                     // we collect all operations, because IndeedDB don't allow doing async work within a transaction
                     val operations = writeTransaction.getOperations()

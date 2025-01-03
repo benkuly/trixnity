@@ -6,7 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.resources.*
 import io.ktor.server.testing.*
-import io.ktor.utils.io.charsets.Charsets.UTF_8
+import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -73,7 +73,7 @@ class MatrixEndpointRouteTest {
             setBody("""{"includeDino":true}""")
         }
         response.body<String>() shouldBe """{"status":"dino"}"""
-        response.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response.status shouldBe HttpStatusCode.OK
     }
 
@@ -100,7 +100,7 @@ class MatrixEndpointRouteTest {
         getHasBeenCalled shouldBe false
         postHasBeenCalled shouldBe true
         response1.body<String>() shouldBe """{"status":"dino"}"""
-        response1.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response1.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response1.status shouldBe HttpStatusCode.OK
 
         getHasBeenCalled = false
@@ -110,7 +110,7 @@ class MatrixEndpointRouteTest {
         getHasBeenCalled shouldBe true
         postHasBeenCalled shouldBe false
         response2.body<String>() shouldBe """{"status":"anti-dino"}"""
-        response2.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response2.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response2.status shouldBe HttpStatusCode.OK
     }
 
@@ -190,7 +190,7 @@ class MatrixEndpointRouteTest {
             setBody("""{"includeDino":true}""")
         }
         response.body<String>() shouldBe """{"custom":true}"""
-        response.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response.status shouldBe HttpStatusCode.OK
     }
 
@@ -213,7 +213,7 @@ class MatrixEndpointRouteTest {
             setBody("""{}""")
         }
         response.body<String>() shouldBe """{}"""
-        response.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response.status shouldBe HttpStatusCode.OK
     }
 

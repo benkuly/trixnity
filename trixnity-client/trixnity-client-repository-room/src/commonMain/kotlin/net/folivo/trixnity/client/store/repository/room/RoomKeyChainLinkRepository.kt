@@ -1,10 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import net.folivo.trixnity.client.store.KeyChainLink
 import net.folivo.trixnity.client.store.repository.KeyChainLinkRepository
 import net.folivo.trixnity.core.model.UserId
@@ -75,7 +71,7 @@ internal class RoomKeyChainLinkRepository(
     override suspend fun getBySigningKey(
         signingUserId: UserId,
         signingKey: Key.Ed25519Key
-    ): Set<KeyChainLink> =
+    ): Set<KeyChainLink> = withRoomRead {
         dao.getBySigningKeys(signingUserId, signingKey.keyId, signingKey.value)
             .map { entity ->
                 KeyChainLink(
@@ -91,8 +87,9 @@ internal class RoomKeyChainLinkRepository(
                     ),
                 )
             }.toSet()
+    }
 
-    override suspend fun save(keyChainLink: KeyChainLink) {
+    override suspend fun save(keyChainLink: KeyChainLink) = withRoomWrite {
         dao.insert(
             RoomKeyChainLink(
                 signingUserId = keyChainLink.signingUserId,
@@ -105,11 +102,11 @@ internal class RoomKeyChainLinkRepository(
         )
     }
 
-    override suspend fun deleteBySignedKey(signedUserId: UserId, signedKey: Key.Ed25519Key) {
+    override suspend fun deleteBySignedKey(signedUserId: UserId, signedKey: Key.Ed25519Key) = withRoomWrite {
         dao.delete(signedUserId, signedKey.keyId, signedKey.value)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

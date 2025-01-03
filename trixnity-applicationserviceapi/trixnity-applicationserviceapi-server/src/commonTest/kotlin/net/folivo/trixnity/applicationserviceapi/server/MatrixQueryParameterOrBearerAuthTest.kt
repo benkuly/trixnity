@@ -11,7 +11,7 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
-import io.ktor.utils.io.charsets.Charsets.UTF_8
+import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
@@ -41,7 +41,7 @@ class MatrixQueryParameterOrBearerAuthTest {
         application { testAppMatrixQueryParameterAuth() }
         val response = client.get("/_matrix/something")
         assertEquals(HttpStatusCode.Unauthorized, response.status)
-        assertEquals(ContentType.Application.Json.withCharset(UTF_8), response.contentType())
+        assertEquals(ContentType.Application.Json.withCharset(Charsets.UTF_8), response.contentType())
         Json.decodeFromString(ErrorResponseSerializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.Unauthorized>()
     }
@@ -51,7 +51,7 @@ class MatrixQueryParameterOrBearerAuthTest {
         application { testAppMatrixQueryParameterAuth() }
         val response = client.get("/_matrix/something?access_token=invalidToken")
         assertEquals(HttpStatusCode.Forbidden, response.status)
-        assertEquals(ContentType.Application.Json.withCharset(UTF_8), response.contentType())
+        assertEquals(ContentType.Application.Json.withCharset(Charsets.UTF_8), response.contentType())
         Json.decodeFromString(ErrorResponseSerializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.Forbidden>()
     }
@@ -63,7 +63,7 @@ class MatrixQueryParameterOrBearerAuthTest {
             bearerAuth("invalidToken")
         }
         assertEquals(HttpStatusCode.Forbidden, response.status)
-        assertEquals(ContentType.Application.Json.withCharset(UTF_8), response.contentType())
+        assertEquals(ContentType.Application.Json.withCharset(Charsets.UTF_8), response.contentType())
         Json.decodeFromString(ErrorResponseSerializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.Forbidden>()
     }
@@ -75,7 +75,7 @@ class MatrixQueryParameterOrBearerAuthTest {
             bearerAuth("invalidToken")
         }
         assertEquals(HttpStatusCode.Forbidden, response.status)
-        assertEquals(ContentType.Application.Json.withCharset(UTF_8), response.contentType())
+        assertEquals(ContentType.Application.Json.withCharset(Charsets.UTF_8), response.contentType())
         Json.decodeFromString(ErrorResponseSerializer, response.body())
             .shouldBeInstanceOf<ErrorResponse.Forbidden>()
     }

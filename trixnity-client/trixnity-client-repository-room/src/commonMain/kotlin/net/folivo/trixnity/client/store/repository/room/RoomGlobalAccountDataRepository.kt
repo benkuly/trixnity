@@ -51,22 +51,24 @@ internal class RoomGlobalAccountDataRepository(
         .getContextual(GlobalAccountDataEvent::class)
         ?: throw IllegalArgumentException("could not find event serializer")
 
-    override suspend fun get(firstKey: String): Map<String, GlobalAccountDataEvent<*>> =
+    override suspend fun get(firstKey: String): Map<String, GlobalAccountDataEvent<*>> = withRoomRead {
         dao.getAllByType(firstKey)
             .associate { entity -> entity.key to json.decodeFromString(serializer, entity.event) }
+    }
 
     override suspend fun get(
         firstKey: String,
         secondKey: String
-    ): GlobalAccountDataEvent<*>? =
+    ): GlobalAccountDataEvent<*>? = withRoomRead {
         dao.getByKeys(firstKey, secondKey)
             ?.let { entity -> json.decodeFromString(serializer, entity.event) }
+    }
 
     override suspend fun save(
         firstKey: String,
         secondKey: String,
         value: GlobalAccountDataEvent<*>
-    ) {
+    ) = withRoomWrite {
         dao.insert(
             RoomGlobalAccountData(
                 type = firstKey,
@@ -76,11 +78,11 @@ internal class RoomGlobalAccountDataRepository(
         )
     }
 
-    override suspend fun delete(firstKey: String, secondKey: String) {
+    override suspend fun delete(firstKey: String, secondKey: String) = withRoomWrite {
         dao.delete(firstKey, secondKey)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

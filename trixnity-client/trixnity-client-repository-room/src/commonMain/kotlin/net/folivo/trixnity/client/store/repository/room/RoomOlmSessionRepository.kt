@@ -1,12 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
@@ -40,11 +34,12 @@ internal class RoomOlmSessionRepository(
 ) : OlmSessionRepository {
     private val dao = db.olmSession()
 
-    override suspend fun get(key: Key.Curve25519Key): Set<StoredOlmSession>? =
+    override suspend fun get(key: Key.Curve25519Key): Set<StoredOlmSession>? = withRoomRead {
         dao.get(key.value)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun save(key: Key.Curve25519Key, value: Set<StoredOlmSession>) {
+    override suspend fun save(key: Key.Curve25519Key, value: Set<StoredOlmSession>) = withRoomWrite {
         dao.insert(
             RoomOlmSession(
                 senderKey = key.value,
@@ -53,11 +48,11 @@ internal class RoomOlmSessionRepository(
         )
     }
 
-    override suspend fun delete(key: Key.Curve25519Key) {
+    override suspend fun delete(key: Key.Curve25519Key) = withRoomWrite {
         dao.delete(key.value)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

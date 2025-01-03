@@ -14,7 +14,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
@@ -408,7 +407,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 roomOutboxMessageStore.update(message1.roomId, message1.transactionId) { null }
             }
             currentSyncState.value = SyncState.RUNNING
-            mediaServiceMock.uploadMediaCalled.onEach { println(it) }.first { it == cacheUrl }
+            mediaServiceMock.uploadMediaCalled.first { it == cacheUrl }
 
             eventually(5.seconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()

@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotest)
     trixnity.general
     trixnity.publish
 }
@@ -9,10 +10,10 @@ plugins {
 kotlin {
     jvmToolchain()
     addJvmTarget()
-    // TODO enable native targets as soon as it is more stable
-    // does not use addNativeTargets() because mingw is not supported yet
-    //addNativeAppleTargets()
-    //linuxX64()
+    // does not use addNativeTargets() because some ar not supported yet
+    iosArm64()
+    iosSimulatorArm64()
+    iosX64()
 
     sourceSets {
         all {
@@ -25,7 +26,7 @@ kotlin {
 
                 implementation(libs.oshai.logging)
 
-                implementation(libs.androidx.room.runtime)
+                api(libs.androidx.room.runtime)
             }
         }
         commonTest {
@@ -51,7 +52,12 @@ kotlin {
 
 dependencies {
     configurations
-        .filter { it.name.startsWith("ksp") }
+        .filter {
+            it.name != "ksp"
+                    && it.name.startsWith("ksp")
+                    && it.name.contains("Common").not()
+                    && it.name.contains("Test").not()
+        }
         .forEach {
             add(it.name, libs.androidx.room.compiler)
         }

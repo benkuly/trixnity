@@ -50,13 +50,15 @@ internal class RoomRoomOutboxMessageRepository(
 ) : RoomOutboxMessageRepository {
     private val dao = db.roomOutboxMessage()
 
-    override suspend fun get(key: RoomOutboxMessageRepositoryKey): RoomOutboxMessage<*>? =
+    override suspend fun get(key: RoomOutboxMessageRepositoryKey): RoomOutboxMessage<*>? = withRoomRead {
         dao.get(key.roomId, key.transactionId)?.toModel()
+    }
 
-    override suspend fun getAll(): List<RoomOutboxMessage<*>> =
+    override suspend fun getAll(): List<RoomOutboxMessage<*>> = withRoomRead {
         dao.getAll().map { it.toModel() }
+    }
 
-    override suspend fun save(key: RoomOutboxMessageRepositoryKey, value: RoomOutboxMessage<*>) {
+    override suspend fun save(key: RoomOutboxMessageRepositoryKey, value: RoomOutboxMessage<*>) = withRoomWrite {
         val mapping = getMappingOrThrow { it.kClass.isInstance(value.content) }
         @Suppress("UNCHECKED_CAST")
         dao.insert(
@@ -72,15 +74,15 @@ internal class RoomRoomOutboxMessageRepository(
         )
     }
 
-    override suspend fun delete(key: RoomOutboxMessageRepositoryKey) {
+    override suspend fun delete(key: RoomOutboxMessageRepositoryKey) = withRoomWrite {
         dao.delete(key.roomId, key.transactionId)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 
-    override suspend fun deleteByRoomId(roomId: RoomId) {
+    override suspend fun deleteByRoomId(roomId: RoomId) = withRoomWrite {
         dao.delete(roomId)
     }
 

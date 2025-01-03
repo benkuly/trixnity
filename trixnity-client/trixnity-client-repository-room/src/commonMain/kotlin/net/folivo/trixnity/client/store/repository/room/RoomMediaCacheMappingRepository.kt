@@ -32,7 +32,7 @@ internal class RoomMediaCacheMappingRepository(
 ) : MediaCacheMappingRepository {
     private val dao = db.mediaCacheMapping()
 
-    override suspend fun get(key: String): MediaCacheMapping? =
+    override suspend fun get(key: String): MediaCacheMapping? = withRoomRead {
         dao.get(key)?.let { entity ->
             MediaCacheMapping(
                 cacheUri = entity.cacheUri,
@@ -41,8 +41,9 @@ internal class RoomMediaCacheMappingRepository(
                 contentType = entity.contentType,
             )
         }
+    }
 
-    override suspend fun save(key: String, value: MediaCacheMapping) {
+    override suspend fun save(key: String, value: MediaCacheMapping) = withRoomWrite {
         dao.insert(
             RoomMediaCacheMapping(
                 cacheUri = value.cacheUri,
@@ -53,11 +54,11 @@ internal class RoomMediaCacheMappingRepository(
         )
     }
 
-    override suspend fun delete(key: String) {
+    override suspend fun delete(key: String) = withRoomWrite {
         dao.delete(cacheUri = key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

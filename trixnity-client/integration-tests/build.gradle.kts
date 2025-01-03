@@ -23,7 +23,8 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityClient)
                 implementation(projects.trixnityClient.trixnityClientRepositoryExposed)
-                implementation(projects.trixnityClient.trixnityClientRepositoryRealm)
+                implementation(projects.trixnityClient.trixnityClientRepositoryRoom)
+                implementation(libs.androidx.sqlite.bundled)
                 implementation(kotlin("test"))
                 implementation(libs.kotest.common)
                 implementation(libs.kotest.assertions.core)

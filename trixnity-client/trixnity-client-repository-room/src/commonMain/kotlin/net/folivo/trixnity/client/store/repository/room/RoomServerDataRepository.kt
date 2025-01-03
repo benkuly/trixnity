@@ -33,11 +33,12 @@ internal class RoomServerDataRepository(
 ) : ServerDataRepository {
     private val dao = db.serverData()
 
-    override suspend fun get(key: Long): ServerData? =
+    override suspend fun get(key: Long): ServerData? = withRoomRead {
         dao.get(key)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun save(key: Long, value: ServerData) {
+    override suspend fun save(key: Long, value: ServerData) = withRoomWrite {
         dao.insert(
             RoomServerData(
                 id = key,
@@ -46,11 +47,11 @@ internal class RoomServerDataRepository(
         )
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

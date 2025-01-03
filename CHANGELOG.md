@@ -21,7 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed Realm repository implementation as it is currently not actively maintained and does not work with current
+  Kotlin versions.
+
 ### Fixed
+
+- Fixed Androidx Room repository implementation.
 
 ### Security
 
@@ -266,6 +271,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 ### Removed
+
+- Removed Realm repository implementation as it is currently not actively maintained and does not work with current
+  Kotlin versions.
 
 ### Fixed
 

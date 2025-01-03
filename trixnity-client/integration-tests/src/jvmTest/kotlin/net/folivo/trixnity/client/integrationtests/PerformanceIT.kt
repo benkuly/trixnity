@@ -1,5 +1,7 @@
 package net.folivo.trixnity.client.integrationtests
 
+import androidx.room.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -21,7 +23,8 @@ import net.folivo.trixnity.client.room.encrypt
 import net.folivo.trixnity.client.roomEventEncryptionServices
 import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
-import net.folivo.trixnity.client.store.repository.realm.createRealmRepositoriesModule
+import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
+import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
@@ -57,46 +60,50 @@ private val log = KotlinLogging.logger {}
 class PerformanceIT {
 
     @Test
-    fun realmVsExposedSyncSpeed(): Unit = runBlocking(Dispatchers.Default) {
-        val results = syncSpeed(false, { baseUrl ->
-            registerAndStartClient(
-                "exposed", "exposed", baseUrl,
-                repositoriesModule = createExposedRepositoriesModule(newDatabase()),
-            ).client
-        },
+    fun roomVsExposedSyncSpeed(): Unit = runBlocking(Dispatchers.Default) {
+        val results = syncSpeed(
+            false, { baseUrl ->
+                registerAndStartClient(
+                    "exposed", "exposed", baseUrl,
+                    repositoriesModule = createExposedRepositoriesModule(
+                        Database.connect("jdbc:h2:./build/tmp/test/${Random.nextString(22)};DB_CLOSE_DELAY=-1;")
+                    ),
+                ).client
+            },
             { baseUrl ->
                 registerAndStartClient(
-                    "realm", "realm", baseUrl,
-                    repositoriesModule = createRealmRepositoriesModule {
-                        inMemory()
-                        directory("build/test-db/${Random.nextString(22)}")
-                    },
+                    "room", "room", baseUrl,
+                    repositoriesModule = createRoomRepositoriesModule(
+                        Room.databaseBuilder<TrixnityRoomDatabase>("build/tmp/test/${Random.nextString(22)}.db").apply {
+                            setDriver(BundledSQLiteDriver())
+                        }),
                 ).client
             }
         )
 
         val exposedDuration = results.total[0].duration
-        val realmDuration = results.total[1].duration
+        val roomDuration = results.total[1].duration
 
-        val diff = (exposedDuration / realmDuration) * 100
+        val diff = (exposedDuration / roomDuration) * 100
 
         println("################################")
         println("exposedDuration: $exposedDuration")
         println("################################")
-        println("realmDuration: $realmDuration")
+        println("roomDuration: $roomDuration")
         println("################################")
         println("diff: ${diff.roundToInt()}%")
         println("################################")
 
-        diff shouldBeLessThan 150.0 // %
-        diff shouldBeGreaterThan 50.0 // %
+        roomDuration shouldBeLessThan 2.seconds
+        diff shouldBeGreaterThan 120.0 // % (room is faster)
     }
 
     @Test
     fun fullClientVsBotModeSyncSpeed(): Unit = runBlocking(Dispatchers.Default) {
         val matrixPostgresql1 = PostgreSQLContainer("postgres:16").apply { start() }
         val matrixPostgresql2 = PostgreSQLContainer("postgres:16").apply { start() }
-        val results = syncSpeed(true,
+        val results = syncSpeed(
+            true,
             { baseUrl ->
                 registerAndStartClient(
                     "fullClient", baseUrl = baseUrl,
