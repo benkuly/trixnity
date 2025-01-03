@@ -90,7 +90,7 @@ interface RoomApiClient {
     suspend fun getRelations(
         roomId: RoomId,
         eventId: EventId,
-        from: String,
+        from: String? = null,
         to: String? = null,
         limit: Long? = null,
         recurse: Boolean? = null,
@@ -104,7 +104,7 @@ interface RoomApiClient {
         roomId: RoomId,
         eventId: EventId,
         relationType: RelationType,
-        from: String,
+        from: String? = null,
         to: String? = null,
         limit: Long? = null,
         recurse: Boolean? = null,
@@ -119,7 +119,7 @@ interface RoomApiClient {
         eventId: EventId,
         relationType: RelationType,
         eventType: String,
-        from: String,
+        from: String? = null,
         to: String? = null,
         limit: Long? = null,
         asUserId: UserId? = null
@@ -558,7 +558,7 @@ class RoomApiClientImpl(
     override suspend fun getRelations(
         roomId: RoomId,
         eventId: EventId,
-        from: String,
+        from: String?,
         to: String?,
         limit: Long?,
         recurse: Boolean?,
@@ -570,7 +570,7 @@ class RoomApiClientImpl(
         roomId: RoomId,
         eventId: EventId,
         relationType: RelationType,
-        from: String,
+        from: String?,
         to: String?,
         limit: Long?,
         recurse: Boolean?,
@@ -594,7 +594,7 @@ class RoomApiClientImpl(
         eventId: EventId,
         relationType: RelationType,
         eventType: String,
-        from: String,
+        from: String?,
         to: String?,
         limit: Long?,
         asUserId: UserId?
@@ -989,7 +989,7 @@ suspend inline fun <reified C : MessageEventContent> RoomApiClient.getRelationsB
     roomId: RoomId,
     eventId: EventId,
     relationType: RelationType,
-    from: String,
+    from: String? = null,
     to: String? = null,
     limit: Long? = null,
     asUserId: UserId? = null

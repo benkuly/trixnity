@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Upgrade dependencies.
 - Parameter `from` in `RoomsApiClient::getHierarchy` is nullable.
+- Parameter `from` in `RoomsApiClient::getRelations*` is nullable.
 
 ### Deprecated
 
