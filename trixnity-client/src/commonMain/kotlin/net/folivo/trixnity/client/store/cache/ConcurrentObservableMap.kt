@@ -1,7 +1,8 @@
 package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.utils.concurrentMutableMap
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -41,6 +42,10 @@ internal class ConcurrentObservableMap<K, V> {
     suspend fun getOrPut(key: K, defaultValue: () -> V): V =
         _values.read { get(key) }
             ?: checkNotNull(update(key) { it ?: defaultValue() })
+
+    suspend fun skipPut(key: K) {
+        indexes.first().forEach { it.onSkipPut(key) }
+    }
 
 
     @OptIn(ExperimentalContracts::class)
@@ -103,11 +108,6 @@ internal class ConcurrentObservableMap<K, V> {
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun getIndexSubscriptionCount(key: K): Flow<Int> =
-        indexes.flatMapLatest { indexesValue ->
-            if (indexesValue.isEmpty()) flowOf(0)
-            else combine(indexesValue.map { it.getSubscriptionCount(key) }) { subscriptionCounts ->
-                subscriptionCounts.sum()
-            }
-        }
+    suspend fun getIndexSubscriptionCount(key: K): Int =
+        indexes.first().sumOf { it.getSubscriptionCount(key) }
 }

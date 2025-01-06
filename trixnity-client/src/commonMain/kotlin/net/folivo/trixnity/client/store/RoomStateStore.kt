@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
@@ -29,11 +30,13 @@ class RoomStateStore(
     config: MatrixClientConfiguration,
     statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope,
+    clock: Clock,
 ) : Store {
     private val roomStateCache = MapDeleteByRoomIdRepositoryObservableCache(
         roomStateRepository,
         tm,
         storeScope,
+        clock,
         config.cacheExpireDurations.roomState
     ) { it.firstKey.roomId }.also(statisticCollector::addCache)
 
@@ -62,7 +65,7 @@ class RoomStateStore(
             }
                 ?: throw IllegalArgumentException("Cannot find state event, because it is not supported. You need to register it first.")
             if (skipWhenAlreadyPresent)
-                roomStateCache.write(
+                roomStateCache.update(
                     MapRepositoryCoroutinesCacheKey(
                         RoomStateRepositoryKey(roomId, eventType),
                         stateKey
@@ -71,7 +74,7 @@ class RoomStateStore(
                     it ?: event
                 }
             else
-                roomStateCache.write(
+                roomStateCache.set(
                     MapRepositoryCoroutinesCacheKey(
                         RoomStateRepositoryKey(roomId, eventType),
                         stateKey
@@ -105,7 +108,7 @@ class RoomStateStore(
         stateKey: String,
     ): Flow<StateBaseEvent<C>?> {
         val eventType = findType(eventContentClass)
-        return roomStateCache.read(MapRepositoryCoroutinesCacheKey(RoomStateRepositoryKey(roomId, eventType), stateKey))
+        return roomStateCache.get(MapRepositoryCoroutinesCacheKey(RoomStateRepositoryKey(roomId, eventType), stateKey))
             .map { if (it?.content?.instanceOf(eventContentClass) == true) it else null }
             .filterIsInstance()
     }

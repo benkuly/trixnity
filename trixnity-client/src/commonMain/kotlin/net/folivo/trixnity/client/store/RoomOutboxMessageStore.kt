@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.FullDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
@@ -16,11 +17,13 @@ class RoomOutboxMessageStore(
     config: MatrixClientConfiguration,
     statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope,
+    clock: Clock,
 ) : Store {
     private val roomOutboxMessageCache = FullDeleteByRoomIdRepositoryObservableCache(
         roomOutboxMessageRepository,
         tm,
         storeScope,
+        clock,
         config.cacheExpireDurations.roomOutboxMessage,
         { RoomOutboxMessageRepositoryKey(it.roomId, it.transactionId) }) {
         it.roomId
@@ -40,13 +43,13 @@ class RoomOutboxMessageStore(
         transactionId: String,
         updater: suspend (RoomOutboxMessage<*>?) -> RoomOutboxMessage<*>?
     ) =
-        roomOutboxMessageCache.write(RoomOutboxMessageRepositoryKey(roomId, transactionId), updater = updater)
+        roomOutboxMessageCache.update(RoomOutboxMessageRepositoryKey(roomId, transactionId), updater = updater)
 
     fun get(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?> =
-        roomOutboxMessageCache.read(RoomOutboxMessageRepositoryKey(roomId, transactionId))
+        roomOutboxMessageCache.get(RoomOutboxMessageRepositoryKey(roomId, transactionId))
 
     fun getAsFlow(roomId: RoomId, transactionId: String): Flow<RoomOutboxMessage<*>?> =
-        roomOutboxMessageCache.read(RoomOutboxMessageRepositoryKey(roomId, transactionId))
+        roomOutboxMessageCache.get(RoomOutboxMessageRepositoryKey(roomId, transactionId))
 
     suspend fun deleteByRoomId(roomId: RoomId) = roomOutboxMessageCache.deleteByRoomId(roomId)
 }

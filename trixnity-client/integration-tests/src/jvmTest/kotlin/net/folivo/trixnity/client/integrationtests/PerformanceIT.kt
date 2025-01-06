@@ -40,6 +40,7 @@ import net.folivo.trixnity.core.subscribeContentList
 import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
+import org.openjdk.jol.info.GraphStats
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -47,6 +48,7 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -58,12 +60,13 @@ class PerformanceIT {
 
     @Test
     fun realmVsExposedSyncSpeed(): Unit = runBlocking(Dispatchers.Default) {
-        val results = syncSpeed(false, { baseUrl ->
-            registerAndStartClient(
-                "exposed", "exposed", baseUrl,
-                repositoriesModule = createExposedRepositoriesModule(newDatabase()),
-            ).client
-        },
+        val results = measureSync(
+            { baseUrl ->
+                registerAndStartClient(
+                    "exposed", "exposed", baseUrl,
+                    repositoriesModule = createExposedRepositoriesModule(newDatabase()),
+                ).client
+            },
             { baseUrl ->
                 registerAndStartClient(
                     "realm", "realm", baseUrl,
@@ -93,10 +96,40 @@ class PerformanceIT {
     }
 
     @Test
+    fun syncSpeedAndMemoryUsage(): Unit = runBlocking(Dispatchers.Default) {
+        fun client(name: String): suspend (Url) -> MatrixClient = { baseUrl ->
+            registerAndStartClient(
+                name, baseUrl = baseUrl,
+                repositoriesModule = createInMemoryRepositoriesModule(),
+            ).client
+        }
+
+        val repeat = 10
+        val results = measureSync(
+            *(0..repeat).map { client("measure-$it") }.toTypedArray(),
+            timeout = 4.minutes,
+            roomsCount = 10,
+            messagesCount = 5,
+        ).total
+            .drop(1) // warmup
+
+        val duration = results.fold(0.seconds) { current, next -> current + next.duration } / repeat
+        val memoryUsage = results.fold(0L) { current, next -> current + next.memoryUsage } / repeat
+        val memoryFootprint = results.fold(0L) { current, next -> current + next.memoryFootprint } / repeat
+
+        println("duration = $duration ${results.map { it.duration }}")
+        println("memoryUsage = ${memoryUsage / 1_000} KB ${results.map { (it.memoryUsage / 1_000).toString() + " KB" }}")
+        println("memoryFootprint = ${memoryFootprint / 1_000} KB ${results.map { (it.memoryFootprint / 1_000).toString() + " KB" }}")
+        duration shouldBeLessThan 100.milliseconds
+        (memoryUsage / 1_000) shouldBeLessThan 1_000
+        (memoryFootprint / 1_000) shouldBeLessThan 50_000
+    }
+
+    @Test
     fun fullClientVsBotModeSyncSpeed(): Unit = runBlocking(Dispatchers.Default) {
         val matrixPostgresql1 = PostgreSQLContainer("postgres:16").apply { start() }
         val matrixPostgresql2 = PostgreSQLContainer("postgres:16").apply { start() }
-        val results = syncSpeed(true,
+        val results = measureSync(
             { baseUrl ->
                 registerAndStartClient(
                     "fullClient", baseUrl = baseUrl,
@@ -118,10 +151,11 @@ class PerformanceIT {
                 ) {
                     modulesFactories = createTrixnityBotModuleFactories()
                 }.client
-            }
+            },
+            decrypt = true
         )
 
-        fun printTable(name: String, r: List<SyncSpeedResult>) {
+        fun printTable(name: String, r: List<MeasureSyncResult>) {
             println(
                 """
             #####################################################################
@@ -132,6 +166,8 @@ class PerformanceIT {
             |sync time       |${r.joinToString("|") { "%-16s".format(it.duration.toString()) }}|
             |RoomEvent count |${r.joinToString("|") { "%-16s".format(it.roomEventsCount.toString()) }}|
             |speed/RoomEvent |${r.joinToString("|") { "%-16s".format((it.duration / it.roomEventsCount).toString()) }}|
+            |memory usage    |${r.joinToString("|") { "%-16s".format((it.memoryUsage / 1_000).toString() + " KB") }}|
+            |memory footprint|${r.joinToString("|") { "%-16s".format((it.memoryFootprint / 1_000_000).toString() + " MB") }}|
         """.trimIndent()
             )
         }
@@ -148,28 +184,29 @@ class PerformanceIT {
     }
 
     data class SyncSpeedResults(
-        val createRoom: List<SyncSpeedResult>,
-        val initialMessages: List<SyncSpeedResult>,
-        val messages: List<SyncSpeedResult>,
+        val createRoom: List<MeasureSyncResult>,
+        val initialMessages: List<MeasureSyncResult>,
+        val messages: List<MeasureSyncResult>,
     ) {
-        val total: List<SyncSpeedResult> =
+        val total: List<MeasureSyncResult> =
             List(createRoom.size) { index ->
-                SyncSpeedResult(
+                MeasureSyncResult(
                     duration = createRoom[index].duration + initialMessages[index].duration + messages[index].duration,
                     roomEventsCount = createRoom[index].roomEventsCount + initialMessages[index].roomEventsCount + messages[index].roomEventsCount,
+                    memoryUsage = createRoom[index].memoryUsage + initialMessages[index].memoryUsage + messages[index].memoryUsage,
+                    memoryFootprint = (createRoom[index].memoryFootprint + initialMessages[index].memoryFootprint + messages[index].memoryFootprint) / 3
                 )
             }
     }
 
-    private suspend fun syncSpeed(
+    private suspend fun measureSync(
+        vararg clientFactories: suspend (Url) -> MatrixClient,
         decrypt: Boolean = false,
-        clientFactory: suspend (Url) -> MatrixClient,
-        vararg moreClientFactories: suspend (Url) -> MatrixClient,
+        timeout: Duration = 4.minutes,
+        roomsCount: Int = 40,
+        messagesCount: Int = 10,
     ): SyncSpeedResults =
-        withTimeout(4.minutes) {
-            val roomsCount = 40
-            val messagesCount = 10
-
+        withTimeout(timeout) {
             val network = Network.newNetwork()
             val synapsePostgresql = PostgreSQLContainer("postgres:16").apply {
                 withNetworkAliases("synapse-postgresql")
@@ -188,7 +225,7 @@ class PerformanceIT {
                 host = synapse.host,
                 port = synapse.firstMappedPort
             ).build()
-            val clients = (listOf(clientFactory) + moreClientFactories).map { it(baseUrl) }
+            val clients = clientFactories.map { it(baseUrl) }
             clients.map { async { it.stopSync(true) } }.awaitAll()
 
             val prepareTestClients = (1..roomsCount).withLimitedParallelism { i ->
@@ -210,7 +247,7 @@ class PerformanceIT {
             }.toMap()
             log.info { "all rooms created" }
 
-            val createRoomResults = clients.measureSyncSpeed(decrypt)
+            val createRoomResults = clients.measureSync(decrypt)
 
             prepareTestClients.withLimitedParallelism {
                 it.startSync()
@@ -225,7 +262,7 @@ class PerformanceIT {
             }
             log.info { "all initial messages sent" }
 
-            val initialMessageResults = clients.measureSyncSpeed(decrypt)
+            val initialMessageResults = clients.measureSync(decrypt)
 
             prepareTestClients.withLimitedParallelism {
                 it.startSync()
@@ -242,7 +279,7 @@ class PerformanceIT {
             }
             log.info { "all messages sent" }
 
-            val messagesResults = clients.measureSyncSpeed(decrypt)
+            val messagesResults = clients.measureSync(decrypt)
 
             clients.forEach { it.close() }
             synapse.stop()
@@ -255,9 +292,11 @@ class PerformanceIT {
             )
         }
 
-    data class SyncSpeedResult(
+    data class MeasureSyncResult(
         val duration: Duration,
         val roomEventsCount: Int,
+        val memoryUsage: Long,
+        val memoryFootprint: Long,
     )
 
     private suspend fun <S, T> Iterable<S>.withLimitedParallelism(
@@ -274,15 +313,21 @@ class PerformanceIT {
         }.awaitAll()
     }
 
-    private suspend fun List<MatrixClient>.measureSyncSpeed(decrypt: Boolean): List<SyncSpeedResult> =
+    private suspend fun List<MatrixClient>.measureSync(decrypt: Boolean): List<MeasureSyncResult> =
         map { client ->
             var syncTime = Duration.ZERO
             var syncStartInstant: Instant? = null
+            var memBefore: Long? = null
+            var memAfter: Long? = null
+
             val unsubscribe1 = client.api.sync.subscribe(Int.MAX_VALUE) {
+                System.gc()
+                memBefore = GraphStats.parseInstance(client).totalSize()
                 syncStartInstant = Clock.System.now()
             }
             val unsubscribe2 = client.api.sync.subscribe(Int.MIN_VALUE) {
                 syncTime += Clock.System.now() - checkNotNull(syncStartInstant)
+                memAfter = GraphStats.parseInstance(client).totalSize()
             }
 
             val roomEventsCount = MutableStateFlow(0)
@@ -316,7 +361,12 @@ class PerformanceIT {
 
             delay(1.seconds) // cool down
 
-            SyncSpeedResult(syncTime, roomEventsCount.value)
+            MeasureSyncResult(
+                duration = syncTime,
+                roomEventsCount = roomEventsCount.value,
+                memoryUsage = checkNotNull(memAfter) - checkNotNull(memBefore),
+                memoryFootprint = checkNotNull(memAfter)
+            )
         }
 
     @Test

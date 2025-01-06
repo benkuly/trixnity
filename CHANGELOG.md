@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade dependencies.
 - Parameter `from` in `RoomsApiClient::getHierarchy` is nullable.
 - Parameter `from` in `RoomsApiClient::getRelations*` is nullable.
+- Performance improvements in cache: Skip cache, when an entry is not subscribed by anyone.
+- Performance improvements in cache: Don't start coroutine for each cache entry and instead invalidate cache in loop.
 
 ### Deprecated
 

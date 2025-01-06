@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
@@ -18,13 +19,15 @@ class RoomUserStore(
     tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
     statisticCollector: ObservableCacheStatisticCollector,
-    storeScope: CoroutineScope
+    storeScope: CoroutineScope,
+    clock: Clock,
 ) : Store {
     private val roomUserCache =
         MapDeleteByRoomIdRepositoryObservableCache(
             roomUserRepository,
             tm,
             storeScope,
+            clock,
             config.cacheExpireDurations.roomUser
         ) { it.firstKey }.also(statisticCollector::addCache)
 
@@ -33,6 +36,7 @@ class RoomUserStore(
             roomUserReceiptsRepository,
             tm,
             storeScope,
+            clock,
             config.cacheExpireDurations.roomUserReceipts
         ) { it.firstKey }.also(statisticCollector::addCache)
 
@@ -51,23 +55,23 @@ class RoomUserStore(
         roomUserCache.readByFirstKey(roomId)
 
     fun get(userId: UserId, roomId: RoomId): Flow<RoomUser?> =
-        roomUserCache.read(MapRepositoryCoroutinesCacheKey(roomId, userId))
+        roomUserCache.get(MapRepositoryCoroutinesCacheKey(roomId, userId))
 
     fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>> =
         roomUserReceiptsCache.readByFirstKey(roomId)
 
     fun getReceipts(userId: UserId, roomId: RoomId): Flow<RoomUserReceipts?> =
-        roomUserReceiptsCache.read(MapRepositoryCoroutinesCacheKey(roomId, userId))
+        roomUserReceiptsCache.get(MapRepositoryCoroutinesCacheKey(roomId, userId))
 
     suspend fun update(
         userId: UserId,
         roomId: RoomId,
         updater: suspend (oldRoomUser: RoomUser?) -> RoomUser?
-    ) = roomUserCache.write(MapRepositoryCoroutinesCacheKey(roomId, userId), updater = updater)
+    ) = roomUserCache.update(MapRepositoryCoroutinesCacheKey(roomId, userId), updater = updater)
 
     suspend fun updateReceipts(
         userId: UserId,
         roomId: RoomId,
         updater: suspend (oldRoomUser: RoomUserReceipts?) -> RoomUserReceipts?
-    ) = roomUserReceiptsCache.write(MapRepositoryCoroutinesCacheKey(roomId, userId), updater = updater)
+    ) = roomUserReceiptsCache.update(MapRepositoryCoroutinesCacheKey(roomId, userId), updater = updater)
 }

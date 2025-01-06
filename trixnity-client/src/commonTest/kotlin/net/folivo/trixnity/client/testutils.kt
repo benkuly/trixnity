@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
@@ -49,7 +50,8 @@ suspend fun getInMemoryAccountStore(scope: CoroutineScope) = AccountStore(
     InMemoryAccountRepository(),
     RepositoryTransactionManagerMock(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply {
     init(scope)
     updateAccount { Account("", "", UserId("user", "server"), "", null, null, null, null, null, null, false) }
@@ -64,7 +66,8 @@ suspend fun getInMemoryServerDataStore(scope: CoroutineScope) = ServerDataStore(
     },
     RepositoryTransactionManagerMock(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryRoomAccountDataStore(scope: CoroutineScope) = RoomAccountDataStore(
@@ -73,7 +76,8 @@ suspend fun getInMemoryRoomAccountDataStore(scope: CoroutineScope) = RoomAccount
     DefaultEventContentSerializerMappings,
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryGlobalAccountDataStore(scope: CoroutineScope) = GlobalAccountDataStore(
@@ -82,7 +86,8 @@ suspend fun getInMemoryGlobalAccountDataStore(scope: CoroutineScope) = GlobalAcc
     DefaultEventContentSerializerMappings,
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryOlmStore(scope: CoroutineScope) = OlmCryptoStore(
@@ -95,7 +100,8 @@ suspend fun getInMemoryOlmStore(scope: CoroutineScope) = OlmCryptoStore(
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
@@ -110,7 +116,8 @@ suspend fun getInMemoryKeyStore(scope: CoroutineScope) = KeyStore(
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryRoomStore(scope: CoroutineScope) = RoomStore(
@@ -119,6 +126,7 @@ suspend fun getInMemoryRoomStore(scope: CoroutineScope) = RoomStore(
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineStore(
@@ -127,7 +135,8 @@ suspend fun getInMemoryRoomTimelineStore(scope: CoroutineScope) = RoomTimelineSt
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryRoomStateStore(scope: CoroutineScope) = RoomStateStore(
@@ -136,7 +145,8 @@ suspend fun getInMemoryRoomStateStore(scope: CoroutineScope) = RoomStateStore(
     DefaultEventContentSerializerMappings,
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
@@ -145,7 +155,8 @@ suspend fun getInMemoryRoomUserStore(scope: CoroutineScope) = RoomUserStore(
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMappingStore(
@@ -153,7 +164,8 @@ suspend fun getInMemoryMediaCacheMapping(scope: CoroutineScope) = MediaCacheMapp
     RepositoryTransactionManagerMock(),
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
-    scope
+    scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutboxMessageStore(
@@ -162,6 +174,7 @@ suspend fun getInMemoryRoomOutboxMessageStore(scope: CoroutineScope) = RoomOutbo
     MatrixClientConfiguration(),
     ObservableCacheStatisticCollector(),
     scope,
+    Clock.System,
 ).apply { init(scope) }
 
 suspend fun ShouldSpecContainerScope.clearOutdatedKeys(keyStoreBuilder: () -> KeyStore) {
