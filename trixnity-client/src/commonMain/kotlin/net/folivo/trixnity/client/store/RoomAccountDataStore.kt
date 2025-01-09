@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
@@ -26,12 +27,14 @@ class RoomAccountDataStore(
     config: MatrixClientConfiguration,
     statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope,
+    clock: Clock,
 ) : Store {
     private val roomAccountDataCache =
         MapDeleteByRoomIdRepositoryObservableCache(
             roomAccountDataRepository,
             tm,
             storeScope,
+            clock,
             config.cacheExpireDurations.roomAccountData
         ) { it.firstKey.roomId }.also(statisticCollector::addCache)
 
@@ -50,7 +53,7 @@ class RoomAccountDataStore(
             else -> contentMappings.roomAccountData.find { it.kClass.isInstance(event.content) }?.type
         }
             ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
-        roomAccountDataCache.write(
+        roomAccountDataCache.set(
             MapRepositoryCoroutinesCacheKey(RoomAccountDataRepositoryKey(event.roomId, eventType), event.key), event
         )
     }
@@ -62,7 +65,7 @@ class RoomAccountDataStore(
     ): Flow<RoomAccountDataEvent<C>?> {
         val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
-        return roomAccountDataCache.read(
+        return roomAccountDataCache.get(
             MapRepositoryCoroutinesCacheKey(
                 RoomAccountDataRepositoryKey(
                     roomId,

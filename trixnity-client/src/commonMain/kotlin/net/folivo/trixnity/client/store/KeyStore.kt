@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
@@ -30,13 +31,15 @@ class KeyStore(
     private val tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
     statisticCollector: ObservableCacheStatisticCollector,
-    storeScope: CoroutineScope
+    storeScope: CoroutineScope,
+    clock: Clock,
 ) : Store {
     private val outdatedKeysCache =
         MinimalRepositoryObservableCache(
             repository = outdatedKeysRepository,
             tm = tm,
             cacheScope = storeScope,
+            clock = clock,
             expireDuration = Duration.INFINITE
         ).also(statisticCollector::addCache)
     private val secretsCache =
@@ -44,6 +47,7 @@ class KeyStore(
             repository = secretsRepository,
             tm = tm,
             cacheScope = storeScope,
+            clock = clock,
             expireDuration = Duration.INFINITE
         ).also(statisticCollector::addCache)
     private val deviceKeysCache =
@@ -51,30 +55,35 @@ class KeyStore(
             repository = deviceKeysRepository,
             tm = tm,
             cacheScope = storeScope,
+            clock = clock,
             expireDuration = config.cacheExpireDurations.deviceKeys
         ).also(statisticCollector::addCache)
     private val crossSigningKeysCache = MinimalRepositoryObservableCache(
         repository = crossSigningKeysRepository,
         tm = tm,
         cacheScope = storeScope,
+        clock = clock,
         expireDuration = config.cacheExpireDurations.crossSigningKeys
     ).also(statisticCollector::addCache)
     private val keyVerificationStateCache = MinimalRepositoryObservableCache(
         repository = keyVerificationStateRepository,
         tm = tm,
         cacheScope = storeScope,
+        clock = clock,
         expireDuration = config.cacheExpireDurations.keyVerificationState
     ).also(statisticCollector::addCache)
     private val secretKeyRequestCache = FullRepositoryObservableCache(
         repository = secretKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
+        clock = clock,
         expireDuration = config.cacheExpireDurations.secretKeyRequest
     ) { it.content.requestId }.also(statisticCollector::addCache)
     private val roomKeyRequestCache = FullRepositoryObservableCache(
         repository = roomKeyRequestRepository,
         tm = tm,
         cacheScope = storeScope,
+        clock = clock,
         expireDuration = config.cacheExpireDurations.roomKeyRequest
     ) { it.content.requestId }.also(statisticCollector::addCache)
 
@@ -95,17 +104,17 @@ class KeyStore(
         keyVerificationStateCache.deleteAll()
     }
 
-    suspend fun getOutdatedKeys(): Set<UserId> = outdatedKeysCache.read(1).first().orEmpty()
-    fun getOutdatedKeysFlow(): Flow<Set<UserId>> = outdatedKeysCache.read(1).map { it.orEmpty() }
+    suspend fun getOutdatedKeys(): Set<UserId> = outdatedKeysCache.get(1).first().orEmpty()
+    fun getOutdatedKeysFlow(): Flow<Set<UserId>> = outdatedKeysCache.get(1).map { it.orEmpty() }
     suspend fun updateOutdatedKeys(updater: suspend (Set<UserId>) -> Set<UserId>) =
-        outdatedKeysCache.write(1) {
+        outdatedKeysCache.update(1) {
             updater(it.orEmpty())
         }
 
-    suspend fun getSecrets(): Map<SecretType, StoredSecret> = secretsCache.read(1).first().orEmpty()
-    fun getSecretsFlow(): Flow<Map<SecretType, StoredSecret>> = secretsCache.read(1).map { it.orEmpty() }
+    suspend fun getSecrets(): Map<SecretType, StoredSecret> = secretsCache.get(1).first().orEmpty()
+    fun getSecretsFlow(): Flow<Map<SecretType, StoredSecret>> = secretsCache.get(1).map { it.orEmpty() }
     suspend fun updateSecrets(updater: suspend (Map<SecretType, StoredSecret>) -> Map<SecretType, StoredSecret>) =
-        secretsCache.write(1) {
+        secretsCache.update(1) {
             updater(it ?: mapOf())
         }
 
@@ -133,46 +142,46 @@ class KeyStore(
     ): Flow<Map<String, StoredDeviceKeys>?> =
         flow {
             waitForUpdateOutdatedKey(userId, "device keys") {
-                deviceKeysCache.read(userId).first() == null
+                deviceKeysCache.get(userId).first() == null
             }
-            emitAll(deviceKeysCache.read(userId))
+            emitAll(deviceKeysCache.get(userId))
         }
 
     suspend fun updateDeviceKeys(
         userId: UserId,
         updater: suspend (Map<String, StoredDeviceKeys>?) -> Map<String, StoredDeviceKeys>?
-    ) = deviceKeysCache.write(userId, updater = updater)
+    ) = deviceKeysCache.update(userId, updater = updater)
 
     suspend fun saveDeviceKeys(
         userId: UserId,
         deviceKeys: Map<String, StoredDeviceKeys>
-    ) = deviceKeysCache.write(userId, deviceKeys)
+    ) = deviceKeysCache.set(userId, deviceKeys)
 
-    suspend fun deleteDeviceKeys(userId: UserId) = deviceKeysCache.write(userId, null)
+    suspend fun deleteDeviceKeys(userId: UserId) = deviceKeysCache.set(userId, null)
 
     fun getCrossSigningKeys(
         userId: UserId,
     ): Flow<Set<StoredCrossSigningKeys>?> =
         flow {
             waitForUpdateOutdatedKey(userId, "cross singing keys") {
-                crossSigningKeysCache.read(userId).first() == null
+                crossSigningKeysCache.get(userId).first() == null
             }
-            emitAll(crossSigningKeysCache.read(userId))
+            emitAll(crossSigningKeysCache.get(userId))
         }
 
     suspend fun updateCrossSigningKeys(
         userId: UserId,
         updater: suspend (Set<StoredCrossSigningKeys>?) -> Set<StoredCrossSigningKeys>?
-    ) = crossSigningKeysCache.write(userId, updater = updater)
+    ) = crossSigningKeysCache.update(userId, updater = updater)
 
-    suspend fun deleteCrossSigningKeys(userId: UserId) = crossSigningKeysCache.write(userId, null)
+    suspend fun deleteCrossSigningKeys(userId: UserId) = crossSigningKeysCache.set(userId, null)
 
     suspend fun getKeyVerificationState(
         key: Key,
     ): KeyVerificationState? {
         val keyId = key.keyId
         return keyId?.let {
-            keyVerificationStateCache.read(
+            keyVerificationStateCache.get(
                 KeyVerificationStateKey(
                     keyId = it,
                     keyAlgorithm = key.algorithm,
@@ -190,7 +199,7 @@ class KeyStore(
     ) {
         val keyId = key.keyId
         requireNotNull(keyId)
-        keyVerificationStateCache.write(
+        keyVerificationStateCache.set(
             KeyVerificationStateKey(keyId = keyId, keyAlgorithm = key.algorithm), state
         )
     }
@@ -210,21 +219,21 @@ class KeyStore(
     suspend fun getAllSecretKeyRequests() = getAllSecretKeyRequestsFlow().first()
 
     suspend fun addSecretKeyRequest(request: StoredSecretKeyRequest) {
-        secretKeyRequestCache.write(request.content.requestId, request)
+        secretKeyRequestCache.set(request.content.requestId, request)
     }
 
     suspend fun deleteSecretKeyRequest(requestId: String) {
-        secretKeyRequestCache.write(requestId, null)
+        secretKeyRequestCache.set(requestId, null)
     }
 
     fun getAllRoomKeyRequestsFlow() = roomKeyRequestCache.readAll().flattenValues()
     suspend fun getAllRoomKeyRequests() = getAllRoomKeyRequestsFlow().first()
 
     suspend fun addRoomKeyRequest(request: StoredRoomKeyRequest) {
-        roomKeyRequestCache.write(request.content.requestId, request)
+        roomKeyRequestCache.set(request.content.requestId, request)
     }
 
     suspend fun deleteRoomKeyRequest(requestId: String) {
-        roomKeyRequestCache.write(requestId, null)
+        roomKeyRequestCache.set(requestId, null)
     }
 }

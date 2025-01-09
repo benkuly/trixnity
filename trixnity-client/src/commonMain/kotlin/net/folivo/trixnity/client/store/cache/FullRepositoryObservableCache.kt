@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.repository.FullRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
@@ -18,6 +19,10 @@ private class FullRepositoryObservableCacheIndex<K>(
         allKeys.add(key)
     }
 
+    override suspend fun onSkipPut(key: K) {
+        fullyLoadedFromRepository.value = false
+    }
+
     override suspend fun onRemove(key: K, stale: Boolean) {
         fullyLoadedFromRepository.value = stale
         allKeys.remove(key)
@@ -27,16 +32,17 @@ private class FullRepositoryObservableCacheIndex<K>(
         allKeys.removeAll()
     }
 
-    override suspend fun getSubscriptionCount(key: K): Flow<Int> = subscribers
+    override suspend fun getSubscriptionCount(key: K): Int = subscribers.value
 
     fun getAllKeys(): Flow<Set<K>> = flow {
         if (!fullyLoadedFromRepository.value) {
             loadFromStore()
             fullyLoadedFromRepository.value = true
         }
-        emitAll(allKeys.values
-            .onStart { subscribers.update { it + 1 } }
-            .onCompletion { subscribers.update { it - 1 } }
+        emitAll(
+            allKeys.values
+                .onStart { subscribers.update { it + 1 } }
+                .onCompletion { subscribers.update { it - 1 } }
         )
     }
 
@@ -48,10 +54,11 @@ private class FullRepositoryObservableCacheIndex<K>(
         )
 }
 
-internal open class FullRepositoryObservableCache<K, V>(
+internal open class FullRepositoryObservableCache<K : Any, V>(
     repository: FullRepository<K, V>,
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
+    clock: Clock,
     expireDuration: Duration = 1.minutes,
     values: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>> = ConcurrentObservableMap(),
     private val valueToKeyMapper: (V) -> K,
@@ -59,6 +66,7 @@ internal open class FullRepositoryObservableCache<K, V>(
     name = repository::class.simpleName ?: repository::class.toString(),
     store = FullRepositoryObservableCacheStore(repository, tm),
     cacheScope = cacheScope,
+    clock = clock,
     expireDuration = expireDuration,
     removeFromCacheOnNull = true,
     values = values,
@@ -67,9 +75,10 @@ internal open class FullRepositoryObservableCache<K, V>(
     private val subscribersIndex = FullRepositoryObservableCacheIndex<K> {
         store.getAll().forEach { value ->
             val key = valueToKeyMapper(value)
-            updateAndGet(
+            set(
                 key = key,
-                get = { value },
+                value = value,
+                persistEnabled = false,
             )
         }
     }
@@ -80,6 +89,6 @@ internal open class FullRepositoryObservableCache<K, V>(
 
     fun readAll(): Flow<Map<K, Flow<V?>>> =
         subscribersIndex.getAllKeys().map { keys ->
-            keys.associateWith { read(it) }
+            keys.associateWith { get(it) }
         }
 }

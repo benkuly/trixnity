@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
@@ -20,11 +21,13 @@ class RoomTimelineStore(
     config: MatrixClientConfiguration,
     statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope,
+    clock: Clock,
 ) : Store {
     private val timelineEventCache = MinimalDeleteByRoomIdRepositoryObservableCache(
         timelineEventRepository,
         tm,
         storeScope,
+        clock,
         config.cacheExpireDurations.timelineEvent
     ) { it.roomId }.also(statisticCollector::addCache)
     private val timelineEventRelationCache =
@@ -32,6 +35,7 @@ class RoomTimelineStore(
             timelineEventRelationRepository,
             tm,
             storeScope,
+            clock,
             config.cacheExpireDurations.timelineEventRelation
         ) { it.firstKey.roomId }.also(statisticCollector::addCache)
 
@@ -48,14 +52,14 @@ class RoomTimelineStore(
     }
 
     fun get(eventId: EventId, roomId: RoomId): Flow<TimelineEvent?> =
-        timelineEventCache.read(TimelineEventKey(eventId, roomId))
+        timelineEventCache.get(TimelineEventKey(eventId, roomId))
 
     suspend fun update(
         eventId: EventId,
         roomId: RoomId,
         persistIntoRepository: Boolean = true,
         updater: suspend (oldTimelineEvent: TimelineEvent?) -> TimelineEvent?
-    ) = timelineEventCache.write(
+    ) = timelineEventCache.update(
         TimelineEventKey(eventId, roomId),
         persistIntoRepository,
         updater = updater
@@ -63,7 +67,7 @@ class RoomTimelineStore(
 
     suspend fun addAll(events: List<TimelineEvent>) {
         events.forEach { event ->
-            timelineEventCache.write(TimelineEventKey(event.eventId, event.roomId), event)
+            timelineEventCache.set(TimelineEventKey(event.eventId, event.roomId), event)
         }
     }
 
@@ -77,7 +81,7 @@ class RoomTimelineStore(
         )
 
     suspend fun addRelation(relation: TimelineEventRelation) {
-        timelineEventRelationCache.write(
+        timelineEventRelationCache.update(
             MapRepositoryCoroutinesCacheKey(
                 TimelineEventRelationKey(relation.relatedEventId, relation.roomId, relation.relationType),
                 relation.eventId
@@ -88,7 +92,7 @@ class RoomTimelineStore(
     }
 
     suspend fun deleteRelation(relation: TimelineEventRelation) {
-        timelineEventRelationCache.write(
+        timelineEventRelationCache.update(
             MapRepositoryCoroutinesCacheKey(
                 TimelineEventRelationKey(relation.relatedEventId, relation.roomId, relation.relationType),
                 relation.eventId

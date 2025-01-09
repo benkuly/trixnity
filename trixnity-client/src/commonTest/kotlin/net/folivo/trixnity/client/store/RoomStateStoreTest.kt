@@ -5,9 +5,12 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.JsonObject
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
@@ -27,6 +30,8 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 class RoomStateStoreTest : ShouldSpec({
     timeout = 60_000
@@ -43,7 +48,8 @@ class RoomStateStoreTest : ShouldSpec({
             DefaultEventContentSerializerMappings,
             MatrixClientConfiguration(),
             ObservableCacheStatisticCollector(),
-            storeScope
+            storeScope,
+            Clock.System,
         )
     }
     afterTest {
@@ -138,9 +144,10 @@ class RoomStateStoreTest : ShouldSpec({
                     event1
                 )
                 val scope = CoroutineScope(Dispatchers.Default)
-                val result = cut.get<MemberEventContent>(roomId).flatten()
-                    .shareIn(scope, SharingStarted.Eagerly, 3)
-                result.first { it.size == 1 }
+                val result = cut.get<MemberEventContent>(roomId).flatten(throttle = Duration.ZERO).stateIn(scope)
+                result.value shouldBe mapOf(
+                    "@user:server" to event1,
+                )
                 cut.save(
                     StateEvent(
                         UnknownEventContent(JsonObject(mapOf()), "m.room.member"),
@@ -151,12 +158,11 @@ class RoomStateStoreTest : ShouldSpec({
                         stateKey = "@bob:server"
                     )
                 )
-                result.first { it.size == 2 }
-                result.replayCache shouldBe listOf(
-                    mapOf("@user:server" to event1),
-                    mapOf("@user:server" to event1, "@bob:server" to null)
+                delay(100.milliseconds)
+                result.value shouldBe mapOf(
+                    "@user:server" to event1,
+                    "@bob:server" to null
                 )
-                scope.cancel()
             }
         }
     }

@@ -24,12 +24,12 @@ data class ObservableCacheIndexStatistic(
 )
 
 class ObservableCacheStatisticCollector : EventHandler {
-    private val caches = mutableListOf<ObservableCacheBase<*, *>>()
+    private val caches = mutableListOf<ObservableCache<*, *, *>>()
 
-    internal fun addCache(cache: ObservableCacheBase<*, *>) = caches.add(cache)
+    internal fun addCache(cache: ObservableCache<*, *, *>) = caches.add(cache)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        if (log.isDebugEnabled())
+        if (log.isTraceEnabled())
             scope.launch {
                 while (isActive) {
                     delay(10.seconds)
@@ -38,7 +38,7 @@ class ObservableCacheStatisticCollector : EventHandler {
                     val midUsageStatistics = statistics.filter { it.all in 100..999 }
                     val highUsageStatistics = statistics.filter { it.all in 1_000..9_999 }
                     val extremeUsageStatistics = statistics.filter { it.all >= 10_000 }
-                    log.debug {
+                    log.trace {
                         """
                             cache statistic:
                                 Low usage (< 100): ${lowUsageStatistics.map { it.name }}

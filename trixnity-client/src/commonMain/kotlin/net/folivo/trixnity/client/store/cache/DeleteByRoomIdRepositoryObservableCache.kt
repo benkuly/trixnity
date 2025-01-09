@@ -2,10 +2,9 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.repository.DeleteByRoomIdFullRepository
 import net.folivo.trixnity.client.store.repository.DeleteByRoomIdMapRepository
 import net.folivo.trixnity.client.store.repository.DeleteByRoomIdMinimalRepository
@@ -26,6 +25,8 @@ private class DeleteByRoomIdRepositoryObservableCacheIndex<K>(
             .add(key)
     }
 
+    override suspend fun onSkipPut(key: K) {}
+
     override suspend fun onRemove(key: K, stale: Boolean) {
         val roomId = keyMapper(key)
         values.update(roomId) { mapping ->
@@ -39,8 +40,7 @@ private class DeleteByRoomIdRepositoryObservableCacheIndex<K>(
         values.removeAll()
     }
 
-    private val zeroStateFlow = MutableStateFlow(0)
-    override suspend fun getSubscriptionCount(key: K): StateFlow<Int> = zeroStateFlow
+    override suspend fun getSubscriptionCount(key: K): Int = 0
 
     suspend fun getMapping(roomId: RoomId): Set<K> =
         values.getOrPut(roomId) { ConcurrentObservableSet() }
@@ -49,16 +49,18 @@ private class DeleteByRoomIdRepositoryObservableCacheIndex<K>(
     override suspend fun collectStatistic(): ObservableCacheIndexStatistic? = null
 }
 
-internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
+internal class MinimalDeleteByRoomIdRepositoryObservableCache<K : Any, V>(
     private val repository: DeleteByRoomIdMinimalRepository<K, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
+    clock: Clock,
     expireDuration: Duration = 1.minutes,
     roomIdMapper: (K) -> RoomId,
 ) : MinimalRepositoryObservableCache<K, V>(
     repository = repository,
     tm = tm,
     cacheScope = cacheScope,
+    clock = clock,
     expireDuration = expireDuration,
 ) {
 
@@ -76,9 +78,10 @@ internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
             }
             launch {
                 roomIdIndex.getMapping(roomId).forEach {
-                    updateAndGet(
+                    set(
                         key = it,
-                        updater = { null },
+                        value = null,
+                        persistEnabled = false,
                     )
                 }
             }
@@ -86,10 +89,11 @@ internal class MinimalDeleteByRoomIdRepositoryObservableCache<K, V>(
     }
 }
 
-internal class FullDeleteByRoomIdRepositoryObservableCache<K, V>(
+internal class FullDeleteByRoomIdRepositoryObservableCache<K : Any, V>(
     private val repository: DeleteByRoomIdFullRepository<K, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
+    clock: Clock,
     expireDuration: Duration = 1.minutes,
     valueToKeyMapper: (V) -> K,
     roomIdMapper: (K) -> RoomId,
@@ -98,6 +102,7 @@ internal class FullDeleteByRoomIdRepositoryObservableCache<K, V>(
     tm = tm,
     cacheScope = cacheScope,
     expireDuration = expireDuration,
+    clock = clock,
     valueToKeyMapper = valueToKeyMapper
 ) {
 
@@ -115,9 +120,10 @@ internal class FullDeleteByRoomIdRepositoryObservableCache<K, V>(
             }
             launch {
                 roomIdIndex.getMapping(roomId).forEach {
-                    updateAndGet(
+                    set(
                         key = it,
-                        updater = { null },
+                        value = null,
+                        persistEnabled = false,
                     )
                 }
             }
@@ -129,12 +135,14 @@ internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
     private val repository: DeleteByRoomIdMapRepository<K1, K2, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,
+    clock: Clock,
     expireDuration: Duration = 1.minutes,
     roomIdMapper: (MapRepositoryCoroutinesCacheKey<K1, K2>) -> RoomId,
 ) : MapRepositoryObservableCache<K1, K2, V>(
     repository = repository,
     tm = tm,
     cacheScope = cacheScope,
+    clock = clock,
     expireDuration = expireDuration,
 ) {
     private val roomIdIndex: DeleteByRoomIdRepositoryObservableCacheIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> =
@@ -151,9 +159,10 @@ internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
             }
             launch {
                 roomIdIndex.getMapping(roomId).forEach {
-                    updateAndGet(
+                    set(
                         key = it,
-                        updater = { null },
+                        value = null,
+                        persistEnabled = false,
                     )
                 }
             }
