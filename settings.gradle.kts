@@ -30,7 +30,6 @@ include(
     "trixnity-client:client-repository-test",
     "trixnity-client:trixnity-client-repository-exposed",
     "trixnity-client:trixnity-client-repository-indexeddb",
-    "trixnity-client:trixnity-client-repository-realm",
     "trixnity-client:trixnity-client-repository-room",
 )
 include("trixnity-applicationservice")

@@ -42,7 +42,7 @@ internal class RoomAccountRepository(
 
     private val dao = db.account()
 
-    override suspend fun get(key: Long): Account? =
+    override suspend fun get(key: Long): Account? = withRoomRead {
         dao.get(key)?.let { entity ->
             Account(
                 olmPickleKey = entity.olmPickleKey ?: throw IllegalStateException("olmPickleKey not found"),
@@ -58,8 +58,9 @@ internal class RoomAccountRepository(
                 isLocked = entity.isLocked,
             )
         }
+    }
 
-    override suspend fun save(key: Long, value: Account) {
+    override suspend fun save(key: Long, value: Account) = withRoomWrite {
         dao.insert(
             RoomAccount(
                 id = key,
@@ -78,11 +79,11 @@ internal class RoomAccountRepository(
         )
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

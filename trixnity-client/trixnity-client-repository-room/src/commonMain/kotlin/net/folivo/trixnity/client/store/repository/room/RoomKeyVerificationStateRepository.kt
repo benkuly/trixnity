@@ -1,11 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.KeyVerificationState
@@ -44,11 +39,12 @@ internal class RoomKeyVerificationStateRepository(
 ) : KeyVerificationStateRepository {
     private val dao = db.keyVerificationState()
 
-    override suspend fun get(key: KeyVerificationStateKey): KeyVerificationState? =
+    override suspend fun get(key: KeyVerificationStateKey): KeyVerificationState? = withRoomRead {
         dao.get(key.keyId, key.keyAlgorithm)
             ?.let { json.decodeFromString(it.verificationState) }
+    }
 
-    override suspend fun save(key: KeyVerificationStateKey, value: KeyVerificationState) {
+    override suspend fun save(key: KeyVerificationStateKey, value: KeyVerificationState) = withRoomWrite {
         dao.insert(
             RoomKeyVerificationState(
                 keyId = key.keyId,
@@ -58,11 +54,11 @@ internal class RoomKeyVerificationStateRepository(
         )
     }
 
-    override suspend fun delete(key: KeyVerificationStateKey) {
+    override suspend fun delete(key: KeyVerificationStateKey) = withRoomWrite {
         dao.delete(key.keyId, key.keyAlgorithm)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

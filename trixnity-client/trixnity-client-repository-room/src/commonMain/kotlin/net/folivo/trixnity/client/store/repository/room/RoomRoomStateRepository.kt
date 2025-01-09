@@ -59,7 +59,7 @@ internal class RoomRoomStateRepository(
         ?: error("could not find event serializer")
 
     private val dao = db.roomState()
-    override suspend fun get(firstKey: RoomStateRepositoryKey): Map<String, StateBaseEvent<*>> =
+    override suspend fun get(firstKey: RoomStateRepositoryKey): Map<String, StateBaseEvent<*>> = withRoomRead {
         dao.get(firstKey.roomId, firstKey.type)
             .associate { entity ->
                 entity.stateKey to json.decodeFromString(
@@ -67,24 +67,28 @@ internal class RoomRoomStateRepository(
                     entity.event
                 )
             }
+    }
 
 
     override suspend fun get(
         firstKey: RoomStateRepositoryKey,
         secondKey: String
-    ): StateBaseEvent<*>? =
+    ): StateBaseEvent<*>? = withRoomRead {
         dao.get(firstKey.roomId, firstKey.type, stateKey = secondKey)
             ?.let { entity -> json.decodeFromString(serializer, entity.event) }
+    }
 
     override suspend fun getByRooms(roomIds: Set<RoomId>, type: String, stateKey: String): List<StateBaseEvent<*>> =
-        dao.get(roomIds, type, stateKey).map { json.decodeFromString(serializer, it.event) }
+        withRoomRead {
+            dao.get(roomIds, type, stateKey).map { json.decodeFromString(serializer, it.event) }
+        }
 
 
     override suspend fun save(
         firstKey: RoomStateRepositoryKey,
         secondKey: String,
         value: StateBaseEvent<*>
-    ) {
+    ) = withRoomWrite {
         dao.insert(
             RoomRoomState(
                 roomId = firstKey.roomId,
@@ -95,15 +99,15 @@ internal class RoomRoomStateRepository(
         )
     }
 
-    override suspend fun delete(firstKey: RoomStateRepositoryKey, secondKey: String) {
+    override suspend fun delete(firstKey: RoomStateRepositoryKey, secondKey: String) = withRoomWrite {
         dao.delete(firstKey.roomId, firstKey.type, secondKey)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 
-    override suspend fun deleteByRoomId(roomId: RoomId) {
+    override suspend fun deleteByRoomId(roomId: RoomId) = withRoomWrite {
         dao.delete(roomId)
     }
 }

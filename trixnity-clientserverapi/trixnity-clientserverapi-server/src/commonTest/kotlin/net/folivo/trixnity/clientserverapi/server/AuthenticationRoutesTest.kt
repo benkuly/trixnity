@@ -11,7 +11,6 @@ import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
-import io.ktor.utils.io.charsets.Charsets.UTF_8
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.clientserverapi.model.authentication.ThirdPartyIdentifier.Medium
@@ -70,7 +69,7 @@ class AuthenticationRoutesTest {
         val response = client.get("/_matrix/client/v1/register/m.login.registration_token/validity?token=token")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                     {
                           "valid": true
@@ -91,7 +90,7 @@ class AuthenticationRoutesTest {
         val response = client.get("/_matrix/client/v3/register/available?username=user")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                     {
                           "available": true
@@ -130,7 +129,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                 {
                   "sid": "123abc",
@@ -178,7 +177,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                 {
                   "sid": "123abc",
@@ -227,7 +226,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                 {
                   "sid": "123abc",
@@ -277,7 +276,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                 {
                   "sid": "123abc",
@@ -321,7 +320,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"user_id":"@user:server"}"""
         }
 
@@ -362,7 +361,7 @@ class AuthenticationRoutesTest {
         val response = client.get("/_matrix/client/v3/login")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                 {
                   "flows":[
@@ -423,7 +422,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                 {
                   "user_id":"@cheeky_monkey:matrix.org",
@@ -461,7 +460,7 @@ class AuthenticationRoutesTest {
         val response = client.post("/_matrix/client/v3/logout") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
 
@@ -478,7 +477,7 @@ class AuthenticationRoutesTest {
         val response = client.post("/_matrix/client/v3/logout/all") { bearerAuth("token") }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
 
@@ -499,7 +498,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
 
@@ -522,7 +521,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{}"""
         }
 
@@ -591,7 +590,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
 
@@ -623,7 +622,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe "{}"
         }
 
@@ -659,7 +658,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
 
@@ -694,7 +693,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"id_server_unbind_result":"success"}"""
         }
 
@@ -765,7 +764,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                 {
                   "access_token":"a_new_token",
@@ -803,7 +802,7 @@ class AuthenticationRoutesTest {
         }
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """{"login_token":"<opaque string>","expires_in_ms":120000}"""
         }
 

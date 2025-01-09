@@ -1,12 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.Room
@@ -43,15 +37,17 @@ internal class RoomRoomRepository(
 ) : RoomRepository {
     private val dao = db.room()
 
-    override suspend fun get(key: RoomId): Room? =
+    override suspend fun get(key: RoomId): Room? = withRoomRead {
         dao.get(key)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun getAll(): List<Room> =
+    override suspend fun getAll(): List<Room> = withRoomRead {
         dao.getAll()
             .map { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun save(key: RoomId, value: Room) {
+    override suspend fun save(key: RoomId, value: Room) = withRoomWrite {
         dao.insert(
             RoomRoom(
                 roomId = key,
@@ -60,11 +56,11 @@ internal class RoomRoomRepository(
         )
     }
 
-    override suspend fun delete(key: RoomId) {
+    override suspend fun delete(key: RoomId) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

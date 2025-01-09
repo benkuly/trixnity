@@ -48,15 +48,17 @@ internal class RoomRoomUserRepository(
 ) : RoomUserRepository {
     private val dao = db.roomUser()
 
-    override suspend fun get(firstKey: RoomId): Map<UserId, RoomUser> =
+    override suspend fun get(firstKey: RoomId): Map<UserId, RoomUser> = withRoomRead {
         dao.get(firstKey)
             .associate { entity -> entity.userId to json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun get(firstKey: RoomId, secondKey: UserId): RoomUser? =
+    override suspend fun get(firstKey: RoomId, secondKey: UserId): RoomUser? = withRoomRead {
         dao.get(secondKey, firstKey)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun save(firstKey: RoomId, secondKey: UserId, value: RoomUser) {
+    override suspend fun save(firstKey: RoomId, secondKey: UserId, value: RoomUser) = withRoomWrite {
         dao.insert(
             RoomRoomUser(
                 userId = secondKey,
@@ -66,15 +68,15 @@ internal class RoomRoomUserRepository(
         )
     }
 
-    override suspend fun deleteByRoomId(key: RoomId) {
+    override suspend fun deleteByRoomId(key: RoomId) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun delete(firstKey: RoomId, secondKey: UserId) {
+    override suspend fun delete(firstKey: RoomId, secondKey: UserId) = withRoomWrite {
         dao.delete(firstKey, secondKey)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

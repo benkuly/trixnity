@@ -1,10 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepository
 import net.folivo.trixnity.client.store.repository.InboundMegolmMessageIndexRepositoryKey
 import net.folivo.trixnity.core.model.EventId
@@ -67,21 +63,23 @@ internal class RoomInboundMegolmMessageIndexRepository(
     private val dao = db.inboundMegolmMessageIndex()
 
     override suspend fun get(key: InboundMegolmMessageIndexRepositoryKey): StoredInboundMegolmMessageIndex? =
-        dao.get(key.sessionId, key.roomId, key.messageIndex)
-            ?.let { entity ->
-                StoredInboundMegolmMessageIndex(
-                    sessionId = entity.sessionId,
-                    roomId = entity.roomId,
-                    messageIndex = entity.messageIndex,
-                    eventId = entity.eventId,
-                    originTimestamp = entity.originTimestamp,
-                )
-            }
+        withRoomRead {
+            dao.get(key.sessionId, key.roomId, key.messageIndex)
+                ?.let { entity ->
+                    StoredInboundMegolmMessageIndex(
+                        sessionId = entity.sessionId,
+                        roomId = entity.roomId,
+                        messageIndex = entity.messageIndex,
+                        eventId = entity.eventId,
+                        originTimestamp = entity.originTimestamp,
+                    )
+                }
+        }
 
     override suspend fun save(
         key: InboundMegolmMessageIndexRepositoryKey,
         value: StoredInboundMegolmMessageIndex
-    ) {
+    ) = withRoomWrite {
         dao.insert(
             RoomInboundMegolmMessageIndex(
                 sessionId = key.sessionId,
@@ -93,11 +91,11 @@ internal class RoomInboundMegolmMessageIndexRepository(
         )
     }
 
-    override suspend fun delete(key: InboundMegolmMessageIndexRepositoryKey) {
+    override suspend fun delete(key: InboundMegolmMessageIndexRepositoryKey) = withRoomWrite {
         dao.delete(key.sessionId, key.roomId, key.messageIndex)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

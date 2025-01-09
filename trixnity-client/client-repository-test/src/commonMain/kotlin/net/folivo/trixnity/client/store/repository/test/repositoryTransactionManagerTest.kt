@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.store.repository.test
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,11 +13,10 @@ import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.UserId
 import org.koin.core.Koin
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 
 fun ShouldSpec.repositoryTransactionManagerTest(
-    disabledRollbackTest: Boolean,
-    disabledSimultaneousReadWriteTests: Boolean,
     customRepositoryTransactionManager: suspend () -> RepositoryTransactionManager?,
     diReceiver: () -> Koin
 ) {
@@ -44,6 +42,10 @@ fun ShouldSpec.repositoryTransactionManagerTest(
             rtm.writeTransaction {
                 testWrite(1)
                 testRead(1)
+                rtm.writeTransaction {
+                    testWrite(2)
+                    testRead(2)
+                }
             }
         }
     }
@@ -52,7 +54,7 @@ fun ShouldSpec.repositoryTransactionManagerTest(
         val callCount = MutableStateFlow(0)
         repeat(calls) { i ->
             launch {
-                callCount.value++
+                callCount.update { it + 1 }
                 callCount.first { it == calls }
                 rtm.writeTransaction {
                     testWrite(i)
@@ -61,15 +63,14 @@ fun ShouldSpec.repositoryTransactionManagerTest(
         }
     }
 
-    val simultaneousWriteTestName = "rrepositoryTransactionManagerTest: write allows simultaneous writes"
-    suspend fun simultaneousWriteTest() {
+    should("repositoryTransactionManagerTest: write allows simultaneous writes") {
         val calls = 10
         val callCount = MutableStateFlow(0)
         rtm.writeTransaction {
             coroutineScope {
                 repeat(calls) { i ->
                     launch {
-                        callCount.value++
+                        callCount.update { it + 1 }
                         callCount.first { it == calls }
                         testWrite(i)
                     }
@@ -77,18 +78,15 @@ fun ShouldSpec.repositoryTransactionManagerTest(
             }
         }
     }
-    if (disabledSimultaneousReadWriteTests) xshould(simultaneousWriteTestName) { simultaneousWriteTest() }
-    else should(simultaneousWriteTestName) { simultaneousWriteTest() }
 
-    val simultaneousReadTestName = "rrepositoryTransactionManagerTest: write allows simultaneous reads"
-    suspend fun simultaneousReadTest() {
+    should("repositoryTransactionManagerTest: write allows simultaneous reads") {
         val calls = 10
         val callCount = MutableStateFlow(0)
         rtm.writeTransaction {
             coroutineScope {
                 repeat(calls) { i ->
                     launch {
-                        callCount.value++
+                        callCount.update { it + 1 }
                         callCount.first { it == calls }
                         testRead(i)
                     }
@@ -96,14 +94,54 @@ fun ShouldSpec.repositoryTransactionManagerTest(
             }
         }
     }
-    if (disabledSimultaneousReadWriteTests) xshould(simultaneousReadTestName) { simultaneousReadTest() }
-    else should(simultaneousReadTestName) { simultaneousReadTest() }
 
     should("repositoryTransactionManagerTest: read does not lock") {
         rtm.readTransaction {
             testRead(0)
             rtm.readTransaction {
                 testRead(0)
+                rtm.readTransaction {
+                    testRead(0)
+                }
+            }
+        }
+    }
+
+    should("repositoryTransactionManagerTest: allow read in write transaction") {
+        rtm.writeTransaction {
+            testRead(0)
+        }
+    }
+
+    should("repositoryTransactionManagerTest: allow read in parallel to write transaction") {
+        val startWrite = MutableStateFlow(false)
+        val finishedRead = MutableStateFlow(false)
+        launch {
+            rtm.writeTransaction {
+                startWrite.value = true
+                finishedRead.first { it }
+                testWrite(0)
+            }
+        }
+        startWrite.first { it }
+        rtm.readTransaction {
+            testRead(0)
+        }
+        finishedRead.value = true
+    }
+
+    should("repositoryTransactionManagerTest: read allows simultaneous reads") {
+        val calls = 10
+        val callCount = MutableStateFlow(0)
+        rtm.readTransaction {
+            coroutineScope {
+                repeat(calls) { i ->
+                    launch {
+                        callCount.update { it + 1 }
+                        callCount.first { it == calls }
+                        testRead(i)
+                    }
+                }
             }
         }
     }
@@ -153,23 +191,20 @@ fun ShouldSpec.repositoryTransactionManagerTest(
         }
     }
 
-    val rollbackTestName = "repositoryTransactionManagerTest: rollback on exception"
-    suspend fun rollbackTest() {
+    should("repositoryTransactionManagerTest: rollback on exception") {
         val thrownException = CancellationException("dino")
-        var catchedException: Exception? = null
+        var caughtException: Exception? = null
         try {
             rtm.writeTransaction {
                 testWrite(0)
                 throw thrownException
             }
         } catch (e: Exception) {
-            catchedException = e
+            caughtException = e
         }
-        catchedException shouldBe thrownException
+        caughtException shouldBe thrownException
         rtm.readTransaction {
             testRead(0)
         } shouldBe null
     }
-    if (disabledRollbackTest) xshould(rollbackTestName) { rollbackTest() }
-    else should(rollbackTestName) { rollbackTest() }
 }

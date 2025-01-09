@@ -367,7 +367,6 @@ class MatrixClientTest : ShouldSpec({
                                 }
 
                                 else -> {
-                                    println(path)
                                     respond("", HttpStatusCode.BadRequest)
                                 }
                             }

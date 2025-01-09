@@ -1,11 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.repository.OlmForgetFallbackKeyAfterRepository
 
@@ -35,10 +30,11 @@ internal class RoomOlmForgetFallbackKeyAfterRepository(
 ) : OlmForgetFallbackKeyAfterRepository {
     private val dao = db.olmForgetFallbackKeyAfter()
 
-    override suspend fun get(key: Long): Instant? =
+    override suspend fun get(key: Long): Instant? = withRoomRead {
         dao.get(key)?.instant
+    }
 
-    override suspend fun save(key: Long, value: Instant) {
+    override suspend fun save(key: Long, value: Instant) = withRoomWrite {
         dao.insert(
             RoomOlmForgetFallbackKeyAfter(
                 id = key,
@@ -47,11 +43,11 @@ internal class RoomOlmForgetFallbackKeyAfterRepository(
         )
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

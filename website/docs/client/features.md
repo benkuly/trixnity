@@ -9,16 +9,13 @@ sidebar_position: 12
     - [trixnity-client-repository-exposed](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-repository-exposed)
       implements a database for trixnity-client with [Exposed](https://github.com/JetBrains/Exposed).
       This supports JVM based platforms only.
-    - [trixnity-client-repository-realm](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-repository-realm)
-      implements a database for trixnity-client with [realm](https://github.com/realm/realm-kotlin).
-      This supports JVM/Android/Native.
     - [trixnity-client-repository-indexeddb](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-repository-indexeddb)
       implements a database for trixnity-client with [indexeddb](https://github.com/JuulLabs/indexeddb).
       This supports JS (browser).
     - [trixnity-client-repository-room](https://gitlab.com/trixnity/trixnity/-/tree/main/trixnity-client/trixnity-client-repository-room)
       implements a database for trixnity-client
       with [room](https://developer.android.com/jetpack/androidx/releases/room).
-      This supports JVM/Android (Native comes soon).
+      This supports JVM/Android and iOS.
 - [x] extremely fast reactive cache on top of the database
 - [x] exchangeable media store
     - in memory (e. g. for tests)

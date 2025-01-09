@@ -47,11 +47,12 @@ internal class RoomTimelineEventRepository(
         dao.delete(roomId)
     }
 
-    override suspend fun get(key: TimelineEventKey): TimelineEvent? =
+    override suspend fun get(key: TimelineEventKey): TimelineEvent? = withRoomRead {
         dao.get(key.roomId, key.eventId)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun save(key: TimelineEventKey, value: TimelineEvent) {
+    override suspend fun save(key: TimelineEventKey, value: TimelineEvent) = withRoomWrite {
         dao.insert(
             RoomTimelineEvent(
                 roomId = key.roomId,
@@ -61,11 +62,11 @@ internal class RoomTimelineEventRepository(
         )
     }
 
-    override suspend fun delete(key: TimelineEventKey) {
+    override suspend fun delete(key: TimelineEventKey) = withRoomWrite {
         dao.delete(key.roomId, key.eventId)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

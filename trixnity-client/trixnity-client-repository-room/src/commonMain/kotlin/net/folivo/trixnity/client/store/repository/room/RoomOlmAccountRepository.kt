@@ -1,11 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
+import androidx.room.*
 import net.folivo.trixnity.client.store.repository.OlmAccountRepository
 
 @Entity(tableName = "OlmAccount")
@@ -34,10 +29,11 @@ internal class RoomOlmAccountRepository(
 ) : OlmAccountRepository {
     private val dao = db.olmAccount()
 
-    override suspend fun get(key: Long): String? =
+    override suspend fun get(key: Long): String? = withRoomRead {
         dao.get(key)?.pickled
+    }
 
-    override suspend fun save(key: Long, value: String) {
+    override suspend fun save(key: Long, value: String) = withRoomWrite {
         dao.insert(
             RoomOlmAccount(
                 id = key,
@@ -46,11 +42,11 @@ internal class RoomOlmAccountRepository(
         )
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long) = withRoomWrite {
         dao.delete(id = key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }
