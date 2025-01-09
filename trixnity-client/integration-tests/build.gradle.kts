@@ -42,6 +42,7 @@ kotlin {
                 implementation(libs.postgresql)
                 implementation(libs.hikari)
                 implementation(libs.logback.classic)
+                implementation(libs.openjdk.jol)
             }
         }
     }

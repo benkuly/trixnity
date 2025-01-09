@@ -35,7 +35,8 @@ class RoomOutboxMessageStoreTest : ShouldSpec({
                 cacheExpireDurations = MatrixClientConfiguration.CacheExpireDurations.default(50.milliseconds)
             },
             ObservableCacheStatisticCollector(),
-            storeScope
+            storeScope,
+            Clock.System,
         )
     }
     afterTest {

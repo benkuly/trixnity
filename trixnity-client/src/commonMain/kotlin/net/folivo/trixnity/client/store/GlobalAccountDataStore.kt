@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapRepositoryCoroutinesCacheKey
 import net.folivo.trixnity.client.store.cache.MapRepositoryObservableCache
@@ -24,12 +25,14 @@ class GlobalAccountDataStore(
     config: MatrixClientConfiguration,
     statisticCollector: ObservableCacheStatisticCollector,
     storeScope: CoroutineScope,
+    clock: Clock,
 ) : Store {
     private val globalAccountDataCache =
         MapRepositoryObservableCache(
             globalAccountDataRepository,
             tm,
             storeScope,
+            clock,
             config.cacheExpireDurations.globalAccountDate
         ).also(statisticCollector::addCache)
 
@@ -45,7 +48,7 @@ class GlobalAccountDataStore(
             else -> contentMappings.globalAccountData.find { it.kClass.isInstance(event.content) }?.type
         }
             ?: throw IllegalArgumentException("Cannot save account data event $event, because it is not supported. You need to register it first.")
-        globalAccountDataCache.write(MapRepositoryCoroutinesCacheKey(eventType, event.key), event)
+        globalAccountDataCache.set(MapRepositoryCoroutinesCacheKey(eventType, event.key), event)
     }
 
     fun <C : GlobalAccountDataEventContent> get(
@@ -54,7 +57,7 @@ class GlobalAccountDataStore(
     ): Flow<GlobalAccountDataEvent<C>?> {
         val eventType = contentMappings.globalAccountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot find account data event $eventContentClass, because it is not supported. You need to register it first.")
-        return globalAccountDataCache.read(MapRepositoryCoroutinesCacheKey(eventType, key))
+        return globalAccountDataCache.get(MapRepositoryCoroutinesCacheKey(eventType, key))
             .map { if (it?.content?.instanceOf(eventContentClass) == true) it else null }
             .filterIsInstance()
     }
