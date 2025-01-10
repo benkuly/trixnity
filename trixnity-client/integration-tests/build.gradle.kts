@@ -23,7 +23,8 @@ kotlin {
             dependencies {
                 implementation(projects.trixnityClient)
                 implementation(projects.trixnityClient.trixnityClientRepositoryExposed)
-                implementation(projects.trixnityClient.trixnityClientRepositoryRealm)
+                implementation(projects.trixnityClient.trixnityClientRepositoryRoom)
+                implementation(libs.androidx.sqlite.bundled)
                 implementation(kotlin("test"))
                 implementation(libs.kotest.common)
                 implementation(libs.kotest.assertions.core)
@@ -41,6 +42,7 @@ kotlin {
                 implementation(libs.postgresql)
                 implementation(libs.hikari)
                 implementation(libs.logback.classic)
+                implementation(libs.openjdk.jol)
             }
         }
     }

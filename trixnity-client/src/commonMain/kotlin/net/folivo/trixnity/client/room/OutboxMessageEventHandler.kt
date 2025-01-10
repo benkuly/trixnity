@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.plugins.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
@@ -29,10 +28,12 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribeOnCompletion
+import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
 
 private val log = KotlinLogging.logger {}
 
@@ -44,6 +45,7 @@ class OutboxMessageEventHandler(
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val outboxMessageMediaUploaderMappings: OutboxMessageMediaUploaderMappings,
     private val currentSyncState: CurrentSyncState,
+    private val userInfo: UserInfo,
     private val tm: TransactionManager,
     private val clock: Clock,
 ) : EventHandler {
@@ -224,19 +226,26 @@ class OutboxMessageEventHandler(
         roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
             it?.copy(sentAt = clock.now(), eventId = eventId)
         }
-        if (config.setOwnMessagesAsFullyRead) {
-            try {
-                api.room.setReadMarkers(roomId, eventId, eventId).getOrThrow()
-            } catch (exception: ResponseException) {
-                if (exception.response.status == HttpStatusCode.TooManyRequests) throw exception
-                log.warn(exception) { "could not set read marker for sent message $eventId in $roomId" }
+        if (config.markOwnMessageAsRead) {
+            coroutineScope {
+                launch {
+                    api.room.setReadMarkers(roomId, eventId, eventId)
+                        .onFailure { exception ->
+                            log.warn(exception) { "could not set read marker for sent message $eventId in $roomId" }
+                        }
+                }
+                launch {
+                    api.room.setAccountData(MarkedUnreadEventContent(false), roomId, userInfo.userId)
+                        .onFailure { exception ->
+                            log.warn(exception) { "could not reset unread for sent message $eventId in $roomId" }
+                        }
+                }
             }
         }
         log.trace {
             "finished send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})"
         }
     }
-
 }
 
 

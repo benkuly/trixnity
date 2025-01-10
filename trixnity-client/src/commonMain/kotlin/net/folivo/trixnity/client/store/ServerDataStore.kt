@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.store
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
@@ -13,14 +14,15 @@ class ServerDataStore(
     repository: ServerDataRepository,
     tm: RepositoryTransactionManager,
     statisticCollector: ObservableCacheStatisticCollector,
-    storeScope: CoroutineScope
+    storeScope: CoroutineScope,
+    clock: Clock,
 ) : Store {
-    private val serverDataCache = MinimalRepositoryObservableCache(repository, tm, storeScope, Duration.INFINITE)
+    private val serverDataCache = MinimalRepositoryObservableCache(repository, tm, storeScope, clock, Duration.INFINITE)
         .also(statisticCollector::addCache)
 
-    suspend fun setServerData(serverData: ServerData) = serverDataCache.write(1, serverData)
+    suspend fun setServerData(serverData: ServerData) = serverDataCache.set(1, serverData)
 
-    fun getServerDataFlow() = serverDataCache.read(1).filterNotNull()
+    fun getServerDataFlow() = serverDataCache.get(1).filterNotNull()
     suspend fun getServerData() = getServerDataFlow().first()
 
     override suspend fun clearCache() {}

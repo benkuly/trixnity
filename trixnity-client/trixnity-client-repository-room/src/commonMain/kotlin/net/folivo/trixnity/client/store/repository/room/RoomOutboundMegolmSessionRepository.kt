@@ -1,12 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.OutboundMegolmSessionRepository
@@ -40,11 +34,12 @@ internal class RoomOutboundMegolmSessionRepository(
 ) : OutboundMegolmSessionRepository {
     private val dao = db.outboundMegolmSession()
 
-    override suspend fun get(key: RoomId): StoredOutboundMegolmSession? =
+    override suspend fun get(key: RoomId): StoredOutboundMegolmSession? = withRoomRead {
         dao.get(key)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun save(key: RoomId, value: StoredOutboundMegolmSession) {
+    override suspend fun save(key: RoomId, value: StoredOutboundMegolmSession) = withRoomWrite {
         dao.insert(
             RoomOutboundMegolmSession(
                 roomId = key,
@@ -53,11 +48,11 @@ internal class RoomOutboundMegolmSessionRepository(
         )
     }
 
-    override suspend fun delete(key: RoomId) {
+    override suspend fun delete(key: RoomId) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

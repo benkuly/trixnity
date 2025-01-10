@@ -73,12 +73,10 @@ internal class IndexedDBRoomOutboxMessageRepository(
     companion object {
         const val objectStoreName = "room_outbox_message_2"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 6 ->
-                    createIndexedDBMinimalStoreRepository(database, objectStoreName) {
-                        createIndex("roomId", KeyPath("roomId"), unique = false)
-                    }
-            }
+            if (oldVersion < 6)
+                createIndexedDBMinimalStoreRepository(database, objectStoreName) {
+                    createIndex("roomId", KeyPath("roomId"), unique = false)
+                }
         }
     }
 

@@ -1,12 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredDeviceKeys
@@ -40,11 +34,12 @@ internal class RoomDeviceKeysRepository(
 ) : DeviceKeysRepository {
     private val dao = db.deviceKeys()
 
-    override suspend fun get(key: UserId): Map<String, StoredDeviceKeys>? =
+    override suspend fun get(key: UserId): Map<String, StoredDeviceKeys>? = withRoomRead {
         dao.get(key)
             ?.let { entity -> json.decodeFromString<Map<String, StoredDeviceKeys>>(entity.value) }
+    }
 
-    override suspend fun save(key: UserId, value: Map<String, StoredDeviceKeys>) {
+    override suspend fun save(key: UserId, value: Map<String, StoredDeviceKeys>) = withRoomWrite {
         dao.insert(
             RoomDeviceKeys(
                 userId = key,
@@ -53,11 +48,11 @@ internal class RoomDeviceKeysRepository(
         )
     }
 
-    override suspend fun delete(key: UserId) {
+    override suspend fun delete(key: UserId) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

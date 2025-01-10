@@ -1,12 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
@@ -40,11 +34,12 @@ internal class RoomCrossSigningKeysRepository(
 ) : CrossSigningKeysRepository {
     private val dao = db.crossSigningKeys()
 
-    override suspend fun get(key: UserId): Set<StoredCrossSigningKeys>? =
+    override suspend fun get(key: UserId): Set<StoredCrossSigningKeys>? = withRoomRead {
         dao.get(key)
             ?.let { entity -> json.decodeFromString<Set<StoredCrossSigningKeys>>(entity.value) }
+    }
 
-    override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>) {
+    override suspend fun save(key: UserId, value: Set<StoredCrossSigningKeys>) = withRoomWrite {
         dao.insert(
             RoomCrossSigningKeys(
                 userId = key,
@@ -53,11 +48,11 @@ internal class RoomCrossSigningKeysRepository(
         )
     }
 
-    override suspend fun delete(key: UserId) {
+    override suspend fun delete(key: UserId) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

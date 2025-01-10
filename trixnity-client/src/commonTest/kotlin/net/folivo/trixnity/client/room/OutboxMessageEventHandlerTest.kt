@@ -14,7 +14,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
@@ -30,7 +29,9 @@ import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
@@ -76,6 +77,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             roomOutboxMessageStore,
             defaultOutboxMessageMediaUploaderMappings,
             CurrentSyncState(currentSyncState),
+            UserInfo(UserId("user", "server"), "device", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = "")),
             TransactionManagerMock(),
             Clock.System,
         )
@@ -405,7 +407,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 roomOutboxMessageStore.update(message1.roomId, message1.transactionId) { null }
             }
             currentSyncState.value = SyncState.RUNNING
-            mediaServiceMock.uploadMediaCalled.onEach { println(it) }.first { it == cacheUrl }
+            mediaServiceMock.uploadMediaCalled.first { it == cacheUrl }
 
             eventually(5.seconds) {// we need this, because the cache may not be fast enough
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()

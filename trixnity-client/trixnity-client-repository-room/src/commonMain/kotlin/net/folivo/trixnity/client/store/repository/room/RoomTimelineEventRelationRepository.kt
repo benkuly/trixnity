@@ -93,7 +93,7 @@ internal class RoomTimelineEventRelationRepository(db: TrixnityRoomDatabase) : T
 
     private val dao = db.timelineEventRelation()
 
-    override suspend fun get(firstKey: TimelineEventRelationKey): Map<EventId, TimelineEventRelation> =
+    override suspend fun get(firstKey: TimelineEventRelationKey): Map<EventId, TimelineEventRelation> = withRoomRead {
         dao.get(firstKey.relatedEventId, firstKey.roomId, firstKey.relationType).associate {
             it.eventId to TimelineEventRelation(
                 roomId = it.roomId,
@@ -102,15 +102,16 @@ internal class RoomTimelineEventRelationRepository(db: TrixnityRoomDatabase) : T
                 relatedEventId = it.relatedEventId,
             )
         }
+    }
 
-    override suspend fun deleteByRoomId(roomId: RoomId) {
+    override suspend fun deleteByRoomId(roomId: RoomId) = withRoomWrite {
         dao.delete(roomId)
     }
 
     override suspend fun get(
         firstKey: TimelineEventRelationKey,
         secondKey: EventId,
-    ): TimelineEventRelation? =
+    ): TimelineEventRelation? = withRoomRead {
         dao.get(firstKey.relatedEventId, firstKey.roomId, firstKey.relationType, secondKey)?.let {
             TimelineEventRelation(
                 roomId = firstKey.roomId,
@@ -119,12 +120,13 @@ internal class RoomTimelineEventRelationRepository(db: TrixnityRoomDatabase) : T
                 relatedEventId = it.relatedEventId,
             )
         }
+    }
 
     override suspend fun save(
         firstKey: TimelineEventRelationKey,
         secondKey: EventId,
         value: TimelineEventRelation,
-    ) {
+    ) = withRoomWrite {
         dao.insert(
             RoomTimelineEventRelation(
                 roomId = value.roomId,
@@ -138,11 +140,11 @@ internal class RoomTimelineEventRelationRepository(db: TrixnityRoomDatabase) : T
     override suspend fun delete(
         firstKey: TimelineEventRelationKey,
         secondKey: EventId
-    ) {
+    ) = withRoomWrite {
         dao.delete(firstKey.relatedEventId, firstKey.roomId, firstKey.relationType, secondKey)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

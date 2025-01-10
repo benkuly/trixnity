@@ -10,9 +10,8 @@ import org.koin.dsl.module
 import kotlin.random.Random
 
 class RepositoryTestSuite : ShouldSpec({
-    // remove disabledRollbackTest when fixed: https://github.com/JuulLabs/indexeddb/issues/115
     // remove customRepositoryTransactionManager as soon as a solution is found for async work within a transaction
-    repositoryTestSuite(disabledRollbackTest = true, customRepositoryTransactionManager = {
+    repositoryTestSuite(customRepositoryTransactionManager = {
         IndexedDBRepositoryTransactionManager(createDatabase(Random.nextString(22)), allStoreNames)
     }) {
         val database = createDatabase(Random.nextString(22))

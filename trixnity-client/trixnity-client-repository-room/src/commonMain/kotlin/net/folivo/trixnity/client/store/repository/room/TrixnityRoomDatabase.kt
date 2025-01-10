@@ -1,8 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import androidx.room.*
 
 @Database(
     entities = [
@@ -44,6 +42,8 @@ import androidx.room.TypeConverters
     RoomIdConverter::class,
     UserIdConverter::class,
 )
+
+@ConstructedBy(TrixnityRoomDatabaseConstructor::class)
 abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun account(): AccountDao
     abstract fun serverData(): ServerDataDao
@@ -71,4 +71,10 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun secrets(): SecretsDao
     abstract fun timelineEventRelation(): TimelineEventRelationDao
     abstract fun timelineEvent(): TimelineEventDao
+}
+
+// The Room compiler generates the `actual` implementations.
+@Suppress("NO_ACTUAL_FOR_EXPECT")
+expect object TrixnityRoomDatabaseConstructor : RoomDatabaseConstructor<TrixnityRoomDatabase> {
+    override fun initialize(): TrixnityRoomDatabase
 }

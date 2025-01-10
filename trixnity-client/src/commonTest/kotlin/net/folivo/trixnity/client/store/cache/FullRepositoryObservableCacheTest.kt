@@ -8,6 +8,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.store.repository.FullRepository
 import net.folivo.trixnity.client.store.repository.InMemoryFullRepository
@@ -29,7 +30,12 @@ class FullRepositoryObservableCacheTest : ShouldSpec({
         repository = object : InMemoryFullRepository<String, Entry>() {
             override fun serializeKey(key: String): String = key
         }
-        cut = FullRepositoryObservableCache(repository, NoOpRepositoryTransactionManager, cacheScope) { it.key }
+        cut = FullRepositoryObservableCache(
+            repository,
+            NoOpRepositoryTransactionManager,
+            cacheScope,
+            Clock.System,
+        ) { it.key }
     }
     afterTest {
         cacheScope.cancel()
@@ -48,7 +54,7 @@ class FullRepositoryObservableCacheTest : ShouldSpec({
             repository.save("key2", Entry("key2", "old2"))
             val all = cut.readAll().flatten().map { it.keys }.stateIn(readScope)
             all.value shouldBe setOf("key1", "key2")
-            cut.write("key1") { null }
+            cut.update("key1") { null }
             all.first { it == setOf("key2") }
         }
     }

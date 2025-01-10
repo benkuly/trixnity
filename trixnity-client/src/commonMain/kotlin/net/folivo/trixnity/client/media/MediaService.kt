@@ -31,13 +31,13 @@ interface MediaService {
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         saveToCache: Boolean = true,
-    ): Result<ByteArrayFlow>
+    ): Result<PlatformMedia>
 
     suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         saveToCache: Boolean = true,
-    ): Result<ByteArrayFlow>
+    ): Result<PlatformMedia>
 
     suspend fun getThumbnail(
         uri: String,
@@ -46,7 +46,7 @@ interface MediaService {
         method: ThumbnailResizingMethod = CROP,
         progress: MutableStateFlow<FileTransferProgress?>? = null,
         saveToCache: Boolean = true,
-    ): Result<ByteArrayFlow>
+    ): Result<PlatformMedia>
 
     suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String
 
@@ -105,7 +105,7 @@ class MediaServiceImpl(
         saveToCache: Boolean,
         sha256Hash: String?,
         progress: MutableStateFlow<FileTransferProgress?>?,
-    ): Result<ByteArrayFlow> = kotlin.runCatching {
+    ): Result<PlatformMedia> = kotlin.runCatching {
         when {
             uri.startsWith(UPLOAD_MEDIA_MXC_URI_PREFIX) -> {
                 val existingMedia = mediaStore.getMedia(uri)
@@ -130,7 +130,7 @@ class MediaServiceImpl(
                         }.getOrThrow()
                     }
                     requireNotNull(mediaStore.getMedia(uri)) { "media should not be null, because it has just been saved" }
-                        .onCompletion { if (!saveToCache) mediaStore.deleteMedia(uri) }
+                        .transformByteArrayFlow { it.onCompletion { if (!saveToCache) mediaStore.deleteMedia(uri) } }
                 } else {
                     log.debug { "found media in store: $uri" }
                     existingMedia
@@ -150,23 +150,25 @@ class MediaServiceImpl(
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteArrayFlow> =
+    ): Result<PlatformMedia> =
         getMedia(uri, saveToCache, null, progress)
 
     override suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteArrayFlow> = kotlin.runCatching {
+    ): Result<PlatformMedia> = kotlin.runCatching {
         val originalHash = encryptedFile.hashes["sha256"]
             ?: throw MediaValidationException(null, null)
-        val media = getMedia(encryptedFile.url, saveToCache, originalHash, progress).getOrThrow()
-        media.decryptAes256Ctr(
-            initialisationVector = encryptedFile.initialisationVector.decodeUnpaddedBase64Bytes(),
-            // url-safe base64 is given
-            key = encryptedFile.key.key.replace("-", "+").replace("_", "/")
-                .decodeUnpaddedBase64Bytes()
-        )
+        getMedia(encryptedFile.url, saveToCache, originalHash, progress).getOrThrow()
+            .transformByteArrayFlow {
+                it.decryptAes256Ctr(
+                    initialisationVector = encryptedFile.initialisationVector.decodeUnpaddedBase64Bytes(),
+                    // url-safe base64 is given
+                    key = encryptedFile.key.key.replace("-", "+").replace("_", "/")
+                        .decodeUnpaddedBase64Bytes()
+                )
+            }
     }
 
     private suspend fun MediaApiClient.downloadThumbnailDependingOnServerVersion(
@@ -197,7 +199,7 @@ class MediaServiceImpl(
         method: ThumbnailResizingMethod,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<ByteArrayFlow> = kotlin.runCatching {
+    ): Result<PlatformMedia> = kotlin.runCatching {
         val thumbnailUrl = "$uri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
         val existingMedia = mediaStore.getMedia(thumbnailUrl)
         if (existingMedia == null) {
@@ -205,7 +207,7 @@ class MediaServiceImpl(
                 it.saveMedia(thumbnailUrl) { this }
             }.getOrThrow()
             requireNotNull(mediaStore.getMedia(thumbnailUrl)) { "media should not be null, because it has just been saved" }
-                .onCompletion { if (!saveToCache) mediaStore.deleteMedia(thumbnailUrl) }
+                .transformByteArrayFlow { it.onCompletion { if (!saveToCache) mediaStore.deleteMedia(thumbnailUrl) } }
         } else existingMedia
     }
 

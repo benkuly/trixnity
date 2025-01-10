@@ -1,12 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.StoredSecretKeyRequest
@@ -43,15 +37,17 @@ internal class RoomSecretKeyRequestRepository(
 
     private val dao = db.secretKeyRequest()
 
-    override suspend fun get(key: String): StoredSecretKeyRequest? =
+    override suspend fun get(key: String): StoredSecretKeyRequest? = withRoomRead {
         dao.get(key)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun getAll(): List<StoredSecretKeyRequest> =
+    override suspend fun getAll(): List<StoredSecretKeyRequest> = withRoomRead {
         dao.getAll()
             .map { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun save(key: String, value: StoredSecretKeyRequest) {
+    override suspend fun save(key: String, value: StoredSecretKeyRequest) = withRoomWrite {
         dao.insert(
             RoomSecretKeyRequest(
                 id = key,
@@ -60,11 +56,11 @@ internal class RoomSecretKeyRequestRepository(
         )
     }
 
-    override suspend fun delete(key: String) {
+    override suspend fun delete(key: String) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.cache
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import korlibs.io.lang.format
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -25,12 +24,12 @@ data class ObservableCacheIndexStatistic(
 )
 
 class ObservableCacheStatisticCollector : EventHandler {
-    private val caches = mutableListOf<ObservableCacheBase<*, *>>()
+    private val caches = mutableListOf<ObservableCache<*, *, *>>()
 
-    internal fun addCache(cache: ObservableCacheBase<*, *>) = caches.add(cache)
+    internal fun addCache(cache: ObservableCache<*, *, *>) = caches.add(cache)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        if (log.isDebugEnabled())
+        if (log.isTraceEnabled())
             scope.launch {
                 while (isActive) {
                     delay(10.seconds)
@@ -39,7 +38,7 @@ class ObservableCacheStatisticCollector : EventHandler {
                     val midUsageStatistics = statistics.filter { it.all in 100..999 }
                     val highUsageStatistics = statistics.filter { it.all in 1_000..9_999 }
                     val extremeUsageStatistics = statistics.filter { it.all >= 10_000 }
-                    log.debug {
+                    log.trace {
                         """
                             cache statistic:
                                 Low usage (< 100): ${lowUsageStatistics.map { it.name }}
@@ -60,11 +59,10 @@ class ObservableCacheStatisticCollector : EventHandler {
             }
     }
 
-    fun List<ObservableCacheStatistic>.format() = map { statistic ->
-        val indexNames = statistic.indexes.map { it.name }.joinToString("|") { "%-16s".format(it) }
-        val indexAll = statistic.indexes.map { it.all }.joinToString("|") { "%-16s".format(it) }
-        val indexSubscribed =
-            statistic.indexes.map { it.all }.joinToString("|") { "%-16s".format(it) }
+    fun List<ObservableCacheStatistic>.format() = joinToString("\n") { statistic ->
+        val indexNames = statistic.indexes.map { it.name }.joinToString("|") { padMax(it) }
+        val indexAll = statistic.indexes.map { it.all }.joinToString("|") { padMax(it.toString()) }
+        val indexSubscribed = statistic.indexes.map { it.all }.joinToString("|") { padMax(it.toString()) }
         """
             ------------------------------------------------------------
             Name:               ${statistic.name}
@@ -75,5 +73,13 @@ class ObservableCacheStatisticCollector : EventHandler {
                 All entries:        $indexAll
                 Subscribed entries: $indexSubscribed
         """.trimIndent()
-    }.joinToString("\n")
+    }
+
+    private fun padMax(input: String, length: Int = 16): String {
+        return when {
+            input.length > length -> input.substring(0, length)
+            input.length < length -> input.padEnd(length)
+            else -> input
+        }
+    }
 }

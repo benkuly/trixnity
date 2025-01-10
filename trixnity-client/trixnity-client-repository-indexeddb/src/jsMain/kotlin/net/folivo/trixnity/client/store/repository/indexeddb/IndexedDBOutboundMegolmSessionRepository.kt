@@ -20,10 +20,7 @@ internal class IndexedDBOutboundMegolmSessionRepository(
     companion object {
         const val objectStoreName = "outbound_megolm_session"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
-            }
+            if (oldVersion < 1) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }
 }

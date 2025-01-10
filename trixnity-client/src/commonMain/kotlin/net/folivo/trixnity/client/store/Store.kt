@@ -1,7 +1,9 @@
 package net.folivo.trixnity.client.store
 
+import kotlinx.coroutines.CoroutineScope
+
 interface Store {
-    suspend fun init() {}
+    suspend fun init(coroutineScope: CoroutineScope) {}
 
     /**
      * Only deletes everything, that can be fetched from server.

@@ -30,7 +30,8 @@ fun createStoreModule() = module {
             tm = get(),
             config = get(),
             statisticCollector = get(),
-            storeScope = get()
+            storeScope = get(),
+            clock = get(),
         )
     }
     singleOf(::MediaCacheMappingStore)

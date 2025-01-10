@@ -30,7 +30,6 @@ include(
     "trixnity-client:client-repository-test",
     "trixnity-client:trixnity-client-repository-exposed",
     "trixnity-client:trixnity-client-repository-indexeddb",
-    "trixnity-client:trixnity-client-repository-realm",
     "trixnity-client:trixnity-client-repository-room",
 )
 include("trixnity-applicationservice")
@@ -39,7 +38,6 @@ include("test-utils")
 buildCache {
     local {
         directory = File(rootDir, ".gradle").resolve("build-cache")
-        removeUnusedEntriesAfterDays = 30
     }
 }
 

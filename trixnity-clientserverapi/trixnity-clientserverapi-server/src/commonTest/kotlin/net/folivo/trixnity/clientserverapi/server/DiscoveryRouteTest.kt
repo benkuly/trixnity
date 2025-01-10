@@ -10,7 +10,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.testing.*
-import io.ktor.utils.io.charsets.Charsets.UTF_8
+import io.ktor.utils.io.charsets.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.DiscoveryInformation
 import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport
@@ -56,7 +56,7 @@ class DiscoveryRouteTest {
         val response = client.get("/.well-known/matrix/client")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                     {
                       "m.homeserver": {
@@ -96,7 +96,7 @@ class DiscoveryRouteTest {
         val response = client.get("/.well-known/matrix/support")
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
-            this.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
             this.body<String>() shouldBe """
                     {
                       "contacts": [

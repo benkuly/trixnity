@@ -1,5 +1,6 @@
 package net.folivo.trixnity.core.model.events.m
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -8,6 +9,8 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.MessageEventContent
+
+private val log = KotlinLogging.logger { }
 
 @Serializable(with = RelatesToSerializer::class)
 sealed interface RelatesTo {
@@ -104,10 +107,20 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
         val replyTo: RelatesTo.ReplyTo? =
-            jsonObject[RelationType.Reply.name]?.let { decoder.json.decodeFromJsonElement(it) }
+            try {
+                jsonObject[RelationType.Reply.name]?.let { decoder.json.decodeFromJsonElement(it) }
+            } catch (e: Exception) {
+                log.warn(e) { "malformed reply" }
+                null
+            }
         val relationType: RelationType? =
-            (jsonObject["rel_type"] as? JsonPrimitive)?.let { decoder.json.decodeFromJsonElement(it) }
-                ?: replyTo?.let { RelationType.Reply }
+            try {
+                (jsonObject["rel_type"] as? JsonPrimitive)?.let { decoder.json.decodeFromJsonElement(it) }
+                    ?: replyTo?.let { RelationType.Reply }
+            } catch (e: Exception) {
+                log.warn(e) { "malformed rel_type" }
+                null
+            }
         return try {
             when (relationType) {
                 is RelationType.Reference -> decoder.json.decodeFromJsonElement<RelatesTo.Reference>(jsonObject)
@@ -118,13 +131,13 @@ object RelatesToSerializer : KSerializer<RelatesTo> {
                 else -> {
                     RelatesTo.Unknown(
                         jsonObject,
-                        (jsonObject["event_id"] as? JsonPrimitive)?.content.let { EventId(it ?: "") },
+                        EventId((jsonObject["event_id"] as? JsonPrimitive)?.content ?: ""),
                         relationType?.name.let { RelationType.Unknown(it ?: "") },
                         replyTo,
                     )
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             RelatesTo.Unknown(
                 jsonObject,
                 EventId((jsonObject["event_id"] as? JsonPrimitive)?.content ?: ""),

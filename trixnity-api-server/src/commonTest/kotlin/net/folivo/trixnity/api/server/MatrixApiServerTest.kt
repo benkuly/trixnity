@@ -6,7 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
-import io.ktor.utils.io.charsets.Charsets.UTF_8
+import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.SerializationException
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
@@ -27,7 +27,7 @@ class MatrixApiServerTest {
         }
         val response = client.get("/")
         response.body<String>() shouldBe """{"errcode":"M_NOT_FOUND","error":"not found"}"""
-        response.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response.status shouldBe HttpStatusCode.NotFound
     }
 
@@ -42,7 +42,7 @@ class MatrixApiServerTest {
         }
         val response = client.get("/")
         response.body<String>() shouldBe """{"errcode":"M_BAD_JSON","error":"missing key"}"""
-        response.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response.status shouldBe HttpStatusCode.BadRequest
     }
 
@@ -57,7 +57,7 @@ class MatrixApiServerTest {
         }
         val response = client.get("/")
         response.body<String>() shouldBe """{"errcode":"M_UNKNOWN","error":"something"}"""
-        response.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response.status shouldBe HttpStatusCode.InternalServerError
     }
 
@@ -72,7 +72,7 @@ class MatrixApiServerTest {
         }
         val response = client.get("/test")
         response.status shouldBe HttpStatusCode.NotFound
-        response.contentType() shouldBe ContentType.Application.Json.withCharset(UTF_8)
+        response.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
         response.body<String>() shouldBe """{"errcode":"M_UNRECOGNIZED","error":"unsupported (or unknown) endpoint"}"""
     }
 }

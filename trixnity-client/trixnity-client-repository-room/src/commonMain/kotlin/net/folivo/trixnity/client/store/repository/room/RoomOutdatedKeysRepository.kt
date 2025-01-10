@@ -1,12 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import kotlinx.serialization.decodeFromString
+import androidx.room.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.OutdatedKeysRepository
@@ -39,11 +33,12 @@ internal class RoomOutdatedKeysRepository(
 ) : OutdatedKeysRepository {
     private val dao = db.outdatedKeys()
 
-    override suspend fun get(key: Long): Set<UserId>? =
+    override suspend fun get(key: Long): Set<UserId>? = withRoomRead {
         dao.get(key)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
 
-    override suspend fun save(key: Long, value: Set<UserId>) {
+    override suspend fun save(key: Long, value: Set<UserId>) = withRoomWrite {
         dao.insert(
             RoomOutdatedKeys(
                 id = key,
@@ -52,11 +47,11 @@ internal class RoomOutdatedKeysRepository(
         )
     }
 
-    override suspend fun delete(key: Long) {
+    override suspend fun delete(key: Long) = withRoomWrite {
         dao.delete(key)
     }
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll() = withRoomWrite {
         dao.deleteAll()
     }
 }

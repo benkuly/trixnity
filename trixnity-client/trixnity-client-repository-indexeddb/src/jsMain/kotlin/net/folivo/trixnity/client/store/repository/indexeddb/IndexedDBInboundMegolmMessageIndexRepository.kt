@@ -20,10 +20,7 @@ internal class IndexedDBInboundMegolmMessageIndexRepository(
     companion object {
         const val objectStoreName = "inbound_megolm_message_index"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
-            }
+            if (oldVersion < 1) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }
 }

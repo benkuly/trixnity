@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.AccountRepository
@@ -25,7 +26,8 @@ class AccountStoreTest : ShouldSpec({
             repository,
             RepositoryTransactionManagerMock(),
             ObservableCacheStatisticCollector(),
-            storeScope
+            storeScope,
+            Clock.System,
         )
     }
     afterTest {
@@ -49,7 +51,7 @@ class AccountStoreTest : ShouldSpec({
                 )
             )
 
-            cut.init()
+            cut.init(this)
 
             cut.getAccount().shouldNotBeNull().run {
                 olmPickleKey shouldBe ""

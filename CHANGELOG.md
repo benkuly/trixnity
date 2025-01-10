@@ -9,15 +9,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Reset unread marker on sending own message.
+
 ### Changed
+
+- Upgrade dependencies.
+- Parameter `from` in `RoomsApiClient::getHierarchy` is nullable.
+- Parameter `from` in `RoomsApiClient::getRelations*` is nullable.
+- Performance improvements in cache: Skip cache, when an entry is not subscribed by anyone.
+- Performance improvements in cache: Don't start coroutine for each cache entry and instead invalidate cache in loop.
 
 ### Deprecated
 
 ### Removed
 
+- Removed Realm repository implementation as it is currently not actively maintained and does not work with current
+  Kotlin versions.
+
 ### Fixed
 
+- Fixed Androidx Room repository implementation.
+
 ### Security
+
+## 4.11.2
+
+### Fixed
+
+- Fix message replacements not redacted.
+
+## 4.11.1
+
+### Fixed
+
+- Fixed bug where own device keys are removed when leaving all rooms.
+- Don't fail when setting read marker fails in outbox.
+- Fix outbox may filter elements from cache, that are initial null.
+
+## 4.11.0
+
+### Added
+
+- Allow to create temporary files from media.
+
+### Changed
+
+- Use Blob in media-indexeddb.
+
+### Fixed
+
+- Fixed OPFS streams not closed.
+- Catch more MediaStore exceptions.
 
 ## 4.10.0
 
@@ -231,6 +273,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 ### Removed
+
+- Removed Realm repository implementation as it is currently not actively maintained and does not work with current
+  Kotlin versions.
 
 ### Fixed
 

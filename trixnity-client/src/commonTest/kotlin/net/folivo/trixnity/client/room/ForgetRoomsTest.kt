@@ -59,7 +59,7 @@ class ForgetRoomsTest : ShouldSpec({
     }
 
     context(ForgetRoomService::invoke.name) {
-        should("forget rooms when membershipt is leave") {
+        should("forget rooms when membership is leave") {
             roomStore.update(room) { simpleRoom.copy(room, membership = Membership.LEAVE) }
 
             fun timelineEvent(roomId: RoomId, i: Int) =

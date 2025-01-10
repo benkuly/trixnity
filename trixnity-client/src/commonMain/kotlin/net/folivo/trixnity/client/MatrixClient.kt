@@ -113,6 +113,10 @@ interface MatrixClient : AutoCloseable {
     suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit>
 }
 
+private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
+    log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
+}
+
 suspend fun MatrixClient.Companion.login(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -281,12 +285,8 @@ suspend fun MatrixClient.Companion.loginWith(
     val mediaStore = mediaStoreFactory(loginInfo)
     val repositoriesModule = repositoriesModuleFactory(loginInfo)
 
-
-    val handler = CoroutineExceptionHandler { _, exception ->
-        log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
-    }
     val coroutineScope =
-        CoroutineScope((Dispatchers.Default + handler).let {
+        CoroutineScope((Dispatchers.Default + coroutineExceptionHandler).let {
             val coroutineName = config.name?.let { name -> CoroutineName(name) }
             if (coroutineName != null) it + coroutineName else it
         }
@@ -304,7 +304,7 @@ suspend fun MatrixClient.Companion.loginWith(
     val di = koinApplication.koin
 
     val rootStore = di.get<RootStore>()
-    rootStore.init()
+    rootStore.init(coroutineScope)
     val accountStore = di.get<AccountStore>()
 
     val api = MatrixClientServerApiClientImpl(
@@ -406,10 +406,7 @@ suspend fun MatrixClient.Companion.fromStore(
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): Result<MatrixClient?> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
-    val handler = CoroutineExceptionHandler { _, exception ->
-        log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
-    }
-    val coroutineScope = CoroutineScope((Dispatchers.Default + handler).let {
+    val coroutineScope = CoroutineScope((Dispatchers.Default + coroutineExceptionHandler).let {
         val coroutineName = config.name?.let { name -> CoroutineName(name) }
         if (coroutineName != null) it + coroutineName else it
     }
@@ -426,7 +423,7 @@ suspend fun MatrixClient.Companion.fromStore(
     val di = koinApplication.koin
 
     val rootStore = di.get<RootStore>()
-    rootStore.init()
+    rootStore.init(coroutineScope)
 
     val accountStore = di.get<AccountStore>()
     val olmCryptoStore = di.get<OlmCryptoStore>()

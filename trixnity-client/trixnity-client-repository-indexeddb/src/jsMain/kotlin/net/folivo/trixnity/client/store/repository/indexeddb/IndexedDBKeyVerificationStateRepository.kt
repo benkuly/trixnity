@@ -20,10 +20,7 @@ internal class IndexedDBKeyVerificationStateRepository(
     companion object {
         const val objectStoreName = "key_verification_state"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
-            }
+            if (oldVersion < 1) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }
 }

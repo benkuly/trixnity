@@ -5,22 +5,36 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.datatest.withData
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.maps.shouldContainExactly
-import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.beNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.*
+import kotlinx.coroutines.withContext
+import net.folivo.trixnity.client.CurrentSyncState
+import net.folivo.trixnity.client.getInMemoryKeyStore
+import net.folivo.trixnity.client.getInMemoryOlmStore
+import net.folivo.trixnity.client.getInMemoryRoomStateStore
+import net.folivo.trixnity.client.getInMemoryRoomStore
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.simpleRoom
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel
+import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.client.store.OlmCryptoStore
+import net.folivo.trixnity.client.store.RoomStateStore
+import net.folivo.trixnity.client.store.RoomStore
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
+import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.keys.GetKeys
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -34,7 +48,12 @@ import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventConten
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent.HistoryVisibility
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.CrossSigningKeys
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage
+import net.folivo.trixnity.core.model.keys.DeviceKeys
+import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
 import net.folivo.trixnity.crypto.sign.VerifyResult
@@ -43,6 +62,7 @@ import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
+
 class OutdatedKeysHandlerTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
@@ -50,15 +70,16 @@ private val body: ShouldSpec.() -> Unit = {
 
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
+    val us = UserId("us", "server")
     val aliceDevice = "ALICEDEVICE"
-    val bobDevice = "BOBDEVICE"
+    val ourDevice = "OURDEVICE"
     val aliceKeys = StoredDeviceKeys(
         Signed(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), mapOf()),
         KeySignatureTrustLevel.Valid(false)
     )
-    val bobKeys = StoredDeviceKeys(
-        Signed(DeviceKeys(bob, bobDevice, setOf(), keysOf()), mapOf()),
-        KeySignatureTrustLevel.Valid(false)
+    val ourKeys = StoredDeviceKeys(
+        Signed(DeviceKeys(us, ourDevice, setOf(), keysOf()), mapOf()),
+        KeySignatureTrustLevel.Valid(true)
     )
 
     lateinit var scope: CoroutineScope
@@ -95,7 +116,7 @@ private val body: ShouldSpec.() -> Unit = {
             signServiceMock,
             keyTrustServiceMock,
             CurrentSyncState(currentSyncState),
-            UserInfo(UserId("us", "server"), "ourDevice", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
+            UserInfo(us, ourDevice, Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             TransactionManagerMock(),
         )
         cut.startInCoroutineScope(scope)
@@ -107,6 +128,7 @@ private val body: ShouldSpec.() -> Unit = {
     afterTest {
         scope.cancel()
     }
+
     context(OutdatedKeysHandler::handleDeviceLists.name) {
         context("device key is tracked") {
             should("add changed devices to outdated keys") {
@@ -144,26 +166,25 @@ private val body: ShouldSpec.() -> Unit = {
         }
         should("always handle own keys") {
             cut.handleDeviceLists(
-                Sync.Response.DeviceLists(changed = setOf(UserId("us", "server"), bob)),
+                Sync.Response.DeviceLists(changed = setOf(us, bob)),
                 SyncState.RUNNING
             )
-            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(UserId("us", "server"))
+            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(us)
         }
         should("always handle own keys in initial sync") {
             cut.handleDeviceLists(
-                Sync.Response.DeviceLists(changed = setOf(UserId("us", "server"), bob)),
+                Sync.Response.DeviceLists(changed = setOf(us, bob)),
                 SyncState.INITIAL_SYNC
             )
-            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(UserId("us", "server"))
+            keyStore.getOutdatedKeysFlow().first() shouldContainExactly setOf(us)
         }
         should("never remove own keys") {
-            keyStore.updateDeviceKeys(UserId("us", "server")) { mapOf() }
+            keyStore.updateDeviceKeys(us) { mapOf() }
             cut.handleDeviceLists(
-                Sync.Response.DeviceLists(left = setOf(UserId("us", "server"), bob)),
+                Sync.Response.DeviceLists(left = setOf(us, bob)),
                 SyncState.RUNNING
             )
-
-            keyStore.getDeviceKeys(UserId("us", "server")).first() shouldBe mapOf()
+            keyStore.getDeviceKeys(us).first() shouldBe mapOf()
         }
     }
     context(OutdatedKeysHandler::updateDeviceKeysFromChangedMembership.name) {
@@ -187,7 +208,7 @@ private val body: ShouldSpec.() -> Unit = {
                 ),
                 SyncState.RUNNING
             )
-            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
+            keyStore.getOutdatedKeysFlow().first().shouldBeEmpty()
         }
         should("remove device keys on leave or ban of the last encrypted room") {
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
@@ -232,7 +253,6 @@ private val body: ShouldSpec.() -> Unit = {
             roomStore.update(otherRoom) {
                 simpleRoom.copy(roomId = otherRoom, encrypted = true)
             }
-            delay(500)
             roomStateStore.save(
                 StateEvent(
                     MemberEventContent(membership = Membership.JOIN),
@@ -257,7 +277,7 @@ private val body: ShouldSpec.() -> Unit = {
                 SyncState.RUNNING
             )
             withContext(KeyStore.SkipOutdatedKeys) {
-                keyStore.getDeviceKeys(alice) shouldNot beNull()
+                keyStore.getDeviceKeys(alice).first() shouldNot beNull()
             }
 
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
@@ -275,7 +295,46 @@ private val body: ShouldSpec.() -> Unit = {
                 SyncState.RUNNING
             )
             withContext(KeyStore.SkipOutdatedKeys) {
-                keyStore.getDeviceKeys(alice) shouldNot beNull()
+                keyStore.getDeviceKeys(alice).first() shouldNot beNull()
+            }
+        }
+        should("not remove our device keys on leave or ban when there are no more rooms") {
+            keyStore.updateDeviceKeys(us) { mapOf(ourDevice to ourKeys) }
+
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.LEAVE),
+                        EventId("\$event"),
+                        us,
+                        room,
+                        1234,
+                        stateKey = us.full
+                    )
+                ),
+                SyncState.RUNNING
+            )
+            roomStore.delete(room)
+            withContext(KeyStore.SkipOutdatedKeys) {
+                keyStore.getDeviceKeys(us).first() shouldNot beNull()
+            }
+
+            keyStore.updateDeviceKeys(us) { mapOf(ourDevice to ourKeys) }
+            cut.updateDeviceKeysFromChangedMembership(
+                listOf(
+                    StateEvent(
+                        MemberEventContent(membership = Membership.BAN),
+                        EventId("\$event"),
+                        us,
+                        room,
+                        1234,
+                        stateKey = us.full
+                    )
+                ),
+                SyncState.RUNNING
+            )
+            withContext(KeyStore.SkipOutdatedKeys) {
+                keyStore.getDeviceKeys(us).first() shouldNot beNull()
             }
         }
         should("ignore join when key already tracked") {
@@ -296,7 +355,7 @@ private val body: ShouldSpec.() -> Unit = {
                 ),
                 SyncState.RUNNING
             )
-            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
+            keyStore.getOutdatedKeysFlow().first().shouldBeEmpty()
         }
         should("not mark keys as outdated when not members loaded or loading") {
             cut.updateDeviceKeysFromChangedMembership(
@@ -329,7 +388,7 @@ private val body: ShouldSpec.() -> Unit = {
                 ),
                 SyncState.RUNNING
             )
-            keyStore.getOutdatedKeysFlow().first() shouldHaveSize 0
+            keyStore.getOutdatedKeysFlow().first().shouldBeEmpty()
         }
     }
     context(OutdatedKeysHandler::updateOutdatedKeys.name) {
@@ -933,7 +992,7 @@ private val body: ShouldSpec.() -> Unit = {
                     keyStore.getOutdatedKeysFlow().first { it.isEmpty() }
                     val storedKeys = keyStore.getDeviceKeys(cedric).first()
                     assertNotNull(storedKeys)
-                    storedKeys shouldHaveSize 0
+                    storedKeys.shouldBeEmpty()
                 }
                 withData<Map<UserId, Map<String, Signed<DeviceKeys, UserId>>>>(
                     mapOf(
@@ -952,7 +1011,7 @@ private val body: ShouldSpec.() -> Unit = {
                     keyStore.getOutdatedKeysFlow().first { it.isEmpty() }
                     val storedKeys = keyStore.getDeviceKeys(alice).first()
                     assertNotNull(storedKeys)
-                    storedKeys shouldHaveSize 0
+                    storedKeys.shouldBeEmpty()
                 }
             }
         }

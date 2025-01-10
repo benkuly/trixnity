@@ -19,10 +19,7 @@ internal class IndexedDBOutdatedKeysRepository(
     companion object {
         const val objectStoreName = "outdated_keys"
         fun VersionChangeTransaction.migrate(database: Database, oldVersion: Int) {
-            when {
-                oldVersion < 1 ->
-                    createIndexedDBMinimalStoreRepository(database, objectStoreName)
-            }
+            if (oldVersion < 1) createIndexedDBMinimalStoreRepository(database, objectStoreName)
         }
     }
 }

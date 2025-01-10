@@ -4,12 +4,9 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
-import korlibs.io.async.async
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
@@ -60,7 +57,8 @@ class KeyStoreTest : ShouldSpec({
             RepositoryTransactionManagerMock(),
             MatrixClientConfiguration(),
             ObservableCacheStatisticCollector(),
-            storeScope
+            storeScope,
+            Clock.System,
         )
     }
     afterTest {
