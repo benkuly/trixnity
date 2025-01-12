@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.crypto
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.key.get
@@ -83,8 +82,7 @@ class ClientOlmStore(
 
     override suspend fun getOlmPickleKey(): String = checkNotNull(accountStore.getAccount()?.olmPickleKey)
 
-    override suspend fun getForgetFallbackKeyAfter(): Flow<Instant> =
-        olmCryptoStore.getForgetFallbackKeyAfter().filterNotNull()
+    override suspend fun getForgetFallbackKeyAfter(): Flow<Instant?> = olmCryptoStore.getForgetFallbackKeyAfter()
 
     override suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?) =
         olmCryptoStore.updateForgetFallbackKeyAfter(updater)

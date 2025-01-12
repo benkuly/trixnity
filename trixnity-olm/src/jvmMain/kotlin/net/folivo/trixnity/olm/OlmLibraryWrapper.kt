@@ -311,11 +311,11 @@ object OlmLibraryWrapper : Library {
         account: OlmAccountPointer?
     )
 
-    external fun olm_account_fallback_key_length(
+    external fun olm_account_unpublished_fallback_key_length(
         account: OlmAccountPointer?
     ): NativeSize
 
-    external fun olm_account_fallback_key(
+    external fun olm_account_unpublished_fallback_key(
         account: OlmAccountPointer?,
         fallback_key: Pointer?,
         fallback_key_size: NativeSize

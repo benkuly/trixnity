@@ -574,6 +574,7 @@ class MatrixClientImpl internal constructor(
                             log.info { "account is locked - waiting for successful sync for unlocking" }
                             api.sync.subscribeAsFlow(ClientEventEmitter.Priority.FIRST).first()
                             accountStore.updateAccount { it?.copy(isLocked = false) }
+                            log.info { "account unlocked" }
                         }
 
                         else -> {}
