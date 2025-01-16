@@ -9,6 +9,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.folivo.trixnity.client.store.TransactionManagerImpl
+import net.folivo.trixnity.client.store.repository.NoOpRepositoryTransactionManager
 import kotlin.js.JsName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -232,6 +234,11 @@ class ObservableCacheTest : ShouldSpec({
             cut.set("key", "value")
             readResult.await() shouldBe "value"
         }
+        should("fill value with set when cache entry present") {
+            cut.get("key").first() shouldBe null
+            cut.set("key", "value")
+            cut.get("key").first() shouldBe "value"
+        }
         should("fill value with update while read is active") {
             val startedCollect = MutableStateFlow(false)
             val readResult = async { cut.get("key").onEach { startedCollect.value = true }.filterNotNull().first() }
@@ -329,15 +336,19 @@ class ObservableCacheTest : ShouldSpec({
             }
         }
     }
-    should("not create empty cache entry, when read is faster then write") {
-        cacheStore.readDelay = 50.milliseconds
-        cacheStore.writeDelay = 100.milliseconds
+    should("update cache entry, when read during transaction after transaction") {
+        val transactionManager = TransactionManagerImpl(NoOpRepositoryTransactionManager)
         launch {
-            cut.set("key", "value") // this skips the cache!
+            transactionManager.transaction {
+                cut.set("key", "value")
+                cacheStore.persist("key", null) // simulate that write is only visible after transaction
+                delay(100.milliseconds)
+            }
         }
-        launch {
-            withTimeoutOrNull(200.milliseconds) { cut.get("key").filterNotNull().first() } shouldBe "value"
-        }
+        delay(50.milliseconds)
+        cut.get("key").first() shouldBe null
+        delay(51.milliseconds)
+        cut.get("key").first() shouldBe "value"
     }
     context("index") {
         class TestIndexedObservableCache(

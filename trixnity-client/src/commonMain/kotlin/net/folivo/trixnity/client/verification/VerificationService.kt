@@ -345,7 +345,10 @@ class VerificationServiceImpl(
                 .transformLatest { event ->
                     event?.content?.key?.let {
                         emitAll(globalAccountDataStore.get<SecretKeyEventContent>(it))
-                    } ?: emit(null)
+                    } ?: run {
+                        log.debug { "no default secret key found" }
+                        emit(null)
+                    }
                 },
         ) { bootstrapRunning, currentSyncState, crossSigningKeys, deviceKeys, defaultKey ->
             log.trace {

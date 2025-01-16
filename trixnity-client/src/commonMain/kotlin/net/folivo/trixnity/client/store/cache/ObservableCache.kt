@@ -5,6 +5,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.folivo.trixnity.client.store.Transaction
 import net.folivo.trixnity.utils.concurrentMutableMap
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration
@@ -174,13 +175,15 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             values.skipPut(key)
             persist(value)
 
-            val cacheEntry = values.get(key)
-            if (cacheEntry != null) {
-                log.trace { "$name (set): skipped cache but found a cache entry and therefore filling it for key $key" }
-                cacheEntry.set(value, null, force = true)
-                possiblyRemoveFromCache(value, key)
-            } else {
-                log.trace { "$name (set): skipped cache successful for key $key" }
+            currentCoroutineContext()[Transaction]?.doAfter?.write {
+                add {
+                    val cacheEntry = values.get(key)
+                    if (cacheEntry != null) {
+                        log.trace { "$name (set): skipped cache but found a cache entry and therefore filling it for key $key" }
+                        cacheEntry.set(value, null, forceCacheOnly = true)
+                        possiblyRemoveFromCache(value, key)
+                    }
+                }
             }
         } else {
             val cacheEntry =
@@ -196,15 +199,15 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
     private suspend inline fun <V> MutableStateFlow<CacheValue<V?>>.set(
         newValue: V?,
         noinline persist: (suspend (newValue: V?) -> Unit)? = null,
-        force: Boolean = false,
+        forceCacheOnly: Boolean = false,
     ) {
         while (true) {
             val oldRawValue = value
             // prefer cache value (when not going to be nulled)
-            if (!force && newValue != null && persist == null && oldRawValue is CacheValue.Value) return
+            if (forceCacheOnly.not() && newValue != null && persist == null && oldRawValue is CacheValue.Value) return
             val newRawValue = CacheValue.Value(newValue)
             if (compareAndSet(oldRawValue, newRawValue)) {
-                if (persist != null && (oldRawValue.valueOrNull() != newValue)) persist(newValue)
+                if (forceCacheOnly.not() && persist != null && (oldRawValue.valueOrNull() != newValue)) persist(newValue)
                 return
             }
         }
