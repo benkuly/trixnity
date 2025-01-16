@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import korlibs.io.async.launch
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
@@ -30,49 +31,16 @@ class ObservableCacheTest : ShouldSpec({
     lateinit var cut: ObservableCache<String, String, InMemoryObservableCacheStore<String, String>>
 
     beforeTest {
+        coroutineTestScope = true
         cacheScope = CoroutineScope(Dispatchers.Default)
         clock = TestClock()
         cacheStore = InMemoryObservableCacheStore()
-        cut = ObservableCache("", cacheStore, cacheScope, clock)
+        cut = ObservableCache("test", cacheStore, cacheScope, clock)
     }
     afterTest {
         cacheScope.cancel()
     }
 
-    should("use same internal StateFlow when initial value is null") {
-        val readScope = CoroutineScope(Dispatchers.Default)
-        val readFlow = cut.get(key = "key").shareIn(readScope, SharingStarted.Eagerly, 3)
-        readFlow.first { it == null }
-        cut.update(
-            key = "key",
-            updater = { null } // this should not create a new internal StateFlow
-        )
-        cut.update(
-            key = "key",
-            updater = { "newValue" }
-        )
-        readFlow.first { it == "newValue" }
-        readScope.cancel()
-    }
-    should("fill value with set while read is active") {
-        val startedCollect = MutableStateFlow(false)
-        val readResult = async { cut.get("key").onEach { startedCollect.value = true }.filterNotNull().first() }
-        startedCollect.first { it }
-        cut.set("key", "value")
-        readResult.await() shouldBe "value"
-    }
-    should("fill value with update while read is active") {
-        val startedCollect = MutableStateFlow(false)
-        val readResult = async { cut.get("key").onEach { startedCollect.value = true }.filterNotNull().first() }
-        startedCollect.first { it }
-        cut.update("key") { "value" }
-        readResult.await() shouldBe "value"
-    }
-    should("skip cache when no read active") {
-        cut.set("key", "value")
-        cacheStore.persist("key", "otherValue")
-        cut.get("key").first() shouldBe "otherValue"
-    }
     context("read") {
         should("read value from repository and update cache") {
             cacheStore.persist("key", "a new value")
@@ -242,6 +210,40 @@ class ObservableCacheTest : ShouldSpec({
             timePerOperation shouldBeLessThan 20.milliseconds
             completeTime shouldBeLessThan 200.milliseconds
         }
+        should("use same internal StateFlow when initial value is null") {
+            val readScope = CoroutineScope(Dispatchers.Default)
+            val readFlow = cut.get(key = "key").shareIn(readScope, SharingStarted.Eagerly, 3)
+            readFlow.first { it == null }
+            cut.update(
+                key = "key",
+                updater = { null } // this should not create a new internal StateFlow
+            )
+            cut.update(
+                key = "key",
+                updater = { "newValue" }
+            )
+            readFlow.first { it == "newValue" }
+            readScope.cancel()
+        }
+        should("fill value with set while read is active") {
+            val startedCollect = MutableStateFlow(false)
+            val readResult = async { cut.get("key").onEach { startedCollect.value = true }.filterNotNull().first() }
+            startedCollect.first { it }
+            cut.set("key", "value")
+            readResult.await() shouldBe "value"
+        }
+        should("fill value with update while read is active") {
+            val startedCollect = MutableStateFlow(false)
+            val readResult = async { cut.get("key").onEach { startedCollect.value = true }.filterNotNull().first() }
+            startedCollect.first { it }
+            cut.update("key") { "value" }
+            readResult.await() shouldBe "value"
+        }
+        should("skip cache when no read active") {
+            cut.set("key", "value")
+            cacheStore.persist("key", "otherValue")
+            cut.get("key").first() shouldBe "otherValue"
+        }
         context("infinite cache not enabled") {
             should("remove from cache, when write cache time expired") {
                 cut = ObservableCache("", cacheStore, cacheScope, clock, expireDuration = 1.seconds)
@@ -325,6 +327,16 @@ class ObservableCacheTest : ShouldSpec({
                 cut.update("key") { null }
                 values.getAll().size shouldBe 0
             }
+        }
+    }
+    should("not create empty cache entry, when read is faster then write") {
+        cacheStore.readDelay = 50.milliseconds
+        cacheStore.writeDelay = 100.milliseconds
+        launch {
+            cut.set("key", "value") // this skips the cache!
+        }
+        launch {
+            withTimeoutOrNull(200.milliseconds) { cut.get("key").filterNotNull().first() } shouldBe "value"
         }
     }
     context("index") {
