@@ -9,13 +9,12 @@ import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import net.folivo.trixnity.core.ClientEventEmitterImpl
-import net.folivo.trixnity.core.Unsubscriber
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -37,6 +36,7 @@ import net.folivo.trixnity.crypto.mocks.OlmEventHandlerRequestHandlerMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
 import net.folivo.trixnity.olm.*
+import kotlin.time.Duration.Companion.seconds
 
 class OlmEventHandlerTest : ShouldSpec({
     timeout = 30_000
@@ -112,13 +112,12 @@ class OlmEventHandlerTest : ShouldSpec({
             }
         olmStoreMock.olmAccount.value = olmInfos.olmAccount
 
-        val job = launch {
-            cut.forgetOldFallbackKey()
-        }
+        olmStoreMock.forgetFallbackKeyAfter.value = Clock.System.now() - 1.seconds
 
-        olmStoreMock.forgetFallbackKeyAfter.value = Clock.System.now()
+        cut.forgetOldFallbackKey()
 
         olmStoreMock.forgetFallbackKeyAfter.first { it == null }
+
         olmStoreMock.olmAccount.first { it != olmInfos.olmAccount }
 
         freeAfter(
@@ -140,7 +139,6 @@ class OlmEventHandlerTest : ShouldSpec({
                 }
             }.message shouldBe "BAD_MESSAGE_KEY_ID"
         }
-        job.cancel()
     }
 
     // ##########################
@@ -157,6 +155,55 @@ class OlmEventHandlerTest : ShouldSpec({
 
         captureOneTimeKeys[0].keys shouldNotContainAnyOf captureOneTimeKeys[1].keys
     }
+    should("re-upload generated keys when failed") {
+        olmEventHandlerRequestHandlerMock.setOneTimeKeys =
+            Result.failure(
+                MatrixServerException(
+                    HttpStatusCode.BadGateway,
+                    ErrorResponse.Unknown("bad gateway")
+                )
+            )
+        shouldThrow<MatrixServerException> {
+            cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), setOf()))
+        }
+        olmEventHandlerRequestHandlerMock.setOneTimeKeys = Result.success(Unit)
+        cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), setOf()))
+
+        val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
+        captureOneTimeKeys shouldHaveSize 2
+        captureOneTimeKeys[0].keys shouldHaveSize 26
+        captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
+    }
+    should("not fail when re-upload gives 4xx failure because we most likely already uploaded them") {
+        olmEventHandlerRequestHandlerMock.setOneTimeKeys =
+            Result.failure(
+                MatrixServerException(
+                    HttpStatusCode.BadGateway,
+                    ErrorResponse.Unknown("bad gateway")
+                )
+            )
+        shouldThrow<MatrixServerException> {
+            cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), setOf()))
+        }
+        olmEventHandlerRequestHandlerMock.setOneTimeKeys =
+            Result.failure(
+                MatrixServerException(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse.Unknown("key already exist")
+                )
+            )
+        cut.handleOlmKeysChange( // should re-upload even if the server says it does not need to
+            OlmKeysChange(
+                mapOf(KeyAlgorithm.SignedCurve25519 to 0),
+                setOf(KeyAlgorithm.SignedCurve25519)
+            )
+        )
+
+        val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
+        captureOneTimeKeys shouldHaveSize 2
+        captureOneTimeKeys[0].keys shouldHaveSize 26
+        captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
+    }
     should("not upload keys when server has 50 one time keys") {
         cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 50), null))
         val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
@@ -170,11 +217,13 @@ class OlmEventHandlerTest : ShouldSpec({
         val captureFallbackKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.second }
         captureFallbackKeys shouldHaveSize 2
         captureFallbackKeys[0].keys shouldHaveSize 1
-        captureFallbackKeys[0].keys.first().shouldBeInstanceOf<Key.SignedCurve25519Key>().fallback shouldBe true
+        val fallbackKey1 = captureFallbackKeys[0].keys.first().shouldBeInstanceOf<Key.SignedCurve25519Key>()
+        fallbackKey1.fallback shouldBe true
         captureFallbackKeys[1].keys shouldHaveSize 1
-        captureFallbackKeys[1].keys.first().shouldBeInstanceOf<Key.SignedCurve25519Key>().fallback shouldBe true
+        val fallbackKey2 = captureFallbackKeys[1].keys.first().shouldBeInstanceOf<Key.SignedCurve25519Key>()
+        fallbackKey2.fallback shouldBe true
 
-        captureFallbackKeys[0].keys shouldNotContainAnyOf captureFallbackKeys[1].keys
+        fallbackKey1 shouldNotBe fallbackKey2
     }
     should("not upload fallback key when server has one") {
         cut.handleOlmKeysChange(OlmKeysChange(null, setOf(KeyAlgorithm.SignedCurve25519)))
