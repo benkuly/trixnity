@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.store.cache
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.utils.KeyedMutex
 import net.folivo.trixnity.utils.concurrentMutableMap
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -11,7 +10,6 @@ import kotlin.contracts.contract
 
 internal class ConcurrentObservableMap<K : Any, V> {
     private val _values = concurrentMutableMap<K, V>()
-    private val keyedMutex = KeyedMutex<K>()
 
     val indexes = MutableStateFlow(listOf<ObservableCacheIndex<K>>())
 
@@ -42,10 +40,8 @@ internal class ConcurrentObservableMap<K : Any, V> {
         }
 
     suspend fun getOrPut(key: K, defaultValue: () -> V): V =
-        keyedMutex.withLock(key) {
-            _values.read { get(key) }
-                ?: checkNotNull(internalUpdate(key) { it ?: defaultValue() })
-        }
+        _values.read { get(key) }
+            ?: checkNotNull(internalUpdate(key) { it ?: defaultValue() })
 
 
     suspend fun skipPut(key: K) {
@@ -60,15 +56,11 @@ internal class ConcurrentObservableMap<K : Any, V> {
         contract {
             callsInPlace(updater, InvocationKind.AT_LEAST_ONCE)
         }
-        return keyedMutex.withLock(key) {
-            internalUpdate(key, updater = updater)
-        }
+        return internalUpdate(key, updater = updater)
     }
 
     suspend fun remove(key: K, stale: Boolean = false) {
-        keyedMutex.withLock(key) {
-            internalUpdate(key, stale) { null }
-        }
+        internalUpdate(key, stale) { null }
     }
 
     @OptIn(ExperimentalContracts::class)
@@ -104,7 +96,7 @@ internal class ConcurrentObservableMap<K : Any, V> {
         }
     }
 
-    suspend fun get(key: K): V? = keyedMutex.withLock(key) { _values.read { get(key) } }
+    suspend fun get(key: K): V? = _values.read { get(key) }
 
     suspend fun getAll(): Map<K, V> = _values.read { toMap() }
 
