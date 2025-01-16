@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.media.opfs
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import js.objects.jso
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
@@ -12,6 +11,9 @@ import web.events.EventType
 import web.events.addEventHandler
 import web.file.File
 import web.fs.FileSystemDirectoryHandle
+import web.fs.FileSystemGetDirectoryOptions
+import web.fs.FileSystemGetFileOptions
+import web.fs.FileSystemRemoveOptions
 import web.streams.WritableStream
 import web.window.window
 import kotlin.random.Random
@@ -25,7 +27,7 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
     override suspend fun init(coroutineScope: CoroutineScope) {
         suspend fun delTmp() {
             val tmpPath = tmpPath()
-            basePath.removeEntry(tmpPath.name, jso { recursive = true })
+            basePath.removeEntry(tmpPath.name, FileSystemRemoveOptions(recursive = true))
             tmpPath()
         }
 
@@ -48,18 +50,18 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
 
     override suspend fun deleteAll() {
         for (entry in basePath.values()) {
-            basePath.removeEntry(entry.name, jso { recursive = true })
+            basePath.removeEntry(entry.name, FileSystemRemoveOptions(recursive = true))
         }
     }
 
     private fun fileSystemSafe(url: String) = url.encodeToByteArray().toByteString().sha256().base64Url()
 
     private suspend fun FileSystemDirectoryHandle.resolveUrl(url: String, create: Boolean = false) =
-        getFileHandle(fileSystemSafe(url), jso { this.create = create })
+        getFileHandle(fileSystemSafe(url), FileSystemGetFileOptions(create = create))
 
     override suspend fun addMedia(url: String, content: ByteArrayFlow) = basePathLock.withLock(url) {
         @Suppress("UNCHECKED_CAST")
-        val writableFileStream = basePath.resolveUrl(url, true).createWritable() as WritableStream<Uint8Array>
+        val writableFileStream = basePath.resolveUrl(url, true).createWritable() as WritableStream<Uint8Array<*>>
         try {
             content.writeTo(writableFileStream)
         } catch (throwable: Throwable) {
@@ -105,7 +107,7 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
     // ############ temporary files ############
     // #########################################
 
-    private suspend fun tmpPath() = basePath.getDirectoryHandle("tmp", jso { create = true })
+    private suspend fun tmpPath() = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
 
     private inner class FileBasedOpfsPlatformMediaImpl(
         private val url: String,
@@ -121,7 +123,7 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
                 basePathLock.withLock(url) {
                     val tmpPath = tmpPath()
                     val fileName = Random.nextString(12)
-                    val fileHandle = tmpPath.getFileHandle(fileName, jso { create = true })
+                    val fileHandle = tmpPath.getFileHandle(fileName, FileSystemGetFileOptions(create = true))
                     val writableFileStream = fileHandle.createWritable()
                     try {
                         writableFileStream.write(file)
@@ -150,10 +152,10 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
                 basePathLock.withLock(url) {
                     val tmpPath = tmpPath()
                     val fileName = Random.nextString(12)
-                    val fileHandle = tmpPath.getFileHandle(fileName, jso { create = true })
+                    val fileHandle = tmpPath.getFileHandle(fileName, FileSystemGetFileOptions(create = true))
 
                     @Suppress("UNCHECKED_CAST")
-                    val writableFileStream = fileHandle.createWritable() as WritableStream<Uint8Array>
+                    val writableFileStream = fileHandle.createWritable() as WritableStream<Uint8Array<*>>
                     try {
                         delegate.writeTo(writableFileStream)
                     } catch (throwable: Throwable) {

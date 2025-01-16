@@ -1,7 +1,6 @@
 package net.folivo.trixnity.crypto.core
 
 import io.ktor.util.*
-import js.objects.jso
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
 import pbkdf2
@@ -21,18 +20,18 @@ actual suspend fun generatePbkdf2Sha512(
         val key = crypto.importKey(
             format = KeyFormat.raw,
             keyData = password.encodeToByteArray().toUint8Array(),
-            algorithm = jso<Algorithm> { name = "PBKDF2" },
+            algorithm = Algorithm(name = "PBKDF2"),
             extractable = false,
             keyUsages = arrayOf(KeyUsage.deriveBits)
         )
         Uint8Array(
             crypto.deriveBits(
-                algorithm = jso<Pbkdf2Params> {
-                    name = "PBKDF2"
-                    this.salt = salt.toUint8Array()
-                    iterations = iterationCount
-                    hash = "SHA-512"
-                },
+                algorithm = Pbkdf2Params(
+                    name = "PBKDF2",
+                    salt = salt.toUint8Array(),
+                    iterations = iterationCount,
+                    hash = "SHA-512",
+                ),
                 baseKey = key,
                 length = keyBitLength,
             )

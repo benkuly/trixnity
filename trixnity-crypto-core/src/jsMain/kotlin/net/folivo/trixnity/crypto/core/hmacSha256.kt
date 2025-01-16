@@ -2,7 +2,6 @@ package net.folivo.trixnity.crypto.core
 
 import createHmac
 import io.ktor.util.*
-import js.objects.jso
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
 import web.crypto.HmacImportParams
@@ -17,10 +16,10 @@ actual suspend fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
         val hmacKey = crypto.importKey(
             format = KeyFormat.raw,
             keyData = key.toUint8Array(),
-            algorithm = jso<HmacImportParams> {
-                name = "HMAC"
-                hash = json("name" to "SHA-256")
-            },
+            algorithm = HmacImportParams(
+                name = "HMAC",
+                hash = json("name" to "SHA-256"),
+            ),
             extractable = false,
             keyUsages = arrayOf(KeyUsage.sign)
         )

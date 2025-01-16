@@ -2,8 +2,7 @@ package net.folivo.trixnity.client.media.opfs
 
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import js.iterable.AsyncIterableIterator
-import js.objects.jso
+import js.iterable.AsyncIterator
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.*
@@ -14,6 +13,9 @@ import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
 import web.fs.FileSystemDirectoryHandle
+import web.fs.FileSystemGetDirectoryOptions
+import web.fs.FileSystemGetFileOptions
+import web.fs.FileSystemRemoveOptions
 import web.navigator.navigator
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
@@ -27,7 +29,7 @@ class OpfsMediaStoreTest {
 
     fun test(testBody: suspend TestScope.() -> Unit): TestResult = runTest {
         basePath = navigator.storage.getDirectory()
-        tmpPath = basePath.getDirectoryHandle("tmp", jso { create = true })
+        tmpPath = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
         cut = OpfsMediaStore(basePath)
         coroutineScope = CoroutineScope(Dispatchers.Default)
         try {
@@ -37,7 +39,7 @@ class OpfsMediaStoreTest {
             throw throwable
         } finally {
             for (entry in basePath.values()) {
-                basePath.removeEntry(entry.name, jso { recursive = true })
+                basePath.removeEntry(entry.name, FileSystemRemoveOptions(recursive = true))
             }
             coroutineScope.cancel()
         }
@@ -46,8 +48,8 @@ class OpfsMediaStoreTest {
     @Test
     fun shouldDeleteAll() = test {
         cut.init(coroutineScope)
-        basePath.getFileHandle("url1", jso { create = true })
-        basePath.getFileHandle("url2", jso { create = true })
+        basePath.getFileHandle("url1", FileSystemGetFileOptions(create = true))
+        basePath.getFileHandle("url2", FileSystemGetFileOptions(create = true))
         basePath.values().toList().size shouldBe 3
         cut.deleteAll()
         basePath.values().toList().size shouldBe 0
@@ -78,7 +80,8 @@ class OpfsMediaStoreTest {
     @Test
     fun shouldGetMedia() = test {
         cut.init(coroutineScope)
-        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
+        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", FileSystemGetFileOptions(create = true))
+            .createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
                 close()
@@ -95,7 +98,8 @@ class OpfsMediaStoreTest {
     @Test
     fun shouldDeleteMedia() = test {
         cut.init(coroutineScope)
-        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
+        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", FileSystemGetFileOptions(create = true))
+            .createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
                 close()
@@ -114,7 +118,8 @@ class OpfsMediaStoreTest {
     @Test
     fun shouldChangeMediaUrl() = test {
         cut.init(coroutineScope)
-        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", jso { create = true }).createWritable()
+        basePath.getFileHandle("K5pAaUF5iDoN1BsrFr4kJ0bP8ayM_Q_ftEtyeb_FY2I=", FileSystemGetFileOptions(create = true))
+            .createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
                 close()
@@ -134,7 +139,7 @@ class OpfsMediaStoreTest {
 
     @Test
     fun shouldDeleteTmpDirectoryOnStartup() = test {
-        tmpPath.getFileHandle("tmp_file_1", jso { create = true }).createWritable()
+        tmpPath.getFileHandle("tmp_file_1", FileSystemGetFileOptions(create = true)).createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
                 close()
@@ -147,7 +152,7 @@ class OpfsMediaStoreTest {
     @Test
     fun shouldDeleteTmpDirectoryOnShutdown() = test {
         cut.init(coroutineScope)
-        tmpPath.getFileHandle("tmp_file_1", jso { create = true }).createWritable()
+        tmpPath.getFileHandle("tmp_file_1", FileSystemGetFileOptions(create = true)).createWritable()
             .apply {
                 write("hi".encodeToByteArray().toUint8Array())
                 close()
@@ -195,7 +200,7 @@ class OpfsMediaStoreTest {
         tmpPath.values().toList().size shouldBe 0
     }
 
-    private suspend fun <V> AsyncIterableIterator<V>.toList(): List<V> {
+    private suspend fun <V> AsyncIterator<V>.toList(): List<V> {
         val list = mutableListOf<V>()
         for (entry in this) {
             list.add(entry)
