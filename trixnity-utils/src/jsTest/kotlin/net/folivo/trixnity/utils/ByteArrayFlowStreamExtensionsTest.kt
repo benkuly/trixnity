@@ -19,7 +19,7 @@ class ByteArrayFlowStreamExtensionsTest {
     @Test
     fun shouldCreateByteArrayFlow() = runTest {
         byteArrayFlowFromReadableStream {
-            ReadableStream(jso<UnderlyingDefaultSource<Uint8Array>> {
+            ReadableStream(jso<UnderlyingDefaultSource<Uint8Array<*>>> {
                 start = { controller ->
                     controller.enqueue("he".encodeToByteArray().toUint8Array())
                     controller.enqueue("llo".encodeToByteArray().toUint8Array())
@@ -36,14 +36,15 @@ class ByteArrayFlowStreamExtensionsTest {
     fun shouldWriteFromByteArrayFlow() = runTest {
         val input = listOf("he".toByteArray(), "llo".toByteArray())
         val result = mutableListOf<ByteArray>()
-        WritableStream(jso<UnderlyingSink<Uint8Array>> {
-            write = { chunk, _ ->
-                Promise { resolve, _ ->
-                    result.add(chunk.toByteArray())
-                    resolve(null)
+        WritableStream(
+            UnderlyingSink<Uint8Array<*>>(
+                write = { chunk, _ ->
+                    Promise { resolve, _ ->
+                        result.add(chunk.toByteArray())
+                        resolve(null)
+                    }
                 }
-            }
-        }).write(input.asFlow())
+            )).write(input.asFlow())
         result shouldBe input
     }
 }

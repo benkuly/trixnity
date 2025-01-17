@@ -63,7 +63,7 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
     }
 
     override suspend fun addMedia(url: String, content: ByteArrayFlow) = coroutineScope {
-        val transformStream = TransformStream<Uint8Array, Uint8Array>()
+        val transformStream = TransformStream<Uint8Array<*>, Uint8Array<*>>()
         launch {
             content.writeTo(transformStream.writable)
         }
@@ -131,7 +131,7 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
 
         override suspend fun getTemporaryFile(): Result<IndexeddbPlatformMedia.TemporaryFile> = runCatching {
             coroutineScope {
-                val transformStream = TransformStream<Uint8Array, Uint8Array>()
+                val transformStream = TransformStream<Uint8Array<*>, Uint8Array<*>>()
                 launch {
                     delegate.writeTo(transformStream.writable)
                 }

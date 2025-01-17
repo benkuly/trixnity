@@ -7,11 +7,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.time.Duration
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class KeyedMutexTest {
+
+
     @Test
     fun shouldLockKey() = runTest {
         val keyedMutex = KeyedMutex<String>()
@@ -31,11 +34,22 @@ class KeyedMutexTest {
 
     @Test
     fun shouldLockMultipleKeys() = runTest {
-        val keyedMutex = KeyedMutex<String>()
+        class ClassWithHashCode(@JsName("hashCodeVal") val hashCode: Int) {
+            override fun hashCode(): Int = hashCode
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (other == null || this::class != other::class) return false
+                other as ClassWithHashCode
+                if (hashCode != other.hashCode) return false
+                return true
+            }
+        }
+
+        val keyedMutex = KeyedMutex<ClassWithHashCode>(1000)
         val locked = MutableStateFlow(0)
         val jobs = (1..1000).map { i ->
             launch {
-                keyedMutex.withLock("key$i") {
+                keyedMutex.withLock(ClassWithHashCode(i)) {
                     locked.value++
                     delay(Duration.INFINITE)
                 }

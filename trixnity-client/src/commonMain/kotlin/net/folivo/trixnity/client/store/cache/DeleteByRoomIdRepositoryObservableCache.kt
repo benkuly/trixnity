@@ -131,7 +131,7 @@ internal class FullDeleteByRoomIdRepositoryObservableCache<K : Any, V>(
     }
 }
 
-internal class MapDeleteByRoomIdRepositoryObservableCache<K1, K2, V>(
+internal class MapDeleteByRoomIdRepositoryObservableCache<K1 : Any, K2 : Any, V>(
     private val repository: DeleteByRoomIdMapRepository<K1, K2, V>,
     private val tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,

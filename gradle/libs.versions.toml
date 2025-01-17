@@ -2,9 +2,9 @@
 ### build ###
 kotlin = "2.1.0" # https://github.com/JetBrains/kotlin/releases
 ksp = "2.1.0-1.0.29" # https://github.com/google/ksp/releases
-kotlinWrappers = "1.0.0-pre.774" # https://github.com/JetBrains/kotlin-wrappers/releases
+kotlinWrappers = "2025.1.3" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "2.0.0" # https://github.com/Kotlin/dokka/releases
-androidGradlePlugin = "8.5.2" # https://developer.android.com/reference/tools/gradle-api
+androidGradlePlugin = "8.7.3" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 
 ### kotlinx ###
@@ -21,22 +21,22 @@ jna = "5.16.0" # https://github.com/java-native-access/jna/tags
 ### libraries ###
 ktor = "3.0.3" # https://github.com/ktorio/ktor/releases
 koin = "4.0.1" # https://github.com/InsertKoinIO/koin/tags
-okio = "3.9.1" # https://square.github.io/okio/changelog/
+okio = "3.10.2" # https://square.github.io/okio/changelog/
 arrow = "2.0.0" # https://github.com/arrow-kt/arrow/releases
 korlibs = "4.0.10" # https://github.com/korlibs/korge/releases
 
 ### databases ###
-exposed = "0.57.0" # https://github.com/JetBrains/Exposed/releases
+exposed = "0.58.0" # https://github.com/JetBrains/Exposed/releases
 hikari = "6.2.1" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.3.232" # https://github.com/h2database/h2database/releases
-postgres = "42.7.4" # https://github.com/pgjdbc/pgjdbc/releases
+postgres = "42.7.5" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.9.0" # https://github.com/JuulLabs/indexeddb/releases
 androidxRoom = "2.7.0-alpha12" # https://developer.android.com/jetpack/androidx/releases/room
 androidxSqlite = "2.5.0-alpha12" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
 ### logging ###
 oshaiKotlinLogging = "7.0.3" # https://github.com/oshai/kotlin-logging/releases
-logback = "1.5.15" # https://github.com/qos-ch/logback/tags
+logback = "1.5.16" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
 kotest = "6.0.0.M1" # https://github.com/kotest/kotest/releases
