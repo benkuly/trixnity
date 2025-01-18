@@ -345,12 +345,21 @@ class VerificationServiceImpl(
                 .transformLatest { event ->
                     event?.content?.key?.let {
                         emitAll(globalAccountDataStore.get<SecretKeyEventContent>(it))
-                    } ?: emit(null)
+                    } ?: run {
+                        log.debug { "no default secret key found" }
+                        emit(null)
+                    }
                 },
         ) { bootstrapRunning, currentSyncState, crossSigningKeys, deviceKeys, defaultKey ->
             log.trace {
-                "self verification preconditions: bootstrapRunning=$bootstrapRunning currentSyncState=$currentSyncState " +
-                        "crossSigningKeys=$crossSigningKeys deviceKeys=$deviceKeys defaultKey=$defaultKey"
+                """
+                    self verification preconditions:
+                         bootstrapRunning=$bootstrapRunning
+                         currentSyncState=$currentSyncState
+                         crossSigningKeys=$crossSigningKeys
+                         deviceKeys=$deviceKeys
+                         defaultKey=$defaultKey
+                """.trimIndent()
             }
             // preconditions: sync running, login was successful and we are not yet cross-signed
             if (currentSyncState != SyncState.RUNNING || deviceKeys == null || crossSigningKeys == null)

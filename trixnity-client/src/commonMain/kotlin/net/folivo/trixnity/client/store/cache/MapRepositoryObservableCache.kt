@@ -16,7 +16,7 @@ data class MapRepositoryCoroutinesCacheKey<K1, K2>(
     val secondKey: K2,
 )
 
-private class MapRepositoryObservableCacheIndex<K1, K2>(
+private class MapRepositoryObservableCacheIndex<K1 : Any, K2>(
     private val name: String,
     private val loadFromStore: suspend (key: K1) -> Unit,
 ) : ObservableCacheIndex<MapRepositoryCoroutinesCacheKey<K1, K2>> {
@@ -96,7 +96,7 @@ private class MapRepositoryObservableCacheIndex<K1, K2>(
     }
 }
 
-internal open class MapRepositoryObservableCache<K1, K2, V>(
+internal open class MapRepositoryObservableCache<K1 : Any, K2 : Any, V>(
     repository: MapRepository<K1, K2, V>,
     tm: RepositoryTransactionManager,
     cacheScope: CoroutineScope,

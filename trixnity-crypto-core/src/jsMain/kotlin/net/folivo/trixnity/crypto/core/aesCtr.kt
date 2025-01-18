@@ -4,7 +4,6 @@ import createCipheriv
 import io.ktor.util.*
 import js.buffer.ArrayBuffer
 import js.buffer.BufferSource
-import js.objects.jso
 import js.typedarrays.Uint8Array
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.FlowCollector
@@ -89,10 +88,11 @@ private suspend fun ByteArrayFlow.aesOperation(
     operation: suspend (algorithm: AesCtrParams, key: CryptoKey, data: BufferSource) -> ArrayBuffer,
 ) {
     val crypto = crypto.subtle
+
     val aesKey = crypto.importKey(
         format = KeyFormat.raw,
         keyData = key.toUint8Array(),
-        algorithm = jso<AesKeyAlgorithm> { name = "AES-CTR" },
+        algorithm = AesKeyAlgorithm(name = "AES-CTR", length = 256),
         extractable = false,
         keyUsages = arrayOf(KeyUsage.encrypt, KeyUsage.decrypt),
     )
@@ -104,11 +104,11 @@ private suspend fun ByteArrayFlow.aesOperation(
         val input = previousInput + nextInput
         val output = Uint8Array(
             operation(
-                jso {
-                    name = "AES-CTR"
-                    counter = (nonce + currentCounter).toUint8Array()
-                    length = 64
-                },
+                AesCtrParams(
+                    name = "AES-CTR",
+                    counter = (nonce + currentCounter).toUint8Array(),
+                    length = 64,
+                ),
                 aesKey,
                 input.toUint8Array(),
             )

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.olm
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.olm.OlmLibrary.account
 import net.folivo.trixnity.olm.OlmLibrary.account_forget_old_fallback_key

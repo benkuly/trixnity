@@ -5,6 +5,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.folivo.trixnity.client.store.Transaction
 import net.folivo.trixnity.utils.concurrentMutableMap
 import kotlin.jvm.JvmInline
 import kotlin.time.Duration
@@ -131,7 +132,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
     fun get(key: K): Flow<V?> = flow {
         val cacheEntry =
             values.getOrPut(key) {
-                log.trace { "$name: no cache hit for key $key" }
+                log.trace { "$name (get): no cache hit for key $key" }
                 MutableStateFlow<CacheValue<V?>>(CacheValue.Init())
             }.also {
                 it.get { store.get(key) }
@@ -166,35 +167,47 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                 { newValue -> store.persist(key, newValue).also { onPersist(newValue) } }
             } else null
 
-        val cacheEntry = values.get(key)
-        if (persist != null && cacheEntry == null && values.getIndexSubscriptionCount(key) == 0) {
-            log.trace { "$name: skipped cache and persist directly because there is not cache entry or subscriber for $key" }
+        if (persist != null
+            && values.get(key) == null
+            && values.getIndexSubscriptionCount(key) == 0
+        ) {
+            log.trace { "$name (set): skipped cache and persist directly because there is no cache entry or subscriber for key $key" }
             values.skipPut(key)
             persist(value)
+
+            currentCoroutineContext()[Transaction]?.doAfter?.write {
+                add {
+                    val cacheEntry = values.get(key)
+                    if (cacheEntry != null) {
+                        log.trace { "$name (set): skipped cache but found a cache entry and therefore filling it for key $key" }
+                        cacheEntry.set(value, null, forceCacheOnly = true)
+                        possiblyRemoveFromCache(value, key)
+                    }
+                }
+            }
         } else {
-            val cacheEntry = values.getOrPut(key) {
-                log.trace { "$name: no cache hit for key $key" }
-                MutableStateFlow<CacheValue<V?>>(CacheValue.Value(value))
-            }
+            val cacheEntry =
+                values.getOrPut(key) {
+                    log.trace { "$name (set): no cache hit for key $key" }
+                    MutableStateFlow<CacheValue<V?>>(CacheValue.Value(value))
+                }
             cacheEntry.set(value, persist)
-            if (removeFromCacheOnNull && value == null) {
-                log.trace { "$name: remove value from cache with key $key because it is stale and is allowed to remove (will never be not-null again)" }
-                values.remove(key, true)
-            }
+            possiblyRemoveFromCache(value, key)
         }
     }
 
     private suspend inline fun <V> MutableStateFlow<CacheValue<V?>>.set(
         newValue: V?,
         noinline persist: (suspend (newValue: V?) -> Unit)? = null,
+        forceCacheOnly: Boolean = false,
     ) {
         while (true) {
             val oldRawValue = value
             // prefer cache value (when not going to be nulled)
-            if (newValue != null && persist == null && oldRawValue is CacheValue.Value) return
+            if (forceCacheOnly.not() && newValue != null && persist == null && oldRawValue is CacheValue.Value) return
             val newRawValue = CacheValue.Value(newValue)
             if (compareAndSet(oldRawValue, newRawValue)) {
-                if (persist != null && (oldRawValue.valueOrNull() != newValue)) persist(newValue)
+                if (forceCacheOnly.not() && persist != null && (oldRawValue.valueOrNull() != newValue)) persist(newValue)
                 return
             }
         }
@@ -211,15 +224,13 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                 { newValue -> store.persist(key, newValue).also { onPersist(newValue) } }
             } else null
 
-        val cacheEntry = values.getOrPut(key) {
-            log.trace { "$name: no cache hit for key $key" }
-            MutableStateFlow<CacheValue<V?>>(CacheValue.Init())
-        }
+        val cacheEntry =
+            values.getOrPut(key) {
+                log.trace { "$name (update): no cache hit for key $key" }
+                MutableStateFlow<CacheValue<V?>>(CacheValue.Init())
+            }
         val value = cacheEntry.updateAndGet(updater, { store.get(key) }, persist)
-        if (removeFromCacheOnNull && value == null) {
-            log.trace { "$name: remove value from cache with key $key because it is stale and is allowed to remove (will never be not-null again)" }
-            values.remove(key, true)
-        }
+        possiblyRemoveFromCache(value, key)
     }
 
     private suspend inline fun <V> MutableStateFlow<CacheValue<V?>>.updateAndGet(
@@ -242,6 +253,13 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         }
     }
 
+    private suspend fun possiblyRemoveFromCache(value: V?, key: K) {
+        if (removeFromCacheOnNull && value == null) {
+            log.trace { "$name: remove value from cache with key $key because it is stale and is allowed to remove (will never be not-null again)" }
+            values.remove(key, true)
+        }
+    }
+
     internal suspend fun collectStatistic(): ObservableCacheStatistic {
         val (all, subscribed) = values.internalRead {
             count() to values.count { it.subscriptionCount.value > 0 }
@@ -255,7 +273,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
     }
 }
 
-private class RemoverJobExecutingIndex<K, V>(
+private class RemoverJobExecutingIndex<K : Any, V>(
     private val name: String,
     private val cacheValues: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>>,
     private val clock: Clock,
@@ -281,14 +299,14 @@ private class RemoverJobExecutingIndex<K, V>(
             coroutineScope {
                 launch {
                     val nextExpiration = now + expireDuration
-                    log.trace { "$name: update invalidation to $nextExpiration for ${subscribed.map { it.key }}" }
+                    log.trace { "$name: update invalidation to $nextExpiration for ${subscribed.size} entries" }
                     removeAfter.write {
                         putAll(subscribed.map { it.key to nextExpiration })
                     }
                 }
                 launch {
+                    log.trace { "$name: check invalidation at $now for ${unsubscribed.size} entries" }
                     unsubscribed.forEach { (key, value) ->
-                        log.trace { "$name: check invalidation at $now for $unsubscribed" }
                         if (now > value) {
                             val cacheValue = cacheValues.get(key)
                             if (cacheValue != null) {

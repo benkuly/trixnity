@@ -47,7 +47,7 @@ external class Session {
 
 external class Utility {
     fun free()
-    fun sha256(input: Uint8Array): String
+    fun sha256(input: Uint8Array<*>): String
     fun sha256(input: String): String
     fun ed25519_verify(key: String, message: String, signature: String)
 }
@@ -83,9 +83,9 @@ external class PkEncryption {
 
 external class PkDecryption {
     fun free()
-    fun init_with_private_key(key: Uint8Array): String
+    fun init_with_private_key(key: Uint8Array<*>): String
     fun generate_key(): String
-    fun get_private_key(): Uint8Array
+    fun get_private_key(): Uint8Array<*>
     fun pickle(key: String): String
     fun unpickle(key: String, pickle: String): String
     fun decrypt(ephemeral_key: String, mac: String, cipherText: String): String
@@ -93,8 +93,8 @@ external class PkDecryption {
 
 external class PkSigning {
     fun free()
-    fun init_with_seed(seed: Uint8Array): String
-    fun generate_seed(): Uint8Array
+    fun init_with_seed(seed: Uint8Array<*>): String
+    fun generate_seed(): Uint8Array<*>
     fun sign(message: String): String
 }
 
@@ -102,7 +102,7 @@ external class SAS {
     fun free()
     fun get_pubkey(): String
     fun set_their_key(their_key: String)
-    fun generate_bytes(info: String, length: Number): Uint8Array
+    fun generate_bytes(info: String, length: Number): Uint8Array<*>
     fun calculate_mac(input: String, info: String): String
     fun calculate_mac_fixed_base64(input: String, info: String): String
 }

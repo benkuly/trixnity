@@ -3,7 +3,7 @@ package net.folivo.trixnity.crypto.olm
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.*
@@ -46,6 +46,7 @@ class OlmEventHandler(
         eventEmitter.subscribeEventList(subscriber = ::handleMemberEvents).unsubscribeOnCompletion(scope)
         eventEmitter.subscribeEvent(subscriber = ::handleHistoryVisibility).unsubscribeOnCompletion(scope)
         eventEmitter.subscribeEventList(Priority.TO_DEVICE_EVENTS, ::handleOlmEvents).unsubscribeOnCompletion(scope)
+        eventEmitter.subscribe(Priority.LAST, ::forgetOldFallbackKey).unsubscribeOnCompletion(scope)
         decrypter.subscribe(::handleOlmEncryptedRoomKeyEventContent).unsubscribeOnCompletion(scope)
         scope.launch {
             forgetOldFallbackKey()
@@ -56,72 +57,95 @@ class OlmEventHandler(
         decrypter.handleOlmEvents(events)
 
     internal suspend fun forgetOldFallbackKey() {
-        store.getForgetFallbackKeyAfter().collect { forgetFallbackKeyAfter ->
-            if (forgetFallbackKeyAfter != null) {
-                val wait = forgetFallbackKeyAfter - clock.now()
-                log.debug { "wait for $wait and then forget old fallback key" }
-                delay(wait)
-                store.updateOlmAccount { pickledOlmAccount ->
-                    freeAfter(
-                        OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount),
-                    ) { olmAccount ->
-                        olmAccount.forgetOldFallbackKey()
-                        olmAccount.pickle(store.getOlmPickleKey())
-                    }
+        val forgetFallbackKeyAfter = store.getForgetFallbackKeyAfter().first()
+        if (forgetFallbackKeyAfter != null && forgetFallbackKeyAfter < clock.now()) {
+            log.debug { "forget old fallback key" }
+            store.updateOlmAccount { pickledOlmAccount ->
+                freeAfter(
+                    OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount),
+                ) { olmAccount ->
+                    olmAccount.forgetOldFallbackKey()
+                    olmAccount.pickle(store.getOlmPickleKey())
                 }
-                store.updateForgetFallbackKeyAfter { null }
             }
+            store.updateForgetFallbackKeyAfter { null }
         }
     }
 
     internal suspend fun handleOlmKeysChange(change: OlmKeysChange) {
         val oneTimeKeysCount = change.oneTimeKeysCount
         val fallbackKeyTypes = change.fallbackKeyTypes
+        var newOneTimeKeys: Keys? = null
+        var newFallbackKeys: Keys? = null
+
+        log.trace { "handle change of own olm keys server count" }
         store.updateOlmAccount { pickledOlmAccount ->
-            log.trace { "handle change of own olm keys server count" }
             freeAfter(
                 OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount)
             ) { olmAccount ->
-                val newOneTimeKeys =
-                    if (oneTimeKeysCount != null) {
-                        val generateOneTimeKeysCount =
-                            (olmAccount.maxNumberOfOneTimeKeys / 2 - (oneTimeKeysCount[KeyAlgorithm.SignedCurve25519]
-                                ?: 0))
-                                .coerceAtLeast(0)
-                        if (generateOneTimeKeysCount > 0) {
-                            olmAccount.generateOneTimeKeys(generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4)
-                            Keys(olmAccount.oneTimeKeys.curve25519.map {
-                                signService.signCurve25519Key(Curve25519Key(keyId = it.key, value = it.value))
-                            }.toSet())
-                        } else null
+                newOneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys()
+                if (newOneTimeKeys != null) log.trace { "found one time keys marked as unpublished" }
+                if (newOneTimeKeys.isNullOrEmpty() && oneTimeKeysCount != null) {
+                    val generateOneTimeKeysCount =
+                        (olmAccount.maxNumberOfOneTimeKeys / 2 - (oneTimeKeysCount[KeyAlgorithm.SignedCurve25519]
+                            ?: 0))
+                            .coerceAtLeast(0)
+                    if (generateOneTimeKeysCount > 0) {
+                        log.trace { "generate $generateOneTimeKeysCount new one time key" }
+                        olmAccount.generateOneTimeKeys(generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4)
+                        newOneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys()
                     } else null
+                } else null
 
-                val newFallbackKeys =
-                    if (fallbackKeyTypes?.contains(KeyAlgorithm.SignedCurve25519)?.not() == true) {
-                        olmAccount.generateFallbackKey()
-                        Keys(olmAccount.unpublishedFallbackKey.curve25519.map {
-                            signService.signCurve25519Key(
-                                Curve25519Key(keyId = it.key, value = it.value, fallback = true)
-                            )
-                        }.toSet())
-                            // we can forget the old fallback key, when we had to generate a new one
-                            .also { store.updateForgetFallbackKeyAfter { clock.now() + 1.hours } }
-                    } else null
-
-                if (newOneTimeKeys != null || newFallbackKeys != null) {
-                    log.debug { "generate and upload ${newOneTimeKeys?.size} one time keys and ${newFallbackKeys?.size} fallback keys." }
-                    requestHandler.setOneTimeKeys(
-                        oneTimeKeys = newOneTimeKeys,
-                        fallbackKeys = newFallbackKeys
-                    ).getOrThrow()
-                    olmAccount.markKeysAsPublished()
-                    olmAccount.pickle(store.getOlmPickleKey())
-                } else pickledOlmAccount
-            }.also {
-                log.trace { "finished handle change of own olm keys server count" }
+                newFallbackKeys = olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(fallback = true)
+                if (newFallbackKeys != null) log.trace { "found fallback key marked as unpublished" }
+                if (newFallbackKeys.isNullOrEmpty()
+                    && fallbackKeyTypes?.contains(KeyAlgorithm.SignedCurve25519)?.not() == true
+                ) {
+                    log.trace { "generate new fallback key" }
+                    olmAccount.generateFallbackKey()
+                    newFallbackKeys = olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(fallback = true)
+                } else null
+                olmAccount.pickle(store.getOlmPickleKey())
             }
         }
+        if (newOneTimeKeys != null || newFallbackKeys != null) {
+            log.debug { "upload ${newOneTimeKeys?.size ?: 0} one time keys and ${newFallbackKeys?.size ?: 0} fallback keys." }
+            requestHandler.setOneTimeKeys(
+                oneTimeKeys = newOneTimeKeys,
+                fallbackKeys = newFallbackKeys
+            ).onFailure {
+                if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
+                    log.warn(it) { "seems like our keys were already uploaded, so just marking them as published" }
+                } else throw it
+            }
+
+            store.updateOlmAccount { pickledOlmAccount ->
+                freeAfter(
+                    OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount)
+                ) { olmAccount ->
+                    log.trace { "mark keys as published" }
+                    olmAccount.markKeysAsPublished()
+                    olmAccount.pickle(store.getOlmPickleKey())
+                }
+            }
+
+            newFallbackKeys // we can forget the old fallback key, when we had to generate a new one and successfully set it
+                ?.also {
+                    val forgetAfter = clock.now() + 1.hours
+                    log.trace { "mark fallback key to be forget after $forgetAfter" }
+                    store.updateForgetFallbackKeyAfter { clock.now() + 1.hours }
+                }
+        }
+        log.trace { "finished handle change of own olm keys server count" }
     }
+
+    private suspend fun Map<String, String>.toCurve25519Keys(fallback: Boolean = false) =
+        Keys(this.map {
+            signService.signCurve25519Key(
+                Curve25519Key(keyId = it.key, value = it.value, fallback = fallback)
+            )
+        }.toSet()).ifEmpty { null }
 
     internal suspend fun handleOlmEncryptedRoomKeyEventContent(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content

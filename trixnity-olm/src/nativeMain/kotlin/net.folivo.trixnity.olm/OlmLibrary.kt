@@ -296,12 +296,12 @@ actual object OlmLibrary {
 
     actual fun account_unpublished_fallback_key_length(
         account: OlmAccountPointer
-    ): ULong = olm_account_fallback_key_length(account.ptr)
+    ): ULong = olm_account_unpublished_fallback_key_length(account.ptr)
 
     actual fun account_unpublished_fallback_key(
         account: OlmAccountPointer,
         fallbackKey: ByteArray,
-    ): ULong = olm_account_fallback_key(account.ptr, fallbackKey.refToOrNull(), fallbackKey.usize())
+    ): ULong = olm_account_unpublished_fallback_key(account.ptr, fallbackKey.refToOrNull(), fallbackKey.usize())
 
     actual fun session(): OlmSessionPointer =
         OlmSessionPointer(genericInit(::olm_session, olm_session_size()))

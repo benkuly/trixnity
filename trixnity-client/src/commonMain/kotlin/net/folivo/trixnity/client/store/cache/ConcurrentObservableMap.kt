@@ -8,7 +8,7 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-internal class ConcurrentObservableMap<K, V> {
+internal class ConcurrentObservableMap<K : Any, V> {
     private val _values = concurrentMutableMap<K, V>()
 
     val indexes = MutableStateFlow(listOf<ObservableCacheIndex<K>>())
@@ -41,12 +41,12 @@ internal class ConcurrentObservableMap<K, V> {
 
     suspend fun getOrPut(key: K, defaultValue: () -> V): V =
         _values.read { get(key) }
-            ?: checkNotNull(update(key) { it ?: defaultValue() })
+            ?: checkNotNull(internalUpdate(key) { it ?: defaultValue() })
+
 
     suspend fun skipPut(key: K) {
         indexes.first().forEach { it.onSkipPut(key) }
     }
-
 
     @OptIn(ExperimentalContracts::class)
     suspend fun update(
@@ -74,7 +74,7 @@ internal class ConcurrentObservableMap<K, V> {
         }
         // inspired by [MutableStateFlow::update]
         while (true) {
-            val oldValue = get(key)
+            val oldValue = _values.read { get(key) }
             val newValue = updater(oldValue)
             val compareAndSetResult = compareAndSet(key, oldValue, newValue)
             when (compareAndSetResult) {

@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed Androidx Room repository implementation.
+- Fixed edge-case, where a one time key is published twice and blocks sync processing.
+- Fixed race condition in cache, when cache is skipped.
 
 ### Security
 

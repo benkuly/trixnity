@@ -4,8 +4,6 @@ package net.folivo.trixnity.olm
 
 import com.sun.jna.ptr.IntByReference
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account
-import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_fallback_key
-import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_fallback_key_length
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_forget_old_fallback_key
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_generate_fallback_key
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_generate_fallback_key_random_length
@@ -21,6 +19,8 @@ import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_one_time_keys_lengt
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_sign
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_signature_length
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_size
+import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_unpublished_fallback_key
+import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_account_unpublished_fallback_key_length
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_clear_account
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_clear_inbound_group_session
 import net.folivo.trixnity.olm.OlmLibraryWrapper.olm_clear_outbound_group_session
@@ -437,13 +437,13 @@ actual object OlmLibrary {
 
     actual fun account_unpublished_fallback_key_length(
         account: OlmAccountPointer
-    ): ULong = olm_account_fallback_key_length(account).toULong()
+    ): ULong = olm_account_unpublished_fallback_key_length(account).toULong()
 
     actual fun account_unpublished_fallback_key(
         account: OlmAccountPointer,
         fallbackKey: ByteArray,
     ): ULong = fallbackKey.withNativeWrite { fallbackKeyPtr, fallbackKeySize ->
-        olm_account_fallback_key(account, fallbackKeyPtr, fallbackKeySize).toULong()
+        olm_account_unpublished_fallback_key(account, fallbackKeyPtr, fallbackKeySize).toULong()
     }
 
     actual fun session(): OlmSessionPointer = genericInit(::olm_session, olm_session_size())
