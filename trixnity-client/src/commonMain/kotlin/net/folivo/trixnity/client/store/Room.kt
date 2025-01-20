@@ -27,10 +27,11 @@ data class Room(
 )
 
 val Room.previousRoomId: RoomId? get() = createEventContent?.predecessor?.roomId
-
 val Room.type: CreateEventContent.RoomType? get() = createEventContent?.type
+val Room.federate: Boolean? get() = createEventContent?.federate
+val Room.version: String? get() = createEventContent?.roomVersion
+val Room.joinedMemberCount: Long? get() = name?.summary?.joinedMemberCount
+val Room.invitedMemberCount: Long? get() = name?.summary?.invitedMemberCount
 
 @Deprecated("use sender of CreateEventContent instead")
 val Room.creator: UserId? get() = createEventContent?.creator
-val Room.federate: Boolean? get() = createEventContent?.federate
-val Room.version: String? get() = createEventContent?.roomVersion
