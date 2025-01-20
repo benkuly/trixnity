@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 private val log = KotlinLogging.logger { }
 
 val FallbackOutboxMessageMediaUploaderMapping =
-    OutboxMessageMediaUploaderMapping(MessageEventContent::class) { content, _ ->
+    OutboxMessageMediaUploaderMapping(MessageEventContent::class, null).also { content ->
         log.trace { "EventContent class ${content::class.simpleName} is not supported by any other media uploader." }
         content
     }

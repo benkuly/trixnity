@@ -5,6 +5,5 @@ import net.folivo.trixnity.core.model.events.EventContent
 
 data class OutboxMessageMediaUploaderMappings(val mappings: List<OutboxMessageMediaUploaderMapping<*>>)
 
-fun OutboxMessageMediaUploaderMappings.findUploaderOrFallback(content: EventContent): UploadAndTransformMessageEventContent =
-    mappings.find { content.instanceOf(it.kClass) }?.uploader
-        ?: FallbackOutboxMessageMediaUploaderMapping.uploader
+fun OutboxMessageMediaUploaderMappings.findUploaderOrFallback(content: EventContent): RoomMessageEventContentMediaUploader? =
+    mappings.find { content.instanceOf(it.kClass) }?.uploader ?: FallbackOutboxMessageMediaUploaderMapping.uploader
