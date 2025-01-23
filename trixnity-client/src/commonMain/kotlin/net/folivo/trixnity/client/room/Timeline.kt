@@ -132,6 +132,7 @@ data class TimelineStateChange<T>(
  *
  */
 abstract class TimelineBase<T>(
+    val onStateChange: suspend (TimelineStateChange<T>) -> Unit,
     val transformer: suspend (Flow<TimelineEvent>) -> T,
 ) : Timeline<T> {
     protected abstract suspend fun internalInit(
@@ -270,7 +271,9 @@ abstract class TimelineBase<T>(
                 elementsAfterChange = elementsAfterChange,
                 addedElements = newElements,
                 removedElements = removedElements
-            )
+            ).also {
+                onStateChange(it)
+            }
         }
     }
 
@@ -320,7 +323,9 @@ abstract class TimelineBase<T>(
                         elementsBeforeChange = elementsBeforeChange,
                         elementsAfterChange = elementsAfterChange,
                         addedElements = newElements
-                    )
+                    ).also {
+                        onStateChange(it)
+                    }
                 }
             }
         }
@@ -372,7 +377,9 @@ abstract class TimelineBase<T>(
                         elementsBeforeChange = elementsBeforeChange,
                         elementsAfterChange = elementsAfterChange,
                         addedElements = newElements
-                    )
+                    ).also {
+                        onStateChange(it)
+                    }
                 }
             }
         }
@@ -406,7 +413,9 @@ abstract class TimelineBase<T>(
                 elementsBeforeChange = elementsBeforeChange,
                 elementsAfterChange = elementsAfterChange,
                 removedElements = removedElements,
-            )
+            ).also {
+                onStateChange(it)
+            }
         }
 
     override suspend fun dropAfter(roomId: RoomId, eventId: EventId): TimelineStateChange<T> =
@@ -438,7 +447,9 @@ abstract class TimelineBase<T>(
                 elementsBeforeChange = elementsBeforeChange,
                 elementsAfterChange = elementsAfterChange,
                 removedElements = removedElements,
-            )
+            ).also {
+                onStateChange(it)
+            }
         }
 
     private suspend fun List<Flow<TimelineEvent>>.transformToEventsWithMeta(): List<EventWithMeta> =
@@ -474,8 +485,9 @@ abstract class TimelineBase<T>(
 class TimelineImpl<T>(
     private val roomId: RoomId,
     private val roomService: RoomService,
+    onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
     transformer: suspend (Flow<TimelineEvent>) -> T,
-) : TimelineBase<T>(transformer) {
+) : TimelineBase<T>(onStateChange, transformer) {
     override suspend fun internalInit(
         startFrom: EventId,
         configStart: GetTimelineEventConfig.() -> Unit,

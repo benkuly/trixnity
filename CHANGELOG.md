@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reset unread marker on sending own message.
 - Expose member counts for Room.
 - Allow to init Timeline without explicitly cancel load.
+- Allow to listen to state changes in Timeline.
 
 ### Changed
 
