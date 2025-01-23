@@ -400,7 +400,7 @@ class MatrixClientTest : ShouldSpec({
             val accountStore = cut.di.get<AccountStore>()
             accountStore.updateAccount { it?.copy(isLocked = true) }
             cut.loginState.first { it == LOCKED }
-            delay(50.milliseconds) // give it a moment to listen to sync
+            delay(100.milliseconds) // give it a moment to listen to sync
             cut.syncOnce().getOrThrow()
             cut.loginState.first { it == LOGGED_IN }
         }
