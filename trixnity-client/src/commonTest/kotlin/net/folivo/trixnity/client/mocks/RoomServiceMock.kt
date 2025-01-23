@@ -2,10 +2,7 @@ package net.folivo.trixnity.client.mocks
 
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.flatten
-import net.folivo.trixnity.client.room.GetTimelineEventConfig
-import net.folivo.trixnity.client.room.GetTimelineEventsConfig
-import net.folivo.trixnity.client.room.RoomService
-import net.folivo.trixnity.client.room.Timeline
+import net.folivo.trixnity.client.room.*
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
@@ -84,7 +81,11 @@ class RoomServiceMock : RoomService {
         return returnGetTimelineEventsFromNowOn
     }
 
-    override fun <T> getTimeline(roomId: RoomId, transformer: suspend (Flow<TimelineEvent>) -> T): Timeline<T> {
+    override fun <T> getTimeline(
+        roomId: RoomId,
+        onStateChange: suspend (TimelineStateChange<T>) -> Unit,
+        transformer: suspend (Flow<TimelineEvent>) -> T
+    ): Timeline<T> {
         throw NotImplementedError()
     }
 
