@@ -116,8 +116,8 @@ data class TimelineState<T>(
 )
 
 data class TimelineStateChange<T>(
-    val elementsBeforeChange: List<T>,
-    val elementsAfterChange: List<T>,
+    val elementsBeforeChange: List<T> = listOf(),
+    val elementsAfterChange: List<T> = listOf(),
     val addedElements: List<T> = listOf(),
     val removedElements: List<T> = listOf(),
 ) {
