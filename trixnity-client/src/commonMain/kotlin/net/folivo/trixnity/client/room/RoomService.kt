@@ -133,6 +133,7 @@ interface RoomService {
      */
     fun <T> getTimeline(
         roomId: RoomId,
+        onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
         transformer: suspend (Flow<TimelineEvent>) -> T,
     ): Timeline<T>
 
@@ -588,11 +589,13 @@ class RoomServiceImpl(
 
     override fun <T> getTimeline(
         roomId: RoomId,
+        onStateChange: suspend (TimelineStateChange<T>) -> Unit,
         transformer: suspend (Flow<TimelineEvent>) -> T,
     ): Timeline<T> =
         TimelineImpl(
             roomId = roomId,
             roomService = this,
+            onStateChange = onStateChange,
             transformer = transformer,
         )
 

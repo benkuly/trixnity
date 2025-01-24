@@ -18,7 +18,8 @@ import kotlin.jvm.JvmName
  */
 fun RoomService.getTimeline(
     roomId: RoomId,
-): SimpleTimeline = getTimeline(roomId = roomId) { it }
+    onStateChange: suspend (TimelineStateChange<Flow<TimelineEvent>>) -> Unit = {},
+): SimpleTimeline = getTimeline(roomId = roomId, onStateChange = onStateChange) { it }
 
 inline fun <reified C : RoomAccountDataEventContent> RoomService.getAccountData(
     roomId: RoomId,

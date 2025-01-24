@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Reset unread marker on sending own message.
+- Expose member counts for Room.
+- Allow to init Timeline without explicitly cancel load.
+- Allow to listen to state changes in Timeline.
 
 ### Changed
 
@@ -31,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Androidx Room repository implementation.
 - Fixed edge-case, where a one time key is published twice and blocks sync processing.
 - Fixed race condition in cache, when cache is skipped.
+- Timeline::init returns removed elements in TimelineStateChange.
 
 ### Security
 
