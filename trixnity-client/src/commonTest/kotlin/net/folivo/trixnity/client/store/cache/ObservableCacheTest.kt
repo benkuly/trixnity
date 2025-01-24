@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.store.cache
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.comparables.shouldBeLessThan
@@ -349,6 +350,29 @@ class ObservableCacheTest : ShouldSpec({
         cut.get("key").first() shouldBe null
         delay(51.milliseconds)
         cut.get("key").first() shouldBe "value"
+    }
+    should("rollback cache entry when used during transaction") {
+        val transactionManager = TransactionManagerImpl(NoOpRepositoryTransactionManager)
+        cut.update("key1") { "value0" }
+        cut.update("key2") { null }
+        launch {
+            shouldThrow<CancellationException> {
+                transactionManager.transaction {
+                    cut.update("key1") { "value1" }
+                    cut.set("key1", "value2")
+                    cut.set("key2", "value3")
+                    cut.update("key2") { "value4" }
+                    delay(100.milliseconds)
+                    throw CancellationException("sync cancelled")
+                }
+            }
+        }
+        delay(50.milliseconds)
+        cut.get("key1").first() shouldBe "value2"
+        cut.get("key2").first() shouldBe "value4"
+        delay(51.milliseconds)
+        cut.get("key1").first() shouldBe "value0"
+        cut.get("key2").first() shouldBe null
     }
     context("index") {
         class TestIndexedObservableCache(
