@@ -1,13 +1,10 @@
 package net.folivo.trixnity.client.room.outbox
 
-import korlibs.io.async.async
 import korlibs.io.async.launch
-import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.selects.select
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -36,25 +33,25 @@ class FileRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaU
         val thumbnailUploadProgress = MutableStateFlow<FileTransferProgress?>(null)
         val fileUploadProgress = MutableStateFlow<FileTransferProgress?>(null)
 
+        val uploadThumbnailJob = launch {
+            thumbnailUploadProgress.map {
+                FileTransferProgress(it?.transferred ?: 0, maxSize)
+            }.collectLatest { uploadProgress.value = it }
+        }
+
+        val uploadJob = launch {
+            fileUploadProgress.map {
+                FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
+            }.collectLatest { uploadProgress.value = it }
+        }
+
         return@coroutineScope if (encryptedContentUrl != null) {
             val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
-                select {
-                    async { upload(it, thumbnailUploadProgress) }.onAwait { it }
-                    async {
-                        thumbnailUploadProgress.map {
-                            FileTransferProgress(it?.transferred ?: 0, maxSize)
-                        }.collectLatest { uploadProgress.value = it }
-                    }
-                }
+                upload(it, thumbnailUploadProgress)
             }
-            val mxcUri = select {
-                async { upload(encryptedContentUrl, fileUploadProgress) }.onAwait { it }
-                async {
-                    fileUploadProgress.map {
-                        FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
-                    }.collectLatest { uploadProgress.value = it }
-                }
-            }.also { coroutineContext.cancelChildren() }
+            uploadThumbnailJob.cancel()
+            val mxcUri = upload(encryptedContentUrl, fileUploadProgress)
+            uploadJob.cancel()
             content.copy(
                 file = content.file?.copy(url = mxcUri),
                 info = content.info?.copy(thumbnailFile = thumbnailMxcUri?.let {
@@ -65,23 +62,11 @@ class FileRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaU
             )
         } else if (contentUrl != null) {
             val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
-                select {
-                    async { upload(it, thumbnailUploadProgress) }.onAwait { it }
-                    async {
-                        thumbnailUploadProgress.map {
-                            FileTransferProgress(it?.transferred ?: 0, maxSize)
-                        }.collectLatest { uploadProgress.value = it }
-                    }
-                }
+                upload(it, thumbnailUploadProgress)
             }
-            val mxcUri = select {
-                async { upload(contentUrl, fileUploadProgress) }.onAwait { it }
-                async {
-                    fileUploadProgress.map {
-                        FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
-                    }.collectLatest { uploadProgress.value = it }
-                }
-            }.also { coroutineContext.cancelChildren() }
+            uploadThumbnailJob.cancel()
+            val mxcUri = upload(contentUrl, fileUploadProgress)
+            uploadJob.cancel()
             content.copy(
                 url = mxcUri,
                 info = content.info?.copy(thumbnailUrl = thumbnailMxcUri)
@@ -105,25 +90,23 @@ class ImageRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
         val thumbnailUploadProgress = MutableStateFlow<FileTransferProgress?>(null)
         val fileUploadProgress = MutableStateFlow<FileTransferProgress?>(null)
 
+        val uploadThumbnailJob = launch {
+            thumbnailUploadProgress.map {
+                FileTransferProgress(it?.transferred ?: 0, maxSize)
+            }.collectLatest { uploadProgress.value = it }
+        }
+        val uploadJob = launch {
+            fileUploadProgress.map {
+                FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
+            }.collectLatest { uploadProgress.value = it }
+        }
         return@coroutineScope if (encryptedContentUrl != null) {
             val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
-                select {
-                    async { upload(it, thumbnailUploadProgress) }.onAwait { it }
-                    async {
-                        thumbnailUploadProgress.map {
-                            FileTransferProgress(it?.transferred ?: 0, maxSize)
-                        }.collectLatest { uploadProgress.value = it }
-                    }
-                }
+                upload(it, thumbnailUploadProgress)
             }
-            val mxcUri = select {
-                async { upload(encryptedContentUrl, fileUploadProgress) }.onAwait { it }
-                async {
-                    fileUploadProgress.map {
-                        FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
-                    }.collectLatest { uploadProgress.value = it }
-                }
-            }.also { coroutineContext.cancelChildren() }
+            uploadThumbnailJob.cancel()
+            val mxcUri = upload(encryptedContentUrl, fileUploadProgress)
+            uploadJob.cancel()
             content.copy(
                 file = content.file?.copy(url = mxcUri),
                 info = content.info?.copy(thumbnailFile = thumbnailMxcUri?.let {
@@ -134,23 +117,11 @@ class ImageRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
             )
         } else if (contentUrl != null) {
             val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
-                select {
-                    async { upload(it, thumbnailUploadProgress) }.onAwait { it }
-                    async {
-                        thumbnailUploadProgress.map {
-                            FileTransferProgress(it?.transferred ?: 0, maxSize)
-                        }.collectLatest { uploadProgress.value = it }
-                    }
-                }.also { coroutineContext.cancelChildren() }
+                upload(it, thumbnailUploadProgress)
             }
-            val mxcUri = select {
-                async { upload(contentUrl, fileUploadProgress) }.onAwait { it }
-                async {
-                    fileUploadProgress.map {
-                        FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
-                    }.collectLatest { uploadProgress.value = it }
-                }
-            }
+            uploadThumbnailJob.cancel()
+            val mxcUri = upload(contentUrl, fileUploadProgress)
+            uploadJob.cancel()
             content.copy(
                 url = mxcUri,
                 info = content.info?.copy(thumbnailUrl = thumbnailMxcUri)
@@ -172,35 +143,23 @@ class VideoRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
         val contentUrl = content.url
         val thumbnailUploadProgress = MutableStateFlow<FileTransferProgress?>(null)
         val fileUploadProgress = MutableStateFlow<FileTransferProgress?>(null)
-        launch {
+        val uploadThumbnailJob = launch {
             thumbnailUploadProgress.map {
                 FileTransferProgress(it?.transferred ?: 0, maxSize)
             }.collectLatest { uploadProgress.value = it }
         }
-        launch {
+        val uploadJob = launch {
             fileUploadProgress.map {
                 FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
             }.collectLatest { uploadProgress.value = it }
         }
         return@coroutineScope if (encryptedContentUrl != null) {
             val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
-                select {
-                    async { upload(it, thumbnailUploadProgress) }.onAwait { it }
-                    async {
-                        thumbnailUploadProgress.map {
-                            FileTransferProgress(it?.transferred ?: 0, maxSize)
-                        }.collectLatest { uploadProgress.value = it }
-                    }
-                }
+                upload(it, thumbnailUploadProgress)
             }
-            val mxcUri = select {
-                async { upload(encryptedContentUrl, fileUploadProgress) }.onAwait { it }
-                async {
-                    fileUploadProgress.map {
-                        FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
-                    }.collectLatest { uploadProgress.value = it }
-                }
-            }.also { coroutineContext.cancelChildren() }
+            uploadThumbnailJob.cancel()
+            val mxcUri = upload(encryptedContentUrl, fileUploadProgress)
+            uploadJob.cancel()
             content.copy(
                 file = content.file?.copy(url = mxcUri),
                 info = content.info?.copy(thumbnailFile = thumbnailMxcUri?.let {
@@ -211,23 +170,11 @@ class VideoRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
             )
         } else if (contentUrl != null) {
             val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
-                select {
-                    async { upload(it, thumbnailUploadProgress) }.onAwait { it }
-                    async {
-                        thumbnailUploadProgress.map {
-                            FileTransferProgress(it?.transferred ?: 0, maxSize)
-                        }.collectLatest { uploadProgress.value = it }
-                    }
-                }
+                upload(it, thumbnailUploadProgress)
             }
-            val mxcUri = select {
-                async { upload(contentUrl, fileUploadProgress) }.onAwait { it }
-                async {
-                    fileUploadProgress.map {
-                        FileTransferProgress((content.info?.thumbnailInfo?.size ?: 0) + (it?.transferred ?: 0), maxSize)
-                    }.collectLatest { uploadProgress.value = it }
-                }
-            }.also { coroutineContext.cancelChildren() }
+            uploadThumbnailJob.cancel()
+            val mxcUri = upload(contentUrl, fileUploadProgress)
+            uploadJob.cancel()
             content.copy(
                 url = mxcUri,
                 info = content.info?.copy(thumbnailUrl = thumbnailMxcUri)
