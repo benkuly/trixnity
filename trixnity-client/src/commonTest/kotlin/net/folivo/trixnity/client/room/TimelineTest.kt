@@ -49,7 +49,7 @@ class TimelineTest : ShouldSpec({
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
             val expectedResult = listOf("1", "2", "3", "2", "1")
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe expectedResult
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe expectedResult
             val state = cut.state.first()
             state.elements.map { it.first().eventId.full } shouldBe expectedResult
             state.isInitialized shouldBe true
@@ -59,20 +59,41 @@ class TimelineTest : ShouldSpec({
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")))
             val expectedResult = listOf("3")
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe expectedResult
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe expectedResult
             val state = cut.state.first()
             state.elements.map { it.first().eventId.full } shouldBe expectedResult
             state.isInitialized shouldBe true
+        }
+        should("re-use events") {
+            roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
+            roomServiceMock.returnGetTimelineEvents =
+                flowOf(
+                    flowOf(timelineEvent("3")),
+                    flowOf(timelineEvent("2")),
+                    flowOf(timelineEvent("1"))
+                )
+            cut.init(EventId("start"))
+            roomServiceMock.returnGetTimelineEvents =
+                flowOf(
+                    flowOf(timelineEvent("3")),
+                    flowOf(timelineEvent("2")),
+                    flowOf(timelineEvent("0"))
+                )
+            val change = cut.init(EventId("start"))
+            change.elementsBeforeChange.map { it.first().eventId.full } shouldBe listOf("1", "2", "3", "2", "1")
+            change.elementsAfterChange.map { it.first().eventId.full } shouldBe listOf("0", "2", "3", "2", "0")
+            change.removedElements.map { it.first().eventId.full } shouldBe listOf("1", "1")
+            change.addedElements.map { it.first().eventId.full } shouldBe listOf("0", "0")
         }
     }
     context(SimpleTimeline::loadBefore.name) {
         should("load events before") {
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent("3")))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
-            cut.loadBefore().newElements.map { it.first().eventId.full } shouldBe listOf("1", "2")
+            cut.loadBefore().addedElements.map { it.first().eventId.full } shouldBe listOf("1", "2")
             val state = cut.state.first()
             state.elements.map { it.first().eventId.full } shouldBe listOf("1", "2", "3")
             state.isLoadingBefore shouldBe false
@@ -82,10 +103,10 @@ class TimelineTest : ShouldSpec({
         should("load events after") {
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent("3")))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
-            cut.loadAfter().newElements.map { it.first().eventId.full } shouldBe listOf("2", "1")
+            cut.loadAfter().addedElements.map { it.first().eventId.full } shouldBe listOf("2", "1")
             val state = cut.state.first()
             state.elements.map { it.first().eventId.full } shouldBe listOf("3", "2", "1")
             state.isLoadingAfter shouldBe false
@@ -95,7 +116,7 @@ class TimelineTest : ShouldSpec({
         should("drop events before") {
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent("3")))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
 
@@ -111,7 +132,7 @@ class TimelineTest : ShouldSpec({
         should("drop events after") {
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent("3"))
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent("3")))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
             roomServiceMock.returnGetTimelineEvents =
                 flowOf(flowOf(timelineEvent("3")), flowOf(timelineEvent("2")), flowOf(timelineEvent("1")))
 
@@ -128,7 +149,7 @@ class TimelineTest : ShouldSpec({
             val timelineEvent = timelineEvent("3")
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent)
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
 
             cut.state.first().canLoadBefore shouldBe false
         }
@@ -136,7 +157,7 @@ class TimelineTest : ShouldSpec({
             val timelineEvent = timelineEvent("3").copy(previousEventId = EventId("bla"))
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent)
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
 
             cut.state.first().canLoadBefore shouldBe true
         }
@@ -153,7 +174,7 @@ class TimelineTest : ShouldSpec({
             )
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent)
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
 
             cut.state.first().canLoadBefore shouldBe true
         }
@@ -163,7 +184,7 @@ class TimelineTest : ShouldSpec({
             val timelineEvent = timelineEvent("3")
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent)
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
 
             cut.state.first().canLoadAfter shouldBe false
         }
@@ -171,7 +192,7 @@ class TimelineTest : ShouldSpec({
             val timelineEvent = timelineEvent("3").copy(nextEventId = EventId("bla"))
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent)
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
 
             cut.state.first().canLoadAfter shouldBe true
         }
@@ -192,7 +213,7 @@ class TimelineTest : ShouldSpec({
             )
             roomServiceMock.returnGetTimelineEvent = flowOf(timelineEvent)
             roomServiceMock.returnGetTimelineEvents = flowOf(flowOf(timelineEvent))
-            cut.init(EventId("start")).newElements.map { it.first().eventId.full } shouldBe listOf("3")
+            cut.init(EventId("start")).addedElements.map { it.first().eventId.full } shouldBe listOf("3")
 
             cut.state.first().canLoadAfter shouldBe true
         }
