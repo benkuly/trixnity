@@ -61,10 +61,10 @@ suspend fun MatrixClientServerApiClient.register(
     registerStep.shouldBeInstanceOf<UIA.Step<Register.Response>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy).getOrThrow()
     registerResult.shouldBeInstanceOf<UIA.Success<Register.Response>>()
-    val (userId, createdDeviceId, accessToken) = registerResult.value
+    val (userId, createdDeviceId, accessToken, _, refreshToken) = registerResult.value
     requireNotNull(createdDeviceId)
     requireNotNull(accessToken)
-    return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken))
+    return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken, refreshToken))
 }
 
 fun newDatabase() = Database.connect("jdbc:h2:mem:${Random.nextString(22)};DB_CLOSE_DELAY=-1;")

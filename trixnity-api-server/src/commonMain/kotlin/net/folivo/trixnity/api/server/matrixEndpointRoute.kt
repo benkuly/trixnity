@@ -7,14 +7,14 @@ import io.ktor.server.request.*
 import io.ktor.server.resources.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.util.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+import net.folivo.trixnity.core.Auth
+import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.jvm.JvmName
 
@@ -23,12 +23,6 @@ class MatrixEndpointContext<ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, REQUES
     val requestBody: REQUEST,
     val call: ApplicationCall,
 )
-
-enum class AuthRequired {
-    YES, OPTIONAL, NO
-}
-
-val withoutAuthAttributeKey = AttributeKey<AuthRequired>("matrixEndpointAuthRequired")
 
 // TODO inject json and mappings with context receivers in a future kotlin version
 inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> Route.matrixEndpoint(
@@ -92,17 +86,12 @@ inline fun <reified ENDPOINT : MatrixEndpoint<*, *>> Route.matrixEndpointResourc
     val annotations = serializer<ENDPOINT>().descriptor.annotations
     val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
         ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
-    val withoutAuthOptional = annotations.filterIsInstance<WithoutAuth>().firstOrNull()?.optional
+    val authRequired =
+        annotations.filterIsInstance<Auth>().firstOrNull()?.required ?: AuthRequired.YES
     method(io.ktor.http.HttpMethod(endpointHttpMethod.type.name)) {
         install(createRouteScopedPlugin("AuthAttributeKeyPlugin") {
             on(CallSetup) { call ->
-                call.attributes.put(
-                    withoutAuthAttributeKey, when (withoutAuthOptional) {
-                        true -> AuthRequired.OPTIONAL
-                        false -> AuthRequired.NO
-                        null -> AuthRequired.YES
-                    }
-                )
+                call.attributes.put(AuthRequired.attributeKey, authRequired)
             }
         })
         handle<ENDPOINT> { endpoint ->

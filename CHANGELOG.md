@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow to init Timeline without explicitly cancel load.
 - Allow to listen to state changes in Timeline.
 - Rollback of cache on failed transactions additionally to database rollback.
+- Support for refresh tokens.
 
 ### Changed
 

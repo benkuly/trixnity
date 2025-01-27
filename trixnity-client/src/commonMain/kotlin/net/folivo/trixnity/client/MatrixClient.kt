@@ -11,10 +11,7 @@ import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
 import net.folivo.trixnity.client.utils.retryWhen
-import net.folivo.trixnity.clientserverapi.client.LogoutInfo
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
-import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -73,6 +70,7 @@ interface MatrixClient : AutoCloseable {
         val userId: UserId,
         val deviceId: String,
         val accessToken: String,
+        val refreshToken: String?,
     )
 
     data class SoftLoginInfo(
@@ -140,12 +138,14 @@ suspend fun MatrixClient.Companion.login(
                 token = token,
                 type = loginType,
                 deviceId = deviceId,
-                initialDeviceDisplayName = initialDeviceDisplayName
+                initialDeviceDisplayName = initialDeviceDisplayName,
+                refreshToken = true,
             ).map { login ->
                 LoginInfo(
                     userId = login.userId,
-                    accessToken = login.accessToken,
                     deviceId = login.deviceId,
+                    accessToken = login.accessToken,
+                    refreshToken = login.refreshToken,
                 )
             }
         },
@@ -271,15 +271,24 @@ suspend fun MatrixClient.Companion.loginWith(
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
 
-    val (loginInfo, displayName, avatarUrl) = MatrixClientServerApiClientImpl(
+    val loginInfo = MatrixClientServerApiClientImpl(
         baseUrl = baseUrl,
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
     ).use { loginApi ->
-        val loginInfo = getLoginInfo(loginApi).getOrThrow()
-        loginApi.accessToken.value = loginInfo.accessToken
-        val (displayName, avatarUrl) = loginApi.user.getProfile(loginInfo.userId).getOrThrow()
-        Triple(loginInfo, displayName, avatarUrl)
+        getLoginInfo(loginApi).getOrThrow()
+    }
+    
+    val (displayName, avatarUrl) = MatrixClientServerApiClientImpl(
+        baseUrl = baseUrl,
+        authProvider = MatrixAuthProvider.classicInMemory(
+            accessToken = loginInfo.accessToken,
+            refreshToken = loginInfo.refreshToken
+        ),
+        httpClientEngine = config.httpClientEngine,
+        httpClientConfig = config.httpClientConfig,
+    ).use { loginApi ->
+        loginApi.user.getProfile(loginInfo.userId).getOrThrow()
     }
 
     val mediaStore = mediaStoreFactory(loginInfo)
@@ -307,24 +316,14 @@ suspend fun MatrixClient.Companion.loginWith(
     rootStore.init(coroutineScope)
     val accountStore = di.get<AccountStore>()
 
-    val api = MatrixClientServerApiClientImpl(
-        baseUrl = baseUrl,
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig,
-        onLogout = { onLogout(it, accountStore) },
-        json = di.get(),
-        eventContentSerializerMappings = di.get(),
-        syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
-        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
-    )
     val olmPickleKey = ""
 
-    api.accessToken.value = loginInfo.accessToken
     accountStore.updateAccount {
         Account(
             olmPickleKey = olmPickleKey,
             baseUrl = baseUrl.toString(),
             accessToken = loginInfo.accessToken,
+            refreshToken = loginInfo.refreshToken,
             userId = loginInfo.userId,
             deviceId = loginInfo.deviceId,
             displayName = displayName,
@@ -335,6 +334,18 @@ suspend fun MatrixClient.Companion.loginWith(
             isLocked = false,
         )
     }
+
+    val api = MatrixClientServerApiClientImpl(
+        baseUrl = baseUrl,
+        authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)),
+        httpClientEngine = config.httpClientEngine,
+        httpClientConfig = config.httpClientConfig,
+        onLogout = { onLogout(it, accountStore) },
+        json = di.get(),
+        eventContentSerializerMappings = di.get(),
+        syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
+        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
+    )
 
     val olmCryptoStore = di.get<OlmCryptoStore>()
     val (signingKey, identityKey) = freeAfter(
@@ -438,6 +449,7 @@ suspend fun MatrixClient.Companion.fromStore(
     if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
         val api = MatrixClientServerApiClientImpl(
             baseUrl = baseUrl,
+            authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)),
             httpClientEngine = config.httpClientEngine,
             httpClientConfig = config.httpClientConfig,
             onLogout = { onLogout(it, accountStore) },
@@ -446,14 +458,13 @@ suspend fun MatrixClient.Companion.fromStore(
             syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
             syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
         )
-        val accessToken = accountStore.getAccount()?.accessToken ?: onSoftLogin?.let {
+        val accessToken = account.accessToken ?: onSoftLogin?.let {
             val (identifier, password, token, loginType) = onSoftLogin()
-            api.authentication.login(identifier, password, token, loginType, deviceId)
+            api.authentication.login(identifier, password, token, loginType, deviceId, refreshToken = true)
                 .getOrThrow().accessToken
                 .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
         }
         if (accessToken != null) {
-            api.accessToken.value = accessToken
             val (signingKey, identityKey) = freeAfter(OlmAccount.unpickle(olmPickleKey, olmAccount)) {
                 Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
                         Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
@@ -484,6 +495,26 @@ suspend fun MatrixClient.Companion.fromStore(
             }
         } else null
     } else null
+}
+
+private class AccountStoreBearerAccessTokenStore(
+    private val accountStore: AccountStore
+) : ClassicMatrixAuthProvider.BearerTokensStore {
+    override suspend fun getBearerTokens(): ClassicMatrixAuthProvider.BearerTokens? {
+        val currentAccount = accountStore.getAccount()
+        return if (currentAccount?.accessToken != null)
+            ClassicMatrixAuthProvider.BearerTokens(
+                accessToken = currentAccount.accessToken,
+                refreshToken = currentAccount.refreshToken
+            )
+        else null
+    }
+
+    override suspend fun setBearerTokens(bearerTokens: ClassicMatrixAuthProvider.BearerTokens) {
+        accountStore.updateAccount {
+            it?.copy(accessToken = bearerTokens.accessToken, refreshToken = bearerTokens.refreshToken)
+        }
+    }
 }
 
 private suspend fun onLogout(

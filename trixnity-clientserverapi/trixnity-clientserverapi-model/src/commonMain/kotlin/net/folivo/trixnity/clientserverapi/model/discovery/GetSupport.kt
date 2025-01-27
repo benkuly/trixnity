@@ -10,10 +10,11 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport.Response.Contact.Role
+import net.folivo.trixnity.core.Auth
+import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.model.UserId
 
 /**
@@ -22,7 +23,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/.well-known/matrix/support")
 @HttpMethod(GET)
-@WithoutAuth
+@Auth(AuthRequired.NO)
 object GetSupport : MatrixEndpoint<Unit, GetSupport.Response> {
     @Serializable
     data class Response(

@@ -3,7 +3,6 @@ package net.folivo.trixnity.clientserverapi.client
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.http.*
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
@@ -12,8 +11,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 interface MatrixClientServerApiClient : AutoCloseable {
-    val accessToken: MutableStateFlow<String?>
-
     val appservice: AppserviceApiClient
     val authentication: AuthenticationApiClient
     val discovery: DiscoveryApiClient
@@ -48,6 +45,7 @@ interface MatrixClientServerApiClient : AutoCloseable {
 
 class MatrixClientServerApiClientImpl(
     baseUrl: Url? = null,
+    authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
     onLogout: suspend (LogoutInfo) -> Unit = { },
     override val eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
@@ -56,16 +54,14 @@ class MatrixClientServerApiClientImpl(
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixClientServerApiClient {
-    override val accessToken = MutableStateFlow<String?>(null)
-
     private val httpClient = MatrixClientServerApiHttpClient(
-        baseUrl,
-        eventContentSerializerMappings,
-        json,
-        accessToken,
-        onLogout,
-        httpClientEngine,
-        httpClientConfig
+        baseUrl = baseUrl,
+        authProvider = authProvider,
+        onLogout = onLogout,
+        eventContentSerializerMappings = eventContentSerializerMappings,
+        json = json,
+        httpClientEngine = httpClientEngine,
+        httpClientConfig = httpClientConfig
     )
 
     override val appservice: AppserviceApiClient = AppserviceApiClientImpl(httpClient)

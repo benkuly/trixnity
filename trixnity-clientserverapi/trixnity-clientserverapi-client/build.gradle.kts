@@ -22,6 +22,7 @@ kotlin {
 
                 implementation(libs.kotlinx.datetime)
 
+                implementation(libs.ktor.client.auth)
                 implementation(libs.ktor.client.contentNegotiation)
                 implementation(libs.ktor.client.resources)
 
