@@ -38,16 +38,17 @@ class AccountStoreTest : ShouldSpec({
         should("load values from database") {
             repository.save(
                 1, Account(
-                    "",
-                    "http://localhost",
-                    UserId("user", "server"),
-                    "device",
-                    "access_token",
-                    "sync_token",
-                    "filter_id",
-                    "background_filter_id",
-                    "display_name",
-                    "mxc://localhost/123456",
+                    olmPickleKey = "",
+                    baseUrl = "http://localhost",
+                    userId = UserId("user", "server"),
+                    deviceId = "device",
+                    accessToken = "access_token",
+                    refreshToken = "refresh_token",
+                    syncBatchToken = "sync_token",
+                    filterId = "filter_id",
+                    backgroundFilterId = "background_filter_id",
+                    displayName = "display_name",
+                    avatarUrl = "mxc://localhost/123456",
                 )
             )
 
@@ -59,6 +60,7 @@ class AccountStoreTest : ShouldSpec({
                 userId shouldBe UserId("user", "server")
                 deviceId shouldBe "device"
                 accessToken shouldBe "access_token"
+                refreshToken shouldBe "refresh_token"
                 syncBatchToken shouldBe "sync_token"
                 filterId shouldBe "filter_id"
                 displayName shouldBe "display_name"

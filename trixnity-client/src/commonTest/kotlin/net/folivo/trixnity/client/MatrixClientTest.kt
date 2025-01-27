@@ -151,6 +151,7 @@ class MatrixClientTest : ShouldSpec({
                     1, Account(
                         olmPickleKey = "",
                         accessToken = "abcdef",
+                        refreshToken = "ghijk",
                         userId = userId,
                         deviceId = "deviceId",
                         baseUrl = "http://localhost",
@@ -301,6 +302,7 @@ class MatrixClientTest : ShouldSpec({
             val account = Account(
                 olmPickleKey = "",
                 accessToken = "abcdef",
+                refreshToken = "ghijk",
                 userId = userId,
                 deviceId = "deviceId",
                 baseUrl = "http://localhost",
@@ -413,6 +415,7 @@ class MatrixClientTest : ShouldSpec({
                     1, Account(
                         olmPickleKey = "",
                         accessToken = "abcdef",
+                        refreshToken = "ghijk",
                         userId = userId,
                         deviceId = "deviceId",
                         baseUrl = "http://localhost",

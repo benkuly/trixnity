@@ -22,7 +22,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class AuthenticationRoutesTest {
+class AuthRoutesTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 

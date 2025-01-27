@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core
 
 import io.ktor.http.*
+import io.ktor.util.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialInfo
@@ -44,9 +45,17 @@ enum class HttpMethodType {
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS)
-annotation class WithoutAuth(val optional: Boolean = false)
+annotation class Auth(val required: AuthRequired)
 
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS)
 annotation class ForceJson
+
+enum class AuthRequired {
+    YES, OPTIONAL, NO;
+
+    companion object {
+        val attributeKey = AttributeKey<AuthRequired>("matrixEndpointAuthenticationRequired")
+    }
+}

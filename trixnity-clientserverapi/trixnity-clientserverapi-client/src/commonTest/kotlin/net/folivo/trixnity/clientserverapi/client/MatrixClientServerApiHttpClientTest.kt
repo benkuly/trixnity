@@ -8,7 +8,6 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -19,11 +18,9 @@ import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationType
 import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
 import net.folivo.trixnity.clientserverapi.model.uia.UIAState
-import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
-import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.scopedMockEngine
@@ -34,6 +31,7 @@ class MatrixClientServerApiHttpClientTest {
 
     private val json = createMatrixEventJson()
     private val mappings = createDefaultEventContentSerializerMappings()
+    private val authProvider = MatrixAuthProvider.classicInMemory("access")
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -56,6 +54,45 @@ class MatrixClientServerApiHttpClientTest {
     @Serializable
     @Resource("/path/{pathParam}")
     @HttpMethod(POST)
+    @Auth(AuthRequired.NO)
+    data class PostPathWithoutAuth(
+        @SerialName("pathParam") val pathParam: String,
+        @SerialName("requestParam") val requestParam: String,
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
+        @Serializable
+        data class Request(
+            val includeDino: Boolean
+        )
+
+        @Serializable
+        data class Response(
+            val status: String
+        )
+    }
+
+    @Serializable
+    @Resource("/path/{pathParam}")
+    @HttpMethod(POST)
+    @Auth(AuthRequired.OPTIONAL)
+    data class PostPathWithOptionalAuth(
+        @SerialName("pathParam") val pathParam: String,
+        @SerialName("requestParam") val requestParam: String,
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
+        @Serializable
+        data class Request(
+            val includeDino: Boolean
+        )
+
+        @Serializable
+        data class Response(
+            val status: String
+        )
+    }
+
+    @Serializable
+    @Resource("/path/{pathParam}")
+    @HttpMethod(POST)
+    @Auth(AuthRequired.YES)
     data class PostPathWithUIA(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
@@ -76,14 +113,15 @@ class MatrixClientServerApiHttpClientTest {
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
-                    assertEquals("/path/1?requestParam=2", request.url.fullPath)
-                    assertEquals("matrix.host", request.url.host)
-                    assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
-                    assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
-                    assertEquals(Post, request.method)
-                    assertEquals("""{"includeDino":true}""", request.body.toByteArray().decodeToString())
+                    request.url.fullPath shouldBe "/path/1?requestParam=2"
+                    request.url.host shouldBe "matrix.host"
+                    request.headers[HttpHeaders.Authorization] shouldBe "Bearer access"
+                    request.headers[HttpHeaders.Accept] shouldBe Application.Json.toString()
+                    request.method shouldBe Post
+                    request.body.toByteArray().decodeToString() shouldBe """{"includeDino":true}"""
                     respond(
                         """{"status":"ok"}""",
                         HttpStatusCode.OK,
@@ -93,10 +131,139 @@ class MatrixClientServerApiHttpClientTest {
             },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
 
-        cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe PostPath.Response("ok")
+        cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+    }
+
+    @Test
+    fun itShouldNotHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    request.headers[HttpHeaders.Authorization] shouldBe null
+                    respond(
+                        """{"status":"ok"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+    }
+
+    @Test
+    fun itShouldHaveOptionalAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
+        val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
+
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classic(testTokenStore),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    request.headers[HttpHeaders.Authorization] shouldBe null
+                    respond(
+                        """{"status":"ok"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+                addHandler { request ->
+                    request.headers[HttpHeaders.Authorization] shouldBe "Bearer access"
+                    respond(
+                        """{"status":"ok"}""",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+
+        testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
+
+        cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+    }
+
+    @Test
+    fun itShouldRefreshToken() = runTest {
+        var refreshCalled = false
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classicInMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+            ),
+            onLogout = { onLogout = it },
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v3/refresh" -> {
+                            request.body.toByteArray().decodeToString() shouldBe """{"refresh_token":"refresh"}"""
+                            refreshCalled = true
+                            respond(
+                                """
+                                    {
+                                        "access_token": "access",
+                                        "expires_in_ms": 60000,
+                                        "refresh_token": "refresh2"
+                                    }
+                                """,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+        refreshCalled shouldBe true
+        onLogout shouldBe null
     }
 
     @Test
@@ -104,6 +271,7 @@ class MatrixClientServerApiHttpClientTest {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -120,18 +288,17 @@ class MatrixClientServerApiHttpClientTest {
             onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
         val error = shouldThrow<MatrixServerException> {
             cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
         }
-        assertEquals(HttpStatusCode.Unauthorized, error.statusCode)
+        error.statusCode shouldBe HttpStatusCode.Unauthorized
         assertEquals(
             ErrorResponse.UnknownToken::class,
             error.errorResponse::class
         )
-        assertEquals("Only unicorns accepted", error.errorResponse.error)
-        onLogout shouldBe LogoutInfo(true, false)
+        error.errorResponse.error shouldBe "Only unicorns accepted"
+        onLogout shouldBe LogoutInfo(isSoft = true, isLocked = false)
     }
 
     @Test
@@ -139,6 +306,7 @@ class MatrixClientServerApiHttpClientTest {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -155,32 +323,95 @@ class MatrixClientServerApiHttpClientTest {
             onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
         val error = shouldThrow<MatrixServerException> {
             cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
         }
-        assertEquals(HttpStatusCode.Unauthorized, error.statusCode)
+        error.statusCode shouldBe HttpStatusCode.Unauthorized
         assertEquals(
             ErrorResponse.UserLocked::class,
             error.errorResponse::class
         )
-        assertEquals("you are blocked", error.errorResponse.error)
-        onLogout shouldBe LogoutInfo(true, true)
+        error.errorResponse.error shouldBe "you are blocked"
+        onLogout shouldBe LogoutInfo(isSoft = true, isLocked = true)
+    }
+
+    @Test
+    fun itShouldCallOnLogoutWhenRefreshingToken() = runTest {
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classicInMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+            ),
+            onLogout = { onLogout = it },
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v3/refresh" -> {
+                            request.body.toByteArray().decodeToString() shouldBe """{"refresh_token":"refresh"}"""
+                            respond(
+                                """
+                                    {
+                                        "errcode": "M_UNKNOWN_TOKEN",
+                                        "error": "Only unicorns accepted",
+                                        "soft_logout": true
+                                    }
+                                """,
+                                HttpStatusCode.Unauthorized,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            request.headers[HttpHeaders.Authorization] shouldBe "Bearer access_old"
+                            respond(
+                                """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                HttpStatusCode.Unauthorized,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        val error = shouldThrow<MatrixServerException> {
+            cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
+        }
+        error.statusCode shouldBe HttpStatusCode.Unauthorized
+        assertEquals(
+            ErrorResponse.UnknownToken::class,
+            error.errorResponse::class
+        )
+        error.errorResponse.error shouldBe "Only unicorns accepted"
+        onLogout shouldBe LogoutInfo(isSoft = true, isLocked = false)
     }
 
     @Test
     fun uiaRequestShouldReturnSuccess() = runTest {
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
-                    assertEquals("/path/1?requestParam=2", request.url.fullPath)
-                    assertEquals("matrix.host", request.url.host)
-                    assertEquals("Bearer token", request.headers[HttpHeaders.Authorization])
-                    assertEquals(Application.Json.toString(), request.headers[HttpHeaders.Accept])
-                    assertEquals(Post, request.method)
-                    assertEquals("""{"includeDino":true}""", request.body.toByteArray().decodeToString())
+                    request.url.fullPath shouldBe "/path/1?requestParam=2"
+                    request.url.host shouldBe "matrix.host"
+                    request.headers[HttpHeaders.Authorization] shouldBe "Bearer access"
+                    request.headers[HttpHeaders.Accept] shouldBe Application.Json.toString()
+                    request.method shouldBe Post
+                    request.body.toByteArray().decodeToString() shouldBe """{"includeDino":true}"""
                     respond(
                         """{"status":"ok"}""",
                         HttpStatusCode.OK,
@@ -190,7 +421,6 @@ class MatrixClientServerApiHttpClientTest {
             },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
 
         cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true))
@@ -201,6 +431,7 @@ class MatrixClientServerApiHttpClientTest {
     fun uiaRequestShouldReturnError() = runTest {
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -212,13 +443,12 @@ class MatrixClientServerApiHttpClientTest {
             },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
 
         val error = shouldThrow<MatrixServerException> {
             cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
         }
-        assertEquals(HttpStatusCode.NotFound, error.statusCode)
+        error.statusCode shouldBe HttpStatusCode.NotFound
         assertEquals(
             ErrorResponse.NotFound::class,
             error.errorResponse::class
@@ -230,6 +460,7 @@ class MatrixClientServerApiHttpClientTest {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -246,7 +477,6 @@ class MatrixClientServerApiHttpClientTest {
             onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
 
         val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
@@ -263,6 +493,7 @@ class MatrixClientServerApiHttpClientTest {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -279,7 +510,6 @@ class MatrixClientServerApiHttpClientTest {
             onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
 
         val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
@@ -296,6 +526,7 @@ class MatrixClientServerApiHttpClientTest {
         var requestCount = 0
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     when (requestCount) {
@@ -367,7 +598,6 @@ class MatrixClientServerApiHttpClientTest {
             },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
 
         val result = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
@@ -411,6 +641,7 @@ class MatrixClientServerApiHttpClientTest {
         var requestCount = 0
         val cut = MatrixClientServerApiHttpClient(
             baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (requestCount) {
@@ -546,7 +777,6 @@ class MatrixClientServerApiHttpClientTest {
             },
             json = json,
             eventContentSerializerMappings = mappings,
-            accessToken = MutableStateFlow("token")
         )
 
         val expectedUIAState = UIAState(

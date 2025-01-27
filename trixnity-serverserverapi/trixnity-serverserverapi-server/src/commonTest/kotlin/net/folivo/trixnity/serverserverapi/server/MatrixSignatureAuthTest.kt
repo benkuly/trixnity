@@ -15,10 +15,11 @@ import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.api.server.matrixEndpoint
+import net.folivo.trixnity.core.Auth
+import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
@@ -182,7 +183,7 @@ class MatrixSignatureAuthTest {
     @Serializable
     @Resource("/get")
     @HttpMethod(GET)
-    @WithoutAuth
+    @Auth(AuthRequired.NO)
     object GetResourceWithoutAuth : MatrixEndpoint<Unit, Unit>
 
     @Test

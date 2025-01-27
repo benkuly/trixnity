@@ -7,8 +7,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.AuthenticationFailedCause.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import net.folivo.trixnity.api.server.AuthRequired
-import net.folivo.trixnity.api.server.withoutAuthAttributeKey
+import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.ErrorResponse
 
 class MatrixAccessTokenAuth internal constructor(
@@ -84,20 +83,21 @@ fun AuthenticationConfig.matrixAccessTokenAuth(
     name: String? = null,
     configure: MatrixAccessTokenAuth.Config.() -> Unit
 ) {
-    val provider = MatrixAccessTokenAuth(MatrixAccessTokenAuth.Config(name)
-        .apply(configure)
-        .apply {
-            skipWhen {
-                when (it.attributes.getOrNull(withoutAuthAttributeKey)) {
-                    AuthRequired.YES -> false
-                    AuthRequired.OPTIONAL -> !it.request.headers.contains(HttpHeaders.Authorization) &&
-                            !it.request.queryParameters.contains("access_token")
+    val provider = MatrixAccessTokenAuth(
+        MatrixAccessTokenAuth.Config(name)
+            .apply(configure)
+            .apply {
+                skipWhen {
+                    when (it.attributes.getOrNull(AuthRequired.attributeKey)) {
+                        AuthRequired.YES -> false
+                        AuthRequired.OPTIONAL -> !it.request.headers.contains(HttpHeaders.Authorization) &&
+                                !it.request.queryParameters.contains("access_token")
 
-                    AuthRequired.NO -> true
-                    null -> false
+                        AuthRequired.NO -> true
+                        null -> false
+                    }
                 }
-            }
-        })
+            })
     register(provider)
 }
 
