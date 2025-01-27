@@ -133,7 +133,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         val cacheEntry =
             values.getOrPut(key) {
                 log.trace { "$name (get): no cache hit for key $key" }
-                MutableStateFlow<CacheValue<V?>>(CacheValue.Init())
+                MutableStateFlow(CacheValue.Init())
             }.also {
                 it.get { store.get(key) }
             }
@@ -162,6 +162,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         persistEnabled: Boolean = true,
         onPersist: (newValue: V?) -> Unit = {},
     ) {
+        val transaction = currentCoroutineContext()[Transaction]
         val persist: (suspend (V?) -> Unit)? =
             if (persistEnabled) {
                 { newValue -> store.persist(key, newValue).also { onPersist(newValue) } }
@@ -175,12 +176,12 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             values.skipPut(key)
             persist(value)
 
-            currentCoroutineContext()[Transaction]?.doAfter?.write {
+            transaction?.onCommitActions?.write {
                 add {
                     val cacheEntry = values.get(key)
                     if (cacheEntry != null) {
                         log.trace { "$name (set): skipped cache but found a cache entry and therefore filling it for key $key" }
-                        cacheEntry.set(value, null, forceCacheOnly = true)
+                        cacheEntry.set(key, value, transaction, null, forceCacheOnly = true)
                         possiblyRemoveFromCache(value, key)
                     }
                 }
@@ -189,15 +190,17 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             val cacheEntry =
                 values.getOrPut(key) {
                     log.trace { "$name (set): no cache hit for key $key" }
-                    MutableStateFlow<CacheValue<V?>>(CacheValue.Value(value))
+                    MutableStateFlow(CacheValue.Value(value))
                 }
-            cacheEntry.set(value, persist)
+            cacheEntry.set(key, value, transaction, persist)
             possiblyRemoveFromCache(value, key)
         }
     }
 
     private suspend inline fun <V> MutableStateFlow<CacheValue<V?>>.set(
+        key: K,
         newValue: V?,
+        transaction: Transaction?,
         noinline persist: (suspend (newValue: V?) -> Unit)? = null,
         forceCacheOnly: Boolean = false,
     ) {
@@ -206,6 +209,15 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             // prefer cache value (when not going to be nulled)
             if (forceCacheOnly.not() && newValue != null && persist == null && oldRawValue is CacheValue.Value) return
             val newRawValue = CacheValue.Value(newValue)
+            transaction?.onRollbackActions?.write {
+                add {
+                    log.trace { "$name (set): rollback cache update for key $key" }
+                    if (compareAndSet(newRawValue, oldRawValue).not()) {
+                        log.warn { "$name (set): cache entry has been updated outside of this transaction. Force rollback for key $key" }
+                        value = oldRawValue
+                    }
+                }
+            }
             if (compareAndSet(oldRawValue, newRawValue)) {
                 if (forceCacheOnly.not() && persist != null && (oldRawValue.valueOrNull() != newValue)) persist(newValue)
                 return
@@ -219,6 +231,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         onPersist: (newValue: V?) -> Unit = {},
         updater: suspend (oldValue: V?) -> V?,
     ) {
+        val transaction = currentCoroutineContext()[Transaction]
         val persist: (suspend (V?) -> Unit)? =
             if (persistEnabled) {
                 { newValue -> store.persist(key, newValue).also { onPersist(newValue) } }
@@ -227,14 +240,16 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         val cacheEntry =
             values.getOrPut(key) {
                 log.trace { "$name (update): no cache hit for key $key" }
-                MutableStateFlow<CacheValue<V?>>(CacheValue.Init())
+                MutableStateFlow(CacheValue.Init())
             }
-        val value = cacheEntry.updateAndGet(updater, { store.get(key) }, persist)
+        val value = cacheEntry.updateAndGet(key, updater, transaction, { store.get(key) }, persist)
         possiblyRemoveFromCache(value, key)
     }
 
     private suspend inline fun <V> MutableStateFlow<CacheValue<V?>>.updateAndGet(
+        key: K,
         noinline updater: (suspend (oldValue: V?) -> V?),
+        transaction: Transaction?,
         noinline get: (suspend () -> V?),
         noinline persist: (suspend (newValue: V?) -> Unit)? = null,
     ): V? {
@@ -246,6 +261,15 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             }
             val newValue = updater(oldValue)
             val newRawValue = CacheValue.Value(newValue)
+            transaction?.onRollbackActions?.write {
+                add {
+                    log.trace { "$name (update): rollback cache update for key $key" }
+                    if (compareAndSet(newRawValue, oldRawValue).not()) {
+                        log.warn { "$name (update): cache entry has been updated outside of this transaction. Force rollback for key $key" }
+                        value = oldRawValue
+                    }
+                }
+            }
             if (compareAndSet(oldRawValue, newRawValue)) {
                 if (persist != null && (oldValue != newValue)) persist(newValue)
                 return newValue

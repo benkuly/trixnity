@@ -2,11 +2,9 @@ package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -486,20 +484,17 @@ class TimelineEventHandlerImpl(
                 }
             } else emptyList()
 
-        // TODO this is a workaround to prevent loops from sync cancellations (there is no general rollback of the cache yet)
-        withContext(NonCancellable) {
-            // saving (saveAll) must be split up, because processTimelineEventsBeforeSave may redact events
-            addAll(
-                processTimelineEventsBeforeSave(
-                    listOfNotNull(
-                        updatedPreviousEvent,
-                        updatedNextEvent,
-                        updatedStartEvent,
-                    )
+        // saving (saveAll) must be split up, because processTimelineEventsBeforeSave may redact events
+        addAll(
+            processTimelineEventsBeforeSave(
+                listOfNotNull(
+                    updatedPreviousEvent,
+                    updatedNextEvent,
+                    updatedStartEvent,
                 )
             )
-            addAll(processTimelineEventsBeforeSave(newPreviousEvents))
-            addAll(processTimelineEventsBeforeSave(newNextEvents))
-        }
+        )
+        addAll(processTimelineEventsBeforeSave(newPreviousEvents))
+        addAll(processTimelineEventsBeforeSave(newNextEvents))
     }
 }
