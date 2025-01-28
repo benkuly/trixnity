@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.12.0
+
+### Added
+
 - Reset unread marker on sending own message.
 - Expose member counts for Room.
 - Allow to init Timeline without explicitly cancel load.
@@ -23,8 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance improvements in cache: Skip cache, when an entry is not subscribed by anyone.
 - Performance improvements in cache: Don't start coroutine for each cache entry and instead invalidate cache in loop.
 
-### Deprecated
-
 ### Removed
 
 - Removed Realm repository implementation as it is currently not actively maintained and does not work with current
@@ -36,8 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed edge-case, where a one time key is published twice and blocks sync processing.
 - Fixed race condition in cache, when cache is skipped.
 - Timeline::init returns removed elements in TimelineStateChange.
-
-### Security
 
 ## 4.11.2
 
