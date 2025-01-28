@@ -7,6 +7,11 @@ import net.folivo.trixnity.core.model.events.m.RelatesTo
 
 sealed interface EventContent
 
+/**
+ * Content of a matrix room event
+ *
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#types-of-room-events">Types of matrix room events</a>
+ */
 sealed interface RoomEventContent : EventContent {
     /**
      * @see <a href="https://spec.matrix.org/v1.10/application-service-api/#referencing-messages-from-a-third-party-network">matrix spec</a>
@@ -14,11 +19,17 @@ sealed interface RoomEventContent : EventContent {
     val externalUrl: String?
 }
 
+/**
+ * Content of a matrix message event
+ */
 interface MessageEventContent : RoomEventContent {
     val relatesTo: RelatesTo?
     val mentions: Mentions?
 }
 
+/**
+ * Content of a matrix state event
+ */
 interface StateEventContent : RoomEventContent
 
 interface ToDeviceEventContent : EventContent
