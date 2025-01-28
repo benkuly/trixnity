@@ -7,7 +7,7 @@ plugins {
 val dokkaJar by tasks.registering(Jar::class) {
     dependsOn("dokkaGenerate")
     from(dokka.dokkaPublications.html.flatMap { it.outputDirectory })
-    archiveClassifier.set("html-docs")
+    archiveClassifier.set("javadoc")
     onlyIf { isCI }
 }
 
