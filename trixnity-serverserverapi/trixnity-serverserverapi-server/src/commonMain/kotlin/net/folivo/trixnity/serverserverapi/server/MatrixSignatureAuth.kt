@@ -9,8 +9,7 @@ import io.ktor.server.plugins.doublereceive.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.utils.io.*
-import net.folivo.trixnity.api.server.AuthRequired
-import net.folivo.trixnity.api.server.withoutAuthAttributeKey
+import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
@@ -116,13 +115,14 @@ fun AuthenticationConfig.matrixSignatureAuth(
     hostname: String,
     configure: MatrixSignatureAuth.Config.() -> Unit
 ) {
-    val provider = MatrixSignatureAuth(MatrixSignatureAuth.Config(name, hostname)
-        .apply(configure)
-        .apply {
-            skipWhen {
-                it.attributes.getOrNull(withoutAuthAttributeKey) == AuthRequired.NO
-            }
-        })
+    val provider = MatrixSignatureAuth(
+        MatrixSignatureAuth.Config(name, hostname)
+            .apply(configure)
+            .apply {
+                skipWhen {
+                    it.attributes.getOrNull(AuthRequired.attributeKey) == AuthRequired.NO
+                }
+            })
     register(provider)
 }
 

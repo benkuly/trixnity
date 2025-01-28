@@ -62,6 +62,7 @@ interface AuthenticationApiClient {
         deviceId: String? = null,
         initialDeviceDisplayName: String? = null,
         inhibitLogin: Boolean? = null,
+        refreshToken: Boolean? = null,
         isAppservice: Boolean = false,
     ): Result<UIA<Register.Response>>
 
@@ -96,7 +97,8 @@ interface AuthenticationApiClient {
         token: String? = null,
         type: LoginType = LoginType.Password,
         deviceId: String? = null,
-        initialDeviceDisplayName: String? = null
+        initialDeviceDisplayName: String? = null,
+        refreshToken: Boolean? = null
     ): Result<Login.Response>
 
     /**
@@ -237,6 +239,7 @@ class AuthenticationApiClientImpl(
         deviceId: String?,
         initialDeviceDisplayName: String?,
         inhibitLogin: Boolean?,
+        refreshToken: Boolean?,
         isAppservice: Boolean,
     ): Result<UIA<Register.Response>> =
         httpClient.uiaRequest(
@@ -247,6 +250,7 @@ class AuthenticationApiClientImpl(
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName,
                 inhibitLogin = inhibitLogin,
+                refreshToken = refreshToken,
                 type = if (isAppservice) "m.login.application_service" else null
             )
         )
@@ -286,13 +290,15 @@ class AuthenticationApiClientImpl(
         token: String?,
         type: LoginType,
         deviceId: String?,
-        initialDeviceDisplayName: String?
+        initialDeviceDisplayName: String?,
+        refreshToken: Boolean?,
     ): Result<Login.Response> =
         httpClient.request(
             Login, Login.Request(
                 type = type.name,
                 identifier = identifier,
                 password = password,
+                refreshToken = refreshToken,
                 token = token,
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName

@@ -100,9 +100,11 @@ open class MatrixApiClient(
     ): T {
         val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json, requestBody)
         val request = baseClient.prepareRequest(endpoint) {
-            val endpointHttpMethod =
-                serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<HttpMethod>().firstOrNull()
-                    ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
+            val annotations = serializer<ENDPOINT>().descriptor.annotations
+            val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
+                ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
+            val authRequired = annotations.filterIsInstance<Auth>().firstOrNull()?.required ?: AuthRequired.YES
+            attributes.put(AuthRequired.attributeKey, authRequired)
             method = io.ktor.http.HttpMethod(endpointHttpMethod.type.name)
             endpoint.responseContentType?.let { accept(it) }
             if (requestBody != Unit) {

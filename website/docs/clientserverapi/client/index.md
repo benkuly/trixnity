@@ -9,9 +9,10 @@ sidebar_position: 21
 Here is a typical example, how to create a `MatrixClientServerApiClient`:
 
 ```kotlin
-val matrixRestClient = MatrixClientServerApiClient(
+val matrixRestClient = MatrixClientServerApiClientImpl(
     baseUrl = Url("http://host"),
-).apply { accessToken.value = "token" }
+    authProvider = MatrixAuthProvider.classicInMemory("accessToken"),
+)
 ```
 
 ## Use Matrix Client-Server API

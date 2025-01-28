@@ -31,7 +31,7 @@ import androidx.room.*
         RoomTimelineEventRelation::class,
         RoomTimelineEvent::class,
     ],
-    version = 2, // tick this value when any entity classes change
+    version = 3, // tick this value when any entity classes change
     exportSchema = true,
 )
 @TypeConverters(
