@@ -33,6 +33,10 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     messageOf<CallEventContent.Candidates>("m.call.candidates")
     messageOf<CallEventContent.Answer>("m.call.answer")
     messageOf<CallEventContent.Hangup>("m.call.hangup")
+    messageOf<CallEventContent.Negotiate>("m.call.negotiate")
+    messageOf<CallEventContent.Reject>("m.call.reject")
+    messageOf<CallEventContent.SelectAnswer>("m.call.select_answer")
+    messageOf<CallEventContent.SdpStreamMetadataChanged>("m.call.sdp_stream_metadata_changed")
 
     stateOf<AvatarEventContent>("m.room.avatar")
     stateOf<CanonicalAliasEventContent>("m.room.canonical_alias")
