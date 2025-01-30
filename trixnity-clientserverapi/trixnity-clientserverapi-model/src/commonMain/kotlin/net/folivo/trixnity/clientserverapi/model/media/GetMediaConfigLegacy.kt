@@ -15,7 +15,6 @@ import net.folivo.trixnity.core.MatrixEndpoint
 @Serializable
 @Resource("/_matrix/media/v3/config")
 @HttpMethod(GET)
-@Auth(AuthRequired.NO)
 @Deprecated("use GetMediaConfig instead")
 object GetMediaConfigLegacy : MatrixEndpoint<Unit, GetMediaConfigLegacy.Response> {
     @Serializable

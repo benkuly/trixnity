@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed use authentication with `GetMediaConfigLegacy`
+
 ### Security
 
 ## 4.12.0
