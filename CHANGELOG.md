@@ -17,10 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## 4.12.1
+
+### Fixed
+
 - Fixed use authentication with `GetMediaConfigLegacy`
 - Fixed use authentication with `GetPublicRooms`
-
-### Security
 
 ## 4.12.0
 
