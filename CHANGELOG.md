@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Event content types for VOIP.
+
 ### Changed
 
 - `AccessTokenAuthenticationFunction` now allows servers to set `soft_logout`.
