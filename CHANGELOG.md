@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix ConcurrentModificationException on cache removal.
+
 ### Security
 
 ## 4.12.1

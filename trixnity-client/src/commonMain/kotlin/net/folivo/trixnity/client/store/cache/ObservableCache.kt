@@ -312,20 +312,23 @@ private class RemoverJobExecutingIndex<K : Any, V>(
             activityCount.first { it == 0 }
             val now = clock.now()
             val (unsubscribed, subscribed) = removeAfter.read {
-                entries.partition { (key, _) ->
-                    (cacheValues.get(key)?.subscriptionCount?.value ?: 0) == 0
+                val partition = entries.partition { (key, _) ->
+                    val cacheValue = cacheValues.get(key)
+                    (cacheValue?.subscriptionCount?.value ?: 0) == 0
                             && (
-                            cacheValues.get(key)?.value?.valueOrNull() == null
+                            cacheValue?.value?.valueOrNull() == null
                                     || cacheValues.getIndexSubscriptionCount(key) == 0
                             )
                 }
+                // This is needed, because using Map.Entry from a mutable map is not safe to use.
+                partition.first.map { it.key to it.value } to partition.second.map { it.key }
             }
             coroutineScope {
                 launch {
                     val nextExpiration = now + expireDuration
                     log.trace { "$name: update invalidation to $nextExpiration for ${subscribed.size} entries" }
                     removeAfter.write {
-                        putAll(subscribed.map { it.key to nextExpiration })
+                        putAll(subscribed.map { it to nextExpiration })
                     }
                 }
                 launch {
