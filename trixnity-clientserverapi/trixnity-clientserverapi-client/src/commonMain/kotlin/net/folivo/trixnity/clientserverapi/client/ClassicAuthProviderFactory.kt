@@ -115,7 +115,7 @@ class ClassicMatrixAuthProvider(
             AuthRequired.YES -> true
             AuthRequired.OPTIONAL -> true
             AuthRequired.NO -> false
-            else -> true
+            else -> false
         }
 
     @Serializable
