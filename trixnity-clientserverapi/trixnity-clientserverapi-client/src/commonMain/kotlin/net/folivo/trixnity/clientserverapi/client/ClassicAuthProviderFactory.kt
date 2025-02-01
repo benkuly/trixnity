@@ -53,20 +53,18 @@ class ClassicMatrixAuthProvider(
         get() = error("Deprecated")
 
     override suspend fun addRequestHeaders(request: HttpRequestBuilder, authHeader: HttpAuthHeader?) {
-        val token =
-            when (request.attributes.getOrNull(AuthRequired.attributeKey)) {
-                AuthRequired.YES,
-                AuthRequired.OPTIONAL -> {
-                    refreshTokensDeferred
-                        .value?.value
-                        ?.also { log.trace { "addRequestHeaders: wait for refreshing to finish" } }
-                        ?.join()
-                    bearerTokensStore.getBearerTokens() ?: return
-                }
-
-                AuthRequired.NO -> return
-                else -> return
-            }
+        if (request.attributes.getOrNull(AuthCircuitBreaker) != null) {
+            log.trace { "addRequestHeaders: skip due to AuthCircuitBreaker" }
+            return
+        }
+        refreshTokensDeferred
+            .value?.value
+            ?.also { log.trace { "addRequestHeaders: wait for refreshing to finish" } }
+            ?.join()
+        val token = bearerTokensStore.getBearerTokens() ?: run {
+            log.trace { "addRequestHeaders: no bearer tokens found" }
+            return
+        }
 
         request.headers {
             val tokenValue = "Bearer ${token.accessToken}"
