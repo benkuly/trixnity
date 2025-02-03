@@ -20,12 +20,9 @@ import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.StateBaseEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
@@ -248,7 +245,7 @@ class RoomServiceImpl(
         return roomTimelineStore.get(eventId, roomId)
             .flatMapLatest { timelineEvent ->
                 val event = timelineEvent?.event
-                if (cfg.allowReplaceContent && event is MessageEvent) {
+                if (cfg.allowReplaceContent && event is MessageEvent && event.content !is RedactedEventContent) {
                     val replacedByFlow = getTimelineEventReplaceAggregation(roomId, eventId).map { it.replacedBy }
                     replacedByFlow.flatMapLatest { replacedBy ->
                         if (replacedBy != null) {
