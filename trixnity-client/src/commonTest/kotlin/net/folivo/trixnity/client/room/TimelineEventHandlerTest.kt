@@ -90,7 +90,7 @@ class TimelineEventHandlerTest : ShouldSpec({
             i
         )
     }
-    context(TimelineEventHandlerImpl::redactTimelineEvent.name) {
+    context("handleRedactions") {
         context("with existent event") {
             should("redact room event") {
                 val event1 = textEvent(1)
@@ -128,7 +128,9 @@ class TimelineEventHandlerTest : ShouldSpec({
                     roomId = room,
                     originTimestamp = 3
                 )
-                cut.redactTimelineEvent(redactionEvent)
+                with(cut) {
+                    listOf(redactionEvent).handleRedactions()
+                }
                 assertSoftly(roomTimelineStore.get(event2.id, room).first().shouldNotBeNull()) {
                     event shouldBe MessageEvent(
                         RedactedEventContent("m.room.message"),
@@ -183,7 +185,9 @@ class TimelineEventHandlerTest : ShouldSpec({
                     roomId = room,
                     originTimestamp = 3
                 )
-                cut.redactTimelineEvent(redactionEvent)
+                with(cut) {
+                    listOf(redactionEvent).handleRedactions()
+                }
                 assertSoftly(roomTimelineStore.get(event2.id, room).first().shouldNotBeNull()) {
                     event shouldBe StateEvent(
                         RedactedEventContent("m.room.name"),
@@ -236,7 +240,9 @@ class TimelineEventHandlerTest : ShouldSpec({
                     roomId = room,
                     originTimestamp = 3
                 )
-                cut.redactTimelineEvent(redactionEvent)
+                with(cut) {
+                    listOf(redactionEvent).handleRedactions()
+                }
                 roomTimelineStore.get(EventId("\$incorrectlyEvent"), room).first() shouldBe null
                 roomTimelineStore.get(timelineEvent1.eventId, room).first() shouldBe timelineEvent1
                 roomTimelineStore.get(timelineEvent2.eventId, room).first() shouldBe timelineEvent2
@@ -569,6 +575,49 @@ class TimelineEventHandlerTest : ShouldSpec({
                 }
                 assertSoftly(roomTimelineStore.get(eventId3, room).first().shouldNotBeNull()) {
                     content shouldBe null
+                }
+            }
+        }
+        should("process new redactions") {
+            val redactionEvent1 = MessageEvent(
+                RedactionEventContent(redacts = EventId("\$event1")),
+                EventId("\$event3"),
+                UserId("sender", "server"),
+                RoomId("room", "server"),
+                3
+            )
+            val redactionEvent2 = MessageEvent(
+                RedactionEventContent(redacts = EventId("\$event2")),
+                EventId("\$event4"),
+                UserId("sender", "server"),
+                RoomId("room", "server"),
+                4
+            )
+            roomStore.update(room) { Room(roomId = room, lastEventId = event1.id) }
+            roomTimelineStore.addAll(
+                timeline {
+                    fragment {
+                        +event1
+                        gap("oldPrevious")
+                    }
+                }
+            )
+            cut.addEventsToTimelineAtEnd(
+                room,
+                listOf(event2, redactionEvent1, redactionEvent2),
+                "previous",
+                "next",
+                true
+            )
+            storeTimeline(event1, event2, redactionEvent1, redactionEvent2) shouldContainExactly timeline {
+                fragment {
+                    +event1.redacted(because = redactionEvent1)
+                    gap("oldPrevious")
+                    gap("previous")
+                    +event2.redacted(because = redactionEvent2)
+                    +redactionEvent1
+                    +redactionEvent2
+                    gap("next")
                 }
             }
         }
@@ -1402,21 +1451,20 @@ class TimelineEventHandlerTest : ShouldSpec({
                 }
             }
         }
-        should("process redactions from gaps") {
-            val redactionEvent = MessageEvent(
-                RedactionEventContent(redacts = EventId("\$event3")),
-                EventId("\$event2"),
-                UserId("sender", "server"),
-                RoomId("room", "server"),
-                2
-            )
-            val redactedEvent = MessageEvent(
-                RedactedEventContent("m.room.message"),
+        should("process redactions from batch") {
+            val redactionEvent1 = MessageEvent(
+                RedactionEventContent(redacts = EventId("\$event1")),
                 EventId("\$event3"),
                 UserId("sender", "server"),
                 RoomId("room", "server"),
-                3,
-                UnsignedRoomEventData.UnsignedMessageEventData(redactedBecause = redactionEvent),
+                3
+            )
+            val redactionEvent2 = MessageEvent(
+                RedactionEventContent(redacts = EventId("\$event2")),
+                EventId("\$event4"),
+                UserId("sender", "server"),
+                RoomId("room", "server"),
+                4
             )
             apiConfig.endpoints {
                 matrixJsonEndpoint(
@@ -1431,24 +1479,33 @@ class TimelineEventHandlerTest : ShouldSpec({
                     GetEvents.Response(
                         start = "start",
                         end = "end",
-                        chunk = listOf(redactionEvent, event1),
+                        chunk = listOf(redactionEvent2, redactionEvent1, event2),
                         state = listOf()
                     )
                 }
             }
             roomTimelineStore.addAll(timeline {
                 fragment {
+                    +event1
+                    gap("end")
                     gap("start")
-                    +event3
+                    +event5
                 }
             })
-            cut.unsafeFillTimelineGaps(event3.id, room)
-            storeTimeline(event1, redactionEvent, redactedEvent) shouldContainExactlyInAnyOrder timeline {
+            cut.unsafeFillTimelineGaps(event5.id, room)
+            storeTimeline(
+                event1,
+                event2,
+                redactionEvent1,
+                redactionEvent2,
+                event5
+            ) shouldContainExactlyInAnyOrder timeline {
                 fragment {
-                    gap("end")
-                    +event1
-                    +redactionEvent
-                    +redactedEvent
+                    +event1.redacted(because = redactionEvent1)
+                    +event2.redacted(because = redactionEvent2)
+                    +redactionEvent1
+                    +redactionEvent2
+                    +event5
                 }
             }
         }
@@ -1600,3 +1657,13 @@ class TimelineEventHandlerTest : ShouldSpec({
         }
     }
 })
+
+private fun MessageEvent<*>.redacted(because: MessageEvent<RedactionEventContent>) =
+    MessageEvent(
+        content = RedactedEventContent("m.room.message"),
+        id = id,
+        sender = sender,
+        roomId = roomId,
+        originTimestamp = originTimestamp,
+        unsigned = UnsignedRoomEventData.UnsignedMessageEventData(redactedBecause = because)
+    )
