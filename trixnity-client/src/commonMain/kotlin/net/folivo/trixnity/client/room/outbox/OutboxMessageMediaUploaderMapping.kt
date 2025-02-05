@@ -5,7 +5,7 @@ import kotlin.reflect.KClass
 
 data class OutboxMessageMediaUploaderMapping<T : MessageEventContent>(
     val kClass: KClass<T>,
-    val uploader: RoomMessageEventContentMediaUploader?
+    val uploader: RoomMessageEventContentMediaUploader
 ) {
     companion object {
         inline fun <reified C : MessageEventContent> of(
