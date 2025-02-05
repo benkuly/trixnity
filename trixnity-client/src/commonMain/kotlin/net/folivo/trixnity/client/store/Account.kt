@@ -10,6 +10,7 @@ data class Account(
     val userId: UserId,
     val deviceId: String,
     val accessToken: String?,
+    val refreshToken: String?,
     val syncBatchToken: String?,
     val filterId: String?,
     val backgroundFilterId: String?,

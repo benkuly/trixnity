@@ -16,6 +16,7 @@ internal object ExposedAccount : LongIdTable("account") {
     val userId = text("user_id").nullable()
     val deviceId = text("device_id").nullable()
     val accessToken = text("access_token").nullable()
+    val refreshToken = text("refresh_token").nullable()
     val syncBatchToken = text("sync_batch_token").nullable()
     val filterId = text("filter_id").nullable()
     val backgroundFilterId = text("background_filter_id").nullable()
@@ -35,6 +36,7 @@ internal class ExposedAccountRepository : AccountRepository {
                     ?: throw IllegalStateException("userId not found"),
                 deviceId = it[ExposedAccount.deviceId] ?: throw IllegalStateException("deviceId not found"),
                 accessToken = it[ExposedAccount.accessToken],
+                refreshToken = it[ExposedAccount.refreshToken],
                 syncBatchToken = it[ExposedAccount.syncBatchToken],
                 filterId = it[ExposedAccount.filterId],
                 backgroundFilterId = it[ExposedAccount.backgroundFilterId],
@@ -53,6 +55,7 @@ internal class ExposedAccountRepository : AccountRepository {
             it[userId] = value.userId.full
             it[deviceId] = value.deviceId
             it[accessToken] = value.accessToken
+            it[refreshToken] = value.refreshToken
             it[syncBatchToken] = value.syncBatchToken
             it[filterId] = value.filterId
             it[backgroundFilterId] = value.backgroundFilterId

@@ -9,11 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Send access token to endpoints when server wants to
+
+### Security
+
+## 4.12.2
+
+### Fixed
+
+- Fix ConcurrentModificationException on cache removal.
+
+## 4.12.1
+
+### Fixed
+
+- Fixed use authentication with `GetMediaConfigLegacy`
+- Fixed use authentication with `GetPublicRooms`
+
+## 4.12.0
+
+### Added
+
 - Reset unread marker on sending own message.
 - Expose member counts for Room.
 - Allow to init Timeline without explicitly cancel load.
 - Allow to listen to state changes in Timeline.
 - Rollback of cache on failed transactions additionally to database rollback.
+- Support for refresh tokens.
 
 ### Changed
 
@@ -22,8 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parameter `from` in `RoomsApiClient::getRelations*` is nullable.
 - Performance improvements in cache: Skip cache, when an entry is not subscribed by anyone.
 - Performance improvements in cache: Don't start coroutine for each cache entry and instead invalidate cache in loop.
-
-### Deprecated
 
 ### Removed
 
@@ -36,8 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed edge-case, where a one time key is published twice and blocks sync processing.
 - Fixed race condition in cache, when cache is skipped.
 - Timeline::init returns removed elements in TimelineStateChange.
-
-### Security
 
 ## 4.11.2
 

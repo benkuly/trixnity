@@ -18,16 +18,17 @@ fun ShouldSpec.accountRepositoryTest(diReceiver: () -> Koin) {
     }
     should("accountRepositoryTest: save, get and delete") {
         val account = Account(
-            "",
-            "http://host",
-            UserId("alice", "server"),
-            "aliceDevice",
-            "accessToken",
-            "syncToken",
-            "filterId",
-            "backgroundFilterId",
-            "displayName",
-            "mxc://localhost/123456",
+            olmPickleKey = "",
+            baseUrl = "http://host",
+            userId = UserId("alice", "server"),
+            deviceId = "aliceDevice",
+            accessToken = "accessToken",
+            refreshToken = "refreshToken",
+            syncBatchToken = "syncToken",
+            filterId = "filterId",
+            backgroundFilterId = "backgroundFilterId",
+            displayName = "displayName",
+            avatarUrl = "mxc://localhost/123456",
         )
         rtm.writeTransaction {
             cut.save(1, account)

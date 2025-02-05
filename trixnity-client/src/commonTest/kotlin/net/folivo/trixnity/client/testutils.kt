@@ -54,7 +54,22 @@ suspend fun getInMemoryAccountStore(scope: CoroutineScope) = AccountStore(
     Clock.System,
 ).apply {
     init(scope)
-    updateAccount { Account("", "", UserId("user", "server"), "", null, null, null, null, null, null, false) }
+    updateAccount {
+        Account(
+            olmPickleKey = "",
+            baseUrl = "",
+            userId = UserId("user", "server"),
+            deviceId = "",
+            accessToken = null,
+            refreshToken = null,
+            syncBatchToken = null,
+            filterId = null,
+            backgroundFilterId = null,
+            displayName = null,
+            avatarUrl = null,
+            isLocked = false
+        )
+    }
 }
 
 suspend fun getInMemoryServerDataStore(scope: CoroutineScope) = ServerDataStore(

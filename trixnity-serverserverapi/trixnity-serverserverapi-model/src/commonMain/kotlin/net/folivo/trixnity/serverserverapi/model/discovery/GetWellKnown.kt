@@ -3,11 +3,8 @@ package net.folivo.trixnity.serverserverapi.model.discovery
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.ForceJson
-import net.folivo.trixnity.core.HttpMethod
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethodType.GET
-import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.WithoutAuth
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/server-server-api/#getwell-knownmatrixserver">matrix spec</a>
@@ -15,7 +12,7 @@ import net.folivo.trixnity.core.WithoutAuth
 @Serializable
 @Resource("/.well-known/matrix/server")
 @HttpMethod(GET)
-@WithoutAuth
+@Auth(AuthRequired.NO)
 @ForceJson
 object GetWellKnown : MatrixEndpoint<Unit, GetWellKnown.Response> {
     @Serializable

@@ -5,11 +5,11 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.resources.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
@@ -18,10 +18,8 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.api.client.MatrixApiClient
 import net.folivo.trixnity.clientserverapi.model.uia.*
-import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.ErrorResponseSerializer
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
-import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -33,12 +31,16 @@ data class LogoutInfo(
     val isLocked: Boolean,
 )
 
+interface MatrixAuthProvider : AuthProvider {
+    companion object
+}
+
 class MatrixClientServerApiHttpClient(
     val baseUrl: Url? = null,
+    authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+    private val onLogout: suspend (LogoutInfo) -> Unit = { },
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
-    accessToken: MutableStateFlow<String?>,
-    private val onLogout: suspend (LogoutInfo) -> Unit = { },
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixApiClient(
@@ -47,8 +49,10 @@ class MatrixClientServerApiHttpClient(
     httpClientEngine,
     {
         install(DefaultRequest) {
-            accessToken.value?.let { bearerAuth(it) }
             if (baseUrl != null) url.takeFrom(baseUrl)
+        }
+        install(Auth) {
+            providers.add(authProvider)
         }
         install(ConvertMediaPlugin)
         install(HttpRequestRetry) {
@@ -91,9 +95,11 @@ class MatrixClientServerApiHttpClient(
         val responseSerializer = endpoint.plainResponseSerializerBuilder(contentMappings, json) ?: serializer()
         return uiaRequest(requestBody, requestSerializer, responseSerializer) { jsonBody ->
             baseClient.request(endpoint) {
-                val endpointHttpMethod =
-                    serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<HttpMethod>().firstOrNull()
-                        ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
+                val annotations = serializer<ENDPOINT>().descriptor.annotations
+                val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
+                    ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
+                val authRequired = annotations.filterIsInstance<Auth>().firstOrNull()?.required ?: AuthRequired.YES
+                attributes.put(AuthRequired.attributeKey, authRequired)
                 method = io.ktor.http.HttpMethod(endpointHttpMethod.type.name)
                 endpoint.requestContentType?.let { contentType(it) }
                 endpoint.responseContentType?.let { accept(it) }

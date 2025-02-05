@@ -29,7 +29,22 @@ fun ShouldSpec.repositoryTransactionManagerTest(
     }
 
     suspend fun testWrite(key: Int) {
-        cut.save(key.toLong(), Account("", "", UserId("userId"), "", null, null, null, null, null, null, false))
+        cut.save(
+            key.toLong(), Account(
+                olmPickleKey = "",
+                baseUrl = "",
+                userId = UserId("userId"),
+                deviceId = "",
+                accessToken = null,
+                refreshToken = null,
+                syncBatchToken = null,
+                filterId = null,
+                backgroundFilterId = null,
+                displayName = null,
+                avatarUrl = null,
+                isLocked = false
+            )
+        )
     }
 
     suspend fun testRead(key: Int) = cut.get(key.toLong())

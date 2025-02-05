@@ -3,10 +3,11 @@ package net.folivo.trixnity.clientserverapi.model.authentication
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.folivo.trixnity.core.Auth
+import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.WithoutAuth
 import net.folivo.trixnity.core.model.UserId
 
 /**
@@ -15,7 +16,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/_matrix/client/v3/login")
 @HttpMethod(POST)
-@WithoutAuth
+@Auth(AuthRequired.NO)
 object Login : MatrixEndpoint<Login.Request, Login.Response> {
     @Serializable
     data class Request(
