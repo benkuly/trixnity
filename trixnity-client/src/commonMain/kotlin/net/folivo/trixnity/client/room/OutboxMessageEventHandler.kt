@@ -7,7 +7,6 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -124,21 +123,14 @@ class OutboxMessageEventHandler(
         val uploader =
             outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)
         val uploadedContent = try {
-            coroutineScope {
-                val mapUploadProgress =
-                    launch {
-                        uploader.uploadProgress.collectLatest { outboxMessage.mediaUploadProgress.value = it }
-                    }
-                uploader.uploader(originalContent) { cacheUri: String, upload ->
-                    mediaService.uploadMedia(
-                        cacheUri,
-                        upload,
-                        outboxMessage.keepMediaInCache,
-                    ).getOrThrow()
-                }.also {
-                    mapUploadProgress.cancel()
-                }
+            uploader(outboxMessage.mediaUploadProgress, originalContent) { cacheUri: String, upload ->
+                mediaService.uploadMedia(
+                    cacheUri,
+                    upload,
+                    outboxMessage.keepMediaInCache,
+                ).getOrThrow()
             }
+
         } catch (exception: Exception) {
             val sendError = when (exception) {
                 is MatrixServerException -> when (exception.statusCode) {

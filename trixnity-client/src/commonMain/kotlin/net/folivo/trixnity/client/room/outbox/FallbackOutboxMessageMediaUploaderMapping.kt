@@ -12,9 +12,8 @@ val FallbackOutboxMessageMediaUploaderMapping =
     OutboxMessageMediaUploaderMapping(MessageEventContent::class, FallbackOutboxMessageMediaUploaderMappingClass())
 
 class FallbackOutboxMessageMediaUploaderMappingClass() : RoomMessageEventContentMediaUploader {
-    override val uploadProgress: MutableStateFlow<FileTransferProgress?> = MutableStateFlow(null)
-
-    override suspend fun uploader(
+    override suspend fun invoke(
+        uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
         upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
     ): RoomMessageEventContent {

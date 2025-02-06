@@ -11,20 +11,11 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
 // TODO test
 
-interface RoomMessageEventContentMediaUploader {
-    val uploadProgress: MutableStateFlow<FileTransferProgress?>
-    suspend fun uploader(
-        content: MessageEventContent,
-        upload: suspend (cacheUri: String, uploadProgress: MutableStateFlow<FileTransferProgress?>) -> String
-    ): RoomMessageEventContent
-}
-
 class FileRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaUploader {
-    override val uploadProgress: MutableStateFlow<FileTransferProgress?> = MutableStateFlow<FileTransferProgress?>(null)
-
-    override suspend fun uploader(
+    override suspend fun invoke(
+        uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
-        upload: suspend (cacheUri: String, uploadProgress: MutableStateFlow<FileTransferProgress?>) -> String
+        upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
     ): RoomMessageEventContent = coroutineScope {
         require(content is RoomMessageEventContent.FileBased.File)
         val maxSize = (content.info?.size ?: 0) + (content.info?.thumbnailInfo?.size ?: 0)
@@ -73,15 +64,14 @@ class FileRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaU
             )
         } else content
     }
+
 }
 
 class ImageRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaUploader {
-    override val uploadProgress: MutableStateFlow<FileTransferProgress?> = MutableStateFlow<FileTransferProgress?>(null)
-
-
-    override suspend fun uploader(
+    override suspend fun invoke(
+        uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
-        upload: suspend (cacheUri: String, uploadProgress: MutableStateFlow<FileTransferProgress?>) -> String
+        upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
     ): RoomMessageEventContent = coroutineScope {
         require(content is RoomMessageEventContent.FileBased.Image)
         val maxSize = (content.info?.size ?: 0) + (content.info?.thumbnailInfo?.size ?: 0)
@@ -131,11 +121,10 @@ class ImageRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
 }
 
 class VideoRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaUploader {
-    override val uploadProgress: MutableStateFlow<FileTransferProgress?> = MutableStateFlow<FileTransferProgress?>(null)
-
-    override suspend fun uploader(
+    override suspend fun invoke(
+        uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
-        upload: suspend (cacheUri: String, uploadProgress: MutableStateFlow<FileTransferProgress?>) -> String
+        upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
     ): RoomMessageEventContent = coroutineScope {
         require(content is RoomMessageEventContent.FileBased.Video)
         val maxSize = (content.info?.size ?: 0) + (content.info?.thumbnailInfo?.size ?: 0)
@@ -185,11 +174,10 @@ class VideoRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
 }
 
 class AudioRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaUploader {
-    override val uploadProgress: MutableStateFlow<FileTransferProgress?> = MutableStateFlow<FileTransferProgress?>(null)
-
-    override suspend fun uploader(
+    override suspend fun invoke(
+        uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
-        upload: suspend (cacheUri: String, uploadProgress: MutableStateFlow<FileTransferProgress?>) -> String
+        upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
     ): RoomMessageEventContent {
         require(content is RoomMessageEventContent.FileBased.Audio)
         val encryptedContentUrl = content.file?.url
