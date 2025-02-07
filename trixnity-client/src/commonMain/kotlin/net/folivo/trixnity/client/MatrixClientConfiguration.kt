@@ -5,6 +5,7 @@ import io.ktor.client.engine.*
 import kotlinx.coroutines.CoroutineName
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientFactory
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -120,6 +121,16 @@ data class MatrixClientConfiguration(
      * ```
      */
     var modulesFactories: List<ModuleFactory> = createTrixnityDefaultModuleFactories(),
+
+    /**
+     * If you need to override standard behavior of API clients, provide a [MatrixClientServerApiClientFactory] here,
+     * and override one or more API clients in [net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient].
+     *
+     * For [serverDiscovery], the standard [net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl]
+     * is always used.
+     */
+    var matrixClientServerApiClientFactory: MatrixClientServerApiClientFactory =
+        object : MatrixClientServerApiClientFactory {},
 ) {
     data class SyncLoopDelays(
         val syncLoopDelay: Duration,

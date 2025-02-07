@@ -1,12 +1,12 @@
 package net.folivo.trixnity.appservice
 
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 
 interface ApplicationServiceRoomService {
 
-    val matrixClientServerApiClient: MatrixClientServerApiClientImpl
+    val matrixClientServerApiClient: MatrixClientServerApiClient
 
     enum class RoomExistingState {
         EXISTS, DOES_NOT_EXISTS, CAN_BE_CREATED
