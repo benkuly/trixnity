@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Send access token to endpoints when server wants to
+- Fix error enumerating account registration flows
 
 ### Security
 
