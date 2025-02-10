@@ -58,17 +58,7 @@ class MatrixClientServerApiHttpClientTest {
     data class PostPathWithoutAuth(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
-        @Serializable
-        data class Request(
-            val includeDino: Boolean
-        )
-
-        @Serializable
-        data class Response(
-            val status: String
-        )
-    }
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response>
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -77,17 +67,7 @@ class MatrixClientServerApiHttpClientTest {
     data class PostPathWithOptionalAuth(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
-        @Serializable
-        data class Request(
-            val includeDino: Boolean
-        )
-
-        @Serializable
-        data class Response(
-            val status: String
-        )
-    }
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response>
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -96,18 +76,7 @@ class MatrixClientServerApiHttpClientTest {
     data class PostPathWithUIA(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixUIAEndpoint<PostPathWithUIA.Request, PostPathWithUIA.Response> {
-        @Serializable
-        data class Request(
-            val includeDino: Boolean
-        )
-
-        @Serializable
-        data class Response(
-            val status: String
-        )
-    }
-
+    ) : MatrixUIAEndpoint<PostPath.Request, PostPath.Response>
 
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
@@ -423,8 +392,8 @@ class MatrixClientServerApiHttpClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true))
-            .getOrThrow() shouldBe UIA.Success(PostPathWithUIA.Response("ok"))
+        cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true))
+            .getOrThrow() shouldBe UIA.Success(PostPath.Response("ok"))
     }
 
     @Test
@@ -446,7 +415,7 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         val error = shouldThrow<MatrixServerException> {
-            cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+            cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
         }
         error.statusCode shouldBe HttpStatusCode.NotFound
         assertEquals(
@@ -479,7 +448,7 @@ class MatrixClientServerApiHttpClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
             .shouldBeInstanceOf<UIA.Error<*>>()
         assertEquals(
             ErrorResponse.UnknownToken::class,
@@ -512,7 +481,7 @@ class MatrixClientServerApiHttpClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
             .shouldBeInstanceOf<UIA.Error<*>>()
         assertEquals(
             ErrorResponse.UserLocked::class,
@@ -600,7 +569,7 @@ class MatrixClientServerApiHttpClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        val result = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+        val result = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
         result.shouldBeInstanceOf<UIA.Step<*>>()
         result.state shouldBe UIAState(
             completed = listOf(),
@@ -810,7 +779,7 @@ class MatrixClientServerApiHttpClientTest {
         )
         val result1 = cut.uiaRequest(
             PostPathWithUIA("1", "2"),
-            PostPathWithUIA.Request(true)
+            PostPath.Request(true)
         ).getOrThrow()
         result1.shouldBeInstanceOf<UIA.Error<*>>()
         result1.state shouldBe expectedUIAState
