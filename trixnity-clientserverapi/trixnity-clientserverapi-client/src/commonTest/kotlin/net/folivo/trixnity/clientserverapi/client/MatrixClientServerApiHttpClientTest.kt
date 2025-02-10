@@ -103,7 +103,7 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
     }
 
     @Test
@@ -126,7 +126,41 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
+    }
+
+    @Test
+    fun itShouldRetryWithToken() = runTest {
+        val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
+
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classic(testTokenStore),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    if (request.headers[HttpHeaders.Authorization] == "Bearer access") {
+                        respond(
+                            """{"status":"ok"}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    } else {
+                        respond(
+                            """{"status":"not ok"}""",
+                            HttpStatusCode.Unauthorized,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString(),)
+                        )
+                    }
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
+
+        cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true))
+            .getOrThrow() shouldBe PostPath.Response("ok")
     }
 
     @Test
@@ -159,12 +193,12 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
 
         testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
     }
 
     @Test
@@ -230,7 +264,7 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
         refreshCalled shouldBe true
         onLogout shouldBe null
     }
@@ -602,7 +636,7 @@ class MatrixClientServerApiHttpClientTest {
         )
         result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
         result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
     }
 
     @Test
@@ -785,14 +819,14 @@ class MatrixClientServerApiHttpClientTest {
         result1.state shouldBe expectedUIAState
         result1.errorResponse shouldBe ErrorResponse.NotFound("")
         result1.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         val result2 = result1.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
             .getOrThrow()
         result2.shouldBeInstanceOf<UIA.Error<*>>()
         result2.state shouldBe expectedUIAState
         result2.errorResponse shouldBe ErrorResponse.NotFound("")
         result2.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         result2.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
             .getOrThrow()
         requestCount shouldBe 3
