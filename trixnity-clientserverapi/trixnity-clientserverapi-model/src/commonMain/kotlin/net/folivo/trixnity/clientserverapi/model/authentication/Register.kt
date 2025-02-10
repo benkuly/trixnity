@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 @Resource("/_matrix/client/v3/register")
 @HttpMethod(POST)
-@Auth(AuthRequired.NO)
+@Auth(AuthRequired.NEVER)
 data class Register(
     @SerialName("kind") val kind: AccountType? = null,
 ) : MatrixUIAEndpoint<Register.Request, Register.Response> {

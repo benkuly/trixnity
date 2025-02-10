@@ -53,7 +53,26 @@ annotation class Auth(val required: AuthRequired)
 annotation class ForceJson
 
 enum class AuthRequired {
-    YES, OPTIONAL, NO;
+    /**
+     * Client: Send token if available
+     * Server: Always require token, error if none included
+     */
+    YES,
+    /**
+     * Client: Send token if available
+     * Server: Use token if included
+     */
+    OPTIONAL,
+    /**
+     * Client: Send token if requested by server
+     * Server: Ignore token, even if included
+     */
+    NO,
+    /**
+     * Client: Never send token
+     * Server: Ignore token, even if included
+     */
+    NEVER;
 
     companion object {
         val attributeKey = AttributeKey<AuthRequired>("matrixEndpointAuthenticationRequired")

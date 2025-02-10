@@ -21,6 +21,7 @@ import net.folivo.trixnity.clientserverapi.model.uia.UIAState
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.scopedMockEngine
@@ -58,17 +59,7 @@ class MatrixClientServerApiHttpClientTest {
     data class PostPathWithoutAuth(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
-        @Serializable
-        data class Request(
-            val includeDino: Boolean
-        )
-
-        @Serializable
-        data class Response(
-            val status: String
-        )
-    }
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response>
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -77,17 +68,16 @@ class MatrixClientServerApiHttpClientTest {
     data class PostPathWithOptionalAuth(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixEndpoint<PostPath.Request, PostPath.Response> {
-        @Serializable
-        data class Request(
-            val includeDino: Boolean
-        )
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response>
 
-        @Serializable
-        data class Response(
-            val status: String
-        )
-    }
+    @Serializable
+    @Resource("/path/{pathParam}")
+    @HttpMethod(POST)
+    @Auth(AuthRequired.NEVER)
+    data class PostPathWithDisabledAuth(
+        @SerialName("pathParam") val pathParam: String,
+        @SerialName("requestParam") val requestParam: String,
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response>
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -96,18 +86,7 @@ class MatrixClientServerApiHttpClientTest {
     data class PostPathWithUIA(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
-    ) : MatrixUIAEndpoint<PostPathWithUIA.Request, PostPathWithUIA.Response> {
-        @Serializable
-        data class Request(
-            val includeDino: Boolean
-        )
-
-        @Serializable
-        data class Response(
-            val status: String
-        )
-    }
-
+    ) : MatrixUIAEndpoint<PostPath.Request, PostPath.Response>
 
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
@@ -134,7 +113,7 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
     }
 
     @Test
@@ -157,7 +136,72 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
+    }
+
+    @Test
+    fun itShouldNotRetryWithTokenOnNever() = runTest {
+        val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
+
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classic(testTokenStore),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    request.headers[HttpHeaders.Authorization] shouldBe null
+                    respond(
+                        """{"status":"ok"}""",
+                        HttpStatusCode.Unauthorized,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString(),)
+                    )
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
+
+        cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
+            .exceptionOrNull() shouldBe
+            MatrixServerException(
+                HttpStatusCode.Unauthorized,
+                ErrorResponse.CustomErrorResponse("UNKNOWN", error="""{"status":"ok"}""")
+            )
+    }
+
+    @Test
+    fun itShouldRetryWithToken() = runTest {
+        val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
+
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classic(testTokenStore),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    if (request.headers[HttpHeaders.Authorization] == "Bearer access") {
+                        respond(
+                            """{"status":"ok"}""",
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                    } else {
+                        respond(
+                            """{"status":"not ok"}""",
+                            HttpStatusCode.Unauthorized,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString(),)
+                        )
+                    }
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
+
+        cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true))
+            .getOrThrow() shouldBe PostPath.Response("ok")
     }
 
     @Test
@@ -190,12 +234,12 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
 
         testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
     }
 
     @Test
@@ -261,7 +305,7 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-                PostPath.Response("ok")
+            PostPath.Response("ok")
         refreshCalled shouldBe true
         onLogout shouldBe null
     }
@@ -423,8 +467,8 @@ class MatrixClientServerApiHttpClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true))
-            .getOrThrow() shouldBe UIA.Success(PostPathWithUIA.Response("ok"))
+        cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true))
+            .getOrThrow() shouldBe UIA.Success(PostPath.Response("ok"))
     }
 
     @Test
@@ -446,7 +490,7 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         val error = shouldThrow<MatrixServerException> {
-            cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+            cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
         }
         error.statusCode shouldBe HttpStatusCode.NotFound
         assertEquals(
@@ -479,7 +523,7 @@ class MatrixClientServerApiHttpClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
             .shouldBeInstanceOf<UIA.Error<*>>()
         assertEquals(
             ErrorResponse.UnknownToken::class,
@@ -512,7 +556,7 @@ class MatrixClientServerApiHttpClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
             .shouldBeInstanceOf<UIA.Error<*>>()
         assertEquals(
             ErrorResponse.UserLocked::class,
@@ -600,7 +644,7 @@ class MatrixClientServerApiHttpClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        val result = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPathWithUIA.Request(true)).getOrThrow()
+        val result = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
         result.shouldBeInstanceOf<UIA.Step<*>>()
         result.state shouldBe UIAState(
             completed = listOf(),
@@ -633,7 +677,7 @@ class MatrixClientServerApiHttpClientTest {
         )
         result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
         result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
     }
 
     @Test
@@ -810,20 +854,20 @@ class MatrixClientServerApiHttpClientTest {
         )
         val result1 = cut.uiaRequest(
             PostPathWithUIA("1", "2"),
-            PostPathWithUIA.Request(true)
+            PostPath.Request(true)
         ).getOrThrow()
         result1.shouldBeInstanceOf<UIA.Error<*>>()
         result1.state shouldBe expectedUIAState
         result1.errorResponse shouldBe ErrorResponse.NotFound("")
         result1.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         val result2 = result1.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
             .getOrThrow()
         result2.shouldBeInstanceOf<UIA.Error<*>>()
         result2.state shouldBe expectedUIAState
         result2.errorResponse shouldBe ErrorResponse.NotFound("")
         result2.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         result2.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
             .getOrThrow()
         requestCount shouldBe 3
