@@ -21,7 +21,6 @@ import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
-import net.folivo.trixnity.core.subscribeEvent
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.utils.KeyedMutex
 
@@ -50,7 +49,6 @@ class TimelineEventHandlerImpl(
     }
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeEvent(subscriber = ::redactTimelineEvent).unsubscribeOnCompletion(scope)
         api.sync.subscribe(Priority.STORE_TIMELINE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
     }
 
@@ -92,7 +90,9 @@ class TimelineEventHandlerImpl(
     ) {
         timelineMutex.withLock(roomId) {
             tm.transaction {
-                val events = roomTimelineStore.filterDuplicateEvents(newEvents)
+                val events =
+                    roomTimelineStore.filterDuplicateEvents(newEvents)
+                        ?.handleRedactions()
                 if (!events.isNullOrEmpty()) {
                     log.debug { "add events to timeline at end of $roomId" }
                     val lastEventId = roomStore.get(roomId).first()?.lastEventId
@@ -173,7 +173,9 @@ class TimelineEventHandlerImpl(
                 ).getOrThrow()
                 previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
                 previousEvent = possiblyPreviousEvent?.eventId
-                previousEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
+                previousEventChunk = roomTimelineStore
+                    .filterDuplicateEvents(response.chunk)
+                    ?.handleRedactions()
                 previousHasGap = response.end != null &&
                         response.end != destinationBatch &&
                         response.chunk?.none { it.id == previousEvent } == true
@@ -199,7 +201,9 @@ class TimelineEventHandlerImpl(
                 ).getOrThrow()
                 nextToken = response.end
                 nextEvent = possiblyNextEvent?.eventId
-                nextEventChunk = roomTimelineStore.filterDuplicateEvents(response.chunk)
+                nextEventChunk = roomTimelineStore
+                    .filterDuplicateEvents(response.chunk)
+                    ?.handleRedactions()
                 nextHasGap = response.end != null &&
                         response.end != destinationBatch &&
                         response.chunk?.none { it.id == nextEvent } == true
@@ -223,17 +227,6 @@ class TimelineEventHandlerImpl(
                         nextHasGap = nextHasGap,
                         nextEvent = nextEvent,
                         nextEventChunk = nextEventChunk,
-                        processTimelineEventsBeforeSave = { list ->
-                            list.forEach {
-                                val event = it.event
-                                val content = event.content
-                                if (content is RedactionEventContent) {
-                                    @Suppress("UNCHECKED_CAST")
-                                    redactTimelineEvent(event as RoomEvent<RedactionEventContent>)
-                                }
-                            }
-                            list
-                        },
                     )
                     previousEventChunk?.alsoAddRelationFromTimelineEvents()
                     nextEventChunk?.alsoAddRelationFromTimelineEvents()
@@ -250,66 +243,85 @@ class TimelineEventHandlerImpl(
         }
     }
 
-    internal suspend fun redactTimelineEvent(redactionEvent: RoomEvent<RedactionEventContent>) {
-        if (redactionEvent is MessageEvent) {
-            val roomId = redactionEvent.roomId
-            log.debug { "redact event with id ${redactionEvent.content.redacts} in room $roomId" }
-            roomTimelineStore.update(redactionEvent.content.redacts, roomId) { oldTimelineEvent ->
-                if (oldTimelineEvent != null) {
-                    when (val oldEvent = oldTimelineEvent.event) {
-                        is MessageEvent -> {
-                            redactRelation(oldEvent)
-                            val eventType =
-                                api.eventContentSerializerMappings.message
-                                    .find { it.kClass.isInstance(oldEvent.content) }?.type
-                                    ?: "UNKNOWN"
-                            val newContent = RedactedEventContent(eventType)
-                            oldTimelineEvent.copy(
-                                event = MessageEvent(
-                                    newContent,
-                                    oldEvent.id,
-                                    oldEvent.sender,
-                                    oldEvent.roomId,
-                                    oldEvent.originTimestamp,
-                                    UnsignedRoomEventData.UnsignedMessageEventData(
-                                        redactedBecause = redactionEvent,
-                                        transactionId = oldEvent.unsigned?.transactionId,
-                                    )
-                                ),
-                                content = Result.success(newContent),
-                            )
-                        }
+    private suspend fun RoomEvent<*>.redact(because: MessageEvent<RedactionEventContent>): RoomEvent<RedactedEventContent> =
+        when (this) {
+            is MessageEvent -> {
+                redactRelation(this)
+                val eventType =
+                    api.eventContentSerializerMappings.message
+                        .find { it.kClass.isInstance(content) }?.type
+                        ?: "UNKNOWN"
+                val newContent = RedactedEventContent(eventType)
+                MessageEvent(
+                    newContent,
+                    id,
+                    sender,
+                    roomId,
+                    originTimestamp,
+                    UnsignedRoomEventData.UnsignedMessageEventData(
+                        redactedBecause = because,
+                        transactionId = unsigned?.transactionId,
+                    )
+                )
+            }
 
-                        is RoomEvent.StateEvent -> {
-                            val eventType =
-                                api.eventContentSerializerMappings.state
-                                    .find { it.kClass.isInstance(oldEvent.content) }?.type
-                                    ?: "UNKNOWN"
-                            val newContent = RedactedEventContent(eventType)
-                            oldTimelineEvent.copy(
-                                event = RoomEvent.StateEvent(
-                                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.10/rooms/v9/#redactions
-                                    newContent,
-                                    oldEvent.id,
-                                    oldEvent.sender,
-                                    oldEvent.roomId,
-                                    oldEvent.originTimestamp,
-                                    UnsignedRoomEventData.UnsignedStateEventData(
-                                        redactedBecause = redactionEvent,
-                                        transactionId = oldEvent.unsigned?.transactionId,
-                                    ),
-                                    oldEvent.stateKey,
-                                ),
-                                content = Result.success(newContent),
-                            )
-                        }
-                    }
-                } else {
-                    log.debug { "nothing to redact as event with id ${redactionEvent.content.redacts} in room $roomId does not exist locally" }
-                    null
-                }
+            is RoomEvent.StateEvent -> {
+                // TODO should update state to last known (maybe not needed with sync v3)
+                val eventType =
+                    api.eventContentSerializerMappings.state
+                        .find { it.kClass.isInstance(content) }?.type
+                        ?: "UNKNOWN"
+                val newContent = RedactedEventContent(eventType)
+                RoomEvent.StateEvent(
+                    // TODO should keep some fields and change state: https://spec.matrix.org/v1.10/rooms/v9/#redactions
+                    newContent,
+                    id,
+                    sender,
+                    roomId,
+                    originTimestamp,
+                    UnsignedRoomEventData.UnsignedStateEventData(
+                        redactedBecause = because,
+                        transactionId = unsigned?.transactionId,
+                    ),
+                    stateKey,
+                )
             }
         }
+
+    internal suspend fun List<RoomEvent<*>>.handleRedactions(): List<RoomEvent<*>> {
+        val redactionEvents =
+            filter { it.content is RedactionEventContent }
+                .filterIsInstance<MessageEvent<RedactionEventContent>>()
+                .associateBy { it.content.redacts }
+                .toMutableMap()
+
+        val eventsWithRedactedEvents = map { event ->
+            val redactedBecause = redactionEvents[event.id]
+            if (redactedBecause != null && redactedBecause != event) {
+                log.debug { "redact new event with id ${redactedBecause.content.redacts} in room ${redactedBecause.roomId}" }
+                redactionEvents.remove(event.id)
+                event.redact(redactedBecause)
+            } else event
+        }
+        redactionEvents
+            .forEach { (_, redactionEvent) ->
+                val roomId = redactionEvent.roomId
+                roomTimelineStore.update(redactionEvent.content.redacts, roomId) { oldTimelineEvent ->
+                    if (oldTimelineEvent != null) {
+                        log.debug { "redact existing event with id ${redactionEvent.content.redacts} in room $roomId" }
+                        val newEvent = oldTimelineEvent.event.redact(redactionEvent)
+                        oldTimelineEvent.copy(
+                            event = newEvent,
+                            content = Result.success(newEvent.content),
+                        )
+                    } else {
+                        log.trace { "redact nothing because event with id ${redactionEvent.content.redacts} in room $roomId does not exist locally" }
+                        null
+                    }
+                }
+            }
+
+        return eventsWithRedactedEvents
     }
 
     private suspend fun List<RoomEvent<*>>.alsoAddRelationFromTimelineEvents() =
@@ -363,7 +375,7 @@ class TimelineEventHandlerImpl(
         nextHasGap: Boolean,
         nextEvent: EventId?,
         nextEventChunk: List<RoomEvent<*>>?,
-        processTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent>
+        processTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
     ) {
         log.trace {
             "addEventsToTimeline with parameters:\n" +
@@ -484,17 +496,14 @@ class TimelineEventHandlerImpl(
                 }
             } else emptyList()
 
-        // saving (saveAll) must be split up, because processTimelineEventsBeforeSave may redact events
         addAll(
             processTimelineEventsBeforeSave(
                 listOfNotNull(
                     updatedPreviousEvent,
                     updatedNextEvent,
                     updatedStartEvent,
-                )
+                ) + newPreviousEvents + newNextEvents
             )
         )
-        addAll(processTimelineEventsBeforeSave(newPreviousEvents))
-        addAll(processTimelineEventsBeforeSave(newNextEvents))
     }
 }

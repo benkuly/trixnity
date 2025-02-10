@@ -2,16 +2,41 @@ package net.folivo.trixnity.client
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.MediaStore
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.Account
+import net.folivo.trixnity.client.store.AccountStore
+import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.client.store.KeyVerificationState
+import net.folivo.trixnity.client.store.MediaCacheMappingStore
+import net.folivo.trixnity.client.store.OlmCryptoStore
+import net.folivo.trixnity.client.store.RootStore
+import net.folivo.trixnity.client.store.ServerData
+import net.folivo.trixnity.client.store.ServerDataStore
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
 import net.folivo.trixnity.client.utils.retryWhen
-import net.folivo.trixnity.clientserverapi.client.*
+import net.folivo.trixnity.clientserverapi.client.ClassicMatrixAuthProvider
+import net.folivo.trixnity.clientserverapi.client.LogoutInfo
+import net.folivo.trixnity.clientserverapi.client.MatrixAuthProvider
+import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.classic
+import net.folivo.trixnity.clientserverapi.client.classicInMemory
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -271,15 +296,15 @@ suspend fun MatrixClient.Companion.loginWith(
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
 
-    val loginInfo = MatrixClientServerApiClientImpl(
+    val loginInfo = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
     ).use { loginApi ->
         getLoginInfo(loginApi).getOrThrow()
     }
-    
-    val (displayName, avatarUrl) = MatrixClientServerApiClientImpl(
+
+    val (displayName, avatarUrl) = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
         authProvider = MatrixAuthProvider.classicInMemory(
             accessToken = loginInfo.accessToken,
@@ -335,7 +360,7 @@ suspend fun MatrixClient.Companion.loginWith(
         )
     }
 
-    val api = MatrixClientServerApiClientImpl(
+    val api = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
         authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)),
         httpClientEngine = config.httpClientEngine,
@@ -447,7 +472,7 @@ suspend fun MatrixClient.Companion.fromStore(
     val olmAccount = olmCryptoStore.getOlmAccount()
 
     if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
-        val api = MatrixClientServerApiClientImpl(
+        val api = config.matrixClientServerApiClientFactory.create(
             baseUrl = baseUrl,
             authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)),
             httpClientEngine = config.httpClientEngine,
@@ -456,7 +481,7 @@ suspend fun MatrixClient.Companion.fromStore(
             json = di.get(),
             eventContentSerializerMappings = di.get(),
             syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
-            syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
+            syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay,
         )
         val accessToken = account.accessToken ?: onSoftLogin?.let {
             val (identifier, password, token, loginType) = onSoftLogin()

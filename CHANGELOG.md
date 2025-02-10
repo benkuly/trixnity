@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Possibility to configure a MatrixClientServerApiClient via MatrixClientConfiguration
+
 ### Changed
 
 ### Deprecated
@@ -17,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Send access token to endpoints when server wants to
+- Send access token to endpoints when server wants to.
+- Redacted TimelineEvent should not be replaced by edits.
 - Fix error enumerating account registration flows
 
 ### Security
