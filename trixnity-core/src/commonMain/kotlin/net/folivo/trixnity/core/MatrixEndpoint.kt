@@ -67,7 +67,12 @@ enum class AuthRequired {
      * Client: Send token if requested by server
      * Server: Ignore token, even if included
      */
-    NO;
+    NO,
+    /**
+     * Client: Never send token
+     * Server: Ignore token, even if included
+     */
+    NEVER;
 
     companion object {
         val attributeKey = AttributeKey<AuthRequired>("matrixEndpointAuthenticationRequired")

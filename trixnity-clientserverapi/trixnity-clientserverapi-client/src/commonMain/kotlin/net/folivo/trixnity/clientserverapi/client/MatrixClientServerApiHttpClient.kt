@@ -5,6 +5,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
+import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.resources.*
 import io.ktor.client.request.*
@@ -35,6 +36,17 @@ interface MatrixAuthProvider : AuthProvider {
     companion object
 }
 
+/**
+ * Plugin to fully disable auth for requests with AuthRequired set to NEVER
+ */
+private val SkipAuthenticationIfDisabled: ClientPlugin<Unit> = createClientPlugin("SkipAuthenticationIfDisabled") {
+    onRequest { request, _ ->
+        if (request.attributes.getOrNull(AuthRequired.attributeKey) == AuthRequired.NEVER) {
+            request.attributes.put(AuthCircuitBreaker, Unit)
+        }
+    }
+}
+
 class MatrixClientServerApiHttpClient(
     val baseUrl: Url? = null,
     authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
@@ -51,6 +63,7 @@ class MatrixClientServerApiHttpClient(
         install(DefaultRequest) {
             if (baseUrl != null) url.takeFrom(baseUrl)
         }
+        install(SkipAuthenticationIfDisabled)
         install(Auth) {
             providers.add(authProvider)
         }

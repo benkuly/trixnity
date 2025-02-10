@@ -21,6 +21,7 @@ import net.folivo.trixnity.clientserverapi.model.uia.UIAState
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.scopedMockEngine
@@ -65,6 +66,15 @@ class MatrixClientServerApiHttpClientTest {
     @HttpMethod(POST)
     @Auth(AuthRequired.OPTIONAL)
     data class PostPathWithOptionalAuth(
+        @SerialName("pathParam") val pathParam: String,
+        @SerialName("requestParam") val requestParam: String,
+    ) : MatrixEndpoint<PostPath.Request, PostPath.Response>
+
+    @Serializable
+    @Resource("/path/{pathParam}")
+    @HttpMethod(POST)
+    @Auth(AuthRequired.NEVER)
+    data class PostPathWithDisabledAuth(
         @SerialName("pathParam") val pathParam: String,
         @SerialName("requestParam") val requestParam: String,
     ) : MatrixEndpoint<PostPath.Request, PostPath.Response>
@@ -127,6 +137,37 @@ class MatrixClientServerApiHttpClientTest {
 
         cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
             PostPath.Response("ok")
+    }
+
+    @Test
+    fun itShouldNotRetryWithTokenOnNever() = runTest {
+        val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
+
+        val cut = MatrixClientServerApiHttpClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classic(testTokenStore),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    request.headers[HttpHeaders.Authorization] shouldBe null
+                    respond(
+                        """{"status":"ok"}""",
+                        HttpStatusCode.Unauthorized,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString(),)
+                    )
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
+
+        cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
+            .exceptionOrNull() shouldBe
+            MatrixServerException(
+                HttpStatusCode.Unauthorized,
+                ErrorResponse.CustomErrorResponse("UNKNOWN", error="""{"status":"ok"}""")
+            )
     }
 
     @Test

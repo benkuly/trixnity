@@ -94,6 +94,7 @@ fun AuthenticationConfig.matrixAccessTokenAuth(
                                 !it.request.queryParameters.contains("access_token")
 
                         AuthRequired.NO -> true
+                        AuthRequired.NEVER -> true
                         null -> false
                     }
                 }
