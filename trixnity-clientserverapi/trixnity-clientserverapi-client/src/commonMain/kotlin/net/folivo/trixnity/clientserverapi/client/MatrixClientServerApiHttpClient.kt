@@ -88,13 +88,10 @@ class MatrixClientServerApiHttpClient(
     }
 ) {
     override suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {
-        if (response.status == HttpStatusCode.Unauthorized) {
-            when (errorResponse) {
-                is ErrorResponse.UnknownToken -> onLogout(LogoutInfo(errorResponse.softLogout, false))
-                is ErrorResponse.UserLocked -> onLogout(LogoutInfo(errorResponse.softLogout, true))
-                else -> {}
-            }
-
+        when (errorResponse) {
+            is ErrorResponse.UnknownToken -> onLogout(LogoutInfo(errorResponse.softLogout, false))
+            is ErrorResponse.UserLocked -> onLogout(LogoutInfo(errorResponse.softLogout, true))
+            else -> {}
         }
     }
 
