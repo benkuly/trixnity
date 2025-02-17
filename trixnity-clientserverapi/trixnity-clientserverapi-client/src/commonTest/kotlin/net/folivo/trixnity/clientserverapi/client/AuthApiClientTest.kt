@@ -426,6 +426,8 @@ class AuthApiClientTest {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/logout", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe ""
+                    request.headers[HttpHeaders.ContentType] shouldBe null
                     respond(
                         "{}",
                         HttpStatusCode.OK,
@@ -444,6 +446,8 @@ class AuthApiClientTest {
                 addHandler { request ->
                     assertEquals("/_matrix/client/v3/logout/all", request.url.fullPath)
                     assertEquals(HttpMethod.Post, request.method)
+                    request.body.toByteArray().decodeToString() shouldBe ""
+                    request.headers[HttpHeaders.ContentType] shouldBe null
                     respond(
                         "{}",
                         HttpStatusCode.OK,
