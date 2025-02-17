@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -90,7 +91,9 @@ class FallbackKeyIT {
             startedClient1.client.stopSync(true)
 
             withClue("ensure, that new one time and fallback keys are generated") {
-                startedClient2.claimAllOneTimeKeysFrom(startedClient1) shouldNotContainAnyOf oneTimeKeys
+                startedClient2.claimAllOneTimeKeysFrom(startedClient1)
+                    .shouldHaveAtLeastSize(30)
+                    .shouldNotContainAnyOf(oneTimeKeys)
             }
         }
     }

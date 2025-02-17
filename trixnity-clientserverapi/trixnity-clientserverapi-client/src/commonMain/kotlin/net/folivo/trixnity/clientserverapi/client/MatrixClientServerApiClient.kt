@@ -43,6 +43,32 @@ interface MatrixClientServerApiClient : AutoCloseable {
     val json: Json
 }
 
+interface MatrixClientServerApiClientFactory {
+    fun create(
+        baseUrl: Url? = null,
+        authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+        onLogout: suspend (LogoutInfo) -> Unit = { },
+        eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+        json: Json = createMatrixEventJson(eventContentSerializerMappings),
+        syncLoopDelay: Duration = 2.seconds,
+        syncLoopErrorDelay: Duration = 5.seconds,
+        httpClientEngine: HttpClientEngine? = null,
+        httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
+    ): MatrixClientServerApiClient {
+        return MatrixClientServerApiClientImpl(
+            baseUrl,
+            authProvider,
+            onLogout,
+            eventContentSerializerMappings,
+            json,
+            syncLoopDelay,
+            syncLoopErrorDelay,
+            httpClientEngine,
+            httpClientConfig,
+        )
+    }
+}
+
 class MatrixClientServerApiClientImpl(
     baseUrl: Url? = null,
     authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),

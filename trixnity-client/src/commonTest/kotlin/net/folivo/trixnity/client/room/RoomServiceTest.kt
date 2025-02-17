@@ -22,6 +22,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
+import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
@@ -321,6 +322,31 @@ class RoomServiceTest : ShouldSpec({
                 cut.getTimelineEvent(room, eventId) { allowReplaceContent = false }.first() shouldBe timelineEvent.copy(
                     content = Result.success(RoomMessageEventContent.TextBased.Text("hi"))
                 )
+            }
+            should("not replace when redacted") {
+                val redactedTimelineEvent = TimelineEvent(
+                    event = MessageEvent(
+                        RedactedEventContent("m.room.message"),
+                        EventId("\$event1"),
+                        UserId("sender", "server"),
+                        room,
+                        1,
+                        UnsignedRoomEventData.UnsignedMessageEventData(
+                            relations = mapOf(
+                                RelationType.Replace to ServerAggregation.Replace(
+                                    replaceTimelineEvent.eventId,
+                                    replaceTimelineEvent.event.sender,
+                                    replaceTimelineEvent.event.originTimestamp
+                                )
+                            )
+                        )
+                    ),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null
+                )
+                roomTimelineStore.addAll(listOf(redactedTimelineEvent, replaceTimelineEvent))
+                cut.getTimelineEvent(room, eventId).first() shouldBe redactedTimelineEvent
             }
         }
     }

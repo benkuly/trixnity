@@ -120,7 +120,8 @@ fun AuthenticationConfig.matrixSignatureAuth(
             .apply(configure)
             .apply {
                 skipWhen {
-                    it.attributes.getOrNull(AuthRequired.attributeKey) == AuthRequired.NO
+                    val authRequired = it.attributes.getOrNull(AuthRequired.attributeKey)
+                    authRequired == AuthRequired.NO || authRequired == AuthRequired.NEVER
                 }
             })
     register(provider)
