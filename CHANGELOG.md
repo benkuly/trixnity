@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Ignore status code for onLogout callback check.
 - Logout and LogoutAll should send empty request body.
 
 ### Security
@@ -25,13 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Possibility to configure a MatrixClientServerApiClient via MatrixClientConfiguration
+- Possibility to configure a MatrixClientServerApiClient via MatrixClientConfiguration.
 
 ### Fixed
 
 - Send access token to endpoints when server wants to.
 - Redacted TimelineEvent should not be replaced by edits.
-- Fix error enumerating account registration flows
+- Fix error enumerating account registration flows.
 
 ## 4.12.2
 
@@ -43,8 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed use authentication with `GetMediaConfigLegacy`
-- Fixed use authentication with `GetPublicRooms`
+- Fixed use authentication with `GetMediaConfigLegacy`.
+- Fixed use authentication with `GetPublicRooms`.
 
 ## 4.12.0
 
