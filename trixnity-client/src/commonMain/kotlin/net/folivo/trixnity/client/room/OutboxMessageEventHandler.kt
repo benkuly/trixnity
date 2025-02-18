@@ -150,13 +150,11 @@ class OutboxMessageEventHandler(
                     throw exception
                 }
             }
-
             roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
                 it?.copy(sendError = sendError)
             }
             return
         }
-
         val contentResult = roomEventEncryptionServices.encrypt(uploadedContent, roomId)
 
         val content = when {
