@@ -43,7 +43,7 @@ class MatrixAccessTokenAuth internal constructor(
 
                     InvalidCredentials -> challengeCall.respond<ErrorResponse>(
                         HttpStatusCode.Unauthorized,
-                        ErrorResponse.UnknownToken("invalid token")
+                        ErrorResponse.UnknownToken("invalid token", authResult?.softLogout ?: false)
                     )
 
                     is Error -> challengeCall.respond<ErrorResponse>(
@@ -65,7 +65,8 @@ typealias AccessTokenAuthenticationFunction = suspend (UserAccessTokenCredential
 data class UserAccessTokenCredentials(val accessToken: String) : Credential
 data class AccessTokenAuthenticationFunctionResult(
     val principal: UserIdPrincipal?,
-    val cause: AuthenticationFailedCause?
+    val cause: AuthenticationFailedCause?,
+    val softLogout: Boolean = false
 )
 
 private fun ApplicationRequest.getAccessToken(): UserAccessTokenCredentials? {
