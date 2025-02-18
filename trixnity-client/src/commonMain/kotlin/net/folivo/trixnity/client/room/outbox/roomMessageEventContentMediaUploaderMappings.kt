@@ -21,7 +21,11 @@ class FileRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaU
         val contentUrl = content.url
         val combinedUploadProgress = CombinedFileTransferProgress()
         val thumbnailUploadProgress = combinedUploadProgress.acquire()
-        thumbnailUploadProgress.value = FileTransferProgress(0, content.info?.thumbnailInfo?.size)
+        thumbnailUploadProgress.value =
+            if (content.info?.thumbnailFile != null || content.info?.thumbnailUrl != null) FileTransferProgress(
+                0,
+                content.info?.thumbnailInfo?.size
+            ) else null
         val fileUploadProgress = combinedUploadProgress.acquire()
         fileUploadProgress.value = FileTransferProgress(0, content.info?.size)
         val updateProgress = launch {
@@ -43,7 +47,7 @@ class FileRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaU
                 })
             )
         } else if (contentUrl != null) {
-            val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
+            val thumbnailMxcUri = content.info?.thumbnailUrl?.let {
                 upload(it, thumbnailUploadProgress)
             }
             val mxcUri = upload(contentUrl, fileUploadProgress)
@@ -67,13 +71,17 @@ class ImageRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
         val encryptedContentUrl = content.file?.url
         val contentUrl = content.url
         val combinedUploadProgress = CombinedFileTransferProgress()
-        val thumbnailUploadProgress = combinedUploadProgress.acquire()
-        thumbnailUploadProgress.value = FileTransferProgress(0, content.info?.thumbnailInfo?.size)
-        val fileUploadProgress = combinedUploadProgress.acquire()
-        fileUploadProgress.value = FileTransferProgress(0, content.info?.size)
         val updateProgress = launch {
             combinedUploadProgress.collect(uploadProgress)
         }
+        val thumbnailUploadProgress = combinedUploadProgress.acquire()
+        thumbnailUploadProgress.value =
+            if (content.info?.thumbnailFile != null || content.info?.thumbnailUrl != null) FileTransferProgress(
+                0,
+                content.info?.thumbnailInfo?.size
+            ) else null
+        val fileUploadProgress = combinedUploadProgress.acquire()
+        fileUploadProgress.value = FileTransferProgress(0, content.info?.size)
         return@coroutineScope if (encryptedContentUrl != null) {
             val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
                 upload(it, thumbnailUploadProgress)
@@ -89,7 +97,7 @@ class ImageRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
                 })
             )
         } else if (contentUrl != null) {
-            val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
+            val thumbnailMxcUri = content.info?.thumbnailUrl?.let {
                 upload(it, thumbnailUploadProgress)
             }
             val mxcUri = upload(contentUrl, fileUploadProgress)
@@ -113,7 +121,11 @@ class VideoRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
         val contentUrl = content.url
         val combinedUploadProgress = CombinedFileTransferProgress()
         val thumbnailUploadProgress = combinedUploadProgress.acquire()
-        thumbnailUploadProgress.value = FileTransferProgress(0, content.info?.thumbnailInfo?.size)
+        thumbnailUploadProgress.value =
+            if (content.info?.thumbnailFile != null || content.info?.thumbnailUrl != null) FileTransferProgress(
+                0,
+                content.info?.thumbnailInfo?.size
+            ) else null
         val fileUploadProgress = combinedUploadProgress.acquire()
         fileUploadProgress.value = FileTransferProgress(0, content.info?.size)
         val updateProgress = launch {
@@ -134,7 +146,7 @@ class VideoRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
                 })
             )
         } else if (contentUrl != null) {
-            val thumbnailMxcUri = content.info?.thumbnailFile?.url?.let {
+            val thumbnailMxcUri = content.info?.thumbnailUrl?.let {
                 upload(it, thumbnailUploadProgress)
             }
             val mxcUri = upload(contentUrl, fileUploadProgress)

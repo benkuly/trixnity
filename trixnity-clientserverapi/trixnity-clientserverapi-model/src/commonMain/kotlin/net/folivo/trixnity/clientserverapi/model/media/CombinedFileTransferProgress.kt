@@ -21,7 +21,10 @@ class CombinedFileTransferProgress : Flow<FileTransferProgress?> {
                     val total = if (acc.total != null || fileTransferProgress.total != null) {
                         (acc.total ?: 0) + (fileTransferProgress.total ?: 0)
                     } else null
-                    FileTransferProgress(transferred, total)
+                    FileTransferProgress(
+                        transferred,
+                        total
+                    )
                 }
             }
         }.collect(collector)
