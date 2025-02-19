@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Ignore status code for onLogout callback check.
+- Logout and LogoutAll should send empty request body.
 
 ### Security
 
