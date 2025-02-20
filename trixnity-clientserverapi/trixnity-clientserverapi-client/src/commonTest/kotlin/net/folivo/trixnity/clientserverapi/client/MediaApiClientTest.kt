@@ -3,7 +3,6 @@ package net.folivo.trixnity.clientserverapi.client
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import io.ktor.util.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest

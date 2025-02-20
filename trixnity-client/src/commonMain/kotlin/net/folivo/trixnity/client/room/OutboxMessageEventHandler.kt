@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -27,6 +28,7 @@ import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKe
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
@@ -123,13 +125,17 @@ class OutboxMessageEventHandler(
         val uploader =
             outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)
         val uploadedContent = try {
-            uploader(originalContent) { cacheUri ->
+            uploader(
+                outboxMessage.mediaUploadProgress,
+                originalContent
+            ) { cacheUri: String, uploadProgress: MutableStateFlow<FileTransferProgress?> ->
                 mediaService.uploadMedia(
                     cacheUri,
-                    outboxMessage.mediaUploadProgress,
+                    uploadProgress,
                     outboxMessage.keepMediaInCache,
                 ).getOrThrow()
             }
+
         } catch (exception: Exception) {
             val sendError = when (exception) {
                 is MatrixServerException -> when (exception.statusCode) {

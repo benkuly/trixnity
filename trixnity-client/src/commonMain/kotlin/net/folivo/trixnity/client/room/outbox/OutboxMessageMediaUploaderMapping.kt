@@ -5,11 +5,11 @@ import kotlin.reflect.KClass
 
 data class OutboxMessageMediaUploaderMapping<T : MessageEventContent>(
     val kClass: KClass<T>,
-    val uploader: UploadAndTransformMessageEventContent
+    val uploader: MessageEventContentMediaUploader
 ) {
     companion object {
         inline fun <reified C : MessageEventContent> of(
-            noinline uploader: UploadAndTransformMessageEventContent
+            uploader: MessageEventContentMediaUploader
         ): OutboxMessageMediaUploaderMapping<C> {
             return OutboxMessageMediaUploaderMapping(C::class, uploader)
         }
