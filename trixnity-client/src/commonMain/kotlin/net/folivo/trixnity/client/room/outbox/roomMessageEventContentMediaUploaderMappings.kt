@@ -3,19 +3,18 @@ package net.folivo.trixnity.client.room.outbox
 import korlibs.io.async.launch
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import net.folivo.trixnity.clientserverapi.model.media.CombinedFileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
 // TODO test
 
-class FileRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaUploader {
+class FileMessageEventContentMediaUploader() : MessageEventContentMediaUploader {
     override suspend fun invoke(
         uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
         upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
-    ): RoomMessageEventContent = coroutineScope {
+    ): MessageEventContent = coroutineScope {
         require(content is RoomMessageEventContent.FileBased.File)
         val encryptedContentUrl = content.file?.url
         val contentUrl = content.url
@@ -61,12 +60,12 @@ class FileRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaU
 
 }
 
-class ImageRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaUploader {
+class ImageMessageEventContentMediaUploader() : MessageEventContentMediaUploader {
     override suspend fun invoke(
         uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
         upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
-    ): RoomMessageEventContent = coroutineScope {
+    ): MessageEventContent = coroutineScope {
         require(content is RoomMessageEventContent.FileBased.Image)
         val encryptedContentUrl = content.file?.url
         val contentUrl = content.url
@@ -110,12 +109,12 @@ class ImageRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
     }
 }
 
-class VideoRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaUploader {
+class VideoMessageEventContentMediaUploader() : MessageEventContentMediaUploader {
     override suspend fun invoke(
         uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
         upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
-    ): RoomMessageEventContent = coroutineScope {
+    ): MessageEventContent = coroutineScope {
         require(content is RoomMessageEventContent.FileBased.Video)
         val encryptedContentUrl = content.file?.url
         val contentUrl = content.url
@@ -160,12 +159,12 @@ class VideoRoomMessageEventContentMediaUploader() : RoomMessageEventContentMedia
 
 }
 
-class AudioRoomMessageEventContentMediaUploader() : RoomMessageEventContentMediaUploader {
+class AudioMessageEventContentMediaUploader() : MessageEventContentMediaUploader {
     override suspend fun invoke(
         uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
         upload: suspend (String, MutableStateFlow<FileTransferProgress?>) -> String
-    ): RoomMessageEventContent {
+    ): MessageEventContent {
         require(content is RoomMessageEventContent.FileBased.Audio)
         val encryptedContentUrl = content.file?.url
         val contentUrl = content.url

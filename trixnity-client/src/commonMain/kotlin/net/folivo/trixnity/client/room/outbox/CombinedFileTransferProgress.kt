@@ -1,7 +1,14 @@
-package net.folivo.trixnity.clientserverapi.model.media
+package net.folivo.trixnity.client.room.outbox
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
+import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
+import kotlin.collections.plus
 
 class CombinedFileTransferProgress : Flow<FileTransferProgress?> {
     private val allProgress = MutableStateFlow<Set<MutableStateFlow<FileTransferProgress?>>>(setOf())

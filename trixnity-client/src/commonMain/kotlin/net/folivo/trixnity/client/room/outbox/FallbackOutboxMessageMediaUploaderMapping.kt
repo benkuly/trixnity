@@ -11,7 +11,7 @@ private val log = KotlinLogging.logger { }
 val FallbackOutboxMessageMediaUploaderMapping =
     OutboxMessageMediaUploaderMapping(MessageEventContent::class, FallbackOutboxMessageMediaUploaderMappingClass())
 
-class FallbackOutboxMessageMediaUploaderMappingClass() : RoomMessageEventContentMediaUploader {
+class FallbackOutboxMessageMediaUploaderMappingClass() : MessageEventContentMediaUploader {
     override suspend fun invoke(
         uploadProgress: MutableStateFlow<FileTransferProgress?>,
         content: MessageEventContent,
