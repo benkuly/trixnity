@@ -433,20 +433,22 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         should("monitor upload on a file with thumbnail correctly") {
             val thumbnailInfo = ThumbnailInfo(15, 15, "image/png", 10)
             mediaServiceMock.uploadTimer.value = 100
-            mediaServiceMock.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
-            mediaServiceMock.returnPrepareUploadMedia = "mediaCacheUrl"
+            mediaServiceMock.returnPrepareUploadMedia.add("mediaCacheUrl")
+            mediaServiceMock.returnPrepareUploadMedia.add("thumbnailCacheUrl")
             mediaServiceMock.returnUploadMedia = Result.success("mxc://success")
             val message = MessageBuilder(room, roomServiceMock, mediaServiceMock, UserId("")).build {
                 image(
-                    "image.png",
-                    "fake_image_with_Thumbnail".toByteArray().toByteArrayFlow(),
-                    null,
-                    null,
-                    null,
-                    PNG,
-                    25,
-                    1024,
-                    1024
+                    body = "image.png",
+                    image = "fake_image_with_Thumbnail".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = null,
+                    type = PNG,
+                    size = 25,
+                    height = 1024,
+                    width = 1024,
+                    thumbnail = "fake_Thumbnail".toByteArray().toByteArrayFlow(),
+                    thumbnailInfo = thumbnailInfo,
                 )
             }
             message shouldNotBe null
@@ -466,8 +468,9 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             }
             currentSyncState.value = SyncState.STARTED
             mediaServiceMock.uploadSizes.value = ArrayList<Long>().apply {
-                this.add((message1.content as RoomMessageEventContent.FileBased.Image).info?.thumbnailInfo?.size ?: 0)
-                this.add(message1.content.info?.size ?: 0)
+                val content = message1.content as RoomMessageEventContent.FileBased.Image
+                this.add(content.info?.thumbnailInfo?.size ?: 0)
+                this.add(content.info?.size ?: 0)
             }
 
             val job = launch(Dispatchers.Default) {
