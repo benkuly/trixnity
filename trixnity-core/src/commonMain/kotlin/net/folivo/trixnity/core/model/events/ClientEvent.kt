@@ -7,11 +7,16 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#types-of-room-events">matrix spec</a>
+ * A client event with a specific type given by the generic parameter C.
+ *
+ * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#events">Matrix events</a>
  */
 sealed interface ClientEvent<C : EventContent> : Event<C> {
     /**
-     * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#room-event-fields">matrix spec</a>
+     * Matrix room event. Either a message event or a state event.
+     *
+     * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#types-of-room-events">Types of matrix room events</a>
+     * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#room-event-format">Matrix room event format</a>
      */
     sealed interface RoomEvent<C : RoomEventContent> : ClientEvent<C> {
         val id: EventId
@@ -20,6 +25,12 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
         val originTimestamp: Long
         val unsigned: UnsignedRoomEventData?
 
+        /**
+         * Matrix message event
+         *
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#types-of-room-events">Types of matrix room events</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#room-event-format">Matrix room event format</a>
+         */
         @Serializable
         data class MessageEvent<C : MessageEventContent>(
             @SerialName("content") override val content: C,
@@ -31,7 +42,10 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
         ) : RoomEvent<C>
 
         /**
-         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#types-of-room-events">matrix spec</a>
+         * Matrix state event
+         *
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#types-of-room-events">Types of matrix room events</a>
+         * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#room-event-format">Matrix room event format</a>
          */
         @Serializable
         data class StateEvent<C : StateEventContent>(

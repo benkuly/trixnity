@@ -1,6 +1,7 @@
 package net.folivo.trixnity.core.serialization.events
 
 import net.folivo.trixnity.core.model.events.m.*
+import net.folivo.trixnity.core.model.events.m.call.CallEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -28,6 +29,14 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     messageOf<SasAcceptEventContent>("m.key.verification.accept")
     messageOf<SasKeyEventContent>("m.key.verification.key")
     messageOf<SasMacEventContent>("m.key.verification.mac")
+    messageOf<CallEventContent.Invite>("m.call.invite")
+    messageOf<CallEventContent.Candidates>("m.call.candidates")
+    messageOf<CallEventContent.Answer>("m.call.answer")
+    messageOf<CallEventContent.Hangup>("m.call.hangup")
+    messageOf<CallEventContent.Negotiate>("m.call.negotiate")
+    messageOf<CallEventContent.Reject>("m.call.reject")
+    messageOf<CallEventContent.SelectAnswer>("m.call.select_answer")
+    messageOf<CallEventContent.SdpStreamMetadataChanged>("m.call.sdp_stream_metadata_changed")
 
     stateOf<AvatarEventContent>("m.room.avatar")
     stateOf<CanonicalAliasEventContent>("m.room.canonical_alias")

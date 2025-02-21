@@ -18,6 +18,9 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest as IVerificationRequest
 
 /**
+ * Matrix room message event content
+ *
+ * Room messages have "type": "m.room.message".
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroommessage">matrix spec</a>
  */
 @Serializable(with = RoomMessageEventContentSerializer::class)
