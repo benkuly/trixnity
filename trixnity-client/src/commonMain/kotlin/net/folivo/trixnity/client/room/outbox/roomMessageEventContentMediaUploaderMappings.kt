@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.room.outbox
 
-import korlibs.io.async.launch
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent

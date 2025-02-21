@@ -12,10 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `AccessTokenAuthenticationFunction` now allows servers to set `soft_logout`.
+- Upgrade dependencies
 
 ### Deprecated
 
 ### Removed
+
+- Removed thumbnail creation support (via korge), which never worked reliable.
 
 ### Fixed
 

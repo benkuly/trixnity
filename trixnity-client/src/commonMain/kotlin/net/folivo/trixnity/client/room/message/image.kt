@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.ImageInfo
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.utils.ByteArrayFlow
 
 suspend fun MessageBuilder.image(
@@ -16,30 +17,39 @@ suspend fun MessageBuilder.image(
     type: ContentType? = null,
     size: Long? = null,
     height: Int? = null,
-    width: Int? = null
+    width: Int? = null,
+    thumbnail: ByteArrayFlow? = null,
+    thumbnailInfo: ThumbnailInfo? = null,
 ) {
     val info: ImageInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
     val isEncryptedRoom = roomService.getById(roomId).first()?.encrypted == true
     if (isEncryptedRoom) {
-        val (thumbnailFile, thumbnailInfo) = mediaService.prepareUploadEncryptedThumbnail(image, type)
-            ?: Pair(null, null)
-
         encryptedFile = mediaService.prepareUploadEncryptedMedia(image)
+        val encryptedThumbnailFile = thumbnail?.let { mediaService.prepareUploadEncryptedMedia(it) }
         info = ImageInfo(
             height = height,
             width = width,
             mimeType = type?.toString(),
             size = size,
             thumbnailUrl = null,
-            thumbnailFile = thumbnailFile,
+            thumbnailFile = encryptedThumbnailFile,
             thumbnailInfo = thumbnailInfo
         )
         url = null
     } else {
         url = mediaService.prepareUploadMedia(image, type)
-        val (thumbnailUrl, thumbnailInfo) = mediaService.prepareUploadThumbnail(image, type) ?: Pair(null, null)
+        val thumbnailUrl = thumbnail?.let {
+            val thumbnailType = thumbnailInfo?.mimeType?.let { mimeType ->
+                try {
+                    ContentType.parse(mimeType)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            mediaService.prepareUploadMedia(thumbnail, thumbnailType)
+        }
         info = ImageInfo(
             height = height,
             width = width,

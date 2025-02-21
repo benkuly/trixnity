@@ -4,8 +4,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.longs.shouldBeGreaterThan
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
@@ -14,15 +12,11 @@ import io.kotest.matchers.string.shouldStartWith
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.Application.OctetStream
-import io.ktor.http.ContentType.Image.PNG
 import io.ktor.http.ContentType.Text.Plain
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 import net.folivo.trixnity.client.getInMemoryMediaCacheMapping
 import net.folivo.trixnity.client.getInMemoryServerDataStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -35,7 +29,6 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
-import kotlin.test.assertNotNull
 
 class MediaServiceTest : ShouldSpec({
     timeout = 60_000
@@ -169,30 +162,6 @@ class MediaServiceTest : ShouldSpec({
                     MediaCacheMapping(result, null, 4, Plain.toString())
         }
     }
-    context(MediaServiceImpl::prepareUploadThumbnail.name) {
-        should("save and return local cache uri from thumbnail") {
-            val result = cut.prepareUploadThumbnail(miniPng.toByteArrayFlow(), PNG)
-            result?.first shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
-            assertSoftly(result.shouldNotBeNull().second) {
-                width shouldBe 600
-                height shouldBe 600
-                size.shouldNotBeNull() shouldBeGreaterThan 1000
-                mimeType shouldBe "image/png"
-            }
-            mediaStore.getMedia(result.first).shouldNotBeNull()
-                .map { it.size }.toList().reduce { acc, i -> acc + i } shouldBeGreaterThan 24
-            assertSoftly(mediaCacheMappingStore.getMediaCacheMapping(result.first)) {
-                assertNotNull(this)
-                this.cacheUri shouldBe result.first
-                this.mxcUri shouldBe null
-                this.size.shouldNotBeNull() shouldBeGreaterThan 0
-                this.contentType shouldBe PNG.toString()
-            }
-        }
-        should("return null, when no thumbnail could be generated") {
-            cut.prepareUploadThumbnail("test".toByteArray().toByteArrayFlow(), PNG) shouldBe null
-        }
-    }
     context(MediaServiceImpl::prepareUploadEncryptedMedia.name) {
         should("encrypt, save, and return local cache uri from media") {
             val result = cut.prepareUploadEncryptedMedia("test".encodeToByteArray().toByteArrayFlow())
@@ -210,36 +179,6 @@ class MediaServiceTest : ShouldSpec({
                 4,
                 OctetStream.toString()
             )
-        }
-    }
-    context(MediaServiceImpl::prepareUploadEncryptedThumbnail.name) {
-        should("encrypt, save, and return local cache uri from thumbnail") {
-            val result = cut.prepareUploadEncryptedThumbnail(miniPng.toByteArrayFlow(), PNG)
-            assertSoftly(result.shouldNotBeNull().first) {
-                url shouldStartWith MediaServiceImpl.UPLOAD_MEDIA_CACHE_URI_PREFIX
-                url.length shouldBeGreaterThan 12
-                key.key shouldNot beEmpty()
-                initialisationVector shouldNot beEmpty()
-                hashes["sha256"] shouldNot beEmpty()
-            }
-            assertSoftly(result.second) {
-                width shouldBe 600
-                height shouldBe 600
-                size.shouldNotBeNull() shouldBeGreaterThan 1000
-                mimeType shouldBe "image/png"
-            }
-            mediaStore.getMedia(result.first.url).shouldNotBeNull()
-                .map { it.size }.toList().reduce { acc, i -> acc + i } shouldBeGreaterThan 24
-            assertSoftly(mediaCacheMappingStore.getMediaCacheMapping(result.first.url)) {
-                assertNotNull(this)
-                this.cacheUri shouldBe result.first.url
-                this.mxcUri shouldBe null
-                this.size.shouldNotBeNull() shouldBeGreaterThan 0
-                this.contentType shouldBe OctetStream.toString()
-            }
-        }
-        should("return null, when no encrypted thumbnail could be generated") {
-            cut.prepareUploadEncryptedThumbnail("test".toByteArray().toByteArrayFlow(), PNG) shouldBe null
         }
     }
     context(MediaServiceImpl::uploadMedia.name) {

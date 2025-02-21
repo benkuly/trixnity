@@ -17,7 +17,6 @@ import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod.CROP
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
-import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.decryptAes256Ctr
 import net.folivo.trixnity.crypto.core.encryptAes256Ctr
@@ -50,14 +49,7 @@ interface MediaService {
 
     suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String
 
-    suspend fun prepareUploadThumbnail(content: ByteArrayFlow, contentType: ContentType?): Pair<String, ThumbnailInfo>?
-
     suspend fun prepareUploadEncryptedMedia(content: ByteArrayFlow): EncryptedFile
-
-    suspend fun prepareUploadEncryptedThumbnail(
-        content: ByteArrayFlow,
-        contentType: ContentType?
-    ): Pair<EncryptedFile, ThumbnailInfo>?
 
     suspend fun uploadMedia(
         cacheUri: String,
@@ -222,27 +214,6 @@ class MediaServiceImpl(
         }
     }
 
-    override suspend fun prepareUploadThumbnail(
-        content: ByteArrayFlow,
-        contentType: ContentType?
-    ): Pair<String, ThumbnailInfo>? {
-        val thumbnail =
-            if (contentType?.contentType == "image") try {
-                createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
-            } catch (e: Exception) {
-                log.warn(e) { "could not create thumbnail from file with content type $contentType" }
-                return null
-            }
-            else return null
-        val cacheUri = prepareUploadMedia(thumbnail.file.toByteArrayFlow(), thumbnail.contentType)
-        return cacheUri to ThumbnailInfo(
-            width = thumbnail.width,
-            height = thumbnail.height,
-            mimeType = thumbnail.contentType.toString(),
-            size = thumbnail.file.size.toLong()
-        )
-    }
-
     override suspend fun prepareUploadEncryptedMedia(content: ByteArrayFlow): EncryptedFile {
         val key = SecureRandom.nextBytes(32)
         val nonce = SecureRandom.nextBytes(8)
@@ -261,27 +232,6 @@ class MediaServiceImpl(
             ),
             initialisationVector = initialisationVector.encodeUnpaddedBase64(),
             hashes = mapOf("sha256" to hash)
-        )
-    }
-
-    override suspend fun prepareUploadEncryptedThumbnail(
-        content: ByteArrayFlow,
-        contentType: ContentType?
-    ): Pair<EncryptedFile, ThumbnailInfo>? {
-        val thumbnail =
-            if (contentType?.contentType == "image") try {
-                createThumbnail(content.takeBytes(maxFileSizeForThumbnail).toByteArray(), 600, 600)
-            } catch (e: Exception) {
-                log.debug { "could not create thumbnail from file with content type $contentType" }
-                return null
-            }
-            else return null
-        val encryptedFile = prepareUploadEncryptedMedia(thumbnail.file.toByteArrayFlow())
-        return encryptedFile to ThumbnailInfo(
-            width = thumbnail.width,
-            height = thumbnail.height,
-            mimeType = thumbnail.contentType.toString(),
-            size = thumbnail.file.size.toLong()
         )
     }
 

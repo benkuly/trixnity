@@ -65,7 +65,9 @@ class ObservableCacheTest : ShouldSpec({
             cacheStore.persist("key", "new value")
             cut.get(key = "key").first() shouldBe "old value"
             readScope1.cancel()
-            delay(50.milliseconds) // wait for cancel to take effect
+            withContext(cacheScope.coroutineContext) {
+                delay(50.milliseconds) // wait for cancel to take effect
+            }
             clock.now += (1.minutes + 1.milliseconds)
             cut.invalidate()
             cut.get(key = "key").first() shouldBe "new value"
