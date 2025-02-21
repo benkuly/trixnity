@@ -51,13 +51,20 @@ class MediaServiceMock : MediaService {
     var returnUploadMedia: Result<String> = Result.success("")
     val uploadMediaCalled = MutableStateFlow<String?>(null)
     val uploadTimer = MutableStateFlow<Long>(0)
+    val uploadSizes = MutableStateFlow<ArrayList<Long>?>(null)
+    var currentUploadSize = 0
     override suspend fun uploadMedia(
         cacheUri: String,
         progress: MutableStateFlow<FileTransferProgress?>?,
         keepMediaInCache: Boolean
     ): Result<String> {
         uploadMediaCalled.value = cacheUri
+        val currentSize = uploadSizes.value?.getOrNull(currentUploadSize)
+        progress?.value = FileTransferProgress(0, currentSize)
         delay(uploadTimer.value)
+        progress?.value = FileTransferProgress(currentSize ?: 0, currentSize)
+        delay(uploadTimer.value)
+        currentUploadSize++
         return returnUploadMedia
     }
 }

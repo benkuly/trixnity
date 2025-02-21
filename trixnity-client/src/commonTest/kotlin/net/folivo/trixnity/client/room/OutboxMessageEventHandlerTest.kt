@@ -10,6 +10,8 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.http.*
+import io.ktor.http.ContentType.Image.PNG
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -18,13 +20,18 @@ import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
+import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.room.message.MessageBuilder
+import net.folivo.trixnity.client.room.message.image
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
+import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.rooms.SendEventResponse
 import net.folivo.trixnity.clientserverapi.model.rooms.SendMessageEvent
 import net.folivo.trixnity.core.ErrorResponse
@@ -32,13 +39,16 @@ import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.CustomErrorResponse
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import net.folivo.trixnity.utils.toByteArrayFlow
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -54,6 +64,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
     lateinit var currentSyncState: MutableStateFlow<SyncState>
     val json = createMatrixEventJson()
     lateinit var apiConfig: PortableMockEngineConfig
+    lateinit var roomServiceMock: RoomServiceMock
 
     lateinit var cut: OutboxMessageEventHandler
 
@@ -65,6 +76,9 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
         roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
         roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock(useInput = true)
         mediaServiceMock = MediaServiceMock()
+        roomServiceMock = RoomServiceMock().apply {
+            rooms.value = mapOf(room to MutableStateFlow(Room(room)))
+        }
         val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
         apiConfig = newApiConfig
         cut = OutboxMessageEventHandler(
@@ -413,6 +427,69 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
                 val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
                 outboxMessages shouldHaveSize 1
                 outboxMessages[0].sentAt shouldNotBe null
+            }
+            job.cancel()
+        }
+        should("monitor upload on a file with thumbnail correctly") {
+            val thumbnailInfo = ThumbnailInfo(15, 15, "image/png", 10)
+            mediaServiceMock.uploadTimer.value = 100
+            mediaServiceMock.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
+            mediaServiceMock.returnPrepareUploadMedia = "mediaCacheUrl"
+            mediaServiceMock.returnUploadMedia = Result.success("mxc://success")
+            val message = MessageBuilder(room, roomServiceMock, mediaServiceMock, UserId("")).build {
+                image(
+                    "image.png",
+                    "fake_image_with_Thumbnail".toByteArray().toByteArrayFlow(),
+                    null,
+                    null,
+                    null,
+                    PNG,
+                    25,
+                    1024,
+                    1024
+                )
+            }
+            message shouldNotBe null
+            val message1 = RoomOutboxMessage(
+                room, "message with thumbnail", message as MessageEventContent,
+                Clock.System.now()
+            )
+            roomOutboxMessageStore.update(message1.roomId, message1.transactionId) { message1 }
+            var sendEventCalled = false
+            apiConfig.endpoints {
+                matrixJsonEndpoint(
+                    SendMessageEvent(room, "m.room.message", "message with thumbnail"),
+                ) {
+                    sendEventCalled = true
+                    SendEventResponse(EventId("event"))
+                }
+            }
+            currentSyncState.value = SyncState.STARTED
+            mediaServiceMock.uploadSizes.value = ArrayList<Long>().apply {
+                this.add((message1.content as RoomMessageEventContent.FileBased.Image).info?.thumbnailInfo?.size ?: 0)
+                this.add(message1.content.info?.size ?: 0)
+            }
+
+            val job = launch(Dispatchers.Default) {
+                cut.processOutboxMessages(roomOutboxMessageStore.getAll())
+            }
+
+            until(50.milliseconds) {
+                job.isActive
+            }
+            currentSyncState.value = SyncState.RUNNING
+            eventually(3.seconds) {
+                val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+                outboxMessages shouldHaveSize 1
+                outboxMessages[0].mediaUploadProgress.value shouldBe FileTransferProgress(0, 35)
+            }
+            eventually(3.seconds) {
+                val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+                outboxMessages shouldHaveSize 1
+                outboxMessages[0].mediaUploadProgress.value shouldBe FileTransferProgress(35, 35)
+            }
+            eventually(3.seconds) {
+                sendEventCalled shouldBe true
             }
             job.cancel()
         }

@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Ignore status code for onLogout callback check.
+- Logout and LogoutAll should send empty request body.
 
 ### Security
 
@@ -69,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parameter `from` in `RoomsApiClient::getRelations*` is nullable.
 - Performance improvements in cache: Skip cache, when an entry is not subscribed by anyone.
 - Performance improvements in cache: Don't start coroutine for each cache entry and instead invalidate cache in loop.
+- Account for thumbnail file size in upload progress for files, images and videos
 
 ### Removed
 
