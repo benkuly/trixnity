@@ -28,8 +28,6 @@ kotlin {
                 implementation(libs.arrow.resilience)
 
                 implementation(libs.oshai.logging)
-
-                implementation(libs.korlibs.korim)
             }
         }
         commonTest {

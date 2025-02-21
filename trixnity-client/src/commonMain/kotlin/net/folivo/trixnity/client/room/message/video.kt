@@ -4,6 +4,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.core.model.events.m.room.VideoInfo
 import net.folivo.trixnity.utils.ByteArrayFlow
 
@@ -17,17 +18,18 @@ suspend fun MessageBuilder.video(
     size: Long? = null,
     height: Int? = null,
     width: Int? = null,
-    duration: Long? = null
+    duration: Long? = null,
+    thumbnail: ByteArrayFlow? = null,
+    thumbnailInfo: ThumbnailInfo? = null,
 ) {
     val info: VideoInfo?
     val url: String?
     val encryptedFile: EncryptedFile?
     val isEncryptedRoom = roomService.getById(roomId).first()?.encrypted == true
     if (isEncryptedRoom) {
-        val (thumbnailFile, thumbnailInfo) = mediaService.prepareUploadEncryptedThumbnail(video, type)
-            ?: Pair(null, null)
-
         encryptedFile = mediaService.prepareUploadEncryptedMedia(video)
+        val encryptedThumbnailFile = thumbnail?.let { mediaService.prepareUploadEncryptedMedia(it) }
+
         info = VideoInfo(
             duration = duration,
             height = height,
@@ -35,13 +37,22 @@ suspend fun MessageBuilder.video(
             mimeType = type?.toString(),
             size = size,
             thumbnailUrl = null,
-            thumbnailFile = thumbnailFile,
+            thumbnailFile = encryptedThumbnailFile,
             thumbnailInfo = thumbnailInfo
         )
         url = null
     } else {
         url = mediaService.prepareUploadMedia(video, type)
-        val (thumbnailUrl, thumbnailInfo) = mediaService.prepareUploadThumbnail(video, type) ?: Pair(null, null)
+        val thumbnailUrl = thumbnail?.let {
+            val thumbnailType = thumbnailInfo?.mimeType?.let { mimeType ->
+                try {
+                    ContentType.parse(mimeType)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            mediaService.prepareUploadMedia(thumbnail, thumbnailType)
+        }
         info = VideoInfo(
             duration = duration,
             height = height,

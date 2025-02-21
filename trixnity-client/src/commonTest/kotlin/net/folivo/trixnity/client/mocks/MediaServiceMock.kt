@@ -8,7 +8,6 @@ import net.folivo.trixnity.client.media.PlatformMedia
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
-import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.utils.ByteArrayFlow
 
 class MediaServiceMock : MediaService {
@@ -39,30 +38,14 @@ class MediaServiceMock : MediaService {
         throw NotImplementedError()
     }
 
-    lateinit var returnPrepareUploadMedia: String
+    val returnPrepareUploadMedia: MutableList<String> = mutableListOf()
     override suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String {
-        return returnPrepareUploadMedia
+        return returnPrepareUploadMedia.removeFirst()
     }
 
-    var returnPrepareUploadThumbnail: Pair<String, ThumbnailInfo>? = null
-    override suspend fun prepareUploadThumbnail(
-        content: ByteArrayFlow,
-        contentType: ContentType?
-    ): Pair<String, ThumbnailInfo>? {
-        return returnPrepareUploadThumbnail
-    }
-
-    lateinit var returnPrepareUploadEncryptedMedia: EncryptedFile
+    val returnPrepareUploadEncryptedMedia: MutableList<EncryptedFile> = mutableListOf()
     override suspend fun prepareUploadEncryptedMedia(content: ByteArrayFlow): EncryptedFile {
-        return returnPrepareUploadEncryptedMedia
-    }
-
-    var returnPrepareUploadEncryptedThumbnail: Pair<EncryptedFile, ThumbnailInfo>? = null
-    override suspend fun prepareUploadEncryptedThumbnail(
-        content: ByteArrayFlow,
-        contentType: ContentType?
-    ): Pair<EncryptedFile, ThumbnailInfo>? {
-        return returnPrepareUploadEncryptedThumbnail
+        return returnPrepareUploadEncryptedMedia.removeFirst()
     }
 
     var returnUploadMedia: Result<String> = Result.success("")

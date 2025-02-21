@@ -8,7 +8,7 @@ androidGradlePlugin = "8.7.3" # https://developer.android.com/reference/tools/gr
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 
 ### kotlinx ###
-kotlinxCoroutines = "1.9.0" # https://github.com/Kotlin/kotlinx.coroutines/releases
+kotlinxCoroutines = "1.10.1" # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinxSerialization = "1.8.0" # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinxDatetime = "0.6.2" # https://github.com/Kotlin/kotlinx-datetime/releases
 
@@ -23,7 +23,6 @@ ktor = "3.1.0" # https://github.com/ktorio/ktor/releases
 koin = "4.0.2" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.10.2" # https://square.github.io/okio/changelog/
 arrow = "2.0.1" # https://github.com/arrow-kt/arrow/releases
-korlibs = "4.0.10" # https://github.com/korlibs/korge/releases
 
 ### databases ###
 exposed = "0.59.0" # https://github.com/JetBrains/Exposed/releases
@@ -97,8 +96,6 @@ okio-nodefilesystem = { module = "com.squareup.okio:okio-nodefilesystem", versio
 okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
 
 arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
-
-korlibs-korim = { module = "com.soywiz.korlibs.korim:korim", version.ref = "korlibs" }
 
 ### databases ###
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }

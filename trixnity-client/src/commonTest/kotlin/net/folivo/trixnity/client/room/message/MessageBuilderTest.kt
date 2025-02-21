@@ -225,13 +225,13 @@ class MessageBuilderTest : ShouldSpec({
     context(MessageBuilder::text.name) {
         should("create text") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-                text("body", "format", "formatted_body")
+                text(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Text("body", "format", "formatted_body", mentions = Mentions())
         }
         should("create fallback text on replace") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 replace(timelineEvent(EventId("bla")))
-                text("body", "format", "formatted_body")
+                text(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Text(
                 "* body",
                 "format",
@@ -246,7 +246,7 @@ class MessageBuilderTest : ShouldSpec({
         should("create fallback text on reply") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 reply(timelineEvent(EventId("bla")))
-                text("body", "format", "formatted_body")
+                text(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Text(
                 """
                     > <@sender:server> dino
@@ -296,7 +296,7 @@ class MessageBuilderTest : ShouldSpec({
             )
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 reply(timelineEvent(EventId("bla")))
-                text("body", "format", "formatted_body")
+                text(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Text(
                 """
                     > <@sender:server> dino
@@ -358,7 +358,7 @@ class MessageBuilderTest : ShouldSpec({
             )
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 reply(timelineEvent(EventId("bla")))
-                text("body", "format", "formatted_body")
+                text(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Text(
                 """
                     > <@sender:server> dino
@@ -385,7 +385,7 @@ class MessageBuilderTest : ShouldSpec({
         should("create fallback text on thread") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 thread(timelineEvent(EventId("bla")))
-                text("body", "format", "formatted_body")
+                text(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Text(
                 "> <@sender:server> dino\n> unicorn\n\nbody",
                 "org.matrix.custom.html",
@@ -425,7 +425,7 @@ class MessageBuilderTest : ShouldSpec({
             )
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
                 reply(timelineEvent(EventId("bla")))
-                text("body", "format", "formatted_body")
+                text(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Text(
                 "> <@sender:server> image.png\n\nbody",
                 "org.matrix.custom.html",
@@ -448,7 +448,7 @@ class MessageBuilderTest : ShouldSpec({
     context(MessageBuilder::notice.name) {
         should("create notice") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-                notice("body", "format", "formatted_body")
+                notice(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Notice(
                 "body",
                 "format",
@@ -460,7 +460,7 @@ class MessageBuilderTest : ShouldSpec({
     context(MessageBuilder::emote.name) {
         should("create emote") {
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-                emote("body", "format", "formatted_body")
+                emote(body = "body", format = "format", formattedBody = "formatted_body")
             } shouldBe RoomMessageEventContent.TextBased.Emote(
                 "body",
                 "format",
@@ -472,10 +472,22 @@ class MessageBuilderTest : ShouldSpec({
     context(MessageBuilder::image.name) {
         should("create image and thumbnail") {
             val thumbnailInfo = ThumbnailInfo()
-            mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
-            mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
+            mediaService.returnPrepareUploadMedia.add("mediaCacheUrl")
+            mediaService.returnPrepareUploadMedia.add("thumbnailCacheUrl")
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
-                image("body", "fake_image".toByteArray().toByteArrayFlow(), null, null, null, PNG, 10, 1024, 1024)
+                image(
+                    body = "body",
+                    image = "fake_image".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = null,
+                    type = PNG,
+                    size = 10,
+                    height = 1024,
+                    width = 1024,
+                    thumbnail = "fake_thumbnail".toByteArray().toByteArrayFlow(),
+                    thumbnailInfo = thumbnailInfo
+                )
             } shouldBe RoomMessageEventContent.FileBased.Image(
                 "body", info = ImageInfo(
                     1024, 1024, "image/png", 10, "thumbnailCacheUrl", null,
@@ -488,10 +500,22 @@ class MessageBuilderTest : ShouldSpec({
             val thumbnailInfo = ThumbnailInfo()
             val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
             val encryptedThumbnail = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
-            mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
-            mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
+            mediaService.returnPrepareUploadEncryptedMedia.add(encryptedFile)
+            mediaService.returnPrepareUploadEncryptedMedia.add(encryptedThumbnail)
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-                image("body", "fake_image".toByteArray().toByteArrayFlow(), null, null, null, PNG, 10, 1024, 1024)
+                image(
+                    body = "body",
+                    image = "fake_image".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = null,
+                    type = PNG,
+                    size = 10,
+                    height = 1024,
+                    width = 1024,
+                    thumbnail = "fake_thumbnaul".toByteArray().toByteArrayFlow(),
+                    thumbnailInfo = thumbnailInfo
+                )
             } shouldBe RoomMessageEventContent.FileBased.Image(
                 "body", info = ImageInfo(
                     1024, 1024, "image/png", 10, null, encryptedThumbnail,
@@ -504,10 +528,20 @@ class MessageBuilderTest : ShouldSpec({
     context(MessageBuilder::file.name) {
         should("create file and thumbnail") {
             val thumbnailInfo = ThumbnailInfo()
-            mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
-            mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
+            mediaService.returnPrepareUploadMedia.add("mediaCacheUrl")
+            mediaService.returnPrepareUploadMedia.add("thumbnailCacheUrl")
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
-                file("body", "fake_file".toByteArray().toByteArrayFlow(), null, null, "filename", PNG, 9)
+                file(
+                    body = "body",
+                    file = "fake_file".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = "filename",
+                    type = PNG,
+                    size = 9,
+                    thumbnail = "fake_thumbnaul".toByteArray().toByteArrayFlow(),
+                    thumbnailInfo = thumbnailInfo
+                )
             } shouldBe RoomMessageEventContent.FileBased.File(
                 "body", fileName = "filename", info = FileInfo(
                     "image/png", 9, "thumbnailCacheUrl", null, thumbnailInfo,
@@ -519,10 +553,20 @@ class MessageBuilderTest : ShouldSpec({
             val thumbnailInfo = ThumbnailInfo()
             val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
             val encryptedThumbnail = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
-            mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
-            mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
+            mediaService.returnPrepareUploadEncryptedMedia.add(encryptedFile)
+            mediaService.returnPrepareUploadEncryptedMedia.add(encryptedThumbnail)
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-                file("body", "fake_file".toByteArray().toByteArrayFlow(), null, null, "filename", PNG, 9)
+                file(
+                    body = "body",
+                    file = "fake_file".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = "filename",
+                    type = PNG,
+                    size = 9,
+                    thumbnail = "fake_thumbnaul".toByteArray().toByteArrayFlow(),
+                    thumbnailInfo = thumbnailInfo
+                )
             } shouldBe RoomMessageEventContent.FileBased.File(
                 "body", fileName = "filename", info = FileInfo(
                     "image/png", 9, null, encryptedThumbnail, thumbnailInfo,
@@ -534,10 +578,23 @@ class MessageBuilderTest : ShouldSpec({
     context(MessageBuilder::video.name) {
         should("create video and thumbnail") {
             val thumbnailInfo = ThumbnailInfo()
-            mediaService.returnPrepareUploadThumbnail = Pair("thumbnailCacheUrl", thumbnailInfo)
-            mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
+            mediaService.returnPrepareUploadMedia.add("mediaCacheUrl")
+            mediaService.returnPrepareUploadMedia.add("thumbnailCacheUrl")
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
-                video("body", "fake_video".toByteArray().toByteArrayFlow(), null, null, null, MP4, 10, 1024, 1024, 1024)
+                video(
+                    body = "body",
+                    video = "fake_video".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = null,
+                    type = MP4,
+                    size = 10,
+                    height = 1024,
+                    width = 1024,
+                    duration = 1024,
+                    thumbnail = "fake_thumbnaul".toByteArray().toByteArrayFlow(),
+                    thumbnailInfo = thumbnailInfo
+                )
             } shouldBe RoomMessageEventContent.FileBased.Video(
                 "body", info = VideoInfo(
                     1024, 1024, 1024, "video/mp4", 10, "thumbnailCacheUrl", null,
@@ -550,10 +607,23 @@ class MessageBuilderTest : ShouldSpec({
             val thumbnailInfo = ThumbnailInfo()
             val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
             val encryptedThumbnail = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
-            mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
-            mediaService.returnPrepareUploadEncryptedThumbnail = encryptedThumbnail to thumbnailInfo
+            mediaService.returnPrepareUploadEncryptedMedia.add(encryptedFile)
+            mediaService.returnPrepareUploadEncryptedMedia.add(encryptedThumbnail)
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-                video("body", "fake_video".toByteArray().toByteArrayFlow(), null, null, null, MP4, 10, 1024, 1024, 1024)
+                video(
+                    body = "body",
+                    video = "fake_video".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = null,
+                    type = MP4,
+                    size = 10,
+                    height = 1024,
+                    width = 1024,
+                    duration = 1024,
+                    thumbnail = "fake_thumbnaul".toByteArray().toByteArrayFlow(),
+                    thumbnailInfo = thumbnailInfo
+                )
             } shouldBe RoomMessageEventContent.FileBased.Video(
                 "body", info = VideoInfo(
                     1024, 1024, 1024, "video/mp4", 10, null, encryptedThumbnail,
@@ -565,9 +635,18 @@ class MessageBuilderTest : ShouldSpec({
     }
     context(MessageBuilder::audio.name) {
         should("create audio") {
-            mediaService.returnPrepareUploadMedia = "mediaCacheUrl"
+            mediaService.returnPrepareUploadMedia.add("mediaCacheUrl")
             MessageBuilder(unencryptedRoom, roomService, mediaService, ownUserId).build {
-                audio("body", "fake_audio".toByteArray().toByteArrayFlow(), null, null, null, OGG, 10, 1024)
+                audio(
+                    body = "body",
+                    audio = "fake_audio".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = null,
+                    type = OGG,
+                    size = 10,
+                    duration = 1024
+                )
             } shouldBe RoomMessageEventContent.FileBased.Audio(
                 "body", info = AudioInfo(1024, "audio/ogg", 10), url = "mediaCacheUrl",
                 mentions = Mentions()
@@ -575,9 +654,18 @@ class MessageBuilderTest : ShouldSpec({
         }
         should("create encrypted audio") {
             val encryptedFile = EncryptedFile("", EncryptedFile.JWK(""), "", mapOf())
-            mediaService.returnPrepareUploadEncryptedMedia = encryptedFile
+            mediaService.returnPrepareUploadEncryptedMedia.add(encryptedFile)
             MessageBuilder(encryptedRoom, roomService, mediaService, ownUserId).build {
-                audio("body", "fake_audio".toByteArray().toByteArrayFlow(), null, null, null, OGG, 10, 1024)
+                audio(
+                    body = "body",
+                    audio = "fake_audio".toByteArray().toByteArrayFlow(),
+                    format = null,
+                    formattedBody = null,
+                    fileName = null,
+                    type = OGG,
+                    size = 10,
+                    duration = 1024
+                )
             } shouldBe RoomMessageEventContent.FileBased.Audio(
                 "body", info = AudioInfo(1024, "audio/ogg", 10), url = null, file = encryptedFile,
                 mentions = Mentions()
