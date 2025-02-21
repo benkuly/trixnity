@@ -2,13 +2,13 @@
 ### build ###
 kotlin = "2.1.10" # https://github.com/JetBrains/kotlin/releases
 ksp = "2.1.10-1.0.30" # https://github.com/google/ksp/releases
-kotlinWrappers = "2025.2.6" # https://github.com/JetBrains/kotlin-wrappers/releases
+kotlinWrappers = "2025.2.7" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "2.0.0" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.7.3" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 
 ### kotlinx ###
-kotlinxCoroutines = "1.10.1" # https://github.com/Kotlin/kotlinx.coroutines/releases
+kotlinxCoroutines = "1.9.0" # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinxSerialization = "1.8.0" # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinxDatetime = "0.6.2" # https://github.com/Kotlin/kotlinx-datetime/releases
 
