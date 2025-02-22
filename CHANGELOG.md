@@ -9,14 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.13.0
+
+### Added
+
 - Event content types for VOIP.
 
 ### Changed
 
 - `AccessTokenAuthenticationFunction` now allows servers to set `soft_logout`.
-- Upgrade dependencies
-
-### Deprecated
 
 ### Removed
 
@@ -26,8 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ignore status code for onLogout callback check.
 - Logout and LogoutAll should send empty request body.
-
-### Security
 
 ## 4.12.3
 
