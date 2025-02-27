@@ -9,12 +9,14 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.model.UserId
 
 class MatrixAccessTokenAuth internal constructor(
     private val config: Config,
 ) : AuthenticationProvider(config) {
     class Config internal constructor(name: String? = null) : AuthenticationProvider.Config(name) {
-        var authenticationFunction: AccessTokenAuthenticationFunction = {
+        var authenticationFunction: AccessTokenAuthenticationFunction = AccessTokenAuthenticationFunction {
             throw NotImplementedError("MatrixAccessTokenAuth validate function is not specified.")
         }
     }
@@ -60,14 +62,20 @@ class MatrixAccessTokenAuth internal constructor(
     }
 }
 
-typealias AccessTokenAuthenticationFunction = suspend (UserAccessTokenCredentials) -> AccessTokenAuthenticationFunctionResult
+fun interface AccessTokenAuthenticationFunction {
+    suspend operator fun invoke(credentials: UserAccessTokenCredentials): AccessTokenAuthenticationFunctionResult
+}
 
-data class UserAccessTokenCredentials(val accessToken: String) : Credential
+data class MatrixClientPrincipal(val userId: UserId, val device: String)
+data class UserAccessTokenCredentials(val accessToken: String)
 data class AccessTokenAuthenticationFunctionResult(
-    val principal: UserIdPrincipal?,
+    val principal: MatrixClientPrincipal?,
     val cause: AuthenticationFailedCause?,
     val softLogout: Boolean = false
 )
+
+fun ApplicationCall.matrixClientPrincipal() = principal<MatrixClientPrincipal>()
+    ?: throw MatrixServerException(HttpStatusCode.Unauthorized, ErrorResponse.Unauthorized("no authorized"))
 
 private fun ApplicationRequest.getAccessToken(): UserAccessTokenCredentials? {
     return when (val authHeader = parseAuthorizationHeader()) {

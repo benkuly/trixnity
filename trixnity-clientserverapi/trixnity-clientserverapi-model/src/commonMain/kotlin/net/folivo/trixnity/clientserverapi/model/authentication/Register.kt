@@ -28,7 +28,7 @@ data class Register(
         @SerialName("initial_device_display_name") val initialDeviceDisplayName: String?,
         @SerialName("inhibit_login") val inhibitLogin: Boolean?,
         @SerialName("refresh_token") val refreshToken: Boolean? = null,
-        @SerialName("type") val type: String? = null
+        @SerialName("type") val type: LoginType? = null
     )
 
     @Serializable

@@ -1,12 +1,13 @@
 package net.folivo.trixnity.utils
 
-import okio.ByteString.Companion.toByteString
-import kotlin.math.ceil
 import kotlin.random.Random
 
+private val alphabet = ('a'..'z') + ('A'..'Z')
+
+/**
+ * Returns a string between a-Z.
+ */
 fun Random.nextString(length: Int): String =
-    nextBytes(ceil(length * 3 / 4.0).toInt())
-        .toByteString()
-        .base64Url()
-        .substringBefore('=')
-        .substring(0, length)
+    buildString(length) {
+        repeat(length) { append(alphabet.random()) }
+    }

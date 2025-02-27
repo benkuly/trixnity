@@ -7,7 +7,7 @@ import kotlin.test.Test
 class RandomNextStringTest {
     @Test
     fun shouldCreateRandomString() {
-        repeat(100) { i ->
+        repeat(1_000) { i ->
             Random.nextString(i) shouldHaveLength i
         }
     }
