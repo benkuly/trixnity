@@ -87,8 +87,6 @@ interface RoomService {
      * Consider using [GetTimelineEventsConfig.minSize] and [GetTimelineEventsConfig.maxSize] when consuming this flow
      * directly (e.g. with `toList()`). This can work
      * like paging through the timeline. It also completes the flow, which is not the case, when both parameters are null.
-     *
-     * To convert it to a flow of list, [flattenValues] can be used.
      */
     fun getTimelineEvents(
         roomId: RoomId,
