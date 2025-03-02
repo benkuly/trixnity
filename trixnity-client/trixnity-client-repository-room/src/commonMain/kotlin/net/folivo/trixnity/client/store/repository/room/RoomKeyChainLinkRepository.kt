@@ -72,17 +72,17 @@ internal class RoomKeyChainLinkRepository(
         signingUserId: UserId,
         signingKey: Key.Ed25519Key
     ): Set<KeyChainLink> = withRoomRead {
-        dao.getBySigningKeys(signingUserId, signingKey.keyId, signingKey.value)
+        dao.getBySigningKeys(signingUserId, signingKey.id, signingKey.value.value)
             .map { entity ->
                 KeyChainLink(
                     signingUserId = entity.signingUserId,
                     signingKey = Key.Ed25519Key(
-                        keyId = entity.signingKeyId,
+                        id = entity.signingKeyId,
                         value = entity.signingKeyValue,
                     ),
                     signedUserId = entity.signedUserId,
                     signedKey = Key.Ed25519Key(
-                        keyId = entity.signedKeyId,
+                        id = entity.signedKeyId,
                         value = entity.signedKeyValue,
                     ),
                 )
@@ -93,17 +93,17 @@ internal class RoomKeyChainLinkRepository(
         dao.insert(
             RoomKeyChainLink(
                 signingUserId = keyChainLink.signingUserId,
-                signingKeyId = keyChainLink.signingKey.keyId ?: "",
-                signingKeyValue = keyChainLink.signingKey.value,
+                signingKeyId = keyChainLink.signingKey.id ?: "",
+                signingKeyValue = keyChainLink.signingKey.value.value,
                 signedUserId = keyChainLink.signedUserId,
-                signedKeyId = keyChainLink.signedKey.keyId ?: "",
-                signedKeyValue = keyChainLink.signedKey.value,
+                signedKeyId = keyChainLink.signedKey.id ?: "",
+                signedKeyValue = keyChainLink.signedKey.value.value,
             )
         )
     }
 
     override suspend fun deleteBySignedKey(signedUserId: UserId, signedKey: Key.Ed25519Key) = withRoomWrite {
-        dao.delete(signedUserId, signedKey.keyId, signedKey.value)
+        dao.delete(signedUserId, signedKey.id, signedKey.value.value)
     }
 
     override suspend fun deleteAll() = withRoomWrite {

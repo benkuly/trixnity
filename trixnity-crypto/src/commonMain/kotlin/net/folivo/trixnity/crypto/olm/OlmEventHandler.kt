@@ -17,7 +17,6 @@ import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventConten
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.Keys
@@ -140,10 +139,12 @@ class OlmEventHandler(
         log.trace { "finished handle change of own olm keys server count" }
     }
 
-    private suspend fun Map<String, String>.toCurve25519Keys(fallback: Boolean = false) =
+    private suspend fun Map<String, String>.toCurve25519Keys(fallback: Boolean? = null) =
         Keys(this.map {
             signService.signCurve25519Key(
-                Curve25519Key(keyId = it.key, value = it.value, fallback = fallback)
+                keyId = it.key,
+                keyValue = it.value,
+                fallback = fallback
             )
         }.toSet()).ifEmpty { null }
 
@@ -164,7 +165,7 @@ class OlmEventHandler(
                         ) { session ->
                             StoredInboundMegolmSession(
                                 senderKey = event.encrypted.content.senderKey,
-                                senderSigningKey = senderSigningKey,
+                                senderSigningKey = senderSigningKey.value,
                                 sessionId = content.sessionId,
                                 roomId = content.roomId,
                                 firstKnownIndex = session.firstKnownIndex,

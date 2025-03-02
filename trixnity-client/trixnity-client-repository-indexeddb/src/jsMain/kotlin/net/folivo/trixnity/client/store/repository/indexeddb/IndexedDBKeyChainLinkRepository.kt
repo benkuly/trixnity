@@ -56,11 +56,11 @@ internal class IndexedDBKeyChainLinkRepository(
             json.encodeToDynamic(
                 IndexedDBKeyChainLink(
                     signingUserId = keyChainLink.signingUserId.full,
-                    signingKeyId = keyChainLink.signingKey.keyId ?: "",
-                    signingKeyValue = keyChainLink.signingKey.value,
+                    signingKeyId = keyChainLink.signingKey.id ?: "",
+                    signingKeyValue = keyChainLink.signingKey.value.value,
                     signedUserId = keyChainLink.signedUserId.full,
-                    signedKeyId = keyChainLink.signedKey.keyId ?: "",
-                    signedKeyValue = keyChainLink.signedKey.value,
+                    signedKeyId = keyChainLink.signedKey.id ?: "",
+                    signedKeyValue = keyChainLink.signedKey.value.value,
                 )
             )
         )
@@ -71,7 +71,7 @@ internal class IndexedDBKeyChainLinkRepository(
         withIndexedDBRead { store ->
             store.index("signing")
                 .openCursor(
-                    com.juul.indexeddb.Key(signingUserId.full, signingKey.keyId, signingKey.value),
+                    com.juul.indexeddb.Key(signingUserId.full, signingKey.id, signingKey.value.value),
                     autoContinue = true
                 )
                 .mapNotNull { json.decodeFromDynamicNullable<IndexedDBKeyChainLink>(it.value) }
@@ -90,7 +90,7 @@ internal class IndexedDBKeyChainLinkRepository(
         withIndexedDBWrite { store ->
             store.index("signed")
                 .openKeyCursor(
-                    com.juul.indexeddb.Key(signedUserId.full, signedKey.keyId, signedKey.value),
+                    com.juul.indexeddb.Key(signedUserId.full, signedKey.id, signedKey.value.value),
                     autoContinue = true
                 )
                 .collect { store.delete(com.juul.indexeddb.Key(it.primaryKey)) }

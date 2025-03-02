@@ -27,6 +27,7 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventC
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
@@ -73,7 +74,7 @@ private val body: ShouldSpec.() -> Unit = {
     val encryptedEvent = ToDeviceEvent(
         OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
-            senderKey = Key.Curve25519Key(null, "")
+            senderKey = Curve25519KeyValue("")
         ), bob
     )
 
@@ -107,7 +108,7 @@ private val body: ShouldSpec.() -> Unit = {
             olmEncryptionServiceMock.returnEncryptOlm = Result.success(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(),
-                    senderKey = Key.Curve25519Key("", "")
+                    senderKey = Curve25519KeyValue("")
                 )
             )
         }
@@ -198,7 +199,7 @@ private val body: ShouldSpec.() -> Unit = {
             olmEncryptionServiceMock.returnEncryptOlm = Result.success(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(),
-                    senderKey = Key.Curve25519Key("", "")
+                    senderKey = Curve25519KeyValue("")
                 )
             )
         }

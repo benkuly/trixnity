@@ -11,6 +11,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.*
 
 class OlmStoreMock : OlmStore {
@@ -24,17 +25,17 @@ class OlmStoreMock : OlmStore {
         return ed25519Keys[userId to deviceId]
     }
 
-    val deviceKeys = mutableMapOf<Pair<UserId, Key.Curve25519Key>, DeviceKeys>()
-    override suspend fun findDeviceKeys(userId: UserId, senderKey: Key.Curve25519Key): DeviceKeys? {
-        return deviceKeys[userId to senderKey]
+    val deviceKeys = mutableMapOf<Pair<UserId, Curve25519KeyValue>, DeviceKeys>()
+    override suspend fun findDeviceKeys(userId: UserId, senderKeyValue: Curve25519KeyValue): DeviceKeys? {
+        return deviceKeys[userId to senderKeyValue]
     }
 
-    val olmSessions = mutableMapOf<Key.Curve25519Key, Set<StoredOlmSession>?>()
+    val olmSessions = mutableMapOf<Curve25519KeyValue, Set<StoredOlmSession>?>()
     override suspend fun updateOlmSessions(
-        senderKey: Key.Curve25519Key,
+        senderKeyValue: Curve25519KeyValue,
         updater: suspend (Set<StoredOlmSession>?) -> (Set<StoredOlmSession>?)
     ) {
-        olmSessions[senderKey] = updater(olmSessions[senderKey])
+        olmSessions[senderKeyValue] = updater(olmSessions[senderKeyValue])
     }
 
     val outboundMegolmSession = mutableMapOf<RoomId, StoredOutboundMegolmSession?>()

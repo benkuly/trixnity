@@ -11,7 +11,7 @@ import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
@@ -81,7 +81,7 @@ class OlmCryptoStore(
         olmForgetFallbackKeyAfterCache.update(1, updater = updater)
 
     suspend fun updateOlmSessions(
-        senderKey: Curve25519Key,
+        senderKey: Curve25519KeyValue,
         updater: suspend (oldSessions: Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
     ) = olmSessionsCache.update(senderKey, updater = updater)
 

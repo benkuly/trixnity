@@ -107,7 +107,7 @@ private val body: ShouldSpec.() -> Unit = {
     val encryptedEvent = ToDeviceEvent(
         OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
-            senderKey = forwardingSenderKey,
+            senderKey = forwardingSenderKey.value,
         ), bob
     )
 
@@ -145,10 +145,10 @@ private val body: ShouldSpec.() -> Unit = {
         suspend fun forwardedRoomKeyEvent() =
             ForwardedRoomKeyEventContent(
                 roomId = room,
-                senderKey = senderKey,
+                senderKey = senderKey.value,
                 sessionId = sessionId,
                 sessionKey = sessionKey(),
-                senderClaimedKey = senderSigningKey,
+                senderClaimedKey = senderSigningKey.value,
                 forwardingKeyChain = listOf(),
                 algorithm = EncryptionAlgorithm.Megolm,
             )
@@ -175,7 +175,7 @@ private val body: ShouldSpec.() -> Unit = {
                         firstKnownIndex = 0,
                         hasBeenBackedUp = false,
                         isTrusted = false,
-                        forwardingCurve25519KeyChain = listOf(forwardingSenderKey),
+                        forwardingCurve25519KeyChain = listOf(forwardingSenderKey.value),
                         pickled = pickleToInbound(forwardedRoomKeyEvent.sessionKey),
                     )
         }
@@ -210,7 +210,7 @@ private val body: ShouldSpec.() -> Unit = {
                         firstKnownIndex = 0,
                         hasBeenBackedUp = false,
                         isTrusted = false,
-                        forwardingCurve25519KeyChain = listOf(forwardingSenderKey),
+                        forwardingCurve25519KeyChain = listOf(forwardingSenderKey.value),
                         pickled = pickleToInbound(forwardedRoomKeyEvent.sessionKey),
                     )
 
@@ -233,7 +233,7 @@ private val body: ShouldSpec.() -> Unit = {
                 firstKnownIndex = 0,
                 hasBeenBackedUp = false,
                 isTrusted = false,
-                forwardingCurve25519KeyChain = listOf(forwardingSenderKey),
+                forwardingCurve25519KeyChain = listOf(forwardingSenderKey.value),
                 pickled = pickleToInbound(sessionKeys(1).last()),
             )
             olmCryptoStore.updateInboundMegolmSession(sessionId, room) { existingSession }

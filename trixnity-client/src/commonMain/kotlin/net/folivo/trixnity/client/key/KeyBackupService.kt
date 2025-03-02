@@ -5,7 +5,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.KeyStore
@@ -107,7 +106,7 @@ class KeyBackupServiceImpl(
         val currentVersion = api.key.getRoomKeysVersion().getOrThrow().let { currentVersion ->
             if (currentVersion is GetRoomKeysBackupVersionResponse.V1) {
                 val deviceSignature =
-                    signService.signatures(currentVersion.authData)[ownUserId]?.find { it.keyId == ownDeviceId }
+                    signService.signatures(currentVersion.authData)[ownUserId]?.find { it.id == ownDeviceId }
                 if (privateKey != null && keyBackupCanBeTrusted(currentVersion, privateKey)) {
                     if (deviceSignature != null &&
                         currentVersion.authData.signatures[ownUserId]?.none { it == deviceSignature } == true
@@ -117,7 +116,7 @@ class KeyBackupServiceImpl(
                             SetRoomKeyBackupVersionRequest.V1(
                                 authData = with(currentVersion.authData) {
                                     val ownUsersSignatures = signatures[ownUserId].orEmpty()
-                                        .filterNot { it.keyId == ownDeviceId } + deviceSignature
+                                        .filterNot { it.id == ownDeviceId } + deviceSignature
                                     copy(signatures = signatures + (ownUserId to Keys(ownUsersSignatures.toSet())))
                                 },
                                 version = currentVersion.version
@@ -129,13 +128,13 @@ class KeyBackupServiceImpl(
                     // TODO should we mark all known keys as not backed up?
                     log.info { "reset key backup and remove own signature from it" }
                     // when the private key does not match it's likely, that the key backup has been changed
-                    if (currentVersion.authData.signatures[ownUserId]?.any { it.keyId == ownDeviceId } == true)
+                    if (currentVersion.authData.signatures[ownUserId]?.any { it.id == ownDeviceId } == true)
                         api.key.setRoomKeysVersion(
                             SetRoomKeyBackupVersionRequest.V1(
                                 authData = with(currentVersion.authData) {
                                     val ownUsersSignatures =
                                         signatures[ownUserId].orEmpty()
-                                            .filterNot { it.keyId == ownDeviceId }
+                                            .filterNot { it.id == ownDeviceId }
                                             .toSet()
                                     copy(signatures = signatures + (ownUserId to Keys(ownUsersSignatures)))
                                 },
@@ -205,11 +204,9 @@ class KeyBackupServiceImpl(
                             freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
                                 it.firstKnownIndex to it.pickle(checkNotNull(accountStore.getAccount()?.olmPickleKey))
                             }
-                        val senderSigningKey = Key.Ed25519Key(
-                            null,
-                            data.senderClaimedKeys[KeyAlgorithm.Ed25519.name]
+                        val senderSigningKey =
+                            data.senderClaimedKeys.filterIsInstance<Key.Ed25519Key>().firstOrNull()
                                 ?: throw IllegalArgumentException("sender claimed key should not be empty")
-                        )
                         olmCryptoStore.updateInboundMegolmSession(sessionId, roomId) {
                             if (it != null && it.firstKnownIndex <= firstKnownIndex) it
                             else StoredInboundMegolmSession(
@@ -219,7 +216,7 @@ class KeyBackupServiceImpl(
                                 firstKnownIndex = firstKnownIndex,
                                 isTrusted = false, // because it comes from backup
                                 hasBeenBackedUp = true, // because it comes from backup
-                                senderSigningKey = senderSigningKey,
+                                senderSigningKey = senderSigningKey.value,
                                 forwardingCurve25519KeyChain = data.forwardingKeyChain,
                                 pickled = pickledSession
                             )
@@ -280,44 +277,45 @@ class KeyBackupServiceImpl(
                     val version = version.value
                     if (version != null && notBackedUpInboundMegolmSessions.isNotEmpty()) {
                         log.debug { "upload room keys to key backup" }
-                        api.key.setRoomKeys(version.version, RoomsKeyBackup(
-                            notBackedUpInboundMegolmSessions.values.groupBy { it.roomId }
-                                .mapValues { roomEntries ->
-                                    RoomKeyBackup(roomEntries.value.associate { session ->
-                                        val encryptedRoomKeyBackupV1SessionData =
-                                            freeAfter(OlmPkEncryption.create(version.authData.publicKey.value)) { pke ->
-                                                val sessionKey = freeAfter(
-                                                    OlmInboundGroupSession.unpickle(
-                                                        checkNotNull(accountStore.getAccount()?.olmPickleKey),
-                                                        session.pickled
-                                                    )
-                                                ) { it.export(it.firstKnownIndex) }
-                                                pke.encrypt(
-                                                    api.json.encodeToString(
-                                                        RoomKeyBackupV1SessionData(
-                                                            session.senderKey,
-                                                            session.forwardingCurve25519KeyChain,
-                                                            session.senderSigningKey.let { mapOf(it.algorithm.name to it.value) },
-                                                            sessionKey
+                        api.key.setRoomKeys(
+                            version.version, RoomsKeyBackup(
+                                notBackedUpInboundMegolmSessions.values.groupBy { it.roomId }
+                                    .mapValues { roomEntries ->
+                                        RoomKeyBackup(roomEntries.value.associate { session ->
+                                            val encryptedRoomKeyBackupV1SessionData =
+                                                freeAfter(OlmPkEncryption.create(version.authData.publicKey.value)) { pke ->
+                                                    val sessionKey = freeAfter(
+                                                        OlmInboundGroupSession.unpickle(
+                                                            checkNotNull(accountStore.getAccount()?.olmPickleKey),
+                                                            session.pickled
                                                         )
-                                                    )
-                                                ).run {
-                                                    EncryptedRoomKeyBackupV1SessionData(
-                                                        ciphertext = cipherText,
-                                                        mac = mac,
-                                                        ephemeral = ephemeralKey
-                                                    )
+                                                    ) { it.export(it.firstKnownIndex) }
+                                                    pke.encrypt(
+                                                        api.json.encodeToString(
+                                                            RoomKeyBackupV1SessionData(
+                                                                session.senderKey,
+                                                                session.forwardingCurve25519KeyChain,
+                                                                Keys(Key.Ed25519Key(null, session.senderSigningKey)),
+                                                                sessionKey
+                                                            )
+                                                        )
+                                                    ).run {
+                                                        EncryptedRoomKeyBackupV1SessionData(
+                                                            ciphertext = cipherText,
+                                                            mac = mac,
+                                                            ephemeral = ephemeralKey
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                        session.sessionId to RoomKeyBackupData(
-                                            firstMessageIndex = session.firstKnownIndex,
-                                            forwardedCount = session.forwardingCurve25519KeyChain.size,
-                                            isVerified = session.isTrusted,
-                                            sessionData = encryptedRoomKeyBackupV1SessionData
-                                        )
-                                    })
-                                }
-                        )).onFailure {
+                                            session.sessionId to RoomKeyBackupData(
+                                                firstMessageIndex = session.firstKnownIndex,
+                                                forwardedCount = session.forwardingCurve25519KeyChain.size,
+                                                isVerified = session.isTrusted,
+                                                sessionData = encryptedRoomKeyBackupV1SessionData
+                                            )
+                                        })
+                                    }
+                            )).onFailure {
                             if (it is MatrixServerException) {
                                 val errorResponse = it.errorResponse
                                 if (errorResponse is ErrorResponse.WrongRoomKeysVersion) {
@@ -346,7 +344,7 @@ class KeyBackupServiceImpl(
         return api.key.setRoomKeysVersion(
             SetRoomKeyBackupVersionRequest.V1(
                 authData = with(
-                    RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Key.Curve25519Key(null, keyBackupPublicKey))
+                    RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(KeyValue.Curve25519KeyValue(keyBackupPublicKey))
                 ) {
                     val ownDeviceSignature = signService.signatures(this)[ownUserId]
                         ?.firstOrNull()

@@ -34,6 +34,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.push.PushAction.Notify
 import net.folivo.trixnity.core.model.push.PushCondition
 import net.folivo.trixnity.core.model.push.PushRule
@@ -379,7 +380,7 @@ private val body: ShouldSpec.() -> Unit = {
         context("new decrypted timeline events") {
             val timelineEvent = messageEventWithContent(
                 roomId, MegolmEncryptedMessageEventContent(
-                    "", Key.Curve25519Key(null, ""), "", ""
+                    "", Curve25519KeyValue(""), "", ""
                 ), RoomMessageEventContent.TextBased.Text(
                     body = "Hello User1 🦊!"
                 )

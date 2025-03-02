@@ -8,11 +8,11 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.appservice.Ping
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.BeforeTest
@@ -27,7 +27,14 @@ class AppserviceRoutesTest {
     private fun ApplicationTestBuilder.initCut() {
         application {
             installMatrixAccessTokenAuth {
-                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
+                authenticationFunction = AccessTokenAuthenticationFunction {
+                    AccessTokenAuthenticationFunctionResult(
+                        MatrixClientPrincipal(
+                            UserId("user", "server"),
+                            "deviceId"
+                        ), null
+                    )
+                }
             }
             matrixApiServer(json) {
                 appserviceApiRoutes(handlerMock, json, mapping)

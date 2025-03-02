@@ -30,7 +30,7 @@ import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -523,7 +523,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 val encryptedEvent1 = MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         "foobar",
-                        Key.Curve25519Key(value = "key"),
+                        Curve25519KeyValue("key"),
                         "deviceId",
                         "sessionId"
                     ),
@@ -536,7 +536,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 val encryptedEvent2 = MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         "barfoo",
-                        Key.Curve25519Key(value = "key"),
+                        Curve25519KeyValue("key"),
                         "deviceId",
                         "sessionId"
                     ),
@@ -549,7 +549,7 @@ class TimelineEventHandlerTest : ShouldSpec({
                 val encryptedEvent3 = MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         "foo",
-                        Key.Curve25519Key(value = "key"),
+                        Curve25519KeyValue("key"),
                         "deviceId",
                         "sessionId"
                     ),

@@ -14,8 +14,8 @@ import kotlinx.serialization.json.jsonObject
 
 @Serializable(with = SignedSerializer::class)
 open class Signed<T, U>(
-    val signed: T,
-    val signatures: Signatures<U>? = null
+    open val signed: T,
+    open val signatures: Signatures<U>? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

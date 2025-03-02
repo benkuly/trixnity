@@ -7,6 +7,7 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.types.instanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -19,7 +20,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
@@ -77,8 +77,8 @@ class SignServiceTest : ShouldSpec({
             assertSoftly(value.keys.first()) {
                 this shouldBe instanceOf<Ed25519Key>()
                 require(this is Ed25519Key)
-                keyId shouldBe "ABCDEF"
-                value shouldNot beBlank()
+                id shouldBe "ABCDEF"
+                value.value shouldNot beBlank()
             }
         }
     }
@@ -95,8 +95,8 @@ class SignServiceTest : ShouldSpec({
             assertSoftly(value.keys.first()) {
                 this shouldBe instanceOf<Ed25519Key>()
                 require(this is Ed25519Key)
-                keyId shouldBe publicKey
-                value shouldNot beBlank()
+                id shouldBe publicKey
+                value.value shouldNot beBlank()
             }
         }
     }
@@ -131,8 +131,8 @@ class SignServiceTest : ShouldSpec({
             assertSoftly(value.keys.first()) {
                 this shouldBe instanceOf<Ed25519Key>()
                 require(this is Ed25519Key)
-                keyId shouldBe "ABCDEF"
-                value shouldNot beBlank()
+                id shouldBe "ABCDEF"
+                value.value shouldNot beBlank()
             }
         }
     }
@@ -160,11 +160,20 @@ class SignServiceTest : ShouldSpec({
     }
     should("sign curve25519") {
         cut.signCurve25519Key(
-            Curve25519Key(
-                "AAAAAQ",
-                "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
-            )
-        ).signatures?.size shouldBe 1
+            keyId = "AAAAAQ",
+            keyValue = "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
+        ).value.signatures?.size shouldBe 1
+    }
+    should("sign curve25519 with fallback") {
+        cut.signCurve25519Key(
+            keyId = "AAAAAQ",
+            keyValue = "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
+        ).value.signatures shouldNotBe
+                cut.signCurve25519Key(
+                    keyId = "AAAAAQ",
+                    keyValue = "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc",
+                    fallback = true,
+                ).value.signatures
     }
     should("verify and return valid") {
         val signedObject = aliceSigningAccountSignService.sign(
@@ -214,11 +223,9 @@ class SignServiceTest : ShouldSpec({
     }
     should("verify SignedCurve25519Key") {
         val signedObject = aliceSigningAccountSignService.signCurve25519Key(
-            Curve25519Key(
-                "AAAAAQ",
-                "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
-            )
-        )
+            "AAAAAQ",
+            "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
+        ).value
         cut.verify(
             signedObject,
             mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))

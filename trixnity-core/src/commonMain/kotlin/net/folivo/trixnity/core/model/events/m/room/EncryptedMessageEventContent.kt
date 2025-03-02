@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroomencrypted">matrix spec</a>
@@ -32,7 +32,7 @@ sealed interface EncryptedMessageEventContent : MessageEventContent {
         val ciphertext: String,
         @Deprecated("see MSC3700")
         @SerialName("sender_key")
-        val senderKey: Curve25519Key? = null,
+        val senderKey: Curve25519KeyValue? = null,
         @Deprecated("see MSC3700")
         @SerialName("device_id")
         val deviceId: String? = null,

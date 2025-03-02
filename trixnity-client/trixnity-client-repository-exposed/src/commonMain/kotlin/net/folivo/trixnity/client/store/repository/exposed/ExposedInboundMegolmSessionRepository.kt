@@ -1,11 +1,11 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepository
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -38,13 +38,13 @@ internal class ExposedInboundMegolmSessionRepository(private val json: Json) : I
     }
 
     private fun ResultRow.mapToStoredInboundMegolmSession() = StoredInboundMegolmSession(
-        senderKey = Key.Curve25519Key(null, this[ExposedInboundMegolmSession.senderKey]),
+        senderKey = Curve25519KeyValue(this[ExposedInboundMegolmSession.senderKey]),
         sessionId = this[ExposedInboundMegolmSession.sessionId],
         roomId = RoomId(this[ExposedInboundMegolmSession.roomId]),
         firstKnownIndex = this[ExposedInboundMegolmSession.firstKnownIndex],
         hasBeenBackedUp = this[ExposedInboundMegolmSession.hasBeenBackedUp],
         isTrusted = this[ExposedInboundMegolmSession.isTrusted],
-        senderSigningKey = Key.Ed25519Key(null, this[ExposedInboundMegolmSession.senderSigningKey]),
+        senderSigningKey = Ed25519KeyValue(this[ExposedInboundMegolmSession.senderSigningKey]),
         forwardingCurve25519KeyChain = json.decodeFromString(this[ExposedInboundMegolmSession.forwardingCurve25519KeyChain]),
         pickled = this[ExposedInboundMegolmSession.pickled]
     )

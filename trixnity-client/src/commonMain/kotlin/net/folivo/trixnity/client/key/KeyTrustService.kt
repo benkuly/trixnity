@@ -68,7 +68,7 @@ class KeyTrustServiceImpl(
                 }
         val advertisedPublicKey =
             keyStore.getCrossSigningKey(userInfo.userId, MasterKey)?.value?.signed?.get<Ed25519Key>()
-        return if (advertisedPublicKey?.value?.decodeUnpaddedBase64Bytes()
+        return if (advertisedPublicKey?.value?.value?.decodeUnpaddedBase64Bytes()
                 ?.contentEquals(decryptedPublicKey?.decodeUnpaddedBase64Bytes()) == true
         ) {
             val ownDeviceKeys =
@@ -92,9 +92,9 @@ class KeyTrustServiceImpl(
         visitedKeys: MutableSet<Pair<UserId, String?>>
     ) {
         log.trace { "update trust level of all keys signed by $signingUserId $signingKey" }
-        visitedKeys.add(signingUserId to signingKey.keyId)
+        visitedKeys.add(signingUserId to signingKey.id)
         keyStore.getKeyChainLinksBySigningKey(signingUserId, signingKey)
-            .filterNot { visitedKeys.contains(it.signedUserId to it.signedKey.keyId) }
+            .filterNot { visitedKeys.contains(it.signedUserId to it.signedKey.id) }
             .forEach { keyChainLink ->
                 updateTrustLevelOfKey(keyChainLink.signedUserId, keyChainLink.signedKey)
                 updateTrustLevelOfKeyChainSignedBy(keyChainLink.signedUserId, keyChainLink.signedKey, visitedKeys)
@@ -102,7 +102,7 @@ class KeyTrustServiceImpl(
     }
 
     private suspend fun updateTrustLevelOfKey(userId: UserId, key: Ed25519Key) {
-        val keyId = key.keyId
+        val keyId = key.id
 
         if (keyId != null) {
             val foundKey = MutableStateFlow(false)
@@ -119,7 +119,7 @@ class KeyTrustServiceImpl(
             if (foundKey.value.not()) {
                 keyStore.updateCrossSigningKeys(userId) { oldKeys ->
                     val foundCrossSigningKeys = oldKeys?.firstOrNull { keys ->
-                        keys.value.signed.keys.keys.filterIsInstance<Ed25519Key>().any { it.keyId == keyId }
+                        keys.value.signed.keys.keys.filterIsInstance<Ed25519Key>().any { it.id == keyId }
                     }
                     if (foundCrossSigningKeys != null) {
                         val newTrustLevel = calculateCrossSigningKeysTrustLevel(foundCrossSigningKeys.value)
@@ -193,17 +193,17 @@ class KeyTrustServiceImpl(
         visitedKeys: MutableSet<Pair<UserId, String?>> = mutableSetOf()
     ): KeySignatureTrustLevel? {
         log.trace { "search in signatures of $signedKey for trust level calculation: $signatures" }
-        visitedKeys.add(signedUserId to signedKey.keyId)
+        visitedKeys.add(signedUserId to signedKey.id)
         keyStore.deleteKeyChainLinksBySignedKey(signedUserId, signedKey)
         val states = signatures.flatMap { (signingUserId, signatureKeys) ->
             signatureKeys
                 .filterIsInstance<Ed25519Key>()
-                .filterNot { visitedKeys.contains(signingUserId to it.keyId) }
+                .filterNot { visitedKeys.contains(signingUserId to it.id) }
                 .flatMap { signatureKey ->
-                    visitedKeys.add(signingUserId to signatureKey.keyId)
+                    visitedKeys.add(signingUserId to signatureKey.id)
 
                     val crossSigningKey =
-                        signatureKey.keyId?.let { keyStore.getCrossSigningKey(signingUserId, it) }?.value
+                        signatureKey.id?.let { keyStore.getCrossSigningKey(signingUserId, it) }?.value
                     val signingCrossSigningKey = crossSigningKey?.signed?.get<Ed25519Key>()
                     val crossSigningKeyState = if (signingCrossSigningKey != null) {
                         val isValid = verifySignedObject(mapOf(signingUserId to setOf(signingCrossSigningKey)))
@@ -229,7 +229,7 @@ class KeyTrustServiceImpl(
                         } else null
                     } else null
 
-                    val deviceKey = signatureKey.keyId?.let { keyStore.getDeviceKey(signingUserId, it).first() }?.value
+                    val deviceKey = signatureKey.id?.let { keyStore.getDeviceKey(signingUserId, it).first() }?.value
                     val signingDeviceKey = deviceKey?.get<Ed25519Key>()
                     val deviceKeyState = if (signingDeviceKey != null) {
                         val isValid = verifySignedObject(mapOf(signingUserId to setOf(signingDeviceKey)))
@@ -277,7 +277,7 @@ class KeyTrustServiceImpl(
                     M_CROSS_SIGNING_USER_SIGNING -> CrossSigningKeysUsage.UserSigningKey
                     else -> throw IllegalArgumentException("cannot sign with $type")
                 }
-            )?.value?.signed?.get<Ed25519Key>()?.keyId
+            )?.value?.signed?.get<Ed25519Key>()?.id
         requireNotNull(publicKey) { "could not find public key of $type" }
         return SignWith.PrivateKey(privateKey, publicKey)
     }
@@ -285,9 +285,9 @@ class KeyTrustServiceImpl(
     override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
         log.debug { "sign keys (when possible): $keys" }
         val signedDeviceKeys = keys.mapNotNull { key ->
-            val deviceKey = key.keyId?.let { keyStore.getDeviceKey(userId, it).first() }?.value?.signed
+            val deviceKey = key.id?.let { keyStore.getDeviceKey(userId, it).first() }?.value?.signed
             if (deviceKey != null) {
-                keyStore.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value))
+                keyStore.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value.value))
                 updateTrustLevelOfKey(userId, key)
                 try {
                     if (userId == userInfo.userId && deviceKey.get<Ed25519Key>() == key) {
@@ -301,9 +301,9 @@ class KeyTrustServiceImpl(
             } else null
         }
         val signedCrossSigningKeys = keys.mapNotNull { key ->
-            val crossSigningKey = key.keyId?.let { keyStore.getCrossSigningKey(userId, it) }?.value?.signed
+            val crossSigningKey = key.id?.let { keyStore.getCrossSigningKey(userId, it) }?.value?.signed
             if (crossSigningKey != null) {
-                keyStore.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value))
+                keyStore.saveKeyVerificationState(key, KeyVerificationState.Verified(key.value.value))
                 updateTrustLevelOfKey(userId, key)
                 if (crossSigningKey.usage.contains(MasterKey)) {
                     if (crossSigningKey.get<Ed25519Key>() == key) {

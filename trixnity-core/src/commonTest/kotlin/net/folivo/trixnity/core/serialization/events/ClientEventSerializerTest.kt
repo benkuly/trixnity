@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.model.events.m.ReceiptEventContent.Receipt
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Unknown
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.trimToFlatJson
 import kotlin.test.Test
@@ -111,16 +111,16 @@ class ClientEventSerializerTest {
             1432735824653,
             UnsignedMessageEventData(
                 1234, relations =
-                mapOf(
-                    RelationType.Unknown("org.example.possible_annotations") to
-                            ServerAggregation.Unknown(
-                                RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
-                                    add(buildJsonObject {
-                                        put("key", JsonPrimitive("👍"))
-                                        put("count", JsonPrimitive(3))
+                    mapOf(
+                        RelationType.Unknown("org.example.possible_annotations") to
+                                ServerAggregation.Unknown(
+                                    RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                        add(buildJsonObject {
+                                            put("key", JsonPrimitive("👍"))
+                                            put("count", JsonPrimitive(3))
+                                        })
                                     })
-                                })
-                )
+                    )
             ),
         )
         val expectedResult = """
@@ -338,16 +338,16 @@ class ClientEventSerializerTest {
                 1432735824653,
                 UnsignedMessageEventData(
                     1234, relations =
-                    mapOf(
-                        RelationType.Unknown("org.example.possible_annotations") to
-                                ServerAggregation.Unknown(
-                                    RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
-                                        add(buildJsonObject {
-                                            put("key", JsonPrimitive("👍"))
-                                            put("count", JsonPrimitive(3))
+                        mapOf(
+                            RelationType.Unknown("org.example.possible_annotations") to
+                                    ServerAggregation.Unknown(
+                                        RelationType.Unknown("org.example.possible_annotations"), buildJsonArray {
+                                            add(buildJsonObject {
+                                                put("key", JsonPrimitive("👍"))
+                                                put("count", JsonPrimitive(3))
+                                            })
                                         })
-                                    })
-                    )
+                        )
                 ),
             ), result
         )
@@ -1121,7 +1121,7 @@ class ClientEventSerializerTest {
         val input = MessageEvent(
             MegolmEncryptedMessageEventContent(
                 ciphertext = "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
-                senderKey = Key.Curve25519Key(null, "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
+                senderKey = Curve25519KeyValue("YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
                 deviceId = "GNAHNGTKNL",
                 sessionId = "8798dSJJ878789dfjJKDSF",
                 relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("$7sxeT7hzXMlQ7cF2xKJAThT0h4jUvy0-RRgsmF7IZEY")))
@@ -1197,7 +1197,7 @@ class ClientEventSerializerTest {
             MessageEvent(
                 MegolmEncryptedMessageEventContent(
                     ciphertext = "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
-                    senderKey = Key.Curve25519Key(null, "YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
+                    senderKey = Curve25519KeyValue("YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
                     deviceId = "GNAHNGTKNL",
                     sessionId = "8798dSJJ878789dfjJKDSF",
                     relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("$7sxeT7hzXMlQ7cF2xKJAThT0h4jUvy0-RRgsmF7IZEY")))

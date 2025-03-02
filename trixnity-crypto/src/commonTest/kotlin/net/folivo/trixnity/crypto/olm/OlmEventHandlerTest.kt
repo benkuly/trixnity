@@ -30,6 +30,8 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.mocks.OlmDecrypterMock
 import net.folivo.trixnity.crypto.mocks.OlmEventHandlerRequestHandlerMock
@@ -69,7 +71,7 @@ class OlmEventHandlerTest : ShouldSpec({
             eventEmitter,
             olmKeysChangeEmitter,
             OlmDecrypterMock(),
-            SignServiceMock().apply { signCurve25519Key = Key.SignedCurve25519Key(null, "", mapOf()) },
+            SignServiceMock().apply { signCurve25519Key = Key.SignedCurve25519Key(null, "", signatures = mapOf()) },
             olmEventHandlerRequestHandlerMock,
             olmStoreMock,
             Clock.System,
@@ -218,10 +220,10 @@ class OlmEventHandlerTest : ShouldSpec({
         captureFallbackKeys shouldHaveSize 2
         captureFallbackKeys[0].keys shouldHaveSize 1
         val fallbackKey1 = captureFallbackKeys[0].keys.first().shouldBeInstanceOf<Key.SignedCurve25519Key>()
-        fallbackKey1.fallback shouldBe true
+        fallbackKey1.value.fallback shouldBe true
         captureFallbackKeys[1].keys shouldHaveSize 1
         val fallbackKey2 = captureFallbackKeys[1].keys.first().shouldBeInstanceOf<Key.SignedCurve25519Key>()
-        fallbackKey2.fallback shouldBe true
+        fallbackKey2.value.fallback shouldBe true
 
         fallbackKey1 shouldNotBe fallbackKey2
     }
@@ -246,7 +248,7 @@ class OlmEventHandlerTest : ShouldSpec({
         val encryptedEvent = ToDeviceEvent(
             OlmEncryptedToDeviceEventContent(
                 ciphertext = mapOf(),
-                senderKey = Key.Curve25519Key(null, "BOB_IDEN"),
+                senderKey = Curve25519KeyValue("BOB_IDEN"),
             ), bob
         )
 
@@ -269,8 +271,8 @@ class OlmEventHandlerTest : ShouldSpec({
         ) {
             roomId shouldBe roomId
             sessionId shouldBe outboundSession.sessionId
-            senderKey shouldBe Key.Curve25519Key(null, "BOB_IDEN")
-            senderSigningKey shouldBe Key.Ed25519Key(null, "BOB_SIGN")
+            senderKey shouldBe Curve25519KeyValue("BOB_IDEN")
+            senderSigningKey shouldBe Ed25519KeyValue("BOB_SIGN")
         }
     }
 

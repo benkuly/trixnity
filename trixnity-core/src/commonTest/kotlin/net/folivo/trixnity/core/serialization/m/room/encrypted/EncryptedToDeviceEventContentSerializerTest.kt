@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContentSerializer
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Unknown
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,7 +22,7 @@ class EncryptedToDeviceEventContentSerializerTest {
         val result = json.encodeToString(
             EncryptedToDeviceEventContentSerializer,
             OlmEncryptedToDeviceEventContent(
-                senderKey = Key.Curve25519Key("", "<sender_curve25519_key>"),
+                senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 ciphertext = mapOf(
                     "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
                 ),
@@ -60,7 +60,7 @@ class EncryptedToDeviceEventContentSerializerTest {
         val result = json.decodeFromString<EncryptedToDeviceEventContent>(input)
         assertEquals(
             OlmEncryptedToDeviceEventContent(
-                senderKey = Key.Curve25519Key(null, "<sender_curve25519_key>"),
+                senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 ciphertext = mapOf(
                     "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
                 ),

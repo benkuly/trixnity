@@ -10,13 +10,13 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.coroutines.runBlocking
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.media.*
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.BeforeTest
@@ -32,7 +32,14 @@ class MediaRoutesTest {
         application {
             install(ConvertMediaPlugin)
             installMatrixAccessTokenAuth {
-                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
+                authenticationFunction = AccessTokenAuthenticationFunction {
+                    AccessTokenAuthenticationFunctionResult(
+                        MatrixClientPrincipal(
+                            UserId("user", "server"),
+                            "deviceId"
+                        ), null
+                    )
+                }
             }
             matrixApiServer(json) {
                 mediaApiRoutes(handlerMock, json, mapping)

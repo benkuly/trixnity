@@ -3,7 +3,7 @@ package net.folivo.trixnity.core.model.events.m.room
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroomthird_party_invite">matrix spec</a>
@@ -15,7 +15,7 @@ data class ThirdPartyInviteEventContent(
     @SerialName("key_validity_url")
     val keyValidityUrl: String,
     @SerialName("public_key")
-    val publicKey: Key.Ed25519Key,
+    val publicKey: Ed25519KeyValue,
     @SerialName("public_keys")
     val publicKeys: List<PublicKey>? = null,
     @SerialName("external_url")
@@ -26,6 +26,6 @@ data class ThirdPartyInviteEventContent(
         @SerialName("key_validity_url")
         val keyValidityUrl: String? = null,
         @SerialName("public_key")
-        val publicKey: Key.Ed25519Key
+        val publicKey: Ed25519KeyValue
     )
 }

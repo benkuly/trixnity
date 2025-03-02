@@ -42,8 +42,9 @@ class SignServiceMock : SignService {
     }
 
     override suspend fun signCurve25519Key(
-        key: Key.Curve25519Key,
-        signatureJsonKey: String,
+        keyId: String,
+        keyValue: String,
+        fallback: Boolean?
     ): Key.SignedCurve25519Key {
         throw NotImplementedError()
     }

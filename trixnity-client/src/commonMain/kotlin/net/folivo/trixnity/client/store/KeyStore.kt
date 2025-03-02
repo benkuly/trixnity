@@ -179,7 +179,7 @@ class KeyStore(
     suspend fun getKeyVerificationState(
         key: Key,
     ): KeyVerificationState? {
-        val keyId = key.keyId
+        val keyId = key.id
         return keyId?.let {
             keyVerificationStateCache.get(
                 KeyVerificationStateKey(
@@ -187,7 +187,7 @@ class KeyStore(
                     keyAlgorithm = key.algorithm,
                 )
             ).first()?.let { state ->
-                if (state.keyValue == key.value) state
+                if (state.keyValue == key.value.value) state
                 else KeyVerificationState.Blocked(state.keyValue)
             }
         }
@@ -197,7 +197,7 @@ class KeyStore(
         key: Key,
         state: KeyVerificationState
     ) {
-        val keyId = key.keyId
+        val keyId = key.id
         requireNotNull(keyId)
         keyVerificationStateCache.set(
             KeyVerificationStateKey(keyId = keyId, keyAlgorithm = key.algorithm), state

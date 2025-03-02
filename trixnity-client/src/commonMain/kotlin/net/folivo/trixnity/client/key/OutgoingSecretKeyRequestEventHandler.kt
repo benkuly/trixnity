@@ -144,7 +144,7 @@ class OutgoingSecretKeyRequestEventHandler(
                         if (secretType == SecretType.M_CROSS_SIGNING_SELF_SIGNING) CrossSigningKeysUsage.SelfSigningKey else CrossSigningKeysUsage.UserSigningKey
                     val originalPublicKey = keyStore.getCrossSigningKey(ownUserId, crossSigningKeyType)
                         ?.value?.signed?.get<Key.Ed25519Key>()?.value
-                    originalPublicKey != null && originalPublicKey == generatedPublicKey
+                    originalPublicKey != null && originalPublicKey.value == generatedPublicKey
                 }
 
                 SecretType.M_MEGOLM_BACKUP_V1 -> {

@@ -27,6 +27,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService.*
 import net.folivo.trixnity.crypto.sign.SignService
@@ -167,7 +168,7 @@ class OlmEncryptionServiceImpl(
 
     @OptIn(ExperimentalContracts::class)
     private suspend fun withStoredSessions(
-        identityKey: Curve25519Key,
+        identityKey: Curve25519KeyValue,
         block: suspend (Set<StoredOlmSession>?) -> StoredOlmSession
     ) {
         contract {
@@ -191,7 +192,7 @@ class OlmEncryptionServiceImpl(
             ?: throw EncryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
 
         lateinit var encryptionResult: OlmEncryptedToDeviceEventContent
-        withStoredSessions(identityKey) { storedSessions ->
+        withStoredSessions(identityKey.value) { storedSessions ->
             val lastUsedOlmStoredOlmSessions = storedSessions?.maxByOrNull { it.lastUsedAt }
 
             @OptIn(ExperimentalSerializationApi::class)
@@ -206,20 +207,20 @@ class OlmEncryptionServiceImpl(
                 val event = DecryptedOlmEvent(
                     content = content,
                     sender = ownUserId,
-                    senderKeys = keysOf(ownEd25519Key.copy(keyId = null)),
+                    senderKeys = keysOf(ownEd25519Key.copy(id = null)),
                     recipient = userId,
-                    recipientKeys = keysOf(signingKey.copy(keyId = null))
+                    recipientKeys = keysOf(signingKey.copy(id = null))
                 ).also { log.trace { "olm event: $it" } }
                 checkNotNull(serializer)
                 val encryptedContent = olmSession.encrypt(json.encodeToString(serializer, event))
                 return OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
-                        identityKey.value to OlmEncryptedToDeviceEventContent.CiphertextInfo(
+                        identityKey.value.value to OlmEncryptedToDeviceEventContent.CiphertextInfo(
                             encryptedContent.cipherText,
                             OlmMessageType.of(encryptedContent.type.value)
                         )
                     ),
-                    senderKey = ownCurve25519Key,
+                    senderKey = ownCurve25519Key.value,
                 )
             }
 
@@ -239,7 +240,7 @@ class OlmEncryptionServiceImpl(
                 val oneTimeKey =
                     response.oneTimeKeys[userId]?.get(deviceId)?.keys?.firstOrNull() as? SignedCurve25519Key
                         ?: throw EncryptOlmError.OneTimeKeyNotFound(KeyAlgorithm.SignedCurve25519)
-                val keyVerifyState = signService.verify(oneTimeKey, mapOf(userId to setOf(signingKey)))
+                val keyVerifyState = signService.verify(oneTimeKey.value, mapOf(userId to setOf(signingKey)))
                 if (keyVerifyState is VerifyResult.Invalid)
                     throw EncryptOlmError.OneTimeKeyVerificationFailed(
                         KeyAlgorithm.SignedCurve25519,
@@ -251,8 +252,8 @@ class OlmEncryptionServiceImpl(
                         olmAccount,
                         OlmSession.createOutbound(
                             account = olmAccount,
-                            theirIdentityKey = identityKey.value,
-                            theirOneTimeKey = oneTimeKey.value
+                            theirIdentityKey = identityKey.value.value,
+                            theirOneTimeKey = oneTimeKey.value.value
                         )
                     ) { _, session ->
                         encryptionResult = encryptWithOlmSession(
@@ -264,7 +265,7 @@ class OlmEncryptionServiceImpl(
                         )
                         StoredOlmSession(
                             sessionId = session.sessionId,
-                            senderKey = identityKey,
+                            senderKey = identityKey.value,
                             pickled = session.pickle(store.getOlmPickleKey()),
                             createdAt = clock.now(),
                             lastUsedAt = clock.now(),
@@ -314,7 +315,7 @@ class OlmEncryptionServiceImpl(
         val senderDeviceKeys = store.findDeviceKeys(userId, senderIdentityKey)
             ?: throw DecryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
         val deviceId = senderDeviceKeys.deviceId
-        val ciphertext = encryptedContent.ciphertext[ownCurve25519Key.value]
+        val ciphertext = encryptedContent.ciphertext[ownCurve25519Key.value.value]
             ?: throw DecryptOlmError.SenderDidNotEncryptForThisDeviceException
         val senderSigningKey = senderDeviceKeys.keys.keys.filterIsInstance<Ed25519Key>().firstOrNull()
             ?: throw DecryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
@@ -529,7 +530,7 @@ class OlmEncryptionServiceImpl(
 
                 return MegolmEncryptedMessageEventContent(
                     ciphertext = encryptedContent,
-                    senderKey = ownCurve25519Key,
+                    senderKey = ownCurve25519Key.value,
                     deviceId = ownDeviceId,
                     sessionId = session.sessionId,
                     relatesTo = relatesToForEncryptedEvent(content)
@@ -551,13 +552,13 @@ class OlmEncryptionServiceImpl(
                         freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                             store.updateInboundMegolmSession(inboundSession.sessionId, roomId) {
                                 StoredInboundMegolmSession(
-                                    senderKey = ownCurve25519Key,
+                                    senderKey = ownCurve25519Key.value,
                                     sessionId = inboundSession.sessionId,
                                     roomId = roomId,
                                     firstKnownIndex = inboundSession.firstKnownIndex,
                                     hasBeenBackedUp = false,
                                     isTrusted = true,
-                                    senderSigningKey = ownEd25519Key,
+                                    senderSigningKey = ownEd25519Key.value,
                                     forwardingCurve25519KeyChain = listOf(),
                                     pickled = inboundSession.pickle(store.getOlmPickleKey()),
                                 )

@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -98,7 +98,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 ciphertext = "cipher $i",
                 deviceId = "deviceId",
                 sessionId = "senderId",
-                senderKey = Key.Curve25519Key(value = "key")
+                senderKey = KeyValue.Curve25519KeyValue("key")
             ),
             EventId("\$event$i"),
             sender,

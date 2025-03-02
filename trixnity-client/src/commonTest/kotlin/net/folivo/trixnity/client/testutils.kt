@@ -32,7 +32,7 @@ fun String.trimToFlatJson() =
 
 val simpleRoom = Room(RoomId("room", "server"), lastEventId = EventId("\$event"))
 val simpleUserInfo =
-    UserInfo(UserId("me", "server"), "myDevice", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = ""))
+    UserInfo(UserId("me", "server"), "myDevice", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, ""))
 
 fun mockMatrixClientServerApiClient(
     json: Json = createMatrixEventJson(),

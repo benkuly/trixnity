@@ -117,7 +117,7 @@ private val body: ShouldSpec.() -> Unit = {
         olmStoreMock = OlmStoreMock()
         olmStoreMock.ed25519Keys[bob to bobDeviceId] = bobEdKey
         olmStoreMock.curve25519Keys[bob to bobDeviceId] = bobCurveKey
-        olmStoreMock.deviceKeys[bob to bobCurveKey] = DeviceKeys(
+        olmStoreMock.deviceKeys[bob to bobCurveKey.value] = DeviceKeys(
             userId = bob,
             deviceId = bobDeviceId,
             algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
@@ -132,16 +132,16 @@ private val body: ShouldSpec.() -> Unit = {
         sendDecryptedOlmEvent = DecryptedOlmEvent(
             content = decryptedOlmEventContent,
             sender = alice,
-            senderKeys = keysOf(aliceEdKey.copy(keyId = null)),
+            senderKeys = keysOf(aliceEdKey.copy(id = null)),
             recipient = bob,
-            recipientKeys = keysOf(bobEdKey.copy(keyId = null))
+            recipientKeys = keysOf(bobEdKey.copy(id = null))
         )
         receiveDecryptedOlmEvent = DecryptedOlmEvent(
             content = decryptedOlmEventContent,
             sender = bob,
-            senderKeys = keysOf(bobEdKey.copy(keyId = null)),
+            senderKeys = keysOf(bobEdKey.copy(id = null)),
             recipient = alice,
-            recipientKeys = keysOf(aliceEdKey.copy(keyId = null))
+            recipientKeys = keysOf(aliceEdKey.copy(id = null))
         )
 
         cut = OlmEncryptionServiceImpl(
@@ -173,7 +173,7 @@ private val body: ShouldSpec.() -> Unit = {
             Key.SignedCurve25519Key(
                 bobDeviceId,
                 bobAccount.getOneTimeKey(),
-                mapOf(),
+                signatures = mapOf(),
             )
         olmEncryptionServiceRequestHandlerMock.claimKeys = Result.success(
             ClaimKeys.Response(
@@ -189,15 +189,15 @@ private val body: ShouldSpec.() -> Unit = {
     should("encrypt without stored olm encrypt session") {
         mockClaimKeys()
         val encryptedMessage = cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId).getOrThrow()
-        val encryptedCipherText = encryptedMessage.ciphertext[bobCurveKey.value]
+        val encryptedCipherText = encryptedMessage.ciphertext[bobCurveKey.value.value]
         assertNotNull(encryptedCipherText)
 
-        encryptedMessage.senderKey shouldBe aliceCurveKey
+        encryptedMessage.senderKey shouldBe aliceCurveKey.value
         encryptedCipherText.type shouldBe INITIAL_PRE_KEY
         freeAfter(
             OlmSession.createInboundFrom(
                 account = bobAccount,
-                identityKey = aliceCurveKey.value,
+                identityKey = aliceCurveKey.value.value,
                 oneTimeKeyMessage = encryptedCipherText.body
             )
         ) { bobSession ->
@@ -212,7 +212,7 @@ private val body: ShouldSpec.() -> Unit = {
             ) shouldBe sendDecryptedOlmEvent
         }
 
-        olmStoreMock.olmSessions[bobCurveKey] shouldNotBe null
+        olmStoreMock.olmSessions[bobCurveKey.value] shouldNotBe null
     }
     should("is failure when one time key is invalid without stored olm encrypt session") {
         mockClaimKeys()
@@ -229,7 +229,7 @@ private val body: ShouldSpec.() -> Unit = {
         freeAfter(
             OlmSession.createOutbound(
                 bobAccount,
-                aliceCurveKey.value,
+                aliceCurveKey.value.value,
                 aliceAccount.getOneTimeKey(true)
             )
         ) { bobSession ->
@@ -237,7 +237,7 @@ private val body: ShouldSpec.() -> Unit = {
                 OlmSession.createInbound(aliceAccount, bobSession.encrypt("first message").cipherText)
             ) { aliceSession ->
                 StoredOlmSession(
-                    bobCurveKey,
+                    bobCurveKey.value,
                     aliceSession.sessionId,
                     Clock.System.now(),
                     Clock.System.now(),
@@ -245,13 +245,13 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             }
 
-            olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
+            olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
             val encryptedMessage = cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId).getOrThrow()
-            val encryptedCipherText = encryptedMessage.ciphertext[bobCurveKey.value]
+            val encryptedCipherText = encryptedMessage.ciphertext[bobCurveKey.value.value]
             assertNotNull(encryptedCipherText)
 
-            encryptedMessage.senderKey shouldBe aliceCurveKey
+            encryptedMessage.senderKey shouldBe aliceCurveKey.value
             encryptedCipherText.type shouldBe INITIAL_PRE_KEY
 
             json.decodeFromString(
@@ -264,7 +264,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             ) shouldBe sendDecryptedOlmEvent
 
-            olmStoreMock.olmSessions[bobCurveKey]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
+            olmStoreMock.olmSessions[bobCurveKey.value]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
     // #######################
@@ -274,7 +274,7 @@ private val body: ShouldSpec.() -> Unit = {
         val encryptedMessage = freeAfter(
             OlmSession.createOutbound(
                 bobAccount,
-                aliceCurveKey.value,
+                aliceCurveKey.value.value,
                 aliceAccount.getOneTimeKey(true)
             )
         ) { bobSession ->
@@ -284,20 +284,20 @@ private val body: ShouldSpec.() -> Unit = {
             ClientEvent.ToDeviceEvent(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
-                        aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                        aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
                     ),
-                    senderKey = bobCurveKey
+                    senderKey = bobCurveKey.value
                 ), bob
             )
         ).getOrThrow() shouldBe receiveDecryptedOlmEvent
 
-        olmStoreMock.olmSessions[bobCurveKey].shouldNotBeNull() shouldHaveSize 1
+        olmStoreMock.olmSessions[bobCurveKey.value].shouldNotBeNull() shouldHaveSize 1
 
         // we check, that the one time key cannot be used twice
         shouldThrow<OlmLibraryException> {
             OlmSession.createInboundFrom(
                 OlmAccount.unpickle("", olmStoreMock.olmAccount.value.shouldNotBeNull()),
-                bobCurveKey.value,
+                bobCurveKey.value.value,
                 encryptedMessage.cipherText
             )
         }
@@ -306,7 +306,7 @@ private val body: ShouldSpec.() -> Unit = {
         val encryptedMessage = freeAfter(
             OlmSession.createOutbound(
                 bobAccount,
-                aliceCurveKey.value,
+                aliceCurveKey.value.value,
                 aliceAccount.getOneTimeKey(true)
             )
         ) { bobSession ->
@@ -322,7 +322,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 ) { aliceSession ->
                     StoredOlmSession(
-                        bobCurveKey,
+                        bobCurveKey.value,
                         pseudoSessionId.toString(),
                         Clock.System.now(),
                         Clock.System.now(),
@@ -331,14 +331,14 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
         }.toSet()
-        olmStoreMock.olmSessions[bobCurveKey] = existingSessions
+        olmStoreMock.olmSessions[bobCurveKey.value] = existingSessions
         cut.decryptOlm(
             ClientEvent.ToDeviceEvent(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
-                        aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                        aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
                     ),
-                    senderKey = bobCurveKey
+                    senderKey = bobCurveKey.value
                 ), bob
             )
         ).exceptionOrNull() shouldBe DecryptOlmError.TooManySessions
@@ -348,7 +348,7 @@ private val body: ShouldSpec.() -> Unit = {
         val encryptedMessage = freeAfter(
             OlmSession.createOutbound(
                 bobAccount,
-                aliceCurveKey.value,
+                aliceCurveKey.value.value,
                 aliceAccount.getOneTimeKey(true)
             )
         ) { bobSession ->
@@ -358,9 +358,9 @@ private val body: ShouldSpec.() -> Unit = {
             ClientEvent.ToDeviceEvent(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
-                        aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                        aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
                     ),
-                    senderKey = bobCurveKey
+                    senderKey = bobCurveKey.value
                 ), bob
             )
         ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
@@ -368,7 +368,7 @@ private val body: ShouldSpec.() -> Unit = {
         val sendToDeviceEvents = olmEncryptionServiceRequestHandlerMock.sendToDeviceParams
         val encryptedEventContent =
             sendToDeviceEvents.first()[bob]?.get(bobDeviceId)?.shouldBeInstanceOf<OlmEncryptedToDeviceEventContent>()
-        val ciphertext = encryptedEventContent?.ciphertext?.get(bobCurveKey.value)?.body
+        val ciphertext = encryptedEventContent?.ciphertext?.get(bobCurveKey.value.value)?.body
         assertNotNull(ciphertext)
         freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
             json.decodeFromString(
@@ -381,7 +381,7 @@ private val body: ShouldSpec.() -> Unit = {
         freeAfter(
             OlmSession.createOutbound(
                 aliceAccount,
-                bobCurveKey.value,
+                bobCurveKey.value.value,
                 bobAccount.getOneTimeKey()
             )
         ) { aliceSession ->
@@ -393,32 +393,32 @@ private val body: ShouldSpec.() -> Unit = {
                 bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
             }
             val storedOlmSession = StoredOlmSession(
-                bobCurveKey,
+                bobCurveKey.value,
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
                 aliceSession.pickle("")
             )
-            olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
+            olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
             cut.decryptOlm(
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
                         ),
-                        senderKey = bobCurveKey
+                        senderKey = bobCurveKey.value
                     ), bob
                 )
             ).getOrThrow() shouldBe receiveDecryptedOlmEvent
-            olmStoreMock.olmSessions[bobCurveKey]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
+            olmStoreMock.olmSessions[bobCurveKey.value]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
     should("decrypt ordinary message") {
         freeAfter(
             OlmSession.createOutbound(
                 aliceAccount,
-                bobCurveKey.value,
+                bobCurveKey.value.value,
                 bobAccount.getOneTimeKey()
             )
         ) { aliceSession ->
@@ -430,32 +430,32 @@ private val body: ShouldSpec.() -> Unit = {
                 bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
             }
             val storedOlmSession = StoredOlmSession(
-                bobCurveKey,
+                bobCurveKey.value,
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
                 aliceSession.pickle("")
             )
-            olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
+            olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
             cut.decryptOlm(
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
                         ),
-                        senderKey = bobCurveKey
+                        senderKey = bobCurveKey.value
                     ), bob
                 )
             ).getOrThrow() shouldBe receiveDecryptedOlmEvent
-            olmStoreMock.olmSessions[bobCurveKey]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
+            olmStoreMock.olmSessions[bobCurveKey.value]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
     should("try multiple sessions descended by last used") {
         freeAfter(
-            OlmSession.createOutbound(aliceAccount, bobCurveKey.value, bobAccount.getOneTimeKey()),
-            OlmSession.createOutbound(aliceAccount, bobCurveKey.value, bobAccount.getOneTimeKey()),
-            OlmSession.createOutbound(aliceAccount, bobCurveKey.value, bobAccount.getOneTimeKey()),
+            OlmSession.createOutbound(aliceAccount, bobCurveKey.value.value, bobAccount.getOneTimeKey()),
+            OlmSession.createOutbound(aliceAccount, bobCurveKey.value.value, bobAccount.getOneTimeKey()),
+            OlmSession.createOutbound(aliceAccount, bobCurveKey.value.value, bobAccount.getOneTimeKey()),
         ) { aliceSession1, aliceSession2, aliceSession3 ->
             val firstMessage = aliceSession1.encrypt("first message")
             val encryptedMessage = freeAfter(
@@ -465,27 +465,27 @@ private val body: ShouldSpec.() -> Unit = {
                 bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
             }
             val storedOlmSession1 = StoredOlmSession(
-                bobCurveKey,
+                bobCurveKey.value,
                 aliceSession1.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
                 aliceSession1.pickle("")
             )
             val storedOlmSession2 = StoredOlmSession(
-                bobCurveKey,
+                bobCurveKey.value,
                 aliceSession2.sessionId,
                 fromEpochMilliseconds(24),
                 Clock.System.now(),
                 aliceSession2.pickle("")
             )
             val storedOlmSession3 = StoredOlmSession(
-                bobCurveKey,
+                bobCurveKey.value,
                 aliceSession3.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
                 aliceSession3.pickle("")
             )
-            olmStoreMock.olmSessions[bobCurveKey] = setOf(
+            olmStoreMock.olmSessions[bobCurveKey.value] = setOf(
                 storedOlmSession2,
                 storedOlmSession1,
                 storedOlmSession3
@@ -495,13 +495,13 @@ private val body: ShouldSpec.() -> Unit = {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
                         ),
-                        senderKey = bobCurveKey
+                        senderKey = bobCurveKey.value
                     ), bob
                 )
             ).getOrThrow() shouldBe receiveDecryptedOlmEvent
-            olmStoreMock.olmSessions[bobCurveKey].shouldNotBeNull() shouldNotContain storedOlmSession1
+            olmStoreMock.olmSessions[bobCurveKey.value].shouldNotBeNull() shouldNotContain storedOlmSession1
         }
     }
     should("not create multiple recovery sessions in short time") {
@@ -509,7 +509,7 @@ private val body: ShouldSpec.() -> Unit = {
         freeAfter(
             OlmSession.createOutbound(
                 aliceAccount,
-                bobCurveKey.value,
+                bobCurveKey.value.value,
                 bobAccount.getOneTimeKey()
             )
         ) { aliceSession ->
@@ -521,22 +521,22 @@ private val body: ShouldSpec.() -> Unit = {
                 bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
             }
             val storedOlmSession = StoredOlmSession(
-                bobCurveKey,
+                bobCurveKey.value,
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
                 aliceSession.pickle("")
             )
-            olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
+            olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
             // first recovery trigger
             cut.decryptOlm(
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value to CiphertextInfo("junk", ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo("junk", ORDINARY)
                         ),
-                        senderKey = bobCurveKey
+                        senderKey = bobCurveKey.value
                     ), bob
                 )
             ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
@@ -546,9 +546,9 @@ private val body: ShouldSpec.() -> Unit = {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value to CiphertextInfo("junk", ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo("junk", ORDINARY)
                         ),
-                        senderKey = bobCurveKey
+                        senderKey = bobCurveKey.value
                     ), bob
                 )
             ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
@@ -561,7 +561,7 @@ private val body: ShouldSpec.() -> Unit = {
         freeAfter(
             OlmSession.createOutbound(
                 aliceAccount,
-                bobCurveKey.value,
+                bobCurveKey.value.value,
                 bobAccount.getOneTimeKey()
             )
         ) { aliceSession ->
@@ -573,22 +573,22 @@ private val body: ShouldSpec.() -> Unit = {
                 bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, receiveDecryptedOlmEvent))
             }
             val storedOlmSession = StoredOlmSession(
-                bobCurveKey,
+                bobCurveKey.value,
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
                 aliceSession.pickle("")
             )
-            olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
+            olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
             // first recovery trigger
             cut.decryptOlm(
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value to CiphertextInfo("junk", ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo("junk", ORDINARY)
                         ),
-                        senderKey = bobCurveKey
+                        senderKey = bobCurveKey.value
                     ), bob
                 )
             ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
@@ -599,9 +599,9 @@ private val body: ShouldSpec.() -> Unit = {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value to CiphertextInfo("junk", ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo("junk", ORDINARY)
                         ),
-                        senderKey = bobCurveKey
+                        senderKey = bobCurveKey.value
                     ), bob
                 )
             ).exceptionOrNull() shouldBe DecryptOlmError.NoMatchingOlmSessionFound
@@ -613,7 +613,7 @@ private val body: ShouldSpec.() -> Unit = {
         freeAfter(
             OlmSession.createOutbound(
                 aliceAccount,
-                bobCurveKey.value,
+                bobCurveKey.value.value,
                 bobAccount.getOneTimeKey()
             )
         ) { aliceSession ->
@@ -625,21 +625,21 @@ private val body: ShouldSpec.() -> Unit = {
                 bobSession.encrypt(json.encodeToString(decryptedOlmEventSerializer, manipulatedOlmEvent))
             }
             val storedOlmSession = StoredOlmSession(
-                bobCurveKey,
+                bobCurveKey.value,
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
                 aliceSession.pickle("")
             )
-            olmStoreMock.olmSessions[bobCurveKey] = setOf(storedOlmSession)
+            olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
             cut.decryptOlm(
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
                         ),
-                        senderKey = bobCurveKey
+                        senderKey = bobCurveKey.value
                     ), bob
                 )
             ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.ValidationFailed>()
@@ -679,7 +679,7 @@ private val body: ShouldSpec.() -> Unit = {
         val sessionId =
             freeAfter(OlmOutboundGroupSession.unpickle("", storedOutboundSession.pickled)) { outboundSession ->
                 assertSoftly(result) {
-                    this.senderKey shouldBe aliceCurveKey
+                    this.senderKey shouldBe aliceCurveKey.value
                     this.deviceId shouldBe aliceDeviceId
                     this.sessionId shouldBe outboundSession.sessionId
                     this.relatesTo shouldBe relatesTo.copy(newContent = null)
@@ -689,7 +689,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val ciphertext =
                     sendToDeviceEvents.firstOrNull()?.get(bob)?.get(bobDeviceId)
                         ?.shouldBeInstanceOf<OlmEncryptedToDeviceEventContent>()
-                        ?.ciphertext?.get(bobCurveKey.value)?.body
+                        ?.ciphertext?.get(bobCurveKey.value.value)?.body
                 assertNotNull(ciphertext)
                 freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
                     assertSoftly(
@@ -709,7 +709,7 @@ private val body: ShouldSpec.() -> Unit = {
         assertNotNull(storedInboundSession)
         assertSoftly(storedInboundSession) {
             sessionId shouldBe sessionId
-            senderKey shouldBe aliceCurveKey
+            senderKey shouldBe aliceCurveKey.value
             room shouldBe room
         }
 
@@ -745,8 +745,8 @@ private val body: ShouldSpec.() -> Unit = {
                 )
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
-                    senderKey = aliceCurveKey,
-                    senderSigningKey = aliceEdKey,
+                    senderKey = aliceCurveKey.value,
+                    senderSigningKey = aliceEdKey.value,
                     sessionId = inboundSession.sessionId,
                     roomId = room,
                     firstKnownIndex = inboundSession.firstKnownIndex,
@@ -787,8 +787,8 @@ private val body: ShouldSpec.() -> Unit = {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
-                    senderKey = bobCurveKey,
-                    senderSigningKey = bobEdKey,
+                    senderKey = bobCurveKey.value,
+                    senderSigningKey = bobEdKey.value,
                     sessionId = inboundSession.sessionId,
                     roomId = room,
                     firstKnownIndex = inboundSession.firstKnownIndex,
@@ -804,7 +804,7 @@ private val body: ShouldSpec.() -> Unit = {
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         ciphertext,
-                        bobCurveKey,
+                        bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId,
                         relatesTo = relatesTo
@@ -828,8 +828,8 @@ private val body: ShouldSpec.() -> Unit = {
                 outboundSession.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
-                    senderKey = bobCurveKey,
-                    senderSigningKey = bobEdKey,
+                    senderKey = bobCurveKey.value,
+                    senderSigningKey = bobEdKey.value,
                     sessionId = inboundSession.sessionId,
                     roomId = room,
                     firstKnownIndex = inboundSession.firstKnownIndex,
@@ -843,7 +843,7 @@ private val body: ShouldSpec.() -> Unit = {
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         ciphertext,
-                        bobCurveKey,
+                        bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId,
                         relatesTo = relatesTo
@@ -864,7 +864,7 @@ private val body: ShouldSpec.() -> Unit = {
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         ciphertext,
-                        bobCurveKey,
+                        bobCurveKey.value,
                         bobDeviceId,
                         session.sessionId
                     ),
@@ -880,8 +880,8 @@ private val body: ShouldSpec.() -> Unit = {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
-                    senderKey = bobCurveKey,
-                    senderSigningKey = bobEdKey,
+                    senderKey = bobCurveKey.value,
+                    senderSigningKey = bobEdKey.value,
                     sessionId = inboundSession.sessionId,
                     roomId = room,
                     firstKnownIndex = inboundSession.firstKnownIndex,
@@ -901,7 +901,7 @@ private val body: ShouldSpec.() -> Unit = {
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         ciphertext,
-                        bobCurveKey,
+                        bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId
                     ),
@@ -917,8 +917,8 @@ private val body: ShouldSpec.() -> Unit = {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
-                    senderKey = bobCurveKey,
-                    senderSigningKey = bobEdKey,
+                    senderKey = bobCurveKey.value,
+                    senderSigningKey = bobEdKey.value,
                     sessionId = inboundSession.sessionId,
                     roomId = room,
                     firstKnownIndex = inboundSession.firstKnownIndex,
@@ -938,7 +938,7 @@ private val body: ShouldSpec.() -> Unit = {
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         ciphertext,
-                        bobCurveKey,
+                        bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId
                     ),
@@ -956,7 +956,7 @@ private val body: ShouldSpec.() -> Unit = {
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         ciphertext,
-                        bobCurveKey,
+                        bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId
                     ),

@@ -6,8 +6,8 @@ import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositor
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import org.koin.core.Koin
 
@@ -26,28 +26,28 @@ fun ShouldSpec.inboundMegolmSessionRepositoryTest(diReceiver: () -> Koin) {
         val inboundSessionKey2 = InboundMegolmSessionRepositoryKey("session2", roomId)
         val inboundSession1 =
             StoredInboundMegolmSession(
-                senderKey = Curve25519Key(null, "curve1"),
+                senderKey = Curve25519KeyValue("curve1"),
                 sessionId = "session1",
                 roomId = roomId,
                 firstKnownIndex = 1,
                 hasBeenBackedUp = false,
                 isTrusted = false,
-                senderSigningKey = Key.Ed25519Key(null, "ed1"),
+                senderSigningKey = Ed25519KeyValue("ed1"),
                 forwardingCurve25519KeyChain = listOf(
-                    Curve25519Key(null, "curveExt1"),
-                    Curve25519Key(null, "curveExt2")
+                    Curve25519KeyValue("curveExt1"),
+                    Curve25519KeyValue("curveExt2")
                 ),
                 pickled = "pickle1"
             )
         val inboundSession2 =
             StoredInboundMegolmSession(
-                senderKey = Curve25519Key(null, "curve2"),
+                senderKey = Curve25519KeyValue("curve2"),
                 sessionId = "session2",
                 roomId = roomId,
                 firstKnownIndex = 1,
                 hasBeenBackedUp = true,
                 isTrusted = false,
-                senderSigningKey = Key.Ed25519Key(null, "ed2"),
+                senderSigningKey = Ed25519KeyValue("ed2"),
                 forwardingCurve25519KeyChain = listOf(),
                 pickled = "pickle2"
             )

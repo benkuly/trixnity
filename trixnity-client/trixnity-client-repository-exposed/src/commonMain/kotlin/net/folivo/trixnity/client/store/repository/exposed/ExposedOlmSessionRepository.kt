@@ -1,9 +1,8 @@
 package net.folivo.trixnity.client.store.repository.exposed
 
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -15,19 +14,19 @@ internal object ExposedOlmSession : Table("olm_session") {
 }
 
 internal class ExposedOlmSessionRepository(private val json: Json) : OlmSessionRepository {
-    override suspend fun get(key: Key.Curve25519Key): Set<StoredOlmSession>? = withExposedRead {
+    override suspend fun get(key: Curve25519KeyValue): Set<StoredOlmSession>? = withExposedRead {
         ExposedOlmSession.selectAll().where { ExposedOlmSession.senderKey eq key.value }.firstOrNull()
             ?.let { json.decodeFromString(it[ExposedOlmSession.value]) }
     }
 
-    override suspend fun save(key: Key.Curve25519Key, value: Set<StoredOlmSession>): Unit = withExposedWrite {
+    override suspend fun save(key: Curve25519KeyValue, value: Set<StoredOlmSession>): Unit = withExposedWrite {
         ExposedOlmSession.upsert {
             it[senderKey] = key.value
             it[ExposedOlmSession.value] = json.encodeToString(value)
         }
     }
 
-    override suspend fun delete(key: Key.Curve25519Key): Unit = withExposedWrite {
+    override suspend fun delete(key: Curve25519KeyValue): Unit = withExposedWrite {
         ExposedOlmSession.deleteWhere { senderKey eq key.value }
     }
 

@@ -15,6 +15,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
@@ -35,16 +36,16 @@ class ClientOlmStore(
     override suspend fun findEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? =
         keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Ed25519Key>()
 
-    override suspend fun findDeviceKeys(userId: UserId, senderKey: Key.Curve25519Key): DeviceKeys? =
+    override suspend fun findDeviceKeys(userId: UserId, senderKeyValue: Curve25519KeyValue): DeviceKeys? =
         keyStore.getDeviceKeys(userId).first()?.values?.map { it.value.signed }
-            ?.find { it.keys.keys.any { key -> key.value == senderKey.value } }
+            ?.find { it.keys.keys.any { key -> key.value == senderKeyValue } }
 
 
     override suspend fun updateOlmSessions(
-        senderKey: Key.Curve25519Key,
+        senderKeyValue: Curve25519KeyValue,
         updater: suspend (Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
     ) {
-        olmCryptoStore.updateOlmSessions(senderKey, updater)
+        olmCryptoStore.updateOlmSessions(senderKeyValue, updater)
     }
 
     override suspend fun updateOutboundMegolmSession(

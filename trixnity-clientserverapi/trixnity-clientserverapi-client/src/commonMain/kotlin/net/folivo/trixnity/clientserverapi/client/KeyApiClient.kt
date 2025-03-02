@@ -241,7 +241,7 @@ class KeyApiClientImpl(
                 Pair(it.signed.userId, it.signed.deviceId) to json.encodeToJsonElement(it)
             } + signedCrossSigningKeys.associate {
                 Pair(
-                    it.signed.userId, it.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().first().value
+                    it.signed.userId, it.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().first().value.value
                 ) to json.encodeToJsonElement(it)
             }).entries.groupBy { it.key.first }
                 .map { group -> group.key to group.value.associate { it.key.second to it.value } }.toMap()

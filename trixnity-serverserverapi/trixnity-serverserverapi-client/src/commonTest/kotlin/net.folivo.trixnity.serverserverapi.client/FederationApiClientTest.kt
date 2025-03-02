@@ -3,7 +3,6 @@ package net.folivo.trixnity.serverserverapi.client
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
@@ -25,9 +24,7 @@ import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class FederationApiClientTest {
-
     private val pdu: SignedPersistentDataUnit<*> = Signed(
         PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3(
             authEvents = listOf(),
@@ -1774,16 +1771,17 @@ class FederationApiClientTest {
                 UserId("@alice:example.com") to mapOf(
                     "JLAFKJWSCS" to keysOf(
                         Key.SignedCurve25519Key(
-                            "AAAAHg",
-                            "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
-                            mapOf(
+                            id = "AAAAHg",
+                            value = "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                            fallback = true,
+                            signatures = mapOf(
                                 UserId("@alice:example.com") to keysOf(
                                     Key.Ed25519Key(
                                         "JLAFKJWSCS",
                                         "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
                                     )
                                 )
-                            ), true
+                            )
                         )
                     )
                 )

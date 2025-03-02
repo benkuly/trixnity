@@ -30,7 +30,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
@@ -172,7 +172,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
                 ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         mapOf(),
-                        Curve25519Key(null, "")
+                        Curve25519KeyValue("")
                     ), bob
                 ),
                 DecryptedOlmEvent(cancelEvent, bob, keysOf(), alice, keysOf())
@@ -184,7 +184,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     should("send verification step and encrypt it") {
         val encrypted = OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
-            senderKey = Curve25519Key(null, "key")
+            senderKey = Curve25519KeyValue("key")
         )
         olmEncryptionServiceMock.returnEncryptOlm = Result.success(encrypted)
 
@@ -249,7 +249,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
     should("stop lifecycle, when timed out") {
         val encrypted = OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
-            senderKey = Curve25519Key(null, "key")
+            senderKey = Curve25519KeyValue("key")
         )
         olmEncryptionServiceMock.returnEncryptOlm = Result.success(encrypted)
         apiConfig.endpoints {
