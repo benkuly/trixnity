@@ -11,17 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Improved typing of keys to prevent future signing errors
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Fixed wrong signing of one time keys
-
 ### Security
+
+## 4.13.1
+
+### Changed
+
+- Improved typing of keys to prevent future signing errors
+
+### Fixed
+
+- Fixed wrong signing of one time keys leading to unencryptable messages
 
 ## 4.13.0
 
