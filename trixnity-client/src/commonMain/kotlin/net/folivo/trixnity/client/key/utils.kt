@@ -47,7 +47,7 @@ internal suspend inline fun KeyStore.getCrossSigningKey(
     keyId: String,
 ): StoredCrossSigningKeys? {
     return this.getCrossSigningKeys(userId).first()?.find { keys ->
-        keys.value.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().any { it.keyId == keyId }
+        keys.value.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().any { it.id == keyId }
     }
 }
 

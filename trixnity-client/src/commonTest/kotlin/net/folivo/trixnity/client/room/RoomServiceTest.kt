@@ -117,7 +117,7 @@ class RoomServiceTest : ShouldSpec({
         val session = "SESSION"
         val senderKey = Key.Curve25519Key(null, "senderKey")
         val encryptedEventContent = MegolmEncryptedMessageEventContent(
-            "ciphertext", senderKey, "SENDER", session
+            "ciphertext", senderKey.value, "SENDER", session
         )
         val encryptedTimelineEvent = TimelineEvent(
             event = MessageEvent(

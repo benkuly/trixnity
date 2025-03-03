@@ -44,6 +44,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.ThumbnailInfo
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.CustomErrorResponse
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -91,7 +92,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             roomOutboxMessageStore,
             defaultOutboxMessageMediaUploaderMappings,
             CurrentSyncState(currentSyncState),
-            UserInfo(UserId("user", "server"), "device", Key.Ed25519Key(value = ""), Key.Curve25519Key(value = "")),
+            UserInfo(UserId("user", "server"), "device", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
             TransactionManagerMock(),
             Clock.System,
         )
@@ -182,7 +183,7 @@ class OutboxMessageEventHandlerTest : ShouldSpec({
             val megolmEventContent =
                 MegolmEncryptedMessageEventContent(
                     "cipher",
-                    Key.Curve25519Key(null, "key"),
+                    Curve25519KeyValue("key"),
                     "device",
                     "session"
                 )

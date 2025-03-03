@@ -17,6 +17,7 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 import net.folivo.trixnity.core.model.keys.keysOf
 
@@ -141,14 +142,14 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                cut.findDeviceKeys(alice, Key.Curve25519Key(null, "key")) shouldBe deviceKeys
+                cut.findDeviceKeys(alice, Curve25519KeyValue("key")) shouldBe deviceKeys
             }
         }
         context("device key is not present") {
             should("fetch and return device key when found") {
                 val deviceKeys = DeviceKeys(alice, aliceDevice, setOf(), keysOf(Key.Curve25519Key(null, "key")))
 
-                val result = async { cut.findDeviceKeys(alice, Key.Curve25519Key(null, "key")) }
+                val result = async { cut.findDeviceKeys(alice, Curve25519KeyValue("key")) }
                 keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                 keyStore.updateDeviceKeys(alice) {
                     mapOf(
@@ -162,7 +163,7 @@ private val body: ShouldSpec.() -> Unit = {
                 result.await() shouldBe deviceKeys
             }
             should("return null when no device key found") {
-                val result = async { cut.findDeviceKeys(alice, Key.Curve25519Key(null, "key")) }
+                val result = async { cut.findDeviceKeys(alice, Curve25519KeyValue("key")) }
                 keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
                 keyStore.updateOutdatedKeys { setOf() }
                 result.await() shouldBe null

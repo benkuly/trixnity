@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContentSerializer
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Unknown
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,7 +22,7 @@ class EncryptedMessageEventContentSerializerTest {
         val result = json.encodeToString(
             EncryptedMessageEventContentSerializer,
             MegolmEncryptedMessageEventContent(
-                senderKey = Key.Curve25519Key("", "<sender_curve25519_key>"),
+                senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
                 ciphertext = "<encrypted_payload_base_64>",
@@ -63,7 +63,7 @@ class EncryptedMessageEventContentSerializerTest {
         val result = json.decodeFromString<EncryptedMessageEventContent>(input)
         assertEquals(
             MegolmEncryptedMessageEventContent(
-                senderKey = Key.Curve25519Key(null, "<sender_curve25519_key>"),
+                senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
                 ciphertext = "<encrypted_payload_base_64>",

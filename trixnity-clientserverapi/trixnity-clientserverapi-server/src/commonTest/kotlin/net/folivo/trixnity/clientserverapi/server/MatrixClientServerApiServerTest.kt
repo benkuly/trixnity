@@ -12,8 +12,8 @@ import io.ktor.http.HttpHeaders.AccessControlAllowOrigin
 import io.ktor.http.HttpHeaders.AccessControlRequestMethod
 import io.ktor.http.HttpHeaders.Origin
 import io.ktor.http.HttpStatusCode.Companion.OK
-import io.ktor.server.auth.*
 import io.ktor.server.testing.*
+import net.folivo.trixnity.core.model.UserId
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -35,7 +35,10 @@ class MatrixClientServerApiServerTest {
             matrixClientServerApiServer(
                 accessTokenAuthenticationFunction = {
                     AccessTokenAuthenticationFunctionResult(
-                        UserIdPrincipal("user"),
+                        MatrixClientPrincipal(
+                            UserId("user", "server"),
+                            "deviceId"
+                        ),
                         null
                     )
                 },

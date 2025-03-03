@@ -41,7 +41,7 @@ class MatrixSignatureAuthPlugin(
             )
             context.header(
                 HttpHeaders.Authorization,
-                """X-Matrix origin="$hostname",destination="$destination",key="${signature.algorithm.name}:${signature.keyId}",sig="${signature.value}""""
+                """X-Matrix origin="$hostname",destination="$destination",key="${signature.algorithm.name}:${signature.id}",sig="${signature.value.value}""""
             )
         }
     }

@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 
 @Serializable(with = RoomKeyBackupSessionDataSerializer::class)
 sealed interface RoomKeyBackupSessionData {
@@ -21,11 +22,11 @@ sealed interface RoomKeyBackupSessionData {
         @Serializable
         data class RoomKeyBackupV1SessionData(
             @SerialName("sender_key")
-            val senderKey: Key.Curve25519Key,
+            val senderKey: Curve25519KeyValue,
             @SerialName("forwarding_curve25519_key_chain")
-            val forwardingKeyChain: List<Key.Curve25519Key> = listOf(),
+            val forwardingKeyChain: List<Curve25519KeyValue> = listOf(),
             @SerialName("sender_claimed_keys")
-            val senderClaimedKeys: Map<String, String>,
+            val senderClaimedKeys: Keys,
             @SerialName("session_key")
             val sessionKey: String,
             @SerialName("algorithm")

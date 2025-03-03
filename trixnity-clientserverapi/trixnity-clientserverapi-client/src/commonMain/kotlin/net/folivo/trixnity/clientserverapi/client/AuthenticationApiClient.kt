@@ -251,7 +251,7 @@ class AuthenticationApiClientImpl(
                 initialDeviceDisplayName = initialDeviceDisplayName,
                 inhibitLogin = inhibitLogin,
                 refreshToken = refreshToken,
-                type = if (isAppservice) "m.login.application_service" else null
+                type = if (isAppservice) LoginType.AppService else null
             )
         )
 

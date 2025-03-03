@@ -25,6 +25,7 @@ import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
@@ -86,7 +87,7 @@ private val body: ShouldSpec.() -> Unit = {
     val encryptedEvent = ToDeviceEvent(
         OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
-            senderKey = Key.Curve25519Key(null, "")
+            senderKey = Curve25519KeyValue("")
         ), bob
     )
 
@@ -112,15 +113,15 @@ private val body: ShouldSpec.() -> Unit = {
             olmEncryptionServiceMock.returnEncryptOlm = Result.success(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(),
-                    senderKey = Key.Curve25519Key("", "")
+                    senderKey = Curve25519KeyValue("")
                 )
             )
             olmStore.updateInboundMegolmSession(sessionId, room) {
                 freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
                     freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                         StoredInboundMegolmSession(
-                            senderKey = senderKey,
-                            senderSigningKey = senderSigningKey,
+                            senderKey = senderKey.value,
+                            senderSigningKey = senderSigningKey.value,
                             sessionId = sessionId,
                             roomId = room,
                             firstKnownIndex = inboundSession.firstKnownIndex,
@@ -224,15 +225,15 @@ private val body: ShouldSpec.() -> Unit = {
             olmEncryptionServiceMock.returnEncryptOlm = Result.success(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(),
-                    senderKey = Key.Curve25519Key("", "")
+                    senderKey = Curve25519KeyValue("")
                 )
             )
             olmStore.updateInboundMegolmSession(sessionId, room) {
                 freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
                     freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                         StoredInboundMegolmSession(
-                            senderKey = senderKey,
-                            senderSigningKey = senderSigningKey,
+                            senderKey = senderKey.value,
+                            senderSigningKey = senderSigningKey.value,
                             sessionId = sessionId,
                             roomId = room,
                             firstKnownIndex = inboundSession.firstKnownIndex,

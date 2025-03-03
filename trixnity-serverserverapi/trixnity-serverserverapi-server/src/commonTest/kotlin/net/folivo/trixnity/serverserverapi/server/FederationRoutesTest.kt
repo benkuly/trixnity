@@ -1709,9 +1709,10 @@ class FederationRoutesTest {
                         UserId("@alice:example.com") to mapOf(
                             "JLAFKJWSCS" to keysOf(
                                 Key.SignedCurve25519Key(
-                                    "AAAAHg",
-                                    "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
-                                    mapOf(
+                                    id = "AAAAHg",
+                                    value = "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                                    fallback = true,
+                                    signatures = mapOf(
                                         UserId("@alice:example.com") to keysOf(
                                             Ed25519Key(
                                                 "JLAFKJWSCS",
@@ -1719,7 +1720,6 @@ class FederationRoutesTest {
                                             )
                                         )
                                     ),
-                                    true,
                                 )
                             )
                         )

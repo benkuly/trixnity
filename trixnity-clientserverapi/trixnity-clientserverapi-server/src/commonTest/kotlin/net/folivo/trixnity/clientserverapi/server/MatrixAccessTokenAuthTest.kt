@@ -20,6 +20,7 @@ import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.Test
@@ -27,11 +28,12 @@ import kotlin.test.Test
 class MatrixAccessTokenAuthTest {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
+    private val principal = MatrixClientPrincipal(UserId("user", "server"), "deviceId")
 
     private fun ApplicationTestBuilder.testEndpoint(
-        authenticationFunction: AccessTokenAuthenticationFunction = {
+        authenticationFunction: AccessTokenAuthenticationFunction = AccessTokenAuthenticationFunction {
             it.accessToken shouldBe "accessToken"
-            AccessTokenAuthenticationFunctionResult(UserIdPrincipal("dino"), null)
+            AccessTokenAuthenticationFunctionResult(principal, null)
         }
     ) {
         application {
@@ -110,14 +112,14 @@ class MatrixAccessTokenAuthTest {
                 json(json)
             }
             installMatrixAccessTokenAuth {
-                this.authenticationFunction = {
-                    AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
+                this.authenticationFunction = AccessTokenAuthenticationFunction {
+                    AccessTokenAuthenticationFunctionResult(principal, null)
                 }
             }
             routing {
                 authenticate {
                     get("/test") {
-                        call.principal<UserIdPrincipal>() shouldBe UserIdPrincipal("user")
+                        call.matrixClientPrincipal() shouldBe principal
                         call.respond(HttpStatusCode.OK)
                     }
                 }
@@ -151,8 +153,13 @@ class MatrixAccessTokenAuthTest {
             }
             install(Resources)
             installMatrixAccessTokenAuth {
-                this.authenticationFunction = {
-                    AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
+                this.authenticationFunction = AccessTokenAuthenticationFunction {
+                    AccessTokenAuthenticationFunctionResult(
+                        MatrixClientPrincipal(
+                            UserId("user", "server"),
+                            "deviceId"
+                        ), null
+                    )
                 }
             }
             routing {
@@ -174,8 +181,13 @@ class MatrixAccessTokenAuthTest {
             }
             install(Resources)
             installMatrixAccessTokenAuth {
-                this.authenticationFunction = {
-                    AccessTokenAuthenticationFunctionResult(null, null)
+                this.authenticationFunction = AccessTokenAuthenticationFunction {
+                    AccessTokenAuthenticationFunctionResult(
+                        MatrixClientPrincipal(
+                            UserId("user", "server"),
+                            "deviceId"
+                        ), null
+                    )
                 }
             }
             routing {
@@ -191,33 +203,38 @@ class MatrixAccessTokenAuthTest {
 
     @Test
     fun shouldAuthenticateWhenResourceOptionallyAllowsIt() = testApplication {
-        var username: String? = null
+        var observedPrincipal: MatrixClientPrincipal? = null
         application {
             install(ContentNegotiation) {
                 json(json)
             }
             install(Resources)
             installMatrixAccessTokenAuth {
-                this.authenticationFunction = {
+                this.authenticationFunction = AccessTokenAuthenticationFunction {
                     it.accessToken shouldBe "accessToken"
-                    AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null)
+                    AccessTokenAuthenticationFunctionResult(
+                        MatrixClientPrincipal(
+                            UserId("user", "server"),
+                            "deviceId"
+                        ), null
+                    )
                 }
             }
             routing {
                 authenticate {
                     matrixEndpoint<GetResourceWithOptionalAuth, Unit, Unit>(json, mapping) {
-                        username = call.authentication.principal<UserIdPrincipal>()?.name
+                        observedPrincipal = call.principal<MatrixClientPrincipal>()
                         call.respond(HttpStatusCode.OK)
                     }
                 }
             }
         }
         client.get("/get").status shouldBe HttpStatusCode.OK
-        username shouldBe null
+        observedPrincipal shouldBe null
 
         client.get("/get") {
             header(HttpHeaders.Authorization, "Bearer accessToken")
         }.status shouldBe HttpStatusCode.OK
-        username shouldBe "user"
+        observedPrincipal shouldBe principal
     }
 }

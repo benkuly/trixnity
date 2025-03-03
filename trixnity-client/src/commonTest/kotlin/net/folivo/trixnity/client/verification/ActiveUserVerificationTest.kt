@@ -33,7 +33,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRead
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.time.Duration.Companion.minutes
 
@@ -155,7 +155,7 @@ class ActiveUserVerificationTest : ShouldSpec({
                 event = MessageEvent(
                     MegolmEncryptedMessageEventContent(
                         "cipher",
-                        Curve25519Key(null, ""),
+                        Curve25519KeyValue(""),
                         bobDevice,
                         "session"
                     ),
@@ -169,7 +169,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             MutableStateFlow( // ignore event, that is no VerificationStep
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(RoomMessageEventContent.TextBased.Text("hi")),
@@ -179,7 +179,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             MutableStateFlow( // ignore own event
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), alice, roomId, 1234
                     ),
                     content = Result.success(VerificationCancelEventContent(MismatchedSas, "", relatesTo, null)),
@@ -189,7 +189,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             MutableStateFlow( // ignore event with other relates to
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(
@@ -210,7 +210,7 @@ class ActiveUserVerificationTest : ShouldSpec({
         delay(500)
         cancelFlow.value = TimelineEvent(
             event = MessageEvent(
-                MegolmEncryptedMessageEventContent("cipher", Curve25519Key(null, ""), bobDevice, "session"),
+                MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
                 EventId("$2"), bob, roomId, 1234
             ),
             content = Result.success(cancelEvent),

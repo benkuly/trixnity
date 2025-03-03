@@ -8,7 +8,6 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.json.buildJsonObject
@@ -35,7 +34,14 @@ class PushRoutesTest {
     private fun ApplicationTestBuilder.initCut() {
         application {
             installMatrixAccessTokenAuth {
-                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
+                authenticationFunction = AccessTokenAuthenticationFunction {
+                    AccessTokenAuthenticationFunctionResult(
+                        MatrixClientPrincipal(
+                            UserId("user", "server"),
+                            "deviceId"
+                        ), null
+                    )
+                }
             }
             matrixApiServer(json) {
                 pushApiRoutes(handlerMock, json, mapping)

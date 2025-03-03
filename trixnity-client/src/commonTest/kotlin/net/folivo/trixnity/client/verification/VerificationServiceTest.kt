@@ -52,6 +52,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -215,7 +216,7 @@ private val body: ShouldSpec.() -> Unit = {
                 val request = VerificationRequestToDeviceEventContent(bobDeviceId, setOf(Sas), 1111, "transaction1")
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
-                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")), bobUserId),
                         DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
@@ -230,7 +231,7 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
-                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")), bobUserId),
                         DecryptedOlmEvent(request, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
@@ -258,13 +259,13 @@ private val body: ShouldSpec.() -> Unit = {
                 )
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
-                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")), bobUserId),
                         DecryptedOlmEvent(request1, bobUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )
                 olmDecrypterMock.eventSubscribers.first().first()(
                     DecryptedOlmEventContainer(
-                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519Key(null, "")), bobUserId),
+                        ToDeviceEvent(OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")), bobUserId),
                         DecryptedOlmEvent(request2, aliceUserId, keysOf(), aliceUserId, keysOf())
                     )
                 )

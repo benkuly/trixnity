@@ -5,13 +5,13 @@ import com.juul.indexeddb.VersionChangeTransaction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 
 internal class IndexedDBOlmSessionRepository(
     json: Json
 ) : OlmSessionRepository,
-    IndexedDBFullRepository<Key.Curve25519Key, Set<StoredOlmSession>>(
+    IndexedDBFullRepository<Curve25519KeyValue, Set<StoredOlmSession>>(
         objectStoreName = objectStoreName,
         keySerializer = { arrayOf(it.value) },
         valueSerializer = serializer(),

@@ -429,9 +429,9 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.getKeyChainLinksBySigningKey(alice, Ed25519Key("ALICE_MSK", "...")) shouldBe setOf(
                     KeyChainLink(
                         signingUserId = alice,
-                        signingKey = Ed25519Key(keyId = "ALICE_MSK", value = "..."),
+                        signingKey = Ed25519Key(id = "ALICE_MSK", value = "..."),
                         signedUserId = alice,
-                        signedKey = Ed25519Key(keyId = "ALICE_USK", value = "...")
+                        signedKey = Ed25519Key(id = "ALICE_USK", value = "...")
                     )
                 )
             }
@@ -443,9 +443,9 @@ private val body: ShouldSpec.() -> Unit = {
                 keyStore.getKeyChainLinksBySigningKey(alice, Ed25519Key("ALICE_MSK", "...")) shouldBe setOf(
                     KeyChainLink(
                         signingUserId = alice,
-                        signingKey = Ed25519Key(keyId = "ALICE_MSK", value = "..."),
+                        signingKey = Ed25519Key(id = "ALICE_MSK", value = "..."),
                         signedUserId = alice,
-                        signedKey = Ed25519Key(keyId = "ALICE_USK", value = "...")
+                        signedKey = Ed25519Key(id = "ALICE_USK", value = "...")
                     )
                 )
             }
@@ -581,16 +581,16 @@ private val body: ShouldSpec.() -> Unit = {
                     mapOf(
                         alice to mapOf(
                             "AAAAAA" to json.encodeToJsonElement(ownAccountsDeviceKey),
-                            ownMasterEdKey.value to json.encodeToJsonElement(ownMasterKey)
+                            ownMasterEdKey.value.value to json.encodeToJsonElement(ownMasterKey)
                         )
                     )
                     )
             keyStore.getKeyVerificationState(ownAccountsDeviceEdKey)
-                .shouldBe(Verified(ownAccountsDeviceEdKey.value))
+                .shouldBe(Verified(ownAccountsDeviceEdKey.value.value))
             keyStore.getKeyVerificationState(ownMasterEdKey)
-                .shouldBe(Verified(ownMasterEdKey.value))
+                .shouldBe(Verified(ownMasterEdKey.value.value))
             keyStore.getKeyVerificationState(otherCrossSigningEdKey)
-                .shouldBe(Verified(otherCrossSigningEdKey.value))
+                .shouldBe(Verified(otherCrossSigningEdKey.value.value))
         }
         should("handle others account keys") {
             var addSignaturesRequest: Map<UserId, Map<String, JsonElement>>? = null
@@ -650,14 +650,14 @@ private val body: ShouldSpec.() -> Unit = {
             addSignaturesRequest shouldBe (
                     mapOf(
                         bob to mapOf(
-                            othersMasterEdKey.value to json.encodeToJsonElement(othersMasterKey)
+                            othersMasterEdKey.value.value to json.encodeToJsonElement(othersMasterKey)
                         )
                     )
                     )
             keyStore.getKeyVerificationState(othersDeviceEdKey)
-                .shouldBe(Verified(othersDeviceEdKey.value))
+                .shouldBe(Verified(othersDeviceEdKey.value.value))
             keyStore.getKeyVerificationState(othersMasterEdKey)
-                .shouldBe(Verified(othersMasterEdKey.value))
+                .shouldBe(Verified(othersMasterEdKey.value.value))
         }
         should("throw exception, when signature upload fails") {
             apiConfig.endpoints {
@@ -705,7 +705,7 @@ private val body: ShouldSpec.() -> Unit = {
             }
 
             keyStore.getKeyVerificationState(ownAccountsDeviceEdKey)
-                .shouldBe(Verified(ownAccountsDeviceEdKey.value))
+                .shouldBe(Verified(ownAccountsDeviceEdKey.value.value))
         }
     }
 }

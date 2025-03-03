@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
 import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm.Curve25519
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm.SignedCurve25519
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
@@ -127,7 +128,7 @@ class KeysApiClientTest {
             oneTimeKeys = keysOf(
                 Curve25519Key("AAAAAQ", "/qyvZvwjiTxGdGU0RCguDCLeR+nmsb3FfNG3/Ve4vU8"),
                 SignedCurve25519Key(
-                    "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs", mapOf(
+                    "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs", signatures = mapOf(
                         UserId("alice", "example.com") to keysOf(
                             Ed25519Key(
                                 "JLAFKJWSCS",
@@ -137,7 +138,7 @@ class KeysApiClientTest {
                     )
                 ),
                 SignedCurve25519Key(
-                    "AAAAHQ", "j3fR3HemM16M7CWhoI4Sk5ZsdmdfQHsKL1xuSft6MSw", mapOf(
+                    "AAAAHQ", "j3fR3HemM16M7CWhoI4Sk5ZsdmdfQHsKL1xuSft6MSw", signatures = mapOf(
                         UserId("alice", "example.com") to keysOf(
                             Ed25519Key(
                                 "JLAFKJWSCS",
@@ -149,14 +150,14 @@ class KeysApiClientTest {
             ),
             fallbackKeys = keysOf(
                 SignedCurve25519Key(
-                    "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs", mapOf(
+                    "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs", true, mapOf(
                         UserId("alice", "example.com") to keysOf(
                             Ed25519Key(
                                 "JLAFKJWSCS",
                                 "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
                             )
                         )
-                    ), true
+                    )
                 )
             )
         ).getOrThrow()
@@ -1267,7 +1268,7 @@ class KeysApiClientTest {
             .shouldBe(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                        publicKey = Curve25519Key(value = "abcdefg"),
+                        publicKey = Curve25519KeyValue("abcdefg"),
                         signatures = mapOf(
                             UserId("@alice:example.org") to keysOf(Ed25519Key("deviceid", "signature"))
                         )
@@ -1318,7 +1319,7 @@ class KeysApiClientTest {
             .shouldBe(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                        publicKey = Curve25519Key(value = "abcdefg"),
+                        publicKey = Curve25519KeyValue("abcdefg"),
                         signatures = mapOf(
                             UserId("@alice:example.org") to keysOf(Ed25519Key("deviceid", "signature"))
                         )
@@ -1371,7 +1372,7 @@ class KeysApiClientTest {
         matrixRestClient.key.setRoomKeysVersion(
             SetRoomKeyBackupVersionRequest.V1(
                 authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                    publicKey = Curve25519Key(value = "abcdefg"),
+                    publicKey = Curve25519KeyValue("abcdefg"),
                     signatures = mapOf(
                         UserId("@alice:example.org") to keysOf(Ed25519Key("deviceid", "signature"))
                     )
@@ -1418,7 +1419,7 @@ class KeysApiClientTest {
         matrixRestClient.key.setRoomKeysVersion(
             SetRoomKeyBackupVersionRequest.V1(
                 authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                    publicKey = Curve25519Key(value = "abcdefg"),
+                    publicKey = Curve25519KeyValue("abcdefg"),
                     signatures = mapOf(
                         UserId("@alice:example.org") to keysOf(Ed25519Key("deviceid", "signature"))
                     )

@@ -309,7 +309,7 @@ class KeyServiceImpl(
                         megolmSession.isTrusted.not() -> flowOf(DeviceTrustLevel.NotTrusted)
                         else -> {
                             val deviceId =
-                                deviceKeys.values.find { it.value.signed.keys.keys.contains(megolmSession.senderKey) }
+                                deviceKeys.values.find { it.value.signed.keys.keys.any { it.value == megolmSession.senderKey } }
                                     ?.value?.signed?.deviceId
                             if (deviceId != null) getTrustLevel(event.sender, deviceId)
                             else flowOf(DeviceTrustLevel.Invalid("could not find device id"))

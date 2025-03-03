@@ -6,7 +6,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import org.koin.core.Koin
 
@@ -20,8 +20,8 @@ fun ShouldSpec.olmSessionRepositoryTest(diReceiver: () -> Koin) {
         rtm = di.get()
     }
     should("olmSessionRepositoryTest: save, get and delete") {
-        val key1 = Curve25519Key(null, "curve1")
-        val key2 = Curve25519Key(null, "curve2")
+        val key1 = Curve25519KeyValue("curve1")
+        val key2 = Curve25519KeyValue("curve2")
         val session1 =
             StoredOlmSession(key1, "session1", fromEpochMilliseconds(1234), fromEpochMilliseconds(1234), pickled = "1")
         val session2 =

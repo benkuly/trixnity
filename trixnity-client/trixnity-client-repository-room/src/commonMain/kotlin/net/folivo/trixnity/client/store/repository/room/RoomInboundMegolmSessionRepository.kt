@@ -1,12 +1,12 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.*
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepository
 import net.folivo.trixnity.client.store.repository.InboundMegolmSessionRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 @Entity(
@@ -89,13 +89,13 @@ internal class RoomInboundMegolmSessionRepository(
 
     private fun RoomInboundMegolmSession.toModel(): StoredInboundMegolmSession =
         StoredInboundMegolmSession(
-            senderKey = Key.Curve25519Key(keyId = null, senderKey),
+            senderKey = Curve25519KeyValue(senderKey),
             sessionId = sessionId,
             roomId = roomId,
             firstKnownIndex = firstKnownIndex,
             hasBeenBackedUp = hasBeenBackedUp,
             isTrusted = isTrusted,
-            senderSigningKey = Key.Ed25519Key(keyId = null, senderSigningKey),
+            senderSigningKey = KeyValue.Ed25519KeyValue(senderSigningKey),
             forwardingCurve25519KeyChain = json.decodeFromString(forwardingCurve25519KeyChain),
             pickled = pickled
         )

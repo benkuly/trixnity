@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.mocks.OlmEncryptionServiceMock
 
@@ -34,7 +34,7 @@ class OlmDecrypterTest : ShouldSpec({
 
     should("ignore exceptions") {
         val event = ToDeviceEvent(
-            OlmEncryptedToDeviceEventContent(mapOf(), Key.Curve25519Key(null, "")),
+            OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")),
             UserId("sender", "server")
         )
         olmEncryptionServiceMock.decryptOlm = Result.failure(OlmEncryptionService.DecryptOlmError.ValidationFailed(""))
@@ -43,7 +43,7 @@ class OlmDecrypterTest : ShouldSpec({
     }
     should("emit decrypted events") {
         val event = ToDeviceEvent(
-            OlmEncryptedToDeviceEventContent(mapOf(), Key.Curve25519Key(null, "")),
+            OlmEncryptedToDeviceEventContent(mapOf(), Curve25519KeyValue("")),
             UserId("sender", "server")
         )
         val decryptedEvent = DecryptedOlmEvent(

@@ -19,7 +19,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.*
@@ -39,6 +38,8 @@ import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData.RoomKeyBackupV1AuthData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
@@ -113,7 +114,7 @@ private val body: ShouldSpec.() -> Unit = {
         olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
         val defaultVersion = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
-                publicKey = Curve25519Key(null, keyBackupPublicKey),
+                publicKey = Curve25519KeyValue(keyBackupPublicKey),
                 signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
             ),
             count = 1,
@@ -144,7 +145,7 @@ private val body: ShouldSpec.() -> Unit = {
             currentSyncState.value = RUNNING
             keyVersion = GetRoomKeysBackupVersionResponse.V1(
                 authData = RoomKeyBackupV1AuthData(
-                    publicKey = Curve25519Key(null, validKeyBackupPublicKey),
+                    publicKey = Curve25519KeyValue(validKeyBackupPublicKey),
                     signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
                 ),
                 count = 1,
@@ -222,7 +223,7 @@ private val body: ShouldSpec.() -> Unit = {
                         setRoomKeyBackupVersionCalled = true
                         it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                         it.version shouldBe "1"
-                        it.authData.publicKey shouldBe Curve25519Key(null, validKeyBackupPublicKey)
+                        it.authData.publicKey shouldBe Curve25519KeyValue(validKeyBackupPublicKey)
                         it.authData.signatures shouldBe mapOf(
                             ownUserId to keysOf(
                                 Ed25519Key("DEV", "s24"),
@@ -259,7 +260,7 @@ private val body: ShouldSpec.() -> Unit = {
                         setRoomKeyBackupVersionCalled = true
                         it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                         it.version shouldBe "1"
-                        it.authData.publicKey shouldBe Curve25519Key(null, validKeyBackupPublicKey)
+                        it.authData.publicKey shouldBe Curve25519KeyValue(validKeyBackupPublicKey)
                         it.authData.signatures shouldBe mapOf(
                             ownUserId to keysOf(
                                 Ed25519Key("MSK", "s2")
@@ -303,7 +304,7 @@ private val body: ShouldSpec.() -> Unit = {
         val roomId = RoomId("room", "server")
         val sessionId = "sessionId"
         val version = "1"
-        val senderKey = Curve25519Key(null, "senderKey")
+        val senderKey = Curve25519KeyValue("senderKey")
         beforeTest {
             currentSyncState.value = RUNNING
         }
@@ -328,7 +329,7 @@ private val body: ShouldSpec.() -> Unit = {
                     val e = it.encrypt(
                         json.encodeToString(
                             RoomKeyBackupV1SessionData(
-                                senderKey, listOf(), mapOf(KeyAlgorithm.Ed25519.name to "edKey"), sessionKey
+                                senderKey, listOf(), Keys(Ed25519Key(null, "edKey")), sessionKey
                             )
                         )
                     )
@@ -356,7 +357,7 @@ private val body: ShouldSpec.() -> Unit = {
                         firstKnownIndex = 24,
                         hasBeenBackedUp = true,
                         isTrusted = true,
-                        senderSigningKey = Ed25519Key(null, "edKey"),
+                        senderSigningKey = Ed25519KeyValue("edKey"),
                         forwardingCurve25519KeyChain = listOf(),
                         pickled = "pickle"
                     )
@@ -388,7 +389,7 @@ private val body: ShouldSpec.() -> Unit = {
                         firstKnownIndex = 0,
                         hasBeenBackedUp = true,
                         isTrusted = true,
-                        senderSigningKey = Ed25519Key(null, "key"),
+                        senderSigningKey = Ed25519KeyValue("key"),
                         forwardingCurve25519KeyChain = listOf(),
                         pickled = "pickle"
                     )
@@ -488,7 +489,7 @@ private val body: ShouldSpec.() -> Unit = {
                 matrixJsonEndpoint(GetRoomKeyBackupVersionByVersion("1")) {
                     GetRoomKeysBackupVersionResponse.V1(
                         authData = RoomKeyBackupV1AuthData(
-                            publicKey = Curve25519Key(null, "keyBackupPublicKey"),
+                            publicKey = Curve25519KeyValue("keyBackupPublicKey"),
                         ),
                         count = 1,
                         etag = "etag",
@@ -532,25 +533,25 @@ private val body: ShouldSpec.() -> Unit = {
             freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.pickle("") }
         }
         val session1 = StoredInboundMegolmSession(
-            senderKey = Curve25519Key(null, "curve1"),
+            senderKey = Curve25519KeyValue("curve1"),
             sessionId = sessionId1,
             roomId = room1,
             firstKnownIndex = 2,
             hasBeenBackedUp = false,
             isTrusted = true,
-            senderSigningKey = Ed25519Key(null, "ed1"),
+            senderSigningKey = Ed25519KeyValue("ed1"),
             forwardingCurve25519KeyChain = listOf(),
             pickled = pickle1
         )
         val session2 = StoredInboundMegolmSession(
-            senderKey = Curve25519Key(null, "curve2"),
+            senderKey = Curve25519KeyValue("curve2"),
             sessionId = sessionId2,
             roomId = room2,
             firstKnownIndex = 4,
             hasBeenBackedUp = false,
             isTrusted = true,
-            senderSigningKey = Ed25519Key(null, "ed2"),
-            forwardingCurve25519KeyChain = listOf(Curve25519Key(null, "curve2")),
+            senderSigningKey = Ed25519KeyValue("ed2"),
+            forwardingCurve25519KeyChain = listOf(Curve25519KeyValue("curve2")),
             pickled = pickle2
         )
         beforeTest {
@@ -653,7 +654,7 @@ private val body: ShouldSpec.() -> Unit = {
                 if (setRoomKeyBackupDataCalled1.value)
                     GetRoomKeysBackupVersionResponse.V1(
                         authData = RoomKeyBackupV1AuthData(
-                            publicKey = Curve25519Key(null, validKeyBackupPublicKey),
+                            publicKey = Curve25519KeyValue(validKeyBackupPublicKey),
                             signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
                         ),
                         count = 1,
@@ -672,7 +673,7 @@ private val body: ShouldSpec.() -> Unit = {
     context(KeyBackupServiceImpl::keyBackupCanBeTrusted.name) {
         fun roomKeyVersion() = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
-                publicKey = Curve25519Key(null, validKeyBackupPublicKey),
+                publicKey = Curve25519KeyValue(validKeyBackupPublicKey),
                 signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEVICE", "s1"), Ed25519Key("MSK", "s2")))
             ),
             count = 1,

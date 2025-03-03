@@ -25,6 +25,8 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService.DecryptMegolmError
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -62,7 +64,7 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
         olmCryptoStore = getInMemoryOlmStore(scope)
         keyBackupServiceMock = KeyBackupServiceMock()
         keyBackupServiceMock.version.value = GetRoomKeysBackupVersionResponse.V1(
-            RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Key.Curve25519Key(null, "")),
+            RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Curve25519KeyValue("")),
             1, "", ""
         )
         olmEncyptionServiceMock = OlmEncryptionServiceMock()
@@ -109,7 +111,7 @@ class MegolmRoomEventDecryptionServiceTest : ShouldSpec({
         val session = "SESSION"
         val senderKey = Key.Curve25519Key(null, "senderKey")
         val storedSession = StoredInboundMegolmSession(
-            senderKey, Key.Ed25519Key(null, "ed"), session, room, 1, hasBeenBackedUp = false, isTrusted = false,
+            senderKey.value, Ed25519KeyValue("ed"), session, room, 1, hasBeenBackedUp = false, isTrusted = false,
             forwardingCurve25519KeyChain = listOf(), pickled = "pickle"
         )
         val encryptedEvent = MessageEvent(

@@ -7,6 +7,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.appservice.ApplicationServiceUserService.UserExistingState.CAN_BE_CREATED
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 import net.folivo.trixnity.clientserverapi.model.authentication.Register
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.clientserverapi.model.users.SetDisplayName
@@ -33,7 +34,7 @@ class ApplicationServiceUserServiceTest {
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(Register()) { requestBody ->
                     assertSoftly(requestBody.request) {
-                        it.type shouldBe "m.login.application_service"
+                        it.type shouldBe LoginType.AppService
                         it.username shouldBe "user"
                     }
                     ResponseWithUIA.Success(Register.Response(userId))

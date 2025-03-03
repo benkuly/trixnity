@@ -8,7 +8,6 @@ import io.kotest.matchers.shouldBe
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.json.JsonArray
@@ -21,6 +20,7 @@ import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import kotlin.test.BeforeTest
@@ -36,7 +36,14 @@ class KeysRoutesTest {
     private fun ApplicationTestBuilder.initCut() {
         application {
             installMatrixAccessTokenAuth {
-                authenticationFunction = { AccessTokenAuthenticationFunctionResult(UserIdPrincipal("user"), null) }
+                authenticationFunction = AccessTokenAuthenticationFunction {
+                    AccessTokenAuthenticationFunctionResult(
+                        MatrixClientPrincipal(
+                            UserId("user", "server"),
+                            "deviceId"
+                        ), null
+                    )
+                }
             }
             matrixApiServer(json) {
                 keysApiRoutes(handlerMock, json, mapping)
@@ -150,7 +157,7 @@ class KeysRoutesTest {
                         Key.Curve25519Key("AAAAAQ", "/qyvZvwjiTxGdGU0RCguDCLeR+nmsb3FfNG3/Ve4vU8"),
                         Key.SignedCurve25519Key(
                             "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
-                            mapOf(
+                            signatures = mapOf(
                                 UserId("alice", "example.com") to keysOf(
                                     Key.Ed25519Key(
                                         "JLAFKJWSCS",
@@ -161,7 +168,7 @@ class KeysRoutesTest {
                         ),
                         Key.SignedCurve25519Key(
                             "AAAAHQ", "j3fR3HemM16M7CWhoI4Sk5ZsdmdfQHsKL1xuSft6MSw",
-                            mapOf(
+                            signatures = mapOf(
                                 UserId("alice", "example.com") to keysOf(
                                     Key.Ed25519Key(
                                         "JLAFKJWSCS",
@@ -174,6 +181,7 @@ class KeysRoutesTest {
                     fallbackKeys = keysOf(
                         Key.SignedCurve25519Key(
                             "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                            true,
                             mapOf(
                                 UserId("alice", "example.com") to keysOf(
                                     Key.Ed25519Key(
@@ -182,7 +190,6 @@ class KeysRoutesTest {
                                     )
                                 )
                             ),
-                            true,
                         )
                     ),
                 )
@@ -385,7 +392,7 @@ class KeysRoutesTest {
                                 Key.SignedCurve25519Key(
                                     "AAAAHg",
                                     "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
-                                    mapOf(
+                                    signatures = mapOf(
                                         alice to keysOf(
                                             Key.Ed25519Key(
                                                 "JLAFKJWSCS",
@@ -1178,7 +1185,7 @@ class KeysRoutesTest {
             .returns(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                        publicKey = Key.Curve25519Key(value = "abcdefg"),
+                        publicKey = Curve25519KeyValue("abcdefg"),
                         signatures = mapOf(
                             UserId("@alice:example.org") to keysOf(Key.Ed25519Key("deviceid", "signature"))
                         )
@@ -1223,7 +1230,7 @@ class KeysRoutesTest {
             .returns(
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                        publicKey = Key.Curve25519Key(value = "abcdefg"),
+                        publicKey = Curve25519KeyValue("abcdefg"),
                         signatures = mapOf(
                             UserId("@alice:example.org") to keysOf(Key.Ed25519Key("deviceid", "signature"))
                         )
@@ -1300,7 +1307,7 @@ class KeysRoutesTest {
             handlerMock.setRoomKeyBackupVersion(assert {
                 it.requestBody shouldBe SetRoomKeyBackupVersionRequest.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                        publicKey = Key.Curve25519Key(value = "abcdefg"),
+                        publicKey = Curve25519KeyValue("abcdefg"),
                         signatures = mapOf(
                             UserId("@alice:example.org") to keysOf(Key.Ed25519Key("deviceid", "signature"))
                         )
@@ -1344,7 +1351,7 @@ class KeysRoutesTest {
                 it.endpoint.version shouldBe "1"
                 it.requestBody shouldBe SetRoomKeyBackupVersionRequest.V1(
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                        publicKey = Key.Curve25519Key(value = "abcdefg"),
+                        publicKey = Curve25519KeyValue("abcdefg"),
                         signatures = mapOf(
                             UserId("@alice:example.org") to keysOf(Key.Ed25519Key("deviceid", "signature"))
                         )

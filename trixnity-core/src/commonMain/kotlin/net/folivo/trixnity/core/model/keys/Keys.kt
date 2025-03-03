@@ -4,21 +4,17 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
+import net.folivo.trixnity.core.model.keys.Key.*
+import net.folivo.trixnity.core.model.keys.KeyValue.*
 
-// TODO split into two serializers (so no .copy(keyId=null) anymore)
 @Serializable(with = KeysSerializer::class)
 data class Keys(
     val keys: Set<Key>
-) : Set<Key> {
-    override val size: Int = keys.size
-    override fun contains(element: Key): Boolean = keys.contains(element)
-    override fun containsAll(elements: Collection<Key>): Boolean = keys.containsAll(elements)
-    override fun isEmpty(): Boolean = keys.isEmpty()
-    override fun iterator(): Iterator<Key> = keys.iterator()
+) : Set<Key> by keys {
+    constructor(vararg keys: Key) : this(keys.toSet())
 }
 
 fun keysOf(vararg keys: Key) = Keys(keys.toSet())
@@ -28,28 +24,26 @@ object KeysSerializer : KSerializer<Keys> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         return Keys(
-            jsonObj.map {
-                val algorithm = KeyAlgorithm.of(it.key.substringBefore(":"))
-                val keyId = it.key.substringAfter(":", "")
+            jsonObj.map { (key, value) ->
+                val algorithm = KeyAlgorithm.of(key.substringBefore(":"))
+                val keyId = key.substringAfter(":", "")
                     .let { foundKeyId -> foundKeyId.ifEmpty { null } }
                 when (algorithm) {
-                    KeyAlgorithm.Ed25519 -> Key.Ed25519Key(keyId, it.value.jsonPrimitive.content)
-                    KeyAlgorithm.Curve25519 -> Key.Curve25519Key(keyId, it.value.jsonPrimitive.content)
-                    KeyAlgorithm.SignedCurve25519 -> {
-                        val value = (it.value.jsonObject["key"] as? JsonPrimitive)?.content
-                        val signatures = it.value.jsonObject["signatures"]
-                        val fallback = (it.value.jsonObject["fallback"] as? JsonPrimitive)?.booleanOrNull
-                        requireNotNull(value)
-                        requireNotNull(signatures)
-                        Key.SignedCurve25519Key(keyId, value, decoder.json.decodeFromJsonElement(signatures), fallback)
-                    }
+                    KeyAlgorithm.Ed25519 ->
+                        Ed25519Key(keyId, decoder.json.decodeFromJsonElement<Ed25519KeyValue>(value))
 
-                    is KeyAlgorithm.Unknown -> Key.UnknownKey(
-                        keyId,
-                        decoder.json.encodeToString(it.value),
-                        it.value,
-                        KeyAlgorithm.Unknown(algorithm.name)
-                    )
+                    KeyAlgorithm.Curve25519 ->
+                        Curve25519Key(keyId, decoder.json.decodeFromJsonElement<Curve25519KeyValue>(value))
+
+                    KeyAlgorithm.SignedCurve25519 ->
+                        SignedCurve25519Key(keyId, decoder.json.decodeFromJsonElement<SignedCurve25519KeyValue>(value))
+
+                    is KeyAlgorithm.Unknown ->
+                        UnknownKey(
+                            id = keyId,
+                            value = decoder.json.decodeFromJsonElement<UnknownKeyValue>(value),
+                            algorithm = KeyAlgorithm.Unknown(algorithm.name)
+                        )
                 }
             }.toSet()
         )
@@ -60,21 +54,10 @@ object KeysSerializer : KSerializer<Keys> {
         encoder.encodeJsonElement(
             JsonObject(value.keys.associate { key ->
                 when (key) {
-                    is Key.Ed25519Key ->
-                        key.algorithm.name + (key.keyId?.let { ":$it" } ?: "") to JsonPrimitive(key.value)
-
-                    is Key.Curve25519Key ->
-                        key.algorithm.name + (key.keyId?.let { ":$it" } ?: "") to JsonPrimitive(key.value)
-
-                    is Key.SignedCurve25519Key ->
-                        key.algorithm.name + (key.signed.keyId?.let { ":$it" } ?: "") to
-                                buildJsonObject {
-                                    put("key", JsonPrimitive(key.signed.value))
-                                    key.fallback?.let { put("fallback", JsonPrimitive(it)) }
-                                    put("signatures", encoder.json.encodeToJsonElement(key.signatures))
-                                }
-
-                    is Key.UnknownKey -> "${key.algorithm.name}:${key.keyId}" to key.raw
+                    is Ed25519Key -> key.fullId to encoder.json.encodeToJsonElement(key.value)
+                    is Curve25519Key -> key.fullId to encoder.json.encodeToJsonElement(key.value)
+                    is SignedCurve25519Key -> key.fullId to encoder.json.encodeToJsonElement(key.value)
+                    is Key.UnknownKey -> key.fullId to encoder.json.encodeToJsonElement(key.value)
                 }
             })
         )

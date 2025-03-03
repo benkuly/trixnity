@@ -368,7 +368,7 @@ suspend fun MatrixClient.Companion.loginWith(
 
     val selfSignedDeviceKeys = di.get<SignService>().getSelfSignedDeviceKeys()
     selfSignedDeviceKeys.signed.keys.forEach {
-        keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value))
+        keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value.value))
     }
     val matrixClient = MatrixClientImpl(
         userId = loginInfo.userId,

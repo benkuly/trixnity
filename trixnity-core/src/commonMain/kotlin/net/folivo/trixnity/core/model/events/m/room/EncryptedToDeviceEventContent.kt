@@ -16,7 +16,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mroomencrypted">matrix spec</a>
@@ -30,7 +30,7 @@ sealed interface EncryptedToDeviceEventContent : ToDeviceEventContent {
         @SerialName("ciphertext")
         val ciphertext: Map<String, CiphertextInfo>,
         @SerialName("sender_key")
-        val senderKey: Curve25519Key,
+        val senderKey: Curve25519KeyValue,
     ) : EncryptedToDeviceEventContent {
         @SerialName("algorithm")
         override val algorithm: Olm = Olm

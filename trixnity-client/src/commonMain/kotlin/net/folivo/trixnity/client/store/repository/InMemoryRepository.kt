@@ -11,6 +11,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -79,7 +80,7 @@ class InMemoryOlmForgetFallbackKeyAfterRepository : OlmForgetFallbackKeyAfterRep
     InMemoryMinimalRepository<Long, Instant>()
 
 class InMemoryOlmSessionRepository : OlmSessionRepository,
-    InMemoryMinimalRepository<Key.Curve25519Key, Set<StoredOlmSession>>()
+    InMemoryMinimalRepository<Curve25519KeyValue, Set<StoredOlmSession>>()
 
 class InMemoryInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRepository,
     InMemoryMinimalRepository<InboundMegolmMessageIndexRepositoryKey, StoredInboundMegolmMessageIndex>()

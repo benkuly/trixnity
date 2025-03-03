@@ -22,7 +22,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -284,7 +284,7 @@ class UsersApiClientTest {
                                     CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
                                 )
                             ),
-                            senderKey = Key.Curve25519Key("keyId", "keyValue")
+                            senderKey = Curve25519KeyValue("keyValue")
                         )
                     )
                 ),
@@ -372,7 +372,7 @@ class UsersApiClientTest {
                                 CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
                             )
                         ),
-                        senderKey = Key.Curve25519Key("keyId", "keyValue")
+                        senderKey = Curve25519KeyValue("keyValue")
                     )
                 )
             ),

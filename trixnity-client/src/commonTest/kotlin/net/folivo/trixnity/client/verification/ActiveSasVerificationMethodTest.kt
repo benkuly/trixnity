@@ -622,7 +622,7 @@ class ActiveSasVerificationMethodTest : ShouldSpec({
                 val firstMac = sasMacEventContent.mac.first()
                 cut.handleVerificationStep(
                     sasMacEventContent.copy(
-                        mac = Keys(sasMacEventContent.mac - firstMac + Ed25519Key(firstMac.keyId, "dino"))
+                        mac = Keys(sasMacEventContent.mac - firstMac + Ed25519Key(firstMac.id, "dino"))
                     ), false
                 )
                 val result =

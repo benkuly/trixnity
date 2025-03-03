@@ -344,20 +344,20 @@ class ActiveSasVerificationMethod private constructor(
                 ownUserId.full + ownDeviceId +
                 actualTransactionId
         val theirMacs = theirMac.mac.keys.filterIsInstance<Ed25519Key>()
-        val theirMacIds = theirMacs.mapNotNull { it.fullKeyId }
+        val theirMacIds = theirMacs.mapNotNull { it.fullId }
         val input = theirMacIds.sortedBy { it }.joinToString(",")
         val info = baseInfo + "KEY_IDS"
         log.trace { "create keys mac from input $input and info $info" }
         val keys = calculateMac(input, info)
         if (keys == theirMac.keys) {
             val allKeysOfDevice = keyStore.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
-            val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullKeyId) }
+            val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullId) }
             val containsMismatchedMac = keysToMac.asSequence()
                 .map { keyToMac ->
-                    log.trace { "create key mac from input ${keyToMac.value} and info ${baseInfo + keyToMac.fullKeyId}" }
+                    log.trace { "create key mac from input ${keyToMac.value} and info ${baseInfo + keyToMac.fullId}" }
                     val calculatedMac =
-                        calculateMac(keyToMac.value, baseInfo + keyToMac.fullKeyId)
-                    (calculatedMac == theirMac.mac.find { it.fullKeyId == keyToMac.fullKeyId }?.value).also {
+                        calculateMac(keyToMac.value.value, baseInfo + keyToMac.fullId)
+                    (calculatedMac == theirMac.mac.find { it.fullId == keyToMac.fullId }?.value?.value).also {
                         if (!it) log.warn { "macs from them (${keyToMac}) did not match our calculated ($calculatedMac)" }
                     }
                 }.contains(false)

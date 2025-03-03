@@ -23,11 +23,11 @@ internal class ExposedKeyChainLinkRepository : KeyChainLinkRepository {
     override suspend fun save(keyChainLink: KeyChainLink): Unit = withExposedWrite {
         ExposedKeyChainLink.upsert {
             it[signingUserId] = keyChainLink.signingUserId.full
-            it[signingKeyId] = keyChainLink.signingKey.keyId ?: ""
-            it[signingKeyValue] = keyChainLink.signingKey.value
+            it[signingKeyId] = keyChainLink.signingKey.id ?: ""
+            it[signingKeyValue] = keyChainLink.signingKey.value.value
             it[signedUserId] = keyChainLink.signedUserId.full
-            it[signedKeyId] = keyChainLink.signedKey.keyId ?: ""
-            it[signedKeyValue] = keyChainLink.signedKey.value
+            it[signedKeyId] = keyChainLink.signedKey.id ?: ""
+            it[signedKeyValue] = keyChainLink.signedKey.value.value
         }
     }
 
@@ -35,8 +35,8 @@ internal class ExposedKeyChainLinkRepository : KeyChainLinkRepository {
         withExposedRead {
             ExposedKeyChainLink.selectAll().where {
                 ExposedKeyChainLink.signingUserId.eq(signingUserId.full) and
-                        ExposedKeyChainLink.signingKeyId.eq(signingKey.keyId ?: "") and
-                        ExposedKeyChainLink.signingKeyValue.eq(signingKey.value)
+                        ExposedKeyChainLink.signingKeyId.eq(signingKey.id ?: "") and
+                        ExposedKeyChainLink.signingKeyValue.eq(signingKey.value.value)
             }.map {
                 KeyChainLink(
                     signingUserId = UserId(it[ExposedKeyChainLink.signingUserId]),
@@ -56,8 +56,8 @@ internal class ExposedKeyChainLinkRepository : KeyChainLinkRepository {
     override suspend fun deleteBySignedKey(signedUserId: UserId, signedKey: Key.Ed25519Key): Unit = withExposedWrite {
         ExposedKeyChainLink.deleteWhere {
             ExposedKeyChainLink.signedUserId.eq(signedUserId.full) and
-                    signedKeyId.eq(signedKey.keyId ?: "") and
-                    signedKeyValue.eq(signedKey.value)
+                    signedKeyId.eq(signedKey.id ?: "") and
+                    signedKeyValue.eq(signedKey.value.value)
         }
     }
 

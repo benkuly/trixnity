@@ -13,7 +13,8 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import kotlin.time.Duration.Companion.seconds
 
@@ -60,8 +61,8 @@ class OlmStoreTest : ShouldSpec({
                     sessionId = "session1",
                     roomId = RoomId("room", "server"),
                 ), StoredInboundMegolmSession(
-                    senderKey = Key.Curve25519Key(null, "senderCurve1"),
-                    senderSigningKey = Key.Ed25519Key(null, "senderEd1"),
+                    senderKey = Curve25519KeyValue("senderCurve1"),
+                    senderSigningKey = Ed25519KeyValue("senderEd1"),
                     sessionId = "session1",
                     roomId = RoomId("room", "server"),
                     firstKnownIndex = 1,
@@ -76,8 +77,8 @@ class OlmStoreTest : ShouldSpec({
                     sessionId = "session2",
                     roomId = RoomId("room", "server"),
                 ), StoredInboundMegolmSession(
-                    senderKey = Key.Curve25519Key(null, "senderCurve2"),
-                    senderSigningKey = Key.Ed25519Key(null, "senderEd2"),
+                    senderKey = Curve25519KeyValue("senderCurve2"),
+                    senderSigningKey = Ed25519KeyValue("senderEd2"),
                     sessionId = "session2",
                     roomId = RoomId("room", "server"),
                     firstKnownIndex = 1,
@@ -100,13 +101,13 @@ class OlmStoreTest : ShouldSpec({
     }
     context(OlmCryptoStore::updateInboundMegolmSession.name) {
         val session = StoredInboundMegolmSession(
-            senderKey = Key.Curve25519Key(null, "senderCurve"),
+            senderKey = Curve25519KeyValue("senderCurve"),
             sessionId = "session",
             roomId = RoomId("room", "server"),
             firstKnownIndex = 24,
             hasBeenBackedUp = false,
             isTrusted = true,
-            senderSigningKey = Key.Ed25519Key(null, "edKey"),
+            senderSigningKey = Ed25519KeyValue("edKey"),
             forwardingCurve25519KeyChain = listOf(),
             pickled = "pickle"
         )

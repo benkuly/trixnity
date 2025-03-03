@@ -10,15 +10,16 @@ import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 
 interface OlmStore {
     suspend fun findCurve25519Key(userId: UserId, deviceId: String): Curve25519Key?
     suspend fun findEd25519Key(userId: UserId, deviceId: String): Ed25519Key?
 
-    suspend fun findDeviceKeys(userId: UserId, senderKey: Curve25519Key): DeviceKeys?
+    suspend fun findDeviceKeys(userId: UserId, senderKeyValue: Curve25519KeyValue): DeviceKeys?
 
     suspend fun updateOlmSessions(
-        senderKey: Curve25519Key,
+        senderKeyValue: Curve25519KeyValue,
         updater: suspend (Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
     )
 

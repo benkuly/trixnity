@@ -80,8 +80,8 @@ class UserServiceTest : ShouldSpec({
             loadMembersService = { _, _ -> },
             presenceEventHandler = PresenceEventHandlerImpl(api),
             userInfo = UserInfo(
-                me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(value = ""),
-                Key.Curve25519Key(value = "")
+                me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(null, ""),
+                Key.Curve25519Key(null, "")
             ),
             mappings = DefaultEventContentSerializerMappings,
         )

@@ -42,6 +42,7 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
@@ -99,7 +100,7 @@ private val body: ShouldSpec.() -> Unit = {
     val encryptedEvent = ToDeviceEvent(
         OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
-            senderKey = Key.Curve25519Key(null, "")
+            senderKey = Curve25519KeyValue("")
         ), bob
     )
     context(OutgoingSecretKeyRequestEventHandler::handleOutgoingKeyRequestAnswer.name) {
@@ -156,7 +157,7 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                     else GetRoomKeysBackupVersionResponse.V1(
                         authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
-                            publicKey = Key.Curve25519Key(null, publicKey)
+                            publicKey = Curve25519KeyValue(publicKey)
                         ), 1, "etag", "1"
                     )
                 }

@@ -15,6 +15,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue
 import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.olm.OlmSAS
 
@@ -153,14 +154,14 @@ sealed interface ActiveSasVerificationState {
                     actualTransactionId
             val keysToMac = keyStore.getAllKeysFromUser<Ed25519Key>(ownUserId, ownDeviceId, MasterKey)
             if (keysToMac.isNotEmpty()) {
-                val input = keysToMac.map { it.fullKeyId }.sortedBy { it }.joinToString(",")
+                val input = keysToMac.map { it.fullId }.sortedBy { it }.joinToString(",")
                 val info = baseInfo + "KEY_IDS"
                 log.trace { "create keys mac from input $input and info $info" }
                 val keys = calculateMac(input, info)
                 val macs =
                     keysToMac.map {
-                        log.trace { "create key mac from input $it and info ${baseInfo + it.fullKeyId}" }
-                        it.copy(value = calculateMac(it.value, baseInfo + it.fullKeyId))
+                        log.trace { "create key mac from input $it and info ${baseInfo + it.fullId}" }
+                        it.copy(value = KeyValue.Ed25519KeyValue(calculateMac(it.value.value, baseInfo + it.fullId)))
                     }
                 send(SasMacEventContent(keys, Keys(macs.toSet()), relatesTo, transactionId))
             } else send(

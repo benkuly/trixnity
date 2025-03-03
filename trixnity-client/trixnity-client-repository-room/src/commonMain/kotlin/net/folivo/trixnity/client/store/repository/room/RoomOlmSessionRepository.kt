@@ -1,10 +1,9 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.*
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.repository.OlmSessionRepository
-import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 
 @Entity(tableName = "OlmSession")
@@ -34,12 +33,12 @@ internal class RoomOlmSessionRepository(
 ) : OlmSessionRepository {
     private val dao = db.olmSession()
 
-    override suspend fun get(key: Key.Curve25519Key): Set<StoredOlmSession>? = withRoomRead {
+    override suspend fun get(key: Curve25519KeyValue): Set<StoredOlmSession>? = withRoomRead {
         dao.get(key.value)
             ?.let { entity -> json.decodeFromString(entity.value) }
     }
 
-    override suspend fun save(key: Key.Curve25519Key, value: Set<StoredOlmSession>) = withRoomWrite {
+    override suspend fun save(key: Curve25519KeyValue, value: Set<StoredOlmSession>) = withRoomWrite {
         dao.insert(
             RoomOlmSession(
                 senderKey = key.value,
@@ -48,7 +47,7 @@ internal class RoomOlmSessionRepository(
         )
     }
 
-    override suspend fun delete(key: Key.Curve25519Key) = withRoomWrite {
+    override suspend fun delete(key: Curve25519KeyValue) = withRoomWrite {
         dao.delete(key.value)
     }
 
