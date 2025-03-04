@@ -10,7 +10,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.*
@@ -29,8 +28,6 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.*
-import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
-import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
@@ -503,78 +500,6 @@ class TimelineEventHandlerTest : ShouldSpec({
                             gap("next")
                         }
                     }
-                }
-            }
-        }
-        context("outbox messages") {
-            should("be used to instantly decrypt received encrypted timeline events that have same transaction id") {
-                roomStore.update(room) { Room(roomId = room, lastEventId = event1.id) }
-                roomOutboxMessageStore.update(room, "transactionId1") {
-                    RoomOutboxMessage(
-                        room,
-                        "transactionId1",
-                        RoomMessageEventContent.TextBased.Text("Hello!"),
-                        Clock.System.now()
-                    )
-                }
-                val eventId1 = EventId("\$event1")
-                val eventId2 = EventId("\$event2")
-                val eventId3 = EventId("\$event3")
-                val encryptedEvent1 = MessageEvent(
-                    MegolmEncryptedMessageEventContent(
-                        "foobar",
-                        Curve25519KeyValue("key"),
-                        "deviceId",
-                        "sessionId"
-                    ),
-                    eventId1,
-                    UserId("sender", "server"),
-                    room,
-                    0L,
-                    UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transactionId1")
-                )
-                val encryptedEvent2 = MessageEvent(
-                    MegolmEncryptedMessageEventContent(
-                        "barfoo",
-                        Curve25519KeyValue("key"),
-                        "deviceId",
-                        "sessionId"
-                    ),
-                    eventId2,
-                    UserId("other", "server"),
-                    room,
-                    10L,
-                    UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transactionId2")
-                )
-                val encryptedEvent3 = MessageEvent(
-                    MegolmEncryptedMessageEventContent(
-                        "foo",
-                        Curve25519KeyValue("key"),
-                        "deviceId",
-                        "sessionId"
-                    ),
-                    eventId3,
-                    UserId("sender", "server"),
-                    room,
-                    20L,
-                    UnsignedRoomEventData.UnsignedMessageEventData(transactionId = "transactionId-unknown")
-                )
-                cut.addEventsToTimelineAtEnd(
-                    room,
-                    listOf(encryptedEvent1, encryptedEvent2, encryptedEvent3),
-                    "previous",
-                    "next",
-                    false
-                )
-
-                assertSoftly(roomTimelineStore.get(eventId1, room).first().shouldNotBeNull()) {
-                    content shouldBe Result.success(RoomMessageEventContent.TextBased.Text("Hello!"))
-                }
-                assertSoftly(roomTimelineStore.get(eventId2, room).first().shouldNotBeNull()) {
-                    content shouldBe null
-                }
-                assertSoftly(roomTimelineStore.get(eventId3, room).first().shouldNotBeNull()) {
-                    content shouldBe null
                 }
             }
         }

@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Removed replace TimelineEvents content by outbox content to prevent upload:// uris in TimelineEvent
+
 ### Security
 
 ## 4.13.1
