@@ -96,17 +96,6 @@ class TimelineEventHandlerImpl(
                 if (!events.isNullOrEmpty()) {
                     log.debug { "add events to timeline at end of $roomId" }
                     val lastEventId = roomStore.get(roomId).first()?.lastEventId
-                    suspend fun useDecryptedOutboxMessagesForOwnTimelineEvents(timelineEvents: List<TimelineEvent>) =
-                        timelineEvents.map {
-                            if (it.event.isEncrypted) {
-                                it.event.unsigned?.transactionId?.let { transactionId ->
-                                    roomOutboxMessageStore.get(roomId, transactionId).first()
-                                        ?.let { roomOutboxMessage ->
-                                            it.copy(content = Result.success(roomOutboxMessage.content))
-                                        }
-                                } ?: it
-                            } else it
-                        }
                     roomTimelineStore.addEventsToTimeline(
                         startEvent = TimelineEvent(
                             event = events.first(),
@@ -123,9 +112,6 @@ class TimelineEventHandlerImpl(
                         nextHasGap = true,
                         nextEvent = null,
                         nextEventChunk = events.drop(1),
-                        processTimelineEventsBeforeSave = { list ->
-                            useDecryptedOutboxMessagesForOwnTimelineEvents(list)
-                        }
                     )
                     events.alsoAddRelationFromTimelineEvents()
                 }
@@ -375,7 +361,6 @@ class TimelineEventHandlerImpl(
         nextHasGap: Boolean,
         nextEvent: EventId?,
         nextEventChunk: List<RoomEvent<*>>?,
-        processTimelineEventsBeforeSave: suspend (List<TimelineEvent>) -> List<TimelineEvent> = { it }
     ) {
         log.trace {
             "addEventsToTimeline with parameters:\n" +
@@ -497,13 +482,11 @@ class TimelineEventHandlerImpl(
             } else emptyList()
 
         addAll(
-            processTimelineEventsBeforeSave(
-                listOfNotNull(
-                    updatedPreviousEvent,
-                    updatedNextEvent,
-                    updatedStartEvent,
-                ) + newPreviousEvents + newNextEvents
-            )
+            listOfNotNull(
+                updatedPreviousEvent,
+                updatedNextEvent,
+                updatedStartEvent,
+            ) + newPreviousEvents + newNextEvents
         )
     }
 }
