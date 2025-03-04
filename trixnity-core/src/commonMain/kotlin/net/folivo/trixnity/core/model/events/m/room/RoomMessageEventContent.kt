@@ -28,6 +28,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     val body: String
     val format: String?
     val formattedBody: String?
+    val type: String
 
     sealed interface TextBased : RoomMessageEventContent {
         /**
@@ -43,7 +44,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = TYPE
+            override val type = TYPE
 
             companion object {
                 const val TYPE = "m.notice"
@@ -63,7 +64,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = TYPE
+            override val type = TYPE
 
             companion object {
                 const val TYPE = "m.text"
@@ -83,7 +84,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : TextBased {
             @SerialName("msgtype")
-            val type = TYPE
+            override val type = TYPE
 
             companion object {
                 const val TYPE = "m.emote"
@@ -114,7 +115,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = TYPE
+            override val type = TYPE
 
             companion object {
                 const val TYPE = "m.image"
@@ -138,7 +139,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = TYPE
+            override val type = TYPE
 
             companion object {
                 const val TYPE = "m.file"
@@ -162,7 +163,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = TYPE
+            override val type = TYPE
 
             companion object {
                 const val TYPE = "m.audio"
@@ -186,7 +187,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             @SerialName("external_url") override val externalUrl: String? = null,
         ) : FileBased {
             @SerialName("msgtype")
-            val type = TYPE
+            override val type = TYPE
 
             companion object {
                 const val TYPE = "m.video"
@@ -206,7 +207,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent {
         @SerialName("msgtype")
-        val type = TYPE
+        override val type = TYPE
 
         override val format: String? = null
         override val formattedBody: String? = null
@@ -229,7 +230,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         @SerialName("external_url") override val externalUrl: String? = null,
     ) : RoomMessageEventContent, IVerificationRequest {
         @SerialName("msgtype")
-        val type = TYPE
+        override val type = TYPE
 
         companion object {
             const val TYPE = "m.key.verification.request"
@@ -237,7 +238,7 @@ sealed interface RoomMessageEventContent : MessageEventContent {
     }
 
     data class Unknown(
-        val type: String,
+        override val type: String,
         override val body: String,
         val raw: JsonObject,
         override val format: String? = null,
