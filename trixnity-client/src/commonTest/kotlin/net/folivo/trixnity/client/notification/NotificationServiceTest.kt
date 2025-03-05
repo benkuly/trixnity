@@ -42,6 +42,7 @@ import net.folivo.trixnity.core.model.push.PushRuleSet
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -216,17 +217,34 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     suspend fun checkNoNotification() = coroutineScope {
-        val notifications = async { cut.getNotifications(0.seconds).first() }
-        api.sync.startOnce(
+        api.sync.start(
             getBatchToken = { null },
             setBatchToken = {},
-        ).getOrThrow()
+            scope = this
+        )
+
+        val notifications = async { cut.getNotifications(0.seconds).first() }
 
         continually(50.milliseconds) {
             notifications.isCompleted shouldBe false
         }
         notifications.cancel()
+
+        api.sync.cancel(true)
     }
+
+    suspend fun checkNotifications(block: suspend (Flow<Notification>) -> Unit) = coroutineScope {
+        api.sync.start(
+            getBatchToken = { null },
+            setBatchToken = {},
+            scope = this,
+        )
+
+        block(cut.getNotifications(0.seconds))
+
+        api.sync.cancel(true)
+    }
+
 
     context(NotificationServiceImpl::getNotifications.name) {
         should("wait for sync to be started or running") {
@@ -265,17 +283,10 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
             }
-            val notification = async { cut.getNotifications(0.seconds).first() }
-            delay(50)
-            api.sync.startOnce(
-                getBatchToken = { null },
-                setBatchToken = {},
-            ).getOrThrow()
-            continually(50.milliseconds) {
-                notification.isCompleted shouldBe false
-            }
-            notification.cancel()
+
+            checkNoNotification()
         }
+
         should("do nothing when no events") {
             apiConfig.endpoints {
                 matrixJsonEndpoint(Sync(timeout = 0)) {
@@ -321,13 +332,10 @@ private val body: ShouldSpec.() -> Unit = {
                     )
                 }
             }
-            val notification = async { cut.getNotifications(0.seconds).first() }
-            delay(50)
-            api.sync.startOnce(
-                getBatchToken = { null },
-                setBatchToken = {},
-            ).getOrThrow()
-            notification.await() shouldBe Notification(invitation, setOf(Notify))
+
+            checkNotifications {
+                it.first() shouldBe Notification(invitation, setOf(Notify))
+            }
         }
         context("new timeline events") {
             val timelineEvent = messageEventWithContent(
@@ -343,10 +351,12 @@ private val body: ShouldSpec.() -> Unit = {
                         Sync.Response("next")
                     }
                 }
-                room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
+                room.returnGetTimelineEventsOnce = flowOf(timelineEvent)
             }
             should("check push rules and notify") {
-                cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                checkNotifications {
+                    it.first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                }
             }
             should("have correct order") {
                 val timelineEvents = (0..99).map {
@@ -356,9 +366,10 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                 }
-                room.returnGetTimelineEventsFromNowOn = timelineEvents.asFlow()
-                cut.getNotifications(0.seconds).take(100).toList() shouldBe timelineEvents.map {
-                    Notification(it.event, setOf(Notify))
+                room.returnGetTimelineEventsOnce = timelineEvents.asFlow()
+
+                checkNotifications {
+                    it.take(100).toList() shouldBe timelineEvents.map { Notification(it.event, setOf(Notify)) }
                 }
             }
             should("not notify on own messages") {
@@ -370,13 +381,16 @@ private val body: ShouldSpec.() -> Unit = {
                         sender = if (it == 0 || it == 9) user1 else otherUser
                     )
                 }
-                room.returnGetTimelineEventsFromNowOn = timelineEvents.asFlow()
-                cut.getNotifications(0.seconds).take(8).toList() shouldBe
-                        timelineEvents.drop(1).dropLast(1).map {
-                            Notification(it.event, setOf(Notify))
-                        }
+                room.returnGetTimelineEventsOnce = timelineEvents.asFlow()
+
+                checkNotifications {
+                    it.take(8).toList() shouldBe timelineEvents.drop(1).dropLast(1).map {
+                        Notification(it.event, setOf(Notify))
+                    }
+                }
             }
         }
+
         context("new decrypted timeline events") {
             val timelineEvent = messageEventWithContent(
                 roomId, MegolmEncryptedMessageEventContent(
@@ -391,15 +405,17 @@ private val body: ShouldSpec.() -> Unit = {
                         Sync.Response("next")
                     }
                 }
-                room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
+                room.returnGetTimelineEventsOnce = flowOf(timelineEvent)
             }
             should("check push rules and notify") {
                 setUser1DisplayName(roomId)
                 globalAccountDataStore.save(GlobalAccountDataEvent(pushRules(listOf(pushRuleDisplayName()))))
 
-                assertSoftly(cut.getNotifications(0.seconds).first()) {
-                    event.idOrNull shouldBe timelineEvent.eventId
-                    event.content shouldBe timelineEvent.content?.getOrThrow()
+                checkNotifications {
+                    assertSoftly(it.first()) {
+                        event.idOrNull shouldBe timelineEvent.eventId
+                        event.content shouldBe timelineEvent.content?.getOrThrow()
+                    }
                 }
             }
         }
@@ -415,7 +431,7 @@ private val body: ShouldSpec.() -> Unit = {
                         Sync.Response("next")
                     }
                 }
-                room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
+                room.returnGetTimelineEventsOnce = flowOf(timelineEvent)
             }
             context("room member count") {
                 beforeTest {
@@ -427,7 +443,10 @@ private val body: ShouldSpec.() -> Unit = {
                     roomStore.update(roomId) {
                         Room(roomId, name = RoomDisplayName(summary = RoomSummary(joinedMemberCount = 2)))
                     }
-                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+
+                    checkNotifications {
+                        it.first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                    }
                 }
                 should("not notify when not met") {
                     roomStore.update(roomId) {
@@ -456,7 +475,10 @@ private val body: ShouldSpec.() -> Unit = {
                             stateKey = "",
                         )
                     )
-                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+
+                    checkNotifications {
+                        it.first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                    }
                 }
                 should("not notify when not met") {
                     roomStateStore.save(
@@ -491,7 +513,10 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
                     setUser1DisplayName(roomId)
-                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+
+                    checkNotifications {
+                        it.first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                    }
                 }
                 should("not notify when one condition matches") {
                     globalAccountDataStore.save(
@@ -503,12 +528,17 @@ private val body: ShouldSpec.() -> Unit = {
                 }
             }
             should("always notify when no conditions") {
+                println("executing mythings")
                 globalAccountDataStore.save(
                     GlobalAccountDataEvent(
                         pushRules(listOf(pushRuleNoCondition()))
                     )
                 )
-                cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                checkNotifications {
+                    println("checking notifications")
+                    it.first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                    println("done")
+                }
             }
             should("override") {
                 globalAccountDataStore.save(
@@ -579,7 +609,9 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     )
 
-                    cut.getNotifications(0.seconds).first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                    checkNotifications {
+                        it.first() shouldBe Notification(timelineEvent.event, setOf(Notify))
+                    }
                 }
             }
         }
@@ -595,7 +627,7 @@ private val body: ShouldSpec.() -> Unit = {
                         Sync.Response("next")
                     }
                 }
-                room.returnGetTimelineEventsFromNowOn = flowOf(timelineEvent)
+                room.returnGetTimelineEventsOnce = flowOf(timelineEvent)
             }
             should("not notify when action says it") {
                 globalAccountDataStore.save(
