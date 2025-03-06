@@ -9,12 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `RoomMessageEventContent` should have `type`
 - Extract notifications from a single sync
 
 ### Changed
-
-- revert changes to KeyedMutex handling
 
 ### Deprecated
 
@@ -22,9 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Removed replace TimelineEvents content by outbox content to prevent upload:// uris in TimelineEvent
-
 ### Security
+
+## 4.13.2
+
+### Added
+
+- `RoomMessageEventContent` should have `type`
+
+### Changed
+
+- revert changes to KeyedMutex handling
+
+### Fixed
+
+- Removed replace TimelineEvents content by outbox content to prevent upload:// uris in TimelineEvent
 
 ## 4.13.1
 
