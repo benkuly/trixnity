@@ -41,7 +41,7 @@ interface NotificationService {
         syncResponseBufferSize: Int = 4
     ): Flow<Notification>
 
-    fun getNotificationsOnce(
+    fun getNotifications(
         response: Sync.Response,
         decryptionTimeout: Duration = 5.seconds,
     ): Flow<Notification>
@@ -61,7 +61,7 @@ class NotificationServiceImpl(
 
     private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 
-    override fun getNotificationsOnce(
+    override fun getNotifications(
         response: Sync.Response,
         decryptionTimeout: Duration,
     ) : Flow<Notification> = evaluateDefaultPushRules(
@@ -308,7 +308,7 @@ class NotificationServiceImpl(
         response: Sync.Response,
         decryptionTimeout: Duration,
     ): Flow<RoomEvent<*>> =
-        room.getTimelineEventsOnce(response, decryptionTimeout)
+        room.getTimelineEvents(response, decryptionTimeout)
             .map { extractDecryptedEvent(it) }
             .filterNotNull()
             .filter {

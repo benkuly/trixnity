@@ -136,7 +136,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         nextEventId = null,
         gap = TimelineEvent.Gap.GapAfter("3")
     )
-    context(RoomServiceImpl::getTimelineEvents.name) {
+    context("getTimelineEvents") {
         context("all requested events in store") {
             beforeTest {
                 roomTimelineStore.addAll(listOf(timelineEvent1, timelineEvent2, timelineEvent3))

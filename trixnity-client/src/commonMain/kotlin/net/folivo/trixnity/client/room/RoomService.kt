@@ -124,7 +124,7 @@ interface RoomService {
         syncResponseBufferSize: Int = 4,
     ): Flow<TimelineEvent>
 
-    fun getTimelineEventsOnce(
+    fun getTimelineEvents(
         response: Sync.Response,
         decryptionTimeout: Duration = 30.seconds,
     ): Flow<TimelineEvent>
@@ -566,9 +566,9 @@ class RoomServiceImpl(
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
         api.sync.subscribeAsFlow(Priority.AFTER_DEFAULT).map { it.syncResponse }
-            .buffer(syncResponseBufferSize).flatMapConcat { getTimelineEventsOnce(it, decryptionTimeout) }
+            .buffer(syncResponseBufferSize).flatMapConcat { getTimelineEvents(it, decryptionTimeout) }
 
-    override fun getTimelineEventsOnce(
+    override fun getTimelineEvents(
         response: Sync.Response,
         decryptionTimeout: Duration,
     ): Flow<TimelineEvent>  {

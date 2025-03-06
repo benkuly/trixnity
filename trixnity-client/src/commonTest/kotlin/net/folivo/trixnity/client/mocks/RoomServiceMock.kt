@@ -91,7 +91,7 @@ class RoomServiceMock : RoomService {
     }
 
     var returnGetTimelineEventsOnce: Flow<TimelineEvent> = flowOf()
-    override fun getTimelineEventsOnce(response: Sync.Response, decryptionTimeout: Duration): Flow<TimelineEvent> {
+    override fun getTimelineEvents(response: Sync.Response, decryptionTimeout: Duration): Flow<TimelineEvent> {
         return returnGetTimelineEventsOnce
     }
 

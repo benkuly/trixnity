@@ -245,8 +245,7 @@ private val body: ShouldSpec.() -> Unit = {
         api.sync.cancel(true)
     }
 
-
-    context(NotificationServiceImpl::getNotifications.name) {
+    context("getNotifications") {
         should("wait for sync to be started or running") {
             currentSyncState.value = SyncState.INITIAL_SYNC
             globalAccountDataStore.save(
