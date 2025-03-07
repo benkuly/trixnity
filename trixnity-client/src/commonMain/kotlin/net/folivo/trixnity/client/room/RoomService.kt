@@ -16,6 +16,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
@@ -121,6 +122,11 @@ interface RoomService {
     fun getTimelineEventsFromNowOn(
         decryptionTimeout: Duration = 30.seconds,
         syncResponseBufferSize: Int = 4,
+    ): Flow<TimelineEvent>
+
+    fun getTimelineEvents(
+        response: Sync.Response,
+        decryptionTimeout: Duration = 30.seconds,
     ): Flow<TimelineEvent>
 
     /**
@@ -560,27 +566,38 @@ class RoomServiceImpl(
         syncResponseBufferSize: Int,
     ): Flow<TimelineEvent> =
         api.sync.subscribeAsFlow(Priority.AFTER_DEFAULT).map { it.syncResponse }
-            .buffer(syncResponseBufferSize).flatMapConcat { syncResponse ->
-                coroutineScope {
-                    val timelineEvents =
-                        syncResponse.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
-                                syncResponse.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
-                    timelineEvents.map {
-                        async {
-                            getTimelineEvent(it.roomId, it.id) {
-                                this.decryptionTimeout = decryptionTimeout
-                            }
+            .buffer(syncResponseBufferSize).flatMapConcat { getTimelineEvents(it, decryptionTimeout) }
+
+    override fun getTimelineEvents(
+        response: Sync.Response,
+        decryptionTimeout: Duration,
+    ): Flow<TimelineEvent>  {
+        val timelineEvents =
+            response.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
+                    response.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
+
+        return flow {
+            coroutineScope {
+                val deferredTimelineEvents = timelineEvents.map {
+                    async {
+                        getTimelineEvent(it.roomId, it.id) {
+                            this.decryptionTimeout = decryptionTimeout
                         }
-                    }.asFlow()
-                        .map { timelineEventFlow ->
-                            // we must wait until TimelineEvent is saved into store
-                            val notNullTimelineEvent = timelineEventFlow.await().filterNotNull().first()
-                            withTimeoutOrNull(decryptionTimeout) {
-                                timelineEventFlow.await().filterNotNull().first { it.content != null }
-                            } ?: notNullTimelineEvent
-                        }
+                    }
+                }
+
+                deferredTimelineEvents.forEach { deferredTimelineEvent ->
+                    // we must wait until TimelineEvent is saved into store
+                    val notNullTimelineEvent = deferredTimelineEvent.await().filterNotNull().first()
+                    val timelineEvent = withTimeoutOrNull(decryptionTimeout) {
+                        deferredTimelineEvent.await().filterNotNull().first { it.content != null }
+                    } ?: notNullTimelineEvent
+
+                    emit(timelineEvent)
                 }
             }
+        }
+    }
 
     override fun <T> getTimeline(
         roomId: RoomId,

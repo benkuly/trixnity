@@ -196,7 +196,8 @@ class SyncApiClientImpl(
                                     timeout = if (_currentSyncState.value == STARTED) ZERO else timeout,
                                     withTransaction = withTransaction,
                                     allowStoppingRequest = true,
-                                    asUserId = asUserId
+                                    asUserId = asUserId,
+                                    runOnce = { it }
                                 )
                                 delay(syncLoopDelay)
                             } catch (error: Throwable) {
@@ -249,8 +250,7 @@ class SyncApiClientImpl(
             val isInitialSync = getBatchToken() == null
             log.info { "started single sync (initial=$isInitialSync)" }
             _currentSyncState.value = if (isInitialSync) INITIAL_SYNC else STARTED
-            val syncResponse =
-                syncAndResponse(
+            syncAndResponse(
                     getBatchToken = getBatchToken,
                     setBatchToken = setBatchToken,
                     filter = filter,
@@ -258,9 +258,9 @@ class SyncApiClientImpl(
                     timeout = timeout,
                     withTransaction = withTransaction,
                     allowStoppingRequest = false,
-                    asUserId = asUserId
+                    asUserId = asUserId,
+                    runOnce = runOnce
                 )
-            runOnce(syncResponse)
         }
     }.onSuccess {
         log.info { "stopped single sync with success" }
@@ -270,7 +270,7 @@ class SyncApiClientImpl(
         _currentSyncState.value = STOPPED
     }
 
-    private suspend fun syncAndResponse(
+    private suspend fun <T> syncAndResponse(
         getBatchToken: suspend () -> String?,
         setBatchToken: suspend (String) -> Unit,
         filter: String?,
@@ -279,7 +279,8 @@ class SyncApiClientImpl(
         withTransaction: suspend (block: suspend () -> Unit) -> Unit,
         allowStoppingRequest: Boolean,
         asUserId: UserId?,
-    ): Sync.Response {
+        runOnce: suspend (Sync.Response) -> T
+    ): T {
         val batchToken = getBatchToken()
         val (response, measuredSyncDuration) = measureTime<Sync.Response> {
             coroutineScope {
@@ -305,6 +306,8 @@ class SyncApiClientImpl(
         }
         log.info { "received sync response after about $measuredSyncDuration with token $batchToken" }
 
+        val result = runOnce(response)
+
         withTransaction {
             val measuredProcessDuration = measureTime {
                 processSyncResponse(response)
@@ -314,7 +317,7 @@ class SyncApiClientImpl(
             setBatchToken(response.nextBatch)
         }
         _currentSyncState.value = RUNNING
-        return response
+        return result
     }
 
     private suspend fun processSyncResponse(response: Sync.Response) {
