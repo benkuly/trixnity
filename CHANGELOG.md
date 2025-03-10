@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix check for too many olm inbound sessions
+
 ### Security
 
 ## 4.13.2

@@ -324,8 +324,8 @@ private val body: ShouldSpec.() -> Unit = {
                     StoredOlmSession(
                         bobCurveKey.value,
                         pseudoSessionId.toString(),
-                        Clock.System.now(),
-                        Clock.System.now(),
+                        clockMock.now(),
+                        clockMock.now(),
                         aliceSession.pickle("")
                     )
                 }
