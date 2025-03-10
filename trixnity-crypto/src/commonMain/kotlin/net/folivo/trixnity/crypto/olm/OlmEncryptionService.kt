@@ -454,8 +454,11 @@ class OlmEncryptionServiceImpl(
         return (storedSessions?.size ?: 0) >= 3 && storedSessions
             ?.sortedByDescending { it.createdAt }
             ?.takeLast(3)
-            ?.map { it.createdAt.plus(1, DateTimeUnit.HOUR) <= now }
-            ?.all { true } == true
+            ?.map {
+                check(it.createdAt <= now)
+                it.createdAt.plus(1, DateTimeUnit.HOUR) >= now
+            }
+            ?.all { it } == true
     }
 
     private fun hasCreatedTooManyOlmOutboundSessions(storedSessions: Set<StoredOlmSession>?): Boolean {
