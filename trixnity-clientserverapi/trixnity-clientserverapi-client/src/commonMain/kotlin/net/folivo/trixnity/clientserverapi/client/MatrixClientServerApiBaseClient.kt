@@ -47,7 +47,7 @@ private val SkipAuthenticationIfDisabled: ClientPlugin<Unit> = createClientPlugi
     }
 }
 
-class MatrixClientServerApiHttpClient(
+class MatrixClientServerApiBaseClient(
     val baseUrl: Url? = null,
     authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
     private val onLogout: suspend (LogoutInfo) -> Unit = { },

@@ -11,6 +11,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 interface MatrixClientServerApiClient : AutoCloseable {
+    val baseClient: MatrixClientServerApiBaseClient
     val appservice: AppserviceApiClient
     val authentication: AuthenticationApiClient
     val discovery: DiscoveryApiClient
@@ -80,7 +81,7 @@ class MatrixClientServerApiClientImpl(
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixClientServerApiClient {
-    private val httpClient = MatrixClientServerApiHttpClient(
+    override val baseClient = MatrixClientServerApiBaseClient(
         baseUrl = baseUrl,
         authProvider = authProvider,
         onLogout = onLogout,
@@ -90,19 +91,19 @@ class MatrixClientServerApiClientImpl(
         httpClientConfig = httpClientConfig
     )
 
-    override val appservice: AppserviceApiClient = AppserviceApiClientImpl(httpClient)
-    override val authentication = AuthenticationApiClientImpl(httpClient)
-    override val discovery = DiscoveryApiClientImpl(httpClient)
-    override val server = ServerApiClientImpl(httpClient)
-    override val user = UserApiClientImpl(httpClient, eventContentSerializerMappings)
-    override val room = RoomApiClientImpl(httpClient, eventContentSerializerMappings)
-    override val sync = SyncApiClientImpl(httpClient, syncLoopDelay, syncLoopErrorDelay)
-    override val key = KeyApiClientImpl(httpClient, json)
-    override val media = MediaApiClientImpl(httpClient)
-    override val device = DeviceApiClientImpl(httpClient)
-    override val push = PushApiClientImpl(httpClient)
+    override val appservice: AppserviceApiClient = AppserviceApiClientImpl(baseClient)
+    override val authentication = AuthenticationApiClientImpl(baseClient)
+    override val discovery = DiscoveryApiClientImpl(baseClient)
+    override val server = ServerApiClientImpl(baseClient)
+    override val user = UserApiClientImpl(baseClient, eventContentSerializerMappings)
+    override val room = RoomApiClientImpl(baseClient, eventContentSerializerMappings)
+    override val sync = SyncApiClientImpl(baseClient, syncLoopDelay, syncLoopErrorDelay)
+    override val key = KeyApiClientImpl(baseClient, json)
+    override val media = MediaApiClientImpl(baseClient)
+    override val device = DeviceApiClientImpl(baseClient)
+    override val push = PushApiClientImpl(baseClient)
 
     override fun close() {
-        httpClient.close()
+        baseClient.close()
     }
 }

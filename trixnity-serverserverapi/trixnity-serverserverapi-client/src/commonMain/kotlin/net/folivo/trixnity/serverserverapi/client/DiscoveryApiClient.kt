@@ -37,28 +37,28 @@ interface DiscoveryApiClient {
 }
 
 class DiscoveryApiClientImpl(
-    private val httpClient: MatrixApiClient
+    private val baseClient: MatrixApiClient
 ) : DiscoveryApiClient {
     override suspend fun getWellKnown(baseUrl: Url): Result<GetWellKnown.Response> =
-        httpClient.request(GetWellKnown) { mergeUrl(baseUrl) }
+        baseClient.request(GetWellKnown) { mergeUrl(baseUrl) }
 
 
     override suspend fun getServerVersion(baseUrl: Url): Result<GetServerVersion.Response> =
-        httpClient.request(GetServerVersion) { mergeUrl(baseUrl) }
+        baseClient.request(GetServerVersion) { mergeUrl(baseUrl) }
 
     override suspend fun getServerKeys(baseUrl: Url): Result<Signed<ServerKeys, String>> =
-        httpClient.request(GetServerKeys) { mergeUrl(baseUrl) }
+        baseClient.request(GetServerKeys) { mergeUrl(baseUrl) }
 
     override suspend fun queryServerKeys(
         baseUrl: Url,
         request: QueryServerKeys.Request
     ): Result<QueryServerKeysResponse> =
-        httpClient.request(QueryServerKeys, request) { mergeUrl(baseUrl) }
+        baseClient.request(QueryServerKeys, request) { mergeUrl(baseUrl) }
 
     override suspend fun queryKeysByServer(
         baseUrl: Url,
         serverName: String,
         minimumValidUntil: Long?
     ): Result<QueryServerKeysResponse> =
-        httpClient.request(QueryServerKeysByServer(serverName, minimumValidUntil)) { mergeUrl(baseUrl) }
+        baseClient.request(QueryServerKeysByServer(serverName, minimumValidUntil)) { mergeUrl(baseUrl) }
 }

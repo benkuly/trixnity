@@ -11,6 +11,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import net.folivo.trixnity.core.serialization.events.GetRoomVersionFunction
 
 interface MatrixServerServerApiClient : AutoCloseable {
+    val baseClient: MatrixApiClient
     val discovery: DiscoveryApiClient
     val federation: FederationApiClient
 }
@@ -25,7 +26,7 @@ class MatrixServerServerApiClientImpl(
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixServerServerApiClient {
-    internal val httpClient = MatrixApiClient(eventContentSerializerMappings, json, httpClientEngine) {
+    override val baseClient = MatrixApiClient(eventContentSerializerMappings, json, httpClientEngine) {
         install(MatrixSignatureAuthPlugin(hostname, sign, json))
         install(MatrixDestinationPlugin(getDelegatedDestination))
         install(ConvertMediaPlugin)
@@ -33,10 +34,10 @@ class MatrixServerServerApiClientImpl(
         httpClientConfig?.invoke(this)
     }
 
-    override val discovery = DiscoveryApiClientImpl(httpClient)
-    override val federation = FederationApiClientImpl(httpClient)
+    override val discovery = DiscoveryApiClientImpl(baseClient)
+    override val federation = FederationApiClientImpl(baseClient)
 
     override fun close() {
-        httpClient.close()
+        baseClient.close()
     }
 }

@@ -156,44 +156,44 @@ interface UserApiClient {
 }
 
 class UserApiClientImpl(
-    private val httpClient: MatrixClientServerApiHttpClient,
+    private val baseClient: MatrixClientServerApiBaseClient,
     override val contentMappings: EventContentSerializerMappings
 ) : UserApiClient {
 
     override suspend fun getDisplayName(
         userId: UserId,
     ): Result<String?> =
-        httpClient.request(GetDisplayName(userId)).mapCatching { it.displayName }
+        baseClient.request(GetDisplayName(userId)).mapCatching { it.displayName }
 
     override suspend fun setDisplayName(
         userId: UserId,
         displayName: String?,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(SetDisplayName(userId, asUserId), SetDisplayName.Request(displayName))
+        baseClient.request(SetDisplayName(userId, asUserId), SetDisplayName.Request(displayName))
 
     override suspend fun getAvatarUrl(
         userId: UserId,
     ): Result<String?> =
-        httpClient.request(GetAvatarUrl(userId)).mapCatching { it.avatarUrl }
+        baseClient.request(GetAvatarUrl(userId)).mapCatching { it.avatarUrl }
 
     override suspend fun setAvatarUrl(
         userId: UserId,
         avatarUrl: String?,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(SetAvatarUrl(userId, asUserId), SetAvatarUrl.Request(avatarUrl))
+        baseClient.request(SetAvatarUrl(userId, asUserId), SetAvatarUrl.Request(avatarUrl))
 
     override suspend fun getProfile(
         userId: UserId,
     ): Result<GetProfile.Response> =
-        httpClient.request(GetProfile(userId))
+        baseClient.request(GetProfile(userId))
 
     override suspend fun getPresence(
         userId: UserId,
         asUserId: UserId?
     ): Result<PresenceEventContent> =
-        httpClient.request(GetPresence(userId, asUserId))
+        baseClient.request(GetPresence(userId, asUserId))
 
     override suspend fun setPresence(
         userId: UserId,
@@ -201,7 +201,7 @@ class UserApiClientImpl(
         statusMessage: String?,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(SetPresence(userId, asUserId), SetPresence.Request(presence, statusMessage))
+        baseClient.request(SetPresence(userId, asUserId), SetPresence.Request(presence, statusMessage))
 
 
     override suspend fun <C : ToDeviceEventContent> sendToDeviceUnsafe(
@@ -223,7 +223,7 @@ class UserApiClientImpl(
         transactionId: String,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(SendToDevice(type, transactionId, asUserId), SendToDevice.Request(events))
+        baseClient.request(SendToDevice(type, transactionId, asUserId), SendToDevice.Request(events))
 
     override suspend fun sendToDevice(
         events: Map<UserId, Map<String, ToDeviceEventContent>>,
@@ -264,14 +264,14 @@ class UserApiClientImpl(
         filterId: String,
         asUserId: UserId?
     ): Result<Filters> =
-        httpClient.request(GetFilter(userId, filterId, asUserId))
+        baseClient.request(GetFilter(userId, filterId, asUserId))
 
     override suspend fun setFilter(
         userId: UserId,
         filters: Filters,
         asUserId: UserId?
     ): Result<String> =
-        httpClient.request(SetFilter(userId, asUserId), filters).mapCatching { it.filterId }
+        baseClient.request(SetFilter(userId, asUserId), filters).mapCatching { it.filterId }
 
     override suspend fun getAccountData(
         type: String,
@@ -280,7 +280,7 @@ class UserApiClientImpl(
         asUserId: UserId?
     ): Result<GlobalAccountDataEventContent> {
         val actualType = if (key.isEmpty()) type else type + key
-        return httpClient.request(GetGlobalAccountData(userId, actualType, asUserId))
+        return baseClient.request(GetGlobalAccountData(userId, actualType, asUserId))
     }
 
     override suspend fun setAccountData(
@@ -292,7 +292,7 @@ class UserApiClientImpl(
         val eventType = contentMappings.globalAccountData.contentType(content)
             .let { type -> if (key.isEmpty()) type else type + key }
 
-        return httpClient.request(SetGlobalAccountData(userId, eventType, asUserId), content)
+        return baseClient.request(SetGlobalAccountData(userId, eventType, asUserId), content)
     }
 
     override suspend fun searchUsers(
@@ -301,7 +301,7 @@ class UserApiClientImpl(
         limit: Long?,
         asUserId: UserId?,
     ): Result<SearchUsers.Response> =
-        httpClient.request(SearchUsers(asUserId), SearchUsers.Request(searchTerm, limit)) {
+        baseClient.request(SearchUsers(asUserId), SearchUsers.Request(searchTerm, limit)) {
             header(HttpHeaders.AcceptLanguage, acceptLanguage)
         }
 }

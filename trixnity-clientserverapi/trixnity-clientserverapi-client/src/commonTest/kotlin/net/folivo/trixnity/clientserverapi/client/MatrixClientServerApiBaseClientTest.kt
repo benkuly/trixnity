@@ -21,14 +21,13 @@ import net.folivo.trixnity.clientserverapi.model.uia.UIAState
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
-import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MatrixClientServerApiHttpClientTest {
+class MatrixClientServerApiBaseClientTest {
 
     private val json = createMatrixEventJson()
     private val mappings = createDefaultEventContentSerializerMappings()
@@ -90,7 +89,7 @@ class MatrixClientServerApiHttpClientTest {
 
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -113,12 +112,12 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-            PostPath.Response("ok")
+                PostPath.Response("ok")
     }
 
     @Test
     fun itShouldNotHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -136,14 +135,14 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-            PostPath.Response("ok")
+                PostPath.Response("ok")
     }
 
     @Test
     fun itShouldNotRetryWithTokenOnNever() = runTest {
         val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
 
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = MatrixAuthProvider.classic(testTokenStore),
             httpClientEngine = scopedMockEngine(false) {
@@ -152,7 +151,7 @@ class MatrixClientServerApiHttpClientTest {
                     respond(
                         """{"status":"ok"}""",
                         HttpStatusCode.Unauthorized,
-                        headersOf(HttpHeaders.ContentType, Application.Json.toString(),)
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
                 }
             },
@@ -164,17 +163,17 @@ class MatrixClientServerApiHttpClientTest {
 
         cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
             .exceptionOrNull() shouldBe
-            MatrixServerException(
-                HttpStatusCode.Unauthorized,
-                ErrorResponse.CustomErrorResponse("UNKNOWN", error="""{"status":"ok"}""")
-            )
+                MatrixServerException(
+                    HttpStatusCode.Unauthorized,
+                    ErrorResponse.CustomErrorResponse("UNKNOWN", error = """{"status":"ok"}""")
+                )
     }
 
     @Test
     fun itShouldRetryWithToken() = runTest {
         val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
 
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = MatrixAuthProvider.classic(testTokenStore),
             httpClientEngine = scopedMockEngine(false) {
@@ -189,7 +188,7 @@ class MatrixClientServerApiHttpClientTest {
                         respond(
                             """{"status":"not ok"}""",
                             HttpStatusCode.Unauthorized,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString(),)
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
                         )
                     }
                 }
@@ -208,7 +207,7 @@ class MatrixClientServerApiHttpClientTest {
     fun itShouldHaveOptionalAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
 
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = MatrixAuthProvider.classic(testTokenStore),
             httpClientEngine = scopedMockEngine {
@@ -234,19 +233,19 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-            PostPath.Response("ok")
+                PostPath.Response("ok")
 
         testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-            PostPath.Response("ok")
+                PostPath.Response("ok")
     }
 
     @Test
     fun itShouldRefreshToken() = runTest {
         var refreshCalled = false
         var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
@@ -305,7 +304,7 @@ class MatrixClientServerApiHttpClientTest {
         )
 
         cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
-            PostPath.Response("ok")
+                PostPath.Response("ok")
         refreshCalled shouldBe true
         onLogout shouldBe null
     }
@@ -313,7 +312,7 @@ class MatrixClientServerApiHttpClientTest {
     @Test
     fun itShouldCallOnLogout() = runTest {
         var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -348,7 +347,7 @@ class MatrixClientServerApiHttpClientTest {
     @Test
     fun itShouldCallOnLogoutOnLocked() = runTest {
         var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -383,7 +382,7 @@ class MatrixClientServerApiHttpClientTest {
     @Test
     fun itShouldCallOnLogoutWhenRefreshingToken() = runTest {
         var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
@@ -445,7 +444,7 @@ class MatrixClientServerApiHttpClientTest {
 
     @Test
     fun uiaRequestShouldReturnSuccess() = runTest {
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -473,7 +472,7 @@ class MatrixClientServerApiHttpClientTest {
 
     @Test
     fun uiaRequestShouldReturnError() = runTest {
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -502,7 +501,7 @@ class MatrixClientServerApiHttpClientTest {
     @Test
     fun uiaRequestShouldCallOnLogout() = runTest {
         var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -535,7 +534,7 @@ class MatrixClientServerApiHttpClientTest {
     @Test
     fun uiaRequestShouldCallOnLogoutOnLock() = runTest {
         var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -568,7 +567,7 @@ class MatrixClientServerApiHttpClientTest {
     @Test
     fun uiaRequestShouldReturnStepAndAllowAuthenticate() = runTest {
         var requestCount = 0
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine {
@@ -677,13 +676,13 @@ class MatrixClientServerApiHttpClientTest {
         )
         result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
         result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
     }
 
     @Test
     fun uiaRequestShouldReturnErrorAndAllowAuthenticate() = runTest {
         var requestCount = 0
-        val cut = MatrixClientServerApiHttpClient(
+        val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
             httpClientEngine = scopedMockEngine(false) {
@@ -860,14 +859,14 @@ class MatrixClientServerApiHttpClientTest {
         result1.state shouldBe expectedUIAState
         result1.errorResponse shouldBe ErrorResponse.NotFound("")
         result1.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         val result2 = result1.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
             .getOrThrow()
         result2.shouldBeInstanceOf<UIA.Error<*>>()
         result2.state shouldBe expectedUIAState
         result2.errorResponse shouldBe ErrorResponse.NotFound("")
         result2.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
-            "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
+                "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
         result2.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
             .getOrThrow()
         requestCount shouldBe 3

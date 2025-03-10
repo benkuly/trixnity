@@ -253,21 +253,21 @@ interface FederationApiClient {
 }
 
 class FederationApiClientImpl(
-    private val httpClient: MatrixApiClient
+    private val baseClient: MatrixApiClient
 ) : FederationApiClient {
     override suspend fun sendTransaction(
         baseUrl: Url,
         txnId: String,
         request: SendTransaction.Request
     ): Result<SendTransaction.Response> =
-        httpClient.request(SendTransaction(txnId), request) { mergeUrl(baseUrl) }
+        baseClient.request(SendTransaction(txnId), request) { mergeUrl(baseUrl) }
 
     override suspend fun getEventAuthChain(
         baseUrl: Url,
         roomId: RoomId,
         eventId: EventId
     ): Result<GetEventAuthChain.Response> =
-        httpClient.request(GetEventAuthChain(roomId, eventId)) { mergeUrl(baseUrl) }
+        baseClient.request(GetEventAuthChain(roomId, eventId)) { mergeUrl(baseUrl) }
 
     override suspend fun backfillRoom(
         baseUrl: Url,
@@ -275,31 +275,31 @@ class FederationApiClientImpl(
         startFrom: List<EventId>,
         limit: Long
     ): Result<PduTransaction> =
-        httpClient.request(BackfillRoom(roomId, startFrom, limit)) { mergeUrl(baseUrl) }
+        baseClient.request(BackfillRoom(roomId, startFrom, limit)) { mergeUrl(baseUrl) }
 
     override suspend fun getMissingEvents(
         baseUrl: Url,
         roomId: RoomId, request:
         GetMissingEvents.Request
     ): Result<PduTransaction> =
-        httpClient.request(GetMissingEvents(roomId), request) { mergeUrl(baseUrl) }
+        baseClient.request(GetMissingEvents(roomId), request) { mergeUrl(baseUrl) }
 
     override suspend fun getEvent(baseUrl: Url, eventId: EventId): Result<PduTransaction> =
-        httpClient.request(GetEvent(eventId)) { mergeUrl(baseUrl) }
+        baseClient.request(GetEvent(eventId)) { mergeUrl(baseUrl) }
 
     override suspend fun getState(
         baseUrl: Url,
         roomId: RoomId,
         eventId: EventId
     ): Result<GetState.Response> =
-        httpClient.request(GetState(roomId, eventId)) { mergeUrl(baseUrl) }
+        baseClient.request(GetState(roomId, eventId)) { mergeUrl(baseUrl) }
 
     override suspend fun getStateIds(
         baseUrl: Url,
         roomId: RoomId,
         eventId: EventId
     ): Result<GetStateIds.Response> =
-        httpClient.request(GetStateIds(roomId, eventId)) { mergeUrl(baseUrl) }
+        baseClient.request(GetStateIds(roomId, eventId)) { mergeUrl(baseUrl) }
 
     override suspend fun makeJoin(
         baseUrl: Url,
@@ -307,7 +307,7 @@ class FederationApiClientImpl(
         userId: UserId,
         supportedRoomVersions: Set<String>?
     ): Result<MakeJoin.Response> =
-        httpClient.request(MakeJoin(roomId, userId, supportedRoomVersions)) { mergeUrl(baseUrl) }
+        baseClient.request(MakeJoin(roomId, userId, supportedRoomVersions)) { mergeUrl(baseUrl) }
 
     override suspend fun sendJoin(
         baseUrl: Url,
@@ -315,7 +315,7 @@ class FederationApiClientImpl(
         eventId: EventId,
         request: Signed<PersistentDataUnit.PersistentStateDataUnit<MemberEventContent>, String>
     ): Result<SendJoin.Response> =
-        httpClient.request(SendJoin(roomId, eventId), request) { mergeUrl(baseUrl) }
+        baseClient.request(SendJoin(roomId, eventId), request) { mergeUrl(baseUrl) }
 
     override suspend fun makeKnock(
         baseUrl: Url,
@@ -323,7 +323,7 @@ class FederationApiClientImpl(
         userId: UserId,
         supportedRoomVersions: Set<String>?
     ): Result<MakeKnock.Response> =
-        httpClient.request(MakeKnock(roomId, userId, supportedRoomVersions)) { mergeUrl(baseUrl) }
+        baseClient.request(MakeKnock(roomId, userId, supportedRoomVersions)) { mergeUrl(baseUrl) }
 
     override suspend fun sendKnock(
         baseUrl: Url,
@@ -331,7 +331,7 @@ class FederationApiClientImpl(
         eventId: EventId,
         request: Signed<PersistentDataUnit.PersistentStateDataUnit<MemberEventContent>, String>
     ): Result<SendKnock.Response> =
-        httpClient.request(SendKnock(roomId, eventId), request) { mergeUrl(baseUrl) }
+        baseClient.request(SendKnock(roomId, eventId), request) { mergeUrl(baseUrl) }
 
     override suspend fun invite(
         baseUrl: Url,
@@ -339,14 +339,14 @@ class FederationApiClientImpl(
         eventId: EventId,
         request: Invite.Request
     ): Result<Invite.Response> =
-        httpClient.request(Invite(roomId, eventId), request) { mergeUrl(baseUrl) }
+        baseClient.request(Invite(roomId, eventId), request) { mergeUrl(baseUrl) }
 
     override suspend fun makeLeave(
         baseUrl: Url,
         roomId: RoomId,
         userId: UserId
     ): Result<MakeLeave.Response> =
-        httpClient.request(MakeLeave(roomId, userId)) { mergeUrl(baseUrl) }
+        baseClient.request(MakeLeave(roomId, userId)) { mergeUrl(baseUrl) }
 
     override suspend fun sendLeave(
         baseUrl: Url,
@@ -354,17 +354,17 @@ class FederationApiClientImpl(
         eventId: EventId,
         request: Signed<PersistentDataUnit.PersistentStateDataUnit<MemberEventContent>, String>
     ): Result<Unit> =
-        httpClient.request(SendLeave(roomId, eventId), request) { mergeUrl(baseUrl) }
+        baseClient.request(SendLeave(roomId, eventId), request) { mergeUrl(baseUrl) }
 
     override suspend fun onBindThirdPid(baseUrl: Url, request: OnBindThirdPid.Request): Result<Unit> =
-        httpClient.request(OnBindThirdPid, request) { mergeUrl(baseUrl) }
+        baseClient.request(OnBindThirdPid, request) { mergeUrl(baseUrl) }
 
     override suspend fun exchangeThirdPartyInvite(
         baseUrl: Url,
         roomId: RoomId,
         request: Signed<PersistentDataUnit.PersistentStateDataUnit<MemberEventContent>, String>
     ): Result<Unit> =
-        httpClient.request(ExchangeThirdPartyInvite(roomId), request) { mergeUrl(baseUrl) }
+        baseClient.request(ExchangeThirdPartyInvite(roomId), request) { mergeUrl(baseUrl) }
 
     override suspend fun getPublicRooms(
         baseUrl: Url,
@@ -373,56 +373,56 @@ class FederationApiClientImpl(
         since: String?,
         thirdPartyInstanceId: String?
     ): Result<GetPublicRoomsResponse> =
-        httpClient.request(GetPublicRooms(includeAllNetworks, limit, since, thirdPartyInstanceId)) { mergeUrl(baseUrl) }
+        baseClient.request(GetPublicRooms(includeAllNetworks, limit, since, thirdPartyInstanceId)) { mergeUrl(baseUrl) }
 
     override suspend fun getPublicRoomsWithFilter(
         baseUrl: Url,
         request: GetPublicRoomsWithFilter.Request
     ): Result<GetPublicRoomsResponse> =
-        httpClient.request(GetPublicRoomsWithFilter, request) { mergeUrl(baseUrl) }
+        baseClient.request(GetPublicRoomsWithFilter, request) { mergeUrl(baseUrl) }
 
     override suspend fun getHierarchy(
         baseUrl: Url,
         roomId: RoomId,
         suggestedOnly: Boolean
     ): Result<GetHierarchy.Response> =
-        httpClient.request(GetHierarchy(roomId, suggestedOnly)) { mergeUrl(baseUrl) }
+        baseClient.request(GetHierarchy(roomId, suggestedOnly)) { mergeUrl(baseUrl) }
 
     override suspend fun queryDirectory(baseUrl: Url, roomAlias: RoomAliasId): Result<QueryDirectory.Response> =
-        httpClient.request(QueryDirectory(roomAlias)) { mergeUrl(baseUrl) }
+        baseClient.request(QueryDirectory(roomAlias)) { mergeUrl(baseUrl) }
 
     override suspend fun queryProfile(
         baseUrl: Url,
         userId: UserId,
         field: QueryProfile.Field?
     ): Result<QueryProfile.Response> =
-        httpClient.request(QueryProfile(userId, field)) { mergeUrl(baseUrl) }
+        baseClient.request(QueryProfile(userId, field)) { mergeUrl(baseUrl) }
 
     override suspend fun getOIDCUserInfo(baseUrl: Url, accessToken: String): Result<GetOIDCUserInfo.Response> =
-        httpClient.request(GetOIDCUserInfo(accessToken)) { mergeUrl(baseUrl) }
+        baseClient.request(GetOIDCUserInfo(accessToken)) { mergeUrl(baseUrl) }
 
     override suspend fun getDevices(baseUrl: Url, userId: UserId): Result<GetDevices.Response> =
-        httpClient.request(GetDevices(userId)) { mergeUrl(baseUrl) }
+        baseClient.request(GetDevices(userId)) { mergeUrl(baseUrl) }
 
     override suspend fun claimKeys(baseUrl: Url, request: ClaimKeys.Request): Result<ClaimKeys.Response> =
-        httpClient.request(ClaimKeys, request) { mergeUrl(baseUrl) }
+        baseClient.request(ClaimKeys, request) { mergeUrl(baseUrl) }
 
     override suspend fun getKeys(baseUrl: Url, request: GetKeys.Request): Result<GetKeys.Response> =
-        httpClient.request(GetKeys, request) { mergeUrl(baseUrl) }
+        baseClient.request(GetKeys, request) { mergeUrl(baseUrl) }
 
     override suspend fun timestampToEvent(
         roomId: RoomId,
         timestamp: Long,
         dir: TimestampToEvent.Direction
     ): Result<TimestampToEvent.Response> =
-        httpClient.request(TimestampToEvent(roomId, timestamp, dir))
+        baseClient.request(TimestampToEvent(roomId, timestamp, dir))
 
     override suspend fun downloadMedia(
         mediaId: String,
         timeout: Duration?,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> =
-        httpClient.withRequest(
+        baseClient.withRequest(
             endpoint = DownloadMedia(mediaId, timeout?.inWholeMilliseconds),
             requestBuilder = {
                 method = HttpMethod.Get
@@ -443,7 +443,7 @@ class FederationApiClientImpl(
         timeout: Duration?,
         downloadHandler: suspend (Media) -> Unit
     ): Result<Unit> =
-        httpClient.withRequest(
+        baseClient.withRequest(
             endpoint = DownloadThumbnail(
                 mediaId = mediaId,
                 width = width,

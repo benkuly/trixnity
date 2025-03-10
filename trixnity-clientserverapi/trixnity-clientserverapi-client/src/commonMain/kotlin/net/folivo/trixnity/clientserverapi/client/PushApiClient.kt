@@ -109,14 +109,14 @@ interface PushApiClient {
 }
 
 class PushApiClientImpl(
-    private val httpClient: MatrixClientServerApiHttpClient
+    private val baseClient: MatrixClientServerApiBaseClient
 ) : PushApiClient {
 
     override suspend fun getPushers(asUserId: UserId?): Result<GetPushers.Response> =
-        httpClient.request(GetPushers(asUserId))
+        baseClient.request(GetPushers(asUserId))
 
     override suspend fun setPushers(request: SetPushers.Request, asUserId: UserId?): Result<Unit> =
-        httpClient.request(SetPushers(asUserId), request)
+        baseClient.request(SetPushers(asUserId), request)
 
     override suspend fun getNotifications(
         from: String?,
@@ -124,10 +124,10 @@ class PushApiClientImpl(
         only: String?,
         asUserId: UserId?,
     ): Result<GetNotifications.Response> =
-        httpClient.request(GetNotifications(from, limit, only, asUserId))
+        baseClient.request(GetNotifications(from, limit, only, asUserId))
 
     override suspend fun getPushRules(asUserId: UserId?): Result<GetPushRules.Response> =
-        httpClient.request(GetPushRules(asUserId))
+        baseClient.request(GetPushRules(asUserId))
 
     override suspend fun getPushRule(
         scope: String,
@@ -135,7 +135,7 @@ class PushApiClientImpl(
         ruleId: String,
         asUserId: UserId?,
     ): Result<PushRule> =
-        httpClient.request(GetPushRule(scope, kind, ruleId, asUserId))
+        baseClient.request(GetPushRule(scope, kind, ruleId, asUserId))
 
     override suspend fun setPushRule(
         scope: String,
@@ -146,7 +146,7 @@ class PushApiClientImpl(
         afterRuleId: String?,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(SetPushRule(scope, kind, ruleId, beforeRuleId, afterRuleId, asUserId), pushRule)
+        baseClient.request(SetPushRule(scope, kind, ruleId, beforeRuleId, afterRuleId, asUserId), pushRule)
 
     override suspend fun deletePushRule(
         scope: String,
@@ -154,7 +154,7 @@ class PushApiClientImpl(
         ruleId: String,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(DeletePushRule(scope, kind, ruleId, asUserId))
+        baseClient.request(DeletePushRule(scope, kind, ruleId, asUserId))
 
     override suspend fun getPushRuleActions(
         scope: String,
@@ -162,7 +162,7 @@ class PushApiClientImpl(
         ruleId: String,
         asUserId: UserId?,
     ): Result<Set<PushAction>> =
-        httpClient.request(GetPushRuleActions(scope, kind, ruleId, asUserId)).map { it.actions }
+        baseClient.request(GetPushRuleActions(scope, kind, ruleId, asUserId)).map { it.actions }
 
     override suspend fun setPushRuleActions(
         scope: String,
@@ -171,7 +171,7 @@ class PushApiClientImpl(
         actions: Set<PushAction>,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(
+        baseClient.request(
             SetPushRuleActions(scope, kind, ruleId, asUserId),
             SetPushRuleActions.Request(actions)
         )
@@ -182,7 +182,7 @@ class PushApiClientImpl(
         ruleId: String,
         asUserId: UserId?,
     ): Result<Boolean> =
-        httpClient.request(GetPushRuleEnabled(scope, kind, ruleId, asUserId)).map { it.enabled }
+        baseClient.request(GetPushRuleEnabled(scope, kind, ruleId, asUserId)).map { it.enabled }
 
     override suspend fun setPushRuleEnabled(
         scope: String,
@@ -191,7 +191,7 @@ class PushApiClientImpl(
         enabled: Boolean,
         asUserId: UserId?,
     ): Result<Unit> =
-        httpClient.request(
+        baseClient.request(
             SetPushRuleEnabled(scope, kind, ruleId, asUserId),
             SetPushRuleEnabled.Request(enabled)
         )
