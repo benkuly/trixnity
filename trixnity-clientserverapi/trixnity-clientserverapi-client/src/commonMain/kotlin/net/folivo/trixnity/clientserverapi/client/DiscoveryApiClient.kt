@@ -17,12 +17,12 @@ interface DiscoveryApiClient {
 }
 
 class DiscoveryApiClientImpl(
-    private val httpClient: MatrixClientServerApiHttpClient
+    private val baseClient: MatrixClientServerApiBaseClient
 ) : DiscoveryApiClient {
 
     override suspend fun getWellKnown(): Result<DiscoveryInformation> =
-        httpClient.request(GetWellKnown)
+        baseClient.request(GetWellKnown)
 
     override suspend fun getSupport(): Result<GetSupport.Response> =
-        httpClient.request(GetSupport)
+        baseClient.request(GetSupport)
 }

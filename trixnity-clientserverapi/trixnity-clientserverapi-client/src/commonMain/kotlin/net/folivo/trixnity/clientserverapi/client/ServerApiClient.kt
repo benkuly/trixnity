@@ -35,24 +35,26 @@ interface ServerApiClient {
     ): Result<WhoIs.Response>
 }
 
-class ServerApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient) : ServerApiClient {
+class ServerApiClientImpl(
+    private val baseClient: MatrixClientServerApiBaseClient
+) : ServerApiClient {
 
     override suspend fun getVersions(): Result<GetVersions.Response> =
-        httpClient.request(GetVersions)
+        baseClient.request(GetVersions)
 
     override suspend fun getCapabilities(): Result<GetCapabilities.Response> =
-        httpClient.request(GetCapabilities)
+        baseClient.request(GetCapabilities)
 
     override suspend fun search(
         request: Search.Request,
         nextBatch: String?,
         asUserId: UserId?
     ): Result<Search.Response> =
-        httpClient.request(Search(nextBatch, asUserId), request)
+        baseClient.request(Search(nextBatch, asUserId), request)
 
     override suspend fun whoIs(
         userId: UserId,
         asUserId: UserId?
     ): Result<WhoIs.Response> =
-        httpClient.request(WhoIs(userId, asUserId))
+        baseClient.request(WhoIs(userId, asUserId))
 }

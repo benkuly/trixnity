@@ -33,7 +33,7 @@ class MatrixServerServerApiClientTest {
                     respond("{}")
                 }
             })
-        cut.httpClient.baseClient.get {
+        cut.baseClient.baseClient.get {
             host = "otherHost"
             port = 80
         }
@@ -59,7 +59,7 @@ class MatrixServerServerApiClientTest {
                     respond("{}")
                 }
             })
-        cut.httpClient.baseClient.post("/test") {
+        cut.baseClient.baseClient.post("/test") {
             host = "otherHost"
             port = 80
             contentType(ContentType.Application.Json)
@@ -86,7 +86,7 @@ class MatrixServerServerApiClientTest {
                     respond("{}")
                 }
             })
-        cut.httpClient.baseClient.get("/test") {
+        cut.baseClient.baseClient.get("/test") {
             host = "otherHost"
             port = 80
         }

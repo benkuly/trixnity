@@ -113,24 +113,26 @@ interface MediaApiClient {
     ): Result<GetUrlPreview.Response>
 }
 
-class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient) : MediaApiClient {
+class MediaApiClientImpl(
+    private val baseClient: MatrixClientServerApiBaseClient
+) : MediaApiClient {
 
     @Deprecated("use getConfig instead")
     override suspend fun getConfigLegacy(): Result<GetMediaConfigLegacy.Response> =
-        httpClient.request(GetMediaConfigLegacy)
+        baseClient.request(GetMediaConfigLegacy)
 
     override suspend fun getConfig(): Result<GetMediaConfig.Response> =
-        httpClient.request(GetMediaConfig)
+        baseClient.request(GetMediaConfig)
 
     override suspend fun createMedia(): Result<CreateMedia.Response> =
-        httpClient.request(CreateMedia)
+        baseClient.request(CreateMedia)
 
     override suspend fun upload(
         media: Media,
         progress: MutableStateFlow<FileTransferProgress?>?,
         timeout: Duration,
     ): Result<UploadMedia.Response> =
-        httpClient.request(UploadMedia(media.contentDisposition?.parameter("filename")), media) {
+        baseClient.request(UploadMedia(media.contentDisposition?.parameter("filename")), media) {
             timeout {
                 requestTimeoutMillis = timeout.inWholeMilliseconds
             }
@@ -147,7 +149,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         progress: MutableStateFlow<FileTransferProgress?>?,
         timeout: Duration,
     ): Result<Unit> =
-        httpClient.request(
+        baseClient.request(
             UploadMediaByContentUri(
                 serverName,
                 mediaId,
@@ -175,7 +177,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         if (uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
         val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
             .let { it.substringBefore("/") to it.substringAfter("/") }
-        return httpClient.withRequest(
+        return baseClient.withRequest(
             endpoint = DownloadMediaLegacy(serverName, mediaId, allowRemote, timeoutMs = timeout.inWholeMilliseconds),
             requestBuilder = {
                 method = HttpMethod.Get
@@ -201,7 +203,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         if (uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
         val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
             .let { it.substringBefore("/") to it.substringAfter("/") }
-        return httpClient.withRequest(
+        return baseClient.withRequest(
             endpoint = DownloadMedia(serverName, mediaId, timeout?.inWholeMilliseconds),
             requestBuilder = {
                 method = HttpMethod.Get
@@ -234,7 +236,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         if (uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
         val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
             .let { it.substringBefore("/") to it.substringAfter("/") }
-        return httpClient.withRequest(
+        return baseClient.withRequest(
             endpoint = DownloadThumbnailLegacy(
                 serverName = serverName,
                 mediaId = mediaId,
@@ -272,7 +274,7 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         if (uri.protocol.name != "mxc") return Result.failure(IllegalArgumentException("url protocol was not mxc"))
         val (serverName, mediaId) = mxcUri.removePrefix("mxc://")
             .let { it.substringBefore("/") to it.substringAfter("/") }
-        return httpClient.withRequest(
+        return baseClient.withRequest(
             endpoint = DownloadThumbnail(
                 serverName = serverName,
                 mediaId = mediaId,
@@ -302,11 +304,11 @@ class MediaApiClientImpl(private val httpClient: MatrixClientServerApiHttpClient
         url: String,
         timestamp: Long?,
     ): Result<GetUrlPreviewLegacy.Response> =
-        httpClient.request(GetUrlPreviewLegacy(url, timestamp))
+        baseClient.request(GetUrlPreviewLegacy(url, timestamp))
 
     override suspend fun getUrlPreview(
         url: String,
         timestamp: Long?,
     ): Result<GetUrlPreview.Response> =
-        httpClient.request(GetUrlPreview(url, timestamp))
+        baseClient.request(GetUrlPreview(url, timestamp))
 }

@@ -126,7 +126,7 @@ suspend fun SyncApiClient.startOnce(
 
 
 class SyncApiClientImpl(
-    private val httpClient: MatrixClientServerApiHttpClient,
+    private val baseClient: MatrixClientServerApiBaseClient,
     private val syncLoopDelay: Duration,
     private val syncLoopErrorDelay: Duration,
     private val clock: Clock = Clock.System,
@@ -140,7 +140,7 @@ class SyncApiClientImpl(
         timeout: Duration,
         asUserId: UserId?
     ): Result<Sync.Response> =
-        httpClient.request(
+        baseClient.request(
             Sync(filter, if (fullState) fullState else null, setPresence, since, timeout.inWholeMilliseconds, asUserId),
         ) {
             timeout {
@@ -251,16 +251,16 @@ class SyncApiClientImpl(
             log.info { "started single sync (initial=$isInitialSync)" }
             _currentSyncState.value = if (isInitialSync) INITIAL_SYNC else STARTED
             syncAndResponse(
-                    getBatchToken = getBatchToken,
-                    setBatchToken = setBatchToken,
-                    filter = filter,
-                    setPresence = setPresence,
-                    timeout = timeout,
-                    withTransaction = withTransaction,
-                    allowStoppingRequest = false,
-                    asUserId = asUserId,
-                    runOnce = runOnce
-                )
+                getBatchToken = getBatchToken,
+                setBatchToken = setBatchToken,
+                filter = filter,
+                setPresence = setPresence,
+                timeout = timeout,
+                withTransaction = withTransaction,
+                allowStoppingRequest = false,
+                asUserId = asUserId,
+                runOnce = runOnce
+            )
         }
     }.onSuccess {
         log.info { "stopped single sync with success" }

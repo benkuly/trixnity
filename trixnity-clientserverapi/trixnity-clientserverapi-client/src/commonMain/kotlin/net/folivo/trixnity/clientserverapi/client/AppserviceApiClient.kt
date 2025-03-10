@@ -10,9 +10,9 @@ interface AppserviceApiClient {
 }
 
 class AppserviceApiClientImpl(
-    private val httpClient: MatrixClientServerApiHttpClient
+    private val baseClient: MatrixClientServerApiBaseClient
 ) : AppserviceApiClient {
 
     override suspend fun ping(appserviceId: String, transactionId: String?): Result<Ping.Response> =
-        httpClient.request(Ping(appserviceId), Ping.Request(transactionId))
+        baseClient.request(Ping(appserviceId), Ping.Request(transactionId))
 }

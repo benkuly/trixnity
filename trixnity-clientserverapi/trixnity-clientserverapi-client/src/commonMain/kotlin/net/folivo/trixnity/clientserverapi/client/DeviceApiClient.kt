@@ -35,25 +35,25 @@ interface DeviceApiClient {
 }
 
 class DeviceApiClientImpl(
-    private val httpClient: MatrixClientServerApiHttpClient
+    private val baseClient: MatrixClientServerApiBaseClient
 ) : DeviceApiClient {
 
     override suspend fun getDevices(asUserId: UserId?): Result<List<Device>> =
-        httpClient.request(GetDevices(asUserId)).map { it.devices }
+        baseClient.request(GetDevices(asUserId)).map { it.devices }
 
     override suspend fun getDevice(deviceId: String, asUserId: UserId?): Result<Device> =
-        httpClient.request(GetDevice(deviceId, asUserId))
+        baseClient.request(GetDevice(deviceId, asUserId))
 
     override suspend fun updateDevice(
         deviceId: String,
         displayName: String,
         asUserId: UserId?
     ): Result<Unit> =
-        httpClient.request(UpdateDevice(deviceId, asUserId), UpdateDevice.Request(displayName))
+        baseClient.request(UpdateDevice(deviceId, asUserId), UpdateDevice.Request(displayName))
 
     override suspend fun deleteDevices(devices: List<String>, asUserId: UserId?): Result<UIA<Unit>> =
-        httpClient.uiaRequest(DeleteDevices(asUserId), DeleteDevices.Request(devices))
+        baseClient.uiaRequest(DeleteDevices(asUserId), DeleteDevices.Request(devices))
 
     override suspend fun deleteDevice(deviceId: String, asUserId: UserId?): Result<UIA<Unit>> =
-        httpClient.uiaRequest(DeleteDevice(deviceId, asUserId))
+        baseClient.uiaRequest(DeleteDevice(deviceId, asUserId))
 }
