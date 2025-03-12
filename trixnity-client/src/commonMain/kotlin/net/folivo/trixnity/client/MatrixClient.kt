@@ -14,7 +14,6 @@ import net.folivo.trixnity.client.utils.retryWhen
 import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.EventHandler
@@ -99,12 +98,12 @@ interface MatrixClient : AutoCloseable {
     suspend fun <T> syncOnce(
         presence: Presence? = Presence.OFFLINE,
         timeout: Duration = Duration.ZERO,
-        runOnce: suspend (Sync.Response) -> T
+        runOnce: suspend (SyncEvents) -> T
     ): Result<T>
 
-    suspend fun stopSync(wait: Boolean = false)
+    suspend fun stopSync()
 
-    suspend fun cancelSync(wait: Boolean = false)
+    suspend fun cancelSync()
 
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
@@ -343,6 +342,14 @@ suspend fun MatrixClient.Companion.loginWith(
         onLogout = { onLogout(it, accountStore) },
         json = di.get(),
         eventContentSerializerMappings = di.get(),
+        syncBatchTokenStore = object : SyncBatchTokenStore {
+            override suspend fun getSyncBatchToken(): String? =
+                accountStore.getAccount()?.syncBatchToken
+
+            override suspend fun setSyncBatchToken(token: String) {
+                accountStore.updateAccount { it?.copy(syncBatchToken = token) }
+            }
+        },
         syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
         syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
     )
@@ -455,6 +462,14 @@ suspend fun MatrixClient.Companion.fromStore(
             onLogout = { onLogout(it, accountStore) },
             json = di.get(),
             eventContentSerializerMappings = di.get(),
+            syncBatchTokenStore = object : SyncBatchTokenStore {
+                override suspend fun getSyncBatchToken(): String? =
+                    accountStore.getAccount()?.syncBatchToken
+
+                override suspend fun setSyncBatchToken(token: String) {
+                    accountStore.updateAccount { it?.copy(syncBatchToken = token) }
+                }
+            },
             syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
             syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay,
         )
@@ -592,12 +607,12 @@ class MatrixClientImpl internal constructor(
                     when (it) {
                         LOGGED_OUT_SOFT -> {
                             log.info { "stop sync" }
-                            stopSync(true)
+                            stopSync()
                         }
 
                         LOGGED_OUT -> {
                             log.info { "stop sync and delete all" }
-                            stopSync(true)
+                            stopSync()
                             rootStore.deleteAll()
                         }
 
@@ -650,7 +665,7 @@ class MatrixClientImpl internal constructor(
     }
 
     override suspend fun logout(): Result<Unit> {
-        cancelSync(true)
+        cancelSync()
         return if (loginState.value == LOGGED_OUT_SOFT) {
             deleteAll()
             Result.success(Unit)
@@ -668,14 +683,14 @@ class MatrixClientImpl internal constructor(
      * Be aware, that most StateFlows you got before will not be updated after calling this method.
      */
     override suspend fun clearCache(): Result<Unit> = kotlin.runCatching {
-        stopSync(true)
+        stopSync()
         accountStore.updateAccount { it?.copy(syncBatchToken = null) }
         rootStore.clearCache()
         startSync()
     }
 
     override suspend fun clearMediaCache(): Result<Unit> = kotlin.runCatching {
-        stopSync(true)
+        stopSync()
         mediaCacheMappingStore.clearCache()
         mediaStore.clearCache()
         startSync()
@@ -687,9 +702,6 @@ class MatrixClientImpl internal constructor(
             timeout = config.syncLoopTimeout,
             filter = checkNotNull(accountStore.getAccount()?.filterId),
             setPresence = presence,
-            getBatchToken = { accountStore.getAccount()?.syncBatchToken },
-            setBatchToken = { accountStore.updateAccount { account -> account?.copy(syncBatchToken = it) } },
-            scope = coroutineScope,
         )
     }
 
@@ -699,25 +711,23 @@ class MatrixClientImpl internal constructor(
     override suspend fun <T> syncOnce(
         presence: Presence?,
         timeout: Duration,
-        runOnce: suspend (Sync.Response) -> T,
+        runOnce: suspend (SyncEvents) -> T,
     ): Result<T> {
         started.first { it }
         return api.sync.startOnce(
             filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
             setPresence = presence,
-            getBatchToken = { accountStore.getAccount()?.syncBatchToken },
-            setBatchToken = { accountStore.updateAccount { account -> account?.copy(syncBatchToken = it) } },
             timeout = timeout,
             runOnce = runOnce
         )
     }
 
-    override suspend fun stopSync(wait: Boolean) {
-        api.sync.stop(wait)
+    override suspend fun stopSync() {
+        api.sync.stop()
     }
 
-    override suspend fun cancelSync(wait: Boolean) {
-        api.sync.cancel(wait)
+    override suspend fun cancelSync() {
+        api.sync.cancel()
     }
 
     override fun close() {
