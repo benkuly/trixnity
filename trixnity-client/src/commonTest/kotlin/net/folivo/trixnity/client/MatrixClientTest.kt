@@ -7,7 +7,6 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.store.Account

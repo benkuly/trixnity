@@ -10,6 +10,7 @@ import io.ktor.http.ContentType.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.currentTime
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.core.model.RoomId
@@ -355,7 +356,7 @@ class SyncApiClientTest {
                 setPresence = Presence.ONLINE,
                 timeout = 30_000.milliseconds
             )
-            delay(200.milliseconds)
+            runCurrent()
             matrixRestClient.sync.currentSyncState.value shouldBe SyncState.INITIAL_SYNC
             delay(31.seconds)
             matrixRestClient.sync.currentSyncState.first { it == SyncState.RUNNING }
@@ -435,7 +436,7 @@ class SyncApiClientTest {
                 setPresence = Presence.ONLINE,
                 timeout = 30_000.milliseconds
             )
-            delay(200.milliseconds)
+            runCurrent()
             matrixRestClient.sync.currentSyncState.value shouldBe SyncState.STARTED
             delay(31.seconds)
             matrixRestClient.sync.currentSyncState.first { it == SyncState.RUNNING }

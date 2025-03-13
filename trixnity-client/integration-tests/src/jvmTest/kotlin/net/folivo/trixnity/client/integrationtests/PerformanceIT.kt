@@ -231,7 +231,7 @@ class PerformanceIT {
                 port = synapse.firstMappedPort
             ).build()
             val clients = clientFactories.map { it(baseUrl) }
-            clients.map { async { it.stopSync(true) } }.awaitAll()
+            clients.map { async { it.stopSync() } }.awaitAll()
 
             val prepareTestClients = (1..roomsCount).withLimitedParallelism { i ->
                 registerAndStartClient("prepare-$i", "prepare-$i", baseUrl, createInMemoryRepositoriesModule()) {
@@ -247,7 +247,7 @@ class PerformanceIT {
                     invite = clients.map { it.userId }.toSet(),
                 ).getOrThrow()
                 clients.forEach { it.api.room.joinRoom(roomId).getOrThrow() }
-                it.cancelSync(true)
+                it.cancelSync()
                 userId to roomId
             }.toMap()
             log.info { "all rooms created" }
@@ -263,7 +263,7 @@ class PerformanceIT {
                     ?.getOrThrow()
                 encryptedEvent.shouldNotBeNull()
                 api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
-                it.cancelSync(true)
+                it.cancelSync()
             }
             log.info { "all initial messages sent" }
 

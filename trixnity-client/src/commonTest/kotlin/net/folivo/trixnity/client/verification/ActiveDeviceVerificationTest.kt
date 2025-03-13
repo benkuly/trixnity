@@ -108,10 +108,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         }
         createCut()
         cut.startLifecycle(this)
-        api.sync.startOnce(
-            getBatchToken = { null },
-            setBatchToken = {},
-        ).getOrThrow()
+        api.sync.startOnce().getOrThrow()
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
@@ -241,10 +238,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
         }
         createCut()
         cut.startLifecycle(this)
-        api.sync.startOnce(
-            getBatchToken = { null },
-            setBatchToken = {},
-        ).getOrThrow()
+        api.sync.startOnce().getOrThrow()
     }
     should("stop lifecycle, when timed out") {
         val encrypted = OlmEncryptedToDeviceEventContent(
@@ -305,10 +299,7 @@ class ActiveDeviceVerificationTest : ShouldSpec({
             clock = Clock.System,
         )
         cut.startLifecycle(this)
-        api.sync.startOnce(
-            getBatchToken = { null },
-            setBatchToken = {},
-        ).getOrThrow()
+        api.sync.startOnce().getOrThrow()
         cut.state.first { it is ActiveVerificationState.Ready }
 
         cut.theirDeviceId shouldBe "ALICE_1"

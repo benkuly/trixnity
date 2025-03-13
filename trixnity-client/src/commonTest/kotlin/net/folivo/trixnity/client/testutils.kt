@@ -13,6 +13,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.clientserverapi.client.SyncBatchTokenStore
 import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
 import net.folivo.trixnity.clientserverapi.model.server.GetVersions
 import net.folivo.trixnity.core.UserInfo
@@ -37,11 +38,13 @@ val simpleUserInfo =
 fun mockMatrixClientServerApiClient(
     json: Json = createMatrixEventJson(),
     contentMappings: EventContentSerializerMappings = createDefaultEventContentSerializerMappings(),
+    syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
 ): Pair<MatrixClientServerApiClientImpl, PortableMockEngineConfig> {
     val config = PortableMockEngineConfig()
     val api = MatrixClientServerApiClientImpl(
         json = json,
-        httpClientEngine = mockEngineWithEndpoints(json, contentMappings, portableConfig = config)
+        httpClientEngine = mockEngineWithEndpoints(json, contentMappings, portableConfig = config),
+        syncBatchTokenStore = syncBatchTokenStore
     )
     return api to config
 }

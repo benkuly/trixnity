@@ -182,6 +182,9 @@ class SyncApiClientImpl(
     private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(STOPPED)
     override val currentSyncState = _currentSyncState.asStateFlow()
 
+    private var syncLoopJob: Job? = null
+    private val syncLoopStartMutex = Mutex()
+
     init {
         syncCoroutineScope.launch { syncLoop() }
         if (log.isInfoEnabled()) {
@@ -193,32 +196,37 @@ class SyncApiClientImpl(
         }
     }
 
-    private var syncLoopJob: Job? = null
-    private val syncLoopStartMutex = Mutex()
     private suspend fun syncLoop() {
         syncLoopStartMutex.withLock {
             syncLoopJob?.cancelAndJoin()
             syncLoopJob = syncCoroutineScope.launch {
                 log.info { "started syncLoop" }
                 while (currentCoroutineContext().isActive) {
-                    val currentBatchToken = syncBatchTokenStore.getSyncBatchToken()
-                    val syncParameter =
+                    val (syncParameter, currentBatchToken) =
                         combine(syncOnceRequests, syncLoopRequest) { syncOnceRequests, syncLoopRequest ->
                             syncOnceRequests.firstOrNull() ?: syncLoopRequest
-                        }.onEach {
-                            _currentSyncState.value = when {
-                                it == null -> STOPPED
-                                currentBatchToken == null -> INITIAL_SYNC
-                                _currentSyncState.value == RUNNING -> RUNNING
-                                else -> STARTED
+                        }.onEach { req ->
+                            if (req == null) {
+                                _currentSyncState.value = STOPPED
                             }
                         }.filterNotNull()
+                            .map { req ->
+                                val currentBatchToken = syncBatchTokenStore.getSyncBatchToken()
+                                _currentSyncState.update { prev ->
+                                    when {
+                                        currentBatchToken == null -> INITIAL_SYNC
+                                        prev != RUNNING -> STARTED
+                                        else -> prev
+                                    }
+                                }
+                                req to currentBatchToken
+                            }
                             .first()
                     try {
                         syncAndResponse(syncParameter, currentBatchToken)
                         if (syncParameter.doOnce) {
                             log.trace { "remove sync once request from queue" }
-                            syncOnceRequests.update { it.filter { it.epoch == syncParameter.epoch } }
+                            syncOnceRequests.update { it.filter { it.epoch != syncParameter.epoch } }
                         }
                         _currentSyncState.value = RUNNING
                     } catch (error: Throwable) {
@@ -229,7 +237,9 @@ class SyncApiClientImpl(
                             }
 
                             is CancellationException -> throw error
-                            is SyncStoppedException -> {}
+                            is SyncStoppedException -> {
+                                continue
+                            }
 
                             else -> {
                                 log.error(error) { "error while sync with token $currentBatchToken" }

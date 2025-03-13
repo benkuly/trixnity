@@ -217,11 +217,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     suspend fun checkNoNotification() = coroutineScope {
-        api.sync.start(
-            getBatchToken = { null },
-            setBatchToken = {},
-            scope = this
-        )
+        api.sync.start()
 
         val notifications = async { cut.getNotifications(0.seconds).first() }
 
@@ -230,19 +226,15 @@ private val body: ShouldSpec.() -> Unit = {
         }
         notifications.cancel()
 
-        api.sync.cancel(true)
+        api.sync.cancel()
     }
 
     suspend fun checkNotifications(block: suspend (Flow<Notification>) -> Unit) = coroutineScope {
-        api.sync.start(
-            getBatchToken = { null },
-            setBatchToken = {},
-            scope = this,
-        )
+        api.sync.start()
 
         block(cut.getNotifications(0.seconds))
 
-        api.sync.cancel(true)
+        api.sync.cancel()
     }
 
     context("getNotifications") {

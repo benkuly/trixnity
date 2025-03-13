@@ -64,7 +64,7 @@ class FallbackKeyIT {
             startedClient1.client.room.getAll().first { it.size == 1 }
             val startFrom =
                 startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().first().first().eventId
-            startedClient1.client.cancelSync(true)
+            startedClient1.client.cancelSync()
 
 
             val oneTimeKeys = startedClient2.claimAllOneTimeKeysFrom(startedClient1)
@@ -73,12 +73,12 @@ class FallbackKeyIT {
                 startedClient2.client.room.sendMessage(roomId) { text("dino") } // uses fallback key
                 delay(500.milliseconds)
                 startedClient2.client.room.waitForOutboxSent()
-                startedClient2.client.cancelSync(true)
+                startedClient2.client.cancelSync()
 
                 startedClient3.client.room.sendMessage(roomId) { text("dino") } // uses fallback key
                 delay(500.milliseconds)
                 startedClient3.client.room.waitForOutboxSent()
-                startedClient3.client.cancelSync(true)
+                startedClient3.client.cancelSync()
             }
 
             startedClient1.client.startSync()
@@ -91,7 +91,7 @@ class FallbackKeyIT {
             withTimeoutOrNull(1.seconds) {
                 message.first { it.content != null }
             } ?: fail { "could not decrypt event (maybe there was no fallback key)" }
-            startedClient1.client.stopSync(true)
+            startedClient1.client.stopSync()
 
             withClue("ensure, that new one time and fallback keys are generated") {
                 startedClient2.claimAllOneTimeKeysFrom(startedClient1)
