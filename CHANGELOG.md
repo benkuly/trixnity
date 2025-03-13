@@ -9,9 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Extract notifications from a single sync
-- Expose base clients
-
 ### Changed
 
 - Changed sync loop to allow for once-syncs in between
@@ -22,9 +19,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix check for too many olm inbound sessions
-
 ### Security
+
+## 4.13.3
+
+### Added
+
+- Extract notifications from a single sync
+- Expose base clients
+
+### Fixed
+
+- Fix check for too many olm inbound sessions
 
 ## 4.13.2
 
