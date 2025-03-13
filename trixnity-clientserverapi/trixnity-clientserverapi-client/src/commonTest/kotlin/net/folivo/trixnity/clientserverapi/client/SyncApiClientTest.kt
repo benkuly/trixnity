@@ -7,12 +7,10 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
@@ -268,7 +266,7 @@ class SyncApiClientTest {
             .shouldBeInstanceOf<MessageEvent<*>>()
             .unsigned.also {
                 it?.redactedBecause.shouldNotBeNull().shouldBeInstanceOf<MessageEvent<*>>()
-                it?.relations?.thread?.latestEvent.shouldNotBeNull().shouldBeInstanceOf<MessageEvent<*>>()
+                it.relations?.thread?.latestEvent.shouldNotBeNull().shouldBeInstanceOf<MessageEvent<*>>()
             }
         assertEquals(1, result.room?.invite?.size)
         assertEquals(0, result.room?.leave?.size)
@@ -454,25 +452,226 @@ class SyncApiClientTest {
     }
 
     @Test
-    fun `should do sync once`() = runTest {
-        fail("TODO")
-        fail("remove from queue")
-        fail("run operation")
+    fun `should do sync once`() = runTestWithCoroutineScope { coroutineScope ->
+        val syncBatchTokenStore = SyncBatchTokenStore.inMemory()
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0", // started state
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            syncBatchTokenStore = syncBatchTokenStore,
+            syncCoroutineScope = coroutineScope,
+        ).use { matrixRestClient ->
+            syncBatchTokenStore.setSyncBatchToken("some")
+
+            val states = async {
+                matrixRestClient.sync.currentSyncState.take(4).toList()
+            }
+
+            matrixRestClient.sync.startOnce(
+                filter = "someFilter", setPresence = Presence.ONLINE, timeout = 12.seconds
+            ) {
+                it.syncResponse shouldBe serverResponse1
+            }.getOrThrow()
+
+            states.await() shouldBe listOf(
+                SyncState.STOPPED, SyncState.STARTED, SyncState.RUNNING, SyncState.STOPPED
+            )
+        }
     }
 
     @Test
-    fun `should stop sync once on cancellation`() = runTest {
-        fail("TODO")
-        fail("remove from queue")
+    fun `should stop sync once on cancellation`() = runTestWithCoroutineScope { coroutineScope ->
+        val syncBatchTokenStore = SyncBatchTokenStore.inMemory()
+        val requestStarted = MutableSharedFlow<CompletableDeferred<Unit>>()
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    val complete = CompletableDeferred<Unit>()
+                    requestStarted.emit(complete)
+                    complete.await()
+
+                    fail("should be cancelled before complete.await()")
+                }
+            },
+            syncBatchTokenStore = syncBatchTokenStore,
+            syncCoroutineScope = coroutineScope,
+        ).use { matrixRestClient ->
+            syncBatchTokenStore.setSyncBatchToken("some")
+
+            val startOnceJob = launch {
+                matrixRestClient.sync.startOnce(
+                    filter = "someFilter",
+                    setPresence = Presence.ONLINE,
+                ) {
+                    fail("startOnce should be cancelled")
+                }.getOrThrow()
+            }
+
+            requestStarted.first() // wait for request to be running
+            matrixRestClient.sync.currentSyncState.value shouldBe SyncState.STARTED
+            matrixRestClient.sync.testOnlySyncOnceSize() shouldBe 1
+
+            startOnceJob.cancelAndJoin()
+            matrixRestClient.sync.testOnlySyncOnceSize() shouldBe 0
+
+            matrixRestClient.sync.currentSyncState.first { it == SyncState.STOPPED }
+        }
     }
 
     @Test
-    fun `should stop sync loop on stop`() = runTest {
-        fail("TODO")
+    fun `should stop sync loop on stop`() = runTestWithCoroutineScope { coroutineScope ->
+        val syncBatchTokenStore = SyncBatchTokenStore.inMemory()
+        val requestStarted = MutableSharedFlow<CompletableDeferred<Unit>>()
+        val requestCount = MutableStateFlow(0)
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    when (requestCount.getAndUpdate { it + 1 }) {
+                        0 -> {
+                            val complete = CompletableDeferred<Unit>()
+                            requestStarted.emit(complete)
+                            complete.await()
+
+                            respond(
+                                json.encodeToString(serverResponse1),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        else -> {
+                            val complete = CompletableDeferred<Unit>()
+                            requestStarted.emit(complete)
+                            complete.await()
+
+                            fail("should be cancelled before complete.await()")
+                        }
+                    }
+                }
+            },
+            syncBatchTokenStore = syncBatchTokenStore,
+            syncCoroutineScope = coroutineScope,
+        ).use { matrixRestClient ->
+            syncBatchTokenStore.setSyncBatchToken("some")
+            matrixRestClient.sync.start()
+
+            matrixRestClient.sync.currentSyncState.first { it == SyncState.STARTED }
+            requestStarted.first().complete(Unit)
+            matrixRestClient.sync.currentSyncState.first { it == SyncState.RUNNING }
+
+            // wait for second request but don't complete it
+            requestStarted.first()
+
+            requestCount.value shouldBe 2
+            matrixRestClient.sync.stop()
+            matrixRestClient.sync.currentSyncState.value shouldBe SyncState.STOPPED
+        }
     }
 
     @Test
-    fun `should stop sync loop on sync once`() = runTest {
-        fail("TODO")
+    fun `should stop sync loop on sync once`() = runTestWithCoroutineScope { coroutineScope ->
+        val syncBatchTokenStore = SyncBatchTokenStore.inMemory()
+        val requestCount = MutableStateFlow(0)
+        val requestStarted = MutableSharedFlow<CompletableDeferred<Unit>>()
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    when (val count = requestCount.getAndUpdate { it + 1 }) {
+                        0 -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+
+                            val complete = CompletableDeferred<Unit>()
+                            requestStarted.emit(complete)
+                            complete.await()
+
+                            fail("first request should be cancelled because of syncOnce")
+                        }
+
+                        1 -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?filter=secondFilter&since=some&timeout=0", request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            respond(
+                                json.encodeToString(serverResponse1),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        2 -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+
+                            val complete = CompletableDeferred<Unit>()
+                            requestStarted.emit(complete)
+                            complete.await()
+
+                            respond(
+                                json.encodeToString(serverResponse2),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        else -> {
+                            fail("there should be no more requests: $count")
+                        }
+                    }
+                }
+            },
+            syncBatchTokenStore = syncBatchTokenStore,
+            syncCoroutineScope = coroutineScope,
+        ).use { matrixRestClient ->
+            syncBatchTokenStore.setSyncBatchToken("some")
+            val syncResponses = MutableSharedFlow<Response>(replay = 5)
+            matrixRestClient.sync.subscribe { syncResponses.emit(it.syncResponse) }
+            matrixRestClient.sync.start(
+                filter = "someFilter", setPresence = Presence.ONLINE, timeout = 30_000.milliseconds
+            )
+            matrixRestClient.sync.currentSyncState.first { it == SyncState.STARTED }
+            requestStarted.first() // request handler is now waiting for
+            matrixRestClient.sync.currentSyncState.value shouldBe SyncState.STARTED // first request not finished yet
+
+            matrixRestClient.sync.startOnce(filter = "secondFilter") { syncResponses ->
+                syncResponses.syncResponse shouldBe serverResponse1
+            }.getOrThrow()
+
+            matrixRestClient.sync.currentSyncState.value shouldBe SyncState.RUNNING
+            matrixRestClient.sync.testOnlySyncOnceSize() shouldBe 0
+
+            requestStarted.first().complete(Unit)
+
+            syncResponses.take(2).collect()
+            matrixRestClient.sync.stop()
+            matrixRestClient.sync.currentSyncState.value shouldBe SyncState.STOPPED
+
+            requestCount.value shouldBe 3
+            syncResponses.replayCache[0] shouldBe serverResponse1
+            syncResponses.replayCache[1] shouldBe serverResponse2
+            syncBatchTokenStore.getSyncBatchToken() shouldBe "nextBatch2"
+        }
     }
 }

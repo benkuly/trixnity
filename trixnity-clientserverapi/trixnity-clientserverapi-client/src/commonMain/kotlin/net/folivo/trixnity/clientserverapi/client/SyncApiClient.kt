@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
@@ -173,6 +174,8 @@ class SyncApiClientImpl(
 
     private val syncOnceRequests = MutableStateFlow<List<SyncQueueItem>>(listOf())
     private val syncLoopRequest = MutableStateFlow<SyncQueueItem?>(null)
+
+    internal fun testOnlySyncOnceSize() : Int = syncOnceRequests.value.size
 
     private object SyncStoppedException : RuntimeException("sync has been stopped")
 
@@ -356,9 +359,10 @@ class SyncApiClientImpl(
                     send(kotlin.runCatching { runOnce(it) })
             }
             syncOnceRequests.update { it + syncQueueItem }
-            invokeOnClose {
+
+            awaitClose {
                 unsubscribe()
-                syncOnceRequests.update { it.filter { it.epoch == syncQueueItem.epoch } }
+                syncOnceRequests.update { it.filter { it.epoch != syncQueueItem.epoch } }
             }
         }.first()
 
