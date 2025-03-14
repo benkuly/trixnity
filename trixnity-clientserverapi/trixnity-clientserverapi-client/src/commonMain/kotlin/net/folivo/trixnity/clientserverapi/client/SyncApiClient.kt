@@ -41,9 +41,9 @@ interface SyncBatchTokenStore {
 }
 
 class SyncEvents(
-    internal val epoch: Long,
     val syncResponse: Sync.Response,
     allEvents: List<ClientEvent<*>>,
+    internal val epoch: Long? = null
 ) : List<ClientEvent<*>> by allEvents
 
 enum class SyncState {
@@ -237,9 +237,7 @@ class SyncApiClientImpl(
                             }
 
                             is CancellationException -> throw error
-                            is SyncStoppedException -> {
-                                continue
-                            }
+                            is SyncStoppedException -> continue // skip syncLoopErrorDelay
 
                             else -> {
                                 log.error(error) { "error while sync with token $currentBatchToken" }
@@ -364,7 +362,7 @@ class SyncApiClientImpl(
                 timeout = timeout,
                 doOnce = true,
             )
-            val unsubscribe = subscribe(ClientEventEmitter.Priority.LAST) {
+            val unsubscribe = subscribe(Int.MIN_VALUE) {
                 if (it.epoch == syncQueueItem.epoch)
                     send(kotlin.runCatching { runOnce(it) })
             }

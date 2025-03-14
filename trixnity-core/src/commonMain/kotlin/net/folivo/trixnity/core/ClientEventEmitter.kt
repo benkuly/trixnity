@@ -32,7 +32,7 @@ interface ClientEventEmitter<T : List<ClientEvent<*>>> {
         const val BEFORE_DEFAULT = DEFAULT + 1_000
         const val AFTER_DEFAULT = DEFAULT - 1_000
 
-        const val LAST = Int.MIN_VALUE
+        const val LAST = Int.MIN_VALUE + 1
     }
 
     /**
