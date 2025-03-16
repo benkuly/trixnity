@@ -5,19 +5,40 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
+import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
+import net.folivo.trixnity.core.model.events.UnknownEventContent
+import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.Presence
+import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.thread
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.subscribeContent
+import net.folivo.trixnity.core.subscribeEachEvent
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -675,4 +696,746 @@ class SyncApiClientTest {
             syncBatchTokenStore.getSyncBatchToken() shouldBe "nextBatch2"
         }
     }
+
+    @Test
+    fun `should sync loop with timeout state and initial sync state`() = runTestWithCoroutineScope { coroutineScope ->
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+                addHandler {
+                    delay(100)
+                    throw HttpRequestTimeoutException(HttpRequestBuilder())
+                }
+                addHandler {
+                    respond(
+                        json.encodeToString(serverResponse2),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+            val stateResult = MutableSharedFlow<SyncState>(replay = 5)
+
+            launch {
+                stateResult.emitAll(matrixRestClient.sync.currentSyncState.take(5))
+            }
+
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = Presence.ONLINE,
+                timeout = 300.milliseconds
+            )
+
+            stateResult.take(4).toList() shouldBe
+                    listOf(SyncState.STOPPED, SyncState.INITIAL_SYNC, SyncState.RUNNING, SyncState.TIMEOUT)
+
+            matrixRestClient.sync.stop()
+
+            stateResult.take(5).toList() shouldBe
+                    listOf(SyncState.STOPPED, SyncState.INITIAL_SYNC, SyncState.RUNNING, SyncState.TIMEOUT, SyncState.STOPPED)
+        }
+    }
+
+    @Test
+    fun `should sync loop without initial sync state`() = runTestWithCoroutineScope { coroutineScope ->
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("ananas") },
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=ananas&timeout=0",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=100",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse2),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+                addHandler {
+                    delay(50)
+                    respond(
+                        json.encodeToString(serverResponse2),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+
+            val stateResult = MutableSharedFlow<SyncState>(replay = 3)
+
+            launch {
+                stateResult.emitAll(matrixRestClient.sync.currentSyncState.take(3))
+            }
+
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = Presence.ONLINE,
+                timeout = 100.milliseconds
+            )
+
+            stateResult.take(3).toList() shouldBe
+                    listOf(SyncState.STOPPED, SyncState.STARTED, SyncState.RUNNING)
+        }
+    }
+
+    @Test
+    fun `should sync loop with error state`() = runTestWithCoroutineScope { coroutineScope ->
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler {
+                    respond(
+                        "Bad Request",
+                        HttpStatusCode.BadRequest,
+                    )
+                }
+
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?timeout=0",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+            val stateResult = MutableSharedFlow<SyncState>(replay = 6)
+
+            launch {
+                stateResult.emitAll(matrixRestClient.sync.currentSyncState.take(6))
+            }
+
+            matrixRestClient.sync.start(
+                filter = null,
+                setPresence = null,
+            )
+
+            stateResult.take(5).toList() shouldBe listOf(SyncState.STOPPED, SyncState.INITIAL_SYNC,
+                SyncState.ERROR, SyncState.INITIAL_SYNC, SyncState.RUNNING)
+
+            matrixRestClient.sync.stop()
+
+            stateResult.take(6).toList() shouldBe listOf(SyncState.STOPPED, SyncState.INITIAL_SYNC,
+                SyncState.ERROR, SyncState.INITIAL_SYNC, SyncState.RUNNING, SyncState.STOPPED)
+        }
+    }
+
+    @Test
+    fun `should sync loop and handle timeout`() = runTestWithCoroutineScope { coroutineScope ->
+        val requestCount = MutableStateFlow(0)
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    when (requestCount.value) {
+                        0 -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?timeout=0",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            requestCount.value++
+                            delay(100)
+                            throw HttpRequestTimeoutException(HttpRequestBuilder())
+                        }
+
+                        else -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?timeout=0",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            requestCount.value++
+                            delay(100)
+                            respond(
+                                json.encodeToString(serverResponse1),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+                }
+            }
+        ).use { matrixRestClient ->
+            matrixRestClient.sync.start(
+                timeout = 100.milliseconds,
+            )
+
+            requestCount.first { it == 2 } shouldBe 2
+        }
+
+    }
+
+
+    @Test
+    fun `should retry sync loop on error`() = runTestWithCoroutineScope { coroutineScope ->
+        val syncBatchTokenStore = SyncBatchTokenStore.inMemory()
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            syncBatchTokenStore =  syncBatchTokenStore,
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        "",
+                        HttpStatusCode.NotFound,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=0",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse2),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+
+                addHandler { request ->
+                    respond(
+                        json.encodeToString(serverResponse2),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+            val syncResponses = MutableSharedFlow<Response>(replay = 5)
+            matrixRestClient.sync.subscribe { syncResponses.emit(it.syncResponse) }
+
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = Presence.ONLINE,
+                timeout = 30_000.milliseconds
+            )
+
+            syncResponses.take(3).collect()
+
+            assertEquals(serverResponse1, syncResponses.replayCache[0])
+            assertEquals(serverResponse2, syncResponses.replayCache[1])
+            assertEquals("nextBatch2", syncBatchTokenStore.getSyncBatchToken())
+        }
+    }
+
+    @Test
+    fun `should retry sync loop on subscriber error`() = runTestWithCoroutineScope { coroutineScope ->
+        val syncBatchTokenStore = SyncBatchTokenStore.inMemory()
+        val requestCount = MutableStateFlow(0)
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            syncBatchTokenStore =  syncBatchTokenStore,
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    when (requestCount.value) {
+                        0, 1 -> {
+                            assertEquals(
+                                "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&timeout=0",
+                                request.url.fullPath
+                            )
+                            assertEquals(HttpMethod.Get, request.method)
+                            requestCount.value++
+                            respond(
+                                json.encodeToString(serverResponse1),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        else -> {
+                            respond(
+                                json.encodeToString(serverResponse2),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+                }
+            }
+        ).use { matrixRestClient ->
+            val syncResponses = MutableSharedFlow<Response>(replay = 5)
+            var subscribeCall = 0
+            matrixRestClient.sync.subscribe {
+                subscribeCall++
+                when (subscribeCall) {
+                    1 -> throw RuntimeException("dino")
+                    else -> syncResponses.emit(it.syncResponse)
+                }
+            }
+
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = Presence.ONLINE,
+                timeout = 0.milliseconds
+            )
+
+            syncResponses.take(3).collect()
+
+            matrixRestClient.sync.stop()
+
+            assertEquals(2, requestCount.value)
+            assertEquals(serverResponse1, syncResponses.replayCache[0])
+            assertEquals(serverResponse2, syncResponses.replayCache[1])
+            assertEquals("nextBatch2", syncBatchTokenStore.getSyncBatchToken())
+        }
+    }
+
+    @Test
+    fun `should emit events`() = runTestWithCoroutineScope { coroutineScope ->
+        val response = Response(
+            nextBatch = "nextBatch1",
+            accountData = Response.GlobalAccountData(
+                listOf(
+                    ClientEvent.GlobalAccountDataEvent(
+                        DirectEventContent(
+                            mapOf(
+                                UserId("alice", "server") to setOf(RoomId("room1", "server"))
+                            )
+                        )
+                    )
+                )
+            ),
+            deviceLists = Response.DeviceLists(emptySet(), emptySet()),
+            oneTimeKeysCount = emptyMap(),
+            presence = Response.Presence(
+                listOf(
+                    ClientEvent.EphemeralEvent(
+                        PresenceEventContent(Presence.ONLINE),
+                        sender = UserId("dino", "server")
+                    )
+                )
+            ),
+            room = Response.Rooms(
+                join = mapOf(
+                    RoomId("room1", "Server") to Response.Rooms.JoinedRoom(
+                        timeline = Response.Rooms.Timeline(
+                            listOf(
+                                MessageEvent(
+                                    RoomMessageEventContent.TextBased.Text("hi"),
+                                    EventId("event1"),
+                                    UserId("user", "server"),
+                                    RoomId("room1", "server"),
+                                    1234L
+                                )
+                            )
+                        ),
+                        state = Response.Rooms.State(
+                            listOf(
+                                ClientEvent.RoomEvent.StateEvent(
+                                    MemberEventContent(membership = Membership.JOIN),
+                                    EventId("event2"),
+                                    UserId("user", "server"),
+                                    RoomId("room1", "server"),
+                                    1235L,
+                                    stateKey = UserId("joinedUser", "server").toString()
+                                )
+                            )
+                        ),
+                        ephemeral = Response.Rooms.JoinedRoom.Ephemeral(emptyList()), //TODO
+                        accountData = Response.Rooms.RoomAccountData(
+                            listOf(
+                                ClientEvent.RoomAccountDataEvent(
+                                    FullyReadEventContent(EventId("event1")),
+                                    RoomId("room1", "server")
+                                ),
+                                ClientEvent.RoomAccountDataEvent(
+                                    UnknownEventContent(
+                                        JsonObject(mapOf("cool" to JsonPrimitive("trixnity"))),
+                                        "org.example.mynamespace"
+                                    ),
+                                    RoomId("room1", "server")
+                                )
+                            )
+                        )
+                    )
+                ),
+                leave = mapOf(
+                    RoomId("room2", "Server") to Response.Rooms.LeftRoom(
+                        timeline = Response.Rooms.Timeline(
+                            listOf(
+                                MessageEvent(
+                                    RoomMessageEventContent.TextBased.Notice("hi"),
+                                    EventId("event4"),
+                                    UserId("user", "server"),
+                                    RoomId("room2", "server"),
+                                    1234L
+                                )
+                            )
+                        ),
+                        state = Response.Rooms.State(
+                            listOf(
+                                ClientEvent.RoomEvent.StateEvent(
+                                    MemberEventContent(membership = Membership.JOIN),
+                                    EventId("event5"),
+                                    UserId("user", "server"),
+                                    RoomId("room2", "server"),
+                                    1235L,
+                                    stateKey = UserId("joinedUser", "server").toString()
+                                )
+                            )
+                        )
+                    )
+                ),
+                invite = mapOf(
+                    RoomId("room3", "Server") to Response.Rooms.InvitedRoom(
+                        Response.Rooms.InvitedRoom.InviteState(
+                            listOf(
+                                ClientEvent.StrippedStateEvent(
+                                    MemberEventContent(membership = Membership.INVITE),
+                                    null,
+                                    UserId("user", "server"),
+                                    RoomId("room3", "server"),
+                                    stateKey = UserId("joinedUser", "server").toString()
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            toDevice = Response.ToDevice(
+                listOf(
+                    ClientEvent.ToDeviceEvent(
+                        RoomKeyEventContent(RoomId("room", "server"), "se", "sk", EncryptionAlgorithm.Megolm),
+                        UserId("dino", "server")
+                    )
+                )
+            )
+        )
+        val inChannel = Channel<Response>()
+
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler {
+                    respond(
+                        json.encodeToString(inChannel.receive()),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+            val allEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeEachEvent { allEventsCount.update { it + 1 } }
+
+            val messageEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeContent<RoomMessageEventContent> { messageEventsCount.update { it + 1 } }
+
+            val memberEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeContent<MemberEventContent> { memberEventsCount.update { it + 1 } }
+
+            val presenceEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeContent<PresenceEventContent> { presenceEventsCount.update { it + 1 } }
+
+            val roomKeyEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeContent<RoomKeyEventContent> { roomKeyEventsCount.update { it + 1 } }
+
+            val globalAccountDataEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeContent<GlobalAccountDataEventContent> { globalAccountDataEventsCount.update { it + 1 } }
+
+            val roomAccountDataEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeContent<RoomAccountDataEventContent> { roomAccountDataEventsCount.update { it + 1 } }
+
+            matrixRestClient.sync.start()
+
+            inChannel.send(response)
+
+            matrixRestClient.sync.currentSyncState.first { it == SyncState.RUNNING }
+
+            assertEquals(10, allEventsCount.value)
+            assertEquals(2, messageEventsCount.value)
+            assertEquals(3, memberEventsCount.value)
+            assertEquals(1, presenceEventsCount.value)
+            assertEquals(1, roomKeyEventsCount.value)
+            assertEquals(1, globalAccountDataEventsCount.value)
+            assertEquals(1, roomAccountDataEventsCount.value)
+
+            matrixRestClient.sync.stop()
+        }
+    }
+
+    @Test
+    fun `should deal with multiple starts and stops`() = runTestWithCoroutineScope { coroutineScope ->
+        val response = Response(
+            nextBatch = "nextBatch1",
+            accountData = Response.GlobalAccountData(emptyList()),
+            deviceLists = Response.DeviceLists(emptySet(), emptySet()),
+            oneTimeKeysCount = emptyMap(),
+            presence = Response.Presence(emptyList()),
+            room = Response.Rooms(
+                join = mapOf(
+                    RoomId("room", "Server") to Response.Rooms.JoinedRoom(
+                        timeline = Response.Rooms.Timeline(
+                            listOf(
+                                MessageEvent(
+                                    RoomMessageEventContent.TextBased.Text("hi"),
+                                    EventId("event"),
+                                    UserId("user", "server"),
+                                    RoomId("room", "server"),
+                                    1234L
+                                )
+                            )
+                        )
+                    )
+                ), knock = null, invite = null, leave = null
+            ),
+            toDevice = Response.ToDevice(emptyList())
+        )
+        val inChannel = Channel<Response>()
+
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler {
+                    respond(
+                        json.encodeToString(inChannel.receive()),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+            val allEventsCount = MutableStateFlow(0)
+            matrixRestClient.sync.subscribeEachEvent { allEventsCount.update { it + 1 } }
+
+            matrixRestClient.sync.start()
+            matrixRestClient.sync.start()
+
+            inChannel.send(response)
+            inChannel.send(response)
+
+            allEventsCount.first { it == 2 }
+
+            matrixRestClient.sync.stop()
+            matrixRestClient.sync.stop()
+        }
+    }
+
+    @Test
+    fun `should allow only one sync at a time`() = runTestWithCoroutineScope { coroutineScope ->
+        val response = Response(
+            nextBatch = "nextBatch1",
+            accountData = Response.GlobalAccountData(emptyList()),
+            deviceLists = Response.DeviceLists(emptySet(), emptySet()),
+            oneTimeKeysCount = emptyMap(),
+            presence = Response.Presence(emptyList()),
+            room = Response.Rooms(
+                join = mapOf(
+                    RoomId("room", "Server") to Response.Rooms.JoinedRoom(
+                        timeline = Response.Rooms.Timeline(
+                            listOf(
+                                MessageEvent(
+                                    RoomMessageEventContent.TextBased.Text("hi"),
+                                    EventId("event"),
+                                    UserId("user", "server"),
+                                    RoomId("room", "server"),
+                                    1234L
+                                )
+                            )
+                        )
+                    )
+                ), knock = null, invite = null, leave = null
+            ),
+            toDevice = Response.ToDevice(emptyList())
+        )
+
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler {
+                    respond(
+                        json.encodeToString(response),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+            val allEventsCount = MutableStateFlow(0)
+
+            launch {
+                matrixRestClient.sync.startOnce(
+                    timeout = 0.milliseconds
+                ) {
+                    delay(500)
+                    allEventsCount.update { it + 1 }
+                }
+            }
+
+            launch {
+                matrixRestClient.sync.startOnce(
+                    timeout = 0.milliseconds
+                ) {
+                    delay(500)
+                    allEventsCount.update { it + 1 }
+                }
+            }
+
+            launch {
+                allEventsCount.first { it == 0 }
+                currentTime shouldBe 0
+                allEventsCount.first { it == 1 }
+                currentTime shouldBe 500
+                allEventsCount.first { it == 2 }
+                currentTime shouldBe 3000
+            }.join()
+        }
+    }
+
+
+    @Test
+    fun `should stop sync loop`() = runTestWithCoroutineScope { coroutineScope ->
+        val requestCount = MutableStateFlow(0)
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("some") },
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    requestCount.value++
+
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        json.encodeToString(serverResponse1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+            val syncResponses = MutableSharedFlow<Response>(replay = 5)
+            matrixRestClient.sync.subscribe { syncResponses.emit(it.syncResponse) }
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = Presence.ONLINE,
+                timeout = 30_000.milliseconds
+            )
+            syncResponses.first()
+            matrixRestClient.sync.stop()
+            matrixRestClient.sync.currentSyncState.value shouldBe SyncState.STOPPED
+            requestCount.value shouldBe 1
+        }
+    }
+    @Test
+    fun `should allow multiple stop sync loop`() = runTestWithCoroutineScope { coroutineScope ->
+        val requestCount = MutableStateFlow(0)
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("some") },
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=some&timeout=0",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    requestCount.value++
+                    respond(
+                        json.encodeToString(serverResponse1),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/sync?filter=someFilter&set_presence=online&since=nextBatch1&timeout=30000",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    requestCount.value++
+                    respond(
+                        json.encodeToString(serverResponse2),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        ).use { matrixRestClient ->
+            matrixRestClient.sync.start(
+                filter = "someFilter",
+                setPresence = Presence.ONLINE,
+                timeout = 30_000.milliseconds
+            )
+
+            requestCount.first { it == 2 }
+
+            val stopAndWait1 = launch { matrixRestClient.sync.stop() }
+            val stopAndWait2 = launch { matrixRestClient.sync.stop() }
+
+            stopAndWait1.join()
+            stopAndWait2.join()
+
+            matrixRestClient.sync.currentSyncState.value shouldBe SyncState.STOPPED
+        }
+    }
+
 }
