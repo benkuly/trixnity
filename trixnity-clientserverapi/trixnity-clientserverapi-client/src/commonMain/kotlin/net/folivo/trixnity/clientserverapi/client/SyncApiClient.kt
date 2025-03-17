@@ -382,6 +382,6 @@ class SyncApiClientImpl(
 
     override suspend fun cancel() {
         stop()
-        syncLoop()
+        syncCoroutineScope.launch { syncLoop() }
     }
 }
