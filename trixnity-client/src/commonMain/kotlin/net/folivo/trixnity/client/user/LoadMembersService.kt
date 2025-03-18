@@ -40,7 +40,9 @@ class LoadMembersServiceImpl(
                     onError = { log.warn(it) { "failed loading members" } },
                 ) {
                     val room = roomStore.get(roomId).first()
-                    if (room?.membersLoaded != true) {
+                        ?: throw IllegalStateException("room not loaded yet")
+
+                    if (!room.membersLoaded) {
                         log.debug { "load members of room $roomId" }
                         val memberEvents = api.room.getMembers(
                             roomId = roomId,
