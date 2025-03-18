@@ -7,8 +7,10 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -32,9 +34,29 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class LoadMembersServiceTest : ShouldSpec({
     timeout = 30_000
+    coroutineTestScope = true
+
     val alice = UserId("alice", "server")
     val bob = UserId("bob", "server")
     val roomId = simpleRoom.roomId
+
+    val aliceEvent = StateEvent(
+        MemberEventContent(membership = JOIN),
+        EventId("\$event1"),
+        alice,
+        roomId,
+        1234,
+        stateKey = alice.full
+    )
+    val bobEvent = StateEvent(
+        MemberEventContent(membership = JOIN),
+        EventId("\$event2"),
+        bob,
+        roomId,
+        1234,
+        stateKey = bob.full
+    )
+
     lateinit var roomStore: RoomStore
     lateinit var scope: CoroutineScope
     lateinit var api: MatrixClientServerApiClient
@@ -74,22 +96,6 @@ class LoadMembersServiceTest : ShouldSpec({
             }
         }
         should("load members") {
-            val aliceEvent = StateEvent(
-                MemberEventContent(membership = JOIN),
-                EventId("\$event1"),
-                alice,
-                roomId,
-                1234,
-                stateKey = alice.full
-            )
-            val bobEvent = StateEvent(
-                MemberEventContent(membership = JOIN),
-                EventId("\$event2"),
-                bob,
-                roomId,
-                1234,
-                stateKey = bob.full
-            )
             apiConfig.endpoints {
                 matrixJsonEndpoint(GetMembers(roomId, notMembership = LEAVE)) {
                     GetMembers.Response(
@@ -105,6 +111,31 @@ class LoadMembersServiceTest : ShouldSpec({
             }
             cut(roomId, true)
             roomStore.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
+            newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
+        }
+        should("retry when room not loaded yet") {
+            apiConfig.endpoints {
+                matrixJsonEndpoint(GetMembers(roomId, notMembership = LEAVE)) {
+                    GetMembers.Response(
+                        setOf(aliceEvent, bobEvent)
+                    )
+                }
+            }
+            val newMemberEvents = mutableListOf<Event<MemberEventContent>>()
+            api.sync.subscribeContent<MemberEventContent> {
+                newMemberEvents += it
+            }
+
+            val loadMembers = launch{
+                cut(roomId, true)
+            }
+
+            delay(10000)
+
+            loadMembers.isCompleted shouldBe false
+
+            roomStore.update(roomId) { simpleRoom.copy(roomId = roomId, membersLoaded = false) }
+            roomStore.get(roomId).first { it?.membersLoaded == true }
             newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
         }
     }

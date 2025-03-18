@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Do not remove cache entry again if null
+
 ### Security
 
 ## 4.13.3
