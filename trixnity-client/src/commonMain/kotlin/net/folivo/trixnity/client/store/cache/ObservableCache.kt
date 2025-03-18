@@ -181,8 +181,9 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                     val cacheEntry = values.get(key)
                     if (cacheEntry != null) {
                         log.trace { "$name (set): skipped cache but found a cache entry and therefore filling it for key $key" }
-                        cacheEntry.set(key, value, transaction, null, forceCacheOnly = true)
-                        possiblyRemoveFromCache(value, key)
+                        cacheEntry.set(key, value, transaction, null, forceCacheOnly = true)?.also { (oldValue, newValue) ->
+                            possiblyRemoveFromCache(oldValue, newValue, key)
+                        }
                     }
                 }
             }
@@ -192,8 +193,9 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                     log.trace { "$name (set): no cache hit for key $key" }
                     MutableStateFlow(CacheValue.Value(value))
                 }
-            cacheEntry.set(key, value, transaction, persist)
-            possiblyRemoveFromCache(value, key)
+            cacheEntry.set(key, value, transaction, persist)?.also { (oldValue, newValue) ->
+                possiblyRemoveFromCache(oldValue, newValue, key)
+            }
         }
     }
 
@@ -203,11 +205,13 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         transaction: Transaction?,
         noinline persist: (suspend (newValue: V?) -> Unit)? = null,
         forceCacheOnly: Boolean = false,
-    ) {
+    ) : ValueUpdate<V>? {
         while (true) {
             val oldRawValue = value
+            val oldValue = oldRawValue.valueOrNull()
             // prefer cache value (when not going to be nulled)
-            if (forceCacheOnly.not() && newValue != null && persist == null && oldRawValue is CacheValue.Value) return
+            if (forceCacheOnly.not() && newValue != null && persist == null && oldRawValue is CacheValue.Value)
+                return null
             val newRawValue = CacheValue.Value(newValue)
             transaction?.onRollbackActions?.write {
                 add {
@@ -219,8 +223,8 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                 }
             }
             if (compareAndSet(oldRawValue, newRawValue)) {
-                if (forceCacheOnly.not() && persist != null && (oldRawValue.valueOrNull() != newValue)) persist(newValue)
-                return
+                if (forceCacheOnly.not() && persist != null && (oldValue != newValue)) persist(newValue)
+                return ValueUpdate(oldValue, newValue)
             }
         }
     }
@@ -242,8 +246,8 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                 log.trace { "$name (update): no cache hit for key $key" }
                 MutableStateFlow(CacheValue.Init())
             }
-        val value = cacheEntry.updateAndGet(key, updater, transaction, { store.get(key) }, persist)
-        possiblyRemoveFromCache(value, key)
+        val (oldValue, newValue) = cacheEntry.updateAndGet(key, updater, transaction, { store.get(key) }, persist)
+        possiblyRemoveFromCache(oldValue, newValue, key)
     }
 
     private suspend inline fun <V> MutableStateFlow<CacheValue<V?>>.updateAndGet(
@@ -252,7 +256,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         transaction: Transaction?,
         noinline get: (suspend () -> V?),
         noinline persist: (suspend (newValue: V?) -> Unit)? = null,
-    ): V? {
+    ): ValueUpdate<V> {
         while (true) {
             val oldRawValue = value
             val oldValue = when (oldRawValue) {
@@ -272,13 +276,13 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             }
             if (compareAndSet(oldRawValue, newRawValue)) {
                 if (persist != null && (oldValue != newValue)) persist(newValue)
-                return newValue
+                return ValueUpdate(oldValue, newValue)
             }
         }
     }
 
-    private suspend fun possiblyRemoveFromCache(value: V?, key: K) {
-        if (removeFromCacheOnNull && value == null) {
+    private suspend fun possiblyRemoveFromCache(oldValue: V?, newValue: V?, key: K) {
+        if (removeFromCacheOnNull && newValue == null && oldValue != null) {
             log.trace { "$name: remove value from cache with key $key because it is stale and is allowed to remove (will never be not-null again)" }
             values.remove(key, true)
         }
@@ -367,3 +371,8 @@ private class RemoverJobExecutingIndex<K : Any, V>(
 
     override suspend fun getSubscriptionCount(key: K): Int = 0
 }
+
+private data class ValueUpdate<V>(
+    val oldValue: V?,
+    val newValue: V?
+)

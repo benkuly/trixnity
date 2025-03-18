@@ -473,5 +473,14 @@ class ObservableCacheTest : ShouldSpec({
             indexedCut.invalidate()
             indexedCut.index.onRemove.first() shouldBe ("key" to true)
         }
+        should("not remove from cache when alreay null on upate") {
+            indexedCut = TestIndexedObservableCache("", cacheStore, cacheScope, 1.seconds)
+            val barrier = CompletableDeferred<Unit>()
+            val myFlow = async { indexedCut.get("key").onStart { barrier.complete(Unit) }.drop(1).first() }
+            barrier.await()
+            indexedCut.set("key", null)
+            indexedCut.update("key") { "my elem" }
+            myFlow.await() shouldBe "my elem"
+        }
     }
 })
