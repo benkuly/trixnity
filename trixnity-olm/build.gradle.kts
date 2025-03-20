@@ -6,9 +6,10 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     id("com.android.library")
-    alias(libs.plugins.download)
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    alias(libs.plugins.download)
+    alias(libs.plugins.kotlinxKover)
     trixnity.general
     trixnity.publish
 }

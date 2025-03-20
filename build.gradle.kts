@@ -8,6 +8,7 @@ plugins {
     `maven-publish`
     signing
     id(libs.plugins.dokka.get().pluginId)
+    alias(libs.plugins.kotlinxKover)
     alias(libs.plugins.download).apply(false)
     alias(libs.plugins.kotest).apply(false)
     alias(libs.plugins.mokkery).apply(false)
@@ -89,9 +90,54 @@ dependencies {
     dokka(projects.trixnityApplicationservice)
 }
 
+
 val dokkaHtmlToWebsite by tasks.registering(Copy::class) {
     from(layout.buildDirectory.dir("dokka/html"))
     into(layout.projectDirectory.dir("website/static/api"))
     outputs.cacheIf { true }
     dependsOn(":dokkaGenerate")
+}
+
+kover {
+    dependencies {
+        fun DependencyHandler.addSubProjectsWithKoverAsDependency(project: Project) {
+            for (subProject in project.subprojects) {
+                subProject.afterEvaluate {
+                    if (subProject.plugins.hasPlugin("org.jetbrains.kotlinx.kover"))
+                        kover(subProject)
+                }
+                addSubProjectsWithKoverAsDependency(subProject)
+            }
+        }
+
+        addSubProjectsWithKoverAsDependency(project)
+    }
+    reports {
+        filters {
+            includes.classes("net.folivo.trixnity.*")
+        }
+    }
+}
+
+val testCoverage by tasks.registering {
+    fun collectTasksByName(project: Project, name: String, foundTasks: MutableList<Task>) {
+        project.tasks.findByName(name)?.let { foundTasks.add(it) }
+        project.subprojects.forEach { collectTasksByName(it, name, foundTasks) }
+    }
+
+    val reportTask = tasks.named("koverXmlReport").get()
+    dependsOn(reportTask)
+    doLast {
+        val regex = """<counter type="INSTRUCTION" missed="(\d+)" covered="(\d+)"/>""".toRegex()
+        reportTask.outputs.files.forEach { file ->
+            file.useLines { lines ->
+                val coverage = lines.last(regex::containsMatchIn)
+                regex.find(coverage)?.let { coverageData ->
+                    val covered = coverageData.groupValues[2].toInt()
+                    val missed = coverageData.groupValues[1].toInt()
+                    println("Total test coverage: ${covered * 100 / (missed + covered)}%")
+                }
+            }
+        }
+    }
 }
