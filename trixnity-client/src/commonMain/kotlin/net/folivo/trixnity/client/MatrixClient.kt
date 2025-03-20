@@ -623,6 +623,7 @@ class MatrixClientImpl internal constructor(
                         userId, config.syncFilter.copy(
                             room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
                                 state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                                includeLeave = config.deleteRoomsOnLeave.not(),
                             )
                         )
                     ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
@@ -639,6 +640,7 @@ class MatrixClientImpl internal constructor(
                         userId, config.syncFilter.copy(
                             room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
                                 state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                                includeLeave = config.deleteRoomsOnLeave.not(),
                             ),
                         )
                     ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
