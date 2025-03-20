@@ -3,6 +3,7 @@ plugins {
     kotlin("plugin.serialization")
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotest)
+    alias(libs.plugins.kotlinxKover)
     trixnity.general
     trixnity.publish
 }
