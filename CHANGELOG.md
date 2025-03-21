@@ -9,9 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Test coverage in GitLab
-- Added AuthenticationRequest.Unknown
-
 ### Changed
 
 ### Deprecated
@@ -20,9 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Do not remove cache entry again if null
-
 ### Security
+
+## 4.13.4
+
+### Added
+
+- Test coverage in GitLab
+- Added AuthenticationRequest.Unknown
+
+### Fixed
+
+- Do not remove cache entry again if null
 
 ## 4.13.3
 

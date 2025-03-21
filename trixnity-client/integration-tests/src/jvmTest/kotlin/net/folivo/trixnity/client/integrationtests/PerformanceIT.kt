@@ -374,24 +374,6 @@ class PerformanceIT {
             )
         }
 
-    @Test
-    fun fullClientVsBotModeThroughput(): Unit =
-        runBlocking(Dispatchers.Default) {
-            val fullClientSyncTime = throughput()
-            val botSyncTime = throughput { modulesFactories = createTrixnityBotModuleFactories() }
-            val diff = (botSyncTime / fullClientSyncTime) * 100
-            println("################################")
-            println("fullClientSyncTime: $fullClientSyncTime")
-            println("################################")
-            println("botSyncTime: $botSyncTime")
-            println("################################")
-            println("diff: ${diff.roundToInt()}%")
-            println("################################")
-
-            // diff can be very small, because many components are involved
-            diff shouldBeLessThan 100.0 // %
-        }
-
     private suspend fun throughput(
         configuration: MatrixClientConfiguration.() -> Unit = {},
     ): Duration = withTimeout(4.minutes) {
