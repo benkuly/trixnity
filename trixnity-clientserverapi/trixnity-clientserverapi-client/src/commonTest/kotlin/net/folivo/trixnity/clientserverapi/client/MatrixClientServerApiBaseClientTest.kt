@@ -11,6 +11,7 @@ import io.ktor.resources.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
@@ -565,12 +566,83 @@ class MatrixClientServerApiBaseClientTest {
     }
 
     @Test
+    fun uiaRequestShouldAuthenticate() = runTest {
+        var requestCount = 0
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = authProvider,
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (requestCount) {
+                        0 -> {
+                            requestCount++
+                            respond(
+                                """
+                                {
+                                  "flows":[
+                                    {
+                                      "stages":["we.are.so.smartly"]
+                                    }
+                                  ],
+                                  "session":"session1"
+                                }
+                            """.trimIndent(),
+                                HttpStatusCode.Unauthorized,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        else -> {
+                            requestCount++
+                            request.body.toByteArray().decodeToString() shouldBe """
+                                {
+                                  "includeDino":true,
+                                  "auth":{
+                                    "type":"we.are.so.smartly",
+                                    "just_break_everything":"NOT_USED",
+                                    "session":"session1"
+                                  }
+                                }
+                                """.trimToFlatJson()
+                            respond(
+                                """{"status":"ok"}""",
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        val result = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
+        result.shouldBeInstanceOf<UIA.Step<*>>()
+        result.state shouldBe UIAState(
+            completed = listOf(),
+            flows = setOf(
+                UIAState.FlowInformation(listOf(AuthenticationType.Unknown("we.are.so.smartly"))),
+            ),
+            session = "session1"
+        )
+        result.authenticate(
+            AuthenticationRequest.Unknown(
+                JsonObject(mapOf("just_break_everything" to JsonPrimitive("NOT_USED"))),
+                AuthenticationType.Unknown("we.are.so.smartly")
+            )
+        ).getOrThrow()
+        result.getFallbackUrl(AuthenticationType.Unknown("we.are.so.smartly")).toString() shouldBe
+                "https://matrix.host/_matrix/client/v3/auth/we.are.so.smartly/fallback/web?session=session1"
+    }
+
+    @Test
     fun uiaRequestShouldReturnStepAndAllowAuthenticate() = runTest {
         var requestCount = 0
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
             authProvider = authProvider,
-            httpClientEngine = scopedMockEngine {
+            httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (requestCount) {
                         0 -> {
@@ -618,15 +690,15 @@ class MatrixClientServerApiBaseClientTest {
                             requestCount++
                             request.body.toByteArray().decodeToString() shouldBe """
                                 {
-                                  "help":"me",
+                                  "includeDino":true,
                                   "auth":{
+                                    "type":"m.login.password",
                                     "identifier":{
                                       "user":"username",
                                       "type":"m.id.user"                                     
                                     },
                                     "password":"password",
-                                    "session":"session1",
-                                    "type":"m.login.password"
+                                    "session":"session1"
                                   }
                                 }
                                 """.trimToFlatJson()
@@ -675,6 +747,7 @@ class MatrixClientServerApiBaseClientTest {
             session = "session1"
         )
         result.authenticate(AuthenticationRequest.Password(IdentifierType.User("username"), "password"))
+            .getOrThrow()
         result.getFallbackUrl(AuthenticationType.Password).toString() shouldBe
                 "https://matrix.host/_matrix/client/v3/auth/m.login.password/fallback/web?session=session1"
     }

@@ -68,6 +68,11 @@ sealed interface AuthenticationRequest {
         @SerialName("type")
         override val type: AuthenticationType? = null
     }
+
+    data class Unknown(
+        val raw: JsonObject,
+        override val type: AuthenticationType.Unknown?,
+    ) : AuthenticationRequest
 }
 
 object AuthenticationRequestSerializer : KSerializer<AuthenticationRequest> {
@@ -88,8 +93,12 @@ object AuthenticationRequestSerializer : KSerializer<AuthenticationRequest> {
             AuthenticationType.RegistrationToken.name ->
                 decoder.json.decodeFromJsonElement<RegistrationToken>(jsonObject)
 
-            null -> decoder.json.decodeFromJsonElement<Fallback>(jsonObject)
-            else -> throw SerializationException("could not deserialize authentication request")
+            null -> {
+                if (jsonObject.size == 1) decoder.json.decodeFromJsonElement<Fallback>(jsonObject)
+                else Unknown(jsonObject, null)
+            }
+
+            else -> Unknown(jsonObject, AuthenticationType.Unknown(type))
         }
     }
 
@@ -103,6 +112,10 @@ object AuthenticationRequestSerializer : KSerializer<AuthenticationRequest> {
             is Dummy -> encoder.json.encodeToJsonElement(value)
             is RegistrationToken -> encoder.json.encodeToJsonElement(value)
             is Fallback -> encoder.json.encodeToJsonElement(value)
+            is Unknown -> encoder.json.encodeToJsonElement(JsonObject(buildMap {
+                putAll(value.raw)
+                put("type", encoder.json.encodeToJsonElement(value.type))
+            }))
         }
         encoder.encodeJsonElement(JsonObject(buildMap {
             value.type?.name?.let { put("type", JsonPrimitive(it)) }
