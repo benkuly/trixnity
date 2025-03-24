@@ -24,6 +24,7 @@ import net.folivo.trixnity.client.verification.SelfVerificationMethod.*
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods.PreconditionsNotMet.Reason
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.clientserverapi.client.SyncBatchTokenStore
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
@@ -75,6 +76,7 @@ private val body: ShouldSpec.() -> Unit = {
     val eventId = EventId("$1event")
     val roomId = RoomId("room", "server")
     lateinit var apiConfig: PortableMockEngineConfig
+    lateinit var syncBatchTokenStore: SyncBatchTokenStore
     lateinit var api: MatrixClientServerApiClientImpl
     lateinit var scope: CoroutineScope
     lateinit var keyStore: KeyStore
@@ -100,7 +102,11 @@ private val body: ShouldSpec.() -> Unit = {
         keyServiceMock = KeyServiceMock()
         keyTrustServiceMock = KeyTrustServiceMock()
         keySecretServiceMock = KeySecretServiceMock()
-        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        syncBatchTokenStore = SyncBatchTokenStore.inMemory()
+        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(
+            json = json,
+            syncBatchTokenStore = syncBatchTokenStore,
+        )
         apiConfig = newApiConfig
         api = newApi
         cut = VerificationServiceImpl(
@@ -135,10 +141,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                api.sync.startOnce(
-                    getBatchToken = { null },
-                    setBatchToken = {},
-                ).getOrThrow()
+                api.sync.startOnce().getOrThrow()
 
                 val activeDeviceVerifications = cut.activeDeviceVerification.value
                 activeDeviceVerifications shouldBe null
@@ -158,10 +161,7 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                api.sync.startOnce(
-                    getBatchToken = { null },
-                    setBatchToken = {},
-                ).getOrThrow()
+                api.sync.startOnce().getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
                 activeDeviceVerification.state.value.shouldBeInstanceOf<TheirRequest>()
@@ -194,10 +194,7 @@ private val body: ShouldSpec.() -> Unit = {
                     matrixJsonEndpoint(SendToDevice("m.key.verification.cancel", "*")) {
                     }
                 }
-                api.sync.startOnce(
-                    getBatchToken = { null },
-                    setBatchToken = {},
-                ).getOrThrow()
+                api.sync.startOnce().getOrThrow()
 
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
@@ -294,16 +291,17 @@ private val body: ShouldSpec.() -> Unit = {
                     Clock.System.now().toEpochMilliseconds(),
                     "transaction"
                 )
+                syncBatchTokenStore.setSyncBatchToken("token1")
                 apiConfig.endpoints {
                     matrixJsonEndpoint(Sync(since = "token1")) {
                         Sync.Response(
-                            nextBatch = "nextBatch",
+                            nextBatch = "nextBatch1",
                             toDevice = Sync.Response.ToDevice(listOf(ToDeviceEvent(request, bobUserId)))
                         )
                     }
-                    matrixJsonEndpoint(Sync(since = "token2")) {
+                    matrixJsonEndpoint(Sync(since = "nextBatch1")) {
                         Sync.Response(
-                            nextBatch = "nextBatch",
+                            nextBatch = "nextBatch2",
                             toDevice = Sync.Response.ToDevice(
                                 listOf(
                                     ToDeviceEvent(
@@ -315,16 +313,10 @@ private val body: ShouldSpec.() -> Unit = {
                         )
                     }
                 }
-                api.sync.startOnce(
-                    getBatchToken = { "token1" },
-                    setBatchToken = {},
-                ).getOrThrow()
+                api.sync.startOnce().getOrThrow()
                 val activeDeviceVerification = cut.activeDeviceVerification.first { it != null }
                 require(activeDeviceVerification != null)
-                api.sync.startOnce(
-                    getBatchToken = { "token2" },
-                    setBatchToken = {},
-                ).getOrThrow()
+                api.sync.startOnce().getOrThrow()
                 activeDeviceVerification.state.first { it is Cancel } shouldBe Cancel(
                     VerificationCancelEventContent(Code.User, "user", null, "transaction"),
                     false

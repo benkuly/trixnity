@@ -4,11 +4,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ClientEventEmitter
@@ -20,12 +20,30 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
+import kotlin.time.measureTimedValue
 
 private val log = KotlinLogging.logger {}
+
+interface SyncBatchTokenStore {
+    suspend fun getSyncBatchToken(): String?
+    suspend fun setSyncBatchToken(token: String)
+
+    companion object {
+        fun inMemory(): SyncBatchTokenStore = object : SyncBatchTokenStore {
+            private var token: String? = null
+            override suspend fun getSyncBatchToken(): String? = token
+            override suspend fun setSyncBatchToken(token: String) {
+                this.token = token
+            }
+        }
+    }
+}
 
 class SyncEvents(
     val syncResponse: Sync.Response,
     allEvents: List<ClientEvent<*>>,
+    internal val epoch: Long? = null
 ) : List<ClientEvent<*>> by allEvents
 
 enum class SyncState {
@@ -80,56 +98,39 @@ interface SyncApiClient : ClientEventEmitter<SyncEvents> {
     suspend fun start(
         filter: String? = null,
         setPresence: Presence? = null,
-        getBatchToken: suspend () -> String?,
-        setBatchToken: suspend (String) -> Unit,
         timeout: Duration = 30.seconds,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
-        asUserId: UserId? = null,
-        wait: Boolean = false,
-        scope: CoroutineScope,
     )
 
     suspend fun <T> startOnce(
         filter: String? = null,
         setPresence: Presence? = null,
-        getBatchToken: suspend () -> String?,
-        setBatchToken: suspend (String) -> Unit,
         timeout: Duration = ZERO,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
-        asUserId: UserId? = null,
-        runOnce: suspend (Sync.Response) -> T,
+        runOnce: suspend (SyncEvents) -> T,
     ): Result<T>
 
-    suspend fun stop(wait: Boolean = false)
-    suspend fun cancel(wait: Boolean = false)
+    suspend fun stop()
+    suspend fun cancel()
 }
 
 suspend fun SyncApiClient.startOnce(
     filter: String? = null,
     setPresence: Presence? = null,
-    getBatchToken: suspend () -> String?,
-    setBatchToken: suspend (String) -> Unit,
     timeout: Duration = ZERO,
-    withTransaction: suspend (block: suspend () -> Unit) -> Unit = { it() },
-    asUserId: UserId? = null,
 ): Result<Unit> =
     startOnce(
         filter = filter,
         setPresence = setPresence,
-        getBatchToken = getBatchToken,
-        setBatchToken = setBatchToken,
         timeout = timeout,
-        withTransaction = withTransaction,
-        asUserId = asUserId,
         runOnce = {}
     )
 
 
 class SyncApiClientImpl(
     private val baseClient: MatrixClientServerApiBaseClient,
+    private val syncCoroutineScope: CoroutineScope,
+    private val syncBatchTokenStore: SyncBatchTokenStore,
     private val syncLoopDelay: Duration,
     private val syncLoopErrorDelay: Duration,
-    private val clock: Clock = Clock.System,
 ) : ClientEventEmitterImpl<SyncEvents>(), SyncApiClient {
 
     override suspend fun sync(
@@ -149,181 +150,165 @@ class SyncApiClientImpl(
             }
         }
 
-    private val syncMutex = Mutex()
-
-    private data class SyncJobState(
-        val job: Job,
-        val stopRequest: Boolean = false,
+    private val syncQueueItemEpoch = MutableStateFlow(0L)
+    private fun nextSyncQueueItem(
+        filter: String?,
+        setPresence: Presence?,
+        timeout: Duration,
+        doOnce: Boolean,
+    ): SyncQueueItem = SyncQueueItem(
+        filter = filter,
+        setPresence = setPresence,
+        timeout = timeout,
+        doOnce = doOnce,
+        epoch = syncQueueItemEpoch.updateAndGet { it + 1 },
     )
 
-    private val syncJobState = MutableStateFlow<SyncJobState?>(null)
+    private data class SyncQueueItem(
+        val filter: String?,
+        val setPresence: Presence?,
+        val timeout: Duration,
+        val doOnce: Boolean,
+        val epoch: Long,
+    )
+
+    private val syncOnceRequests = MutableStateFlow<List<SyncQueueItem>>(listOf())
+    private val syncLoopRequest = MutableStateFlow<SyncQueueItem?>(null)
+
+    internal fun testOnlySyncOnceSize() : Int = syncOnceRequests.value.size
+
+    private object SyncStoppedException : RuntimeException("sync has been stopped")
+
     private val _currentSyncState: MutableStateFlow<SyncState> = MutableStateFlow(STOPPED)
     override val currentSyncState = _currentSyncState.asStateFlow()
 
-    override suspend fun start(
-        filter: String?,
-        setPresence: Presence?,
-        getBatchToken: suspend () -> String?,
-        setBatchToken: suspend (String) -> Unit,
-        timeout: Duration,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
-        asUserId: UserId?,
-        wait: Boolean,
-        scope: CoroutineScope
-    ) {
-        syncJobState.value.also {
-            if (it?.stopRequest == true) {
-                log.info { "wait for old sync loop to be fully stopped before starting another sync loop" }
-                it.job.join()
+    private var syncLoopJob: Job? = null
+    private val syncLoopStartMutex = Mutex()
+
+    init {
+        syncCoroutineScope.launch { syncLoop() }
+        if (log.isInfoEnabled()) {
+            syncCoroutineScope.launch {
+                currentSyncState.collect {
+                    log.info { "current sync state: $it" }
+                }
             }
         }
-        val currentSyncJobState = syncJobState.updateAndGet {
-            if (it == null) {
-                val job = scope.launch(start = CoroutineStart.LAZY) {
-                    syncMutex.withLock {
-                        log.info { "started syncLoop" }
-                        val currentBatchToken = getBatchToken()
-                        val isInitialSync = currentBatchToken == null
-                        _currentSyncState.value = if (isInitialSync) INITIAL_SYNC else STARTED
+    }
 
-                        while (isActive && syncJobState.value?.stopRequest == false) {
-                            try {
-                                syncAndResponse(
-                                    getBatchToken = getBatchToken,
-                                    setBatchToken = setBatchToken,
-                                    filter = filter,
-                                    setPresence = setPresence,
-                                    timeout = if (_currentSyncState.value == STARTED) ZERO else timeout,
-                                    withTransaction = withTransaction,
-                                    allowStoppingRequest = true,
-                                    asUserId = asUserId,
-                                    runOnce = { it }
-                                )
-                                delay(syncLoopDelay)
-                            } catch (error: Throwable) {
-                                when (error) {
-                                    is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
-                                        log.info { "timeout while sync with token $currentBatchToken" }
-                                        _currentSyncState.value = TIMEOUT
-                                    }
-
-                                    is CancellationException -> throw error
-                                    is SyncStoppedException -> {
-                                        log.info { "sync has been stopped" }
-                                    }
-
-                                    else -> {
-                                        log.error(error) { "error while sync with token $currentBatchToken" }
-                                        _currentSyncState.value = ERROR
+    private suspend fun syncLoop() {
+        syncLoopStartMutex.withLock {
+            syncLoopJob?.cancelAndJoin()
+            syncLoopJob = syncCoroutineScope.launch {
+                log.info { "started syncLoop" }
+                while (currentCoroutineContext().isActive) {
+                    val (syncParameter, currentBatchToken) =
+                        combine(syncOnceRequests, syncLoopRequest) { syncOnceRequests, syncLoopRequest ->
+                            syncOnceRequests.firstOrNull() ?: syncLoopRequest
+                        }.onEach { req ->
+                            if (req == null) {
+                                _currentSyncState.value = STOPPED
+                            }
+                        }.filterNotNull()
+                            .map { req ->
+                                val currentBatchToken = syncBatchTokenStore.getSyncBatchToken()
+                                _currentSyncState.update { prev ->
+                                    when {
+                                        currentBatchToken == null -> INITIAL_SYNC
+                                        prev != RUNNING -> STARTED
+                                        else -> prev
                                     }
                                 }
-                                delay(syncLoopErrorDelay) // TODO better retry policy!
-                                _currentSyncState.value = if (getBatchToken() == null) INITIAL_SYNC else STARTED
+                                req to currentBatchToken
+                            }
+                            .first()
+                    try {
+                        syncAndResponse(syncParameter, currentBatchToken)
+                        if (syncParameter.doOnce) {
+                            log.trace { "remove sync once request from queue" }
+                            syncOnceRequests.update { it.filter { it.epoch != syncParameter.epoch } }
+                        }
+                        _currentSyncState.value = RUNNING
+                    } catch (error: Throwable) {
+                        when (error) {
+                            is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
+                                log.info { "timeout while sync with token $currentBatchToken" }
+                                _currentSyncState.value = TIMEOUT
+                            }
+
+                            is CancellationException -> throw error
+                            is SyncStoppedException -> continue // skip syncLoopErrorDelay
+
+                            else -> {
+                                log.error(error) { "error while sync with token $currentBatchToken" }
+                                _currentSyncState.value = ERROR
                             }
                         }
+                        delay(syncLoopErrorDelay) // TODO better retry policy!
                     }
                 }
-                job.invokeOnCompletion {
-                    log.info { "stopped syncLoop" }
-                    syncJobState.value = null
-                    _currentSyncState.value = STOPPED
-                }
-                SyncJobState(job)
-            } else it
+            }
         }
-        currentSyncJobState?.job?.start()
-        if (wait) currentSyncJobState?.job?.join()
     }
 
-    override suspend fun <T> startOnce(
-        filter: String?,
-        setPresence: Presence?,
-        getBatchToken: suspend () -> String?,
-        setBatchToken: suspend (String) -> Unit,
-        timeout: Duration,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
-        asUserId: UserId?,
-        runOnce: suspend (Sync.Response) -> T
-    ): Result<T> = kotlin.runCatching {
-        stop(wait = true)
-        syncMutex.withLock {
-            val isInitialSync = getBatchToken() == null
-            log.info { "started single sync (initial=$isInitialSync)" }
-            _currentSyncState.value = if (isInitialSync) INITIAL_SYNC else STARTED
-            syncAndResponse(
-                getBatchToken = getBatchToken,
-                setBatchToken = setBatchToken,
-                filter = filter,
-                setPresence = setPresence,
-                timeout = timeout,
-                withTransaction = withTransaction,
-                allowStoppingRequest = false,
-                asUserId = asUserId,
-                runOnce = runOnce
-            )
-        }
-    }.onSuccess {
-        log.info { "stopped single sync with success" }
-        _currentSyncState.value = STOPPED
-    }.onFailure {
-        log.warn(it) { "stopped single sync with failure" }
-        _currentSyncState.value = STOPPED
-    }
-
-    private suspend fun <T> syncAndResponse(
-        getBatchToken: suspend () -> String?,
-        setBatchToken: suspend (String) -> Unit,
-        filter: String?,
-        setPresence: Presence?,
-        timeout: Duration,
-        withTransaction: suspend (block: suspend () -> Unit) -> Unit,
-        allowStoppingRequest: Boolean,
-        asUserId: UserId?,
-        runOnce: suspend (Sync.Response) -> T
-    ): T {
-        val batchToken = getBatchToken()
-        val (response, measuredSyncDuration) = measureTime<Sync.Response> {
+    private suspend fun syncAndResponse(queueItem: SyncQueueItem, batchToken: String?) {
+        val (response, measuredSyncDuration) =
             coroutineScope {
                 select {
-                    if (allowStoppingRequest) {
+                    if (queueItem.doOnce) {
                         async {
-                            syncJobState.first { it?.stopRequest == true }
+                            syncOnceRequests.first { it.none { it.epoch == queueItem.epoch } }
+                            log.debug { "stop sync once because stop requested" }
+                            throw SyncStoppedException
+                        }.onAwait { it }
+                    } else {
+                        async {
+                            syncOnceRequests.first { it.isNotEmpty() }
+                            log.debug { "stop sync loop because of a sync once request" }
+                            throw SyncStoppedException
+                        }.onAwait { it }
+                        async {
+                            syncLoopRequest.first { it == null }
+                            log.debug { "stop sync loop because stop requested" }
                             throw SyncStoppedException
                         }.onAwait { it }
                     }
                     async {
-                        sync(
-                            filter = filter,
-                            setPresence = setPresence,
-                            fullState = false,
-                            since = batchToken,
-                            timeout = if (batchToken == null) ZERO else timeout,
-                            asUserId = asUserId
-                        ).getOrThrow()
+                        if (currentSyncState.value == RUNNING) {
+                            log.trace { "wait sync loop delay of $syncLoopDelay before starting the next sync request" }
+                            delay(syncLoopDelay)
+                        }
+                        log.trace { "do sync request $queueItem" }
+                        measureTimedValue {
+                            sync(
+                                filter = queueItem.filter,
+                                setPresence = queueItem.setPresence,
+                                fullState = false,
+                                since = batchToken,
+                                timeout = if (batchToken == null || _currentSyncState.value == STARTED) ZERO else queueItem.timeout,
+                            ).getOrThrow()
+                        }
                     }.onAwait { it }
                 }.also { coroutineContext.cancelChildren() }
             }
-        }
         log.info { "received sync response after about $measuredSyncDuration with token $batchToken" }
 
-        val result = runOnce(response)
-
-        withTransaction {
-            val measuredProcessDuration = measureTime {
-                processSyncResponse(response)
-            }
-            log.info { "processed sync response in about $measuredProcessDuration with token $batchToken" }
-
-            setBatchToken(response.nextBatch)
+        val measuredProcessDuration = measureTime {
+            processSyncResponse(queueItem.epoch, response)
         }
-        _currentSyncState.value = RUNNING
-        return result
+        log.info { "processed sync response in about $measuredProcessDuration with token $batchToken" }
+
+        syncBatchTokenStore.setSyncBatchToken(response.nextBatch)
     }
 
-    private suspend fun processSyncResponse(response: Sync.Response) {
+    private suspend fun processSyncResponse(
+        epoch: Long,
+        response: Sync.Response,
+    ) {
         log.trace { "process syncResponse" }
         val syncEvents =
             SyncEvents(
+                epoch = epoch,
                 syncResponse = response,
                 allEvents = buildList {
                     response.toDevice?.events?.forEach { add(it) }
@@ -349,27 +334,54 @@ class SyncApiClientImpl(
                 }
             )
         emit(syncEvents)
-        log.trace { "finished process syncResponse" }
     }
 
-    private object SyncStoppedException : RuntimeException("sync has been stopped")
-
-    override suspend fun stop(wait: Boolean) = coroutineScope {
-        val currentSyncJobState = syncJobState.updateAndGet { it?.copy(stopRequest = true) }
-        if (wait) currentSyncJobState?.job?.join()
+    override suspend fun start(
+        filter: String?,
+        setPresence: Presence?,
+        timeout: Duration,
+    ) {
+        syncLoopRequest.value = nextSyncQueueItem(
+            filter = filter,
+            setPresence = setPresence,
+            timeout = timeout,
+            doOnce = false,
+        )
     }
 
-    override suspend fun cancel(wait: Boolean) {
-        if (wait) syncJobState.value?.job?.cancelAndJoin()
-        else syncJobState.value?.job?.cancel()
+    override suspend fun <T> startOnce(
+        filter: String?,
+        setPresence: Presence?,
+        timeout: Duration,
+        runOnce: suspend (SyncEvents) -> T
+    ): Result<T> =
+        callbackFlow {
+            val syncQueueItem = nextSyncQueueItem(
+                filter = filter,
+                setPresence = setPresence,
+                timeout = timeout,
+                doOnce = true,
+            )
+            val unsubscribe = subscribe(Int.MIN_VALUE) {
+                if (it.epoch == syncQueueItem.epoch)
+                    send(kotlin.runCatching { runOnce(it) })
+            }
+            syncOnceRequests.update { it + syncQueueItem }
+
+            awaitClose {
+                unsubscribe()
+                syncOnceRequests.update { it.filter { it.epoch != syncQueueItem.epoch } }
+            }
+        }.first()
+
+    override suspend fun stop() {
+        syncLoopRequest.value = null
+        syncOnceRequests.value = emptyList()
+        currentSyncState.first { it == STOPPED }
     }
 
-    private suspend fun <T> measureTime(block: suspend () -> T): Pair<T, Duration> {
-        val start = clock.now()
-        val result = block()
-        val stop = clock.now()
-        return result to (stop - start)
+    override suspend fun cancel() {
+        stop()
+        syncCoroutineScope.launch { syncLoop() }
     }
-
-    private suspend fun measureTime(block: suspend () -> Unit): Duration = measureTime<Unit>(block).second
 }

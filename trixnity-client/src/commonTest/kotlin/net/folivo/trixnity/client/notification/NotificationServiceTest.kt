@@ -14,7 +14,6 @@ import net.folivo.trixnity.client.notification.NotificationService.Notification
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
 import net.folivo.trixnity.core.UserInfo
@@ -42,14 +41,13 @@ import net.folivo.trixnity.core.model.push.PushRuleSet
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class NotificationServiceTest : ShouldSpec(body)
 
 private val body: ShouldSpec.() -> Unit = {
-    timeout = 10_000
+    timeout = 30_000
 
     lateinit var roomStore: RoomStore
     lateinit var roomStateStore: RoomStateStore
@@ -217,11 +215,7 @@ private val body: ShouldSpec.() -> Unit = {
     }
 
     suspend fun checkNoNotification() = coroutineScope {
-        api.sync.start(
-            getBatchToken = { null },
-            setBatchToken = {},
-            scope = this
-        )
+        api.sync.start()
 
         val notifications = async { cut.getNotifications(0.seconds).first() }
 
@@ -230,19 +224,15 @@ private val body: ShouldSpec.() -> Unit = {
         }
         notifications.cancel()
 
-        api.sync.cancel(true)
+        api.sync.cancel()
     }
 
     suspend fun checkNotifications(block: suspend (Flow<Notification>) -> Unit) = coroutineScope {
-        api.sync.start(
-            getBatchToken = { null },
-            setBatchToken = {},
-            scope = this,
-        )
+        api.sync.start()
 
         block(cut.getNotifications(0.seconds))
 
-        api.sync.cancel(true)
+        api.sync.cancel()
     }
 
     context("getNotifications") {

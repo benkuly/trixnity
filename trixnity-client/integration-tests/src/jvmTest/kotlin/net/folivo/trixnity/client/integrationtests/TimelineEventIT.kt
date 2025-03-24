@@ -238,7 +238,7 @@ class TimelineEventIT {
                 ?.eventId
                 .shouldNotBeNull()
 
-            client.stopSync(true)
+            client.stopSync()
             client.close()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
@@ -280,7 +280,7 @@ class TimelineEventIT {
                 ?.eventId
                 .shouldNotBeNull()
 
-            client.stopSync(true)
+            client.stopSync()
             client.close()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
@@ -305,7 +305,7 @@ class TimelineEventIT {
             client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
-            client2.cancelSync(true)
+            client2.cancelSync()
 
             (0..29).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
@@ -355,7 +355,7 @@ class TimelineEventIT {
             client2.room.getById(room).first { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
-            client2.cancelSync(true)
+            client2.cancelSync()
             (0..29).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
                 delay(50) // give it time to sync back
@@ -391,7 +391,7 @@ class TimelineEventIT {
             client2.api.room.joinRoom(room).getOrThrow()
             client2.room.getById(room).first { it?.membership == JOIN }
 
-            client2.cancelSync(true)
+            client2.cancelSync()
 
             (0..29).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }

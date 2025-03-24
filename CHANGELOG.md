@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Changed sync loop to allow for once-syncs in between
+
 ### Deprecated
 
 ### Removed

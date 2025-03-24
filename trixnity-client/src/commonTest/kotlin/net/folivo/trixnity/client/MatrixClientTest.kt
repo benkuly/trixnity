@@ -7,7 +7,6 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.store.Account
@@ -333,7 +332,7 @@ class MatrixClientTest : ShouldSpec({
                         addHandler { request ->
                             val path = request.url.fullPath
                             when {
-                                path.startsWith("/_matrix/client/v3/sync?filter=backgroundFilter&set_presence=offline&since=sync&timeout=0") -> {
+                                path.startsWith("/_matrix/client/v3/sync?filter=backgroundFilter&set_presence=offline&timeout=0") -> {
                                     assertEquals(HttpMethod.Get, request.method)
                                     respond(
                                         json.encodeToString(serverResponse),

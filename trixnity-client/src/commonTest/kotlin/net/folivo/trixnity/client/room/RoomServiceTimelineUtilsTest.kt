@@ -12,6 +12,7 @@ import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncBatchTokenStore
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
@@ -44,6 +45,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
     lateinit var roomTimelineStore: RoomTimelineStore
     lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
     lateinit var scope: CoroutineScope
+    lateinit var syncBatchTokenStore: SyncBatchTokenStore
     lateinit var api: MatrixClientServerApiClient
     lateinit var apiConfig: PortableMockEngineConfig
     lateinit var mediaServiceMock: MediaServiceMock
@@ -65,7 +67,11 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
         mediaServiceMock = MediaServiceMock()
         roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock(true)
         timelineEventHandlerMock = TimelineEventHandlerMock()
-        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(json)
+        syncBatchTokenStore = SyncBatchTokenStore.inMemory()
+        val (newApi, newApiConfig) = mockMatrixClientServerApiClient(
+            json = json,
+            syncBatchTokenStore = syncBatchTokenStore
+        )
         api = newApi
         apiConfig = newApiConfig
         cut = RoomServiceImpl(
@@ -537,6 +543,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 room,
                 10
             )
+            syncBatchTokenStore.setSyncBatchToken("token1")
             roomTimelineStore.addAll(
                 listOf(
                     timelineEvent1,
@@ -546,7 +553,7 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
             apiConfig.endpoints {
                 matrixJsonEndpoint(Sync(timeout = 0, since = "token1")) {
                     Sync.Response(
-                        nextBatch = "next", room = Sync.Response.Rooms(
+                        nextBatch = "nextBatch1", room = Sync.Response.Rooms(
                             join = mapOf(
                                 room to Sync.Response.Rooms.JoinedRoom(
                                     timeline = Sync.Response.Rooms.Timeline(
@@ -557,9 +564,9 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                         )
                     )
                 }
-                matrixJsonEndpoint(Sync(timeout = 0, since = "token2")) {
+                matrixJsonEndpoint(Sync(timeout = 0, since = "nextBatch1")) {
                     Sync.Response(
-                        nextBatch = "next", room = Sync.Response.Rooms(
+                        nextBatch = "nextBatch2", room = Sync.Response.Rooms(
                             join = mapOf(
                                 RoomId("other", "server") to Sync.Response.Rooms.JoinedRoom(
                                     timeline = Sync.Response.Rooms.Timeline(
@@ -575,14 +582,8 @@ class RoomServiceTimelineUtilsTest : ShouldSpec({
                 cut.getTimelineEventsFromNowOn(decryptionTimeout = 0.seconds).take(2).toList()
             }
             delay(100.milliseconds)
-            api.sync.startOnce(
-                getBatchToken = { "token1" },
-                setBatchToken = {},
-            ).getOrThrow()
-            api.sync.startOnce(
-                getBatchToken = { "token2" },
-                setBatchToken = {},
-            ).getOrThrow()
+            api.sync.startOnce().getOrThrow()
+            api.sync.startOnce().getOrThrow()
             result.await().map { it.eventId } shouldBe listOf(event1.id, event10.id)
         }
     }

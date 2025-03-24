@@ -27,6 +27,7 @@ import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
 import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.users.Filters
+import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
@@ -231,7 +232,7 @@ class PerformanceIT {
                 port = synapse.firstMappedPort
             ).build()
             val clients = clientFactories.map { it(baseUrl) }
-            clients.map { async { it.stopSync(true) } }.awaitAll()
+            clients.map { async { it.stopSync() } }.awaitAll()
 
             val prepareTestClients = (1..roomsCount).withLimitedParallelism { i ->
                 registerAndStartClient("prepare-$i", "prepare-$i", baseUrl, createInMemoryRepositoriesModule()) {
@@ -247,7 +248,7 @@ class PerformanceIT {
                     invite = clients.map { it.userId }.toSet(),
                 ).getOrThrow()
                 clients.forEach { it.api.room.joinRoom(roomId).getOrThrow() }
-                it.cancelSync(true)
+                it.cancelSync()
                 userId to roomId
             }.toMap()
             log.info { "all rooms created" }
@@ -263,7 +264,7 @@ class PerformanceIT {
                     ?.getOrThrow()
                 encryptedEvent.shouldNotBeNull()
                 api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
-                it.cancelSync(true)
+                it.cancelSync()
             }
             log.info { "all initial messages sent" }
 
@@ -325,12 +326,12 @@ class PerformanceIT {
             var memBefore: Long? = null
             var memAfter: Long? = null
 
-            val unsubscribe1 = client.api.sync.subscribe(Int.MAX_VALUE) {
+            val unsubscribe1 = client.api.sync.subscribe(ClientEventEmitter.Priority.FIRST) {
                 System.gc()
                 memBefore = GraphStats.parseInstance(client).totalSize()
                 syncStartInstant = Clock.System.now()
             }
-            val unsubscribe2 = client.api.sync.subscribe(Int.MIN_VALUE) {
+            val unsubscribe2 = client.api.sync.subscribe(ClientEventEmitter.Priority.LAST) {
                 syncTime += Clock.System.now() - checkNotNull(syncStartInstant)
                 memAfter = GraphStats.parseInstance(client).totalSize()
             }
