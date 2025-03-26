@@ -17,9 +17,8 @@ don't want!
 
 ## Custom events
 
-One goal on developing Trixnity was the ability to add custom events. This is achieved by a mapping event types to
-Serializers. In this example we added a new message event `net.folivo.dino`. As a developer you than can receive events
-of this Kotlin type like all other default events.
+One goal in developing Trixnity was the ability to add custom events. This is achieved by mapping event types to serializers. In this example, 
+we added a new message event: `net.folivo.dino`. As a developer, you can then receive events of this Kotlin type like all other default events.
 
 ```kotlin
 @Serializable
