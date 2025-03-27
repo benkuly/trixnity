@@ -233,13 +233,14 @@ class TimelineEventHandlerImpl(
         when (this) {
             is MessageEvent -> {
                 redactRelation(this)
-                val eventType =
-                    api.eventContentSerializerMappings.message
-                        .find { it.kClass.isInstance(content) }?.type
-                        ?: "UNKNOWN"
-                val newContent = RedactedEventContent(eventType)
+                val redactedContent = content as? RedactedEventContent
+                    ?: RedactedEventContent(
+                        api.eventContentSerializerMappings.message
+                            .find { it.kClass.isInstance(content) }?.type
+                            ?: "UNKNOWN"
+                    )
                 MessageEvent(
-                    newContent,
+                    redactedContent,
                     id,
                     sender,
                     roomId,
@@ -253,14 +254,15 @@ class TimelineEventHandlerImpl(
 
             is RoomEvent.StateEvent -> {
                 // TODO should update state to last known (maybe not needed with sync v3)
-                val eventType =
-                    api.eventContentSerializerMappings.state
-                        .find { it.kClass.isInstance(content) }?.type
-                        ?: "UNKNOWN"
-                val newContent = RedactedEventContent(eventType)
+                val redactedContent = content as? RedactedEventContent
+                    ?: RedactedEventContent(
+                        api.eventContentSerializerMappings.state
+                            .find { it.kClass.isInstance(content) }?.type
+                            ?: "UNKNOWN"
+                    )
                 RoomEvent.StateEvent(
                     // TODO should keep some fields and change state: https://spec.matrix.org/v1.10/rooms/v9/#redactions
-                    newContent,
+                    redactedContent,
                     id,
                     sender,
                     roomId,
