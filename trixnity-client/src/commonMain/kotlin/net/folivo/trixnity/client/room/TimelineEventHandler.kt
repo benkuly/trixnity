@@ -352,7 +352,7 @@ class TimelineEventHandlerImpl(
         events?.distinctBy { it.id }
             ?.filter { get(it.id, it.roomId).first() == null }
 
-    private suspend fun RoomTimelineStore.addEventsToTimeline(
+    internal suspend fun RoomTimelineStore.addEventsToTimeline(
         startEvent: TimelineEvent,
         roomId: RoomId,
         previousToken: String?,

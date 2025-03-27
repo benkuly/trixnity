@@ -146,6 +146,68 @@ class TimelineEventHandlerTest : ShouldSpec({
                     nextEventId shouldBe event3.id
                 }
             }
+            should("not redact room event twice") {
+                val messageEventId = EventId("\$message")
+                val redactionEventId = EventId("\$redact")
+
+                val redactionEvent = MessageEvent(
+                    content = RedactionEventContent(redacts = messageEventId),
+                    id = redactionEventId,
+                    sender = alice,
+                    roomId = room,
+                    originTimestamp = 2
+                )
+
+                val messageEvent = MessageEvent(
+                    content = RedactedEventContent("m.room.message"),
+                    id = messageEventId,
+                    sender = alice,
+                    roomId = room,
+                    originTimestamp = 1,
+                    UnsignedRoomEventData.UnsignedMessageEventData(
+                        redactedBecause = redactionEvent
+                    )
+                )
+
+                with(cut) {
+                    val events = listOf(
+                        messageEvent,
+                        redactionEvent
+                    ).handleRedactions()
+                    roomTimelineStore.addEventsToTimeline(
+                        startEvent = TimelineEvent(
+                            event = events.first(),
+                            previousEventId = null,
+                            nextEventId = null,
+                            gap = null
+                        ),
+                        roomId = room,
+                        previousToken = null,
+                        previousHasGap = true,
+                        previousEvent = null,
+                        previousEventChunk = null,
+                        nextToken = "token",
+                        nextHasGap = true,
+                        nextEvent = null,
+                        nextEventChunk = events.drop(1),
+                    )
+                }
+                assertSoftly(roomTimelineStore.get(messageEvent.id, room).first().shouldNotBeNull()) {
+                    event shouldBe MessageEvent(
+                        content = RedactedEventContent("m.room.message"),
+                        id = EventId("\$message"),
+                        sender = alice,
+                        roomId = room,
+                        originTimestamp = 1,
+                        UnsignedRoomEventData.UnsignedMessageEventData(
+                            redactedBecause = redactionEvent
+                        )
+                    )
+                    content shouldBe Result.success(RedactedEventContent("m.room.message"))
+                    roomId shouldBe room
+                    eventId shouldBe messageEvent.id
+                }
+            }
             should("redact state event") {
                 val event1 = nameEvent(1)
                 val event2 = nameEvent(2)
