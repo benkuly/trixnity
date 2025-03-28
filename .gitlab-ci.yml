@@ -22,6 +22,7 @@ variables:
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   KOTLIN_DATA_DIR: $CI_PROJECT_DIR/.kotlin
   BUILD_LINUX_IMAGE_NAME: registry.gitlab.com/trixnity/kmp-dockerfiles/kmp-dockerfiles-base:latest
+  TRIVY_LINUX_IMAGE_NAME: registry.gitlab.com/trixnity/kmp-dockerfiles/kmp-dockerfiles-trivy:latest
 
 .cache-linux: &cache-linux
   - key: global-trixnity-cache-linux
@@ -200,9 +201,7 @@ security:dependencies:
   timeout: 30m
   needs: [ ]
   tags: [ "saas-linux-small-amd64" ]
-  image:
-    name: "aquasec/trivy"
-    entrypoint: [ "" ]
+  image: $TRIVY_LINUX_IMAGE_NAME
   variables:
     TRIVY_CACHE_DIR: ".trivycache/"
     WITH_LOCK: true
@@ -220,10 +219,8 @@ security:dependencies:
     when: always
     reports:
       dependency_scanning: report.json
-  before_script:
-    - apk add openjdk21
-    - ./gradlew dependenciesForAll --write-locks --no-parallel > dependencies.txt
   script:
+    - ./gradlew dependenciesForAll --write-locks --no-parallel > dependencies.txt
     - trivy repo ./ --exit-code 0
     - trivy repo ./ --exit-code 0 --format template --template "@/contrib/gitlab.tpl" --output report.json
     - trivy repo ./ --exit-code 1 --severity CRITICAL
