@@ -222,7 +222,7 @@ security:dependencies:
   script:
     - ./gradlew dependenciesForAll --write-locks --no-parallel > dependencies.txt
     - trivy repo ./ --exit-code 0
-    - trivy repo ./ --exit-code 0 --format template --template "@/usr/local/share/trivy/templates/gitlab.tp" --output report.json
+    - trivy repo ./ --exit-code 0 --format template --template "@/usr/local/share/trivy/templates/gitlab.tpl" --output report.json
     - trivy repo ./ --exit-code 1 --severity CRITICAL
 
 changelog:
