@@ -1,5 +1,6 @@
 package net.folivo.trixnity.olm
 
+import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.encodeUnpaddedBase64

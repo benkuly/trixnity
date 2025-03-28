@@ -1,5 +1,7 @@
 package net.folivo.trixnity.olm
 
+import js.typedarrays.toByteArray
+
 actual class OlmSAS private constructor() : WantsToBeFree {
     internal actual val ptr: OlmSASPointer = rethrow { js("new Olm.SAS()") }.unsafeCast<OlmSASPointer>()
 

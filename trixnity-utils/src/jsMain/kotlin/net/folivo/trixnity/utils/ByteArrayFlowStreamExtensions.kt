@@ -1,6 +1,7 @@
 package net.folivo.trixnity.utils
 
 import js.typedarrays.Uint8Array
+import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.flow
 import web.streams.ReadableStream

@@ -5,6 +5,7 @@ import io.ktor.util.*
 import js.buffer.ArrayBuffer
 import js.buffer.BufferSource
 import js.typedarrays.Uint8Array
+import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow

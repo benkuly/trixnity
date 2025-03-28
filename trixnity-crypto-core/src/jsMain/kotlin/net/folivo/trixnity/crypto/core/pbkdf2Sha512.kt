@@ -2,6 +2,7 @@ package net.folivo.trixnity.crypto.core
 
 import io.ktor.util.*
 import js.typedarrays.Uint8Array
+import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
 import pbkdf2
 import web.crypto.*

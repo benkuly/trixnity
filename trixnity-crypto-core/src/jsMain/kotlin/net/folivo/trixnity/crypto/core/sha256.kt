@@ -3,6 +3,7 @@ package net.folivo.trixnity.crypto.core
 import createHash
 import io.ktor.util.*
 import js.typedarrays.Uint8Array
+import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.utils.ByteArrayFlow
