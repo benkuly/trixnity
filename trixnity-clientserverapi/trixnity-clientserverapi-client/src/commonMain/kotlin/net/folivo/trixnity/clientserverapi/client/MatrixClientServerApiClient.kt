@@ -70,8 +70,10 @@ interface MatrixClientServerApiClientFactory {
             onLogout = onLogout,
             eventContentSerializerMappings = eventContentSerializerMappings,
             json = json,
+            syncBatchTokenStore = syncBatchTokenStore,
             syncLoopDelay = syncLoopDelay,
             syncLoopErrorDelay = syncLoopErrorDelay,
+            syncCoroutineScope = syncCoroutineScope,
             httpClientEngine = httpClientEngine,
             httpClientConfig = httpClientConfig,
         )
