@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Matrix 1.11 Federation-Client support
+
 ### Changed
 
 - Changed sync loop to allow for once-syncs in between

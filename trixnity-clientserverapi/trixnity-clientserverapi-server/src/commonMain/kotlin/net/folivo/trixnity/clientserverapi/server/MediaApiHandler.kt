@@ -42,6 +42,11 @@ interface MediaApiHandler {
     suspend fun downloadMedia(context: MatrixEndpointContext<DownloadMedia, Unit, Media>): Media
 
     /**
+     * @see [DownloadMediaWithFileName]
+     */
+    suspend fun downloadMediaWithFileName(context: MatrixEndpointContext<DownloadMediaWithFileName, Unit, Media>): Media
+
+    /**
      * @see [DownloadThumbnailLegacy]
      */
     @Deprecated("use downloadThumbnail instead")

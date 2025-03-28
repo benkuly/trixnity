@@ -24,7 +24,7 @@ data class DownloadThumbnailLegacy(
     @SerialName("mediaId") val mediaId: String,
     @SerialName("width") val width: Long,
     @SerialName("height") val height: Long,
-    @SerialName("method") val method: ThumbnailResizingMethod,
+    @SerialName("method") val method: ThumbnailResizingMethod? = null,
     @SerialName("allow_remote") val allowRemote: Boolean? = null,
     @SerialName("allow_redirect") val allowRedirect: Boolean? = null,
     @SerialName("timeout_ms") val timeoutMs: Long? = null,

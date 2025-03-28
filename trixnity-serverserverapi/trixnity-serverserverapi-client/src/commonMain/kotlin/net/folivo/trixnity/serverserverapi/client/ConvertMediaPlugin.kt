@@ -1,29 +1,60 @@
 package net.folivo.trixnity.serverserverapi.client
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.api.*
+import io.ktor.http.*
+import io.ktor.http.cio.*
+import io.ktor.utils.io.*
+import kotlinx.coroutines.CoroutineScope
+import net.folivo.trixnity.serverserverapi.model.federation.Media
+
+private val log = KotlinLogging.logger {}
 
 val ConvertMediaPlugin = createClientPlugin("ConvertMediaPlugin") {
-    transformResponseBody { _, body, requestedType ->
-        throw NotImplementedError("parsing multipart/mixed into Media is not implemented yet")
-//        if (body !is MultiPartData || requestedType.type != Media::class) return@transformResponseBody null
-//
-//        val part1 = body.readPart() // right now is empty and therefore ignored
-//        checkNotNull(part1 != null) { "part 1 of media missing" }
-//        check(part1 is PartData.BinaryChannelItem) { "part 1 was not a PartData.BinaryChannelItem" }
-//        val part2 = body.readPart()
-//        checkNotNull(part2 != null) { "part 2 of media missing" }
-//        check(part2 is PartData.BinaryChannelItem) { "part 2 was not a PartData.BinaryChannelItem" }
-//
-//        val locationHeader = part2.headers[HttpHeaders.Location]
-//
-//        when {
-//            locationHeader != null -> Media.Redirect(locationHeader)
-//            else -> Media.Stream(
-//                content = part2.provider(),
-//                contentLength = part2.headers[HttpHeaders.ContentLength]?.toLong(),
-//                contentType = part2.contentType,
-//                contentDisposition = part2.contentDisposition,
-//            )
-//        }
+    transformResponseBody { response, body, requestedType ->
+        if (requestedType.type != Media::class) return@transformResponseBody null
+
+        val rawContentType =
+            checkNotNull(response.headers[HttpHeaders.ContentType]) { "No content type provided for multipart" }
+        val contentType = ContentType.parse(rawContentType)
+        check(contentType.match(ContentType.MultiPart.Mixed)) { "Expected multipart/mixed, got $contentType" }
+
+        val contentLength = response.headers[HttpHeaders.ContentLength]?.toLong()
+        val multipartBody =
+            CoroutineScope(response.coroutineContext).parseMultipart(body, rawContentType, contentLength)
+
+        when (val part1 = multipartBody.receive()) {// right now is empty and therefore ignored
+            is MultipartEvent.MultipartPart -> {
+                val bodyJson = part1.body.readRemaining().use { it.readText() }
+                if (bodyJson != "{}") log.warn { "part1 of media should be empty json but was '$bodyJson'" }
+                part1.release()
+            }
+
+            else -> {
+                part1.release()
+            }
+        }
+        when (val part2 = multipartBody.receive()) {
+            is MultipartEvent.MultipartPart -> {
+                val headers = CIOHeaders(part2.headers.await())
+                val locationHeader = headers[HttpHeaders.Location]
+
+                when {
+                    locationHeader != null -> Media.Redirect(locationHeader)
+                    else -> Media.Stream(
+                        content = part2.body,
+                        contentLength = headers[HttpHeaders.ContentLength]?.toLong(),
+                        contentType = headers[HttpHeaders.ContentType]
+                            ?.let { ContentType.parse(it) },
+                        contentDisposition = headers[HttpHeaders.ContentDisposition]
+                            ?.let { ContentDisposition.parse(it) },
+                    )
+                }
+            }
+
+            else -> {
+                part2.release()
+            }
+        }
     }
 }
