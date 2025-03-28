@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.14.1
 
+### Changed
+
+- Upgrade dependencies
+
+## 4.14.1
+
 ### Fixed
 
 - Fixed MatrixClientServerApiClientFactory ignore parameter
