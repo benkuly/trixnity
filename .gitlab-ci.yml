@@ -221,7 +221,7 @@ security:dependencies:
     reports:
       dependency_scanning: report.json
   before_script:
-    - apk add openjdk17
+    - apk add openjdk11 openjdk21
     - ./gradlew dependenciesForAll --write-locks --no-parallel > dependencies.txt
   script:
     - trivy repo ./ --exit-code 0
