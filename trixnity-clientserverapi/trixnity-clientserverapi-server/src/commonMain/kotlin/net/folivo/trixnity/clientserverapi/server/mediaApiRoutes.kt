@@ -17,6 +17,7 @@ internal fun Route.mediaApiRoutes(
     matrixEndpoint(json, contentMappings, handler::uploadMediaByContentUri)
     matrixEndpoint(json, contentMappings, handler::downloadMediaLegacy)
     matrixEndpoint(json, contentMappings, handler::downloadMedia)
+    matrixEndpoint(json, contentMappings, handler::downloadMediaWithFileName)
     matrixEndpoint(json, contentMappings, handler::downloadThumbnailLegacy)
     matrixEndpoint(json, contentMappings, handler::downloadThumbnail)
     matrixEndpoint(json, contentMappings, handler::getUrlPreviewLegacy)

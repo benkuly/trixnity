@@ -10,20 +10,18 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 
 /**
- * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixmediav3thumbnailservernamemediaid">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv1mediadownloadservernamemediaidfilename">matrix spec</a>
  */
 @Serializable
-@Resource("/_matrix/client/v1/media/thumbnail/{serverName}/{mediaId}")
+@Resource("/_matrix/client/v1/media/download/{serverName}/{mediaId}/{fileName}")
 @HttpMethod(GET)
-data class DownloadThumbnail(
+data class DownloadMediaWithFileName(
     @SerialName("serverName") val serverName: String,
     @SerialName("mediaId") val mediaId: String,
-    @SerialName("width") val width: Long,
-    @SerialName("height") val height: Long,
-    @SerialName("method") val method: ThumbnailResizingMethod? = null,
-    @SerialName("animated") val animated: Boolean? = null,
+    @SerialName("fileName") val fileName: String,
     @SerialName("timeout_ms") val timeoutMs: Long? = null,
 ) : MatrixEndpoint<Unit, Media> {
+
     @Transient
     override val requestContentType = null
 

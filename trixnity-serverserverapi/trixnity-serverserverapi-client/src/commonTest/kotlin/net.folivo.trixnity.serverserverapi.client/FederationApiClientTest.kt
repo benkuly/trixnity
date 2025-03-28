@@ -1,8 +1,10 @@
 package net.folivo.trixnity.serverserverapi.client
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
@@ -20,6 +22,7 @@ import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
 import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
+import net.folivo.trixnity.serverserverapi.model.federation.ThumbnailResizingMethod.SCALE
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1969,54 +1972,177 @@ class FederationApiClientTest {
         )
     }
 
-    // TODO
-//    @Test
-//    fun shouldDownloadMediaStream() = runTest {
-//        val matrixRestClient = MatrixServerServerApiClientImpl(
-//            hostname = "hostname",
-//            getDelegatedDestination = { host, port -> host to port },
-//            sign = { Key.Ed25519Key("key", "value") },
-//            getRoomVersion = { "3" },
-//            httpClientEngine = mockEngineFactory {
-//                addHandler { request ->
-//                    assertEquals(
-//                        "/_matrix/federation/v1/media/download/mediaId123",
-//                        request.url.fullPath
-//                    )
-//                    assertEquals(HttpMethod.Get, request.method)
-//                    respond(
-//                        """
-//                            Content-type: application/json
-//
-//                            {}
-//                            --boundary
-//                            Content-Length: 22
-//                            Content-Type: text/plain
-//                            Content-Disposition: attachment; filename=example.txt
-//
-//                            a multiline
-//                            text file
-//                           --boundary--
-//
-//                        """.trimIndent(),
-//                        HttpStatusCode.OK,
-//                        headersOf(
-//                            HttpHeaders.ContentType,
-//                            ContentType.MultiPart.Mixed.withParameter("boundary", "boundary").toString()
-//                        )
-//                    )
-//                }
-//            })
-//        matrixRestClient.federation.downloadMedia("mediaId123") { media ->
-//            media.shouldBeInstanceOf<Media.Stream>()
-//            media.content.toByteArray().decodeToString() shouldBe "a multiline\ntext file"
-//            media.contentLength shouldBe 22
-//            media.contentType shouldBe ContentType.Text.Plain
-//            media.contentDisposition shouldBe ContentDisposition("attachment").withParameter("filename", "example.txt")
-//        }.getOrThrow()
-//    }
+    @Test
+    fun shouldDownloadMediaStream() = runTest {
+        val matrixRestClient = MatrixServerServerApiClientImpl(
+            hostname = "hostname",
+            getDelegatedDestination = { host, port -> host to port },
+            sign = { Key.Ed25519Key("key", "value") },
+            getRoomVersion = { "3" },
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/federation/v1/media/download/mediaId123",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            --boundary
+                            Content-Type: application/json
 
-    // TODO downloadMediaRedirect
-    // TODO downloadThumbnailStream
-    // TODO downloadThumbnailRedirect
+                            {}
+                            --boundary
+                            Content-Length: 22
+                            Content-Type: text/plain
+                            Content-Disposition: attachment; filename=example.txt
+
+                            a multiline
+                            text file
+                            --boundary--
+
+                        """.trimIndent().replace("\n", "\r\n"),
+                        HttpStatusCode.OK,
+                        headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.MultiPart.Mixed.withParameter("boundary", "boundary").toString()
+                        )
+                    )
+                }
+            })
+        matrixRestClient.federation.downloadMedia("mediaId123") { media ->
+            media.shouldBeInstanceOf<Media.Stream>()
+            media.contentLength shouldBe 22
+            media.contentType shouldBe ContentType.Text.Plain
+            media.contentDisposition shouldBe ContentDisposition("attachment").withParameter("filename", "example.txt")
+            media.content.toByteArray().decodeToString() shouldBe "a multiline\r\ntext file"
+        }.getOrThrow()
+    }
+
+    @Test
+    fun shouldDownloadMediaRedirect() = runTest {
+        val matrixRestClient = MatrixServerServerApiClientImpl(
+            hostname = "hostname",
+            getDelegatedDestination = { host, port -> host to port },
+            sign = { Key.Ed25519Key("key", "value") },
+            getRoomVersion = { "3" },
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/federation/v1/media/download/mediaId123",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            --boundary
+                            Content-Type: application/json
+
+                            {}
+                            --boundary
+                            Location: https://example.org/mediablabla
+                            
+                            --boundary--
+
+                        """.trimIndent().replace("\n", "\r\n"),
+                        HttpStatusCode.OK,
+                        headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.MultiPart.Mixed.withParameter("boundary", "boundary").toString()
+                        )
+                    )
+                }
+            })
+        matrixRestClient.federation.downloadMedia("mediaId123") { media ->
+            media.shouldBeInstanceOf<Media.Redirect>()
+            media.location shouldBe "https://example.org/mediablabla"
+        }.getOrThrow()
+    }
+
+    @Test
+    fun shouldDownloadThumbnailStream() = runTest {
+        val matrixRestClient = MatrixServerServerApiClientImpl(
+            hostname = "hostname",
+            getDelegatedDestination = { host, port -> host to port },
+            sign = { Key.Ed25519Key("key", "value") },
+            getRoomVersion = { "3" },
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/federation/v1/media/thumbnail/mediaId123?width=64&height=64&method=scale",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            --boundary
+                            Content-Type: application/json
+
+                            {}
+                            --boundary
+                            Content-Length: 22
+                            Content-Type: text/plain
+                            Content-Disposition: attachment; filename=example.txt
+
+                            a multiline
+                            text file
+                            --boundary--
+
+                        """.trimIndent().replace("\n", "\r\n"),
+                        HttpStatusCode.OK,
+                        headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.MultiPart.Mixed.withParameter("boundary", "boundary").toString()
+                        )
+                    )
+                }
+            })
+        matrixRestClient.federation.downloadThumbnail("mediaId123", 64, 64, SCALE) { media ->
+            media.shouldBeInstanceOf<Media.Stream>()
+            media.contentLength shouldBe 22
+            media.contentType shouldBe ContentType.Text.Plain
+            media.contentDisposition shouldBe ContentDisposition("attachment").withParameter("filename", "example.txt")
+            media.content.toByteArray().decodeToString() shouldBe "a multiline\r\ntext file"
+        }.getOrThrow()
+    }
+
+    @Test
+    fun shouldDownloadThumbnailRedirect() = runTest {
+        val matrixRestClient = MatrixServerServerApiClientImpl(
+            hostname = "hostname",
+            getDelegatedDestination = { host, port -> host to port },
+            sign = { Key.Ed25519Key("key", "value") },
+            getRoomVersion = { "3" },
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/federation/v1/media/thumbnail/mediaId123?width=64&height=64&method=scale",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        """
+                            --boundary
+                            Content-Type: application/json
+
+                            {}
+                            --boundary
+                            Location: https://example.org/mediablabla
+                            
+                            --boundary--
+
+                        """.trimIndent().replace("\n", "\r\n"),
+                        HttpStatusCode.OK,
+                        headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.MultiPart.Mixed.withParameter("boundary", "boundary").toString()
+                        )
+                    )
+                }
+            })
+        matrixRestClient.federation.downloadThumbnail("mediaId123", 64, 64, SCALE) { media ->
+            media.shouldBeInstanceOf<Media.Redirect>()
+            media.location shouldBe "https://example.org/mediablabla"
+        }.getOrThrow()
+    }
 }

@@ -196,6 +196,38 @@ class MediaRoutesTest {
     }
 
     @Test
+    fun shouldDownloadMediaWithFileName() = testApplication {
+        initCut()
+        everySuspend { handlerMock.downloadMediaWithFileName(any()) }
+            .returns(
+                Media(
+                    content = ByteReadChannel("test"),
+                    contentLength = 4L,
+                    contentType = ContentType.Text.Plain,
+                    contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.txt")
+                )
+            )
+        val response =
+            client.get("/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga/testFile.txt") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Text.Plain
+            this.contentLength() shouldBe 4
+            this.headers[HttpHeaders.ContentDisposition] shouldBe "attachment; filename=testFile.txt"
+            this.body<ByteReadChannel>().readUTF8Line() shouldBe "test"
+        }
+        verifySuspend {
+            handlerMock.downloadMediaWithFileName(assert {
+                it.endpoint.serverName shouldBe "matrix.org:443"
+                it.endpoint.mediaId shouldBe "ascERGshawAWawugaAcauga"
+                it.endpoint.fileName shouldBe "testFile.txt"
+            })
+        }
+    }
+
+    @Test
     fun shouldDownloadThumbnail() = testApplication {
         initCut()
         everySuspend { handlerMock.downloadThumbnail(any()) }
