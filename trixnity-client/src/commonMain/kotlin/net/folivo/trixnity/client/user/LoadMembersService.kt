@@ -61,6 +61,6 @@ class LoadMembersServiceImpl(
                 currentlyLoadingMembers.update { it - roomId }
             }
         }
-        if (wait) roomStore.get(roomId).first { it?.membersLoaded == true }
+        if (wait) roomStore.get(roomId).first { it == null || it.membersLoaded }
     }
 }
