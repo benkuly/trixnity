@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix UIA handling when refresh token is enabled
+
 ### Security
 
 ## 4.14.1

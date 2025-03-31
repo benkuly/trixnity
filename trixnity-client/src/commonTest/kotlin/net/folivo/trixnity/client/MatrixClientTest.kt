@@ -332,7 +332,7 @@ class MatrixClientTest : ShouldSpec({
                         addHandler { request ->
                             val path = request.url.fullPath
                             when {
-                                path.startsWith("/_matrix/client/v3/sync?filter=backgroundFilter&set_presence=offline&timeout=0") -> {
+                                path.startsWith("/_matrix/client/v3/sync?filter=backgroundFilter&set_presence=offline") -> {
                                     assertEquals(HttpMethod.Get, request.method)
                                     respond(
                                         json.encodeToString(serverResponse),
@@ -368,7 +368,10 @@ class MatrixClientTest : ShouldSpec({
                                 }
 
                                 else -> {
-                                    respond("", HttpStatusCode.BadRequest)
+                                    respond(
+                                        """{"errcode":"M_NOT_FOUND","error":"not found url ${request.url}"}""",
+                                        HttpStatusCode.BadRequest
+                                    )
                                 }
                             }
                         }
@@ -379,30 +382,31 @@ class MatrixClientTest : ShouldSpec({
         afterTest {
             cut.close()
         }
-        should("$LOGGED_IN when access token is not null") {
+        should("be $LOGGED_IN when access token is not null") {
             cut.loginState.first { it == LOGGED_IN }
         }
-        should("$LOGGED_OUT_SOFT when access token is null, but sync batch token not") {
+        should("be $LOGGED_OUT_SOFT when access token is null, but sync batch token not") {
             val accountStore = cut.di.get<AccountStore>()
             accountStore.updateAccount { it?.copy(accessToken = null) }
             cut.loginState.first { it == LOGGED_OUT_SOFT }
         }
-        should("$LOGGED_OUT when access token and sync batch token are null") {
+        should("be $LOGGED_OUT when access token and sync batch token are null") {
             val accountStore = cut.di.get<AccountStore>()
             accountStore.updateAccount { it?.copy(accessToken = null, syncBatchToken = null) }
             cut.loginState.first { it == LOGGED_OUT }
         }
-        should("$LOCKED when locked") {
+        should("be $LOCKED when locked") {
             val accountStore = cut.di.get<AccountStore>()
             accountStore.updateAccount { it?.copy(isLocked = true) }
             cut.loginState.first { it == LOCKED }
         }
-        should("$LOGGED_IN when not locked anymore") {
+        should("be $LOGGED_IN when not locked anymore") {
             val accountStore = cut.di.get<AccountStore>()
             accountStore.updateAccount { it?.copy(isLocked = true) }
             cut.loginState.first { it == LOCKED }
-            delay(100.milliseconds) // give it a moment to listen to sync
+            delay(200.milliseconds) // give it a moment to listen to sync
             cut.syncOnce().getOrThrow()
+            delay(200.milliseconds) // give it a moment to listen to sync
             cut.loginState.first { it == LOGGED_IN }
         }
     }

@@ -2,6 +2,8 @@ package net.folivo.trixnity.api.client
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
@@ -152,12 +154,32 @@ class MatrixApiClientTest {
         val error = shouldThrow<MatrixServerException> {
             cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
         }
-        assertEquals(HttpStatusCode.NotFound, error.statusCode)
-        assertEquals(
-            ErrorResponse.Forbidden::class,
-            error.errorResponse::class
+        error.statusCode shouldBe HttpStatusCode.NotFound
+        error.errorResponse shouldBe ErrorResponse.Forbidden("Only unicorns accepted")
+    }
+
+    @Test
+    fun itShouldCatchNotOkErrorResponseAndThrowMatrixServerException() = runTest {
+        val cut = MatrixApiClient(
+            httpClientEngine = scopedMockEngine {
+                addHandler {
+                    respond(
+                        """{
+                            "errcodeWRONG": "M_FORBIDDEN",
+                            "error": "Only unicorns accepted"
+                       }""".trimIndent(),
+                        HttpStatusCode.NotFound,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            },
+            json = json,
         )
-        assertEquals("Only unicorns accepted", error.errorResponse.error)
+        val error = shouldThrow<MatrixServerException> {
+            cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
+        }
+        error.statusCode shouldBe HttpStatusCode.NotFound
+        error.errorResponse.shouldBeInstanceOf<ErrorResponse.BadJson>().error shouldStartWith "response could not be parsed"
     }
 
     @Test
@@ -179,9 +201,9 @@ class MatrixApiClientTest {
         }
         assertEquals(HttpStatusCode.NotFound, error.statusCode)
         assertEquals(
-            ErrorResponse.CustomErrorResponse::class,
+            ErrorResponse.NotJson::class,
             error.errorResponse::class
         )
-        assertEquals("NO_UNICORN", error.errorResponse.error)
+        error.errorResponse.error shouldStartWith "response could not be parsed"
     }
 }

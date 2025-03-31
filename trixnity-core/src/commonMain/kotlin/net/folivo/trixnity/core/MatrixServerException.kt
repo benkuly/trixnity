@@ -6,4 +6,4 @@ open class MatrixServerException(
     val statusCode: HttpStatusCode,
     val errorResponse: ErrorResponse,
     val retryAfter: Long? = null,
-) : Exception("statusCode: $statusCode; errorResponse: $errorResponse")
+) : Exception("statusCode=$statusCode errorResponse=$errorResponse retryAfter=$retryAfter")

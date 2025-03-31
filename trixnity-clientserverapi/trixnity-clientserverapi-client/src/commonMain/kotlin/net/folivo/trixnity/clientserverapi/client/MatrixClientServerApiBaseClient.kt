@@ -11,7 +11,7 @@ import io.ktor.client.plugins.resources.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.ExperimentalSerializationApi
+import io.ktor.util.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -39,13 +39,18 @@ interface MatrixAuthProvider : AuthProvider {
 /**
  * Plugin to fully disable auth for requests with AuthRequired set to NEVER
  */
-private val SkipAuthenticationIfDisabled: ClientPlugin<Unit> = createClientPlugin("SkipAuthenticationIfDisabled") {
+private val SkipAuthenticationIfDisabled = createClientPlugin("SkipAuthenticationIfDisabled") {
     onRequest { request, _ ->
         if (request.attributes.getOrNull(AuthRequired.attributeKey) == AuthRequired.NEVER) {
             request.attributes.put(AuthCircuitBreaker, Unit)
         }
     }
 }
+
+@PublishedApi
+internal val IsUIA = AttributeKey<Unit>("IsUIA")
+
+private class UIAInterception(val body: JsonObject, val errorResponse: ErrorResponse?) : RuntimeException()
 
 class MatrixClientServerApiBaseClient(
     val baseUrl: Url? = null,
@@ -63,9 +68,33 @@ class MatrixClientServerApiBaseClient(
         install(DefaultRequest) {
             if (baseUrl != null) url.takeFrom(baseUrl)
         }
+
         install(SkipAuthenticationIfDisabled)
         install(Auth) {
             providers.add(authProvider)
+        }
+        install(createClientPlugin("UIAInterception") {
+            on(Send) { request ->
+                val call = proceed(request)
+                val response = call.response
+                if (response.status != HttpStatusCode.Unauthorized) return@on call
+                if (request.attributes.getOrNull(IsUIA) == null) return@on call
+                val body = json.decodeFromString<JsonObject>(response.bodyAsText())
+                val errorResponse = if (body["errcode"] != null) json.decodeErrorResponse(body) else null
+                if (errorResponse is ErrorResponse.UnknownToken) return@on call
+                throw UIAInterception(body, errorResponse)
+            }
+        })
+        install(HttpCallValidator) {
+            handleResponseException { cause, _ ->
+                if (cause is MatrixServerException) {
+                    when (val errorResponse = cause.errorResponse) {
+                        is ErrorResponse.UnknownToken -> onLogout(LogoutInfo(errorResponse.softLogout, false))
+                        is ErrorResponse.UserLocked -> onLogout(LogoutInfo(errorResponse.softLogout, true))
+                        else -> {}
+                    }
+                }
+            }
         }
         install(ConvertMediaPlugin)
         install(HttpRequestRetry) {
@@ -87,15 +116,6 @@ class MatrixClientServerApiBaseClient(
         httpClientConfig?.invoke(this)
     }
 ) {
-    override suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {
-        when (errorResponse) {
-            is ErrorResponse.UnknownToken -> onLogout(LogoutInfo(errorResponse.softLogout, false))
-            is ErrorResponse.UserLocked -> onLogout(LogoutInfo(errorResponse.softLogout, true))
-            else -> {}
-        }
-    }
-
-    @OptIn(ExperimentalSerializationApi::class)
     suspend inline fun <reified ENDPOINT : MatrixUIAEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE> uiaRequest(
         endpoint: ENDPOINT,
         requestBody: REQUEST,
@@ -110,6 +130,7 @@ class MatrixClientServerApiBaseClient(
                     ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
                 val authRequired = annotations.filterIsInstance<Auth>().firstOrNull()?.required ?: AuthRequired.YES
                 attributes.put(AuthRequired.attributeKey, authRequired)
+                attributes.put(IsUIA, Unit)
                 method = io.ktor.http.HttpMethod(endpointHttpMethod.type.name)
                 endpoint.requestContentType?.let { contentType(it) }
                 endpoint.responseContentType?.let { accept(it) }
@@ -136,58 +157,40 @@ class MatrixClientServerApiBaseClient(
         try {
             val plainResponse = jsonRequest(jsonBody)
             UIA.Success(json.decodeFromJsonElement(responseSerializer, plainResponse))
-        } catch (responseException: ResponseException) {
-            val response = responseException.response
-            val responseText = response.bodyAsText()
-            if (response.status == HttpStatusCode.Unauthorized) {
-                val responseObject = json.decodeFromString<JsonObject>(responseText)
-                val state = json.decodeFromJsonElement<UIAState>(responseObject)
-                val errorCode = responseObject["errcode"]
-                val getFallbackUrl: (AuthenticationType) -> Url = { authenticationType ->
-                    URLBuilder().apply {
-                        val localBaseUlr = baseUrl
-                        if (localBaseUlr != null) takeFrom(localBaseUlr)
-                        encodedPath += "_matrix/client/v3/auth/${authenticationType.name}/fallback/web"
-                        state.session?.let { parameters.append("session", it) }
-                    }.build()
+        } catch (exception: UIAInterception) {
+            val responseObject = exception.body
+            val state = json.decodeFromJsonElement<UIAState>(responseObject)
+            val getFallbackUrl: (AuthenticationType) -> Url = { authenticationType ->
+                URLBuilder().apply {
+                    val localBaseUlr = baseUrl
+                    if (localBaseUlr != null) takeFrom(localBaseUlr)
+                    encodedPath += "_matrix/client/v3/auth/${authenticationType.name}/fallback/web"
+                    state.session?.let { parameters.append("session", it) }
+                }.build()
+            }
+            val authenticate: suspend (AuthenticationRequest) -> Result<UIA<RESPONSE>> = { authenticationRequest ->
+                uiaRequest(
+                    RequestWithUIA(
+                        jsonBody,
+                        AuthenticationRequestWithSession(authenticationRequest, state.session)
+                    ),
+                    serializer(),
+                    responseSerializer,
+                    jsonRequest
+                )
+            }
+
+            val errorResponse = exception.errorResponse
+            if (errorResponse != null) {
+                if (errorResponse is ErrorResponse.UnknownToken) {
+                    onLogout(LogoutInfo(errorResponse.softLogout, false))
                 }
-                val authenticate: suspend (AuthenticationRequest) -> Result<UIA<RESPONSE>> = { authenticationRequest ->
-                    uiaRequest(
-                        RequestWithUIA(
-                            jsonBody,
-                            AuthenticationRequestWithSession(authenticationRequest, state.session)
-                        ),
-                        serializer(),
-                        responseSerializer,
-                        jsonRequest
-                    )
+                if (errorResponse is ErrorResponse.UserLocked) {
+                    onLogout(LogoutInfo(errorResponse.softLogout, true))
                 }
-                if (errorCode != null) {
-                    val error = json.decodeFromJsonElement<ErrorResponse>(responseObject)
-                    if (error is ErrorResponse.UnknownToken) {
-                        onLogout(LogoutInfo(error.softLogout, false))
-                    }
-                    if (error is ErrorResponse.UserLocked) {
-                        onLogout(LogoutInfo(error.softLogout, true))
-                    }
-                    UIA.Error(state, error, getFallbackUrl, authenticate)
-                } else {
-                    UIA.Step(state, getFallbackUrl, authenticate)
-                }
+                UIA.Error(state, errorResponse, getFallbackUrl, authenticate)
             } else {
-                val errorResponse =
-                    try {
-                        json.decodeFromString(
-                            ErrorResponseSerializer,
-                            responseText
-                        )
-                    } catch (error: Throwable) {
-                        ErrorResponse.CustomErrorResponse(
-                            "UNKNOWN",
-                            responseText
-                        )
-                    }
-                throw MatrixServerException(response.status, errorResponse)
+                UIA.Step(state, getFallbackUrl, authenticate)
             }
         }
     }

@@ -166,7 +166,7 @@ class MatrixClientServerApiBaseClientTest {
             .exceptionOrNull() shouldBe
                 MatrixServerException(
                     HttpStatusCode.Unauthorized,
-                    ErrorResponse.CustomErrorResponse("UNKNOWN", error = """{"status":"ok"}""")
+                    ErrorResponse.BadJson(error = """response could not be parsed to ErrorResponse (body={"status":"ok"})"""),
                 )
     }
 
@@ -523,13 +523,77 @@ class MatrixClientServerApiBaseClientTest {
             eventContentSerializerMappings = mappings,
         )
 
-        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
-            .shouldBeInstanceOf<UIA.Error<*>>()
+        val error =
+            cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).exceptionOrNull()
+                .shouldBeInstanceOf<MatrixServerException>()
         assertEquals(
             ErrorResponse.UnknownToken::class,
             error.errorResponse::class
         )
         onLogout shouldBe LogoutInfo(true, false)
+    }
+
+    @Test
+    fun uiaRequestShouldRefresh() = runTest {
+        var onLogout: LogoutInfo? = null
+        var refreshCalled = false
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classicInMemory("access_old", "refresh"),
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v3/refresh" -> {
+                            request.body.toByteArray().decodeToString() shouldBe """{"refresh_token":"refresh"}"""
+                            refreshCalled = true
+                            respond(
+                                """
+                                    {
+                                        "access_token": "access",
+                                        "expires_in_ms": 60000,
+                                        "refresh_token": "refresh2"
+                                    }
+                                """,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            onLogout = { onLogout = it },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
+        refreshCalled shouldBe true
     }
 
     @Test
@@ -570,7 +634,7 @@ class MatrixClientServerApiBaseClientTest {
         var requestCount = 0
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            authProvider = MatrixAuthProvider.classicInMemory("access", "refresh"),
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (requestCount) {
