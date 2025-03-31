@@ -27,6 +27,7 @@ import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class LoadMembersServiceTest : ShouldSpec({
     timeout = 30_000
@@ -126,9 +127,16 @@ class LoadMembersServiceTest : ShouldSpec({
                 cut(roomId, true)
             }
 
-            delay(10000)
+            delay(1.seconds)
+            loadMembers.isCompleted shouldBe false
 
+            roomStore.update(roomId) { simpleRoom.copy(roomId = roomId, membersLoaded = false) }
+
+            delay(1.seconds)
+            loadMembers.join()
+            roomStore.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             loadMembers.isCompleted shouldBe true
+            newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
         }
     }
 })
