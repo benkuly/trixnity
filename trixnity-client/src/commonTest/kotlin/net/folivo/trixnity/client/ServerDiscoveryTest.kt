@@ -2,12 +2,12 @@ package net.folivo.trixnity.client
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
-import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.UserId
 import kotlin.test.fail
@@ -167,10 +167,8 @@ class ServerDiscoveryTest : ShouldSpec({
                 }
             }
             "https://someHost:8008".serverDiscovery(httpClientEngine)
-                .exceptionOrNull() shouldBe MatrixServerException(
-                HttpStatusCode.NotFound,
-                ErrorResponse.CustomErrorResponse("UNKNOWN", "Not Found")
-            )
+                .exceptionOrNull()
+                .shouldBeInstanceOf<MatrixServerException>().statusCode shouldBe HttpStatusCode.NotFound
         }
     }
 })

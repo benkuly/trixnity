@@ -331,3 +331,22 @@ object ErrorResponseSerializer : KSerializer<ErrorResponse> {
         return encoder.encodeJsonElement(jsonElement)
     }
 }
+
+fun Json.decodeErrorResponse(body: String): ErrorResponse =
+    try {
+        val bodyJson = decodeFromString<JsonObject>(body)
+        decodeErrorResponse(bodyJson)
+    } catch (error: Throwable) {
+        ErrorResponse.NotJson(
+            "response could not be parsed to JSON (body=$body)"
+        )
+    }
+
+fun Json.decodeErrorResponse(body: JsonObject): ErrorResponse =
+    try {
+        decodeFromJsonElement(ErrorResponseSerializer, body)
+    } catch (error: Throwable) {
+        ErrorResponse.BadJson(
+            "response could not be parsed to ErrorResponse (body=$body)",
+        )
+    }

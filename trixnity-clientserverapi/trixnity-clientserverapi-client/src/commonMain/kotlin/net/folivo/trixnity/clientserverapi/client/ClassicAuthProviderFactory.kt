@@ -1,7 +1,6 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.request.*
@@ -75,10 +74,7 @@ class ClassicMatrixAuthProvider(
         }
     }
 
-    override suspend fun refreshToken(response: HttpResponse): Boolean =
-        refreshToken(response.call.client)
-
-    private suspend fun refreshToken(client: HttpClient): Boolean = coroutineScope {
+    override suspend fun refreshToken(response: HttpResponse): Boolean = coroutineScope {
         val lazyRefreshToken = lazy {
             async {
                 try {
@@ -87,7 +83,7 @@ class ClassicMatrixAuthProvider(
 
                     val refreshToken = oldTokens.refreshToken ?: return@async false
                     val refreshResponse =
-                        client.post("/_matrix/client/v3/refresh") {
+                        response.call.client.post("/_matrix/client/v3/refresh") {
                             attributes.put(AuthCircuitBreaker, Unit)
                             contentType(ContentType.Application.Json)
                             accept(ContentType.Application.Json)
@@ -104,9 +100,7 @@ class ClassicMatrixAuthProvider(
                 }
             }
         }
-        refreshTokensDeferred.updateAndGet {
-            it ?: lazyRefreshToken
-        }?.value?.await()
+        refreshTokensDeferred.updateAndGet { it ?: lazyRefreshToken }?.value?.await()
             ?: throw IllegalStateException("should never be null")
     }
 

@@ -5,6 +5,7 @@ import io.ktor.utils.io.core.*
 import js.objects.jso
 import js.promise.Promise
 import js.typedarrays.Uint8Array
+import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList

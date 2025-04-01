@@ -32,18 +32,23 @@ open class MatrixApiClient(
         install(HttpTimeout) {
             requestTimeoutMillis = 30000
         }
-        expectSuccess = true
-        followRedirects = false
-
-        httpClientConfig?.invoke(this)
+        install(HttpCallValidator) {
+            validateResponse { response ->
+                val status = response.status
+                if (status.isSuccess()) return@validateResponse
+                val errorResponse = json.decodeErrorResponse(response.bodyAsText())
+                throw MatrixServerException(response.status, errorResponse, null)
+            }
+        }
+        expectSuccess = false
 
         install(PlatformUserAgentPlugin)
+
+        httpClientConfig?.invoke(this)
     }
     val baseClient: HttpClient =
         if (httpClientEngine == null) HttpClient(finalHttpClientConfig)
         else HttpClient(httpClientEngine, finalHttpClientConfig)
-
-    open suspend fun onErrorResponse(response: HttpResponse, errorResponse: ErrorResponse) {}
 
     suspend inline fun <reified ENDPOINT : MatrixEndpoint<Unit, RESPONSE>, reified RESPONSE> request(
         endpoint: ENDPOINT,
@@ -68,35 +73,7 @@ open class MatrixApiClient(
         requestBuilder: HttpRequestBuilder.() -> Unit = {},
         noinline responseHandler: suspend (RESPONSE) -> T
     ): Result<T> = runCatching<T> {
-        try {
-            unsafeRequest(endpoint, body, requestBuilder, responseHandler)
-        } catch (responseException: ResponseException) {
-            when (responseException) {
-                is RedirectResponseException -> throw responseException
-                else -> {
-                    val response = responseException.response
-                    val responseText = response.bodyAsText()
-                    val errorResponse =
-                        try {
-                            json.decodeFromString(ErrorResponseSerializer, responseText)
-                        } catch (error: Throwable) {
-                            ErrorResponse.CustomErrorResponse("UNKNOWN", responseText)
-                        }
-                    onErrorResponse(response, errorResponse)
-                    throw MatrixServerException(response.status, errorResponse)
-                }
-            }
-        }
-    }
-
-    @PublishedApi
-    internal suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE, T> unsafeRequest(
-        endpoint: ENDPOINT,
-        requestBody: REQUEST,
-        requestBuilder: HttpRequestBuilder.() -> Unit = {},
-        noinline responseHandler: suspend (RESPONSE) -> T
-    ): T {
-        val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json, requestBody)
+        val requestSerializer = endpoint.requestSerializerBuilder(contentMappings, json, body)
         val request = baseClient.prepareRequest(endpoint) {
             val annotations = serializer<ENDPOINT>().descriptor.annotations
             val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
@@ -105,10 +82,10 @@ open class MatrixApiClient(
             attributes.put(AuthRequired.attributeKey, authRequired)
             method = io.ktor.http.HttpMethod(endpointHttpMethod.type.name)
             endpoint.responseContentType?.let { accept(it) }
-            if (requestBody != Unit) {
+            if (body != Unit) {
                 endpoint.requestContentType?.let { contentType(it) }
-                if (requestSerializer != null) setBody(json.encodeToJsonElement(requestSerializer, requestBody))
-                else setBody(requestBody)
+                if (requestSerializer != null) setBody(json.encodeToJsonElement(requestSerializer, body))
+                else setBody(body)
             } else {
                 if (endpoint.requestContentType == ContentType.Application.Json
                     && (method == io.ktor.http.HttpMethod.Post || method == io.ktor.http.HttpMethod.Put)
@@ -122,7 +99,7 @@ open class MatrixApiClient(
         val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json, null)
         val forceJson =
             serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<ForceJson>().isNotEmpty()
-        return request.execute { response ->
+        request.execute { response ->
             responseHandler(
                 when {
                     forceJson -> json.decodeFromString(responseSerializer ?: serializer(), response.bodyAsText())

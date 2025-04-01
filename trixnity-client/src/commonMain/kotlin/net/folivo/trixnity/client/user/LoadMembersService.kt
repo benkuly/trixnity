@@ -2,10 +2,7 @@ package net.folivo.trixnity.client.user
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import net.folivo.trixnity.client.CurrentSyncState
@@ -39,8 +36,7 @@ class LoadMembersServiceImpl(
                     SyncState.RUNNING,
                     onError = { log.warn(it) { "failed loading members" } },
                 ) {
-                    val room = roomStore.get(roomId).first()
-                        ?: throw IllegalStateException("room not loaded yet")
+                    val room = roomStore.get(roomId).filterNotNull().first()
 
                     if (!room.membersLoaded) {
                         log.debug { "load members of room $roomId" }

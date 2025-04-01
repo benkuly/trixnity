@@ -4,13 +4,9 @@ import io.kotest.assertions.nondeterministic.continually
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.getInMemoryRoomStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -31,6 +27,7 @@ import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class LoadMembersServiceTest : ShouldSpec({
     timeout = 30_000
@@ -113,7 +110,7 @@ class LoadMembersServiceTest : ShouldSpec({
             roomStore.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
             newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
         }
-        should("retry when room not loaded yet") {
+        should("do nothing when room not loaded yet") {
             apiConfig.endpoints {
                 matrixJsonEndpoint(GetMembers(roomId, notMembership = LEAVE)) {
                     GetMembers.Response(
@@ -126,16 +123,19 @@ class LoadMembersServiceTest : ShouldSpec({
                 newMemberEvents += it
             }
 
-            val loadMembers = launch{
+            val loadMembers = launch {
                 cut(roomId, true)
             }
 
-            delay(10000)
-
+            delay(1.seconds)
             loadMembers.isCompleted shouldBe false
 
             roomStore.update(roomId) { simpleRoom.copy(roomId = roomId, membersLoaded = false) }
-            roomStore.get(roomId).first { it?.membersLoaded == true }
+
+            delay(1.seconds)
+            loadMembers.join()
+            roomStore.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
+            loadMembers.isCompleted shouldBe true
             newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
         }
     }

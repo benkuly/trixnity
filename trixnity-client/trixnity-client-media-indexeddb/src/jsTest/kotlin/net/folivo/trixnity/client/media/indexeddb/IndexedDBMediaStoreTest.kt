@@ -6,9 +6,7 @@ import com.juul.indexeddb.openDatabase
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.utils.io.core.*
-import js.typedarrays.Int8Array
-import js.typedarrays.Uint8Array
-import js.typedarrays.asInt8Array
+import js.typedarrays.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestResult
