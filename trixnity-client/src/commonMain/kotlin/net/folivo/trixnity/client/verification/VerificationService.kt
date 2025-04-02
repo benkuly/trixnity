@@ -266,6 +266,9 @@ class VerificationServiceImpl(
         }
     }
 
+    // Equality for javascript
+    private val createDeviceVerificationRequestStable = ::createDeviceVerificationRequest
+
     override suspend fun createDeviceVerificationRequest(
         theirUserId: UserId,
         theirDeviceIds: Set<String>
@@ -387,7 +390,7 @@ class VerificationServiceImpl(
                             SelfVerificationMethod.CrossSignedDeviceVerification(
                                 ownUserId,
                                 sendToDevices.toSet(),
-                                ::createDeviceVerificationRequest
+                                createDeviceVerificationRequestStable
                             )
                         )
                     else setOf()

@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- fix equality for CrossSignedDeviceVerification in kotlin/js
+
 ### Security
 
 ## 4.14.3

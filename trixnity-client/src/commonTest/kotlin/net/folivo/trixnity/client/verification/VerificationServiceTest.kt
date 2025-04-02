@@ -638,6 +638,43 @@ private val body: ShouldSpec.() -> Unit = {
                 AesHmacSha2RecoveryKeyWithPbkdf2Passphrase(keySecretServiceMock, keyTrustServiceMock, "KEY", defaultKey)
             )
         }
+        // TODO enable this on Js
+        should("honor data class equality") {
+            globalAccountDataStore.save(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
+            globalAccountDataStore.save(GlobalAccountDataEvent(SecretKeyEventContent.AesHmacSha2Key(
+                name = "default key",
+                passphrase = SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2("salt", 10_000),
+            ), "KEY"))
+
+            keyStore.updateCrossSigningKeys(aliceUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(CrossSigningKeys(aliceUserId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(true)
+                    )
+                )
+            }
+            keyStore.updateDeviceKeys(aliceUserId) {
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    ),
+                    "DEV2" to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, "DEV2", setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.CrossSigned(false)
+                    ),
+                )
+            }
+
+            val methods1 = cut.getSelfVerificationMethods().first()
+                .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>().methods
+            val methods2 = cut.getSelfVerificationMethods().first()
+                .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>().methods
+
+            methods1.size shouldBe 3
+            methods1 shouldBe methods2
+        }
     }
     context("getActiveUserVerification") {
         should("skip timed out verifications") {
