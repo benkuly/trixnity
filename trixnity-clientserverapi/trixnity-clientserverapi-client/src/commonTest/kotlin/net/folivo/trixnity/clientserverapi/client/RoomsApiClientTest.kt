@@ -7,7 +7,6 @@ import io.ktor.http.ContentType.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.clientserverapi.model.rooms.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId

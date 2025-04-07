@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Restart sync loop when settings change
+
 ### Deprecated
 
 ### Removed
@@ -18,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - fix equality for CrossSignedDeviceVerification in kotlin/js
+- Cancel syncOnce subscriber when sync loop is stopped
 
 ### Security
 

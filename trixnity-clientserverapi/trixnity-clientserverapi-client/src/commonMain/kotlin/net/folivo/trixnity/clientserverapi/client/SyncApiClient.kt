@@ -272,6 +272,11 @@ class SyncApiClientImpl(
                             log.debug { "stop sync loop because stop requested" }
                             throw SyncStoppedException
                         }.onAwait { it }
+                        async {
+                            syncLoopRequest.first { it != null && it != queueItem }
+                            log.debug { "stop sync loop because settings have changed" }
+                            throw SyncStoppedException
+                        }.onAwait { it }
                     }
                     async {
                         if (currentSyncState.value == RUNNING) {
@@ -366,7 +371,13 @@ class SyncApiClientImpl(
                 if (it.epoch == syncQueueItem.epoch)
                     send(kotlin.runCatching { runOnce(it) })
             }
+
             syncOnceRequests.update { it + syncQueueItem }
+
+            launch {
+                syncOnceRequests.first { it.none { it.epoch == syncQueueItem.epoch } }
+                this@callbackFlow.cancel("syncLoop was stopped")
+            }
 
             awaitClose {
                 unsubscribe()

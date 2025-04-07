@@ -43,6 +43,7 @@ import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -1438,4 +1439,71 @@ class SyncApiClientTest {
         }
     }
 
+    @Test
+    fun `should cancel sync once subscriber when stopped`() = runTestWithCoroutineScope { coroutineScope ->
+        val barrier = CompletableDeferred<Unit>()
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("some") },
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    barrier.complete(Unit)
+
+                    delay(Duration.INFINITE)
+
+                    respondBadRequest()
+                }
+            }
+        ).use { matrixRestClient ->
+            val startOnceJob = launch {
+                matrixRestClient.sync.startOnce { }
+            }
+
+            barrier.await()
+
+            matrixRestClient.sync.stop()
+
+            startOnceJob.isCancelled shouldBe true
+        }
+    }
+
+    @Test
+    fun `should restart sync when settings change`() = runTestWithCoroutineScope { coroutineScope ->
+        val firstEndpoint = CompletableDeferred<Unit>()
+        val secondEndpoint = CompletableDeferred<Unit>()
+        MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            syncCoroutineScope = coroutineScope,
+            syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("some") },
+            httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v3/sync?set_presence=online&since=some&timeout=0" -> {
+                            firstEndpoint.complete(Unit)
+                            delay(Duration.INFINITE)
+                        }
+                        "/_matrix/client/v3/sync?set_presence=offline&since=some&timeout=0" -> {
+                            secondEndpoint.complete(Unit)
+                            return@addHandler respond(
+                                json.encodeToString(serverResponse1),
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                    }
+
+                    respondBadRequest()
+                }
+            }
+        ).use { matrixRestClient ->
+            val states = async { matrixRestClient.sync.currentSyncState.take(3).toList() }
+            matrixRestClient.sync.start(setPresence = Presence.ONLINE)
+            firstEndpoint.await()
+            matrixRestClient.sync.start(setPresence = Presence.OFFLINE)
+            secondEndpoint.await()
+
+            states.await() shouldBe listOf(SyncState.STOPPED, SyncState.STARTED, SyncState.RUNNING)
+        }
+    }
 }
