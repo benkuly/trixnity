@@ -80,22 +80,22 @@ class PushApiClientTest {
     }
 
     @Test
-    fun shouldSetPushers() = runTest {
+    fun shouldSetPushersSet() = runTest {
         val expectedRequest = """
             {
-              "app_display_name":"Mat Rix",
-              "app_id":"com.example.app.ios",
-              "append":false,
-              "data":{
-                "format":"event_id_only",
-                "url":"https://push-gateway.location.here/_matrix/push/v1/notify",
-                "custom":"dino"
+              "app_id": "com.example.app.ios",
+              "pushkey": "APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ",
+              "kind": "http",
+              "app_display_name": "Mat Rix",
+              "device_display_name": "EiPhone 9",
+              "lang": "en",
+              "data": {
+                "format": "event_id_only",
+                "url": "https://push-gateway.location.here/_matrix/push/v1/notify",
+                "custom": "dino"
               },
-              "device_display_name":"EiPhone 9",
-              "kind":"http",
-              "lang":"en",
-              "profile_tag":"xxyyzz",
-              "pushkey":"APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ"
+              "append": false,
+              "profile_tag": "xxyyzz"
             }
         """.trimToFlatJson()
         val matrixRestClient = MatrixClientServerApiClientImpl(
@@ -113,7 +113,7 @@ class PushApiClientTest {
                 }
             })
         matrixRestClient.push.setPushers(
-            SetPushers.Request(
+            SetPushers.Request.Set(
                 appDisplayName = "Mat Rix",
                 appId = "com.example.app.ios",
                 append = false,
@@ -126,6 +126,37 @@ class PushApiClientTest {
                 kind = "http",
                 lang = "en",
                 profileTag = "xxyyzz",
+                pushkey = "APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ"
+            )
+        ).getOrThrow()
+    }
+
+    @Test
+    fun shouldSetPushersRemove() = runTest {
+        val expectedRequest = """
+            {
+              "app_id":"com.example.app.ios",
+              "pushkey":"APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ",
+              "kind":null
+            }
+        """.trimToFlatJson()
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v3/pushers/set", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(expectedRequest, request.body.toByteArray().decodeToString())
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.push.setPushers(
+            SetPushers.Request.Remove(
+                appId = "com.example.app.ios",
                 pushkey = "APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ"
             )
         ).getOrThrow()
