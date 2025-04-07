@@ -70,7 +70,8 @@ object SetPushersRequestSerializer : KSerializer<SetPushers.Request> {
     override fun deserialize(decoder: Decoder): SetPushers.Request {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        val isRemove = (jsonObject["kind"] as? JsonNull) != null
+        val kind = jsonObject["kind"]
+        val isRemove = kind == null || kind is JsonNull
         return when (isRemove) {
             true -> decoder.json.decodeFromJsonElement<SetPushers.Request.Remove>(jsonObject)
             false -> decoder.json.decodeFromJsonElement<SetPushers.Request.Set>(jsonObject)
