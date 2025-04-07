@@ -108,7 +108,7 @@ class PushRoutesTest {
     }
 
     @Test
-    fun shouldSetPushers() = testApplication {
+    fun shouldSetPushersSet() = testApplication {
         initCut()
         everySuspend { handlerMock.setPushers(any()) }
             .returns(Unit)
@@ -142,7 +142,7 @@ class PushRoutesTest {
         }
         verifySuspend {
             handlerMock.setPushers(assert {
-                it.requestBody shouldBe SetPushers.Request(
+                it.requestBody shouldBe SetPushers.Request.Set(
                     appDisplayName = "Mat Rix",
                     appId = "com.example.app.ios",
                     append = false,
@@ -155,6 +155,39 @@ class PushRoutesTest {
                     kind = "http",
                     lang = "en",
                     profileTag = "xxyyzz",
+                    pushkey = "APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ"
+                )
+            })
+        }
+    }
+
+    @Test
+    fun shouldSetPushersRemove() = testApplication {
+        initCut()
+        everySuspend { handlerMock.setPushers(any()) }
+            .returns(Unit)
+        val response = client.post("/_matrix/client/v3/pushers/set") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "app_id":"com.example.app.ios",
+                  "kind":null,
+                  "pushkey":"APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ"
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verifySuspend {
+            handlerMock.setPushers(assert {
+                it.requestBody shouldBe SetPushers.Request.Remove(
+                    appId = "com.example.app.ios",
                     pushkey = "APA91bHPRgkF3JUikC4ENAHEeMrd41Zxv3hVZjC9KtT8OvPVGJ-hQMRKRrZuJAEcl7B338qju59zJMjw2DELjzEvxwYv7hH5Ynpc1ODQ0aT4U4OFEeco8ohsN5PjL1iC2dNtk2BAokeMCg2ZXKqpc8FXKmhX94kIxQ"
                 )
             })
