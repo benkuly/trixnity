@@ -27,8 +27,7 @@ class RoomUpgradeHandler(
     internal suspend fun joinUpgradedRooms() {
         if (configuration.autoJoinUpgradedRooms.not()) return
 
-        val allRooms =
-            roomStore.getAll().first().mapValues { it.value.first() }
+        val allRooms = roomStore.getAll().first().mapValues { it.value.first() }
         allRooms.values.filterNotNull().filter { it.membership == Membership.INVITE }.forEach { room ->
             val previousRoom = room.previousRoomId?.let { allRooms[it] }
             if (previousRoom?.nextRoomId == room.roomId && previousRoom.membership == Membership.JOIN) {

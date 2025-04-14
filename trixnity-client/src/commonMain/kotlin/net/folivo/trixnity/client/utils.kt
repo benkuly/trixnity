@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.previousRoomId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
@@ -118,7 +117,6 @@ fun Flow<Map<RoomId, Flow<Room?>>>.flattenValues(
                         rooms.any {
                             it.roomId == nextRoomId
                                     && it.previousRoomId == room.roomId
-                                    && it.membership == Membership.JOIN
                         }
                     } == true
                 foundReplacementRoom.not()

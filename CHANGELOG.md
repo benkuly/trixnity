@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Upgraded rooms were not filtered when membership LEAVE
+
 ### Security
 
 ## 4.15.0
