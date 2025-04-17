@@ -11,17 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Close DI on close
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Upgraded rooms were not filtered when membership LEAVE
-
 ### Security
+
+## 4.15.1
+
+### Changed
+
+- Close DI on close
+
+### Fixed
+
+- Upgraded rooms were not filtered when membership LEAVE
 
 ## 4.15.0
 
