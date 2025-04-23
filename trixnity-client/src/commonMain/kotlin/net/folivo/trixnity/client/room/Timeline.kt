@@ -31,6 +31,14 @@ interface Timeline<T> {
      */
     val state: Flow<TimelineState<T>>
 
+    @Deprecated("use init with explicit roomId instead")
+    suspend fun init(
+        startFrom: EventId,
+        configStart: GetTimelineEventConfig.() -> Unit = {},
+        configBefore: GetTimelineEventsConfig.() -> Unit = {},
+        configAfter: GetTimelineEventsConfig.() -> Unit = {},
+    ): TimelineStateChange<T>
+
     /**
      * Initialize the timeline with the start event.
      *
@@ -44,6 +52,7 @@ interface Timeline<T> {
      * @param configAfter The config for getting [TimelineEvent]s after [startFrom].
      */
     suspend fun init(
+        roomId: RoomId,
         startFrom: EventId,
         configStart: GetTimelineEventConfig.() -> Unit = {},
         configBefore: GetTimelineEventsConfig.() -> Unit = {},
@@ -120,10 +129,7 @@ data class TimelineStateChange<T>(
     val elementsAfterChange: List<T> = listOf(),
     val addedElements: List<T> = listOf(),
     val removedElements: List<T> = listOf(),
-) {
-    @Deprecated("replaced by addedElements", ReplaceWith("addedElements"))
-    val newElements: List<T> get() = addedElements
-}
+)
 
 /**
  * An implementation for some restrictions required by [Timeline].
@@ -136,6 +142,7 @@ abstract class TimelineBase<T>(
     val transformer: suspend (Flow<TimelineEvent>) -> T,
 ) : Timeline<T> {
     protected abstract suspend fun internalInit(
+        roomId: RoomId,
         startFrom: EventId,
         configStart: GetTimelineEventConfig.() -> Unit = {},
         configBefore: GetTimelineEventsConfig.() -> Unit,
@@ -143,11 +150,13 @@ abstract class TimelineBase<T>(
     ): List<Flow<TimelineEvent>>
 
     protected abstract suspend fun internalLoadBefore(
+        roomId: RoomId,
         startFrom: EventId,
         config: GetTimelineEventsConfig.() -> Unit,
     ): List<Flow<TimelineEvent>>
 
     protected abstract suspend fun internalLoadAfter(
+        roomId: RoomId,
         startFrom: EventId,
         config: GetTimelineEventsConfig.() -> Unit,
     ): List<Flow<TimelineEvent>>
@@ -203,16 +212,18 @@ abstract class TimelineBase<T>(
     private suspend fun List<Flow<TimelineEvent>>.transformToElements() = map { events -> transformer(events) }
 
     override suspend fun init(
+        roomId: RoomId,
         startFrom: EventId,
         configStart: GetTimelineEventConfig.() -> Unit,
         configBefore: GetTimelineEventsConfig.() -> Unit,
-        configAfter: GetTimelineEventsConfig.() -> Unit,
+        configAfter: GetTimelineEventsConfig.() -> Unit
     ): TimelineStateChange<T> = coroutineScope {
         requestInit.value = true
         editSemaphore.withPermit(2) {
             requestInit.value = false
             internalState.update { it.copy(isInitialized = false) }
             val newEvents = internalInit(
+                roomId = roomId,
                 startFrom = startFrom,
                 configStart = {
                     fetchTimeout = INFINITE
@@ -285,13 +296,13 @@ abstract class TimelineBase<T>(
                     val newEvents = coroutineScope {
                         select {
                             async {
-                                val startFrom = internalState.value.lastLoadedEventBefore?.first()?.eventId
+                                val startFrom = internalState.value.lastLoadedEventBefore?.first()
                                     ?: throw IllegalStateException("Timeline not initialized")
                                 coroutineContext.job.invokeOnCompletion { error ->
                                     if (error != null) internalState.update { it.copy(isLoadingBefore = false) }
                                 }
                                 internalState.update { it.copy(isLoadingBefore = true) }
-                                internalLoadBefore(startFrom) {
+                                internalLoadBefore(startFrom.roomId, startFrom.eventId) {
                                     minSize = 2
                                     maxSize = fetchSize
                                     config()
@@ -339,13 +350,13 @@ abstract class TimelineBase<T>(
                         coroutineScope {
                             select {
                                 async {
-                                    val startFrom = internalState.value.lastLoadedEventAfter?.first()?.eventId
+                                    val startFrom = internalState.value.lastLoadedEventAfter?.first()
                                         ?: throw IllegalStateException("Timeline not initialized")
                                     coroutineContext.job.invokeOnCompletion { error ->
                                         if (error != null) internalState.update { it.copy(isLoadingAfter = false) }
                                     }
                                     internalState.update { it.copy(isLoadingAfter = true) }
-                                    internalLoadAfter(startFrom) {
+                                    internalLoadAfter(startFrom.roomId, startFrom.eventId) {
                                         minSize = 2
                                         maxSize = fetchSize
                                         config()
@@ -482,13 +493,21 @@ abstract class TimelineBase<T>(
     }
 }
 
-class TimelineImpl<T>(
-    private val roomId: RoomId,
+open class TimelineImpl<T>(
     private val roomService: RoomService,
     onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
     transformer: suspend (Flow<TimelineEvent>) -> T,
 ) : TimelineBase<T>(onStateChange, transformer) {
+    @Deprecated("use init with explicit roomId instead")
+    override suspend fun init(
+        startFrom: EventId,
+        configStart: GetTimelineEventConfig.() -> Unit,
+        configBefore: GetTimelineEventsConfig.() -> Unit,
+        configAfter: GetTimelineEventsConfig.() -> Unit
+    ): TimelineStateChange<T> = throw NotImplementedError("calling this only works with legacy TimelineImpl")
+
     override suspend fun internalInit(
+        roomId: RoomId,
         startFrom: EventId,
         configStart: GetTimelineEventConfig.() -> Unit,
         configBefore: GetTimelineEventsConfig.() -> Unit,
@@ -527,6 +546,7 @@ class TimelineImpl<T>(
     }
 
     override suspend fun internalLoadBefore(
+        roomId: RoomId,
         startFrom: EventId,
         config: GetTimelineEventsConfig.() -> Unit
     ): List<Flow<TimelineEvent>> {
@@ -542,6 +562,7 @@ class TimelineImpl<T>(
     }
 
     override suspend fun internalLoadAfter(
+        roomId: RoomId,
         startFrom: EventId,
         config: GetTimelineEventsConfig.() -> Unit
     ): List<Flow<TimelineEvent>> {
@@ -567,4 +588,21 @@ class TimelineImpl<T>(
             timelineEvent.isLast.not() || tombstone != null
         }
     }
+}
+
+@Deprecated("use TimelineImpl instead")
+class LegacyTimelineImpl<T>(
+    private val roomId: RoomId,
+    roomService: RoomService,
+    onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
+    transformer: suspend (Flow<TimelineEvent>) -> T,
+) : TimelineImpl<T>(roomService, onStateChange, transformer) {
+    @Deprecated("use init with explicit roomId instead")
+    override suspend fun init(
+        startFrom: EventId,
+        configStart: GetTimelineEventConfig.() -> Unit,
+        configBefore: GetTimelineEventsConfig.() -> Unit,
+        configAfter: GetTimelineEventsConfig.() -> Unit
+    ): TimelineStateChange<T> =
+        init(roomId, startFrom, configStart, configBefore, configAfter)
 }

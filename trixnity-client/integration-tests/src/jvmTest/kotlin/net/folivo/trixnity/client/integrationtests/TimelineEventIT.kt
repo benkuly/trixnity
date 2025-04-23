@@ -118,8 +118,8 @@ class TimelineEventIT {
             client2.room.getById(room).first { it?.membership == JOIN }
 
             val lastEventId = client2.room.getById(room).map { it?.lastEventId }.filterNotNull().first()
-            val timeline = client2.room.getTimeline(room)
-            timeline.init(lastEventId)
+            val timeline = client2.room.getTimeline()
+            timeline.init(room, lastEventId)
             timeline.state.first().elements.map { it.map { it.content }.filterNotNull().first().getOrThrow() }
                 .any { it is RoomMessageEventContent.TextBased.Text && it.body == "Hello!" } shouldBe true
         }
@@ -450,8 +450,9 @@ class TimelineEventIT {
             }.first { it } // wait for sync
 
             val timelineFromOldRoom =
-                client1.room.getTimeline(oldRoom).apply {
+                client1.room.getTimeline().apply {
                     init(
+                        oldRoom,
                         client1.room.getState<CreateEventContent>(oldRoom).first()?.idOrNull.shouldNotBeNull(),
                         configAfter = { maxSize = 20 })
                 }.state.first().elements.map { it.first() }
@@ -463,8 +464,8 @@ class TimelineEventIT {
             """.trimMargin()
             )
             val timelineFromNewRoom =
-                client1.room.getTimeline(newRoom).apply {
-                    init(client1.room.getById(newRoom).first()?.lastEventId.shouldNotBeNull())
+                client1.room.getTimeline().apply {
+                    init(newRoom, client1.room.getById(newRoom).first()?.lastEventId.shouldNotBeNull())
                     loadBefore { maxSize = 20 }
                 }.state.first().elements.map { it.first() }
                     .map { it.eventId to it.event.content::class.simpleName }
