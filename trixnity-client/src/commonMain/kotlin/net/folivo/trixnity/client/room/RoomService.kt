@@ -129,11 +129,17 @@ interface RoomService {
         decryptionTimeout: Duration = 30.seconds,
     ): Flow<TimelineEvent>
 
+    @Deprecated("use getTimeline without roomId instead")
+    fun <T> getTimeline(
+        roomId: RoomId,
+        onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
+        transformer: suspend (Flow<TimelineEvent>) -> T,
+    ): Timeline<T>
+
     /**
      * Returns a [Timeline] for a room.
      */
     fun <T> getTimeline(
-        roomId: RoomId,
         onStateChange: suspend (TimelineStateChange<T>) -> Unit = {},
         transformer: suspend (Flow<TimelineEvent>) -> T,
     ): Timeline<T>
@@ -571,7 +577,7 @@ class RoomServiceImpl(
     override fun getTimelineEvents(
         response: Sync.Response,
         decryptionTimeout: Duration,
-    ): Flow<TimelineEvent>  {
+    ): Flow<TimelineEvent> {
         val timelineEvents =
             response.room?.join?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty() +
                     response.room?.leave?.values?.flatMap { it.timeline?.events.orEmpty() }.orEmpty()
@@ -599,13 +605,24 @@ class RoomServiceImpl(
         }
     }
 
+    @Deprecated("use getTimeline without roomId instead")
     override fun <T> getTimeline(
         roomId: RoomId,
         onStateChange: suspend (TimelineStateChange<T>) -> Unit,
         transformer: suspend (Flow<TimelineEvent>) -> T,
     ): Timeline<T> =
-        TimelineImpl(
+        LegacyTimelineImpl(
             roomId = roomId,
+            roomService = this,
+            onStateChange = onStateChange,
+            transformer = transformer,
+        )
+
+    override fun <T> getTimeline(
+        onStateChange: suspend (TimelineStateChange<T>) -> Unit,
+        transformer: suspend (Flow<TimelineEvent>) -> T,
+    ): Timeline<T> =
+        TimelineImpl(
             roomService = this,
             onStateChange = onStateChange,
             transformer = transformer,
