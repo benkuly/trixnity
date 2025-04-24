@@ -9,7 +9,7 @@ sidebar_position: 2
 Select from [modules](/docs/modules) the dependency you need and add it to you project:
 
 ```kotlin
-// get version from https://gitlab.com/benkuly/trixnity/-/releases
+// get version from https://gitlab.com/trixnity/trixnity/-/releases
 val trixnityVersion = "x.x.x"
 
 fun trixnity(module: String, version: String = trixnityVersion) =
