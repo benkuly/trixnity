@@ -84,8 +84,13 @@ open class MatrixApiClient(
             endpoint.responseContentType?.let { accept(it) }
             if (body != Unit) {
                 endpoint.requestContentType?.let { contentType(it) }
-                if (requestSerializer != null) setBody(json.encodeToJsonElement(requestSerializer, body))
-                else setBody(body)
+                when {
+                    requestSerializer != null -> setBody(json.encodeToString(requestSerializer, body))
+                    endpoint.requestContentType == ContentType.Application.Json ->
+                        setBody(json.encodeToString(serializer(), body))
+
+                    else -> setBody(body)
+                }
             } else {
                 if (endpoint.requestContentType == ContentType.Application.Json
                     && (method == io.ktor.http.HttpMethod.Post || method == io.ktor.http.HttpMethod.Put)
@@ -97,13 +102,13 @@ open class MatrixApiClient(
             requestBuilder()
         }
         val responseSerializer = endpoint.responseSerializerBuilder(contentMappings, json, null)
-        val forceJson =
-            serializer<ENDPOINT>().descriptor.annotations.filterIsInstance<ForceJson>().isNotEmpty()
         request.execute { response ->
             responseHandler(
                 when {
-                    forceJson -> json.decodeFromString(responseSerializer ?: serializer(), response.bodyAsText())
-                    responseSerializer != null -> json.decodeFromJsonElement(responseSerializer, response.body())
+                    responseSerializer != null -> json.decodeFromString(responseSerializer, response.bodyAsText())
+                    endpoint.responseContentType == ContentType.Application.Json ->
+                        json.decodeFromString(serializer(), response.bodyAsText())
+
                     else -> response.body()
                 }
             )

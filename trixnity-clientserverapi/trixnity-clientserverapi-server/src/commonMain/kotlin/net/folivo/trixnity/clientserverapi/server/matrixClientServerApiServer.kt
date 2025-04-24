@@ -19,6 +19,7 @@ fun Application.matrixClientServerApiServer(
     installMatrixAccessTokenAuth("matrix-access-token-auth") {
         this.authenticationFunction = accessTokenAuthenticationFunction
     }
+    install(ConvertMediaPlugin)
     matrixApiServer(json) {
         createChild(object : RouteSelector() {
             override suspend fun evaluate(context: RoutingResolveContext, segmentIndex: Int): RouteSelectorEvaluation =
@@ -34,7 +35,6 @@ fun Application.matrixClientServerApiServer(
 
 fun Route.installMatrixClientServerApiServer() {
     // TODO rate limit
-    install(ConvertMediaPlugin)
     // see also https://spec.matrix.org/v1.10/client-server-api/#web-browser-clients
     install(CORS) {
         anyHost()

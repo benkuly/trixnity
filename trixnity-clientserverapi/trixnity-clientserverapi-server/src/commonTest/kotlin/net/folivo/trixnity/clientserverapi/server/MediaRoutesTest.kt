@@ -132,6 +132,38 @@ class MediaRoutesTest {
     }
 
     @Test
+    fun shouldUploadJsonMedia() = testApplication {
+        initCut()
+        everySuspend { handlerMock.uploadMedia(any()) }
+            .returns(UploadMedia.Response("mxc://example.com/AQwafuaFswefuhsfAFAgsw"))
+        val response = client.post("/_matrix/media/v3/upload?filename=testFile.json") {
+            bearerAuth("token")
+            setBody(object : OutgoingContent.ReadChannelContent() {
+                override fun readFrom() = ByteReadChannel("{}")
+                override val contentLength = 2L
+                override val contentType = ContentType.Application.Json
+            })
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                  "content_uri":"mxc://example.com/AQwafuaFswefuhsfAFAgsw"
+                }
+            """.trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.uploadMedia(assert {
+                it.endpoint.filename shouldBe "testFile.json"
+                it.requestBody.contentType shouldBe ContentType.Application.Json
+                it.requestBody.contentLength shouldBe 2
+                runBlocking { it.requestBody.content.readUTF8Line() shouldBe "{}" }
+            })
+        }
+    }
+
+    @Test
     fun shouldUploadMediaByContentUri() = testApplication {
         initCut()
         everySuspend { handlerMock.uploadMediaByContentUri(any()) }
@@ -186,6 +218,37 @@ class MediaRoutesTest {
             this.contentLength() shouldBe 4
             this.headers[HttpHeaders.ContentDisposition] shouldBe "attachment; filename=testFile.txt"
             this.body<ByteReadChannel>().readUTF8Line() shouldBe "test"
+        }
+        verifySuspend {
+            handlerMock.downloadMedia(assert {
+                it.endpoint.serverName shouldBe "matrix.org:443"
+                it.endpoint.mediaId shouldBe "ascERGshawAWawugaAcauga"
+            })
+        }
+    }
+
+    @Test
+    fun shouldDownloadJsonMedia() = testApplication {
+        initCut()
+        everySuspend { handlerMock.downloadMedia(any()) }
+            .returns(
+                Media(
+                    content = ByteReadChannel("{}"),
+                    contentLength = 2L,
+                    contentType = ContentType.Application.Json,
+                    contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.json")
+                )
+            )
+        val response =
+            client.get("/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga") {
+                bearerAuth("token")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json
+            this.contentLength() shouldBe 2
+            this.headers[HttpHeaders.ContentDisposition] shouldBe "attachment; filename=testFile.json"
+            this.body<ByteReadChannel>().readUTF8Line() shouldBe "{}"
         }
         verifySuspend {
             handlerMock.downloadMedia(assert {

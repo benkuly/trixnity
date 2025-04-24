@@ -47,27 +47,25 @@ enum class HttpMethodType {
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS)
 annotation class Auth(val required: AuthRequired)
 
-@OptIn(ExperimentalSerializationApi::class)
-@SerialInfo
-@Target(AnnotationTarget.CLASS, AnnotationTarget.TYPEALIAS)
-annotation class ForceJson
-
 enum class AuthRequired {
     /**
      * Client: Send token if available
      * Server: Always require token, error if none included
      */
     YES,
+
     /**
      * Client: Send token if available
      * Server: Use token if included
      */
     OPTIONAL,
+
     /**
      * Client: Send token if requested by server
      * Server: Ignore token, even if included
      */
     NO,
+
     /**
      * Client: Never send token
      * Server: Ignore token, even if included

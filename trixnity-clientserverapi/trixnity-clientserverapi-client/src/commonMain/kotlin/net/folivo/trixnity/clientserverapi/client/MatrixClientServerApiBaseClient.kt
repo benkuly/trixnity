@@ -2,11 +2,11 @@ package net.folivo.trixnity.clientserverapi.client
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.resources.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -18,6 +18,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.api.client.MatrixApiClient
+import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.uia.*
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
@@ -97,6 +98,9 @@ class MatrixClientServerApiBaseClient(
             }
         }
         install(ConvertMediaPlugin)
+        install(ContentNegotiation) {
+            ignoreType(Media::class)
+        }
         install(HttpRequestRetry) {
             retryIf { httpRequest, httpResponse ->
                 (httpResponse.status == HttpStatusCode.TooManyRequests)
@@ -124,7 +128,7 @@ class MatrixClientServerApiBaseClient(
         val requestSerializer = endpoint.plainRequestSerializerBuilder(contentMappings, json) ?: serializer()
         val responseSerializer = endpoint.plainResponseSerializerBuilder(contentMappings, json) ?: serializer()
         return uiaRequest(requestBody, requestSerializer, responseSerializer) { jsonBody ->
-            baseClient.request(endpoint) {
+            val responseBody = baseClient.request(endpoint) {
                 val annotations = serializer<ENDPOINT>().descriptor.annotations
                 val endpointHttpMethod = annotations.filterIsInstance<HttpMethod>().firstOrNull()
                     ?: throw IllegalArgumentException("matrix endpoint needs @Method annotation")
@@ -134,9 +138,10 @@ class MatrixClientServerApiBaseClient(
                 method = io.ktor.http.HttpMethod(endpointHttpMethod.type.name)
                 endpoint.requestContentType?.let { contentType(it) }
                 endpoint.responseContentType?.let { accept(it) }
-                setBody(jsonBody)
+                setBody(json.encodeToString(jsonBody))
                 requestBuilder()
-            }.body()
+            }.bodyAsText()
+            json.decodeFromString(responseBody)
         }
     }
 

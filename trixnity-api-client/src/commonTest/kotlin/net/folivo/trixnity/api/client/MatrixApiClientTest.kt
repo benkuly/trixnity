@@ -13,10 +13,12 @@ import io.ktor.resources.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.*
+import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethodType.POST
+import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
@@ -104,7 +106,6 @@ class MatrixApiClientTest {
     @Serializable
     @Resource("/path")
     @HttpMethod(GET)
-    @ForceJson
     object GetPath : MatrixEndpoint<Unit, GetPath.Response> {
         @Serializable
         data class Response(
