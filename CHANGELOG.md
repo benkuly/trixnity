@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- When creating Timeline, roomId is used in the init block. This is less error-prone, when working with upgraded rooms.
+
 ### Deprecated
+
+- Deprecate creating Timeline with roomId.
 
 ### Removed
 
