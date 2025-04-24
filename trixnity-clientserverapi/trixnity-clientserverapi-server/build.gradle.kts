@@ -21,6 +21,7 @@ kotlin {
                 api(projects.trixnityApiServer)
                 api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
+                implementation(libs.ktor.server.contentNegotiation)
                 api(libs.ktor.server.auth)
                 implementation(libs.ktor.server.cors)
 

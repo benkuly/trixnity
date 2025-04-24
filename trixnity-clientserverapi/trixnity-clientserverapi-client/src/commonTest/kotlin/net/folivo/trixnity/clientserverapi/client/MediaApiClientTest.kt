@@ -101,6 +101,42 @@ class MediaApiClientTest {
     }
 
     @Test
+    fun shouldUploadJsonFile() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/media/v3/upload?filename=testFile.json", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(ContentType.Application.Json, request.body.contentType)
+                    assertEquals(2, request.body.contentLength)
+                    assertEquals("{}", request.body.toByteArray().decodeToString())
+                    respond(
+                        """
+                                {
+                                  "content_uri": "mxc://example.com/AQwafuaFswefuhsfAFAgsw"
+                                }
+                            """.trimIndent(),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    )
+                }
+            })
+        val progress = MutableStateFlow<FileTransferProgress?>(null)
+        val result = matrixRestClient.media.upload(
+            Media(
+                content = ByteReadChannel("{}"),
+                contentLength = 2,
+                contentType = ContentType.Application.Json,
+                contentDisposition = ContentDisposition("attachment").withParameter("filename", "testFile.json")
+            ),
+            progress = progress
+        ).getOrThrow()
+        result.contentUri shouldBe "mxc://example.com/AQwafuaFswefuhsfAFAgsw"
+        progress.value shouldBe FileTransferProgress(2, 2)
+    }
+
+    @Test
     fun shouldUploadFileByContentUri() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -167,6 +203,39 @@ class MediaApiClientTest {
             result.contentType shouldBe ContentType.Text.Plain
         }.getOrThrow()
         progress.value shouldBe FileTransferProgress(4, 4)
+    }
+
+    @Test
+    fun shouldDownloadJsonFile() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v1/media/download/matrix.org:443/ascERGshawAWawugaAcauga",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Get, request.method)
+                    respond(
+                        ByteReadChannel("{}"),
+                        HttpStatusCode.OK,
+                        headersOf(
+                            Pair(HttpHeaders.ContentType, listOf(ContentType.Application.Json.toString())),
+                            Pair(HttpHeaders.ContentLength, listOf("2"))
+                        )
+                    )
+                }
+            })
+        val progress = MutableStateFlow<FileTransferProgress?>(null)
+        matrixRestClient.media.download(
+            mxcUri = "mxc://matrix.org:443/ascERGshawAWawugaAcauga",
+            progress = progress
+        ) { result ->
+            result.content.toByteArray().decodeToString() shouldBe "{}"
+            result.contentLength shouldBe 2
+            result.contentType shouldBe ContentType.Application.Json
+        }.getOrThrow()
+        progress.value shouldBe FileTransferProgress(2, 2)
     }
 
     @Test
