@@ -19,8 +19,7 @@ import net.folivo.trixnity.client.verification.VerificationService.SelfVerificat
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods.PreconditionsNotMet
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -34,8 +33,6 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Veri
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.core.subscribeContent
-import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
@@ -337,7 +334,7 @@ class VerificationServiceImpl(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTrixnityApi::class)
     override fun getSelfVerificationMethods(): Flow<SelfVerificationMethods> {
         return combine(
             keyService.bootstrapRunning,
@@ -381,7 +378,8 @@ class VerificationServiceImpl(
             if (bootstrapRunning) return@combine SelfVerificationMethods.NoCrossSigningEnabled
 
             val deviceVerificationMethod = deviceKeys.entries
-                .filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }
+                // FIXME test
+                .filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned && it.value.value.signed.dehydrated != true }
                 .map { it.key }
                 .let {
                     val sendToDevices = it - ownDeviceId

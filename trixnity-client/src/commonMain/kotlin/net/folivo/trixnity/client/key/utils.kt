@@ -11,7 +11,8 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
-import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
 
 private val log = KotlinLogging.logger { }
@@ -49,22 +50,6 @@ internal suspend inline fun KeyStore.getCrossSigningKey(
     return this.getCrossSigningKeys(userId).first()?.find { keys ->
         keys.value.signed.keys.keys.filterIsInstance<Key.Ed25519Key>().any { it.id == keyId }
     }
-}
-
-internal inline fun <reified T : Key> DeviceKeys.get(): T? {
-    return keys.keys.filterIsInstance<T>().firstOrNull()
-}
-
-internal inline fun <reified T : Key> CrossSigningKeys.get(): T? {
-    return keys.keys.filterIsInstance<T>().firstOrNull()
-}
-
-internal inline fun <reified T : Key> Keys.get(): T? {
-    return keys.filterIsInstance<T>().firstOrNull()
-}
-
-internal inline fun <reified T : Key> SignedDeviceKeys.get(): T? {
-    return signed.keys.keys.filterIsInstance<T>().firstOrNull()
 }
 
 internal fun SecretType.getEncryptedSecret(globalAccountDataStore: GlobalAccountDataStore) = when (this) {

@@ -6,7 +6,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
@@ -31,9 +31,9 @@ import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.createAesHmacSha2MacFromKey
-import net.folivo.trixnity.crypto.key.encodeRecoveryKey
-import net.folivo.trixnity.crypto.key.encryptSecret
-import net.folivo.trixnity.crypto.key.recoveryKeyFromPassphrase
+import net.folivo.trixnity.crypto.key.*
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
+import net.folivo.trixnity.crypto.key.UserTrustLevel
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.sign
@@ -274,23 +274,6 @@ class KeyServiceImpl(
         return bootstrapCrossSigning(recoveryKey, secretKeyEventContent)
     }
 
-    override fun getTrustLevel(
-        userId: UserId,
-        deviceId: String,
-    ): Flow<DeviceTrustLevel> {
-        return keyStore.getDeviceKey(userId, deviceId).map { deviceKeys ->
-            when (val trustLevel = deviceKeys?.trustLevel) {
-                is Valid -> DeviceTrustLevel.Valid(trustLevel.verified)
-                is CrossSigned -> DeviceTrustLevel.CrossSigned(trustLevel.verified)
-                is NotCrossSigned -> DeviceTrustLevel.NotCrossSigned
-                is Blocked -> DeviceTrustLevel.Blocked
-                is Invalid -> DeviceTrustLevel.Invalid(trustLevel.reason)
-                is NotAllDeviceKeysCrossSigned -> DeviceTrustLevel.Invalid("could not determine trust level of device key: $deviceKeys")
-                null -> DeviceTrustLevel.Unknown
-            }
-        }
-    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getTrustLevel(
         roomId: RoomId,
@@ -321,20 +304,17 @@ class KeyServiceImpl(
 
     override fun getTrustLevel(
         userId: UserId,
+        deviceId: String,
+    ): Flow<DeviceTrustLevel> {
+        return keyStore.getDeviceKey(userId, deviceId).map { it?.trustLevel.toDeviceTrustLevel() }
+    }
+
+    override fun getTrustLevel(
+        userId: UserId,
     ): Flow<UserTrustLevel> {
         return keyStore.getCrossSigningKeys(userId)
             .map { keys -> keys?.firstOrNull { it.value.signed.usage.contains(MasterKey) } }
-            .map { crossSigningKeys ->
-                when (val trustLevel = crossSigningKeys?.trustLevel) {
-                    is Valid -> UserTrustLevel.CrossSigned(trustLevel.verified)
-                    is CrossSigned -> UserTrustLevel.CrossSigned(trustLevel.verified)
-                    is NotAllDeviceKeysCrossSigned -> UserTrustLevel.NotAllDevicesCrossSigned(trustLevel.verified)
-                    is Blocked -> UserTrustLevel.Blocked
-                    is Invalid -> UserTrustLevel.Invalid(trustLevel.reason)
-                    is NotCrossSigned -> UserTrustLevel.Invalid("could not determine trust level of cross signing key: $crossSigningKeys")
-                    null -> UserTrustLevel.Unknown
-                }
-            }
+            .map { it?.trustLevel.toUserTrustLevel() }
     }
 
     override fun getDeviceKeys(

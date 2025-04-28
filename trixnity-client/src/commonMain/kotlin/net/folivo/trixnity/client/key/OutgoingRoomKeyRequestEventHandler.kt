@@ -9,18 +9,16 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.ForwardedRoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.subscribe
-import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -125,6 +123,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
         keyStore.deleteRoomKeyRequest(content.requestId)
     }
 
+    @OptIn(ExperimentalTrixnityApi::class)
     override suspend fun requestRoomKeys(
         roomId: RoomId,
         sessionId: String,
@@ -137,8 +136,12 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                 onError = { log.warn(it) { "failed request room keys" } },
             ) {
                 val receiverDeviceIds = keyStore.getDeviceKeys(ownUserId).first()
-                    ?.filter { it.value.trustLevel.isVerified }
-                    ?.map { it.value.value.signed.deviceId }?.minus(ownDeviceId)?.toSet()
+                    ?.filter {
+                        it.value.trustLevel.isVerified
+                                && it.value.value.signed.deviceId != ownDeviceId
+                                && it.value.value.signed.dehydrated != true // FIXME test
+                    }
+                    ?.map { it.value.value.signed.deviceId }?.toSet()
                 if (receiverDeviceIds.isNullOrEmpty()) {
                     log.debug { "there are no receivers, that we can request room keys from" }
                     return@retryWhenSyncIs

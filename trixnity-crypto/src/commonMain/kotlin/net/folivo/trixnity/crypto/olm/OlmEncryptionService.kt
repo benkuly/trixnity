@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
+import net.folivo.trixnity.core.ExperimentalTrixnityApi
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -29,6 +30,8 @@ import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
+import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService.*
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.VerifyResult
@@ -74,6 +77,9 @@ interface OlmEncryptionService {
         data class OneTimeKeyNotFound(
             val keyAlgorithm: KeyAlgorithm,
         ) : EncryptOlmError, IllegalStateException("no $keyAlgorithm one time key found while encrypting with olm")
+
+        data object DehydratedDeviceNotCrossSigned : EncryptOlmError,
+            IllegalStateException("when encrypting to dehydrated device, the device must be cross signed")
     }
 
     suspend fun encryptOlm(
@@ -108,6 +114,9 @@ interface OlmEncryptionService {
         data class DeserializationError(
             val error: SerializationException,
         ) : DecryptOlmError, IllegalStateException("deserialization failed while decrypting with olm", error)
+
+        data object DehydratedDeviceNotAllowed : DecryptOlmError,
+            IllegalStateException("decrypting from a dehydrated device is not allowed")
     }
 
     suspend fun decryptOlm(
@@ -180,15 +189,20 @@ class OlmEncryptionServiceImpl(
         }
     }
 
+    @OptIn(ExperimentalTrixnityApi::class)
     override suspend fun encryptOlm(
         content: EventContent,
         userId: UserId,
         deviceId: String,
         forceNewSession: Boolean,
     ): Result<OlmEncryptedToDeviceEventContent> = runCatchingCancellationAware {
-        val identityKey = store.findCurve25519Key(userId, deviceId)
+        val deviceKeys = store.getDeviceKey(userId, deviceId)
+        val trustLevel = store.getTrustLevel(userId, deviceId)
+        if (deviceKeys?.signed?.dehydrated == true && trustLevel !is DeviceTrustLevel.CrossSigned) // FIXME test
+            throw EncryptOlmError.DehydratedDeviceNotCrossSigned
+        val identityKey = deviceKeys?.get<Curve25519Key>()
             ?: throw EncryptOlmError.KeyNotFound(KeyAlgorithm.Curve25519)
-        val signingKey = store.findEd25519Key(userId, deviceId)
+        val signingKey = deviceKeys.get<Ed25519Key>()
             ?: throw EncryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
 
         lateinit var encryptionResult: OlmEncryptedToDeviceEventContent
@@ -305,7 +319,7 @@ class OlmEncryptionServiceImpl(
             .also { log.trace { "encrypted event: $it" } }
     }.onFailure { log.warn(it) { "encrypt olm failed" } }
 
-    @OptIn(ExperimentalSerializationApi::class)
+    @OptIn(ExperimentalSerializationApi::class, ExperimentalTrixnityApi::class)
     override suspend fun decryptOlm(
         event: ClientEvent.ToDeviceEvent<OlmEncryptedToDeviceEventContent>,
     ): Result<DecryptedOlmEvent<*>> = runCatchingCancellationAware {
@@ -314,6 +328,8 @@ class OlmEncryptionServiceImpl(
         val senderIdentityKey = encryptedContent.senderKey
         val senderDeviceKeys = store.findDeviceKeys(userId, senderIdentityKey)
             ?: throw DecryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
+        if (senderDeviceKeys.dehydrated == true) // FIXME test
+            throw DecryptOlmError.DehydratedDeviceNotAllowed
         val deviceId = senderDeviceKeys.deviceId
         val ciphertext = encryptedContent.ciphertext[ownCurve25519Key.value.value]
             ?: throw DecryptOlmError.SenderDidNotEncryptForThisDeviceException
@@ -477,6 +493,7 @@ class OlmEncryptionServiceImpl(
         } else newSessions
     }
 
+    @OptIn(ExperimentalTrixnityApi::class)
     override suspend fun encryptMegolm(
         content: MessageEventContent,
         roomId: RoomId,
@@ -548,8 +565,12 @@ class OlmEncryptionServiceImpl(
             ) {
                 log.debug { "encrypt megolm event with new session" }
                 val newUserDevices =
-                    store.getDevices(roomId, store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey)
-                        .orEmpty()
+                    store.getDeviceKeys(roomId, store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey)
+                        .mapValues { (userId, deviceKeys) ->
+                            if (userId == ownUserId) {
+                                deviceKeys.filter { it.value.signed.dehydrated != true } // FIXME test
+                            } else deviceKeys
+                        }.mapValues { it.value.keys }
                 try {
                     freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
                         freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->

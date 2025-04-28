@@ -8,15 +8,15 @@ import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventConten
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
 
 interface OlmStore {
-    suspend fun findCurve25519Key(userId: UserId, deviceId: String): Curve25519Key?
-    suspend fun findEd25519Key(userId: UserId, deviceId: String): Ed25519Key?
-
-    suspend fun findDeviceKeys(userId: UserId, senderKeyValue: Curve25519KeyValue): DeviceKeys?
+    suspend fun getDeviceKey(userId: UserId, deviceId: String): SignedDeviceKeys?
+    suspend fun getDeviceKeys(userId: UserId): Map<String, SignedDeviceKeys>?
+    suspend fun getDeviceKeys(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Map<String, SignedDeviceKeys>>
+    suspend fun getTrustLevel(userId: UserId, deviceId: String): DeviceTrustLevel?
 
     suspend fun updateOlmSessions(
         senderKeyValue: Curve25519KeyValue,
@@ -52,10 +52,11 @@ interface OlmStore {
     suspend fun getForgetFallbackKeyAfter(): Flow<Instant?>
     suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?)
 
-    suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>>?
-    suspend fun getDevices(roomId: RoomId, userId: UserId): Set<String>?
-
     suspend fun getHistoryVisibility(roomId: RoomId): HistoryVisibilityEventContent.HistoryVisibility?
 
     suspend fun getRoomEncryptionAlgorithm(roomId: RoomId): EncryptionAlgorithm?
 }
+
+suspend fun OlmStore.findDeviceKeys(userId: UserId, senderKeyValue: Curve25519KeyValue): DeviceKeys? =
+    getDeviceKeys(userId)?.values?.map { it.signed }
+        ?.find { it.keys.keys.any { key -> key.value == senderKeyValue } }

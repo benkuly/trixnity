@@ -23,11 +23,11 @@ data class SetKeys(
     @Serializable
     data class Request(
         @SerialName("device_keys")
-        val deviceKeys: SignedDeviceKeys?,
+        val deviceKeys: SignedDeviceKeys? = null,
         @SerialName("one_time_keys")
-        val oneTimeKeys: Keys?,
+        val oneTimeKeys: Keys? = null,
         @SerialName("fallback_keys")
-        val fallbackKeys: Keys?,
+        val fallbackKeys: Keys? = null,
     )
 
     @Serializable

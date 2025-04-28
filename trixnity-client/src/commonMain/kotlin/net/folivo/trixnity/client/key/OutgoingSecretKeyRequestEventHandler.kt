@@ -23,6 +23,7 @@ import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.olm.OlmPkSigning
@@ -53,6 +54,7 @@ class OutgoingSecretKeyRequestEventHandler(
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
     }
 
+    @OptIn(ExperimentalTrixnityApi::class)
     internal suspend fun requestSecretKeys() {
         val missingSecrets = SecretType.entries
             .subtract(keyStore.getSecrets().keys)
@@ -64,8 +66,12 @@ class OutgoingSecretKeyRequestEventHandler(
             return
         }
         val receiverDeviceIds = keyStore.getDeviceKeys(ownUserId).first()
-            ?.filter { it.value.trustLevel == KeySignatureTrustLevel.CrossSigned(true) }
-            ?.map { it.value.value.signed.deviceId }?.minus(ownDeviceId)?.toSet()
+            ?.filter {
+                it.value.trustLevel.isVerified
+                        && it.value.value.signed.deviceId != ownDeviceId
+                        && it.value.value.signed.dehydrated != true // FIXME test
+            }
+            ?.map { it.value.value.signed.deviceId }?.toSet()
         if (receiverDeviceIds.isNullOrEmpty()) {
             log.debug { "there are no receivers, that we can request secret keys from" }
             return

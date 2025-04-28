@@ -13,11 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.key.DeviceTrustLevel
-import net.folivo.trixnity.client.key.DeviceTrustLevel.NotCrossSigned
 import net.folivo.trixnity.client.key.KeyService
-import net.folivo.trixnity.client.key.UserTrustLevel.CrossSigned
-import net.folivo.trixnity.client.key.UserTrustLevel.NotAllDevicesCrossSigned
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.user.getAccountData
@@ -36,6 +32,10 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel.NotCrossSigned
+import net.folivo.trixnity.crypto.key.UserTrustLevel.CrossSigned
+import net.folivo.trixnity.crypto.key.UserTrustLevel.NotAllDevicesCrossSigned
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
