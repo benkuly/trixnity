@@ -46,9 +46,9 @@ import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService.*
 import net.folivo.trixnity.crypto.sign.VerifyResult
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -83,7 +83,8 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
     val decryptedOlmEventSerializer = requireNotNull(json.serializersModule.getContextual(DecryptedOlmEvent::class))
 
     @OptIn(ExperimentalSerializationApi::class)
-    val decryptedMegolmEventSerializer = requireNotNull(json.serializersModule.getContextual(DecryptedMegolmEvent::class))
+    val decryptedMegolmEventSerializer =
+        requireNotNull(json.serializersModule.getContextual(DecryptedMegolmEvent::class))
 
     val decryptedOlmEventContent = RoomKeyEventContent(
         RoomId("room", "server"),
@@ -112,16 +113,28 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
         olmEncryptionServiceRequestHandlerMock = OlmEncryptionServiceRequestHandlerMock()
         olmStoreMock = OlmStoreMock()
-        olmStoreMock.ed25519Keys[bob to bobDeviceId] = bobEdKey
-        olmStoreMock.curve25519Keys[bob to bobDeviceId] = bobCurveKey
-        olmStoreMock.deviceKeys[bob to bobCurveKey.value] = DeviceKeys(
-            userId = bob,
-            deviceId = bobDeviceId,
-            algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-            keys = Keys(keysOf(bobCurveKey, bobEdKey))
+        olmStoreMock.devices.put(
+            bob, mapOf(
+                bobDeviceId to DeviceKeys(
+                    userId = bob,
+                    deviceId = bobDeviceId,
+                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                    keys = Keys(keysOf(bobCurveKey, bobEdKey))
+                )
+            )
         )
+        olmStoreMock.devices.put(
+            alice, mapOf(
+                aliceDeviceId to DeviceKeys(
+                    userId = alice,
+                    deviceId = aliceDeviceId,
+                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                    keys = Keys(keysOf(aliceCurveKey, aliceEdKey))
+                )
+            )
+        )
+        olmStoreMock.roomMembers[room] = setOf(alice, bob)
         olmStoreMock.olmAccount.value = aliceAccount.pickle("")
-        olmStoreMock.devices[room] = mapOf(alice to setOf(aliceDeviceId), bob to setOf(bobDeviceId))
         clockMock = ClockMock()
 
         mockSignService.returnVerify = VerifyResult.Valid
@@ -218,6 +231,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
         olmStoreMock.olmSessions[bobCurveKey.value] shouldNotBe null
     }
+
     @Test
     fun `is failure when one time key is invalid without stored olm encrypt session`() = runTestWithSetup {
         mockClaimKeys()
@@ -230,6 +244,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 )
         olmStoreMock.olmSessions.shouldBeEmpty()
     }
+
     @Test
     fun `encrypt event with stored session`() = runTestWithSetup {
         freeAfter(
@@ -273,6 +288,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             olmStoreMock.olmSessions[bobCurveKey.value]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
+
     // #######################
     // decryptOlm
     // #######################
@@ -309,6 +325,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             )
         }
     }
+
     @Test
     fun `not decrypt pre key message when the 5 last created sessions are not older then 1 hour`() = runTestWithSetup {
         val encryptedMessage = freeAfter(
@@ -351,6 +368,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             )
         ).exceptionOrNull() shouldBe DecryptOlmError.TooManySessions
     }
+
     @Test
     fun `fail on ordinary message`() = runTestWithSetup {
         mockClaimKeys()
@@ -386,6 +404,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             ).content shouldBe DummyEventContent
         }
     }
+
     @Test
     fun `decrypt pre key message from stored session`() = runTestWithSetup {
         freeAfter(
@@ -424,6 +443,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             olmStoreMock.olmSessions[bobCurveKey.value]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
+
     @Test
     fun `decrypt ordinary message`() = runTestWithSetup {
         freeAfter(
@@ -462,6 +482,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             olmStoreMock.olmSessions[bobCurveKey.value]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
+
     @Test
     fun `try multiple sessions descended by last used`() = runTestWithSetup {
         freeAfter(
@@ -516,6 +537,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             olmStoreMock.olmSessions[bobCurveKey.value].shouldNotBeNull() shouldNotContain storedOlmSession1
         }
     }
+
     @Test
     fun `not create multiple recovery sessions in short time`() = runTestWithSetup {
         mockClaimKeys()
@@ -569,6 +591,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             olmEncryptionServiceRequestHandlerMock.sendToDeviceParams shouldHaveSize 1
         }
     }
+
     @Test
     fun `create multiple recovery sessions after some time`() = runTestWithSetup {
         mockClaimKeys()
@@ -623,6 +646,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             olmEncryptionServiceRequestHandlerMock.sendToDeviceParams shouldHaveSize 2
         }
     }
+
     suspend fun handleManipulation(manipulatedOlmEvent: DecryptedOlmEvent<RoomKeyEventContent>) {
         freeAfter(
             OlmSession.createOutbound(
@@ -659,24 +683,29 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.ValidationFailed>()
         }
     }
+
     @Test
     fun `handle manipulated sender`() = runTestWithSetup {
         handleManipulation(receiveDecryptedOlmEvent.copy(sender = UserId("cedric", "server")))
     }
+
     @Test
     fun `handle manipulated senderKeys`() = runTestWithSetup {
         handleManipulation(receiveDecryptedOlmEvent.copy(senderKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key"))))
     }
+
     @Test
     fun `handle manipulated recipient`() = runTestWithSetup {
         handleManipulation(receiveDecryptedOlmEvent.copy(recipient = UserId("cedric", "server")))
     }
+
     @Test
     fun `handle manipulated recipientKeys`() = runTestWithSetup {
         handleManipulation(
             receiveDecryptedOlmEvent.copy(recipientKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key")))
         )
     }
+
     // #######################
     // encryptMegolm
     // #######################
@@ -737,10 +766,12 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             ) shouldBe decryptedMegolmEvent
         }
     }
+
     @Test
     fun `encrypt without stored megolm session`() = runTestWithSetup {
         shouldEncryptMessage(EncryptionEventContent(), 1)
     }
+
     @Test
     fun `not send room keys when not possible to encrypt them due to missing one time keys`() = runTestWithSetup {
         olmEncryptionServiceRequestHandlerMock.claimKeys = Result.success(
@@ -754,6 +785,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
         olmEncryptionServiceRequestHandlerMock.sendToDeviceParams.shouldBeEmpty()
         olmEncryptionServiceRequestHandlerMock.claimKeysParams.shouldNotBeEmpty()
     }
+
     suspend fun createExistingOutboundSession() {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             olmStoreMock.outboundMegolmSession[room] =
@@ -778,11 +810,13 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             }
         }
     }
+
     @Test
     fun `send megolm sessions to new devices and encrypt`() = runTestWithSetup {
         createExistingOutboundSession()
         shouldEncryptMessage(EncryptionEventContent(), 24)
     }
+
     @Test
     fun `crete new megolm session when rotation period passed`() = runTestWithSetup {
         olmStoreMock.outboundMegolmSession[room] =
@@ -793,6 +827,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             )
         shouldEncryptMessage(EncryptionEventContent(rotationPeriodMs = 24), 2)
     }
+
     @Test
     fun `create new megolm session when message count passed`() = runTestWithSetup {
         olmStoreMock.outboundMegolmSession[room] =
@@ -803,6 +838,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             )
         shouldEncryptMessage(EncryptionEventContent(rotationPeriodMsgs = 24), 25)
     }
+
     // #######################
     // decryptMegolm
     // #######################
@@ -846,6 +882,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     )
         }
     }
+
     @Test
     fun `decrypt megolm event 2`() = runTestWithSetup {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
@@ -881,6 +918,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             ).exceptionOrNull() shouldBe DecryptMegolmError.MegolmKeyUnknownMessageIndex
         }
     }
+
     @Test
     fun `fail when no keys were send to us`() = runTestWithSetup {
         freeAfter(OlmOutboundGroupSession.create()) { session ->
@@ -902,6 +940,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             ).exceptionOrNull() shouldBe DecryptMegolmError.MegolmKeyNotFound
         }
     }
+
     @Test
     fun `handle manipulated roomId in megolmEvent`() = runTestWithSetup {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->

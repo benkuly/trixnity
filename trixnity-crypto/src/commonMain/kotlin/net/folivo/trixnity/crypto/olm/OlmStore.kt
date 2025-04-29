@@ -9,13 +9,11 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
-import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 import net.folivo.trixnity.crypto.key.DeviceTrustLevel
 
 interface OlmStore {
-    suspend fun getDeviceKey(userId: UserId, deviceId: String): SignedDeviceKeys?
-    suspend fun getDeviceKeys(userId: UserId): Map<String, SignedDeviceKeys>?
-    suspend fun getDeviceKeys(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Map<String, SignedDeviceKeys>>
+    suspend fun getDeviceKeys(userId: UserId): Map<String, DeviceKeys>?
+    suspend fun getMembers(roomId: RoomId, memberships: Set<Membership>): Set<UserId>
     suspend fun getTrustLevel(userId: UserId, deviceId: String): DeviceTrustLevel?
 
     suspend fun updateOlmSessions(
@@ -58,5 +56,10 @@ interface OlmStore {
 }
 
 suspend fun OlmStore.findDeviceKeys(userId: UserId, senderKeyValue: Curve25519KeyValue): DeviceKeys? =
-    getDeviceKeys(userId)?.values?.map { it.signed }
+    getDeviceKeys(userId)?.values
         ?.find { it.keys.keys.any { key -> key.value == senderKeyValue } }
+
+suspend fun OlmStore.getDeviceKeys(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Map<String, DeviceKeys>> =
+    getMembers(roomId, memberships).mapNotNull { userId ->
+        getDeviceKeys(userId)?.let { userId to it.mapValues { it.value } }
+    }.toMap()

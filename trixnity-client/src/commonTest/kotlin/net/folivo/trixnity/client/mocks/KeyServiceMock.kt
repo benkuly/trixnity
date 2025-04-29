@@ -11,6 +11,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.CrossSigningKeys
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.crypto.key.DeviceTrustLevel
+import net.folivo.trixnity.crypto.key.UserTrustLevel
 
 class KeyServiceMock(
     override val bootstrapRunning: StateFlow<Boolean> = MutableStateFlow(false)
@@ -41,7 +42,7 @@ class KeyServiceMock(
         throw NotImplementedError()
     }
 
-    override fun getTrustLevel(userId: UserId): StateFlow<DeviceTrustLevel> {
+    override fun getTrustLevel(userId: UserId): StateFlow<UserTrustLevel> {
         throw NotImplementedError()
     }
 

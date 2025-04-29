@@ -10,25 +10,23 @@ import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventConten
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
 import net.folivo.trixnity.crypto.olm.*
 
 class OlmStoreMock : OlmStore {
-    val curve25519Keys = mutableMapOf<Pair<UserId, String>, Key.Curve25519Key>()
-    override suspend fun findCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? {
-        return curve25519Keys[userId to deviceId]
-    }
+    val devices: MutableMap<UserId, Map<String, DeviceKeys>> = mutableMapOf()
+    override suspend fun getDeviceKeys(userId: UserId): Map<String, DeviceKeys>? =
+        devices[userId]
 
-    val ed25519Keys = mutableMapOf<Pair<UserId, String>, Key.Ed25519Key>()
-    override suspend fun findEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? {
-        return ed25519Keys[userId to deviceId]
-    }
+    val roomMembers = mutableMapOf<RoomId, Set<UserId>>()
+    override suspend fun getMembers(roomId: RoomId, memberships: Set<Membership>): Set<UserId> =
+        roomMembers[roomId].orEmpty()
 
-    val deviceKeys = mutableMapOf<Pair<UserId, Curve25519KeyValue>, DeviceKeys>()
-    override suspend fun findDeviceKeys(userId: UserId, senderKeyValue: Curve25519KeyValue): DeviceKeys? {
-        return deviceKeys[userId to senderKeyValue]
-    }
+    val deviceTrustLevels: MutableMap<UserId, Map<String, DeviceTrustLevel>> = mutableMapOf()
+    override suspend fun getTrustLevel(userId: UserId, deviceId: String): DeviceTrustLevel? =
+        deviceTrustLevels[userId]?.get(deviceId)
+
 
     val olmSessions = mutableMapOf<Curve25519KeyValue, Set<StoredOlmSession>?>()
     override suspend fun updateOlmSessions(
@@ -83,15 +81,6 @@ class OlmStoreMock : OlmStore {
     override suspend fun getForgetFallbackKeyAfter(): Flow<Instant?> = forgetFallbackKeyAfter
     override suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?) {
         forgetFallbackKeyAfter.update { updater(it) }
-    }
-
-    val devices = mutableMapOf<RoomId, Map<UserId, Set<String>>>()
-    override suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>>? {
-        return devices[roomId]
-    }
-
-    override suspend fun getDevices(roomId: RoomId, userId: UserId): Set<String>? {
-        return devices[roomId]?.get(userId)
     }
 
     var historyVisibility: HistoryVisibilityEventContent.HistoryVisibility? = null

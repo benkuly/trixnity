@@ -11,9 +11,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
-import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 import net.folivo.trixnity.crypto.key.DeviceTrustLevel
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
@@ -28,21 +28,15 @@ class ClientOlmStore(
     private val loadMembersService: LoadMembersService,
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
 
-    override suspend fun getDeviceKey(userId: UserId, deviceId: String): SignedDeviceKeys? =
-        keyStore.getDeviceKey(userId, deviceId).first()?.value
+    override suspend fun getDeviceKeys(userId: UserId): Map<String, DeviceKeys>? =
+        keyStore.getDeviceKeys(userId).first()?.mapValues { it.value.value.signed }
 
-    override suspend fun getDeviceKeys(userId: UserId): Map<String, SignedDeviceKeys>? =
-        keyStore.getDeviceKeys(userId).first()?.mapValues { it.value.value }
-
-    override suspend fun getDeviceKeys(
+    override suspend fun getMembers(
         roomId: RoomId,
         memberships: Set<Membership>
-    ): Map<UserId, Map<String, SignedDeviceKeys>> {
+    ): Set<UserId> {
         loadMembersService(roomId, true)
-        val members = roomStateStore.members(roomId, memberships)
-        return members.mapNotNull { userId ->
-            keyStore.getDeviceKeys(userId).first()?.let { userId to it.mapValues { it.value.value } }
-        }.toMap()
+        return roomStateStore.members(roomId, memberships)
     }
 
     override suspend fun getTrustLevel(userId: UserId, deviceId: String): DeviceTrustLevel? =

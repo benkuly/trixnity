@@ -27,18 +27,15 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.model.keys.KeyAlgorithm
+import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
-import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.mocks.OlmDecrypterMock
 import net.folivo.trixnity.crypto.mocks.OlmEventHandlerRequestHandlerMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.olm.*
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
@@ -47,10 +44,10 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
     private val bob = UserId("bob", "server")
     private val roomId = RoomId("room", "server")
 
-    private val dummyPickledAccount
-        = "3/r66zrJBjq31k9A1hFSvIjAhA1PWCM1QEsOSl18NppbOMdV1pCpr+R6gJxRN7QHLYTyClCLJp5cpSEOwj8bVTP4uAAF0SEOdvo26OdV0b6dq85NyIYNmkC+lbuvFerVEhmFHqRNsAkYlr0r+XNa4STYVY9Y1ks5ZEXXqmzYf+hVx1fNRPIyPzn/z6ZxCPwo2MoAHLr7VjotOX3vgz8vGzLoS4Dc2476M45rp2Jnjo4NRVHQeSQgcw"
+    private val dummyPickledAccount =
+        "3/r66zrJBjq31k9A1hFSvIjAhA1PWCM1QEsOSl18NppbOMdV1pCpr+R6gJxRN7QHLYTyClCLJp5cpSEOwj8bVTP4uAAF0SEOdvo26OdV0b6dq85NyIYNmkC+lbuvFerVEhmFHqRNsAkYlr0r+XNa4STYVY9Y1ks5ZEXXqmzYf+hVx1fNRPIyPzn/z6ZxCPwo2MoAHLr7VjotOX3vgz8vGzLoS4Dc2476M45rp2Jnjo4NRVHQeSQgcw"
 
-    private val olmStoreMock =  OlmStoreMock().apply {
+    private val olmStoreMock = OlmStoreMock().apply {
         olmAccount.value = dummyPickledAccount
     }
     private val olmEventHandlerRequestHandlerMock = OlmEventHandlerRequestHandlerMock()
@@ -160,6 +157,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
         captureOneTimeKeys[0].keys shouldNotContainAnyOf captureOneTimeKeys[1].keys
     }
+
     @Test
     fun `re-upload generated keys when failed`() = runTest {
         olmEventHandlerRequestHandlerMock.setOneTimeKeys =
@@ -180,6 +178,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         captureOneTimeKeys[0].keys shouldHaveSize 26
         captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
     }
+
     @Test
     fun `not fail when re-upload gives 4xx failure because we most likely already uploaded them`() = runTest {
         olmEventHandlerRequestHandlerMock.setOneTimeKeys =
@@ -211,6 +210,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         captureOneTimeKeys[0].keys shouldHaveSize 26
         captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
     }
+
     @Test
     fun `not upload keys when server has 50 one time keys`() = runTest {
         cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 50), null))
@@ -234,6 +234,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
         fallbackKey1 shouldNotBe fallbackKey2
     }
+
     @Test
     fun `not upload fallback key when server has one`() = runTest {
         cut.handleOlmKeysChange(OlmKeysChange(null, setOf(KeyAlgorithm.SignedCurve25519)))
@@ -307,11 +308,27 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         )
         olmStoreMock.outboundMegolmSession[roomId] shouldBe null
     }
+
     @Test
     fun `update new devices in megolm session`() = runTest {
         olmStoreMock.roomEncryptionAlgorithm[roomId] = EncryptionAlgorithm.Megolm
         olmStoreMock.historyVisibility = HistoryVisibilityEventContent.HistoryVisibility.SHARED
-        olmStoreMock.devices[roomId] = mapOf(alice to setOf("A1", "A2"))
+        olmStoreMock.devices.put(
+            alice, mapOf(
+                "A1" to DeviceKeys(
+                    userId = alice,
+                    deviceId = "A1",
+                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                    keys = Keys(keysOf())
+                ),
+                "A2" to DeviceKeys(
+                    userId = alice,
+                    deviceId = "A2",
+                    algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
+                    keys = Keys(keysOf())
+                )
+            )
+        )
 
         val megolmSession = StoredOutboundMegolmSession(roomId, pickled = "")
         olmStoreMock.outboundMegolmSession[roomId] = megolmSession
