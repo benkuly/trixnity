@@ -29,11 +29,8 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotest.assertions.core)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
+
+                implementation(projects.trixnityTestUtils)
             }
         }
     }

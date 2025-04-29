@@ -23,7 +23,7 @@ import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import kotlin.jvm.JvmName
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.KeyTrustService")
 
 interface KeyTrustService {
 

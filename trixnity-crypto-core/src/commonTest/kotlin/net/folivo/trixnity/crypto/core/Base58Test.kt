@@ -1,12 +1,13 @@
 package net.folivo.trixnity.crypto.core
 
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import kotlin.test.Test
 
-class Base58Test : ShouldSpec({
-    timeout = 60_000
+class Base58Test : TrixnityBaseTest() {
+
     // Tests from https://github.com/bitcoin/bitcoin/blob/master/src/test/data/base58_encode_decode.json
-    val testVectors = mapOf(
+    private val testVectors = mapOf(
         listOf<Int>() to "",
         listOf(0x61) to "2g",
         listOf(0x62, 0x62, 0x62) to "a3gV",
@@ -27,15 +28,17 @@ class Base58Test : ShouldSpec({
         listOf(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00) to "1111111111"
     ).mapKeys { entry -> entry.key.map { it.toByte() }.toByteArray() }
 
-    should("encode base58") {
+    @Test
+    fun `encode base58`() {
         testVectors.forEach {
             it.value.decodeBase58() shouldBe it.key
         }
     }
 
-    should("decode base58") {
+    @Test
+    fun `decode base58`() {
         testVectors.forEach {
             it.key.encodeBase58() shouldBe it.value
         }
     }
-})
+}

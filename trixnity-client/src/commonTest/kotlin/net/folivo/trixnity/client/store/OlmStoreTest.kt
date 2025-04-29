@@ -1,14 +1,9 @@
 package net.folivo.trixnity.client.store
 
-import io.kotest.assertions.nondeterministic.eventually
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.eventually
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
@@ -16,46 +11,56 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
+import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
-class OlmStoreTest : ShouldSpec({
-    timeout = 60_000
-    lateinit var olmAccountRepository: OlmAccountRepository
-    lateinit var inboundMegolmSessionRepository: InboundMegolmSessionRepository
+class OlmStoreTest : TrixnityBaseTest() {
 
-    lateinit var storeScope: CoroutineScope
-    lateinit var cut: OlmCryptoStore
+    private val olmAccountRepository = InMemoryOlmAccountRepository() as OlmAccountRepository
+    private val inboundMegolmSessionRepository =
+        InMemoryInboundMegolmSessionRepository() as InboundMegolmSessionRepository
 
-    beforeTest {
-        storeScope = CoroutineScope(Dispatchers.Default)
-        olmAccountRepository = InMemoryOlmAccountRepository()
-        inboundMegolmSessionRepository = InMemoryInboundMegolmSessionRepository()
-        cut = OlmCryptoStore(
-            olmAccountRepository,
-            InMemoryOlmForgetFallbackKeyAfterRepository(),
-            InMemoryOlmSessionRepository(),
-            inboundMegolmSessionRepository,
-            InMemoryInboundMegolmMessageIndexRepository(),
-            InMemoryOutboundMegolmSessionRepository(),
-            RepositoryTransactionManagerMock(),
-            MatrixClientConfiguration(),
-            ObservableCacheStatisticCollector(),
-            storeScope,
-            Clock.System,
-        )
+    private val cut = OlmCryptoStore(
+        olmAccountRepository,
+        InMemoryOlmForgetFallbackKeyAfterRepository(),
+        InMemoryOlmSessionRepository(),
+        inboundMegolmSessionRepository,
+        InMemoryInboundMegolmMessageIndexRepository(),
+        InMemoryOutboundMegolmSessionRepository(),
+        RepositoryTransactionManagerMock(),
+        MatrixClientConfiguration(),
+        ObservableCacheStatisticCollector(),
+        testScope.backgroundScope,
+        testScope.testClock,
+    )
+
+    private val session = StoredInboundMegolmSession(
+        senderKey = Curve25519KeyValue("senderCurve"),
+        sessionId = "session",
+        roomId = RoomId("room", "server"),
+        firstKnownIndex = 24,
+        hasBeenBackedUp = false,
+        isTrusted = true,
+        senderSigningKey = Ed25519KeyValue("edKey"),
+        forwardingCurve25519KeyChain = listOf(),
+        pickled = "pickle"
+    )
+
+    @Test
+    fun `init » load values from database`() = runTest {
+        olmAccountRepository.save(1, "olm_account")
+
+        cut.init(this)
+
+        cut.updateOlmAccount { "olm_account" }
     }
-    afterTest {
-        storeScope.cancel()
-    }
-    context(OlmCryptoStore::init.name) {
-        should("load values from database") {
-            olmAccountRepository.save(1, "olm_account")
 
-            cut.init(this)
-
-            cut.updateOlmAccount { "olm_account" }
-        }
-        should("start job, which saves changes to database and fills notBackedUp inbound megolm sessions") {
+    @Test
+    fun `init » start job which saves changes to database and fills notBackedUp inbound megolm sessions`() =
+        runTest {
             inboundMegolmSessionRepository.save(
                 InboundMegolmSessionRepositoryKey(
                     sessionId = "session1",
@@ -98,26 +103,14 @@ class OlmStoreTest : ShouldSpec({
                 cut.notBackedUpInboundMegolmSessions.value.size shouldBe 2
             }
         }
-    }
-    context(OlmCryptoStore::updateInboundMegolmSession.name) {
-        val session = StoredInboundMegolmSession(
-            senderKey = Curve25519KeyValue("senderCurve"),
-            sessionId = "session",
-            roomId = RoomId("room", "server"),
-            firstKnownIndex = 24,
-            hasBeenBackedUp = false,
-            isTrusted = true,
-            senderSigningKey = Ed25519KeyValue("edKey"),
-            forwardingCurve25519KeyChain = listOf(),
-            pickled = "pickle"
-        )
-        should("add and remove to ${OlmCryptoStore::notBackedUpInboundMegolmSessions.name}") {
-            cut.updateInboundMegolmSession(session.sessionId, session.roomId) { session }
-            cut.notBackedUpInboundMegolmSessions.value.values shouldBe setOf(session)
-            cut.updateInboundMegolmSession(session.sessionId, session.roomId) {
-                session.copy(hasBeenBackedUp = true)
-            }
-            cut.notBackedUpInboundMegolmSessions.value.values.shouldBeEmpty()
+
+    @Test
+    fun `updateInboundMegolmSession » add and remove to notBackedUpInboundMegolmSessions`() = runTest {
+        cut.updateInboundMegolmSession(session.sessionId, session.roomId) { session }
+        cut.notBackedUpInboundMegolmSessions.value.values shouldBe setOf(session)
+        cut.updateInboundMegolmSession(session.sessionId, session.roomId) {
+            session.copy(hasBeenBackedUp = true)
         }
+        cut.notBackedUpInboundMegolmSessions.value.values.shouldBeEmpty()
     }
-})
+}

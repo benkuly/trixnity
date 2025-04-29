@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.SignedCrossSigningKeys
 import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.model.keys.CatchingGetKeysResponseSerializer")
 
 object CatchingGetKeysResponseSerializer : KSerializer<GetKeys.Response> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("QueryKeysResponseSerializer")

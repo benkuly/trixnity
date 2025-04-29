@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.clientserverapi.model.authentication.Refresh
 import net.folivo.trixnity.core.AuthRequired
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.ClassicMatrixAuthProvider")
 
 fun MatrixAuthProvider.Companion.classic(
     bearerTokensStore: ClassicMatrixAuthProvider.BearerTokensStore,

@@ -1,24 +1,24 @@
 package net.folivo.trixnity.crypto.key
 
 import io.kotest.assertions.throwables.shouldThrowAny
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.random.Random
+import kotlin.test.Test
 
-class KeySecretUtilsTest : ShouldSpec(body)
+class KeySecretUtilsTest : TrixnityBaseTest() {
 
-private val body: ShouldSpec.() -> Unit = {
-    timeout = 30_000
+    private val json = createMatrixEventJson()
 
-    val json = createMatrixEventJson()
-
-    should("decrypt decryptSecret ${SecretKeyEventContent.AesHmacSha2Key::class.simpleName}") {
+    @Test
+    fun `decrypt decryptSecret AesHmacSha2Key`() = runTest {
         val key = Random.nextBytes(32)
         val secret = Random.nextBytes(32).encodeBase64()
         val encryptedData = encryptAesHmacSha2(
@@ -35,7 +35,9 @@ private val body: ShouldSpec.() -> Unit = {
             json = json
         ) shouldBe secret
     }
-    should("throw error on decryptSecret error") {
+
+    @Test
+    fun `throw error on decryptSecret error`() = runTest {
         val secret = Random.nextBytes(32)
         val encryptedData = encryptAesHmacSha2(
             content = secret,

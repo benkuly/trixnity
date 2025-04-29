@@ -1,17 +1,21 @@
 package net.folivo.trixnity.utils
 
+import io.github.oshai.kotlinlogging.Level
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
 import kotlin.time.Duration
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class KeyedMutexTest {
+class KeyedMutexTest : TrixnityBaseTest() {
+
+    override val packageLogLevels: Map<String, Level>
+        get() = mapOf("net.folivo.trixnity" to Level.INFO)
+
     @Test
     fun shouldLockKey() = runTest {
         val keyedMutex = KeyedMutex<String>()

@@ -15,10 +15,11 @@ import net.folivo.trixnity.clientserverapi.model.appservice.Ping
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class AppserviceRoutesTest {
+class AppserviceRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 

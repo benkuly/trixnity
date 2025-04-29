@@ -23,7 +23,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.SyncApiClient")
 
 interface SyncBatchTokenStore {
     suspend fun getSyncBatchToken(): String?

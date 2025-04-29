@@ -7,13 +7,14 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
 import kotlin.random.Random
 import kotlin.test.Test
 
 @OptIn(ExperimentalStdlibApi::class)
-class AesCtrTest {
+class AesCtrTest : TrixnityBaseTest() {
     private val key = ByteArray(32) { (it + 1).toByte() }
     private val nonce = ByteArray(8) { (it + 1).toByte() }
     private val initialisationVector = nonce + ByteArray(7) + ByteArray(1) { (0xff).toByte() }

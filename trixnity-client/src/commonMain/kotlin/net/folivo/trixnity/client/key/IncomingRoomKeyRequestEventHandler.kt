@@ -23,7 +23,7 @@ import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.IncomingRoomKeyRequestEventHandler")
 
 class IncomingRoomKeyRequestEventHandler(
     userInfo: UserInfo,

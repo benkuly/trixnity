@@ -35,11 +35,7 @@ kotlin {
                 implementation(libs.ktor.server.testHost)
                 implementation(libs.kotest.assertions.core)
                 implementation(libs.kotlinx.coroutines.test)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
+                implementation(projects.trixnityTestUtils)
             }
         }
     }

@@ -16,11 +16,12 @@ import net.folivo.trixnity.core.model.push.PushCondition.*
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.PushRuleKind
 import net.folivo.trixnity.core.model.push.PushRuleSet
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class PushApiClientTest {
+class PushApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldGetPushers() = runTest {

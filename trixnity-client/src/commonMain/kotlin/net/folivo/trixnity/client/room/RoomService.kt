@@ -40,7 +40,7 @@ import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.RoomService")
 
 interface RoomService {
     val usersTyping: StateFlow<Map<RoomId, TypingEventContent>>

@@ -11,9 +11,10 @@ import kotlinx.serialization.SerializationException
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class MatrixApiServerTest {
+class MatrixApiServerTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
 
     @Test

@@ -2,12 +2,11 @@ package net.folivo.trixnity.olm
 
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class OlmPkEncryptionTest {
+class OlmPkEncryptionTest : TrixnityBaseTest() {
 
     @Test
     fun encrypt() = runTest {

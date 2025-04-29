@@ -3,9 +3,10 @@ package net.folivo.trixnity.core.model.events.m.room
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class RoomMessageEventContentTest {
+class RoomMessageEventContentTest : TrixnityBaseTest() {
 
     @Test
     fun shouldNotStripFallbackWhenTheMessageIsNoReply() {

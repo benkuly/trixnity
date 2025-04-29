@@ -25,7 +25,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRead
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveUserVerification")
 
 interface ActiveUserVerification : ActiveVerification {
     val requestEventId: EventId

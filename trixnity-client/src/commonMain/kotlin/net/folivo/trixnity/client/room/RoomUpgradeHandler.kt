@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.subscribe
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.RoomUpgradeHandler")
 
 class RoomUpgradeHandler(
     private val api: MatrixClientServerApiClient,

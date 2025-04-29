@@ -33,7 +33,8 @@ include(
     "trixnity-client:trixnity-client-repository-room",
 )
 include("trixnity-applicationservice")
-include("test-utils")
+include("trixnity-test-utils")
+include("ktor-test-utils")
 
 buildCache {
     local {

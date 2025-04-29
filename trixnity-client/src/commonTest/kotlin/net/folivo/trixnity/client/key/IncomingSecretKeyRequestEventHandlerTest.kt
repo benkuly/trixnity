@@ -1,18 +1,12 @@
 package net.folivo.trixnity.client.key
 
-import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.OlmDecrypterMock
 import net.folivo.trixnity.client.mocks.OlmEncryptionServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
-import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
@@ -28,243 +22,258 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.events.m.secret.SecretKeyRequestEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import kotlin.test.Test
 
-class IncomingSecretKeyRequestEventHandlerTest : ShouldSpec(body)
+class IncomingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
 
-private val body: ShouldSpec.() -> Unit = {
-    timeout = 30_000
+    private val alice = UserId("alice", "server")
+    private val bob = UserId("bob", "server")
+    private val aliceDevice = "ALICEDEVICE"
+    private val bobDevice = "BOBDEVICE"
 
-    val json = createMatrixEventJson()
-    val alice = UserId("alice", "server")
-    val bob = UserId("bob", "server")
-    val aliceDevice = "ALICEDEVICE"
-    val bobDevice = "BOBDEVICE"
-    lateinit var scope: CoroutineScope
-    lateinit var keyStore: KeyStore
-    lateinit var olmEncryptionServiceMock: OlmEncryptionServiceMock
-    lateinit var apiConfig: PortableMockEngineConfig
+    private val keyStore = getInMemoryKeyStore()
 
-    lateinit var cut: IncomingSecretKeyRequestEventHandler
+    private val olmEncryptionServiceMock = OlmEncryptionServiceMock()
 
-    beforeTest {
-        scope = CoroutineScope(Dispatchers.Default)
-        keyStore = getInMemoryKeyStore(scope)
-        olmEncryptionServiceMock = OlmEncryptionServiceMock()
-        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
-        apiConfig = newApiConfig
-        cut = IncomingSecretKeyRequestEventHandler(
-            UserInfo(alice, aliceDevice, Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
-            api,
-            OlmDecrypterMock(),
-            olmEncryptionServiceMock,
-            keyStore
-        )
-        cut.startInCoroutineScope(scope)
+    private val apiConfig = PortableMockEngineConfig()
+    private val api = mockMatrixClientServerApiClient(apiConfig)
+
+    private val cut = IncomingSecretKeyRequestEventHandler(
+        UserInfo(alice, aliceDevice, Key.Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
+        api,
+        OlmDecrypterMock(),
+        olmEncryptionServiceMock,
+        keyStore
+    ).apply {
+        startInCoroutineScope(testScope.backgroundScope)
     }
 
-    afterTest {
-        scope.cancel()
-    }
-
-    val encryptedEvent = ToDeviceEvent(
+    private val encryptedEvent = ToDeviceEvent(
         OlmEncryptedToDeviceEventContent(
             ciphertext = mapOf(),
             senderKey = Curve25519KeyValue("")
         ), bob
     )
 
-    context(IncomingSecretKeyRequestEventHandler::handleEncryptedIncomingKeyRequests.name) {
-        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
-        beforeTest {
-            sendToDeviceEvents = null
-            keyStore.updateDeviceKeys(alice) {
-                mapOf(
-                    aliceDevice to StoredDeviceKeys(
-                        Signed(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), null),
-                        KeySignatureTrustLevel.Valid(true)
-                    )
-                )
-            }
-            apiConfig.endpoints {
-                matrixJsonEndpoint(
-                    SendToDevice("m.room.encrypted", "*"),
-                ) {
-                    sendToDeviceEvents = it.messages
-                }
-            }
-            keyStore.updateSecrets {
-                mapOf(
-                    SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
-                        "secretUserSigningKey"
-                    )
-                )
-            }
-            olmEncryptionServiceMock.returnEncryptOlm = Result.success(
-                OlmEncryptedToDeviceEventContent(
-                    ciphertext = mapOf(),
-                    senderKey = Curve25519KeyValue("")
+    private var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
+
+    @Test
+    fun `handleEncryptedIncomingKeyRequests » ignore request from other user`() = runTest {
+        handleEncryptedIncomingKeyRequestsSetup()
+        cut.handleEncryptedIncomingKeyRequests(
+            DecryptedOlmEventContainer(
+                encryptedEvent, DecryptedOlmEvent(
+                    SecretKeyRequestEventContent(
+                        SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
+                        KeyRequestAction.REQUEST,
+                        bobDevice,
+                        "requestId"
+                    ),
+                    bob, keysOf(), alice, keysOf()
                 )
             )
-        }
-        should("ignore request from other user") {
-            cut.handleEncryptedIncomingKeyRequests(
-                DecryptedOlmEventContainer(
-                    encryptedEvent, DecryptedOlmEvent(
-                        SecretKeyRequestEventContent(
-                            SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
-                            KeyRequestAction.REQUEST,
-                            bobDevice,
-                            "requestId"
-                        ),
-                        bob, keysOf(), alice, keysOf()
-                    )
-                )
-            )
-            cut.processIncomingKeyRequests()
-            sendToDeviceEvents shouldBe null
-        }
-        should("add request on request") {
-            cut.handleEncryptedIncomingKeyRequests(
-                DecryptedOlmEventContainer(
-                    encryptedEvent, DecryptedOlmEvent(
-                        SecretKeyRequestEventContent(
-                            SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
-                            KeyRequestAction.REQUEST,
-                            aliceDevice,
-                            "requestId"
-                        ),
-                        alice, keysOf(), alice, keysOf()
-                    )
-                )
-            )
-            cut.processIncomingKeyRequests()
-            sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
-        }
-        should("remove request on request cancellation") {
-            cut.handleEncryptedIncomingKeyRequests(
-                DecryptedOlmEventContainer(
-                    encryptedEvent, DecryptedOlmEvent(
-                        SecretKeyRequestEventContent(
-                            SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
-                            KeyRequestAction.REQUEST,
-                            aliceDevice,
-                            "requestId"
-                        ),
-                        alice, keysOf(), alice, keysOf()
-                    )
-                )
-            )
-            cut.handleEncryptedIncomingKeyRequests(
-                DecryptedOlmEventContainer(
-                    encryptedEvent, DecryptedOlmEvent(
-                        SecretKeyRequestEventContent(
-                            SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
-                            KeyRequestAction.REQUEST_CANCELLATION,
-                            aliceDevice,
-                            "requestId"
-                        ),
-                        alice, keysOf(), alice, keysOf()
-                    )
-                )
-            )
-            cut.processIncomingKeyRequests()
-            sendToDeviceEvents shouldBe null
-        }
+        )
+        cut.processIncomingKeyRequests()
+        sendToDeviceEvents shouldBe null
     }
-    context(IncomingSecretKeyRequestEventHandler::processIncomingKeyRequests.name) {
-        var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
-        beforeTest {
-            sendToDeviceEvents = null
-            apiConfig.endpoints {
-                matrixJsonEndpoint(
-                    SendToDevice("m.room.encrypted", "*"),
-                ) {
-                    sendToDeviceEvents = it.messages
-                }
-            }
-            keyStore.updateSecrets {
-                mapOf(
-                    SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                        GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
-                        "secretUserSigningKey"
-                    )
-                )
-            }
-            olmEncryptionServiceMock.returnEncryptOlm = Result.success(
-                OlmEncryptedToDeviceEventContent(
-                    ciphertext = mapOf(),
-                    senderKey = Curve25519KeyValue("")
+
+    @Test
+    fun `handleEncryptedIncomingKeyRequests » add request on request`() = runTest {
+        handleEncryptedIncomingKeyRequestsSetup()
+        cut.handleEncryptedIncomingKeyRequests(
+            DecryptedOlmEventContainer(
+                encryptedEvent, DecryptedOlmEvent(
+                    SecretKeyRequestEventContent(
+                        SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
+                        KeyRequestAction.REQUEST,
+                        aliceDevice,
+                        "requestId"
+                    ),
+                    alice, keysOf(), alice, keysOf()
                 )
             )
-        }
-        suspend fun ShouldSpecContainerScope.answerRequest(returnedTrustLevel: KeySignatureTrustLevel) {
-            should("answer request with trust level $returnedTrustLevel") {
-                keyStore.updateDeviceKeys(alice) {
-                    mapOf(
-                        aliceDevice to StoredDeviceKeys(
-                            SignedDeviceKeys(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), mapOf()),
-                            returnedTrustLevel
-                        )
-                    )
-                }
-                cut.handleEncryptedIncomingKeyRequests(
-                    DecryptedOlmEventContainer(
-                        encryptedEvent, DecryptedOlmEvent(
-                            SecretKeyRequestEventContent(
-                                SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
-                                KeyRequestAction.REQUEST,
-                                aliceDevice,
-                                "requestId"
-                            ),
-                            alice, keysOf(), alice, keysOf()
-                        )
-                    )
+        )
+        cut.processIncomingKeyRequests()
+        sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
+    }
+
+    @Test
+    fun `handleEncryptedIncomingKeyRequests » remove request on request cancellation`() = runTest {
+        handleEncryptedIncomingKeyRequestsSetup()
+        cut.handleEncryptedIncomingKeyRequests(
+            DecryptedOlmEventContainer(
+                encryptedEvent, DecryptedOlmEvent(
+                    SecretKeyRequestEventContent(
+                        SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
+                        KeyRequestAction.REQUEST,
+                        aliceDevice,
+                        "requestId"
+                    ),
+                    alice, keysOf(), alice, keysOf()
                 )
-                cut.processIncomingKeyRequests()
-                cut.processIncomingKeyRequests()
-                sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
-            }
-        }
+            )
+        )
+        cut.handleEncryptedIncomingKeyRequests(
+            DecryptedOlmEventContainer(
+                encryptedEvent, DecryptedOlmEvent(
+                    SecretKeyRequestEventContent(
+                        SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
+                        KeyRequestAction.REQUEST_CANCELLATION,
+                        aliceDevice,
+                        "requestId"
+                    ),
+                    alice, keysOf(), alice, keysOf()
+                )
+            )
+        )
+        cut.processIncomingKeyRequests()
+        sendToDeviceEvents shouldBe null
+    }
+
+    @Test
+    fun `processIncomingKeyRequests » answer request with trust level Valid true`() =
         answerRequest(KeySignatureTrustLevel.Valid(true))
+
+    @Test
+    fun `processIncomingKeyRequests » answer request with trust level CrossSigned true`() =
         answerRequest(KeySignatureTrustLevel.CrossSigned(true))
-        suspend fun ShouldSpecContainerScope.notAnswerRequest(returnedTrustLevel: KeySignatureTrustLevel) {
-            should("not answer request with trust level $returnedTrustLevel") {
-                keyStore.updateDeviceKeys(alice) {
-                    mapOf(
-                        aliceDevice to StoredDeviceKeys(
-                            SignedDeviceKeys(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), mapOf()),
-                            returnedTrustLevel
-                        )
-                    )
-                }
-                cut.handleEncryptedIncomingKeyRequests(
-                    DecryptedOlmEventContainer(
-                        encryptedEvent, DecryptedOlmEvent(
-                            SecretKeyRequestEventContent(
-                                SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
-                                KeyRequestAction.REQUEST,
-                                aliceDevice,
-                                "requestId"
-                            ),
-                            alice, keysOf(), alice, keysOf()
-                        )
-                    )
+
+    @Test
+    fun `processIncomingKeyRequests » not answer request with trust level Valid false`() =
+        notAnswerRequest(KeySignatureTrustLevel.Valid(false))
+
+    @Test
+    fun `processIncomingKeyRequests » not answer request with trust level CrossSigned false`() =
+        notAnswerRequest(KeySignatureTrustLevel.CrossSigned(false))
+
+    @Test
+    fun `processIncomingKeyRequests » not answer request with trust level NotCrossSigned`() =
+        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned)
+
+    @Test
+    fun `processIncomingKeyRequests » not answer request with trust level Blocked`() =
+        notAnswerRequest(KeySignatureTrustLevel.Blocked)
+
+    @Test
+    fun `processIncomingKeyRequests » not answer request with trust level Invalid reason`() =
+        notAnswerRequest(KeySignatureTrustLevel.Invalid("reason"))
+
+    private suspend fun handleEncryptedIncomingKeyRequestsSetup() {
+        keyStore.updateDeviceKeys(alice) {
+            mapOf(
+                aliceDevice to StoredDeviceKeys(
+                    Signed(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), null),
+                    KeySignatureTrustLevel.Valid(true)
                 )
-                cut.processIncomingKeyRequests()
-                cut.processIncomingKeyRequests()
-                sendToDeviceEvents shouldBe null
+            )
+        }
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                SendToDevice("m.room.encrypted", "*"),
+            ) {
+                sendToDeviceEvents = it.messages
             }
         }
-        notAnswerRequest(KeySignatureTrustLevel.Valid(false))
-        notAnswerRequest(KeySignatureTrustLevel.CrossSigned(false))
-        notAnswerRequest(KeySignatureTrustLevel.NotCrossSigned)
-        notAnswerRequest(KeySignatureTrustLevel.Blocked)
-        notAnswerRequest(KeySignatureTrustLevel.Invalid("reason"))
+        keyStore.updateSecrets {
+            mapOf(
+                SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
+                    GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
+                    "secretUserSigningKey"
+                )
+            )
+        }
+        olmEncryptionServiceMock.returnEncryptOlm = Result.success(
+            OlmEncryptedToDeviceEventContent(
+                ciphertext = mapOf(),
+                senderKey = Curve25519KeyValue("")
+            )
+        )
     }
+
+    private suspend fun processIncomingKeyRequestsSetup() {
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                SendToDevice("m.room.encrypted", "*"),
+            ) {
+                sendToDeviceEvents = it.messages
+            }
+        }
+        keyStore.updateSecrets {
+            mapOf(
+                SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
+                    GlobalAccountDataEvent(UserSigningKeyEventContent(mapOf())),
+                    "secretUserSigningKey"
+                )
+            )
+        }
+        olmEncryptionServiceMock.returnEncryptOlm = Result.success(
+            OlmEncryptedToDeviceEventContent(
+                ciphertext = mapOf(),
+                senderKey = Curve25519KeyValue("")
+            )
+        )
+    }
+
+    private fun answerRequest(returnedTrustLevel: KeySignatureTrustLevel) = runTest {
+        processIncomingKeyRequestsSetup()
+        keyStore.updateDeviceKeys(alice) {
+            mapOf(
+                aliceDevice to StoredDeviceKeys(
+                    SignedDeviceKeys(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), mapOf()),
+                    returnedTrustLevel
+                )
+            )
+        }
+        cut.handleEncryptedIncomingKeyRequests(
+            DecryptedOlmEventContainer(
+                encryptedEvent, DecryptedOlmEvent(
+                    SecretKeyRequestEventContent(
+                        SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
+                        KeyRequestAction.REQUEST,
+                        aliceDevice,
+                        "requestId"
+                    ),
+                    alice, keysOf(), alice, keysOf()
+                )
+            )
+        )
+        cut.processIncomingKeyRequests()
+        cut.processIncomingKeyRequests()
+        sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldNotBe null
+    }
+
+    private fun notAnswerRequest(returnedTrustLevel: KeySignatureTrustLevel) = runTest {
+        processIncomingKeyRequestsSetup()
+        keyStore.updateDeviceKeys(alice) {
+            mapOf(
+                aliceDevice to StoredDeviceKeys(
+                    SignedDeviceKeys(DeviceKeys(alice, aliceDevice, setOf(), keysOf()), mapOf()),
+                    returnedTrustLevel
+                )
+            )
+        }
+        cut.handleEncryptedIncomingKeyRequests(
+            DecryptedOlmEventContainer(
+                encryptedEvent, DecryptedOlmEvent(
+                    SecretKeyRequestEventContent(
+                        SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
+                        KeyRequestAction.REQUEST,
+                        aliceDevice,
+                        "requestId"
+                    ),
+                    alice, keysOf(), alice, keysOf()
+                )
+            )
+        )
+        cut.processIncomingKeyRequests()
+        cut.processIncomingKeyRequests()
+        sendToDeviceEvents shouldBe null
+    }
+
 }

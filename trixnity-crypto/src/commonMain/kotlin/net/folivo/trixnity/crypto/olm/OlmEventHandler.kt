@@ -26,7 +26,7 @@ import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.hours
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.crypto.olm.OlmEventHandler")
 
 class OlmEventHandler(
     private val userInfo: UserInfo,

@@ -5,11 +5,12 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 // Tests are taken from here: https://matrix.org/docs/spec/appendices#examples
-class CanonicalJsonTest {
+class CanonicalJsonTest : TrixnityBaseTest() {
     @Test
     fun test1() {
         val input = JsonObject(mapOf())

@@ -41,7 +41,7 @@ import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import arrow.core.flatMap as flatMapResult
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.KeyService")
 
 interface KeyService {
     val bootstrapRunning: StateFlow<Boolean>
