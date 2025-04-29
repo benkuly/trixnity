@@ -14,10 +14,11 @@ import io.ktor.http.HttpHeaders.Origin
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.server.testing.*
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class MatrixClientServerApiServerTest {
+class MatrixClientServerApiServerTest : TrixnityBaseTest() {
     val appserviceApiHandlerMock = mock<AppserviceApiHandler>()
     val authenticationApiHandlerMock = mock<AuthenticationApiHandler>()
     val discoveryApiHandlerMock = mock<DiscoveryApiHandler>()

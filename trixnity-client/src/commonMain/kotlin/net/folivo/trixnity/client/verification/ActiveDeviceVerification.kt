@@ -17,7 +17,7 @@ import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveDeviceVerification")
 
 interface ActiveDeviceVerification : ActiveVerification
 class ActiveDeviceVerificationImpl(

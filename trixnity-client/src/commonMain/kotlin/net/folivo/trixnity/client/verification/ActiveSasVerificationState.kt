@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.keys.KeyValue
 import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.olm.OlmSAS
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveSasVerificationState")
 
 sealed interface ActiveSasVerificationState {
     data class OwnSasStart(

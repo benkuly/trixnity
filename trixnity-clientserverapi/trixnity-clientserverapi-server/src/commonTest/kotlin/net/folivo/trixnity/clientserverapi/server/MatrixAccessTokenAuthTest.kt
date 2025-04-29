@@ -23,9 +23,10 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class MatrixAccessTokenAuthTest {
+class MatrixAccessTokenAuthTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
     private val principal = MatrixClientPrincipal(UserId("user", "server"), "deviceId")

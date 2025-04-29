@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.PersistentMessageDataUnitSerializer")
 
 class PersistentMessageDataUnitSerializer(
     messageEventContentSerializers: Set<EventContentSerializerMapping<MessageEventContent>>,

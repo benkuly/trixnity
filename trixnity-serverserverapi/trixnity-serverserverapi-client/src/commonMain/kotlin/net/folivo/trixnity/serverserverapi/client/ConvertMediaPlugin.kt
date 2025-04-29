@@ -8,7 +8,7 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.CoroutineScope
 import net.folivo.trixnity.serverserverapi.model.federation.Media
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.serverserverapi.client.ConvertMediaPlugin")
 
 val ConvertMediaPlugin = createClientPlugin("ConvertMediaPlugin") {
     transformResponseBody { response, body, requestedType ->

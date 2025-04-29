@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiBaseClient")
 
 data class LogoutInfo(
     val isSoft: Boolean,

@@ -23,7 +23,7 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Comp
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.UserService")
 
 interface UserService {
     val userPresence: StateFlow<Map<UserId, PresenceEventContent>>

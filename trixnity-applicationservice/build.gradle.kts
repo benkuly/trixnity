@@ -31,16 +31,11 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation(projects.testUtils)
-
+                implementation(projects.ktorTestUtils)
+                implementation(libs.ktor.server.testHost)
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotest.assertions.core)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
-                implementation(libs.ktor.server.testHost)
+                implementation(projects.trixnityTestUtils)
             }
         }
     }

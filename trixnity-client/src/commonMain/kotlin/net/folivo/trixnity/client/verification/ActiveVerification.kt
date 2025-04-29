@@ -22,7 +22,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveVerification")
 
 interface ActiveVerification {
     val theirUserId: UserId
@@ -67,7 +67,7 @@ abstract class ActiveVerificationImpl(
 
     private val lifecycleStarted = MutableStateFlow(false)
     protected abstract suspend fun lifecycle()
-    internal suspend fun startLifecycle(scope: CoroutineScope): Boolean {
+    internal fun startLifecycle(scope: CoroutineScope): Boolean {
         log.debug { "start lifecycle of verification ${transactionId ?: relatesTo}" }
         return if (!lifecycleAlreadyStarted()) {
             scope.launch(start = CoroutineStart.UNDISPATCHED) {

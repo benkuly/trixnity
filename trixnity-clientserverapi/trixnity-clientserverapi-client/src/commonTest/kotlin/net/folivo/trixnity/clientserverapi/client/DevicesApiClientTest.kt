@@ -4,12 +4,13 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.devices.Device
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class DevicesApiClientTest {
+class DevicesApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldGetDevices() = runTest {

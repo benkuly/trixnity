@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import net.folivo.trixnity.core.EventHandler
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.cache.ObservableCacheStatistic")
 
 data class ObservableCacheStatistic(
     val name: String,

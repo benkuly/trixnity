@@ -15,6 +15,7 @@ import io.ktor.utils.io.charsets.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.ErrorResponseSerializer
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -34,7 +35,7 @@ private fun Application.testAppMatrixQueryParameterAuth() {
     }
 }
 
-class MatrixQueryParameterOrBearerAuthTest {
+class MatrixQueryParameterOrBearerAuthTest : TrixnityBaseTest() {
 
     @Test
     fun `should forbid missing query or auth token`() = testApplication {

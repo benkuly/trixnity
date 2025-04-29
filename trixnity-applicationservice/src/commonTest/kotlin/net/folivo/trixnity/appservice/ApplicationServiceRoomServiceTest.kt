@@ -4,7 +4,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
-import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
 import net.folivo.trixnity.core.ErrorResponse
@@ -13,11 +12,13 @@ import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
 import kotlin.test.Test
 
-class ApplicationServiceRoomServiceTest {
+class ApplicationServiceRoomServiceTest : TrixnityBaseTest() {
 
     private val json = createMatrixEventJson()
     private val mappings = createDefaultEventContentSerializerMappings()

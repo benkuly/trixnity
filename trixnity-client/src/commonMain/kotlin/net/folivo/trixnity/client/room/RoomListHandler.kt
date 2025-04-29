@@ -33,7 +33,7 @@ import net.folivo.trixnity.utils.ConcurrentMap
 import net.folivo.trixnity.utils.concurrentMutableList
 import net.folivo.trixnity.utils.concurrentMutableMap
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.RoomListHandler")
 
 class RoomListHandler(
     private val api: MatrixClientServerApiClient,

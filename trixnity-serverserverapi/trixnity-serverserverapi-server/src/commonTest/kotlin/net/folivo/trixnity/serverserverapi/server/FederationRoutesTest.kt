@@ -35,6 +35,7 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
@@ -43,7 +44,7 @@ import net.folivo.trixnity.serverserverapi.model.federation.ThumbnailResizingMet
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class FederationRoutesTest {
+class FederationRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventAndDataUnitJson({ "3" })
     private val mapping = createDefaultEventContentSerializerMappings()
 

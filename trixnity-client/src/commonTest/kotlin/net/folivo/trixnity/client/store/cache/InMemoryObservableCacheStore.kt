@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.update
 import kotlin.time.Duration
 
 open class InMemoryObservableCacheStore<K, V> : ObservableCacheStore<K, V> {
-    var readDelay = Duration.ZERO
-    var writeDelay = Duration.ZERO
+    private var readDelay = Duration.ZERO
+    private var writeDelay = Duration.ZERO
 
     val values = MutableStateFlow(mapOf<K, V>())
     override suspend fun get(key: K): V? {

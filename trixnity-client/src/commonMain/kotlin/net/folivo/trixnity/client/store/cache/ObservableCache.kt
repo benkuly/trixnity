@@ -12,7 +12,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.cache.ObservableCache")
 
 internal sealed interface CacheValue<T> {
     class Init<T> : CacheValue<T>

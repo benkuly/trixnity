@@ -11,7 +11,7 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.repository.exposed.CreateExposedRepositoriesModule")
 
 suspend fun createExposedRepositoriesModule(
     database: Database,

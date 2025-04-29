@@ -33,7 +33,7 @@ import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.OutboxMessageEventHandler")
 
 class OutboxMessageEventHandler(
     private val config: MatrixClientConfiguration,

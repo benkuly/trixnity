@@ -1,9 +1,10 @@
 package net.folivo.trixnity.utils
 
 import io.kotest.matchers.shouldBe
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class UnpaddedBase64Test {
+class UnpaddedBase64Test : TrixnityBaseTest() {
     @Test
     fun encodeUnpaddedBase64() {
         "".encodeToByteArray().encodeUnpaddedBase64() shouldBe ""

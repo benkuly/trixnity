@@ -1,7 +1,6 @@
 package net.folivo.trixnity.crypto.sign
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -11,6 +10,8 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.types.instanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.core.UserInfo
@@ -25,12 +26,15 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.getOlmPublicKeys
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
+import kotlin.test.AfterTest
+import kotlin.test.Test
 
-class SignServiceTest : ShouldSpec({
-    timeout = 60_000
+class SignServiceTest : TrixnityBaseTest() {
+    
     val json = createMatrixEventJson()
     lateinit var aliceSigningAccount: OlmAccount
     val ownUserId = UserId("me", "server")
@@ -41,7 +45,7 @@ class SignServiceTest : ShouldSpec({
     lateinit var cut: SignServiceImpl
     lateinit var aliceSigningAccountSignService: SignServiceImpl
 
-    beforeEach {
+    private suspend fun setup() {
         aliceSigningAccount = OlmAccount.create()
         val aliceOlmKeys = getOlmPublicKeys("", aliceSigningAccount.pickle(""), aliceDevice)
         aliceSigningAccountSignService = SignServiceImpl(
@@ -64,11 +68,18 @@ class SignServiceTest : ShouldSpec({
         )
     }
 
-    afterEach {
+    @AfterTest
+    fun free() {
         aliceSigningAccount.free()
     }
 
-    should("return signatures from device key") {
+    private fun runTestWithSetup(block: suspend TestScope.() -> Unit) = runTest {
+        setup()
+        block()
+    }
+
+    @Test
+    fun `return signatures from device key`() = runTestWithSetup {
         val result = cut.signatures(JsonObject(mapOf("key" to JsonPrimitive("value"))))
         result shouldHaveSize 1
         assertSoftly(result.entries.first()) {
@@ -82,7 +93,8 @@ class SignServiceTest : ShouldSpec({
             }
         }
     }
-    should("return signatures from private and public key pair") {
+    @Test
+    fun `return signatures from private and public key pair`() = runTestWithSetup {
         val (privateKey, publicKey) = freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
         val result = cut.signatures(
             JsonObject(mapOf("key" to JsonPrimitive("value"))),
@@ -100,7 +112,8 @@ class SignServiceTest : ShouldSpec({
             }
         }
     }
-    should("ignore unsigned and signature field") {
+    @Test
+    fun `ignore unsigned and signature field`() = runTestWithSetup {
         val result1 = cut.signatures(JsonObject(mapOf("key" to JsonPrimitive("value"))))
         val result2 = cut.signatures(
             JsonObject(
@@ -114,7 +127,8 @@ class SignServiceTest : ShouldSpec({
 
         result1 shouldBe result2
     }
-    should("sign and return signed object") {
+    @Test
+    fun `sign and return signed object`() = runTestWithSetup {
         val event = StateEvent(
             NameEventContent("room name"),
             EventId("\$eventId"),
@@ -136,7 +150,8 @@ class SignServiceTest : ShouldSpec({
             }
         }
     }
-    should("ignore unsigned field") {
+    @Test
+    fun `ignore unsigned field`() = runTestWithSetup {
         val event1 = StateEvent(
             NameEventContent("room name"),
             EventId("\$eventId"),
@@ -158,13 +173,15 @@ class SignServiceTest : ShouldSpec({
         val result2 = cut.sign(event2)
         result1.signatures shouldBe result2.signatures
     }
-    should("sign curve25519") {
+    @Test
+    fun `sign curve25519`() = runTestWithSetup {
         cut.signCurve25519Key(
             keyId = "AAAAAQ",
             keyValue = "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
         ).value.signatures?.size shouldBe 1
     }
-    should("sign curve25519 with fallback") {
+    @Test
+    fun `sign curve25519 with fallback`() = runTestWithSetup {
         cut.signCurve25519Key(
             keyId = "AAAAAQ",
             keyValue = "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
@@ -175,7 +192,8 @@ class SignServiceTest : ShouldSpec({
                     fallback = true,
                 ).value.signatures
     }
-    should("verify and return valid") {
+    @Test
+    fun `verify and return valid`() = runTestWithSetup {
         val signedObject = aliceSigningAccountSignService.sign(
             StateEvent(
                 NameEventContent("room name"),
@@ -192,7 +210,8 @@ class SignServiceTest : ShouldSpec({
             mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
         ) shouldBe VerifyResult.Valid
     }
-    should("verify and return MissingSignature, when no key found") {
+    @Test
+    fun `verify and return MissingSignature when no key found`() = runTestWithSetup {
         val signedObject = aliceSigningAccountSignService.sign(
             StateEvent(
                 NameEventContent("room name"),
@@ -206,7 +225,8 @@ class SignServiceTest : ShouldSpec({
         )
         cut.verify(signedObject, mapOf(bob to setOf())).shouldBeInstanceOf<VerifyResult.MissingSignature>()
     }
-    should("verify and return MissingSignature when no signature found for sigining keys") {
+    @Test
+    fun `verify and return MissingSignature when no signature found for sigining keys`() = runTestWithSetup {
         val signedObject = aliceSigningAccountSignService.sign(
             StateEvent(
                 NameEventContent("room name"),
@@ -221,7 +241,8 @@ class SignServiceTest : ShouldSpec({
         cut.verify(signedObject, mapOf(bob to setOf(Ed25519Key("OTHER_DEVCE", "..."))))
             .shouldBeInstanceOf<VerifyResult.MissingSignature>()
     }
-    should("verify SignedCurve25519Key") {
+    @Test
+    fun `verify SignedCurve25519Key`() = runTestWithSetup {
         val signedObject = aliceSigningAccountSignService.signCurve25519Key(
             "AAAAAQ",
             "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
@@ -231,7 +252,8 @@ class SignServiceTest : ShouldSpec({
             mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
         ) shouldBe VerifyResult.Valid
     }
-    should("return invalid") {
+    @Test
+    fun `return invalid`() = runTestWithSetup {
         val signedObject = Signed(
             StateEvent(
                 NameEventContent("room name"),
@@ -256,4 +278,4 @@ class SignServiceTest : ShouldSpec({
             mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
         ).shouldBeInstanceOf<VerifyResult.Invalid>()
     }
-})
+}

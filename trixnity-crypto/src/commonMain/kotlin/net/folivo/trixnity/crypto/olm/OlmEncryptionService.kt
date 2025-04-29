@@ -41,7 +41,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.crypto.olm.OlmEncryptionService")
 
 interface OlmEncryptionService {
 

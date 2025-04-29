@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
@@ -27,7 +28,7 @@ import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class FederationApiClientTest {
+class FederationApiClientTest : TrixnityBaseTest() {
     private val pdu: SignedPersistentDataUnit<*> = Signed(
         PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3(
             authEvents = listOf(),

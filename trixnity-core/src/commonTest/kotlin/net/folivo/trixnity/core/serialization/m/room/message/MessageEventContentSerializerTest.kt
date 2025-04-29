@@ -1,13 +1,13 @@
 package net.folivo.trixnity.core.serialization.m.room.message
 
-import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContentSerializer
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MessageEventContentSerializerTest {
+class MessageEventContentSerializerTest : TrixnityBaseTest() {
 
     private val json = createMatrixEventJson()
 

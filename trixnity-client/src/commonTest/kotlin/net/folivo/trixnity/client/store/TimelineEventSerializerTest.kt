@@ -1,8 +1,6 @@
 package net.folivo.trixnity.client.store
 
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.modules.SerializersModule
@@ -20,10 +18,13 @@ import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import kotlin.test.Test
 
-class TimelineEventSerializerTest : ShouldSpec({
-    timeout = 10_000
-    val json = createMatrixEventJson(customModule = SerializersModule {
+class TimelineEventSerializerTest : TrixnityBaseTest() {
+
+    private val json = createMatrixEventJson(customModule = SerializersModule {
         contextual(
             TimelineEventSerializer(
                 DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
@@ -32,7 +33,7 @@ class TimelineEventSerializerTest : ShouldSpec({
         )
     })
 
-    fun timelineEvent(content: Result<RoomEventContent>?) =
+    private fun timelineEvent(content: Result<RoomEventContent>?) =
         TimelineEvent(
             event = ClientEvent.RoomEvent.MessageEvent(
                 MegolmEncryptedMessageEventContent(ciphertext = "cipher", sessionId = "sessionId"),
@@ -47,7 +48,7 @@ class TimelineEventSerializerTest : ShouldSpec({
             gap = null,
         )
 
-    fun timelineEventJson(contentJson: String?) = """
+    private fun timelineEventJson(contentJson: String?) = """
         {
           "event":{
             "content":{
@@ -65,91 +66,112 @@ class TimelineEventSerializerTest : ShouldSpec({
         }
     """.trimToFlatJson()
 
-    context("message event content") {
-        val result = timelineEvent(Result.success(RoomMessageEventContent.TextBased.Text("hi")))
-        val resultJson = timelineEventJson("""{"type":"m.room.message","value":{"body":"hi","msgtype":"m.text"}}""")
-        should("deserialize") {
-            json.decodeFromString<TimelineEvent>(resultJson) shouldBe result
-        }
-        should("serialize") {
-            json.encodeToString(result) shouldBe resultJson
-        }
+
+    private val messageResult = timelineEvent(Result.success(RoomMessageEventContent.TextBased.Text("hi")))
+    private val messageResultJson =
+        timelineEventJson("""{"type":"m.room.message","value":{"body":"hi","msgtype":"m.text"}}""")
+
+    @Test
+    fun `message event content » deserialize`() = runTest {
+        json.decodeFromString<TimelineEvent>(messageResultJson) shouldBe messageResult
     }
-    context("state event content") {
-        val result = timelineEvent(Result.success(NameEventContent("name")))
-        val resultJson = timelineEventJson("""{"type":"m.room.name","value":{"name":"name"}}""")
-        should("deserialize") {
-            json.decodeFromString<TimelineEvent>(resultJson) shouldBe result
-        }
-        should("serialize") {
-            json.encodeToString(result) shouldBe resultJson
-        }
+
+    @Test
+    fun `message event content » serialize`() = runTest {
+        json.encodeToString(messageResult) shouldBe messageResultJson
     }
-    context("unknown content") {
-        val result = timelineEvent(
-            Result.success(
-                UnknownEventContent(JsonObject(mapOf("dino" to JsonPrimitive("yeah"))), "m.dino")
+
+
+    private val stateResult = timelineEvent(Result.success(NameEventContent("name")))
+    private val stateResultJson = timelineEventJson("""{"type":"m.room.name","value":{"name":"name"}}""")
+
+    @Test
+    fun `state event content » deserialize`() = runTest {
+        json.decodeFromString<TimelineEvent>(stateResultJson) shouldBe stateResult
+    }
+
+    @Test
+    fun `state event content » serialize`() = runTest {
+        json.encodeToString(stateResult) shouldBe stateResultJson
+    }
+
+
+    private val unknownResult = timelineEvent(
+        Result.success(
+            UnknownEventContent(JsonObject(mapOf("dino" to JsonPrimitive("yeah"))), "m.dino")
+        )
+    )
+    private val unknownResultJson = timelineEventJson("""{"type":"m.dino","value":{"dino":"yeah"}}""")
+
+    @Test
+    fun `unknown content » deserialize`() = runTest {
+        json.decodeFromString<TimelineEvent>(unknownResultJson) shouldBe unknownResult
+    }
+
+    @Test
+    fun `unknown content » serialize`() = runTest {
+        json.encodeToString(unknownResult) shouldBe unknownResultJson
+    }
+
+    private val redactedResult = timelineEvent(Result.success(RedactedEventContent("m.room.encrypted")))
+    private val redactedResultJson = timelineEventJson("""{"type":"m.room.encrypted","value":{}}""")
+
+    @Test
+    fun `redacted content » deserialize`() = runTest {
+        json.decodeFromString<TimelineEvent>(redactedResultJson) shouldBe redactedResult
+    }
+
+    @Test
+    fun `redacted content » serialize`() = runTest {
+        json.encodeToString(redactedResult) shouldBe redactedResultJson
+    }
+
+    private val malformedResult = timelineEvent(
+        Result.success(
+            UnknownEventContent(JsonObject(mapOf("wrong" to JsonPrimitive("name"))), "m.room.name")
+        )
+    )
+    private val malformedResultJson = timelineEventJson("""{"type":"m.room.name","value":{"wrong":"name"}}""")
+
+    @Test
+    fun `malformed event content » deserialize`() = runTest {
+        json.decodeFromString<TimelineEvent>(malformedResultJson) shouldBe malformedResult
+    }
+
+    private val failureResult = timelineEvent(Result.failure(TimelineEvent.TimelineEventContentError.DecryptionTimeout))
+    private val failureResultJson = timelineEventJson(null)
+
+    @Test
+    fun `failure » serialize`() = runTest {
+        json.encodeToString(failureResult) shouldBe failureResultJson
+    }
+
+    private val nullResult = timelineEvent(null)
+    private val nullResultJson = timelineEventJson(null)
+
+    @Test
+    fun `null » deserialize`() = runTest {
+        json.decodeFromString<TimelineEvent>(nullResultJson) shouldBe nullResult
+    }
+
+    @Test
+    fun `null » serialize`() = runTest {
+        json.encodeToString(nullResult) shouldBe nullResultJson
+    }
+
+    private val disabledJson = createMatrixEventJson(customModule = SerializersModule {
+        contextual(
+            TimelineEventSerializer(
+                DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
+                false
             )
         )
-        val resultJson = timelineEventJson("""{"type":"m.dino","value":{"dino":"yeah"}}""")
-        should("deserialize") {
-            json.decodeFromString<TimelineEvent>(resultJson) shouldBe result
-        }
-        should("serialize") {
-            json.encodeToString(result) shouldBe resultJson
-        }
+    })
+    private val disabledJsonResult = timelineEvent(Result.success(RoomMessageEventContent.TextBased.Text("hi")))
+    private val disabledJsonResultJson = timelineEventJson(null)
+
+    @Test
+    fun `disabled » serialize`() = runTest {
+        disabledJson.encodeToString(disabledJsonResult) shouldBe disabledJsonResultJson
     }
-    context("redacted content") {
-        val result = timelineEvent(Result.success(RedactedEventContent("m.room.encrypted")))
-        val resultJson = timelineEventJson("""{"type":"m.room.encrypted","value":{}}""")
-        should("deserialize") {
-            json.decodeFromString<TimelineEvent>(resultJson) shouldBe result
-        }
-        should("serialize") {
-            json.encodeToString(result) shouldBe resultJson
-        }
-    }
-    context("malformed event content") {
-        val result = timelineEvent(
-            Result.success(
-                UnknownEventContent(JsonObject(mapOf("wrong" to JsonPrimitive("name"))), "m.room.name")
-            )
-        )
-        val resultJson = timelineEventJson("""{"type":"m.room.name","value":{"wrong":"name"}}""")
-        should("deserialize") {
-            json.decodeFromString<TimelineEvent>(resultJson) shouldBe result
-        }
-    }
-    context("failure") {
-        val result = timelineEvent(Result.failure(TimelineEvent.TimelineEventContentError.DecryptionTimeout))
-        val resultJson = timelineEventJson(null)
-        should("serialize") {
-            json.encodeToString(result) shouldBe resultJson
-        }
-    }
-    context("null") {
-        val result = timelineEvent(null)
-        val resultJson = timelineEventJson(null)
-        should("deserialize") {
-            json.decodeFromString<TimelineEvent>(resultJson) shouldBe result
-        }
-        should("serialize") {
-            json.encodeToString(result) shouldBe resultJson
-        }
-    }
-    context("disabled") {
-        val disabledJson = createMatrixEventJson(customModule = SerializersModule {
-            contextual(
-                TimelineEventSerializer(
-                    DefaultEventContentSerializerMappings.message + DefaultEventContentSerializerMappings.state,
-                    false
-                )
-            )
-        })
-        val result = timelineEvent(Result.success(RoomMessageEventContent.TextBased.Text("hi")))
-        val resultJson = timelineEventJson(null)
-        should("serialize") {
-            disabledJson.encodeToString(result) shouldBe resultJson
-        }
-    }
-})
+}

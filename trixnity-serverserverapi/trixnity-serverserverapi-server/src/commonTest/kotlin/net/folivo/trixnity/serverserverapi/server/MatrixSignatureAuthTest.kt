@@ -23,9 +23,10 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class MatrixSignatureAuthTest {
+class MatrixSignatureAuthTest : TrixnityBaseTest() {
     private val json = createMatrixDataUnitJson({ "3" })
     private val mapping = createDefaultEventContentSerializerMappings()
 

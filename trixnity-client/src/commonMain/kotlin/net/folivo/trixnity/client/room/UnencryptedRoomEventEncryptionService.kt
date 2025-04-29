@@ -9,7 +9,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.UnencryptedRoomEventEncryptionService")
 
 class UnencryptedRoomEventEncryptionService(
     private val roomStore: RoomStore,

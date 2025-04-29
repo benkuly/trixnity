@@ -8,15 +8,14 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class OlmAccountTest {
+class OlmAccountTest : TrixnityBaseTest() {
     @Test
     fun create_shouldCreateAndVerify() = runTest {
         val account = OlmAccount.create()

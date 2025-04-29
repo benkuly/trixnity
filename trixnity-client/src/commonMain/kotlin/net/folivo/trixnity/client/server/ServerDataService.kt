@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.EventHandler
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.server.ServerDataService")
 
 class ServerDataService(
     private val api: MatrixClientServerApiClient,

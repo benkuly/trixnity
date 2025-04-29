@@ -20,7 +20,7 @@ kotlin {
                 api(libs.ktor.utils)
                 api(libs.kotlinx.coroutines.core)
                 api(libs.okio)
-                implementation(libs.oshai.logging)
+                api(libs.oshai.logging)
             }
         }
         jsMain {
@@ -34,6 +34,7 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotest.assertions.core)
+                implementation(projects.trixnityTestUtils)
             }
         }
         jvmTest {

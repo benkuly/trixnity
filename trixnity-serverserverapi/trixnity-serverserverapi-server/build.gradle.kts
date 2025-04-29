@@ -9,7 +9,7 @@ plugins {
 
 kotlin {
     jvmToolchain()
-    addJvmTarget(useJUnitPlatform = false)
+    addJvmTarget()
     linuxX64()
 
     sourceSets {
@@ -37,11 +37,8 @@ kotlin {
                 implementation(libs.ktor.serialization.kotlinx.json)
 
                 implementation(libs.kotest.assertions.core)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
+
+                implementation(projects.trixnityTestUtils)
             }
         }
     }

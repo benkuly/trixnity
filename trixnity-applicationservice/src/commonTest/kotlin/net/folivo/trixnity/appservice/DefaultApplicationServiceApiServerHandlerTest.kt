@@ -22,12 +22,13 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.subscribeEachEvent
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.scopedMockEngine
 import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
 import kotlin.test.Test
 
-class DefaultApplicationServiceApiServerHandlerTest {
+class DefaultApplicationServiceApiServerHandlerTest : TrixnityBaseTest() {
 
     private lateinit var applicationServiceEventTxnService: TestApplicationServiceEventTxnService
     private lateinit var applicationServiceUserService: TestApplicationServiceUserService

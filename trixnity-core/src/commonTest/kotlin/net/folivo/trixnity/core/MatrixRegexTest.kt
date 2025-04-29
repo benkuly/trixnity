@@ -5,11 +5,12 @@ import io.kotest.matchers.shouldNotBe
 import io.ktor.http.*
 import net.folivo.trixnity.core.MatrixRegex.findMentions
 import net.folivo.trixnity.core.model.*
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.fail
 
 
-class MatrixRegexTest {
+class MatrixRegexTest : TrixnityBaseTest() {
     // Common Namespaced Identifier
     private fun commonNamespacedIdTest(id: String, expected: Boolean) {
         val message = "ID $id ist very common"

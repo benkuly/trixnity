@@ -1,15 +1,15 @@
 package net.folivo.trixnity.utils
 
 import io.kotest.matchers.shouldBe
-import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class ByteArrayFlowTest {
+class ByteArrayFlowTest : TrixnityBaseTest() {
     private val helloBytes = "hello".toByteArray()
     private val helloBytesFlow = flowOf("he".toByteArray(), "llo".toByteArray())
 

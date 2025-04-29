@@ -6,17 +6,17 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.clientserverapi.model.authentication.ThirdPartyIdentifier.Medium
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class AuthApiClientTest {
+class AuthApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldGetWhoami() = runTest {

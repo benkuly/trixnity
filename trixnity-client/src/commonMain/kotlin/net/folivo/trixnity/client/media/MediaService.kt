@@ -23,7 +23,7 @@ import net.folivo.trixnity.crypto.core.encryptAes256Ctr
 import net.folivo.trixnity.crypto.core.sha256
 import net.folivo.trixnity.utils.*
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.media.MediaService")
 
 interface MediaService {
     suspend fun getMedia(

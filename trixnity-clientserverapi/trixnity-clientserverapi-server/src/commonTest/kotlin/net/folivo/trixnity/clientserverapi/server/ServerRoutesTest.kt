@@ -19,10 +19,11 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class ServerRoutesTest {
+class ServerRoutesTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 

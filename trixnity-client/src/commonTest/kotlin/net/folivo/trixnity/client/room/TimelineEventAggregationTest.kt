@@ -1,18 +1,14 @@
 package net.folivo.trixnity.client.room
 
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.TimelineEventHandlerMock
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.TimelineEventRelation
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
@@ -24,61 +20,43 @@ import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.ServerAggregation
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
+import kotlin.test.Test
 
-class TimelineEventAggregationTest : ShouldSpec({
-    timeout = 5_000
+class TimelineEventAggregationTest : TrixnityBaseTest() {
 
-    val room = simpleRoom.roomId
-    lateinit var roomStore: RoomStore
-    lateinit var roomStateStore: RoomStateStore
-    lateinit var roomAccountDataStore: RoomAccountDataStore
-    lateinit var roomTimelineStore: RoomTimelineStore
-    lateinit var roomOutboxMessageStore: RoomOutboxMessageStore
-    lateinit var scope: CoroutineScope
-    lateinit var mediaServiceMock: MediaServiceMock
-    lateinit var roomEventDecryptionServiceMock: RoomEventEncryptionServiceMock
-    val json = createMatrixEventJson()
-    val currentSyncState = MutableStateFlow(SyncState.STOPPED)
+    private val room = simpleRoom.roomId
 
-    lateinit var cut: RoomServiceImpl
+    private val roomTimelineStore = getInMemoryRoomTimelineStore()
 
-    beforeTest {
-        scope = CoroutineScope(Dispatchers.Default)
-        roomStore = getInMemoryRoomStore(scope)
-        roomStateStore = getInMemoryRoomStateStore(scope)
-        roomAccountDataStore = getInMemoryRoomAccountDataStore(scope)
-        roomTimelineStore = getInMemoryRoomTimelineStore(scope)
-        roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(scope)
+    private val mediaServiceMock = MediaServiceMock()
+    private val roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock()
 
-        mediaServiceMock = MediaServiceMock()
-        roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock()
-        val (api, _) = mockMatrixClientServerApiClient(json)
-        cut = RoomServiceImpl(
-            api = api,
-            roomStore = roomStore,
-            roomStateStore = roomStateStore,
-            roomAccountDataStore = roomAccountDataStore,
-            roomTimelineStore = roomTimelineStore,
-            roomOutboxMessageStore = roomOutboxMessageStore,
-            roomEventEncryptionServices = listOf(roomEventDecryptionServiceMock),
-            mediaService = mediaServiceMock,
-            forgetRoomService = {},
-            userInfo = simpleUserInfo,
-            timelineEventHandler = TimelineEventHandlerMock(),
-            clock = Clock.System,
-            config = MatrixClientConfiguration(),
-            typingEventHandler = TypingEventHandlerImpl(api),
-            currentSyncState = CurrentSyncState(currentSyncState),
-            scope = scope
-        )
-    }
+    private val currentSyncState = MutableStateFlow(SyncState.STOPPED)
+    private val api = mockMatrixClientServerApiClient()
 
-    afterTest {
-        scope.cancel()
-    }
+    private val cut = RoomServiceImpl(
+        api = api,
+        roomStore = getInMemoryRoomStore(),
+        roomStateStore = getInMemoryRoomStateStore(),
+        roomAccountDataStore = getInMemoryRoomAccountDataStore(),
+        roomTimelineStore = roomTimelineStore,
+        roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore(),
+        roomEventEncryptionServices = listOf(roomEventDecryptionServiceMock),
+        mediaService = mediaServiceMock,
+        forgetRoomService = {},
+        userInfo = simpleUserInfo,
+        timelineEventHandler = TimelineEventHandlerMock(),
+        clock = testScope.testClock,
+        config = MatrixClientConfiguration(),
+        typingEventHandler = TypingEventHandlerImpl(api),
+        currentSyncState = CurrentSyncState(currentSyncState),
+        scope = testScope.backgroundScope
+    )
 
-    fun timelineEvent(
+    private fun timelineEvent(
         id: String,
         originTimestamp: Long = 1234,
         sender: UserId = UserId("sender", "server"),
@@ -101,27 +79,24 @@ class TimelineEventAggregationTest : ShouldSpec({
             previousEventId = null,
         )
 
-    context(RoomService::getTimelineEventReplaceAggregation.name) {
-        beforeTest {
-            roomTimelineStore.addAll(
-                listOf(
-                    timelineEvent("1", 1),
-                    timelineEvent("2", 2),
-                    timelineEvent("3", 3),
-                    timelineEvent("4", 4, UserId("otherSender", "server"))
-                )
-            )
+    @Test
+    fun `use latest replacement from same sender`() = runTest {
+        getTimelineEventReplaceAggregationSetup()
+        roomTimelineStore.apply {
+            addRelation(TimelineEventRelation(room, EventId("2"), RelationType.Replace, EventId("1")))
+            addRelation(TimelineEventRelation(room, EventId("3"), RelationType.Replace, EventId("1")))
+            addRelation(TimelineEventRelation(room, EventId("4"), RelationType.Replace, EventId("1")))
         }
-        should("use latest replacement from same sender") {
-            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("2"), RelationType.Replace, EventId("1")))
-            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("3"), RelationType.Replace, EventId("1")))
-            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("4"), RelationType.Replace, EventId("1")))
 
-            cut.getTimelineEventReplaceAggregation(room, EventId("1")).first() shouldBe
-                    TimelineEventAggregation.Replace(EventId("3"), listOf(EventId("2"), EventId("3")))
-        }
-        should("fallback to server aggregation when newer") {
-            roomTimelineStore.addAll(
+        cut.getTimelineEventReplaceAggregation(room, EventId("1")).first() shouldBe
+                TimelineEventAggregation.Replace(EventId("3"), listOf(EventId("2"), EventId("3")))
+    }
+
+    @Test
+    fun `fallback to server aggregation when newer`() = runTest {
+        getTimelineEventReplaceAggregationSetup()
+        roomTimelineStore.apply {
+            addAll(
                 listOf(
                     timelineEvent(
                         "1", 1,
@@ -129,111 +104,75 @@ class TimelineEventAggregationTest : ShouldSpec({
                     ),
                 )
             )
-            roomTimelineStore.addRelation(TimelineEventRelation(room, EventId("2"), RelationType.Replace, EventId("1")))
-
-            cut.getTimelineEventReplaceAggregation(room, EventId("1")).first() shouldBe
-                    TimelineEventAggregation.Replace(EventId("3"), listOf(EventId("2"), EventId("3")))
+            addRelation(TimelineEventRelation(room, EventId("2"), RelationType.Replace, EventId("1")))
         }
+
+        cut.getTimelineEventReplaceAggregation(room, EventId("1")).first() shouldBe
+                TimelineEventAggregation.Replace(EventId("3"), listOf(EventId("2"), EventId("3")))
     }
 
-    context(RoomService::getTimelineEventReactionAggregation.name) {
-        val originalEvent = timelineEvent("1", 1)
-        val reactionUser2Thumbs1 = timelineEvent(
-            "2", 2, UserId("2", "server"),
-            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
-        )
-        val reactionUser2Thumbs2 = timelineEvent(
-            "3", 3, UserId("2", "server"),
-            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
-        )
-        val reactionUser2Unicorn = timelineEvent(
-            "4", 4, UserId("2", "server"),
-            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🦄"))
-        )
-        val reactionUser1Thumbs = timelineEvent(
-            "5", 5,
-            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
-        )
-        val reactionUser3Thumbs = timelineEvent(
-            "6", 6, UserId("3", "server"),
-            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
-        )
-        val reactionUser3Dog = timelineEvent(
-            "7", 7, UserId("3", "server"),
-            eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🐈"))
-        )
-        beforeTest {
-            roomTimelineStore.addAll(
-                listOf(
-                    originalEvent,
-                    reactionUser2Thumbs1,
-                    reactionUser2Thumbs2,
-                    reactionUser2Unicorn,
-                    reactionUser1Thumbs
-                )
-            )
-            roomTimelineStore.addRelation(
-                TimelineEventRelation(
-                    room,
-                    EventId("2"),
-                    RelationType.Annotation,
-                    EventId("1")
-                )
-            )
-            roomTimelineStore.addRelation(
-                TimelineEventRelation(
-                    room,
-                    EventId("3"),
-                    RelationType.Annotation,
-                    EventId("1")
-                )
-            )
-            roomTimelineStore.addRelation(
-                TimelineEventRelation(
-                    room,
-                    EventId("4"),
-                    RelationType.Annotation,
-                    EventId("1")
-                )
-            )
-            roomTimelineStore.addRelation(
-                TimelineEventRelation(
-                    room,
-                    EventId("5"),
-                    RelationType.Annotation,
-                    EventId("1")
-                )
-            )
-        }
-        should("load reactions") {
-            cut.getTimelineEventReactionAggregation(room, EventId("1")).first() shouldBe
-                    TimelineEventAggregation.Reaction(
-                        mapOf(
-                            "👍" to setOf(
-                                reactionUser1Thumbs,
-                                reactionUser2Thumbs2,
-                            ),
-                            "🦄" to setOf(
-                                reactionUser2Unicorn,
-                            )
+    private val originalEvent = timelineEvent("1", 1)
+    private val reactionUser2Thumbs1 = timelineEvent(
+        "2", 2, UserId("2", "server"),
+        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+    )
+    private val reactionUser2Thumbs2 = timelineEvent(
+        "3", 3, UserId("2", "server"),
+        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+    )
+    private val reactionUser2Unicorn = timelineEvent(
+        "4", 4, UserId("2", "server"),
+        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🦄"))
+    )
+    private val reactionUser1Thumbs = timelineEvent(
+        "5", 5,
+        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+    )
+    private val reactionUser3Thumbs = timelineEvent(
+        "6", 6, UserId("3", "server"),
+        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "👍"))
+    )
+    private val reactionUser3Dog = timelineEvent(
+        "7", 7, UserId("3", "server"),
+        eventContent = ReactionEventContent(RelatesTo.Annotation(EventId("1"), "🐈"))
+    )
+
+    @Test
+    fun `getTimelineEventReactionAggregation » load reactions`() = runTest {
+        getTimelineEventReactionAggregationSetup()
+        cut.getTimelineEventReactionAggregation(room, EventId("1")).first() shouldBe
+                TimelineEventAggregation.Reaction(
+                    mapOf(
+                        "👍" to setOf(
+                            reactionUser1Thumbs,
+                            reactionUser2Thumbs2,
+                        ),
+                        "🦄" to setOf(
+                            reactionUser2Unicorn,
                         )
                     )
-        }
-        should("update reactions on change") {
-            val receivedValues = MutableStateFlow(0)
-            val result = async {
-                cut.getTimelineEventReactionAggregation(room, EventId("1"))
-                    .onEach { receivedValues.value++ }
-                    .take(3).toList()
-            }
+                )
+    }
 
-            receivedValues.first { it == 1 }
-            roomTimelineStore.addAll(
+    @Test
+    fun `getTimelineEventReactionAggregation » update reactions on change`() = runTest {
+        getTimelineEventReactionAggregationSetup()
+        val receivedValues = MutableStateFlow(0)
+        val result = async {
+            cut.getTimelineEventReactionAggregation(room, EventId("1"))
+                .onEach { receivedValues.value++ }
+                .take(3).toList()
+        }
+
+        receivedValues.first { it == 1 }
+
+        with(roomTimelineStore) {
+            addAll(
                 listOf(
                     reactionUser3Thumbs
                 )
             )
-            roomTimelineStore.addRelation(
+            addRelation(
                 TimelineEventRelation(
                     room,
                     EventId("6"),
@@ -243,12 +182,12 @@ class TimelineEventAggregationTest : ShouldSpec({
             )
 
             receivedValues.first { it == 2 }
-            roomTimelineStore.addAll(
+            addAll(
                 listOf(
                     reactionUser3Dog
                 )
             )
-            roomTimelineStore.addRelation(
+            addRelation(
                 TimelineEventRelation(
                     room,
                     EventId("7"),
@@ -256,47 +195,107 @@ class TimelineEventAggregationTest : ShouldSpec({
                     EventId("1")
                 )
             )
+        }
 
-            result.await() shouldBe listOf(
-                TimelineEventAggregation.Reaction(
-                    mapOf(
-                        "👍" to setOf(
-                            reactionUser1Thumbs,
-                            reactionUser2Thumbs2,
-                        ),
-                        "🦄" to setOf(
-                            reactionUser2Unicorn,
-                        )
+        result.await() shouldBe listOf(
+            TimelineEventAggregation.Reaction(
+                mapOf(
+                    "👍" to setOf(
+                        reactionUser1Thumbs,
+                        reactionUser2Thumbs2,
+                    ),
+                    "🦄" to setOf(
+                        reactionUser2Unicorn,
                     )
-                ),
-                TimelineEventAggregation.Reaction(
-                    mapOf(
-                        "👍" to setOf(
-                            reactionUser1Thumbs,
-                            reactionUser2Thumbs2,
-                            reactionUser3Thumbs
-                        ),
-                        "🦄" to setOf(
-                            reactionUser2Unicorn,
-                        )
+                )
+            ),
+            TimelineEventAggregation.Reaction(
+                mapOf(
+                    "👍" to setOf(
+                        reactionUser1Thumbs,
+                        reactionUser2Thumbs2,
+                        reactionUser3Thumbs
+                    ),
+                    "🦄" to setOf(
+                        reactionUser2Unicorn,
                     )
-                ),
-                TimelineEventAggregation.Reaction(
-                    mapOf(
-                        "👍" to setOf(
-                            reactionUser1Thumbs,
-                            reactionUser2Thumbs2,
-                            reactionUser3Thumbs
-                        ),
-                        "🦄" to setOf(
-                            reactionUser2Unicorn,
-                        ),
-                        "🐈" to setOf(
-                            reactionUser3Dog
-                        )
+                )
+            ),
+            TimelineEventAggregation.Reaction(
+                mapOf(
+                    "👍" to setOf(
+                        reactionUser1Thumbs,
+                        reactionUser2Thumbs2,
+                        reactionUser3Thumbs
+                    ),
+                    "🦄" to setOf(
+                        reactionUser2Unicorn,
+                    ),
+                    "🐈" to setOf(
+                        reactionUser3Dog
                     )
-                ),
+                )
+            ),
+        )
+    }
+
+
+    private suspend fun getTimelineEventReplaceAggregationSetup() {
+        with(roomTimelineStore) {
+            addAll(
+                listOf(
+                    timelineEvent("1", 1),
+                    timelineEvent("2", 2),
+                    timelineEvent("3", 3),
+                    timelineEvent("4", 4, UserId("otherSender", "server"))
+                )
             )
         }
     }
-})
+
+    private suspend fun getTimelineEventReactionAggregationSetup() {
+        with(roomTimelineStore) {
+            addAll(
+                listOf(
+                    originalEvent,
+                    reactionUser2Thumbs1,
+                    reactionUser2Thumbs2,
+                    reactionUser2Unicorn,
+                    reactionUser1Thumbs
+                )
+            )
+            addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("2"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+            addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("3"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+            addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("4"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+            addRelation(
+                TimelineEventRelation(
+                    room,
+                    EventId("5"),
+                    RelationType.Annotation,
+                    EventId("1")
+                )
+            )
+        }
+    }
+}

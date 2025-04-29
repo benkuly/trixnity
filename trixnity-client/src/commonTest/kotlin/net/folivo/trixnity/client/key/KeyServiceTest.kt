@@ -1,25 +1,18 @@
 package net.folivo.trixnity.client.key
 
 import io.kotest.assertions.assertSoftly
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
-import net.folivo.trixnity.client.getInMemoryKeyStore
-import net.folivo.trixnity.client.getInMemoryOlmStore
-import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
@@ -39,247 +32,224 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
-import net.folivo.trixnity.crypto.sign.VerifyResult
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import kotlin.test.Test
 
-class KeyServiceTest : ShouldSpec(body)
+class KeyServiceTest : TrixnityBaseTest() {
+    private val alice = UserId("alice", "server")
+    private val aliceDevice = "ALICEDEVICE"
 
-private val body: ShouldSpec.() -> Unit = {
-    timeout = 120_000
+    private val signServiceMock = SignServiceMock()
+    private val roomServiceMock = RoomServiceMock()
+    private val keyBackupServiceMock = KeyBackupServiceMock()
+    private val keyTrustServiceMock = KeyTrustServiceMock()
 
-    val alice = UserId("alice", "server")
-    val aliceDevice = "ALICEDEVICE"
-    lateinit var scope: CoroutineScope
-    lateinit var keyStore: KeyStore
-    lateinit var olmCryptoStore: OlmCryptoStore
-    lateinit var globalAccountDataStore: GlobalAccountDataStore
-    lateinit var roomServiceMock: RoomServiceMock
-    lateinit var signServiceMock: SignServiceMock
-    lateinit var keyBackupServiceMock: KeyBackupServiceMock
-    lateinit var keyTrustServiceMock: KeyTrustServiceMock
-    val json = createMatrixEventJson()
-    lateinit var olmSign: SignServiceMock
-    lateinit var apiConfig: PortableMockEngineConfig
+    private val keyStore = getInMemoryKeyStore()
+    private val olmCryptoStore = getInMemoryOlmStore()
+    private val globalAccountDataStore = getInMemoryGlobalAccountDataStore()
 
-    lateinit var cut: KeyServiceImpl
+    private val apiConfig = PortableMockEngineConfig()
+    private val api = mockMatrixClientServerApiClient(apiConfig)
 
-    beforeTest {
-        scope = CoroutineScope(Dispatchers.Default)
-        olmSign = SignServiceMock()
-        keyStore = getInMemoryKeyStore(scope)
-        olmCryptoStore = getInMemoryOlmStore(scope)
-        globalAccountDataStore = getInMemoryGlobalAccountDataStore(scope)
-        signServiceMock = SignServiceMock()
-        roomServiceMock = RoomServiceMock()
-        keyBackupServiceMock = KeyBackupServiceMock()
-        keyTrustServiceMock = KeyTrustServiceMock()
-        val (api, newApiConfig) = mockMatrixClientServerApiClient(json)
-        apiConfig = newApiConfig
-        cut = KeyServiceImpl(
-            UserInfo(alice, aliceDevice, Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
-            keyStore,
-            olmCryptoStore,
-            globalAccountDataStore,
-            roomServiceMock,
-            signServiceMock,
-            keyBackupServiceMock,
-            keyTrustServiceMock,
-            api,
-        )
-        olmSign.returnVerify = VerifyResult.Valid
-    }
+    private val cut = KeyServiceImpl(
+        UserInfo(alice, aliceDevice, Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
+        keyStore,
+        olmCryptoStore,
+        globalAccountDataStore,
+        roomServiceMock,
+        signServiceMock,
+        keyBackupServiceMock,
+        keyTrustServiceMock,
+        api,
+    )
 
-    afterTest {
-        scope.cancel()
-    }
+    private var secretKeyEventContentCalled = false
+    private var capturedPassphrase: AesHmacSha2Key.SecretStorageKeyPassphrase? = null
+    private var defaultSecretKeyEventContentCalled = false
+    private var masterKeyEventContentCalled = false
+    private var userSigningKeyEventContentCalled = false
+    private var selfSigningKeyEventContentCalled = false
+    private var setCrossSigningKeysCalled = false
 
-    context("bootstrapCrossSigning") {
-        context("successfull") {
-            var secretKeyEventContentCalled = false
-            var capturedPassphrase: AesHmacSha2Key.SecretStorageKeyPassphrase? = null
-            var defaultSecretKeyEventContentCalled = false
-            var masterKeyEventContentCalled = false
-            var userSigningKeyEventContentCalled = false
-            var selfSigningKeyEventContentCalled = false
-            var setCrossSigningKeysCalled = false
-            beforeTest {
-                secretKeyEventContentCalled = false
-                capturedPassphrase = null
-                defaultSecretKeyEventContentCalled = false
-                masterKeyEventContentCalled = false
-                userSigningKeyEventContentCalled = false
-                selfSigningKeyEventContentCalled = false
-                setCrossSigningKeysCalled = false
-
-                apiConfig.endpoints {
-                    matrixJsonEndpoint(
-                        SetGlobalAccountData(alice, "m.secret_storage.key.*"),
-                    ) {
-                        it.shouldBeInstanceOf<AesHmacSha2Key>()
-                        it.iv shouldNot beEmpty()
-                        it.mac shouldNot beEmpty()
-                        capturedPassphrase = it.passphrase
-                        secretKeyEventContentCalled = true
-                    }
-                    matrixJsonEndpoint(
-                        SetGlobalAccountData(alice, "m.secret_storage.default_key")
-                    ) {
-                        it.shouldBeInstanceOf<DefaultSecretKeyEventContent>()
-                        it.key.length shouldBeGreaterThan 10
-                        defaultSecretKeyEventContentCalled = true
-                    }
-                    matrixJsonEndpoint(
-                        SetGlobalAccountData(alice, "m.cross_signing.master")
-                    ) {
-                        it.shouldBeInstanceOf<MasterKeyEventContent>()
-                        val encrypted = it.encrypted.values.first()
-                        encrypted.shouldBeInstanceOf<JsonObject>()
-                        encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        masterKeyEventContentCalled = true
-                    }
-                    matrixJsonEndpoint(
-                        SetGlobalAccountData(alice, "m.cross_signing.user_signing")
-                    ) {
-                        it.shouldBeInstanceOf<UserSigningKeyEventContent>()
-                        val encrypted = it.encrypted.values.first()
-                        encrypted.shouldBeInstanceOf<JsonObject>()
-                        encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        userSigningKeyEventContentCalled = true
-                    }
-                    matrixJsonEndpoint(
-                        SetGlobalAccountData(alice, "m.cross_signing.self_signing")
-                    ) {
-                        it.shouldBeInstanceOf<SelfSigningKeyEventContent>()
-                        val encrypted = it.encrypted.values.first()
-                        encrypted.shouldBeInstanceOf<JsonObject>()
-                        encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
-                        selfSigningKeyEventContentCalled = true
-                    }
-                    matrixJsonEndpoint(SetCrossSigningKeys()) {
-                        it.request.masterKey shouldNotBe null
-                        it.request.selfSigningKey shouldNotBe null
-                        it.request.userSigningKey shouldNotBe null
-                        setCrossSigningKeysCalled = true
-                        ResponseWithUIA.Success(Unit)
-                    }
-                }
-                keyStore.updateCrossSigningKeys(alice) {
-                    setOf(
-                        StoredCrossSigningKeys(
-                            SignedCrossSigningKeys(
-                                CrossSigningKeys(
-                                    alice, setOf(CrossSigningKeysUsage.MasterKey), keysOf(
-                                        Ed25519Key("A_MSK", "A_MSK")
-                                    )
-                                ), mapOf()
-                            ), Valid(false)
-                        )
-                    )
-                }
-                keyStore.updateDeviceKeys(alice) {
-                    mapOf(
-                        aliceDevice to StoredDeviceKeys(
-                            SignedDeviceKeys(
-                                DeviceKeys(
-                                    alice, aliceDevice, setOf(),
-                                    keysOf(Ed25519Key(aliceDevice, "dev"))
-                                ), mapOf()
-                            ),
-                            Valid(false)
-                        )
-                    )
-                }
+    init {
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                SetGlobalAccountData(alice, "m.secret_storage.key.*"),
+            ) {
+                it.shouldBeInstanceOf<AesHmacSha2Key>()
+                it.iv shouldNot beEmpty()
+                it.mac shouldNot beEmpty()
+                capturedPassphrase = it.passphrase
+                secretKeyEventContentCalled = true
             }
-            should("bootstrap") {
-                launch {
-                    keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
-                    keyStore.updateOutdatedKeys { setOf() }
-                    keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
-                    keyStore.updateDeviceKeys(alice) {
-                        mapOf(
-                            aliceDevice to StoredDeviceKeys(
-                                SignedDeviceKeys(
-                                    DeviceKeys(
-                                        alice, aliceDevice, setOf(),
-                                        keysOf(Ed25519Key(aliceDevice, "dev"))
-                                    ), mapOf()
-                                ),
-                                KeySignatureTrustLevel.CrossSigned(true)
-                            )
-                        )
-                    }
-                }
-                val result = cut.bootstrapCrossSigning()
-
-                assertSoftly(result) {
-                    this.recoveryKey shouldNot beEmpty()
-                    this.result shouldBe Result.success(UIA.Success(Unit))
-                }
-                keyTrustServiceMock.trustAndSignKeysCalled.value shouldBe (setOf(
-                    Ed25519Key("A_MSK", "A_MSK"),
-                    Ed25519Key(aliceDevice, "dev")
-                ) to alice)
-                keyBackupServiceMock.bootstrapRoomKeyBackupCalled.value shouldBe true
-                keyStore.getSecrets().keys shouldBe setOf(
-                    M_CROSS_SIGNING_SELF_SIGNING,
-                    M_CROSS_SIGNING_USER_SIGNING
-                )
-                secretKeyEventContentCalled shouldBe true
-                capturedPassphrase shouldBe null
-                defaultSecretKeyEventContentCalled shouldBe true
-                masterKeyEventContentCalled shouldBe true
-                userSigningKeyEventContentCalled shouldBe true
-                selfSigningKeyEventContentCalled shouldBe true
-                setCrossSigningKeysCalled shouldBe true
+            matrixJsonEndpoint(
+                SetGlobalAccountData(alice, "m.secret_storage.default_key")
+            ) {
+                it.shouldBeInstanceOf<DefaultSecretKeyEventContent>()
+                it.key.length shouldBeGreaterThan 10
+                defaultSecretKeyEventContentCalled = true
             }
-            should("bootstrap from passphrase") {
-                launch {
-                    keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
-                    keyStore.updateOutdatedKeys { setOf() }
-                    keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
-                    keyStore.updateDeviceKeys(alice) {
-                        mapOf(
-                            aliceDevice to StoredDeviceKeys(
-                                SignedDeviceKeys(
-                                    DeviceKeys(
-                                        alice, aliceDevice, setOf(),
-                                        keysOf(Ed25519Key(aliceDevice, "dev"))
-                                    ), mapOf()
-                                ),
-                                KeySignatureTrustLevel.CrossSigned(true)
-                            )
-                        )
-                    }
-                }
-                val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.")
-                assertSoftly(result) {
-                    this.recoveryKey shouldNot beEmpty()
-                    this.result shouldBe Result.success(UIA.Success(Unit))
-                }
-                keyTrustServiceMock.trustAndSignKeysCalled.value shouldBe (setOf(
-                    Ed25519Key("A_MSK", "A_MSK"),
-                    Ed25519Key(aliceDevice, "dev")
-                ) to alice)
-                keyBackupServiceMock.bootstrapRoomKeyBackupCalled.value shouldBe true
-                keyStore.getSecrets().keys shouldBe setOf(
-                    M_CROSS_SIGNING_SELF_SIGNING,
-                    M_CROSS_SIGNING_USER_SIGNING
+            matrixJsonEndpoint(
+                SetGlobalAccountData(alice, "m.cross_signing.master")
+            ) {
+                it.shouldBeInstanceOf<MasterKeyEventContent>()
+                val encrypted = it.encrypted.values.first()
+                encrypted.shouldBeInstanceOf<JsonObject>()
+                encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                masterKeyEventContentCalled = true
+            }
+            matrixJsonEndpoint(
+                SetGlobalAccountData(alice, "m.cross_signing.user_signing")
+            ) {
+                it.shouldBeInstanceOf<UserSigningKeyEventContent>()
+                val encrypted = it.encrypted.values.first()
+                encrypted.shouldBeInstanceOf<JsonObject>()
+                encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                userSigningKeyEventContentCalled = true
+            }
+            matrixJsonEndpoint(
+                SetGlobalAccountData(alice, "m.cross_signing.self_signing")
+            ) {
+                it.shouldBeInstanceOf<SelfSigningKeyEventContent>()
+                val encrypted = it.encrypted.values.first()
+                encrypted.shouldBeInstanceOf<JsonObject>()
+                encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                selfSigningKeyEventContentCalled = true
+            }
+            matrixJsonEndpoint(SetCrossSigningKeys()) {
+                it.request.masterKey shouldNotBe null
+                it.request.selfSigningKey shouldNotBe null
+                it.request.userSigningKey shouldNotBe null
+                setCrossSigningKeysCalled = true
+                ResponseWithUIA.Success(Unit)
+            }
+        }
+
+        scheduleSetup {
+            keyStore.updateCrossSigningKeys(alice) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        SignedCrossSigningKeys(
+                            CrossSigningKeys(
+                                alice, setOf(CrossSigningKeysUsage.MasterKey), keysOf(
+                                    Ed25519Key("A_MSK", "A_MSK")
+                                )
+                            ), mapOf()
+                        ), Valid(false)
+                    )
                 )
-                secretKeyEventContentCalled shouldBe true
-                capturedPassphrase.shouldBeInstanceOf<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>()
-                defaultSecretKeyEventContentCalled shouldBe true
-                masterKeyEventContentCalled shouldBe true
-                userSigningKeyEventContentCalled shouldBe true
-                selfSigningKeyEventContentCalled shouldBe true
-                setCrossSigningKeysCalled shouldBe true
+            }
+            keyStore.updateDeviceKeys(alice) {
+                mapOf(
+                    aliceDevice to StoredDeviceKeys(
+                        SignedDeviceKeys(
+                            DeviceKeys(
+                                alice, aliceDevice, setOf(),
+                                keysOf(Ed25519Key(aliceDevice, "dev"))
+                            ), mapOf()
+                        ),
+                        Valid(false)
+                    )
+                )
             }
         }
     }
+
+    @Test
+    fun `bootstrapCrossSigning » successfull » bootstrap`() = runTest {
+        backgroundScope.launch {
+            keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
+            keyStore.updateOutdatedKeys { setOf() }
+            keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
+            keyStore.updateDeviceKeys(alice) {
+                mapOf(
+                    aliceDevice to StoredDeviceKeys(
+                        SignedDeviceKeys(
+                            DeviceKeys(
+                                alice, aliceDevice, setOf(),
+                                keysOf(Ed25519Key(aliceDevice, "dev"))
+                            ), mapOf()
+                        ),
+                        KeySignatureTrustLevel.CrossSigned(true)
+                    )
+                )
+            }
+        }
+        val result = cut.bootstrapCrossSigning()
+
+        assertSoftly(result) {
+            this.recoveryKey shouldNot beEmpty()
+            this.result shouldBe Result.success(UIA.Success(Unit))
+        }
+        keyTrustServiceMock.trustAndSignKeysCalled.value shouldBe (setOf(
+            Ed25519Key("A_MSK", "A_MSK"),
+            Ed25519Key(aliceDevice, "dev")
+        ) to alice)
+        keyBackupServiceMock.bootstrapRoomKeyBackupCalled.value shouldBe true
+        keyStore.getSecrets().keys shouldBe setOf(
+            M_CROSS_SIGNING_SELF_SIGNING,
+            M_CROSS_SIGNING_USER_SIGNING
+        )
+        secretKeyEventContentCalled shouldBe true
+        capturedPassphrase shouldBe null
+        defaultSecretKeyEventContentCalled shouldBe true
+        masterKeyEventContentCalled shouldBe true
+        userSigningKeyEventContentCalled shouldBe true
+        selfSigningKeyEventContentCalled shouldBe true
+        setCrossSigningKeysCalled shouldBe true
+    }
+
+    @Test
+    fun `bootstrapCrossSigning » successfull » bootstrap from passphrase`() = runTest {
+        backgroundScope.launch {
+            keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
+            keyStore.updateOutdatedKeys { setOf() }
+            keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
+            keyStore.updateDeviceKeys(alice) {
+                mapOf(
+                    aliceDevice to StoredDeviceKeys(
+                        SignedDeviceKeys(
+                            DeviceKeys(
+                                alice, aliceDevice, setOf(),
+                                keysOf(Ed25519Key(aliceDevice, "dev"))
+                            ), mapOf()
+                        ),
+                        KeySignatureTrustLevel.CrossSigned(true)
+                    )
+                )
+            }
+        }
+        val result = cut.bootstrapCrossSigningFromPassphrase("super secret. not.")
+        assertSoftly(result) {
+            this.recoveryKey shouldNot beEmpty()
+            this.result shouldBe Result.success(UIA.Success(Unit))
+        }
+        keyTrustServiceMock.trustAndSignKeysCalled.value shouldBe (setOf(
+            Ed25519Key("A_MSK", "A_MSK"),
+            Ed25519Key(aliceDevice, "dev")
+        ) to alice)
+        keyBackupServiceMock.bootstrapRoomKeyBackupCalled.value shouldBe true
+        keyStore.getSecrets().keys shouldBe setOf(
+            M_CROSS_SIGNING_SELF_SIGNING,
+            M_CROSS_SIGNING_USER_SIGNING
+        )
+        secretKeyEventContentCalled shouldBe true
+        capturedPassphrase.shouldBeInstanceOf<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>()
+        defaultSecretKeyEventContentCalled shouldBe true
+        masterKeyEventContentCalled shouldBe true
+        userSigningKeyEventContentCalled shouldBe true
+        selfSigningKeyEventContentCalled shouldBe true
+        setCrossSigningKeysCalled shouldBe true
+    }
+
+
 }

@@ -54,15 +54,6 @@ val olmNativeTargetList = listOf(
     ),
 )
 
-project.afterEvaluate {
-    val testTasks =
-        project.getTasksByName("testReleaseUnitTest", false) +
-                project.getTasksByName("testDebugUnitTest", false)
-    testTasks.forEach {
-        it.onlyIf { false }
-    }
-}
-
 val installOlmToJvmResources by tasks.registering(Copy::class) {
     group = "olm"
     from(olmBinariesDirs.binShared)
@@ -103,11 +94,6 @@ android {
             isDefault = true
         }
     }
-    testOptions {
-        unitTests.all {
-            it.useJUnitPlatform()
-        }
-    }
 }
 tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
     if (name.contains("jni", true)) {
@@ -115,11 +101,23 @@ tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).conf
     }
 }
 
+val desktopOlmLibs by tasks.registering(Jar::class) {
+    dependsOn(trixnityBinariesTask)
+
+    from(olmBinariesDirs.binShared)
+    archiveBaseName = "trixnity-olm-desktop-libs"
+    destinationDirectory = layout.buildDirectory.dir("tmp")
+}
+
 kotlin {
     jvmToolchain()
     addJvmTarget()
     addAndroidTarget()
     addJsTarget(rootDir)
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
 
     val nativeOlmTargets = olmNativeTargetList.map { target ->
         target.createTarget(this).apply {
@@ -185,11 +183,14 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotest.assertions.core)
+
+                implementation(projects.trixnityTestUtils)
             }
         }
-        val androidUnitTest by getting { // TODO does not work
+        androidUnitTest {
             dependencies {
-                implementation(libs.androidx.test.runner)
+                implementation(libs.jna.get().toString() + "@jar")
+                implementation(files(desktopOlmLibs))
             }
         }
     }

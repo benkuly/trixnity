@@ -6,7 +6,6 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    alias(libs.plugins.kotest)
     alias(libs.plugins.kotlinxKover)
     trixnity.general
     trixnity.publish
@@ -117,16 +116,9 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.kotest.common)
                 implementation(libs.kotest.assertions.core)
-                implementation(libs.kotest.framework.engine)
-                implementation(libs.kotest.assertions.core)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.kotest.runner.junit5)
-                implementation(libs.logback.classic)
+
+                implementation(projects.trixnityTestUtils)
             }
         }
     }
