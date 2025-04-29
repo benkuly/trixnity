@@ -17,7 +17,7 @@ import net.folivo.trixnity.crypto.SecretType
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.KeyStore")
 
 class KeyStore(
     outdatedKeysRepository: OutdatedKeysRepository,

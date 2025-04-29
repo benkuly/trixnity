@@ -38,7 +38,7 @@ import net.folivo.trixnity.olm.*
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.KeyBackupService")
 
 interface KeyBackupService {
     /**

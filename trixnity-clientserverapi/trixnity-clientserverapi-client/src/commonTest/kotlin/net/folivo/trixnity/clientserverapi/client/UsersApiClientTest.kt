@@ -23,12 +23,13 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class UsersApiClientTest {
+class UsersApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldSetDisplayName() = runTest {

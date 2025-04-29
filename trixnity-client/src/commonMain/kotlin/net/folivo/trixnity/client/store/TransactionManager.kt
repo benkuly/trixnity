@@ -8,7 +8,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.utils.concurrentMutableList
 import kotlin.coroutines.CoroutineContext
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.TransactionManager")
 
 interface TransactionManager {
     suspend fun transaction(block: suspend CoroutineScope.() -> Unit)

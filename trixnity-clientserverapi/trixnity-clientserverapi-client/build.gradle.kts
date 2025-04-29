@@ -33,16 +33,13 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation(projects.testUtils)
+                implementation(projects.ktorTestUtils)
 
                 implementation(libs.ktor.client.mock)
                 implementation(libs.kotest.assertions.core)
                 implementation(libs.kotlinx.coroutines.test)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(libs.logback.classic)
+
+                implementation(projects.trixnityTestUtils)
             }
         }
     }

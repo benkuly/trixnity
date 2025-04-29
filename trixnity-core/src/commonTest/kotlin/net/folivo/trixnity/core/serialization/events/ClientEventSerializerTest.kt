@@ -23,10 +23,11 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Unkn
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.trimToFlatJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ClientEventSerializerTest {
+class ClientEventSerializerTest : TrixnityBaseTest() {
 
     private val json = createMatrixEventJson()
 

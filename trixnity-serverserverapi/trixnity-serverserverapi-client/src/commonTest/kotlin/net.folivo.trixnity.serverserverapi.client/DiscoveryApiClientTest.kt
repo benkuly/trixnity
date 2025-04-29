@@ -9,12 +9,13 @@ import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.serverserverapi.model.discovery.*
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DiscoveryApiClientTest {
+class DiscoveryApiClientTest : TrixnityBaseTest() {
     @Test
     fun shouldGetWellKnown() = runTest {
         val matrixRestClient = MatrixServerServerApiClientImpl(

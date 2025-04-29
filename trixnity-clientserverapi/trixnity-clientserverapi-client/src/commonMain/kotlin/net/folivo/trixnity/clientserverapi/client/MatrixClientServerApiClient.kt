@@ -14,7 +14,7 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient")
 
 interface MatrixClientServerApiClient : AutoCloseable {
     val baseClient: MatrixClientServerApiBaseClient

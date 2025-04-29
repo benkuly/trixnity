@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger(" net.folivo.trixnity.client.room.DirectRoomEventHandler")
 
 class DirectRoomEventHandler(
     private val userInfo: UserInfo,

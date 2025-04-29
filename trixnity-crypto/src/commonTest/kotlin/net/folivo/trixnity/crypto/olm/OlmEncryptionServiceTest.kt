@@ -2,7 +2,6 @@ package net.folivo.trixnity.crypto.olm
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -13,8 +12,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -47,16 +46,16 @@ import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService.*
 import net.folivo.trixnity.crypto.sign.VerifyResult
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.olm.OlmMessage.OlmMessageType
+import kotlin.test.AfterTest
+import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-class OlmEncryptionServiceTest : ShouldSpec(body)
-
-private val body: ShouldSpec.() -> Unit = {
-    timeout = 30_000
+class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
     val json = createMatrixEventJson()
     val alice = UserId("alice", "server")
@@ -81,12 +80,10 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var bobEdKey: Ed25519Key
 
     @OptIn(ExperimentalSerializationApi::class)
-    val decryptedOlmEventSerializer = json.serializersModule.getContextual(DecryptedOlmEvent::class)
-    requireNotNull(decryptedOlmEventSerializer)
+    val decryptedOlmEventSerializer = requireNotNull(json.serializersModule.getContextual(DecryptedOlmEvent::class))
 
     @OptIn(ExperimentalSerializationApi::class)
-    val decryptedMegolmEventSerializer = json.serializersModule.getContextual(DecryptedMegolmEvent::class)
-    requireNotNull(decryptedMegolmEventSerializer)
+    val decryptedMegolmEventSerializer = requireNotNull(json.serializersModule.getContextual(DecryptedMegolmEvent::class))
 
     val decryptedOlmEventContent = RoomKeyEventContent(
         RoomId("room", "server"),
@@ -102,7 +99,7 @@ private val body: ShouldSpec.() -> Unit = {
     val room = RoomId("room", "server")
     val decryptedMegolmEvent = DecryptedMegolmEvent(decryptedMegolmEventContent, room)
 
-    beforeEach {
+    private suspend fun TestScope.setup() {
         aliceAccount = OlmAccount.create()
         bobAccount = OlmAccount.create()
 
@@ -111,7 +108,7 @@ private val body: ShouldSpec.() -> Unit = {
         bobCurveKey = Curve25519Key(bobDeviceId, bobAccount.identityKeys.curve25519)
         bobEdKey = Ed25519Key(bobDeviceId, bobAccount.identityKeys.ed25519)
 
-        scope = CoroutineScope(Dispatchers.Default)
+        scope = backgroundScope
 
         olmEncryptionServiceRequestHandlerMock = OlmEncryptionServiceRequestHandlerMock()
         olmStoreMock = OlmStoreMock()
@@ -154,11 +151,17 @@ private val body: ShouldSpec.() -> Unit = {
         )
     }
 
-    afterEach {
-        scope.cancel()
+    private fun runTestWithSetup(block: suspend TestScope.() -> Unit) = runTest {
+        setup()
+        block()
+    }
+
+    @AfterTest
+    fun free() {
         aliceAccount.free()
         bobAccount.free()
     }
+
     fun OlmAccount.getOneTimeKey(store: Boolean = false): String {
         generateOneTimeKeys(1)
         return oneTimeKeys.curve25519.values.first()
@@ -186,7 +189,8 @@ private val body: ShouldSpec.() -> Unit = {
     // #######################
     // encryptOlm
     // #######################
-    should("encrypt without stored olm encrypt session") {
+    @Test
+    fun `encrypt without stored olm encrypt session`() = runTestWithSetup {
         mockClaimKeys()
         val encryptedMessage = cut.encryptOlm(decryptedOlmEventContent, bob, bobDeviceId).getOrThrow()
         val encryptedCipherText = encryptedMessage.ciphertext[bobCurveKey.value.value]
@@ -214,7 +218,8 @@ private val body: ShouldSpec.() -> Unit = {
 
         olmStoreMock.olmSessions[bobCurveKey.value] shouldNotBe null
     }
-    should("is failure when one time key is invalid without stored olm encrypt session") {
+    @Test
+    fun `is failure when one time key is invalid without stored olm encrypt session`() = runTestWithSetup {
         mockClaimKeys()
         mockSignService.returnVerify = VerifyResult.Invalid("dino")
 
@@ -225,7 +230,8 @@ private val body: ShouldSpec.() -> Unit = {
                 )
         olmStoreMock.olmSessions.shouldBeEmpty()
     }
-    should("encrypt event with stored session") {
+    @Test
+    fun `encrypt event with stored session`() = runTestWithSetup {
         freeAfter(
             OlmSession.createOutbound(
                 bobAccount,
@@ -270,7 +276,8 @@ private val body: ShouldSpec.() -> Unit = {
     // #######################
     // decryptOlm
     // #######################
-    should("decrypt pre key message from new session") {
+    @Test
+    fun `decrypt pre key message from new session`() = runTestWithSetup {
         val encryptedMessage = freeAfter(
             OlmSession.createOutbound(
                 bobAccount,
@@ -302,7 +309,8 @@ private val body: ShouldSpec.() -> Unit = {
             )
         }
     }
-    should("not decrypt pre key message, when the 5 last created sessions are not older then 1 hour") {
+    @Test
+    fun `not decrypt pre key message when the 5 last created sessions are not older then 1 hour`() = runTestWithSetup {
         val encryptedMessage = freeAfter(
             OlmSession.createOutbound(
                 bobAccount,
@@ -343,7 +351,8 @@ private val body: ShouldSpec.() -> Unit = {
             )
         ).exceptionOrNull() shouldBe DecryptOlmError.TooManySessions
     }
-    should("fail on ordinary message") {
+    @Test
+    fun `fail on ordinary message`() = runTestWithSetup {
         mockClaimKeys()
         val encryptedMessage = freeAfter(
             OlmSession.createOutbound(
@@ -377,7 +386,8 @@ private val body: ShouldSpec.() -> Unit = {
             ).content shouldBe DummyEventContent
         }
     }
-    should("decrypt pre key message from stored session") {
+    @Test
+    fun `decrypt pre key message from stored session`() = runTestWithSetup {
         freeAfter(
             OlmSession.createOutbound(
                 aliceAccount,
@@ -414,7 +424,8 @@ private val body: ShouldSpec.() -> Unit = {
             olmStoreMock.olmSessions[bobCurveKey.value]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
-    should("decrypt ordinary message") {
+    @Test
+    fun `decrypt ordinary message`() = runTestWithSetup {
         freeAfter(
             OlmSession.createOutbound(
                 aliceAccount,
@@ -451,7 +462,8 @@ private val body: ShouldSpec.() -> Unit = {
             olmStoreMock.olmSessions[bobCurveKey.value]?.firstOrNull().shouldNotBeNull() shouldNotBe storedOlmSession
         }
     }
-    should("try multiple sessions descended by last used") {
+    @Test
+    fun `try multiple sessions descended by last used`() = runTestWithSetup {
         freeAfter(
             OlmSession.createOutbound(aliceAccount, bobCurveKey.value.value, bobAccount.getOneTimeKey()),
             OlmSession.createOutbound(aliceAccount, bobCurveKey.value.value, bobAccount.getOneTimeKey()),
@@ -504,7 +516,8 @@ private val body: ShouldSpec.() -> Unit = {
             olmStoreMock.olmSessions[bobCurveKey.value].shouldNotBeNull() shouldNotContain storedOlmSession1
         }
     }
-    should("not create multiple recovery sessions in short time") {
+    @Test
+    fun `not create multiple recovery sessions in short time`() = runTestWithSetup {
         mockClaimKeys()
         freeAfter(
             OlmSession.createOutbound(
@@ -556,7 +569,8 @@ private val body: ShouldSpec.() -> Unit = {
             olmEncryptionServiceRequestHandlerMock.sendToDeviceParams shouldHaveSize 1
         }
     }
-    should("create multiple recovery sessions after some time") {
+    @Test
+    fun `create multiple recovery sessions after some time`() = runTestWithSetup {
         mockClaimKeys()
         freeAfter(
             OlmSession.createOutbound(
@@ -645,16 +659,20 @@ private val body: ShouldSpec.() -> Unit = {
             ).exceptionOrNull().shouldBeInstanceOf<DecryptOlmError.ValidationFailed>()
         }
     }
-    should("handle manipulated sender") {
+    @Test
+    fun `handle manipulated sender`() = runTestWithSetup {
         handleManipulation(receiveDecryptedOlmEvent.copy(sender = UserId("cedric", "server")))
     }
-    should("handle manipulated senderKeys") {
+    @Test
+    fun `handle manipulated senderKeys`() = runTestWithSetup {
         handleManipulation(receiveDecryptedOlmEvent.copy(senderKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key"))))
     }
-    should("handle manipulated recipient") {
+    @Test
+    fun `handle manipulated recipient`() = runTestWithSetup {
         handleManipulation(receiveDecryptedOlmEvent.copy(recipient = UserId("cedric", "server")))
     }
-    should("handle manipulated recipientKeys") {
+    @Test
+    fun `handle manipulated recipientKeys`() = runTestWithSetup {
         handleManipulation(
             receiveDecryptedOlmEvent.copy(recipientKeys = keysOf(Ed25519Key("CEDRICKEY", "cedrics key")))
         )
@@ -682,7 +700,7 @@ private val body: ShouldSpec.() -> Unit = {
                     this.senderKey shouldBe aliceCurveKey.value
                     this.deviceId shouldBe aliceDeviceId
                     this.sessionId shouldBe outboundSession.sessionId
-                    this.relatesTo shouldBe relatesTo.copy(newContent = null)
+                    this.relatesTo shouldBe this@OlmEncryptionServiceTest.relatesTo.copy(newContent = null)
                 }
 
                 val sendToDeviceEvents = olmEncryptionServiceRequestHandlerMock.sendToDeviceParams
@@ -719,10 +737,12 @@ private val body: ShouldSpec.() -> Unit = {
             ) shouldBe decryptedMegolmEvent
         }
     }
-    should("encrypt without stored megolm session") {
+    @Test
+    fun `encrypt without stored megolm session`() = runTestWithSetup {
         shouldEncryptMessage(EncryptionEventContent(), 1)
     }
-    should("not send room keys, when not possible to encrypt them due to missing one time keys") {
+    @Test
+    fun `not send room keys when not possible to encrypt them due to missing one time keys`() = runTestWithSetup {
         olmEncryptionServiceRequestHandlerMock.claimKeys = Result.success(
             ClaimKeys.Response(
                 emptyMap(),
@@ -758,11 +778,13 @@ private val body: ShouldSpec.() -> Unit = {
             }
         }
     }
-    should("send megolm sessions to new devices and encrypt") {
+    @Test
+    fun `send megolm sessions to new devices and encrypt`() = runTestWithSetup {
         createExistingOutboundSession()
         shouldEncryptMessage(EncryptionEventContent(), 24)
     }
-    should("crete new megolm session when rotation period passed") {
+    @Test
+    fun `crete new megolm session when rotation period passed`() = runTestWithSetup {
         olmStoreMock.outboundMegolmSession[room] =
             StoredOutboundMegolmSession(
                 roomId = room,
@@ -771,7 +793,8 @@ private val body: ShouldSpec.() -> Unit = {
             )
         shouldEncryptMessage(EncryptionEventContent(rotationPeriodMs = 24), 2)
     }
-    should("create new megolm session when message count passed") {
+    @Test
+    fun `create new megolm session when message count passed`() = runTestWithSetup {
         olmStoreMock.outboundMegolmSession[room] =
             StoredOutboundMegolmSession(
                 roomId = room,
@@ -783,7 +806,8 @@ private val body: ShouldSpec.() -> Unit = {
     // #######################
     // decryptMegolm
     // #######################
-    should("decrypt megolm event") {
+    @Test
+    fun `decrypt megolm event 1`() = runTestWithSetup {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
@@ -822,7 +846,8 @@ private val body: ShouldSpec.() -> Unit = {
                     )
         }
     }
-    should("decrypt megolm event") {
+    @Test
+    fun `decrypt megolm event 2`() = runTestWithSetup {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             val ciphertext = // encrypted before session saved
                 outboundSession.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
@@ -856,7 +881,8 @@ private val body: ShouldSpec.() -> Unit = {
             ).exceptionOrNull() shouldBe DecryptMegolmError.MegolmKeyUnknownMessageIndex
         }
     }
-    should("fail when no keys were send to us") {
+    @Test
+    fun `fail when no keys were send to us`() = runTestWithSetup {
         freeAfter(OlmOutboundGroupSession.create()) { session ->
             val ciphertext =
                 session.encrypt(json.encodeToString(decryptedMegolmEventSerializer, decryptedMegolmEvent))
@@ -876,7 +902,8 @@ private val body: ShouldSpec.() -> Unit = {
             ).exceptionOrNull() shouldBe DecryptMegolmError.MegolmKeyNotFound
         }
     }
-    should("handle manipulated roomId in megolmEvent") {
+    @Test
+    fun `handle manipulated roomId in megolmEvent`() = runTestWithSetup {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
@@ -913,7 +940,9 @@ private val body: ShouldSpec.() -> Unit = {
             ).exceptionOrNull().shouldBeInstanceOf<DecryptMegolmError.ValidationFailed>()
         }
     }
-    should("handle manipulated message index") {
+
+    @Test
+    fun `handle manipulated message index`() = runTestWithSetup {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(

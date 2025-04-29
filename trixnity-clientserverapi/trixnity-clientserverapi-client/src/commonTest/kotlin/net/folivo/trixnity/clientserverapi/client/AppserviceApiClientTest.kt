@@ -6,11 +6,12 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.appservice.Ping
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class AppserviceApiClientTest {
+class AppserviceApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldPing() = runTest {

@@ -5,7 +5,6 @@ import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.clientserverapi.model.server.*
 import net.folivo.trixnity.core.model.EventId
@@ -13,11 +12,12 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ServerApiClientTest {
+class ServerApiClientTest : TrixnityBaseTest() {
     @Test
     fun shouldGetVersions() = runTest {
         val response = GetVersions.Response(

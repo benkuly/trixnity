@@ -14,7 +14,6 @@ import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventC
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.crypto.SecretType
 
-private val log = KotlinLogging.logger { }
 internal suspend inline fun <reified T : Key> KeyStore.getAllKeysFromUser(
     userId: UserId,
     filterDeviceId: String? = null,

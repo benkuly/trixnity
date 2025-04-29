@@ -20,9 +20,10 @@ import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class MatrixUIAEndpointRouteTest {
+class MatrixUIAEndpointRouteTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mapping = createDefaultEventContentSerializerMappings()
 

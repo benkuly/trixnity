@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.model.events.m.Relations")
 
 typealias Relations = @Serializable(with = RelationsSerializer::class) Map<RelationType, ServerAggregation>
 

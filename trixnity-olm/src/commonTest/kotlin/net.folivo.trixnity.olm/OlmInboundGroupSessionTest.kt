@@ -7,12 +7,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.string.shouldNotBeBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class OlmInboundGroupSessionTest {
+class OlmInboundGroupSessionTest : TrixnityBaseTest() {
 
     private val sessionKey = "AgAAAAAwMTIzNDU2Nzg5QUJERUYwMTIzNDU2Nzg5QUJDREVGMDEyMzQ1Njc4OUFCREVGM" +
             "DEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkRFRjAxMjM0NTY3ODlBQkNERUYwMTIzND" +

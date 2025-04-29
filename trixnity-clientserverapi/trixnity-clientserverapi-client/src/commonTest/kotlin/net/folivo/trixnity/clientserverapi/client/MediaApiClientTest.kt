@@ -7,11 +7,12 @@ import io.ktor.utils.io.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.media.*
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MediaApiClientTest {
+class MediaApiClientTest : TrixnityBaseTest() {
     @Test
     fun shouldGetConfig() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(

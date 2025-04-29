@@ -24,7 +24,7 @@ import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.utils.KeyedMutex
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.TimelineEventHandler")
 
 interface TimelineEventHandler {
     /**

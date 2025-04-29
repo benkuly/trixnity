@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.events.*
 import kotlin.reflect.KClass
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.ClientEventEmitter")
 
 typealias Subscriber<T> = suspend (T) -> Unit
 typealias Unsubscriber = () -> Unit

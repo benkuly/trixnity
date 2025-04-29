@@ -15,7 +15,7 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.LoadMembersService")
 
 fun interface LoadMembersService {
     suspend operator fun invoke(roomId: RoomId, wait: Boolean)

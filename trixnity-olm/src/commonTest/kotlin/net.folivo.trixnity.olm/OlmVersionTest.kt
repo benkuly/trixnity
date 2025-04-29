@@ -1,12 +1,11 @@
 package net.folivo.trixnity.olm
 
 import io.kotest.matchers.ints.shouldBeGreaterThan
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class OlmVersionTest {
+class OlmVersionTest : TrixnityBaseTest() {
     @Test
     fun versionShouldBeSet() = runTest {
         getOlmVersion().major shouldBeGreaterThan 0

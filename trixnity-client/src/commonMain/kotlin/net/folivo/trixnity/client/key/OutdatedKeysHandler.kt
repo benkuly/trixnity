@@ -34,7 +34,7 @@ import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.crypto.sign.verify
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.OutdatedKeysHandler")
 
 class OutdatedKeysHandler(
     private val api: MatrixClientServerApiClient,

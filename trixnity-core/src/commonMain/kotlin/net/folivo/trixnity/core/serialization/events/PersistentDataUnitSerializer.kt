@@ -12,7 +12,7 @@ import kotlinx.serialization.json.jsonObject
 import net.folivo.trixnity.core.model.events.PersistentDataUnit
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.*
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.PersistentDataUnitSerializer")
 
 class PersistentDataUnitSerializer(
     private val persistentMessageDataUnitSerializer: KSerializer<PersistentMessageDataUnit<*>>,

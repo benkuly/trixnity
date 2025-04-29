@@ -18,7 +18,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration.Companion.INFINITE
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.Timeline")
 
 typealias SimpleTimeline = Timeline<Flow<TimelineEvent>>
 

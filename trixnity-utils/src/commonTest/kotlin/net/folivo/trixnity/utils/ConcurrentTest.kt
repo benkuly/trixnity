@@ -6,10 +6,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.time.measureTime
 
-class ConcurrentTest {
+class ConcurrentTest : TrixnityBaseTest() {
     @Test
     fun writeAndReadData() = runTest {
         val cut = concurrentMutableList<Int>()

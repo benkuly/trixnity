@@ -1,16 +1,15 @@
 package net.folivo.trixnity.core.serialization.keys
 
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.Signatures
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class SignaturesSerializerTest {
+class SignaturesSerializerTest : TrixnityBaseTest() {
 
     private val json = Json
 

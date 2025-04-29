@@ -1,22 +1,19 @@
 package net.folivo.trixnity.client.verification
 
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.datetime.Clock
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.currentTime
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
-import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Undefined
@@ -35,56 +32,27 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
+import kotlin.test.Test
 import kotlin.time.Duration.Companion.minutes
 
-class ActiveUserVerificationTest : ShouldSpec({
-    timeout = 30_000
+@OptIn(ExperimentalCoroutinesApi::class)
+class ActiveUserVerificationTest : TrixnityBaseTest() {
 
-    val alice = UserId("alice", "server")
-    val aliceDevice = "AAAAAA"
-    val bob = UserId("bob", "server")
-    val bobDevice = "BBBBBB"
-    val event = EventId("$1")
-    val roomId = RoomId("room", "server")
-    val relatesTo = RelatesTo.Reference(event)
+    private val alice = UserId("alice", "server")
+    private val aliceDevice = "AAAAAA"
+    private val bob = UserId("bob", "server")
+    private val bobDevice = "BBBBBB"
+    private val event = EventId("$1")
+    private val roomId = RoomId("room", "server")
+    private val relatesTo = RelatesTo.Reference(event)
 
-    val json = createMatrixEventJson()
-    lateinit var roomServiceMock: RoomServiceMock
-    lateinit var keyStore: KeyStore
-    lateinit var scope: CoroutineScope
+    private val json = createMatrixEventJson()
+    private val roomServiceMock = RoomServiceMock()
 
-    lateinit var cut: ActiveUserVerificationImpl
-
-    beforeTest {
-        roomServiceMock = RoomServiceMock()
-        scope = CoroutineScope(Dispatchers.Default)
-        keyStore = getInMemoryKeyStore(scope)
-    }
-    afterTest {
-        scope.cancel()
-    }
-
-    fun createCut(timestamp: Instant = Clock.System.now()) {
-        cut = ActiveUserVerificationImpl(
-            request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
-            requestIsFromOurOwn = true,
-            requestEventId = event,
-            requestTimestamp = timestamp.toEpochMilliseconds(),
-            ownUserId = alice,
-            ownDeviceId = aliceDevice,
-            theirUserId = bob,
-            theirInitialDeviceId = null,
-            roomId = roomId,
-            supportedMethods = setOf(Sas),
-            json = json,
-            keyStore = keyStore,
-            room = roomServiceMock,
-            keyTrust = KeyTrustServiceMock(),
-            clock = Clock.System,
-        )
-    }
-
-    val requestTimelineEvent = TimelineEvent(
+    private val requestTimelineEvent = TimelineEvent(
         event = MessageEvent(
             VerificationRequest("from", alice, setOf()),
             EventId("e"),
@@ -96,7 +64,11 @@ class ActiveUserVerificationTest : ShouldSpec({
         nextEventId = null,
         gap = null
     )
-    should("handle verification step") {
+
+    private val keyStore = getInMemoryKeyStore()
+
+    @Test
+    fun `handle verification step`() = runTest {
         val cancelEvent = VerificationCancelEventContent(User, "u", relatesTo, null)
 
         roomServiceMock.returnGetTimelineEvent = MutableStateFlow(requestTimelineEvent)
@@ -143,12 +115,14 @@ class ActiveUserVerificationTest : ShouldSpec({
                 )
             )
         )
-        createCut()
+        val cut = createCut()
         cut.startLifecycle(this)
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
-    should("handle encrypted verification step") {
+
+    @Test
+    fun `handle encrypted verification step`() = runTest {
         val cancelEvent = VerificationCancelEventContent(User, "u", relatesTo, null)
         val cancelFlow = MutableStateFlow(
             TimelineEvent(
@@ -205,7 +179,7 @@ class ActiveUserVerificationTest : ShouldSpec({
             ),
             cancelFlow
         )
-        createCut()
+        val cut = createCut()
         cut.startLifecycle(this)
         delay(500)
         cancelFlow.value = TimelineEvent(
@@ -219,15 +193,19 @@ class ActiveUserVerificationTest : ShouldSpec({
         val result = cut.state.first { it is ActiveVerificationState.Cancel }
         result shouldBe ActiveVerificationState.Cancel(cancelEvent, false)
     }
-    should("send verification step") {
+
+    @Test
+    fun `send verification step`() = runTest {
         roomServiceMock.returnGetTimelineEvent = flowOf()
-        createCut()
+        val cut = createCut()
         cut.startLifecycle(this)
         cut.cancel()
         roomServiceMock.sentMessages.value.shouldNotBeEmpty().first().second
             .shouldBeInstanceOf<VerificationCancelEventContent>()
     }
-    should("stop lifecycle, when cancelled") {
+
+    @Test
+    fun `stop lifecycle when cancelled`() = runTest {
         roomServiceMock.returnGetTimelineEvent = MutableStateFlow(requestTimelineEvent)
         roomServiceMock.returnGetTimelineEvents = flowOf(
             MutableStateFlow(
@@ -240,15 +218,19 @@ class ActiveUserVerificationTest : ShouldSpec({
                 )
             )
         )
-        createCut()
+        val cut = createCut()
         cut.startLifecycle(this)
     }
-    should("stop lifecycle, when timed out") {
+
+    @Test
+    fun `stop lifecycle when timed out`() = runTest {
         roomServiceMock.returnGetTimelineEvent = flowOf()
-        createCut(Clock.System.now() - 9.9.minutes)
+        val cut = createCut(testClock.now() - 9.9.minutes)
         cut.startLifecycle(this)
     }
-    should("set state to ${AcceptedByOtherDevice::class.simpleName} when request accepted by other device") {
+
+    @Test
+    fun `set state to AcceptedByOtherDevice when request accepted by other device`() = runTest {
         roomServiceMock.returnGetTimelineEvent = MutableStateFlow(requestTimelineEvent)
         roomServiceMock.returnGetTimelineEvents = flowOf(
             MutableStateFlow(
@@ -265,11 +247,11 @@ class ActiveUserVerificationTest : ShouldSpec({
                 )
             )
         )
-        cut = ActiveUserVerificationImpl(
+        val cut = ActiveUserVerificationImpl(
             request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
             requestIsFromOurOwn = false,
             requestEventId = event,
-            requestTimestamp = Clock.System.now().toEpochMilliseconds(),
+            requestTimestamp = currentTime,
             ownUserId = bob,
             ownDeviceId = bobDevice,
             theirUserId = alice,
@@ -280,13 +262,15 @@ class ActiveUserVerificationTest : ShouldSpec({
             keyStore = keyStore,
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
-            clock = Clock.System,
+            clock = testClock,
         )
         cut.startLifecycle(this)
         cut.state.first { it == AcceptedByOtherDevice } shouldBe AcceptedByOtherDevice
         cut.cancel()
     }
-    should("set state to ${Undefined::class.simpleName} when request accepted by own device, but state does not match (e.g. on restart)") {
+
+    @Test
+    fun `set state to Undefined when request accepted by own device but state does not match`() = runTest {
         roomServiceMock.returnGetTimelineEvent = MutableStateFlow(requestTimelineEvent)
         roomServiceMock.returnGetTimelineEvents = flowOf(
             MutableStateFlow(
@@ -303,11 +287,11 @@ class ActiveUserVerificationTest : ShouldSpec({
                 )
             )
         )
-        cut = ActiveUserVerificationImpl(
+        val cut = ActiveUserVerificationImpl(
             request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
             requestIsFromOurOwn = false,
             requestEventId = event,
-            requestTimestamp = Clock.System.now().toEpochMilliseconds(),
+            requestTimestamp = currentTime,
             ownUserId = bob,
             ownDeviceId = bobDevice,
             theirUserId = alice,
@@ -318,10 +302,29 @@ class ActiveUserVerificationTest : ShouldSpec({
             keyStore = keyStore,
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
-            clock = Clock.System,
+            clock = testClock,
         )
         cut.startLifecycle(this)
         cut.state.first { it == Undefined } shouldBe Undefined
         cut.cancel()
     }
-})
+
+    private fun TestScope.createCut(timestamp: Instant = testClock.now()): ActiveUserVerificationImpl =
+        ActiveUserVerificationImpl(
+            request = VerificationRequest(aliceDevice, bob, setOf(Sas)),
+            requestIsFromOurOwn = true,
+            requestEventId = event,
+            requestTimestamp = timestamp.toEpochMilliseconds(),
+            ownUserId = alice,
+            ownDeviceId = aliceDevice,
+            theirUserId = bob,
+            theirInitialDeviceId = null,
+            roomId = roomId,
+            supportedMethods = setOf(Sas),
+            json = json,
+            keyStore = keyStore,
+            room = roomServiceMock,
+            keyTrust = KeyTrustServiceMock(),
+            clock = testClock,
+        )
+}

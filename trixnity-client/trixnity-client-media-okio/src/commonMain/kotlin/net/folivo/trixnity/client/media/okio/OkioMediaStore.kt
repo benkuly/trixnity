@@ -13,7 +13,7 @@ import okio.Path
 import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.media.okio.OkioMediaStore")
 
 class OkioMediaStore(
     private val basePath: Path,

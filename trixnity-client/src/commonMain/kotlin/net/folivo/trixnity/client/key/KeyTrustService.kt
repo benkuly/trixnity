@@ -24,7 +24,7 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.jvm.JvmName
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.KeyTrustService")
 
 interface KeyTrustService {
 

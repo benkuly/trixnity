@@ -13,7 +13,7 @@ import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.utils.RetryLoopFlow")
 
 enum class RetryLoopFlowState {
     RUN, PAUSE, STOP,

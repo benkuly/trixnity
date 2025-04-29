@@ -18,7 +18,7 @@ import web.streams.WritableStream
 import web.window.window
 import kotlin.random.Random
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.media.opfs.OpfsMediaStore")
 
 class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaStore {
 

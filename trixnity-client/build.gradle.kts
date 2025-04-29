@@ -1,7 +1,6 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    alias(libs.plugins.kotest)
     trixnity.general
     trixnity.publish
 }
@@ -9,7 +8,7 @@ plugins {
 kotlin {
     jvmToolchain()
     addJvmTarget()
-    addJsTarget(rootDir, testEnabled = false)
+    addJsTarget(rootDir)
     addNativeTargets()
 
     sourceSets {
@@ -22,32 +21,23 @@ kotlin {
                 api(projects.trixnityCrypto)
 
                 api(libs.koin.core)
-
                 api(libs.kotlinx.datetime)
 
                 implementation(libs.arrow.resilience)
-
                 implementation(libs.oshai.logging)
             }
         }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                implementation(projects.testUtils)
+                implementation(projects.ktorTestUtils)
 
                 implementation(libs.ktor.client.mock)
 
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotest.common)
-                implementation(libs.kotest.framework.engine)
                 implementation(libs.kotest.assertions.core)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(kotlin("reflect"))
-                implementation(libs.kotest.runner.junit5)
-                implementation(libs.logback.classic)
+                implementation(projects.trixnityTestUtils)
             }
         }
     }

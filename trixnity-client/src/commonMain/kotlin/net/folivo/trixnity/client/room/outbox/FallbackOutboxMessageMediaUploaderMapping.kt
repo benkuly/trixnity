@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.model.events.MessageEventContent
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.outbox.FallbackOutboxMessageMediaUploaderMapping")
 
 val FallbackOutboxMessageMediaUploaderMapping =
     OutboxMessageMediaUploaderMapping(MessageEventContent::class, FallbackOutboxMessageMediaUploaderMappingClass())

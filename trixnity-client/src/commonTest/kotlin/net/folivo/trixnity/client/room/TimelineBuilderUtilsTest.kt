@@ -3,9 +3,10 @@ package net.folivo.trixnity.client.room
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.TimelineEvent.Gap.*
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class TimelineBuilderUtilsTest {
+class TimelineBuilderUtilsTest : TrixnityBaseTest() {
 
     @Test
     fun shouldCreateTimeline() {

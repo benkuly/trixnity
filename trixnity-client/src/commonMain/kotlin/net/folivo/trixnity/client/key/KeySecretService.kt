@@ -10,7 +10,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.key.decryptSecret
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.KeySecretService")
 
 interface KeySecretService {
     suspend fun decryptMissingSecrets(

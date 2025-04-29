@@ -10,13 +10,14 @@ import js.typedarrays.toUint8Array
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import web.streams.ReadableStream
 import web.streams.UnderlyingDefaultSource
 import web.streams.UnderlyingSink
 import web.streams.WritableStream
 import kotlin.test.Test
 
-class ByteArrayFlowStreamExtensionsTest {
+class ByteArrayFlowStreamExtensionsTest : TrixnityBaseTest() {
     @Test
     fun shouldCreateByteArrayFlow() = runTest {
         byteArrayFlowFromReadableStream {
