@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.mocks
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.user.UserService
@@ -28,9 +29,9 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
-
+    val roomUsers: MutableMap<Pair<UserId, RoomId>, Flow<RoomUser?>> = mutableMapOf()
     override fun getById(roomId: RoomId, userId: UserId): Flow<RoomUser?> {
-        throw NotImplementedError()
+        return roomUsers[userId to roomId] ?: flowOf(null)
     }
 
     override fun getAllReceipts(roomId: RoomId): Flow<Map<UserId, Flow<RoomUserReceipts?>>> {

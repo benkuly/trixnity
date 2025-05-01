@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed bug, where Media with Content Type Application/Json cannot be downloaded.
+- Fix user verification request going into direct rooms, that the other user left
 
 ### Security
 

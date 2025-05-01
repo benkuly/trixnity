@@ -13,6 +13,7 @@ import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
@@ -30,6 +31,7 @@ import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
@@ -118,6 +120,7 @@ class VerificationServiceImpl(
     private val olmDecrypter: OlmDecrypter,
     private val olmEncryptionService: OlmEncryptionService,
     private val roomService: RoomService,
+    private val userService: UserService,
     private val keyService: KeyService,
     private val keyTrustService: KeyTrustService,
     private val keySecretService: KeySecretService,
@@ -308,8 +311,12 @@ class VerificationServiceImpl(
             val request = VerificationRequest(ownDeviceId, theirUserId, supportedMethods)
             val roomId =
                 globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings?.get(theirUserId)
-                    ?.firstOrNull()
+                    ?.firstOrNull {
+                        userService.getById(it, theirUserId).firstOrNull()
+                            ?.let { it.membership != Membership.LEAVE } ?: false
+                    }
                     ?: api.room.createRoom(invite = setOf(theirUserId), isDirect = true).getOrThrow()
+            log.info { "put user verification into room $roomId" }
             val transactionId = roomService.sendMessage(roomId) {
                 content(request)
             }

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.currentTime
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.*
@@ -33,6 +34,7 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
@@ -45,6 +47,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
@@ -53,10 +57,10 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
+import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
-import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
@@ -83,6 +87,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
     private val olmEncryptionServiceMock = OlmEncryptionServiceMock()
     private val syncBatchTokenStore = SyncBatchTokenStore.inMemory()
     private val roomServiceMock = RoomServiceMock()
+    private val userServiceMock = UserServiceMock()
     private val keyServiceMock = KeyServiceMock()
     private val keyTrustServiceMock = KeyTrustServiceMock()
     private val keySecretServiceMock = KeySecretServiceMock()
@@ -104,6 +109,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
         olmEncryptionService = olmEncryptionServiceMock,
         roomService = roomServiceMock,
         keyService = keyServiceMock,
+        userService = userServiceMock,
         keyTrustService = keyTrustServiceMock,
         keySecretService = keySecretServiceMock,
         currentSyncState = CurrentSyncState(currentSyncState),
@@ -425,6 +431,21 @@ class VerificationServiceTest : TrixnityBaseTest() {
         globalAccountDataStore.save(
             GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
         )
+        userServiceMock.roomUsers.put(
+            Pair(bobUserId, roomId), flowOf(
+                RoomUser(
+                    roomId, bobUserId, "Bob",
+                    ClientEvent.RoomEvent.StateEvent(
+                        MemberEventContent(membership = Membership.JOIN),
+                        id = EventId("0"),
+                        sender = bobUserId,
+                        roomId = roomId,
+                        Clock.System.now().toEpochMilliseconds(),
+                        stateKey = bobUserId.full
+                    )
+                )
+            )
+        )
         val result = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
         val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
         roomServiceMock.outbox.value =
@@ -441,6 +462,60 @@ class VerificationServiceTest : TrixnityBaseTest() {
             )
         result.await()
     }
+
+    @Test
+    fun `createUserVerificationRequest » direct room with user exists but other user left and a new direct room was created » send request to room with other user present`() =
+        runTest {
+            val abandonedRoom = RoomId("abandonedRoom", "Server")
+            globalAccountDataStore.save(
+                GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(abandonedRoom, roomId))))
+            )
+            userServiceMock.roomUsers.put(
+                Pair(bobUserId, abandonedRoom), flowOf(
+                    RoomUser(
+                        abandonedRoom, bobUserId, "Bob",
+                        ClientEvent.RoomEvent.StateEvent(
+                            MemberEventContent(membership = Membership.LEAVE),
+                            id = EventId("0"),
+                            sender = bobUserId,
+                            roomId = abandonedRoom,
+                            Clock.System.now().toEpochMilliseconds(),
+                            stateKey = bobUserId.full
+                        )
+                    )
+                )
+            )
+            userServiceMock.roomUsers.put(
+                Pair(bobUserId, roomId), flowOf(
+                    RoomUser(
+                        roomId, bobUserId, "Bob",
+                        ClientEvent.RoomEvent.StateEvent(
+                            MemberEventContent(membership = Membership.JOIN),
+                            id = EventId("0"),
+                            sender = bobUserId,
+                            roomId = roomId,
+                            Clock.System.now().toEpochMilliseconds(),
+                            stateKey = bobUserId.full
+                        )
+                    )
+                )
+            )
+            val result = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
+            val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
+            roomServiceMock.outbox.value =
+                listOf(
+                    flowOf(
+                        RoomOutboxMessage(
+                            transactionId = "1",
+                            roomId = roomId,
+                            content = message,
+                            eventId = EventId("bla"),
+                            createdAt = Clock.System.now(),
+                        )
+                    )
+                )
+            result.await()
+        }
 
     @Test
     fun `return PreconditionsNotMet when initial sync is still running`() =
