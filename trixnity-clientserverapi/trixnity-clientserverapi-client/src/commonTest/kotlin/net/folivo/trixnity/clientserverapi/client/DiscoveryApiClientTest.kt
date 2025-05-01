@@ -8,11 +8,12 @@ import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.authentication.DiscoveryInformation
 import net.folivo.trixnity.clientserverapi.model.discovery.GetSupport
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DiscoveryApiClientTest {
+class DiscoveryApiClientTest : TrixnityBaseTest() {
     @Test
     fun shouldGetWellKnown() = runTest {
         val matrixRestClient = MatrixClientServerApiClientImpl(

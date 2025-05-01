@@ -1,12 +1,13 @@
 package net.folivo.trixnity.crypto.core
 
 import io.kotest.matchers.shouldNotBe
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SecureRandomTest {
+class SecureRandomTest : TrixnityBaseTest() {
     @Test
     fun shouldCreateDifferentInts() {
         SecureRandom.nextInt() shouldNotBe SecureRandom.nextInt()

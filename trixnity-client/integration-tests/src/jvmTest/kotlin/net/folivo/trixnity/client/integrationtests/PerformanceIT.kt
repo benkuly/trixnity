@@ -57,7 +57,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.integrationtests.PerformanceIT")
 
 @Testcontainers
 class PerformanceIT {

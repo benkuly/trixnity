@@ -1,6 +1,5 @@
 package net.folivo.trixnity.core.serialization.m.call
 
-import kotlinx.serialization.encodeToString
 import net.folivo.trixnity.core.model.events.m.call.CallEventContent
 import net.folivo.trixnity.core.model.events.m.call.CallEventContent.Answer.Answer
 import net.folivo.trixnity.core.model.events.m.call.CallEventContent.Answer.AnswerType
@@ -14,10 +13,11 @@ import net.folivo.trixnity.core.model.events.m.call.Purpose
 import net.folivo.trixnity.core.model.events.m.call.StreamMetadata
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.trimToFlatJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class CallEventContentSerializerTest {
+class CallEventContentSerializerTest : TrixnityBaseTest() {
 
     private val json = createMatrixEventJson()
 

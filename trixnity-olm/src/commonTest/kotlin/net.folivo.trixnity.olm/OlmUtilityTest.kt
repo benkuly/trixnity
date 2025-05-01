@@ -4,12 +4,11 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class OlmUtilityTest {
+class OlmUtilityTest : TrixnityBaseTest() {
 
     private val message =
         """{"algorithms":["m.megolm.v1.aes-sha2","m.olm.v1.curve25519-aes-sha2"],"device_id":"YMBYCWTWCG","keys":{"curve25519:YMBYCWTWCG":"KZFa5YUXV2EOdhK8dcGMMHWB67stdgAP4+xwiS69mCU","ed25519:YMBYCWTWCG":"0cEgQJJqjgtXUGp4ZXQQmh36RAxwxr8HJw2E9v1gvA0"},"user_id":"@mxBob14774891254276b253f42-f267-43ec-bad9-767142bfea30:localhost:8480"}"""

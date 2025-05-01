@@ -1,23 +1,25 @@
 package net.folivo.trixnity.utils
 
-import io.kotest.core.spec.style.ShouldSpec
+import kotlinx.coroutines.test.runTest
 import java.nio.ByteBuffer
+import kotlin.test.Test
 import kotlin.test.assertContentEquals
 
-class ByteBufferExtensionsTest : ShouldSpec() {
-    init {
-        context("ByteBuffer.toByteArrayFlow") {
-            should("convert ByteBuffer to ByteArrayFlow") {
-                val data = "hello".toByteArray()
-                val byteArrayFlow = ByteBuffer.wrap(data).toByteArrayFlow()
-                assertContentEquals(data, byteArrayFlow.toByteArray())
-            }
-            should("be consumable multiple times") {
-                val data = "hello".toByteArray()
-                val byteArrayFlow = ByteBuffer.wrap(data).toByteArrayFlow()
-                assertContentEquals(data, byteArrayFlow.toByteArray())
-                assertContentEquals(data, byteArrayFlow.toByteArray())
-            }
-        }
+class ByteBufferExtensionsTest {
+
+    @Test
+    fun `ByteBuffer toByteArrayFlow » convert ByteBuffer to ByteArrayFlow`() = runTest {
+        val data = "hello".toByteArray()
+        val byteArrayFlow = ByteBuffer.wrap(data).toByteArrayFlow()
+        assertContentEquals(data, byteArrayFlow.toByteArray())
     }
+
+    @Test
+    fun `ByteBuffer toByteArrayFlow » be consumable multiple times`() = runTest {
+        val data = "hello".toByteArray()
+        val byteArrayFlow = ByteBuffer.wrap(data).toByteArrayFlow()
+        assertContentEquals(data, byteArrayFlow.toByteArray())
+        assertContentEquals(data, byteArrayFlow.toByteArray())
+    }
+
 }

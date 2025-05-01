@@ -11,7 +11,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
 import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.crypto.key.KeySecretUtils")
 
 suspend fun decryptSecret(
     key: ByteArray,

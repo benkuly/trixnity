@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import kotlin.time.Duration.Companion.seconds
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.MegolmRoomEventEncryptionService")
 
 class MegolmRoomEventEncryptionService(
     private val roomStore: RoomStore,

@@ -20,11 +20,12 @@ import net.folivo.trixnity.core.model.keys.KeyAlgorithm.Curve25519
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm.SignedCurve25519
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class KeysApiClientTest {
+class KeysApiClientTest : TrixnityBaseTest() {
 
     private val alice = UserId("@alice:example.com")
 

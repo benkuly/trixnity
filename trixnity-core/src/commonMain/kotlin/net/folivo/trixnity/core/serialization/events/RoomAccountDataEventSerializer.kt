@@ -17,7 +17,7 @@ import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.HideFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.RoomAccountDataEventSerializer")
 
 class RoomAccountDataEventSerializer(
     private val roomAccountDataEventContentSerializers: Set<EventContentSerializerMapping<RoomAccountDataEventContent>>,

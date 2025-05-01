@@ -20,10 +20,11 @@ import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
 import net.folivo.trixnity.core.serialization.trimToFlatJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
 @OptIn(ExperimentalSerializationApi::class)
-class PersistentDataUnitSerializerTest {
+class PersistentDataUnitSerializerTest : TrixnityBaseTest() {
 
     private val jsonV1 = createMatrixDataUnitJson({ "1" })
     private val jsonV3 = createMatrixDataUnitJson({ "3" })

@@ -19,7 +19,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStar
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.olm.OlmSAS
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveSasVerificationMethod")
 
 class ActiveSasVerificationMethod private constructor(
     override val startEventContent: SasStartEventContent,

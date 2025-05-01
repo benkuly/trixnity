@@ -21,7 +21,7 @@ import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.UserMemberEventHandler")
 
 class UserMemberEventHandler(
     private val api: MatrixClientServerApiClient,

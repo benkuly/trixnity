@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -59,7 +60,7 @@ class TestApplicationServiceApiServerHandler : ApplicationServiceApiServerHandle
 
 }
 
-class MatrixApplicationServiceApiServerTest {
+class MatrixApplicationServiceApiServerTest : TrixnityBaseTest() {
 
     @Test
     fun `should authorize`() = testApplication {

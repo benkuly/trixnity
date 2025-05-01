@@ -28,7 +28,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.notification.NotificationService")
 
 interface NotificationService {
     data class Notification(

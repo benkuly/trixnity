@@ -31,7 +31,7 @@ import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import kotlin.time.Duration
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.MatrixClient")
 
 interface MatrixClient : AutoCloseable {
     companion object
@@ -124,7 +124,8 @@ suspend fun MatrixClient.Companion.login(
     initialDeviceDisplayName: String? = null,
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    configuration: MatrixClientConfiguration.() -> Unit = {}
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> =
     loginWith(
         baseUrl = baseUrl,
@@ -148,7 +149,8 @@ suspend fun MatrixClient.Companion.login(
                 )
             }
         },
-        configuration = configuration
+        configuration = configuration,
+        coroutineScope = coroutineScope,
     )
 
 suspend fun MatrixClient.Companion.login(
@@ -161,7 +163,8 @@ suspend fun MatrixClient.Companion.login(
     initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    configuration: MatrixClientConfiguration.() -> Unit = {}
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = login(
     baseUrl = baseUrl,
     identifier = identifier,
@@ -172,7 +175,8 @@ suspend fun MatrixClient.Companion.login(
     initialDeviceDisplayName = initialDeviceDisplayName,
     repositoriesModuleFactory = { repositoriesModule },
     mediaStoreFactory = { mediaStore },
-    configuration = configuration
+    configuration = configuration,
+    coroutineScope = coroutineScope,
 )
 
 suspend fun MatrixClient.Companion.loginWithPassword(
@@ -183,7 +187,8 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     initialDeviceDisplayName: String? = null,
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    configuration: MatrixClientConfiguration.() -> Unit = {}
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> =
     login(
         baseUrl = baseUrl,
@@ -195,7 +200,8 @@ suspend fun MatrixClient.Companion.loginWithPassword(
         initialDeviceDisplayName = initialDeviceDisplayName,
         repositoriesModuleFactory = repositoriesModuleFactory,
         mediaStoreFactory = mediaStoreFactory,
-        configuration = configuration
+        configuration = configuration,
+        coroutineScope = coroutineScope,
     )
 
 suspend fun MatrixClient.Companion.loginWithPassword(
@@ -206,7 +212,8 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    configuration: MatrixClientConfiguration.() -> Unit = {}
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWithPassword(
     baseUrl = baseUrl,
     identifier = identifier,
@@ -215,7 +222,8 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     initialDeviceDisplayName = initialDeviceDisplayName,
     repositoriesModuleFactory = { repositoriesModule },
     mediaStoreFactory = { mediaStore },
-    configuration = configuration
+    configuration = configuration,
+    coroutineScope = coroutineScope,
 )
 
 suspend fun MatrixClient.Companion.loginWithToken(
@@ -226,7 +234,8 @@ suspend fun MatrixClient.Companion.loginWithToken(
     initialDeviceDisplayName: String? = null,
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    configuration: MatrixClientConfiguration.() -> Unit = {}
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> =
     login(
         baseUrl = baseUrl,
@@ -238,7 +247,8 @@ suspend fun MatrixClient.Companion.loginWithToken(
         initialDeviceDisplayName = initialDeviceDisplayName,
         repositoriesModuleFactory = repositoriesModuleFactory,
         mediaStoreFactory = mediaStoreFactory,
-        configuration = configuration
+        configuration = configuration,
+        coroutineScope = coroutineScope,
     )
 
 suspend fun MatrixClient.Companion.loginWithToken(
@@ -249,7 +259,8 @@ suspend fun MatrixClient.Companion.loginWithToken(
     initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    configuration: MatrixClientConfiguration.() -> Unit = {}
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWithToken(
     baseUrl = baseUrl,
     identifier = identifier,
@@ -258,7 +269,8 @@ suspend fun MatrixClient.Companion.loginWithToken(
     initialDeviceDisplayName = initialDeviceDisplayName,
     repositoriesModuleFactory = { repositoriesModule },
     mediaStoreFactory = { mediaStore },
-    configuration = configuration
+    configuration = configuration,
+    coroutineScope = coroutineScope,
 )
 
 suspend fun MatrixClient.Companion.loginWith(
@@ -266,6 +278,7 @@ suspend fun MatrixClient.Companion.loginWith(
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
@@ -293,12 +306,11 @@ suspend fun MatrixClient.Companion.loginWith(
     val mediaStore = mediaStoreFactory(loginInfo)
     val repositoriesModule = repositoriesModuleFactory(loginInfo)
 
-    val coroutineScope =
-        CoroutineScope((Dispatchers.Default + coroutineExceptionHandler).let {
-            val coroutineName = config.name?.let { name -> CoroutineName(name) }
-            if (coroutineName != null) it + coroutineName else it
-        }
-        )
+    val coroutineName = config.name?.let { name -> CoroutineName(name) }
+    val job = SupervisorJob(coroutineScope.coroutineContext.job)
+    val coroutineScope = (coroutineScope + job + coroutineExceptionHandler).apply {
+        if (coroutineName != null) this + coroutineName
+    }
 
     val koinApplication = koinApplication {
         modules(module {
@@ -408,27 +420,32 @@ suspend fun MatrixClient.Companion.loginWith(
     repositoriesModule: Module,
     mediaStore: MediaStore,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWith(
     baseUrl = baseUrl,
     repositoriesModuleFactory = { repositoriesModule },
     mediaStoreFactory = { mediaStore },
     getLoginInfo = getLoginInfo,
-    configuration = configuration
+    configuration = configuration,
+    coroutineScope = coroutineScope,
 )
 
 suspend fun MatrixClient.Companion.fromStore(
     repositoriesModule: Module,
     mediaStore: MediaStore,
     onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
-    configuration: MatrixClientConfiguration.() -> Unit = {}
+    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient?> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
-    val coroutineScope = CoroutineScope((Dispatchers.Default + coroutineExceptionHandler).let {
-        val coroutineName = config.name?.let { name -> CoroutineName(name) }
-        if (coroutineName != null) it + coroutineName else it
+
+    val coroutineName = config.name?.let { name -> CoroutineName(name) }
+    val job = SupervisorJob(coroutineScope.coroutineContext.job)
+    val coroutineScope = (coroutineScope + job + coroutineExceptionHandler).apply {
+        if (coroutineName != null) this + coroutineName
     }
-    )
+
     val koinApplication = koinApplication {
         modules(module {
             single { coroutineScope }

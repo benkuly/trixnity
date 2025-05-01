@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.EventContentSerializer")
 
 class EventContentSerializer<T : EventContent>(
     private val type: String,

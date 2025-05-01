@@ -10,7 +10,7 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.core.model.events.m.RelatesTo")
 
 @Serializable(with = RelatesToSerializer::class)
 sealed interface RelatesTo {

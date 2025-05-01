@@ -5,15 +5,14 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class OlmOutboundGroupSessionTest {
+class OlmOutboundGroupSessionTest : TrixnityBaseTest() {
 
     @Test
     fun createOutboundSession() = runTest {

@@ -1,12 +1,14 @@
 package net.folivo.trixnity.crypto.core
 
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import kotlin.test.Test
 
-class HmacSha256Test : ShouldSpec({
-    timeout = 30_000
+class HmacSha256Test : TrixnityBaseTest() {
 
-    should("create mac") {
+    @Test
+    fun `create mac`() = runTest {
         hmacSha256(
             "this is a key".encodeToByteArray(),
             "this should be maced".encodeToByteArray()
@@ -14,4 +16,4 @@ class HmacSha256Test : ShouldSpec({
             .map { it.toInt(16).toByte() }
             .toByteArray()
     }
-})
+}

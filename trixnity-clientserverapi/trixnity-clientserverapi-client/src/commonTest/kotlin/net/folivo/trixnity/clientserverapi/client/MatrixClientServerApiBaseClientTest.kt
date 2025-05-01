@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
+import io.ktor.client.plugins.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.HttpMethod.Companion.Post
@@ -24,11 +25,12 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MatrixClientServerApiBaseClientTest {
+class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     private val json = createMatrixEventJson()
     private val mappings = createDefaultEventContentSerializerMappings()
@@ -298,6 +300,11 @@ class MatrixClientServerApiBaseClientTest {
 
                         else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
                     }
+                }
+            },
+            httpClientConfig = {
+                install(SaveBodyPlugin) {
+                    disabled = true
                 }
             },
             json = json,
@@ -585,6 +592,11 @@ class MatrixClientServerApiBaseClientTest {
 
                         else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
                     }
+                }
+            },
+            httpClientConfig = {
+                install(SaveBodyPlugin) {
+                    disabled = true
                 }
             },
             onLogout = { onLogout = it },

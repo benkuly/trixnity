@@ -29,7 +29,7 @@ import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.nextString
 import kotlin.time.Duration.Companion.days
 
-private val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.OutgoingRoomKeyRequestEventHandler")
 
 interface OutgoingRoomKeyRequestEventHandler {
     suspend fun requestRoomKeys(

@@ -9,7 +9,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-private val log = KotlinLogging.logger { }
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.cache.MapRepositoryObservableCache")
 
 data class MapRepositoryCoroutinesCacheKey<K1, K2>(
     val firstKey: K1,

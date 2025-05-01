@@ -4,9 +4,10 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beBlank
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class OlmSessionTest {
+class OlmSessionTest : TrixnityBaseTest() {
 
     @Test
     fun encryptWithOneTimeKey() = runTest {

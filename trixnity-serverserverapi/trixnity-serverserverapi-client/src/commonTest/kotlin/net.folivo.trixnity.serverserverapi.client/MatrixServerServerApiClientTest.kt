@@ -8,10 +8,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 
-class MatrixServerServerApiClientTest {
+class MatrixServerServerApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldUseDelegate() = runTest {

@@ -2,7 +2,6 @@ package net.folivo.trixnity.crypto.olm
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.beEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContainAnyOf
@@ -13,6 +12,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.EventId
@@ -37,26 +37,27 @@ import net.folivo.trixnity.crypto.mocks.OlmDecrypterMock
 import net.folivo.trixnity.crypto.mocks.OlmEventHandlerRequestHandlerMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.olm.*
+import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
-class OlmEventHandlerTest : ShouldSpec({
-    timeout = 30_000
+class OlmEventHandlerTest : TrixnityBaseTest() {
+    private val alice = UserId("alice", "server")
+    private val bob = UserId("bob", "server")
+    private val roomId = RoomId("room", "server")
 
-    lateinit var cut: OlmEventHandler
+    private val dummyPickledAccount
+        = "3/r66zrJBjq31k9A1hFSvIjAhA1PWCM1QEsOSl18NppbOMdV1pCpr+R6gJxRN7QHLYTyClCLJp5cpSEOwj8bVTP4uAAF0SEOdvo26OdV0b6dq85NyIYNmkC+lbuvFerVEhmFHqRNsAkYlr0r+XNa4STYVY9Y1ks5ZEXXqmzYf+hVx1fNRPIyPzn/z6ZxCPwo2MoAHLr7VjotOX3vgz8vGzLoS4Dc2476M45rp2Jnjo4NRVHQeSQgcw"
 
-    val alice = UserId("alice", "server")
-    val bob = UserId("bob", "server")
-    val roomId = RoomId("room", "server")
+    private val olmStoreMock =  OlmStoreMock().apply {
+        olmAccount.value = dummyPickledAccount
+    }
+    private val olmEventHandlerRequestHandlerMock = OlmEventHandlerRequestHandlerMock()
 
-    lateinit var olmStoreMock: OlmStoreMock
-    lateinit var olmEventHandlerRequestHandlerMock: OlmEventHandlerRequestHandlerMock
+    private val cut: OlmEventHandler
 
-    beforeEach {
-        olmStoreMock = OlmStoreMock()
-        olmEventHandlerRequestHandlerMock = OlmEventHandlerRequestHandlerMock()
-
-        olmStoreMock.olmAccount.value = freeAfter(OlmAccount.create()) { it.pickle("") }
+    init {
 
         val eventEmitter: ClientEventEmitterImpl<List<ClientEvent<*>>> =
             object : ClientEventEmitterImpl<List<ClientEvent<*>>>() {}
@@ -81,7 +82,8 @@ class OlmEventHandlerTest : ShouldSpec({
     // ##########################
     // forgetOldFallbackKey
     // ##########################
-    should("forget old fallback key after timestamp") {
+    @Test
+    fun `forget old fallback key after timestamp`() = runTest {
         data class OlmInfos(
             val olmAccount: String,
             val fallbackKey: String
@@ -146,7 +148,8 @@ class OlmEventHandlerTest : ShouldSpec({
     // ##########################
     // handleOlmKeysChange
     // ##########################
-    should("create and upload new one time keys when server has 49 one time keys") {
+    @Test
+    fun `create and upload new one time keys when server has 49 one time keys`() = runTest {
         cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), null))
         cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 0), null))
 
@@ -157,7 +160,8 @@ class OlmEventHandlerTest : ShouldSpec({
 
         captureOneTimeKeys[0].keys shouldNotContainAnyOf captureOneTimeKeys[1].keys
     }
-    should("re-upload generated keys when failed") {
+    @Test
+    fun `re-upload generated keys when failed`() = runTest {
         olmEventHandlerRequestHandlerMock.setOneTimeKeys =
             Result.failure(
                 MatrixServerException(
@@ -176,7 +180,8 @@ class OlmEventHandlerTest : ShouldSpec({
         captureOneTimeKeys[0].keys shouldHaveSize 26
         captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
     }
-    should("not fail when re-upload gives 4xx failure because we most likely already uploaded them") {
+    @Test
+    fun `not fail when re-upload gives 4xx failure because we most likely already uploaded them`() = runTest {
         olmEventHandlerRequestHandlerMock.setOneTimeKeys =
             Result.failure(
                 MatrixServerException(
@@ -206,13 +211,15 @@ class OlmEventHandlerTest : ShouldSpec({
         captureOneTimeKeys[0].keys shouldHaveSize 26
         captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
     }
-    should("not upload keys when server has 50 one time keys") {
+    @Test
+    fun `not upload keys when server has 50 one time keys`() = runTest {
         cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 50), null))
         val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
         captureOneTimeKeys should beEmpty()
     }
 
-    should("create and upload fallback key, when missing") {
+    @Test
+    fun `create and upload fallback key when missing`() = runTest {
         cut.handleOlmKeysChange(OlmKeysChange(null, setOf()))
         cut.handleOlmKeysChange(OlmKeysChange(null, setOf()))
 
@@ -227,7 +234,8 @@ class OlmEventHandlerTest : ShouldSpec({
 
         fallbackKey1 shouldNotBe fallbackKey2
     }
-    should("not upload fallback key when server has one") {
+    @Test
+    fun `not upload fallback key when server has one`() = runTest {
         cut.handleOlmKeysChange(OlmKeysChange(null, setOf(KeyAlgorithm.SignedCurve25519)))
         val captureFallbackKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.second }
         captureFallbackKeys should beEmpty()
@@ -236,7 +244,8 @@ class OlmEventHandlerTest : ShouldSpec({
     // ##########################
     // handleOlmEncryptedRoomKeyEventContent
     // ##########################
-    should("store inbound megolm session") {
+    @Test
+    fun `store inbound megolm session`() = runTest {
         val outboundSession = OlmOutboundGroupSession.create()
 
         val eventContent = RoomKeyEventContent(
@@ -279,7 +288,8 @@ class OlmEventHandlerTest : ShouldSpec({
     // ##########################
     // handleMemberEvents
     // ##########################
-    should("remove megolm session") {
+    @Test
+    fun `remove megolm session`() = runTest {
         olmStoreMock.roomEncryptionAlgorithm[roomId] = EncryptionAlgorithm.Megolm
 
         olmStoreMock.outboundMegolmSession[roomId] = StoredOutboundMegolmSession(roomId, pickled = "")
@@ -297,7 +307,8 @@ class OlmEventHandlerTest : ShouldSpec({
         )
         olmStoreMock.outboundMegolmSession[roomId] shouldBe null
     }
-    should("update new devices in megolm session") {
+    @Test
+    fun `update new devices in megolm session`() = runTest {
         olmStoreMock.roomEncryptionAlgorithm[roomId] = EncryptionAlgorithm.Megolm
         olmStoreMock.historyVisibility = HistoryVisibilityEventContent.HistoryVisibility.SHARED
         olmStoreMock.devices[roomId] = mapOf(alice to setOf("A1", "A2"))
@@ -320,4 +331,4 @@ class OlmEventHandlerTest : ShouldSpec({
             newDevices = mapOf(alice to setOf("A1", "A2"))
         )
     }
-})
+}

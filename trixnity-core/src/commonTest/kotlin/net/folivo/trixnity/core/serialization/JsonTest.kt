@@ -18,12 +18,13 @@ import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Unknown
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
 @ExperimentalSerializationApi
-class JsonTest {
+class JsonTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
 
     @Test

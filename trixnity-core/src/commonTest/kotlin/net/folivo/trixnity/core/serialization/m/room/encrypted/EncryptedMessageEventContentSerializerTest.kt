@@ -10,10 +10,11 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Unknown
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class EncryptedMessageEventContentSerializerTest {
+class EncryptedMessageEventContentSerializerTest : TrixnityBaseTest() {
 
     private val json = createMatrixEventJson()
 
