@@ -36,6 +36,7 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
@@ -48,6 +49,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod.Sas
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequestToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
@@ -85,6 +88,7 @@ private val body: ShouldSpec.() -> Unit = {
     lateinit var olmEncryptionServiceMock: OlmEncryptionServiceMock
     lateinit var roomServiceMock: RoomServiceMock
     lateinit var keyServiceMock: KeyServiceMock
+    lateinit var userServiceMock: UserServiceMock
     lateinit var keyTrustServiceMock: KeyTrustServiceMock
     lateinit var keySecretServiceMock: KeySecretServiceMock
     val json = createMatrixEventJson()
@@ -99,6 +103,7 @@ private val body: ShouldSpec.() -> Unit = {
         olmDecrypterMock = OlmDecrypterMock()
         olmEncryptionServiceMock = OlmEncryptionServiceMock()
         roomServiceMock = RoomServiceMock()
+        userServiceMock = UserServiceMock()
         keyServiceMock = KeyServiceMock()
         keyTrustServiceMock = KeyTrustServiceMock()
         keySecretServiceMock = KeySecretServiceMock()
@@ -117,6 +122,7 @@ private val body: ShouldSpec.() -> Unit = {
             olmDecrypter = olmDecrypterMock,
             olmEncryptionService = olmEncryptionServiceMock,
             roomService = roomServiceMock,
+            userService = userServiceMock,
             keyService = keyServiceMock,
             keyTrustService = keyTrustServiceMock,
             keySecretService = keySecretServiceMock,
@@ -397,6 +403,23 @@ private val body: ShouldSpec.() -> Unit = {
         }
     }
     context(VerificationServiceImpl::createUserVerificationRequest.name) {
+        beforeTest {
+            userServiceMock.roomUsers.put(
+                Pair(bobUserId, roomId), flowOf(
+                    RoomUser(
+                        roomId, bobUserId, "Bob",
+                        ClientEvent.RoomEvent.StateEvent(
+                            MemberEventContent(membership = Membership.JOIN),
+                            id = EventId("0"),
+                            sender = bobUserId,
+                            roomId,
+                            Clock.System.now().toEpochMilliseconds(),
+                            stateKey = bobUserId.full
+                        )
+                    )
+                )
+            )
+        }
         context("no direct room with user exists") {
             should("create room and send request into it") {
                 var createRoomCalled = false
@@ -431,6 +454,44 @@ private val body: ShouldSpec.() -> Unit = {
             should("send request to existing room") {
                 globalAccountDataStore.save(
                     GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
+                )
+                val result = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
+                val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
+                roomServiceMock.outbox.value =
+                    listOf(
+                        flowOf(
+                            RoomOutboxMessage(
+                                transactionId = "1",
+                                roomId = roomId,
+                                content = message,
+                                eventId = EventId("bla"),
+                                createdAt = Clock.System.now(),
+                            )
+                        )
+                    )
+                result.await()
+            }
+        }
+        context("direct room with user exists but other user left and a new direct room was created") {
+            should("send request to room with other user present") {
+                val abandonedRoom = RoomId("abandonedRoom", "Server")
+                globalAccountDataStore.save(
+                    GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(abandonedRoom, roomId))))
+                )
+                userServiceMock.roomUsers.put(
+                    Pair(bobUserId, abandonedRoom), flowOf(
+                        RoomUser(
+                            roomId, bobUserId, "Bob",
+                            ClientEvent.RoomEvent.StateEvent(
+                                MemberEventContent(membership = Membership.LEAVE),
+                                id = EventId("0"),
+                                sender = bobUserId,
+                                roomId,
+                                Clock.System.now().toEpochMilliseconds(),
+                                stateKey = bobUserId.full
+                            )
+                        )
+                    )
                 )
                 val result = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
                 val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
@@ -641,10 +702,17 @@ private val body: ShouldSpec.() -> Unit = {
         // TODO enable this on Js
         should("honor data class equality") {
             globalAccountDataStore.save(GlobalAccountDataEvent(DefaultSecretKeyEventContent("KEY")))
-            globalAccountDataStore.save(GlobalAccountDataEvent(SecretKeyEventContent.AesHmacSha2Key(
-                name = "default key",
-                passphrase = SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2("salt", 10_000),
-            ), "KEY"))
+            globalAccountDataStore.save(
+                GlobalAccountDataEvent(
+                    SecretKeyEventContent.AesHmacSha2Key(
+                        name = "default key",
+                        passphrase = SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2(
+                            "salt",
+                            10_000
+                        ),
+                    ), "KEY"
+                )
+            )
 
             keyStore.updateCrossSigningKeys(aliceUserId) {
                 setOf(
