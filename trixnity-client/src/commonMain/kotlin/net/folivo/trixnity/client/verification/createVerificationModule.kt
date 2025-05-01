@@ -15,6 +15,7 @@ fun createVerificationModule() = module {
             olmDecrypter = get(),
             olmEncryptionService = get(),
             roomService = get(),
+            userService = get(),
             keyService = get(),
             keyTrustService = get(),
             keySecretService = get(),
