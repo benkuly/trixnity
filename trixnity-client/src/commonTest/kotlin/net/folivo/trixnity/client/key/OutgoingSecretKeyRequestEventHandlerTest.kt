@@ -2,6 +2,8 @@ package net.folivo.trixnity.client.key
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.beEmpty
@@ -41,10 +43,10 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.test.utils.*
 import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.test.utils.*
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
@@ -413,7 +415,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `requestSecretKeysSetup » send requests to verified cross signed devices`() = runTest {
+    fun `requestSecretKeysSetup » send requests to verified cross signed devices only`() = runTest {
         requestSecretKeysSetup()
         keyStore.updateSecrets {
             mapOf(
@@ -443,12 +445,20 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 "DEVICE_2" to StoredDeviceKeys(
                     SignedDeviceKeys(DeviceKeys(alice, "DEVICE_2", setOf(), keysOf()), mapOf()),
                     KeySignatureTrustLevel.CrossSigned(true)
+                ),
+                "DEVICE_3" to StoredDeviceKeys(
+                    SignedDeviceKeys(DeviceKeys(alice, "DEVICE_3", setOf(), keysOf(), dehydrated = true), mapOf()),
+                    KeySignatureTrustLevel.CrossSigned(true)
                 )
             )
         }
         cut.requestSecretKeys()
 
-        assertSoftly(sendToDeviceEvents?.get(alice)?.get("DEVICE_2")) {
+        val toDeviceMessages = sendToDeviceEvents.shouldNotBeNull()
+        toDeviceMessages.shouldHaveSize(1)
+        val aliceToDeviceMessages = toDeviceMessages[alice].shouldNotBeNull()
+        aliceToDeviceMessages.shouldHaveSize(1)
+        assertSoftly(aliceToDeviceMessages["DEVICE_2"]) {
             assertNotNull(this)
             this.shouldBeInstanceOf<SecretKeyRequestEventContent>()
             this.name shouldBe SecretType.M_CROSS_SIGNING_USER_SIGNING.id

@@ -377,22 +377,20 @@ class VerificationServiceImpl(
             if (crossSigningKeys.isEmpty()) return@combine SelfVerificationMethods.NoCrossSigningEnabled
             if (bootstrapRunning) return@combine SelfVerificationMethods.NoCrossSigningEnabled
 
-            val deviceVerificationMethod = deviceKeys.entries
-                // FIXME test
-                .filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned && it.value.value.signed.dehydrated != true }
-                .map { it.key }
-                .let {
-                    val sendToDevices = it - ownDeviceId
-                    if (sendToDevices.isNotEmpty())
-                        setOf(
-                            SelfVerificationMethod.CrossSignedDeviceVerification(
-                                ownUserId,
-                                sendToDevices.toSet(),
-                                createDeviceVerificationRequestStable
-                            )
+            val sendToDevices = deviceKeys
+                .filterValues { it.trustLevel is KeySignatureTrustLevel.CrossSigned && it.value.signed.dehydrated != true }
+                .keys - ownDeviceId
+
+            val deviceVerificationMethod =
+                if (sendToDevices.isNotEmpty())
+                    setOf(
+                        SelfVerificationMethod.CrossSignedDeviceVerification(
+                            ownUserId,
+                            sendToDevices.toSet(),
+                            createDeviceVerificationRequestStable
                         )
-                    else setOf()
-                }
+                    )
+                else setOf()
 
             val recoveryKeyMethods = when (val content = defaultKey?.content) {
                 is AesHmacSha2Key -> when (content.passphrase) {

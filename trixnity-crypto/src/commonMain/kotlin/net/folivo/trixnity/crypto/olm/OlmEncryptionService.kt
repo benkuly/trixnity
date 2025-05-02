@@ -198,7 +198,7 @@ class OlmEncryptionServiceImpl(
     ): Result<OlmEncryptedToDeviceEventContent> = runCatchingCancellationAware {
         val deviceKeys = store.getDeviceKeys(userId)?.get(deviceId)
         val trustLevel = store.getTrustLevel(userId, deviceId)
-        if (deviceKeys?.dehydrated == true && trustLevel !is DeviceTrustLevel.CrossSigned) // FIXME test
+        if (deviceKeys?.dehydrated == true && trustLevel !is DeviceTrustLevel.CrossSigned)
             throw EncryptOlmError.DehydratedDeviceNotCrossSigned
         val identityKey = deviceKeys?.get<Curve25519Key>()
             ?: throw EncryptOlmError.KeyNotFound(KeyAlgorithm.Curve25519)
@@ -328,7 +328,7 @@ class OlmEncryptionServiceImpl(
         val senderIdentityKey = encryptedContent.senderKey
         val senderDeviceKeys = store.findDeviceKeys(userId, senderIdentityKey)
             ?: throw DecryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
-        if (senderDeviceKeys.dehydrated == true) // FIXME test
+        if (senderDeviceKeys.dehydrated == true)
             throw DecryptOlmError.DehydratedDeviceNotAllowed
         val deviceId = senderDeviceKeys.deviceId
         val ciphertext = encryptedContent.ciphertext[ownCurve25519Key.value.value]
@@ -568,7 +568,7 @@ class OlmEncryptionServiceImpl(
                     store.getDeviceKeys(roomId, store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey)
                         .mapValues { (userId, deviceKeys) ->
                             if (userId == ownUserId) {
-                                deviceKeys.filter { it.value.dehydrated != true } // FIXME test
+                                deviceKeys.filter { it.value.dehydrated != true }
                             } else deviceKeys
                         }.mapValues { it.value.keys }
                 try {

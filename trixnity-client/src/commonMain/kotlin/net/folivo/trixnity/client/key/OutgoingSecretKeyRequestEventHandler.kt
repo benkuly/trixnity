@@ -69,7 +69,7 @@ class OutgoingSecretKeyRequestEventHandler(
             ?.filter {
                 it.value.trustLevel.isVerified
                         && it.value.value.signed.deviceId != ownDeviceId
-                        && it.value.value.signed.dehydrated != true // FIXME test
+                        && it.value.value.signed.dehydrated != true
             }
             ?.map { it.value.value.signed.deviceId }?.toSet()
         if (receiverDeviceIds.isNullOrEmpty()) {

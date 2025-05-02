@@ -15,8 +15,9 @@ import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
+import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
@@ -25,6 +26,8 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.subscribeEventList
+import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.membershipsAllowedToReceiveKey
 import net.folivo.trixnity.crypto.sign.SignService
@@ -269,7 +272,6 @@ class OutdatedKeysHandler(
         }
     }
 
-    @OptIn(MSC3814::class)
     private suspend fun handleOutdatedDeviceKeys(
         userId: UserId,
         devices: Map<String, SignedDeviceKeys>,
@@ -289,11 +291,8 @@ class OutdatedKeysHandler(
             val trustLevel = keyTrustService.calculateDeviceKeysTrustLevel(deviceKeys)
             log.trace { "updated outdated device keys ${deviceKeys.signed.deviceId} of user $userId with trust level $trustLevel" }
             StoredDeviceKeys(deviceKeys, trustLevel)
-        }.filterValues { storedDeviceKeys -> // FIXME test
-            storedDeviceKeys.value.signed.dehydrated != true || storedDeviceKeys.trustLevel is KeySignatureTrustLevel.CrossSigned
         }
-        val addedDevices = // FIXME test
-            (newDevices.filter { it.value.value.signed.userId != userInfo.userId || it.value.value.signed.dehydrated != true }.keys) - oldDevices.keys
+        val addedDevices = newDevices.keys - oldDevices.keys
         val removedDevices = oldDevices.keys - newDevices.keys
         // we can do this, because an outbound megolm session does only exist, when loadMembers has been called
         when {

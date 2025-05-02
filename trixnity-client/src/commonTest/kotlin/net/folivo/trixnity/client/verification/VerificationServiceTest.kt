@@ -53,10 +53,10 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
+import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
-import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
@@ -581,6 +581,34 @@ class VerificationServiceTest : TrixnityBaseTest() {
                         Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
                         KeySignatureTrustLevel.NotCrossSigned
                     )
+                )
+            }
+            cut.getSelfVerificationMethods().first()
+                .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>()
+                .methods.size shouldBe 0
+        }
+
+    @Test
+    fun `don't add CrossSignedDeviceVerification when there is only a dehydrated device`() =
+        runTest(setup = { getSelfVerificationMethodsSetup() }) {
+            keyStore.updateCrossSigningKeys(aliceUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(CrossSigningKeys(aliceUserId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(true)
+                    ),
+                )
+            }
+            keyStore.updateDeviceKeys(aliceUserId) {
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    ),
+                    "DEV2" to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, "DEV2", setOf(), keysOf(), true), null),
+                        KeySignatureTrustLevel.CrossSigned(false)
+                    ),
                 )
             }
             cut.getSelfVerificationMethods().first()
