@@ -11,13 +11,20 @@ import io.ktor.http.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import net.folivo.trixnity.api.server.matrixApiServer
-import net.folivo.trixnity.clientserverapi.model.devices.DeleteDevices
-import net.folivo.trixnity.clientserverapi.model.devices.Device
-import net.folivo.trixnity.clientserverapi.model.devices.GetDevices
-import net.folivo.trixnity.clientserverapi.model.devices.UpdateDevice
+import net.folivo.trixnity.clientserverapi.model.devices.*
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
+import net.folivo.trixnity.core.MSC3814
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
+import net.folivo.trixnity.core.model.keys.DeviceKeys
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
+import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Olm
+import net.folivo.trixnity.core.model.keys.Key.*
+import net.folivo.trixnity.core.model.keys.Signed
+import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -193,6 +200,257 @@ class DevicesRoutesTest : TrixnityBaseTest() {
         verifySuspend {
             handlerMock.deleteDevice(assert {
                 it.endpoint.deviceId shouldBe "ABCDEF"
+            })
+        }
+    }
+
+    @OptIn(MSC3814::class)
+    @Test
+    fun shouldGetDehydratedDevice() = testApplication {
+        initCut()
+        everySuspend { handlerMock.getDehydratedDevice(any()) }
+            .returns(
+                GetDehydratedDevice.Response(
+                    deviceId = "ABCDEFG",
+                    deviceData = DehydratedDeviceData.DehydrationV2("encrypted dehydrated device", "random nonce")
+                )
+            )
+        val response = client.get("/_matrix/client/v3/dehydrated_device") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                    "device_id":"ABCDEFG",
+                    "device_data":{
+                        "device_pickle": "encrypted dehydrated device",
+                        "nonce": "random nonce",
+                        "algorithm": "m.dehydration.v2"
+                    }
+                }
+            """.trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.getDehydratedDevice(any())
+        }
+    }
+
+    @OptIn(MSC3814::class)
+    @Test
+    fun shouldSetDehydratedDevice() = testApplication {
+        initCut()
+        everySuspend { handlerMock.setDehydratedDevice(any()) }
+            .returns(SetDehydratedDevice.Response("ABCDEFG"))
+        val response = client.put("/_matrix/client/v3/dehydrated_device") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                    "device_id": "ABCDEFG",
+                    "device_data": {
+                        "device_pickle": "encrypted dehydrated device",
+                        "nonce": "random nonce",
+                        "algorithm": "m.dehydration.v2"
+                    },
+                    "device_keys": {
+                        "user_id": "@alice:example.com",
+                        "device_id": "JLAFKJWSCS",
+                        "algorithms": [
+                            "m.olm.v1.curve25519-aes-sha2",
+                            "m.megolm.v1.aes-sha2"
+                        ],
+                        "keys": {
+                            "curve25519:JLAFKJWSCS": "3C5BFWi2Y8MaVvjM8M22DBmh24PmgR0nPvJOIArzgyI",
+                            "ed25519:JLAFKJWSCS": "lEuiRJBit0IG6nUf5pUzWTUEsRVVe/HJkoKuEww9ULI"
+                        },
+                        "dehydrated": true,
+                        "signatures": {
+                            "@alice:example.com": {
+                                "ed25519:JLAFKJWSCS": "dSO80A01XiigH3uBiDVx/EjzaoycHcjq9lfQX0uWsqxl2giMIiSPR8a4d291W1ihKJL/a+myXS367WT6NAIcBA"
+                            }
+                        }
+                    },
+                    "one_time_keys": {
+                        "curve25519:AAAAAQ": "/qyvZvwjiTxGdGU0RCguDCLeR+nmsb3FfNG3/Ve4vU8",
+                        "signed_curve25519:AAAAHg": {
+                            "key": "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                            "signatures": {
+                                "@alice:example.com": {
+                                    "ed25519:JLAFKJWSCS": "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                                }
+                            }
+                        },
+                        "signed_curve25519:AAAAHQ": {
+                            "key": "j3fR3HemM16M7CWhoI4Sk5ZsdmdfQHsKL1xuSft6MSw",
+                            "signatures": {
+                                "@alice:example.com": {
+                                    "ed25519:JLAFKJWSCS": "IQeCEPb9HFk217cU9kw9EOiusC6kMIkoIRnbnfOh5Oc63S1ghgyjShBGpu34blQomoalCyXWyhaaT3MrLZYQAA"
+                                }
+                            }
+                        }
+                    },
+                    "fallback_keys": {
+                        "signed_curve25519:AAAAHg": {
+                            "key": "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs",
+                            "fallback": true,
+                            "signatures": {
+                                "@alice:example.com": {
+                                    "ed25519:JLAFKJWSCS": "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                                }
+                            }
+                        }
+                    },
+                    "initial_device_display_name": "dehydrated device"
+                }
+            """.trimIndent()
+            )
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """{"device_id":"ABCDEFG"}"""
+        }
+        verifySuspend {
+            handlerMock.setDehydratedDevice(assert {
+                it.requestBody shouldBe SetDehydratedDevice.Request(
+                    deviceId = "ABCDEFG",
+                    deviceData = DehydratedDeviceData.DehydrationV2("encrypted dehydrated device", "random nonce"),
+                    deviceKeys = Signed(
+                        DeviceKeys(
+                            userId = UserId("alice", "example.com"),
+                            deviceId = "JLAFKJWSCS",
+                            algorithms = setOf(Olm, Megolm),
+                            keys = keysOf(
+                                Curve25519Key("JLAFKJWSCS", "3C5BFWi2Y8MaVvjM8M22DBmh24PmgR0nPvJOIArzgyI"),
+                                Ed25519Key("JLAFKJWSCS", "lEuiRJBit0IG6nUf5pUzWTUEsRVVe/HJkoKuEww9ULI")
+                            ),
+                            dehydrated = true,
+                        ),
+                        mapOf(
+                            UserId("alice", "example.com") to keysOf(
+                                Ed25519Key(
+                                    "JLAFKJWSCS",
+                                    "dSO80A01XiigH3uBiDVx/EjzaoycHcjq9lfQX0uWsqxl2giMIiSPR8a4d291W1ihKJL/a+myXS367WT6NAIcBA"
+                                )
+                            )
+                        ),
+                    ),
+                    oneTimeKeys = keysOf(
+                        Curve25519Key("AAAAAQ", "/qyvZvwjiTxGdGU0RCguDCLeR+nmsb3FfNG3/Ve4vU8"),
+                        SignedCurve25519Key(
+                            "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs", signatures = mapOf(
+                                UserId("alice", "example.com") to keysOf(
+                                    Ed25519Key(
+                                        "JLAFKJWSCS",
+                                        "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                                    )
+                                )
+                            )
+                        ),
+                        SignedCurve25519Key(
+                            "AAAAHQ", "j3fR3HemM16M7CWhoI4Sk5ZsdmdfQHsKL1xuSft6MSw", signatures = mapOf(
+                                UserId("alice", "example.com") to keysOf(
+                                    Ed25519Key(
+                                        "JLAFKJWSCS",
+                                        "IQeCEPb9HFk217cU9kw9EOiusC6kMIkoIRnbnfOh5Oc63S1ghgyjShBGpu34blQomoalCyXWyhaaT3MrLZYQAA"
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    fallbackKeys = keysOf(
+                        SignedCurve25519Key(
+                            "AAAAHg", "zKbLg+NrIjpnagy+pIY6uPL4ZwEG2v+8F9lmgsnlZzs", true, mapOf(
+                                UserId("alice", "example.com") to keysOf(
+                                    Ed25519Key(
+                                        "JLAFKJWSCS",
+                                        "FLWxXqGbwrb8SM3Y795eB6OA8bwBcoMZFXBqnTn58AYWZSqiD45tlBVcDa2L7RwdKXebW/VzDlnfVJ+9jok1Bw"
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    initialDeviceDisplayName = "dehydrated device"
+                )
+            })
+        }
+    }
+
+    @OptIn(MSC3814::class)
+    @Test
+    fun shouldDeleteDehydratedDevice() = testApplication {
+        initCut()
+        everySuspend { handlerMock.deleteDehydratedDevice(any()) }
+            .returns(DeleteDehydratedDevice.Response("ABCDEFG"))
+        val response = client.delete("/_matrix/client/v3/dehydrated_device") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """{"device_id":"ABCDEFG"}"""
+        }
+        verifySuspend {
+            handlerMock.deleteDehydratedDevice(any())
+        }
+    }
+
+    @OptIn(MSC3814::class)
+    @Test
+    fun shouldGetDehydratedDeviceEvents() = testApplication {
+        initCut()
+        everySuspend { handlerMock.getDehydratedDeviceEvents(any()) }
+            .returns(
+                GetDehydratedDeviceEvents.Response(
+                    "next",
+                    listOf(
+                        ClientEvent.ToDeviceEvent(
+                            RoomKeyEventContent(
+                                roomId = RoomId("!Cuyf34gef24t:localhost"),
+                                sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                                sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
+                                algorithm = Megolm
+                            ),
+                            sender = UserId("@user:matrix.org"),
+                        )
+                    )
+                )
+            )
+        val response = client.post("/_matrix/client/v3/dehydrated_device/ABCDEFG/events") {
+            bearerAuth("token")
+            contentType(ContentType.Application.Json)
+            setBody("""{"next_batch":"batch_me_if_you_can"}""")
+        }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe """
+                {
+                    "next_batch":"next",
+                    "events":[
+                        {
+                            "content":{
+                                "algorithm":"m.megolm.v1.aes-sha2",
+                                "room_id":"!Cuyf34gef24t:localhost",
+                                "session_id":"X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
+                                "session_key":"AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."
+                            },
+                            "sender":"@user:matrix.org",
+                            "type":"m.room_key"
+                        }
+                    ]
+                }
+            """.trimToFlatJson()
+        }
+        verifySuspend {
+            handlerMock.getDehydratedDeviceEvents(assert {
+                it.endpoint.deviceId shouldBe "ABCDEFG"
+                it.requestBody.nextBatch shouldBe "batch_me_if_you_can"
             })
         }
     }

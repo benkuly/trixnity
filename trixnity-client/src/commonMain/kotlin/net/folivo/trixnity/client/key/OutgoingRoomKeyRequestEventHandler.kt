@@ -123,7 +123,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
         keyStore.deleteRoomKeyRequest(content.requestId)
     }
 
-    @OptIn(ExperimentalTrixnityApi::class)
+    @OptIn(MSC3814::class)
     override suspend fun requestRoomKeys(
         roomId: RoomId,
         sessionId: String,

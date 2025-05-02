@@ -54,7 +54,7 @@ class OutgoingSecretKeyRequestEventHandler(
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
     }
 
-    @OptIn(ExperimentalTrixnityApi::class)
+    @OptIn(MSC3814::class)
     internal suspend fun requestSecretKeys() {
         val missingSecrets = SecretType.entries
             .subtract(keyStore.getSecrets().keys)

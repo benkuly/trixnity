@@ -334,7 +334,7 @@ class VerificationServiceImpl(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTrixnityApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, MSC3814::class)
     override fun getSelfVerificationMethods(): Flow<SelfVerificationMethods> {
         return combine(
             keyService.bootstrapRunning,

@@ -269,7 +269,7 @@ class OutdatedKeysHandler(
         }
     }
 
-    @OptIn(ExperimentalTrixnityApi::class)
+    @OptIn(MSC3814::class)
     private suspend fun handleOutdatedDeviceKeys(
         userId: UserId,
         devices: Map<String, SignedDeviceKeys>,

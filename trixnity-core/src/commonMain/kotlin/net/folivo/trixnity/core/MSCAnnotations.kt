@@ -1,5 +1,8 @@
 package net.folivo.trixnity.core
 
+/**
+ * @see <a href="https://github.com/matrix-org/matrix-spec-proposals/pull/3814">MSC3814</a>
+ */
 @RequiresOptIn(message = "This API is experimental. It could change in the future without notice.")
 @Retention(AnnotationRetention.BINARY)
 @Target(
@@ -11,4 +14,4 @@ package net.folivo.trixnity.core
     AnnotationTarget.FUNCTION,
     AnnotationTarget.TYPEALIAS
 )
-annotation class ExperimentalTrixnityApi
+annotation class MSC3814

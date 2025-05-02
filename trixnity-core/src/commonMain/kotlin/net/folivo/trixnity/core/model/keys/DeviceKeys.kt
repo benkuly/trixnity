@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.model.keys
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.ExperimentalTrixnityApi
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.UserId
 
 @Serializable
@@ -15,7 +15,7 @@ data class DeviceKeys(
     val algorithms: Set<EncryptionAlgorithm>,
     @SerialName("keys")
     val keys: Keys,
-    @ExperimentalTrixnityApi
+    @MSC3814
     @SerialName("dehydrated")
     val dehydrated: Boolean? = null,
 )

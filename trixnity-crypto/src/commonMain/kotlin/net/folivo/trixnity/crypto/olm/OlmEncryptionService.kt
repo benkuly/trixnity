@@ -12,7 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
-import net.folivo.trixnity.core.ExperimentalTrixnityApi
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -189,7 +189,7 @@ class OlmEncryptionServiceImpl(
         }
     }
 
-    @OptIn(ExperimentalTrixnityApi::class)
+    @OptIn(MSC3814::class)
     override suspend fun encryptOlm(
         content: EventContent,
         userId: UserId,
@@ -319,7 +319,7 @@ class OlmEncryptionServiceImpl(
             .also { log.trace { "encrypted event: $it" } }
     }.onFailure { log.warn(it) { "encrypt olm failed" } }
 
-    @OptIn(ExperimentalSerializationApi::class, ExperimentalTrixnityApi::class)
+    @OptIn(ExperimentalSerializationApi::class, MSC3814::class)
     override suspend fun decryptOlm(
         event: ClientEvent.ToDeviceEvent<OlmEncryptedToDeviceEventContent>,
     ): Result<DecryptedOlmEvent<*>> = runCatchingCancellationAware {
@@ -493,7 +493,7 @@ class OlmEncryptionServiceImpl(
         } else newSessions
     }
 
-    @OptIn(ExperimentalTrixnityApi::class)
+    @OptIn(MSC3814::class)
     override suspend fun encryptMegolm(
         content: MessageEventContent,
         roomId: RoomId,

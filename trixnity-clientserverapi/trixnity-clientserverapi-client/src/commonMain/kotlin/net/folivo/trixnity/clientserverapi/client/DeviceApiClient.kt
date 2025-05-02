@@ -1,7 +1,10 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import net.folivo.trixnity.clientserverapi.model.devices.*
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.keys.Keys
+import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
 
 interface DeviceApiClient {
     /**
@@ -32,6 +35,42 @@ interface DeviceApiClient {
      * @see [DeleteDevice]
      */
     suspend fun deleteDevice(deviceId: String, asUserId: UserId? = null): Result<UIA<Unit>>
+
+    /**
+     * @see [GetDehydratedDevice]
+     */
+    @MSC3814
+    suspend fun getDehydratedDevice(asUserId: UserId? = null): Result<GetDehydratedDevice.Response>
+
+    /**
+     * @see [SetDehydratedDevice]
+     */
+    @MSC3814
+    suspend fun setDehydratedDevice(
+        deviceId: String,
+        deviceData: DehydratedDeviceData,
+        deviceKeys: SignedDeviceKeys,
+        oneTimeKeys: Keys? = null,
+        fallbackKeys: Keys? = null,
+        initialDeviceDisplayName: String? = null,
+        asUserId: UserId? = null
+    ): Result<SetDehydratedDevice.Response>
+
+    /**
+     * @see [DeleteDehydratedDevice]
+     */
+    @MSC3814
+    suspend fun deleteDehydratedDevice(asUserId: UserId? = null): Result<DeleteDehydratedDevice.Response>
+
+    /**
+     * @see [GetDehydratedDeviceEvents]
+     */
+    @MSC3814
+    suspend fun getDehydratedDeviceEvents(
+        deviceId: String,
+        nextBatch: String? = null,
+        asUserId: UserId? = null
+    ): Result<GetDehydratedDeviceEvents.Response>
 }
 
 class DeviceApiClientImpl(
@@ -56,4 +95,42 @@ class DeviceApiClientImpl(
 
     override suspend fun deleteDevice(deviceId: String, asUserId: UserId?): Result<UIA<Unit>> =
         baseClient.uiaRequest(DeleteDevice(deviceId, asUserId))
+
+    @MSC3814
+    override suspend fun getDehydratedDevice(asUserId: UserId?): Result<GetDehydratedDevice.Response> =
+        baseClient.request(GetDehydratedDevice(asUserId))
+
+    @MSC3814
+    override suspend fun setDehydratedDevice(
+        deviceId: String,
+        deviceData: DehydratedDeviceData,
+        deviceKeys: SignedDeviceKeys,
+        oneTimeKeys: Keys?,
+        fallbackKeys: Keys?,
+        initialDeviceDisplayName: String?,
+        asUserId: UserId?
+    ): Result<SetDehydratedDevice.Response> =
+        baseClient.request(
+            SetDehydratedDevice(asUserId),
+            SetDehydratedDevice.Request(
+                deviceId = deviceId,
+                deviceData = deviceData,
+                deviceKeys = deviceKeys,
+                oneTimeKeys = oneTimeKeys,
+                fallbackKeys = fallbackKeys,
+                initialDeviceDisplayName = initialDeviceDisplayName
+            )
+        )
+
+    @MSC3814
+    override suspend fun deleteDehydratedDevice(asUserId: UserId?): Result<DeleteDehydratedDevice.Response> =
+        baseClient.request(DeleteDehydratedDevice(asUserId))
+
+    @MSC3814
+    override suspend fun getDehydratedDeviceEvents(
+        deviceId: String,
+        nextBatch: String?,
+        asUserId: UserId?
+    ): Result<GetDehydratedDeviceEvents.Response> =
+        baseClient.request(GetDehydratedDeviceEvents(deviceId, asUserId), GetDehydratedDeviceEvents.Request(nextBatch))
 }
