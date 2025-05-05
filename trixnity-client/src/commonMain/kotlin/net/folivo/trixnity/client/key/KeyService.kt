@@ -149,7 +149,13 @@ class KeyServiceImpl(
                         )
                     )
                     val encryptedMasterSigningKey = MasterKeyEventContent(
-                        encryptSecret(recoveryKey, keyId, "m.cross_signing.master", masterSigningPrivateKey, api.json)
+                        encryptSecret(
+                            key = recoveryKey,
+                            keyId = keyId,
+                            secretName = SecretType.M_CROSS_SIGNING_MASTER.id,
+                            secret = masterSigningPrivateKey,
+                            json = api.json
+                        )
                     )
                     val (selfSigningPrivateKey, selfSigningPublicKey) =
                         freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
@@ -166,11 +172,11 @@ class KeyServiceImpl(
                     )
                     val encryptedSelfSigningKey = SelfSigningKeyEventContent(
                         encryptSecret(
-                            recoveryKey,
-                            keyId,
-                            SecretType.M_CROSS_SIGNING_SELF_SIGNING.id,
-                            selfSigningPrivateKey,
-                            api.json
+                            key = recoveryKey,
+                            keyId = keyId,
+                            secretName = SecretType.M_CROSS_SIGNING_SELF_SIGNING.id,
+                            secret = selfSigningPrivateKey,
+                            json = api.json
                         )
                     )
                     val (userSigningPrivateKey, userSigningPublicKey) =
@@ -188,11 +194,11 @@ class KeyServiceImpl(
                     )
                     val encryptedUserSigningKey = UserSigningKeyEventContent(
                         encryptSecret(
-                            recoveryKey,
-                            keyId,
-                            SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
-                            userSigningPrivateKey,
-                            api.json
+                            key = recoveryKey,
+                            keyId = keyId,
+                            secretName = SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
+                            secret = userSigningPrivateKey,
+                            json = api.json
                         )
                     )
                     keyStore.updateSecrets {

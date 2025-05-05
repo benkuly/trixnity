@@ -7,7 +7,6 @@ import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
@@ -56,11 +55,19 @@ class KeyTrustServiceImpl(
         keyId: String,
         keyInfo: SecretKeyEventContent
     ): Result<Unit> {
-        val encryptedMasterKey = globalAccountDataStore.get<MasterKeyEventContent>().first()?.content
-            ?: return Result.failure(MasterKeyInvalidException("could not find encrypted master key"))
+        val encryptedMasterKey =
+            SecretType.M_CROSS_SIGNING_MASTER.getEncryptedSecret(globalAccountDataStore).first()?.content
+                ?: return Result.failure(MasterKeyInvalidException("could not find encrypted master key"))
         val decryptedPublicKey =
             kotlin.runCatching {
-                decryptSecret(key, keyId, keyInfo, "m.cross_signing.master", encryptedMasterKey, api.json)
+                decryptSecret(
+                    key = key,
+                    keyId = keyId,
+                    keyInfo = keyInfo,
+                    secretName = SecretType.M_CROSS_SIGNING_MASTER.id,
+                    secret = encryptedMasterKey,
+                    json = api.json
+                )
             }.getOrNull()
                 ?.let { privateKey ->
                     freeAfter(OlmPkSigning.create(privateKey)) { it.publicKey }

@@ -66,6 +66,7 @@ class IncomingSecretKeyRequestEventHandler(
             if (senderTrustLevel?.isVerified == true) {
                 val requestedSecret = request.name
                     ?.let { SecretType.ofId(it) }
+                    ?.takeIf { it.shareable } // FIXME test
                     ?.let { keyStore.getSecrets()[it] }
                 if (requestedSecret != null) {
                     log.info { "send incoming secret key request answer (${request.name}) to device $requestingDeviceId" }

@@ -54,9 +54,9 @@ class OutgoingSecretKeyRequestEventHandler(
         scope.launch(start = CoroutineStart.UNDISPATCHED) { requestSecretKeysWhenCrossSigned() }
     }
 
-    @OptIn(MSC3814::class)
     internal suspend fun requestSecretKeys() {
         val missingSecrets = SecretType.entries
+            .filter { it.shareable }
             .subtract(keyStore.getSecrets().keys)
             .subtract(keyStore.getAllSecretKeyRequests().mapNotNull { request ->
                 request.content.name?.let { SecretType.ofId(it) }
@@ -69,7 +69,7 @@ class OutgoingSecretKeyRequestEventHandler(
             ?.filter {
                 it.value.trustLevel.isVerified
                         && it.value.value.signed.deviceId != ownDeviceId
-                        && it.value.value.signed.dehydrated != true
+                        && @OptIn(MSC3814::class) it.value.value.signed.dehydrated != true
             }
             ?.map { it.value.value.signed.deviceId }?.toSet()
         if (receiverDeviceIds.isNullOrEmpty()) {
@@ -160,7 +160,10 @@ class OutgoingSecretKeyRequestEventHandler(
                         .getOrElse { false }
                 }
 
-                null -> false
+                SecretType.M_CROSS_SIGNING_MASTER, @OptIn(MSC3814::class) SecretType.M_DEHYDRATED_DEVICE, null -> {
+                    log.warn { "ignore secret $secretType, because we are not interested in it" }
+                    false
+                }
             }
             if (secretType == null || !publicKeyMatches) {
                 log.warn { "generated public key of secret ${request.content.name} did not match the original" }

@@ -189,7 +189,6 @@ class OlmEncryptionServiceImpl(
         }
     }
 
-    @OptIn(MSC3814::class)
     override suspend fun encryptOlm(
         content: EventContent,
         userId: UserId,
@@ -198,6 +197,7 @@ class OlmEncryptionServiceImpl(
     ): Result<OlmEncryptedToDeviceEventContent> = runCatchingCancellationAware {
         val deviceKeys = store.getDeviceKeys(userId)?.get(deviceId)
         val trustLevel = store.getTrustLevel(userId, deviceId)
+        @OptIn(MSC3814::class)
         if (deviceKeys?.dehydrated == true && trustLevel !is DeviceTrustLevel.CrossSigned)
             throw EncryptOlmError.DehydratedDeviceNotCrossSigned
         val identityKey = deviceKeys?.get<Curve25519Key>()
@@ -493,7 +493,6 @@ class OlmEncryptionServiceImpl(
         } else newSessions
     }
 
-    @OptIn(MSC3814::class)
     override suspend fun encryptMegolm(
         content: MessageEventContent,
         roomId: RoomId,
@@ -568,6 +567,7 @@ class OlmEncryptionServiceImpl(
                     store.getDeviceKeys(roomId, store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey)
                         .mapValues { (userId, deviceKeys) ->
                             if (userId == ownUserId) {
+                                @OptIn(MSC3814::class)
                                 deviceKeys.filter { it.value.dehydrated != true }
                             } else deviceKeys
                         }.mapValues { it.value.keys }

@@ -11,6 +11,7 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.MSC3814
 
 @Serializable(with = DehydratedDeviceDataSerializer::class)
+@OptIn(MSC3814::class)
 sealed interface DehydratedDeviceData {
     val algorithm: String
 
@@ -28,7 +29,6 @@ sealed interface DehydratedDeviceData {
     data class Unknown(override val algorithm: String, val raw: JsonObject) : DehydratedDeviceData
 }
 
-@OptIn(MSC3814::class)
 private class DehydratedDeviceDataSerializer : KSerializer<DehydratedDeviceData> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DehydratedDeviceData")
     override fun deserialize(decoder: Decoder): DehydratedDeviceData {

@@ -24,6 +24,7 @@ import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeyBackupVersion
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
 import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
@@ -407,6 +408,11 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
                     GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
                     "key3"
+                ),
+                @OptIn(MSC3814::class)
+                SecretType.M_DEHYDRATED_DEVICE to StoredSecret(
+                    GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                    "key4"
                 )
             )
         }
@@ -422,6 +428,11 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
                     GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
                     "key3"
+                ),
+                @OptIn(MSC3814::class)
+                SecretType.M_DEHYDRATED_DEVICE to StoredSecret(
+                    GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
+                    "key4"
                 )
             )
         }

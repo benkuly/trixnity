@@ -6,7 +6,6 @@ import net.folivo.trixnity.api.server.matrixEndpoint
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 
-@OptIn(MSC3814::class)
 internal fun Route.devicesApiRoutes(
     handler: DevicesApiHandler,
     json: Json,
@@ -17,8 +16,12 @@ internal fun Route.devicesApiRoutes(
     matrixEndpoint(json, contentMappings, handler::updateDevice)
     matrixUIAEndpoint(json, contentMappings, handler::deleteDevices)
     matrixUIAEndpoint(json, contentMappings, handler::deleteDevice)
+    @OptIn(MSC3814::class)
     matrixEndpoint(json, contentMappings, handler::getDehydratedDevice)
+    @OptIn(MSC3814::class)
     matrixEndpoint(json, contentMappings, handler::setDehydratedDevice)
+    @OptIn(MSC3814::class)
     matrixEndpoint(json, contentMappings, handler::deleteDehydratedDevice)
+    @OptIn(MSC3814::class)
     matrixEndpoint(json, contentMappings, handler::getDehydratedDeviceEvents)
 }

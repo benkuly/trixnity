@@ -1,14 +1,16 @@
 package net.folivo.trixnity.client.key
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.store.GlobalAccountDataStore
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.get
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.DehydratedDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
+import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage
@@ -52,7 +54,10 @@ internal suspend inline fun KeyStore.getCrossSigningKey(
 }
 
 internal fun SecretType.getEncryptedSecret(globalAccountDataStore: GlobalAccountDataStore) = when (this) {
+    SecretType.M_CROSS_SIGNING_MASTER -> globalAccountDataStore.get<MasterKeyEventContent>()
     SecretType.M_CROSS_SIGNING_USER_SIGNING -> globalAccountDataStore.get<UserSigningKeyEventContent>()
     SecretType.M_CROSS_SIGNING_SELF_SIGNING -> globalAccountDataStore.get<SelfSigningKeyEventContent>()
     SecretType.M_MEGOLM_BACKUP_V1 -> globalAccountDataStore.get<MegolmBackupV1EventContent>()
+    @OptIn(MSC3814::class)
+    SecretType.M_DEHYDRATED_DEVICE -> @OptIn(MSC3814::class) globalAccountDataStore.get<DehydratedDeviceEventContent>()
 }

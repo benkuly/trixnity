@@ -123,7 +123,6 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
         keyStore.deleteRoomKeyRequest(content.requestId)
     }
 
-    @OptIn(MSC3814::class)
     override suspend fun requestRoomKeys(
         roomId: RoomId,
         sessionId: String,
@@ -139,7 +138,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                     ?.filter {
                         it.value.trustLevel.isVerified
                                 && it.value.value.signed.deviceId != ownDeviceId
-                                && it.value.value.signed.dehydrated != true
+                                && @OptIn(MSC3814::class) it.value.value.signed.dehydrated != true
                     }
                     ?.map { it.value.value.signed.deviceId }?.toSet()
                 if (receiverDeviceIds.isNullOrEmpty()) {
