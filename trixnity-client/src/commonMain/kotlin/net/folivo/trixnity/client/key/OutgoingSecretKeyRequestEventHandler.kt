@@ -56,7 +56,7 @@ class OutgoingSecretKeyRequestEventHandler(
 
     internal suspend fun requestSecretKeys() {
         val missingSecrets = SecretType.entries
-            .filter { it.shareable }
+            .filter { it.cacheable }
             .subtract(keyStore.getSecrets().keys)
             .subtract(keyStore.getAllSecretKeyRequests().mapNotNull { request ->
                 request.content.name?.let { SecretType.ofId(it) }
@@ -160,7 +160,13 @@ class OutgoingSecretKeyRequestEventHandler(
                         .getOrElse { false }
                 }
 
-                SecretType.M_CROSS_SIGNING_MASTER, @OptIn(MSC3814::class) SecretType.M_DEHYDRATED_DEVICE, null -> {
+                @OptIn(MSC3814::class) SecretType.M_DEHYDRATED_DEVICE -> {
+                    // FIXME test
+                    // FIXME check by decrypt
+                    true
+                }
+
+                SecretType.M_CROSS_SIGNING_MASTER, null -> {
                     log.warn { "ignore secret $secretType, because we are not interested in it" }
                     false
                 }

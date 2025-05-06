@@ -231,6 +231,7 @@ class KeyServiceImpl(
                                 userSigningKey = userSigningKey
                             )
                         }
+                    // FIXME bootstrap dehydrated device
                 }.mapCatching { uiaFlow ->
                     uiaFlow.injectOnSuccessIntoUIA {
                         keyStore.updateOutdatedKeys { oldOutdatedKeys -> oldOutdatedKeys + userInfo.userId }

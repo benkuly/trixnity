@@ -32,6 +32,7 @@ class KeySecretServiceImpl(
         keyInfo: SecretKeyEventContent,
     ) {
         val decryptedSecrets = SecretType.entries
+            .filter { it.cacheable }
             .subtract(keyStore.getSecrets().keys)
             .mapNotNull { allowedSecret ->
                 val event = allowedSecret.getEncryptedSecret(globalAccountDataStore).first()
