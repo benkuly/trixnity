@@ -9,6 +9,7 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
@@ -17,7 +18,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
-private val log = KotlinLogging.logger(" net.folivo.trixnity.client.room.DirectRoomEventHandler")
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.DirectRoomEventHandler")
 
 class DirectRoomEventHandler(
     private val userInfo: UserInfo,
@@ -29,7 +30,7 @@ class DirectRoomEventHandler(
         api.sync.subscribeEventList(subscriber = ::setNewDirectEventFromMemberEvent).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun setNewDirectEventFromMemberEvent(events: List<StateEvent<MemberEventContent>>) {
+    internal suspend fun setNewDirectEventFromMemberEvent(events: List<ClientEvent.StateBaseEvent<MemberEventContent>>) {
         if (events.isNotEmpty()) {
             val initialDirectEventContentMappings =
                 globalAccountDataStore.get<DirectEventContent>().first()?.content?.mappings.orEmpty()
@@ -38,7 +39,7 @@ class DirectRoomEventHandler(
 
             var directEventContentMappings = initialDirectEventContentMappings
             for (event in events) {
-                val roomId = event.roomId
+                val roomId = event.roomId ?: continue // in sync, roomId is always there
                 val stateKey = event.stateKey
                 val sender = event.sender
                 val userWithMembershipChange = UserId(stateKey)

@@ -8,6 +8,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.events.*
 import kotlin.reflect.KClass
@@ -51,6 +53,7 @@ abstract class ClientEventEmitterImpl<T : List<ClientEvent<*>>> : ClientEventEmi
         val priority: Int,
     )
 
+    private val emitMutex = Mutex()
     private val _subscribers: MutableStateFlow<List<PrioritySubscribers<T>>> = MutableStateFlow(listOf())
 
     override fun subscribe(priority: Int, subscriber: Subscriber<T>): Unsubscriber {
@@ -74,11 +77,13 @@ abstract class ClientEventEmitterImpl<T : List<ClientEvent<*>>> : ClientEventEmi
     }
 
     override suspend fun emit(events: T) {
-        _subscribers.value.forEach { prioritySubscribers ->
-            coroutineScope {
-                log.trace { "process events in subscribers with priority ${prioritySubscribers.priority}" }
-                prioritySubscribers.subscribers.forEach { subscriber ->
-                    launch { subscriber(events) }
+        emitMutex.withLock {
+            _subscribers.value.forEach { prioritySubscribers ->
+                coroutineScope {
+                    log.trace { "process events in subscribers with priority ${prioritySubscribers.priority}" }
+                    prioritySubscribers.subscribers.forEach { subscriber ->
+                        launch { subscriber(events) }
+                    }
                 }
             }
         }
