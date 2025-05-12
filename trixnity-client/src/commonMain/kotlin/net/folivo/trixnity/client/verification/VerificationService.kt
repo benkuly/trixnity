@@ -334,7 +334,7 @@ class VerificationServiceImpl(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class, MSC3814::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getSelfVerificationMethods(): Flow<SelfVerificationMethods> {
         return combine(
             keyService.bootstrapRunning,
@@ -378,7 +378,7 @@ class VerificationServiceImpl(
             if (bootstrapRunning) return@combine SelfVerificationMethods.NoCrossSigningEnabled
 
             val sendToDevices = deviceKeys
-                .filterValues { it.trustLevel is KeySignatureTrustLevel.CrossSigned && it.value.signed.dehydrated != true }
+                .filterValues { it.trustLevel is KeySignatureTrustLevel.CrossSigned && @OptIn(MSC3814::class) it.value.signed.dehydrated != true }
                 .keys - ownDeviceId
 
             val deviceVerificationMethod =

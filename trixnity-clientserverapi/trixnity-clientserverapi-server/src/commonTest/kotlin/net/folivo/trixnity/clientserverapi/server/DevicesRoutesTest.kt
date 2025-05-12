@@ -228,7 +228,7 @@ class DevicesRoutesTest : TrixnityBaseTest() {
                     "device_data":{
                         "device_pickle": "encrypted dehydrated device",
                         "nonce": "random nonce",
-                        "algorithm": "m.dehydration.v2"
+                        "algorithm": "org.matrix.msc3814.v2"
                     }
                 }
             """.trimToFlatJson()
@@ -254,7 +254,7 @@ class DevicesRoutesTest : TrixnityBaseTest() {
                     "device_data": {
                         "device_pickle": "encrypted dehydrated device",
                         "nonce": "random nonce",
-                        "algorithm": "m.dehydration.v2"
+                        "algorithm": "org.matrix.msc3814.v2"
                     },
                     "device_keys": {
                         "user_id": "@alice:example.com",

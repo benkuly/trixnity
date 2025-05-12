@@ -26,15 +26,15 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.olm.getOlmPublicKeys
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 
 class SignServiceTest : TrixnityBaseTest() {
-    
+
     val json = createMatrixEventJson()
     lateinit var aliceSigningAccount: OlmAccount
     val ownUserId = UserId("me", "server")
@@ -93,12 +93,13 @@ class SignServiceTest : TrixnityBaseTest() {
             }
         }
     }
+
     @Test
     fun `return signatures from private and public key pair`() = runTestWithSetup {
         val (privateKey, publicKey) = freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
         val result = cut.signatures(
             JsonObject(mapOf("key" to JsonPrimitive("value"))),
-            SignWith.PrivateKey(privateKey, publicKey)
+            SignWith.KeyPair(privateKey, publicKey)
         )
         result shouldHaveSize 1
         assertSoftly(result.entries.first()) {
@@ -112,6 +113,7 @@ class SignServiceTest : TrixnityBaseTest() {
             }
         }
     }
+
     @Test
     fun `ignore unsigned and signature field`() = runTestWithSetup {
         val result1 = cut.signatures(JsonObject(mapOf("key" to JsonPrimitive("value"))))
@@ -127,6 +129,7 @@ class SignServiceTest : TrixnityBaseTest() {
 
         result1 shouldBe result2
     }
+
     @Test
     fun `sign and return signed object`() = runTestWithSetup {
         val event = StateEvent(
@@ -150,6 +153,7 @@ class SignServiceTest : TrixnityBaseTest() {
             }
         }
     }
+
     @Test
     fun `ignore unsigned field`() = runTestWithSetup {
         val event1 = StateEvent(
@@ -173,6 +177,7 @@ class SignServiceTest : TrixnityBaseTest() {
         val result2 = cut.sign(event2)
         result1.signatures shouldBe result2.signatures
     }
+
     @Test
     fun `sign curve25519`() = runTestWithSetup {
         cut.signCurve25519Key(
@@ -180,6 +185,7 @@ class SignServiceTest : TrixnityBaseTest() {
             keyValue = "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
         ).value.signatures?.size shouldBe 1
     }
+
     @Test
     fun `sign curve25519 with fallback`() = runTestWithSetup {
         cut.signCurve25519Key(
@@ -192,6 +198,7 @@ class SignServiceTest : TrixnityBaseTest() {
                     fallback = true,
                 ).value.signatures
     }
+
     @Test
     fun `verify and return valid`() = runTestWithSetup {
         val signedObject = aliceSigningAccountSignService.sign(
@@ -210,6 +217,7 @@ class SignServiceTest : TrixnityBaseTest() {
             mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
         ) shouldBe VerifyResult.Valid
     }
+
     @Test
     fun `verify and return MissingSignature when no key found`() = runTestWithSetup {
         val signedObject = aliceSigningAccountSignService.sign(
@@ -225,6 +233,7 @@ class SignServiceTest : TrixnityBaseTest() {
         )
         cut.verify(signedObject, mapOf(bob to setOf())).shouldBeInstanceOf<VerifyResult.MissingSignature>()
     }
+
     @Test
     fun `verify and return MissingSignature when no signature found for sigining keys`() = runTestWithSetup {
         val signedObject = aliceSigningAccountSignService.sign(
@@ -241,6 +250,7 @@ class SignServiceTest : TrixnityBaseTest() {
         cut.verify(signedObject, mapOf(bob to setOf(Ed25519Key("OTHER_DEVCE", "..."))))
             .shouldBeInstanceOf<VerifyResult.MissingSignature>()
     }
+
     @Test
     fun `verify SignedCurve25519Key`() = runTestWithSetup {
         val signedObject = aliceSigningAccountSignService.signCurve25519Key(
@@ -252,6 +262,7 @@ class SignServiceTest : TrixnityBaseTest() {
             mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
         ) shouldBe VerifyResult.Valid
     }
+
     @Test
     fun `return invalid`() = runTestWithSetup {
         val signedObject = Signed(

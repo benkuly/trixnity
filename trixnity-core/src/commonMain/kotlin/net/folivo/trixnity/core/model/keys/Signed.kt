@@ -30,6 +30,14 @@ open class Signed<T, U>(
         return true
     }
 
+    operator fun plus(moreSignatures: Signatures<U>?) = Signed(
+        signed,
+        if (signatures == null && moreSignatures == null) null
+        else (signatures.orEmpty().keys + moreSignatures.orEmpty().keys).associateWith { key ->
+            Keys(signatures?.get(key)?.keys.orEmpty() + moreSignatures?.get(key)?.keys.orEmpty())
+        }
+    )
+
     override fun hashCode(): Int {
         var result = signed?.hashCode() ?: 0
         result = 31 * result + signatures.hashCode()

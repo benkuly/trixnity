@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 
 class KeySecretServiceMock : KeySecretService {
     val decryptMissingSecretsCalled = MutableStateFlow<Triple<ByteArray, String, SecretKeyEventContent>?>(null)
-    override suspend fun decryptMissingSecrets(key: ByteArray, keyId: String, keyInfo: SecretKeyEventContent) {
+    override suspend fun decryptOrCreateMissingSecrets(key: ByteArray, keyId: String, keyInfo: SecretKeyEventContent) {
         decryptMissingSecretsCalled.value = Triple(key, keyId, keyInfo)
     }
 }

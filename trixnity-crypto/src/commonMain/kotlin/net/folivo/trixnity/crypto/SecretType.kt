@@ -19,8 +19,8 @@ enum class SecretType(val id: String, val cacheable: Boolean) {
     M_MEGOLM_BACKUP_V1(id = "m.megolm_backup.v1", cacheable = true),
 
     @MSC3814
-    @SerialName("m.dehydrated_device")
-    M_DEHYDRATED_DEVICE(id = "m.dehydrated_device", cacheable = true);
+    @SerialName("org.matrix.msc3814")
+    M_DEHYDRATED_DEVICE(id = "org.matrix.msc3814", cacheable = true);
 
     companion object {
         fun ofId(id: String): SecretType? = entries.find { it.id == id }

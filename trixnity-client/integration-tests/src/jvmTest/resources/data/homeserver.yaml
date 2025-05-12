@@ -57,3 +57,7 @@ rc_login:
   account:
     per_second: 100000
     burst_count: 1000000
+
+experimental_features:
+  msc2697_enabled: false
+  msc3814_enabled: true

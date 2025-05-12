@@ -17,14 +17,18 @@ import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
+import net.folivo.trixnity.client.store.StoredCrossSigningKeys
+import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.keys.SetCrossSigningKeys
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.clientserverapi.model.users.SetGlobalAccountData
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.DehydratedDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -32,8 +36,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
-import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
+import net.folivo.trixnity.crypto.SecretType.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -41,6 +44,7 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
 
+@OptIn(MSC3814::class)
 class KeyServiceTest : TrixnityBaseTest() {
     private val alice = UserId("alice", "server")
     private val aliceDevice = "ALICEDEVICE"
@@ -58,15 +62,16 @@ class KeyServiceTest : TrixnityBaseTest() {
     private val api = mockMatrixClientServerApiClient(apiConfig)
 
     private val cut = KeyServiceImpl(
-        UserInfo(alice, aliceDevice, Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
-        keyStore,
-        olmCryptoStore,
-        globalAccountDataStore,
-        roomServiceMock,
-        signServiceMock,
-        keyBackupServiceMock,
-        keyTrustServiceMock,
-        api,
+        userInfo = UserInfo(alice, aliceDevice, Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
+        keyStore = keyStore,
+        olmCryptoStore = olmCryptoStore,
+        globalAccountDataStore = globalAccountDataStore,
+        roomService = roomServiceMock,
+        signService = signServiceMock,
+        keyBackupService = keyBackupServiceMock,
+        keyTrustService = keyTrustServiceMock,
+        api = api,
+        matrixClientConfiguration = MatrixClientConfiguration().apply { experimentalFeatures.enableMSC3814 = true },
     )
 
     private var secretKeyEventContentCalled = false
@@ -75,6 +80,7 @@ class KeyServiceTest : TrixnityBaseTest() {
     private var masterKeyEventContentCalled = false
     private var userSigningKeyEventContentCalled = false
     private var selfSigningKeyEventContentCalled = false
+    private var dehydratedDeviceEventContentCalled = false
     private var setCrossSigningKeysCalled = false
 
     init {
@@ -124,6 +130,16 @@ class KeyServiceTest : TrixnityBaseTest() {
                 encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
                 encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
                 selfSigningKeyEventContentCalled = true
+            }
+            matrixJsonEndpoint(
+                SetGlobalAccountData(alice, "org.matrix.msc3814")
+            ) {
+                it.shouldBeInstanceOf<DehydratedDeviceEventContent>()
+                val encrypted = it.encrypted.values.first()
+                encrypted.shouldBeInstanceOf<JsonObject>()
+                encrypted["iv"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                encrypted["mac"].shouldBeInstanceOf<JsonPrimitive>().content shouldNot beEmpty()
+                dehydratedDeviceEventContentCalled = true
             }
             matrixJsonEndpoint(SetCrossSigningKeys()) {
                 it.request.masterKey shouldNotBe null
@@ -197,7 +213,8 @@ class KeyServiceTest : TrixnityBaseTest() {
         keyBackupServiceMock.bootstrapRoomKeyBackupCalled.value shouldBe true
         keyStore.getSecrets().keys shouldBe setOf(
             M_CROSS_SIGNING_SELF_SIGNING,
-            M_CROSS_SIGNING_USER_SIGNING
+            M_CROSS_SIGNING_USER_SIGNING,
+            M_DEHYDRATED_DEVICE,
         )
         secretKeyEventContentCalled shouldBe true
         capturedPassphrase shouldBe null
@@ -205,6 +222,7 @@ class KeyServiceTest : TrixnityBaseTest() {
         masterKeyEventContentCalled shouldBe true
         userSigningKeyEventContentCalled shouldBe true
         selfSigningKeyEventContentCalled shouldBe true
+        dehydratedDeviceEventContentCalled shouldBe true
         setCrossSigningKeysCalled shouldBe true
     }
 
@@ -240,7 +258,8 @@ class KeyServiceTest : TrixnityBaseTest() {
         keyBackupServiceMock.bootstrapRoomKeyBackupCalled.value shouldBe true
         keyStore.getSecrets().keys shouldBe setOf(
             M_CROSS_SIGNING_SELF_SIGNING,
-            M_CROSS_SIGNING_USER_SIGNING
+            M_CROSS_SIGNING_USER_SIGNING,
+            M_DEHYDRATED_DEVICE,
         )
         secretKeyEventContentCalled shouldBe true
         capturedPassphrase.shouldBeInstanceOf<AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2>()
@@ -248,6 +267,7 @@ class KeyServiceTest : TrixnityBaseTest() {
         masterKeyEventContentCalled shouldBe true
         userSigningKeyEventContentCalled shouldBe true
         selfSigningKeyEventContentCalled shouldBe true
+        dehydratedDeviceEventContentCalled shouldBe true
         setCrossSigningKeysCalled shouldBe true
     }
 

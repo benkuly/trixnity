@@ -175,7 +175,7 @@ class SyncApiClientImpl(
     private val syncOnceRequests = MutableStateFlow<List<SyncQueueItem>>(listOf())
     private val syncLoopRequest = MutableStateFlow<SyncQueueItem?>(null)
 
-    internal fun testOnlySyncOnceSize() : Int = syncOnceRequests.value.size
+    internal fun testOnlySyncOnceSize(): Int = syncOnceRequests.value.size
 
     private object SyncStoppedException : RuntimeException("sync has been stopped")
 
@@ -392,7 +392,8 @@ class SyncApiClientImpl(
     }
 
     override suspend fun cancel() {
-        stop()
+        syncLoopRequest.value = null
+        syncOnceRequests.value = emptyList()
         syncCoroutineScope.launch { syncLoop() }
     }
 }

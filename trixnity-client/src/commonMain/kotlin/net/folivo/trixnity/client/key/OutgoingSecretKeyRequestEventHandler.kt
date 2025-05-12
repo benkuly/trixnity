@@ -12,6 +12,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.events.ClientEvent
@@ -22,12 +23,16 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretEventContent
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
+import net.folivo.trixnity.crypto.core.AesHmacSha2EncryptedData
 import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
 import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
+import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.nextString
 import kotlin.time.Duration.Companion.days
 
@@ -160,10 +165,39 @@ class OutgoingSecretKeyRequestEventHandler(
                         .getOrElse { false }
                 }
 
-                @OptIn(MSC3814::class) SecretType.M_DEHYDRATED_DEVICE -> {
-                    // FIXME test
-                    // FIXME check by decrypt
-                    true
+                @OptIn(MSC3814::class) SecretType.M_DEHYDRATED_DEVICE -> @OptIn(MSC3814::class) {
+                    try {
+                        val deviceData = api.device.getDehydratedDevice()
+                            .onFailure {
+                                if (it is MatrixServerException && it.errorResponse is ErrorResponse.NotFound) {
+                                    log.warn { "no dehydrated device found" }
+                                    return
+                                }
+                            }.getOrThrow().deviceData
+                        when (deviceData) {
+                            is DehydratedDeviceData.DehydrationV2Compatibility -> {
+                                val olmPickle = decryptAesHmacSha2(
+                                    AesHmacSha2EncryptedData(
+                                        iv = deviceData.iv,
+                                        ciphertext = deviceData.encryptedDevicePickle,
+                                        mac = deviceData.mac
+                                    ),
+                                    content.secret.decodeUnpaddedBase64Bytes(), deviceData.algorithm
+                                ).decodeToString()
+                                freeAfter(OlmAccount.unpickle("", olmPickle)) {}
+                                true
+                            }
+
+                            is DehydratedDeviceData.DehydrationV2,
+                            is DehydratedDeviceData.Unknown -> {
+                                log.warn { "dehydrated device algorithm ${deviceData.algorithm} not supported" }
+                                false
+                            }
+                        }
+                    } catch (error: Exception) {
+                        log.warn(error) { "failed to use dehydrated device key to decrypt dehydrated device" }
+                        false
+                    }
                 }
 
                 SecretType.M_CROSS_SIGNING_MASTER, null -> {

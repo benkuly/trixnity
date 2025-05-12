@@ -248,20 +248,6 @@ class KeyBackupServiceImpl(
             log.warn { "key backup private key does not match public key (expected: $originalPublicKey was: $generatedPublicKey" }
             return false
         }
-//    if ( // TODO this is only relevant, when we want to use the key backup without private key
-//        keyBackupVersion.authData.signatures[ownUserId]?.none {
-//            it.keyId?.let { keyId ->
-//                val keyTrustLevel = keyStore.getDeviceKey(ownUserId, keyId)?.trustLevel
-//                    ?: keyStore.getCrossSigningKey(ownUserId, keyId)?.trustLevel
-//                keyTrustLevel == KeySignatureTrustLevel.Valid(true)
-//                        || keyTrustLevel == KeySignatureTrustLevel.CrossSigned(true)
-//                        || keyTrustLevel == KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true)
-//            } == true
-//        } == true
-//    ) {
-//        log.warn { "key backup cannot be trusted, because it is not signed by any trusted key" }
-//        return false
-//    }
         return true
     }
 
@@ -351,7 +337,7 @@ class KeyBackupServiceImpl(
                     val ownUsersSignature =
                         signService.signatures(
                             this,
-                            SignWith.PrivateKey(masterSigningPrivateKey, masterSigningPublicKey)
+                            SignWith.KeyPair(masterSigningPrivateKey, masterSigningPublicKey)
                         )[ownUserId]
                             ?.firstOrNull()
                     requireNotNull(ownUsersSignature)
@@ -364,13 +350,14 @@ class KeyBackupServiceImpl(
             val encryptedBackupKey = MegolmBackupV1EventContent(
                 encryptSecret(key, keyId, SecretType.M_MEGOLM_BACKUP_V1.id, keyBackupPrivateKey, api.json)
             )
-            keyStore.updateSecrets {
-                it + (SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
-                    GlobalAccountDataEvent(encryptedBackupKey),
-                    keyBackupPrivateKey
-                ))
+            api.user.setAccountData(encryptedBackupKey, ownUserId).also {
+                keyStore.updateSecrets {
+                    it + (SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(
+                        GlobalAccountDataEvent(encryptedBackupKey),
+                        keyBackupPrivateKey
+                    ))
+                }
             }
-            api.user.setAccountData(encryptedBackupKey, ownUserId)
         }
     }
 }

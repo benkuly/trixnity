@@ -20,6 +20,8 @@ import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
 import net.folivo.trixnity.client.mocks.OlmDecrypterMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
+import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDevice
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeyBackupVersion
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
@@ -32,6 +34,7 @@ import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.DecryptedOlmEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
+import net.folivo.trixnity.core.model.events.m.DehydratedDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
@@ -43,19 +46,25 @@ import net.folivo.trixnity.core.model.events.m.secret.SecretKeySendEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.SecretType
+import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
+import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkDecryption
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.test.utils.*
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(MSC3814::class)
 class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
@@ -249,6 +258,70 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
         }
 
     @Test
+    fun `handleOutgoingKeyRequestAnswer » ignore when dehydrated device cannot be decrypted`() =
+        runTest {
+            val key = SecureRandom.nextBytes(32).encodeUnpaddedBase64()
+            setDeviceKeys(true)
+            setRequest(SecretType.M_DEHYDRATED_DEVICE, setOf(aliceDevice))
+            returnDehydratedDevice(key)
+            cut.handleOutgoingKeyRequestAnswer(
+                DecryptedOlmEventContainer(
+                    encryptedEvent, DecryptedOlmEvent(
+                        SecretKeySendEventContent("requestId", "wrong key"),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            continually(500.milliseconds) {
+                keyStore.getSecrets() shouldBe mapOf()
+            }
+        }
+
+    @Test
+    fun `handleOutgoingKeyRequestAnswer » ignore when dehydrated device cannot be unpickled`() =
+        runTest {
+            val key = SecureRandom.nextBytes(32).encodeUnpaddedBase64()
+            setDeviceKeys(true)
+            setRequest(SecretType.M_DEHYDRATED_DEVICE, setOf(aliceDevice))
+            returnDehydratedDevice(key, "invalid pickle")
+            val secretEvent = GlobalAccountDataEvent(DehydratedDeviceEventContent(mapOf()))
+            globalAccountDataStore.save(secretEvent)
+            cut.handleOutgoingKeyRequestAnswer(
+                DecryptedOlmEventContainer(
+                    encryptedEvent, DecryptedOlmEvent(
+                        SecretKeySendEventContent("requestId", key),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            continually(500.milliseconds) {
+                keyStore.getSecrets() shouldBe mapOf()
+            }
+        }
+
+    @Test
+    fun `handleOutgoingKeyRequestAnswer » ignore when dehydrated device cannot be retrieved`() =
+        runTest {
+            val key = SecureRandom.nextBytes(32).encodeUnpaddedBase64()
+            setDeviceKeys(true)
+            setRequest(SecretType.M_DEHYDRATED_DEVICE, setOf(aliceDevice))
+            returnDehydratedDevice(null)
+            val secretEvent = GlobalAccountDataEvent(DehydratedDeviceEventContent(mapOf()))
+            globalAccountDataStore.save(secretEvent)
+            cut.handleOutgoingKeyRequestAnswer(
+                DecryptedOlmEventContainer(
+                    encryptedEvent, DecryptedOlmEvent(
+                        SecretKeySendEventContent("requestId", key),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            continually(500.milliseconds) {
+                keyStore.getSecrets() shouldBe mapOf()
+            }
+        }
+
+    @Test
     fun `handleOutgoingKeyRequestAnswer » ignore when encrypted secret could not be found`() = runTest {
         setDeviceKeys(true)
         setRequest(SecretType.M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
@@ -306,6 +379,28 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             SecretType.M_MEGOLM_BACKUP_V1 to StoredSecret(secretEvent, keyBackupPrivateKey)
         )
     }
+
+    @Test
+    fun `handleOutgoingKeyRequestAnswer » save dehydrated device secret`() =
+        runTest {
+            val key = SecureRandom.nextBytes(32).encodeUnpaddedBase64()
+            setDeviceKeys(true)
+            setRequest(SecretType.M_DEHYDRATED_DEVICE, setOf(aliceDevice))
+            returnDehydratedDevice(key)
+            val secretEvent = GlobalAccountDataEvent(DehydratedDeviceEventContent(mapOf()))
+            globalAccountDataStore.save(secretEvent)
+            cut.handleOutgoingKeyRequestAnswer(
+                DecryptedOlmEventContainer(
+                    encryptedEvent, DecryptedOlmEvent(
+                        SecretKeySendEventContent("requestId", key),
+                        alice, keysOf(aliceDevice2Key), alice, keysOf()
+                    )
+                )
+            )
+            continually(500.milliseconds) {
+                SecretType.M_DEHYDRATED_DEVICE to StoredSecret(secretEvent, keyBackupPrivateKey)
+            }
+        }
 
     @Test
     fun `handleOutgoingKeyRequestAnswer » cancel other requests`() = runTest {
@@ -639,6 +734,34 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                     authData = RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(
                         publicKey = Curve25519KeyValue(publicKey)
                     ), 1, "etag", "1"
+                )
+            }
+        }
+    }
+
+    private fun returnDehydratedDevice(key: String? = null, pickle: String? = null) {
+        apiConfig.endpoints {
+            matrixJsonEndpoint(GetDehydratedDevice()) {
+                if (key == null) throw MatrixServerException(
+                    HttpStatusCode.NotFound,
+                    ErrorResponse.NotFound("no dehydrated device present")
+                )
+                else GetDehydratedDevice.Response(
+                    deviceId = "dehydratedDeviceId",
+                    deviceData =
+                        with(
+                            encryptAesHmacSha2(
+                                (pickle ?: freeAfter(OlmAccount.create()) { it.pickle("") }).encodeToByteArray(),
+                                key.decodeUnpaddedBase64Bytes(),
+                                DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
+                            )
+                        ) {
+                            DehydratedDeviceData.DehydrationV2Compatibility(
+                                iv = iv,
+                                encryptedDevicePickle = ciphertext,
+                                mac = mac,
+                            )
+                        }
                 )
             }
         }

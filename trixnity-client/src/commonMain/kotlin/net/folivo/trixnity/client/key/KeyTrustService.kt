@@ -272,7 +272,7 @@ class KeyTrustServiceImpl(
         }
     }
 
-    private suspend fun signWithSecret(type: SecretType): SignWith.PrivateKey {
+    private suspend fun signWithSecret(type: SecretType): SignWith.KeyPair {
         val privateKey = keyStore.getSecrets()[type]?.decryptedPrivateKey
         requireNotNull(privateKey) { "could not find private key of $type" }
         val publicKey =
@@ -285,7 +285,7 @@ class KeyTrustServiceImpl(
                 }
             )?.value?.signed?.get<Ed25519Key>()?.id
         requireNotNull(publicKey) { "could not find public key of $type" }
-        return SignWith.PrivateKey(privateKey, publicKey)
+        return SignWith.KeyPair(privateKey, publicKey)
     }
 
     override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {

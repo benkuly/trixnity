@@ -4,18 +4,21 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
+import net.folivo.trixnity.core.model.events.m.DehydratedDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.UserSigningKeyEventContent
@@ -39,6 +42,8 @@ import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.sign
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
+import kotlin.random.Random
 import arrow.core.flatMap as flatMapResult
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.KeyService")
@@ -114,6 +119,7 @@ class KeyServiceImpl(
     private val keyBackupService: KeyBackupService,
     private val keyTrustService: KeyTrustService,
     private val api: MatrixClientServerApiClient,
+    private val matrixClientConfiguration: MatrixClientConfiguration,
 ) : KeyService {
 
     private val _bootstrapRunning = MutableStateFlow(false)
@@ -136,19 +142,46 @@ class KeyServiceImpl(
                 .flatMapResult { api.user.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
                 .flatMapResult {
                     val (masterSigningPrivateKey, masterSigningPublicKey) =
-                        freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
+                        freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
                     val masterSigningKey = signService.sign(
                         CrossSigningKeys(
                             userId = userInfo.userId,
                             usage = setOf(MasterKey),
                             keys = keysOf(Ed25519Key(masterSigningPublicKey, masterSigningPublicKey))
                         ),
-                        signWith = SignWith.PrivateKey(
+                        signWith = SignWith.KeyPair(
                             privateKey = masterSigningPrivateKey,
                             publicKey = masterSigningPublicKey
                         )
                     )
-                    val encryptedMasterSigningKey = MasterKeyEventContent(
+                    val (selfSigningPrivateKey, selfSigningPublicKey) =
+                        freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
+                    val selfSigningKey = signService.sign(
+                        CrossSigningKeys(
+                            userId = userInfo.userId,
+                            usage = setOf(SelfSigningKey),
+                            keys = keysOf(Ed25519Key(selfSigningPublicKey, selfSigningPublicKey))
+                        ),
+                        signWith = SignWith.KeyPair(
+                            privateKey = masterSigningPrivateKey,
+                            publicKey = masterSigningPublicKey
+                        )
+                    )
+                    val (userSigningPrivateKey, userSigningPublicKey) =
+                        freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
+                    val userSigningKey = signService.sign(
+                        CrossSigningKeys(
+                            userId = userInfo.userId,
+                            usage = setOf(UserSigningKey),
+                            keys = keysOf(Ed25519Key(userSigningPublicKey, userSigningPublicKey))
+                        ),
+                        signWith = SignWith.KeyPair(
+                            privateKey = masterSigningPrivateKey,
+                            publicKey = masterSigningPublicKey
+                        )
+                    )
+
+                    val masterKeyEventContent = MasterKeyEventContent(
                         encryptSecret(
                             key = recoveryKey,
                             keyId = keyId,
@@ -157,65 +190,75 @@ class KeyServiceImpl(
                             json = api.json
                         )
                     )
-                    val (selfSigningPrivateKey, selfSigningPublicKey) =
-                        freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val selfSigningKey = signService.sign(
-                        CrossSigningKeys(
-                            userId = userInfo.userId,
-                            usage = setOf(SelfSigningKey),
-                            keys = keysOf(Ed25519Key(selfSigningPublicKey, selfSigningPublicKey))
-                        ),
-                        signWith = SignWith.PrivateKey(
-                            privateKey = masterSigningPrivateKey,
-                            publicKey = masterSigningPublicKey
-                        )
-                    )
-                    val encryptedSelfSigningKey = SelfSigningKeyEventContent(
-                        encryptSecret(
-                            key = recoveryKey,
-                            keyId = keyId,
-                            secretName = SecretType.M_CROSS_SIGNING_SELF_SIGNING.id,
-                            secret = selfSigningPrivateKey,
-                            json = api.json
-                        )
-                    )
-                    val (userSigningPrivateKey, userSigningPublicKey) =
-                        freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
-                    val userSigningKey = signService.sign(
-                        CrossSigningKeys(
-                            userId = userInfo.userId,
-                            usage = setOf(UserSigningKey),
-                            keys = keysOf(Ed25519Key(userSigningPublicKey, userSigningPublicKey))
-                        ),
-                        signWith = SignWith.PrivateKey(
-                            privateKey = masterSigningPrivateKey,
-                            publicKey = masterSigningPublicKey
-                        )
-                    )
-                    val encryptedUserSigningKey = UserSigningKeyEventContent(
-                        encryptSecret(
-                            key = recoveryKey,
-                            keyId = keyId,
-                            secretName = SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
-                            secret = userSigningPrivateKey,
-                            json = api.json
-                        )
-                    )
-                    keyStore.updateSecrets {
-                        mapOf(
-                            SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                                GlobalAccountDataEvent(encryptedSelfSigningKey),
-                                selfSigningPrivateKey
-                            ),
-                            SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
-                                GlobalAccountDataEvent(encryptedUserSigningKey),
-                                userSigningPrivateKey
-                            ),
-                        )
-                    }
-                    api.user.setAccountData(encryptedMasterSigningKey, userInfo.userId)
-                        .flatMapResult { api.user.setAccountData(encryptedUserSigningKey, userInfo.userId) }
-                        .flatMapResult { api.user.setAccountData(encryptedSelfSigningKey, userInfo.userId) }
+                    api.user.setAccountData(masterKeyEventContent, userInfo.userId)
+                        .flatMapResult {
+                            val userSigningKeyEventContent = UserSigningKeyEventContent(
+                                encryptSecret(
+                                    key = recoveryKey,
+                                    keyId = keyId,
+                                    secretName = SecretType.M_CROSS_SIGNING_USER_SIGNING.id,
+                                    secret = userSigningPrivateKey,
+                                    json = api.json
+                                )
+                            )
+                            api.user.setAccountData(userSigningKeyEventContent, userInfo.userId).also {
+                                keyStore.updateSecrets {
+                                    it + mapOf(
+                                        SecretType.M_CROSS_SIGNING_USER_SIGNING to StoredSecret(
+                                            GlobalAccountDataEvent(userSigningKeyEventContent),
+                                            userSigningPrivateKey
+                                        ),
+                                    )
+                                }
+                            }
+                        }
+                        .flatMapResult {
+                            val selfSigningKeyEventContent = SelfSigningKeyEventContent(
+                                encryptSecret(
+                                    key = recoveryKey,
+                                    keyId = keyId,
+                                    secretName = SecretType.M_CROSS_SIGNING_SELF_SIGNING.id,
+                                    secret = selfSigningPrivateKey,
+                                    json = api.json
+                                )
+                            )
+                            api.user.setAccountData(selfSigningKeyEventContent, userInfo.userId).also {
+                                keyStore.updateSecrets {
+                                    it + mapOf(
+                                        SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                                            GlobalAccountDataEvent(selfSigningKeyEventContent),
+                                            selfSigningPrivateKey
+                                        ),
+                                    )
+                                }
+                            }
+                        }
+                        .flatMapResult @OptIn(MSC3814::class) {
+                            if (matrixClientConfiguration.experimentalFeatures.enableMSC3814) {
+                                val dehydratedDeviceKey =
+                                    Random.nextBytes(32).encodeUnpaddedBase64()
+                                val dehydratedDeviceEventContent =
+                                    DehydratedDeviceEventContent(
+                                        encryptSecret(
+                                            key = recoveryKey,
+                                            keyId = keyId,
+                                            secretName = SecretType.M_DEHYDRATED_DEVICE.id,
+                                            secret = dehydratedDeviceKey,
+                                            json = api.json
+                                        )
+                                    )
+                                api.user.setAccountData(dehydratedDeviceEventContent, userInfo.userId).also {
+                                    keyStore.updateSecrets {
+                                        it + mapOf(
+                                            SecretType.M_DEHYDRATED_DEVICE to StoredSecret(
+                                                GlobalAccountDataEvent(dehydratedDeviceEventContent),
+                                                dehydratedDeviceKey
+                                            ),
+                                        )
+                                    }
+                                }
+                            } else Result.success(Unit)
+                        }
                         .flatMapResult {
                             keyBackupService.bootstrapRoomKeyBackup(
                                 recoveryKey,
@@ -231,7 +274,6 @@ class KeyServiceImpl(
                                 userSigningKey = userSigningKey
                             )
                         }
-                    // FIXME bootstrap dehydrated device
                 }.mapCatching { uiaFlow ->
                     uiaFlow.injectOnSuccessIntoUIA {
                         keyStore.updateOutdatedKeys { oldOutdatedKeys -> oldOutdatedKeys + userInfo.userId }

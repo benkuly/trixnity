@@ -22,8 +22,29 @@ sealed interface DehydratedDeviceData {
         @SerialName("nonce")
         val nonce: String,
     ) : DehydratedDeviceData {
+        companion object {
+            const val ALGORITHM = "org.matrix.msc3814.v2"
+        }
+
         @SerialName("algorithm")
-        override val algorithm: String = "m.dehydration.v2"
+        override val algorithm: String = ALGORITHM
+    }
+
+    @Serializable
+    data class DehydrationV2Compatibility(
+        @SerialName("iv")
+        val iv: String,
+        @SerialName("encrypted_device_pickle")
+        val encryptedDevicePickle: String,
+        @SerialName("mac")
+        val mac: String
+    ) : DehydratedDeviceData {
+        companion object {
+            const val ALGORITHM = "trixnity.msc3814.compatibility"
+        }
+
+        @SerialName("algorithm")
+        override val algorithm: String = ALGORITHM
     }
 
     data class Unknown(override val algorithm: String, val raw: JsonObject) : DehydratedDeviceData
@@ -36,7 +57,12 @@ private class DehydratedDeviceDataSerializer : KSerializer<DehydratedDeviceData>
         val jsonObject = decoder.decodeJsonElement().jsonObject
         val algorithm = jsonObject["algorithm"]?.jsonPrimitive?.content
         return when (algorithm) {
-            "m.dehydration.v2" -> decoder.json.decodeFromJsonElement<DehydratedDeviceData.DehydrationV2>(jsonObject)
+            DehydratedDeviceData.DehydrationV2.ALGORITHM ->
+                decoder.json.decodeFromJsonElement<DehydratedDeviceData.DehydrationV2>(jsonObject)
+
+            DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM ->
+                decoder.json.decodeFromJsonElement<DehydratedDeviceData.DehydrationV2Compatibility>(jsonObject)
+
             else -> DehydratedDeviceData.Unknown(algorithm ?: "unknown", jsonObject)
         }
     }
@@ -45,6 +71,12 @@ private class DehydratedDeviceDataSerializer : KSerializer<DehydratedDeviceData>
         require(encoder is JsonEncoder)
         when (value) {
             is DehydratedDeviceData.DehydrationV2 -> encoder.encodeJsonElement(encoder.json.encodeToJsonElement(value))
+            is DehydratedDeviceData.DehydrationV2Compatibility -> encoder.encodeJsonElement(
+                encoder.json.encodeToJsonElement(
+                    value
+                )
+            )
+
             is DehydratedDeviceData.Unknown -> encoder.encodeJsonElement(JsonObject(buildMap {
                 put("algorithm", JsonPrimitive(value.algorithm))
                 putAll(value.raw)

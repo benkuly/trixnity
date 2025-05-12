@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.keys.SignedDeviceKeys
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#put_matrixclientv3devicesdeviceid">matrix spec</a>
  */
 @Serializable
-@Resource("/_matrix/client/v3/dehydrated_device")
+@Resource("/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device")
 @HttpMethod(PUT)
 @MSC3814
 data class SetDehydratedDevice(

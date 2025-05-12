@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.key
 
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.MSC3814
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
 import org.koin.core.module.dsl.singleOf
@@ -56,7 +57,14 @@ fun createKeyModule() = module {
             signService = get(),
             keyBackupService = get(named<KeyBackupService>()),
             keyTrustService = get(),
-            api = get()
+            api = get(),
+            matrixClientConfiguration = get()
         )
+    }
+
+    @OptIn(MSC3814::class)
+    singleOf(::DehydratedDeviceService) {
+        bind<EventHandler>()
+        named<DehydratedDeviceService>()
     }
 }

@@ -319,7 +319,7 @@ class OlmEncryptionServiceImpl(
             .also { log.trace { "encrypted event: $it" } }
     }.onFailure { log.warn(it) { "encrypt olm failed" } }
 
-    @OptIn(ExperimentalSerializationApi::class, MSC3814::class)
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun decryptOlm(
         event: ClientEvent.ToDeviceEvent<OlmEncryptedToDeviceEventContent>,
     ): Result<DecryptedOlmEvent<*>> = runCatchingCancellationAware {
@@ -328,6 +328,7 @@ class OlmEncryptionServiceImpl(
         val senderIdentityKey = encryptedContent.senderKey
         val senderDeviceKeys = store.findDeviceKeys(userId, senderIdentityKey)
             ?: throw DecryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
+        @OptIn(MSC3814::class)
         if (senderDeviceKeys.dehydrated == true)
             throw DecryptOlmError.DehydratedDeviceNotAllowed
         val deviceId = senderDeviceKeys.deviceId

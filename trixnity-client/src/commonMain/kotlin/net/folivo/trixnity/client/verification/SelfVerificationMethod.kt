@@ -32,7 +32,7 @@ sealed interface SelfVerificationMethod {
             val recoveryKey = decodeRecoveryKey(recoverKey)
             checkRecoveryKey(recoveryKey, info)
                 .onSuccess {
-                    keySecretService.decryptMissingSecrets(recoveryKey, keyId, info)
+                    keySecretService.decryptOrCreateMissingSecrets(recoveryKey, keyId, info)
                     keyTrustService.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, info)
                 }.getOrThrow()
         }
@@ -50,7 +50,7 @@ sealed interface SelfVerificationMethod {
             val recoveryKey = recoveryKeyFromPassphrase(passphrase, passphraseInfo)
             checkRecoveryKey(recoveryKey, info)
                 .onSuccess {
-                    keySecretService.decryptMissingSecrets(recoveryKey, keyId, info)
+                    keySecretService.decryptOrCreateMissingSecrets(recoveryKey, keyId, info)
                     keyTrustService.checkOwnAdvertisedMasterKeyAndVerifySelf(recoveryKey, keyId, info)
                 }.getOrThrow()
         }

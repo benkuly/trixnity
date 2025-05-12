@@ -90,7 +90,7 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     globalAccountDataOf<UserSigningKeyEventContent>("m.cross_signing.user_signing")
     globalAccountDataOf<MegolmBackupV1EventContent>("m.megolm_backup.v1")
     @OptIn(MSC3814::class)
-    globalAccountDataOf<DehydratedDeviceEventContent>("m.dehydrated_device")
+    globalAccountDataOf<DehydratedDeviceEventContent>("org.matrix.msc3814")
     globalAccountDataOf<IgnoredUserListEventContent>("m.ignored_user_list")
 
     roomAccountDataOf<FullyReadEventContent>("m.fully_read")
