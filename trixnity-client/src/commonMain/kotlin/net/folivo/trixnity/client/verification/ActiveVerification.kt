@@ -192,13 +192,15 @@ abstract class ActiveVerificationImpl(
                 val userIdComparison = currentState.senderUserId.full.compareTo(sender.full)
                 when {
                     userIdComparison > 0 -> setNewStartEvent(ownUserId == sender)
-                    userIdComparison < 0 -> {}
+                    userIdComparison < 0 -> {// do nothing (we keep the current Start)
+                    }
 
                     else -> {
                         val deviceIdComparison = currentState.senderDeviceId.compareTo(senderDevice)
                         when {
                             deviceIdComparison > 0 -> setNewStartEvent(ownDeviceId == senderDevice)
-                            else -> {}
+                            else -> { // do nothing (we keep the current Start)
+                            }
                         }
                     }
                 }
