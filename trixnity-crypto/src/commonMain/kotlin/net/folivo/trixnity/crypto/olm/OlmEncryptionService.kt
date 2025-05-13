@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -29,6 +30,8 @@ import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.keysOf
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
+import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService.*
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.VerifyResult
@@ -74,6 +77,9 @@ interface OlmEncryptionService {
         data class OneTimeKeyNotFound(
             val keyAlgorithm: KeyAlgorithm,
         ) : EncryptOlmError, IllegalStateException("no $keyAlgorithm one time key found while encrypting with olm")
+
+        data object DehydratedDeviceNotCrossSigned : EncryptOlmError,
+            IllegalStateException("when encrypting to dehydrated device, the device must be cross signed")
     }
 
     suspend fun encryptOlm(
@@ -108,6 +114,9 @@ interface OlmEncryptionService {
         data class DeserializationError(
             val error: SerializationException,
         ) : DecryptOlmError, IllegalStateException("deserialization failed while decrypting with olm", error)
+
+        data object DehydratedDeviceNotAllowed : DecryptOlmError,
+            IllegalStateException("decrypting from a dehydrated device is not allowed")
     }
 
     suspend fun decryptOlm(
@@ -186,9 +195,14 @@ class OlmEncryptionServiceImpl(
         deviceId: String,
         forceNewSession: Boolean,
     ): Result<OlmEncryptedToDeviceEventContent> = runCatchingCancellationAware {
-        val identityKey = store.findCurve25519Key(userId, deviceId)
+        val deviceKeys = store.getDeviceKeys(userId)?.get(deviceId)
+        val trustLevel = store.getTrustLevel(userId, deviceId)
+        @OptIn(MSC3814::class)
+        if (deviceKeys?.dehydrated == true && trustLevel !is DeviceTrustLevel.CrossSigned)
+            throw EncryptOlmError.DehydratedDeviceNotCrossSigned
+        val identityKey = deviceKeys?.get<Curve25519Key>()
             ?: throw EncryptOlmError.KeyNotFound(KeyAlgorithm.Curve25519)
-        val signingKey = store.findEd25519Key(userId, deviceId)
+        val signingKey = deviceKeys.get<Ed25519Key>()
             ?: throw EncryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
 
         lateinit var encryptionResult: OlmEncryptedToDeviceEventContent
@@ -314,6 +328,9 @@ class OlmEncryptionServiceImpl(
         val senderIdentityKey = encryptedContent.senderKey
         val senderDeviceKeys = store.findDeviceKeys(userId, senderIdentityKey)
             ?: throw DecryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
+        @OptIn(MSC3814::class)
+        if (senderDeviceKeys.dehydrated == true)
+            throw DecryptOlmError.DehydratedDeviceNotAllowed
         val deviceId = senderDeviceKeys.deviceId
         val ciphertext = encryptedContent.ciphertext[ownCurve25519Key.value.value]
             ?: throw DecryptOlmError.SenderDidNotEncryptForThisDeviceException
@@ -336,18 +353,18 @@ class OlmEncryptionServiceImpl(
 
                 return when {
                     decryptedEvent.sender != userId ->
-                        throw DecryptOlmError.ValidationFailed("sender did not match")
+                        throw DecryptOlmError.ValidationFailed("sender did not match (expected $userId but got ${decryptedEvent.sender})")
 
                     decryptedEvent.recipient != ownUserId ->
-                        throw DecryptOlmError.ValidationFailed("recipient did not match")
+                        throw DecryptOlmError.ValidationFailed("recipient did not match (expected $ownUserId but got ${decryptedEvent.recipient})")
 
                     decryptedEvent.recipientKeys.filterIsInstance<Ed25519Key>()
                         .firstOrNull()?.value != ownEd25519Key.value ->
-                        throw DecryptOlmError.ValidationFailed("recipientKeys did not match")
+                        throw DecryptOlmError.ValidationFailed("recipientKeys did not match (expected $ownEd25519Key but got ${decryptedEvent.recipientKeys})")
 
                     decryptedEvent.senderKeys.filterIsInstance<Ed25519Key>()
                         .firstOrNull()?.value != senderSigningKey.value ->
-                        throw DecryptOlmError.ValidationFailed("senderKeys did not match")
+                        throw DecryptOlmError.ValidationFailed("senderKeys did not match (expected $senderSigningKey but got ${decryptedEvent.senderKeys})")
 
                     else -> decryptedEvent
                 }
@@ -548,8 +565,13 @@ class OlmEncryptionServiceImpl(
             ) {
                 log.debug { "encrypt megolm event with new session" }
                 val newUserDevices =
-                    store.getDevices(roomId, store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey)
-                        .orEmpty()
+                    store.getDeviceKeys(roomId, store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey)
+                        .mapValues { (userId, deviceKeys) ->
+                            if (userId == ownUserId) {
+                                @OptIn(MSC3814::class)
+                                deviceKeys.filter { it.value.dehydrated != true }
+                            } else deviceKeys
+                        }.mapValues { it.value.keys }
                 try {
                     freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
                         freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->

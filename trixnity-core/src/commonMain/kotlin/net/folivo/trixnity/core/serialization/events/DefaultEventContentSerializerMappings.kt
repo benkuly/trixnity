@@ -1,5 +1,6 @@
 package net.folivo.trixnity.core.serialization.events
 
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.events.m.call.CallEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
@@ -88,6 +89,8 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     globalAccountDataOf<SelfSigningKeyEventContent>("m.cross_signing.self_signing")
     globalAccountDataOf<UserSigningKeyEventContent>("m.cross_signing.user_signing")
     globalAccountDataOf<MegolmBackupV1EventContent>("m.megolm_backup.v1")
+    @OptIn(MSC3814::class)
+    globalAccountDataOf<DehydratedDeviceEventContent>("org.matrix.msc3814")
     globalAccountDataOf<IgnoredUserListEventContent>("m.ignored_user_list")
 
     roomAccountDataOf<FullyReadEventContent>("m.fully_read")

@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.media.opfs
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import js.buffer.ArrayBuffer
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
@@ -61,7 +62,8 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
 
     override suspend fun addMedia(url: String, content: ByteArrayFlow) = basePathLock.withLock(url) {
         @Suppress("UNCHECKED_CAST")
-        val writableFileStream = basePath.resolveUrl(url, true).createWritable() as WritableStream<Uint8Array<*>>
+        val writableFileStream =
+            basePath.resolveUrl(url, true).createWritable() as WritableStream<Uint8Array<ArrayBuffer>>
         try {
             content.writeTo(writableFileStream)
         } catch (throwable: Throwable) {
@@ -155,7 +157,7 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
                     val fileHandle = tmpPath.getFileHandle(fileName, FileSystemGetFileOptions(create = true))
 
                     @Suppress("UNCHECKED_CAST")
-                    val writableFileStream = fileHandle.createWritable() as WritableStream<Uint8Array<*>>
+                    val writableFileStream = fileHandle.createWritable() as WritableStream<Uint8Array<ArrayBuffer>>
                     try {
                         delegate.writeTo(writableFileStream)
                     } catch (throwable: Throwable) {

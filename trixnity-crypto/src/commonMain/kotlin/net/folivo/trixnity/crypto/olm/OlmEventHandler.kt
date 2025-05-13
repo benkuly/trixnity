@@ -15,7 +15,6 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
@@ -190,13 +189,12 @@ class OlmEventHandler(
             val userId = UserId(event.stateKey)
             if (userId != userInfo.userId && store.getRoomEncryptionAlgorithm(roomId) == EncryptionAlgorithm.Megolm) {
                 val membership = event.content.membership
-                val membershipsAllowedToReceiveKey: Set<Membership> =
-                    store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey
+                val membershipsAllowedToReceiveKey = store.getHistoryVisibility(roomId).membershipsAllowedToReceiveKey
                 if (membershipsAllowedToReceiveKey.contains(membership)) {
                     store.updateOutboundMegolmSession(roomId) {
                         if (it != null) {
                             log.debug { "add new devices of $userId to megolm session of $roomId, because new membership does allow to share key" }
-                            val devices = store.getDevices(roomId, userId)
+                            val devices = store.getDeviceKeys(userId)?.keys
                             if (!devices.isNullOrEmpty())
                                 it.copy(newDevices = it.newDevices + (userId to devices))
                             else it

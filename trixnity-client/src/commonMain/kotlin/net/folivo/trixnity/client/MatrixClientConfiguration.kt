@@ -7,6 +7,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientFactory
 import net.folivo.trixnity.clientserverapi.model.users.Filters
+import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import org.koin.core.module.Module
@@ -131,6 +132,8 @@ data class MatrixClientConfiguration(
      */
     var matrixClientServerApiClientFactory: MatrixClientServerApiClientFactory =
         object : MatrixClientServerApiClientFactory {},
+
+    val experimentalFeatures: ExperimentalFeatures = ExperimentalFeatures(),
 ) {
     data class SyncLoopDelays(
         val syncLoopDelay: Duration,
@@ -190,4 +193,13 @@ data class MatrixClientConfiguration(
                 )
         }
     }
+
+    data class ExperimentalFeatures(
+        /**
+         * Currently, the implementation uses some sort of undocumented compatibility mode, which allows it to run without adding new binaries like vodozemac.
+         * Therefore, it is not compatible with other clients yet.
+         */
+        @MSC3814
+        var enableMSC3814: Boolean = false
+    )
 }

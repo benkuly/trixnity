@@ -25,10 +25,10 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
-import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.scopedMockEngine
 import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
@@ -77,7 +77,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                 password = "p4ssw0rd!",
                 repositoriesModule = repositoriesModule,
                 mediaStore = InMemoryMediaStore(),
-                coroutineScope = backgroundScope,
+                coroutineContext = backgroundScope.coroutineContext,
                 configuration = {
                     httpClientEngine = scopedMockEngine(false) {
                         addHandler { request ->
@@ -182,7 +182,7 @@ class MatrixClientTest : TrixnityBaseTest() {
             val cut = MatrixClient.fromStore(
                 repositoriesModule = repositoriesModule,
                 mediaStore = InMemoryMediaStore(),
-                coroutineScope = backgroundScope,
+                coroutineContext = backgroundScope.coroutineContext,
                 configuration = {
                     httpClientEngine = scopedMockEngine(false) {
                         addHandler { request ->
@@ -357,7 +357,7 @@ class MatrixClientTest : TrixnityBaseTest() {
         val cut = MatrixClient.fromStore(
             repositoriesModule = repositoriesModule(),
             mediaStore = InMemoryMediaStore(),
-            coroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                     matrixJsonEndpoint(Logout()) {
@@ -385,7 +385,7 @@ class MatrixClientTest : TrixnityBaseTest() {
         val cut = MatrixClient.fromStore(
             repositoriesModule = repositoriesModule(),
             mediaStore = InMemoryMediaStore(),
-            coroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                     matrixJsonEndpoint(Logout()) {
@@ -435,7 +435,7 @@ class MatrixClientTest : TrixnityBaseTest() {
         return MatrixClient.fromStore(
             repositoriesModule = repositoriesModule,
             mediaStore = InMemoryMediaStore(),
-            coroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = backgroundScope.scopedMockEngine(false) {
                     addHandler { request ->

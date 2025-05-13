@@ -14,11 +14,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.key
-import net.folivo.trixnity.client.key.DeviceTrustLevel
-import net.folivo.trixnity.client.login
-import net.folivo.trixnity.client.loginWith
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.verification
@@ -30,6 +26,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers

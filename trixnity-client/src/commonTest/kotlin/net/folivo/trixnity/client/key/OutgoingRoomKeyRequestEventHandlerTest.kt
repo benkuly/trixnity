@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.key
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeEmpty
@@ -31,12 +32,12 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
-import net.folivo.trixnity.test.utils.runTest
-import net.folivo.trixnity.test.utils.testClock
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.OlmOutboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
@@ -82,6 +83,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
     private val aliceDevice2Key = Key.Ed25519Key(aliceDevice, "aliceDevice2KeyValue")
     private val aliceDevice2 = "ALICEDEVICE_2"
     private val aliceDevice3 = "ALICEDEVICE_3"
+    private val aliceDevice4Dehydrated = "ALICEDEVICE_4_dehydrated"
     private var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
 
 
@@ -285,7 +287,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `requestRoomKeys » send requests to verified devices`() = runTest {
+    fun `requestRoomKeys » send requests to verified devices only`() = runTest {
         requestRoomKeysSetup()
         val result = async { cut.requestRoomKeys(room, sessionId) }
         val storedRequest =
@@ -305,8 +307,10 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 )
             }
 
+        sendToDeviceEvents.shouldNotBeNull().shouldHaveSize(1)
         sendToDeviceEvents?.get(alice)?.get(aliceDevice) shouldBe null
         sendToDeviceEvents?.get(alice)?.get(aliceDevice3) shouldBe null
+        sendToDeviceEvents?.get(alice)?.get(aliceDevice4Dehydrated) shouldBe null
         val requestToAlice2 = sendToDeviceEvents?.get(alice)?.get(aliceDevice2)
             .shouldBeInstanceOf<RoomKeyRequestEventContent>()
 
@@ -363,6 +367,10 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                 aliceDevice3 to StoredDeviceKeys(
                     SignedDeviceKeys(DeviceKeys(alice, aliceDevice3, setOf(), keysOf()), mapOf()),
                     KeySignatureTrustLevel.Valid(false)
+                ),
+                aliceDevice4Dehydrated to StoredDeviceKeys(
+                    SignedDeviceKeys(DeviceKeys(alice, aliceDevice4Dehydrated, setOf(), keysOf(), true), mapOf()),
+                    KeySignatureTrustLevel.CrossSigned(true)
                 )
             )
         }

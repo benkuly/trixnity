@@ -4,6 +4,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
+import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
+import net.folivo.trixnity.crypto.key.UserTrustLevel
 
 @OptIn(ExperimentalSerializationApi::class)
 @JsonClassDiscriminator("level")
@@ -60,3 +63,25 @@ sealed interface KeySignatureTrustLevel {
 val KeySignatureTrustLevel.isVerified: Boolean
     get() = this is KeySignatureTrustLevel.CrossSigned && this.verified
             || this is KeySignatureTrustLevel.Valid && this.verified
+
+fun KeySignatureTrustLevel?.toDeviceTrustLevel(): DeviceTrustLevel =
+    when (this) {
+        is Valid -> DeviceTrustLevel.Valid(verified)
+        is CrossSigned -> DeviceTrustLevel.CrossSigned(verified)
+        is NotCrossSigned -> DeviceTrustLevel.NotCrossSigned
+        is Blocked -> DeviceTrustLevel.Blocked
+        is Invalid -> DeviceTrustLevel.Invalid(reason)
+        is NotAllDeviceKeysCrossSigned -> DeviceTrustLevel.Invalid("could not determine DeviceTrustLevel from $this")
+        null -> DeviceTrustLevel.Unknown
+    }
+
+fun KeySignatureTrustLevel?.toUserTrustLevel(): UserTrustLevel =
+    when (this) {
+        is Valid -> UserTrustLevel.CrossSigned(verified)
+        is CrossSigned -> UserTrustLevel.CrossSigned(verified)
+        is NotAllDeviceKeysCrossSigned -> UserTrustLevel.NotAllDevicesCrossSigned(verified)
+        is Blocked -> UserTrustLevel.Blocked
+        is Invalid -> UserTrustLevel.Invalid(reason)
+        is NotCrossSigned -> UserTrustLevel.Invalid("could not determine UserTrustLevel from $this")
+        null -> UserTrustLevel.Unknown
+    }

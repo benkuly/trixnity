@@ -79,7 +79,7 @@ class SignServiceImpl(
                 }
             }
 
-            is SignWith.PrivateKey -> {
+            is SignWith.KeyPair -> {
                 mapOf(
                     userInfo.userId to keysOf(
                         Ed25519Key(
@@ -145,7 +145,10 @@ class SignServiceImpl(
         val verifyResults = checkSignaturesOf.flatMap { (userId, signingKeys) ->
             signingKeys.map { signingKey ->
                 val signatureKey = signedObject.signatures?.get(userId)?.find { it.id == signingKey.id }
-                    ?: return VerifyResult.MissingSignature("no signature found for signing key $signingKey")
+                    ?: return VerifyResult.MissingSignature(
+                        "no signature found for signing key ${signingKey.id}," +
+                                "got ${signedObject.signatures?.get(userId)?.map { it.id }} instead"
+                    )
                 try {
                     freeAfter(OlmUtility.create()) { olmUtility ->
                         olmUtility.verifyEd25519(
@@ -176,6 +179,12 @@ suspend inline fun <reified T> SignService.sign(
     signWith: SignWith = SignWith.DeviceKey
 ): Signed<T, UserId> =
     sign(unsignedObject, serializer(), signWith)
+
+suspend inline fun <reified T> SignService.sign(
+    signedObject: Signed<T, UserId>,
+    signWith: SignWith = SignWith.DeviceKey
+): Signed<T, UserId> =
+    signedObject + sign(signedObject.signed, serializer(), signWith).signatures
 
 suspend inline fun <reified T> SignService.signatures(
     unsignedObject: T,

@@ -7,7 +7,6 @@ import net.folivo.trixnity.client.store.KeySignatureTrustLevel.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.crosssigning.MasterKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
@@ -16,12 +15,11 @@ import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
 import net.folivo.trixnity.crypto.key.decryptSecret
+import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.sign.*
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.jvm.JvmName
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.KeyTrustService")
@@ -57,11 +55,19 @@ class KeyTrustServiceImpl(
         keyId: String,
         keyInfo: SecretKeyEventContent
     ): Result<Unit> {
-        val encryptedMasterKey = globalAccountDataStore.get<MasterKeyEventContent>().first()?.content
-            ?: return Result.failure(MasterKeyInvalidException("could not find encrypted master key"))
+        val encryptedMasterKey =
+            SecretType.M_CROSS_SIGNING_MASTER.getEncryptedSecret(globalAccountDataStore).first()?.content
+                ?: return Result.failure(MasterKeyInvalidException("could not find encrypted master key"))
         val decryptedPublicKey =
             kotlin.runCatching {
-                decryptSecret(key, keyId, keyInfo, "m.cross_signing.master", encryptedMasterKey, api.json)
+                decryptSecret(
+                    key = key,
+                    keyId = keyId,
+                    keyInfo = keyInfo,
+                    secretName = SecretType.M_CROSS_SIGNING_MASTER.id,
+                    secret = encryptedMasterKey,
+                    json = api.json
+                )
             }.getOrNull()
                 ?.let { privateKey ->
                     freeAfter(OlmPkSigning.create(privateKey)) { it.publicKey }
@@ -266,7 +272,7 @@ class KeyTrustServiceImpl(
         }
     }
 
-    private suspend fun signWithSecret(type: SecretType): SignWith.PrivateKey {
+    private suspend fun signWithSecret(type: SecretType): SignWith.KeyPair {
         val privateKey = keyStore.getSecrets()[type]?.decryptedPrivateKey
         requireNotNull(privateKey) { "could not find private key of $type" }
         val publicKey =
@@ -279,7 +285,7 @@ class KeyTrustServiceImpl(
                 }
             )?.value?.signed?.get<Ed25519Key>()?.id
         requireNotNull(publicKey) { "could not find public key of $type" }
-        return SignWith.PrivateKey(privateKey, publicKey)
+        return SignWith.KeyPair(privateKey, publicKey)
     }
 
     override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {

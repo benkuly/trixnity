@@ -1,5 +1,6 @@
 package net.folivo.trixnity.utils
 
+import js.buffer.ArrayBuffer
 import js.typedarrays.Uint8Array
 import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
@@ -9,7 +10,7 @@ import web.streams.ReadableStreamReadDoneResult
 import web.streams.ReadableStreamReadValueResult
 import web.streams.WritableStream
 
-fun byteArrayFlowFromReadableStream(streamFactory: suspend () -> ReadableStream<Uint8Array<*>>) = flow {
+fun byteArrayFlowFromReadableStream(streamFactory: suspend () -> ReadableStream<Uint8Array<ArrayBuffer>>) = flow {
     val reader = streamFactory().getReader()
     try {
         while (true) {
@@ -28,7 +29,7 @@ fun byteArrayFlowFromReadableStream(streamFactory: suspend () -> ReadableStream<
     }
 }
 
-suspend fun ByteArrayFlow.writeTo(writableStream: WritableStream<Uint8Array<*>>) {
+suspend fun ByteArrayFlow.writeTo(writableStream: WritableStream<Uint8Array<ArrayBuffer>>) {
     val writer = writableStream.getWriter()
     try {
         collect {
@@ -39,4 +40,4 @@ suspend fun ByteArrayFlow.writeTo(writableStream: WritableStream<Uint8Array<*>>)
     }
 }
 
-suspend fun WritableStream<Uint8Array<*>>.write(content: ByteArrayFlow) = content.writeTo(this)
+suspend fun WritableStream<Uint8Array<ArrayBuffer>>.write(content: ByteArrayFlow) = content.writeTo(this)

@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.media.indexeddb
 import com.juul.indexeddb.Database
 import com.juul.indexeddb.Key
 import com.juul.indexeddb.openDatabase
+import js.buffer.ArrayBuffer
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
@@ -63,7 +64,7 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
     }
 
     override suspend fun addMedia(url: String, content: ByteArrayFlow) = coroutineScope {
-        val transformStream = TransformStream<Uint8Array<*>, Uint8Array<*>>()
+        val transformStream = TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>()
         launch {
             content.writeTo(transformStream.writable)
         }
@@ -131,7 +132,7 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
 
         override suspend fun getTemporaryFile(): Result<IndexeddbPlatformMedia.TemporaryFile> = runCatching {
             coroutineScope {
-                val transformStream = TransformStream<Uint8Array<*>, Uint8Array<*>>()
+                val transformStream = TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>()
                 launch {
                     delegate.writeTo(transformStream.writable)
                 }

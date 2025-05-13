@@ -20,8 +20,7 @@ import net.folivo.trixnity.client.verification.VerificationService.SelfVerificat
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods.PreconditionsNotMet
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -36,8 +35,6 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Veri
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.core.subscribeContent
-import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
@@ -387,21 +384,20 @@ class VerificationServiceImpl(
             if (crossSigningKeys.isEmpty()) return@combine SelfVerificationMethods.NoCrossSigningEnabled
             if (bootstrapRunning) return@combine SelfVerificationMethods.NoCrossSigningEnabled
 
-            val deviceVerificationMethod = deviceKeys.entries
-                .filter { it.value.trustLevel is KeySignatureTrustLevel.CrossSigned }
-                .map { it.key }
-                .let {
-                    val sendToDevices = it - ownDeviceId
-                    if (sendToDevices.isNotEmpty())
-                        setOf(
-                            SelfVerificationMethod.CrossSignedDeviceVerification(
-                                ownUserId,
-                                sendToDevices.toSet(),
-                                createDeviceVerificationRequestStable
-                            )
+            val sendToDevices = deviceKeys
+                .filterValues { it.trustLevel is KeySignatureTrustLevel.CrossSigned && @OptIn(MSC3814::class) it.value.signed.dehydrated != true }
+                .keys - ownDeviceId
+
+            val deviceVerificationMethod =
+                if (sendToDevices.isNotEmpty())
+                    setOf(
+                        SelfVerificationMethod.CrossSignedDeviceVerification(
+                            ownUserId,
+                            sendToDevices.toSet(),
+                            createDeviceVerificationRequestStable
                         )
-                    else setOf()
-                }
+                    )
+                else setOf()
 
             val recoveryKeyMethods = when (val content = defaultKey?.content) {
                 is AesHmacSha2Key -> when (content.passphrase) {

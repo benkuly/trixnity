@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.crypto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Instant
-import net.folivo.trixnity.client.key.get
 import net.folivo.trixnity.client.key.getDeviceKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.LoadMembersService
@@ -14,8 +13,8 @@ import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventConten
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
-import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.crypto.key.DeviceTrustLevel
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
@@ -29,17 +28,19 @@ class ClientOlmStore(
     private val loadMembersService: LoadMembersService,
 ) : net.folivo.trixnity.crypto.olm.OlmStore {
 
-    override suspend fun findCurve25519Key(userId: UserId, deviceId: String): Key.Curve25519Key? =
-        keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Curve25519Key>()
+    override suspend fun getDeviceKeys(userId: UserId): Map<String, DeviceKeys>? =
+        keyStore.getDeviceKeys(userId).first()?.mapValues { it.value.value.signed }
 
+    override suspend fun getMembers(
+        roomId: RoomId,
+        memberships: Set<Membership>
+    ): Set<UserId> {
+        loadMembersService(roomId, true)
+        return roomStateStore.members(roomId, memberships)
+    }
 
-    override suspend fun findEd25519Key(userId: UserId, deviceId: String): Key.Ed25519Key? =
-        keyStore.getDeviceKey(userId, deviceId).first()?.value?.get<Key.Ed25519Key>()
-
-    override suspend fun findDeviceKeys(userId: UserId, senderKeyValue: Curve25519KeyValue): DeviceKeys? =
-        keyStore.getDeviceKeys(userId).first()?.values?.map { it.value.signed }
-            ?.find { it.keys.keys.any { key -> key.value == senderKeyValue } }
-
+    override suspend fun getTrustLevel(userId: UserId, deviceId: String): DeviceTrustLevel? =
+        keyStore.getDeviceKey(userId, deviceId).first()?.trustLevel.toDeviceTrustLevel()
 
     override suspend fun updateOlmSessions(
         senderKeyValue: Curve25519KeyValue,
@@ -87,18 +88,6 @@ class ClientOlmStore(
 
     override suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?) =
         olmCryptoStore.updateForgetFallbackKeyAfter(updater)
-
-
-    override suspend fun getDevices(roomId: RoomId, memberships: Set<Membership>): Map<UserId, Set<String>> {
-        loadMembersService(roomId, true)
-        val members = roomStateStore.members(roomId, memberships)
-        return members.mapNotNull { userId ->
-            keyStore.getDeviceKeys(userId).first()?.let { userId to it.keys }
-        }.toMap()
-    }
-
-    override suspend fun getDevices(roomId: RoomId, userId: UserId): Set<String>? =
-        keyStore.getDeviceKeys(userId).first()?.keys
 
     override suspend fun getHistoryVisibility(roomId: RoomId): HistoryVisibilityEventContent.HistoryVisibility? =
         roomStateStore.getByStateKey<HistoryVisibilityEventContent>(roomId).first()?.content?.historyVisibility

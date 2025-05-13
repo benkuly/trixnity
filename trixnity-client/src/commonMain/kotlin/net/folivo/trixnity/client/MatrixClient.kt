@@ -5,6 +5,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.media.MediaStore
@@ -21,14 +22,17 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.keys.Key
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.subscribeAsFlow
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
 import org.koin.core.Koin
+import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.MatrixClient")
@@ -124,7 +128,7 @@ suspend fun MatrixClient.Companion.login(
     initialDeviceDisplayName: String? = null,
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> =
     loginWith(
@@ -150,7 +154,7 @@ suspend fun MatrixClient.Companion.login(
             }
         },
         configuration = configuration,
-        coroutineScope = coroutineScope,
+        coroutineContext = coroutineContext,
     )
 
 suspend fun MatrixClient.Companion.login(
@@ -163,7 +167,7 @@ suspend fun MatrixClient.Companion.login(
     initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = login(
     baseUrl = baseUrl,
@@ -176,7 +180,7 @@ suspend fun MatrixClient.Companion.login(
     repositoriesModuleFactory = { repositoriesModule },
     mediaStoreFactory = { mediaStore },
     configuration = configuration,
-    coroutineScope = coroutineScope,
+    coroutineContext = coroutineContext,
 )
 
 suspend fun MatrixClient.Companion.loginWithPassword(
@@ -187,7 +191,7 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     initialDeviceDisplayName: String? = null,
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> =
     login(
@@ -201,7 +205,7 @@ suspend fun MatrixClient.Companion.loginWithPassword(
         repositoriesModuleFactory = repositoriesModuleFactory,
         mediaStoreFactory = mediaStoreFactory,
         configuration = configuration,
-        coroutineScope = coroutineScope,
+        coroutineContext = coroutineContext,
     )
 
 suspend fun MatrixClient.Companion.loginWithPassword(
@@ -212,7 +216,7 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWithPassword(
     baseUrl = baseUrl,
@@ -223,7 +227,7 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     repositoriesModuleFactory = { repositoriesModule },
     mediaStoreFactory = { mediaStore },
     configuration = configuration,
-    coroutineScope = coroutineScope,
+    coroutineContext = coroutineContext,
 )
 
 suspend fun MatrixClient.Companion.loginWithToken(
@@ -234,7 +238,7 @@ suspend fun MatrixClient.Companion.loginWithToken(
     initialDeviceDisplayName: String? = null,
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> =
     login(
@@ -248,7 +252,7 @@ suspend fun MatrixClient.Companion.loginWithToken(
         repositoriesModuleFactory = repositoriesModuleFactory,
         mediaStoreFactory = mediaStoreFactory,
         configuration = configuration,
-        coroutineScope = coroutineScope,
+        coroutineContext = coroutineContext,
     )
 
 suspend fun MatrixClient.Companion.loginWithToken(
@@ -259,7 +263,7 @@ suspend fun MatrixClient.Companion.loginWithToken(
     initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWithToken(
     baseUrl = baseUrl,
@@ -270,7 +274,7 @@ suspend fun MatrixClient.Companion.loginWithToken(
     repositoriesModuleFactory = { repositoriesModule },
     mediaStoreFactory = { mediaStore },
     configuration = configuration,
-    coroutineScope = coroutineScope,
+    coroutineContext = coroutineContext,
 )
 
 suspend fun MatrixClient.Companion.loginWith(
@@ -278,7 +282,7 @@ suspend fun MatrixClient.Companion.loginWith(
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
@@ -306,27 +310,15 @@ suspend fun MatrixClient.Companion.loginWith(
     val mediaStore = mediaStoreFactory(loginInfo)
     val repositoriesModule = repositoriesModuleFactory(loginInfo)
 
-    val coroutineName = config.name?.let { name -> CoroutineName(name) }
-    val job = SupervisorJob(coroutineScope.coroutineContext.job)
-    val coroutineScope = (coroutineScope + job + coroutineExceptionHandler).apply {
-        if (coroutineName != null) this + coroutineName
-    }
-
-    val koinApplication = koinApplication {
-        modules(module {
-            single { coroutineScope }
-            single { config }
-            single { mediaStore }
-        })
-        modules(repositoriesModule)
-        modules(config.modules ?: config.modulesFactory?.invoke() ?: config.modulesFactories.map { it.invoke() })
-    }
+    val koinApplication = initMatrixClientKoinApplication(
+        repositoriesModule = repositoriesModule,
+        mediaStore = mediaStore,
+        coroutineContext = coroutineContext,
+        config = config
+    )
     val di = koinApplication.koin
 
-    val rootStore = di.get<RootStore>()
-    rootStore.init(coroutineScope)
     val accountStore = di.get<AccountStore>()
-
     val olmPickleKey = ""
 
     accountStore.updateAccount {
@@ -346,72 +338,28 @@ suspend fun MatrixClient.Companion.loginWith(
         )
     }
 
-    val api = config.matrixClientServerApiClientFactory.create(
+    koinApplication.createMatrixClient(
         baseUrl = baseUrl,
-        authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)),
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig,
-        onLogout = { onLogout(it, accountStore) },
-        json = di.get(),
-        eventContentSerializerMappings = di.get(),
-        syncBatchTokenStore = object : SyncBatchTokenStore {
-            override suspend fun getSyncBatchToken(): String? =
-                accountStore.getAccount()?.syncBatchToken
-
-            override suspend fun setSyncBatchToken(token: String) {
-                accountStore.updateAccount { it?.copy(syncBatchToken = token) }
-            }
-        },
-        syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
-        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
-    )
-
-    val olmCryptoStore = di.get<OlmCryptoStore>()
-    val (signingKey, identityKey) = freeAfter(
-        olmCryptoStore.getOlmAccount()
-            ?.let { OlmAccount.unpickle(olmPickleKey, it) }
-            ?: OlmAccount.create()
-                .also { olmAccount -> olmCryptoStore.updateOlmAccount { olmAccount.pickle(olmPickleKey) } }
-    ) {
-        Key.Ed25519Key(loginInfo.deviceId, it.identityKeys.ed25519) to
-                Key.Curve25519Key(loginInfo.deviceId, it.identityKeys.curve25519)
-    }
-
-    koinApplication.modules(module {
-        single { UserInfo(loginInfo.userId, loginInfo.deviceId, signingKey, identityKey) }
-        single<MatrixClientServerApiClient> { api }
-        single { CurrentSyncState(api.sync.currentSyncState) }
-    })
-
-    val keyStore = di.get<KeyStore>()
-
-    val selfSignedDeviceKeys = di.get<SignService>().getSelfSignedDeviceKeys()
-    selfSignedDeviceKeys.signed.keys.forEach {
-        keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value.value))
-    }
-    val matrixClient = MatrixClientImpl(
         userId = loginInfo.userId,
         deviceId = loginInfo.deviceId,
-        baseUrl = baseUrl,
-        identityKey = identityKey,
-        signingKey = signingKey,
-        api = api,
-        di = di,
-        rootStore = rootStore,
+        olmPickleKey = olmPickleKey,
+        json = di.get(),
+        eventContentSerializerMappings = di.get(),
         accountStore = accountStore,
-        serverDataStore = di.get(),
-        mediaStore = di.get(),
-        mediaCacheMappingStore = di.get(),
-        eventHandlers = di.getAll(),
-        config = config,
-        coroutineScope = coroutineScope,
-    )
-    api.key.setKeys(deviceKeys = selfSignedDeviceKeys)
-        .onFailure { matrixClient.deleteAll() }
-        .getOrThrow()
-    keyStore.updateOutdatedKeys { it + loginInfo.userId }
-    matrixClient.also {
-        log.trace { "finished creating MatrixClient" }
+        olmCryptoStore = di.get(),
+        config = config
+    ) { matrixClient ->
+        val keyStore = di.get<KeyStore>()
+
+        val selfSignedDeviceKeys = di.get<SignService>().getSelfSignedDeviceKeys()
+        selfSignedDeviceKeys.signed.keys.forEach {
+            keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value.value))
+        }
+        matrixClient.api.key.setKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
+        keyStore.updateOutdatedKeys { it + loginInfo.userId }
+        matrixClient.also {
+            log.trace { "finished creating MatrixClient" }
+        }
     }
 }
 
@@ -420,7 +368,7 @@ suspend fun MatrixClient.Companion.loginWith(
     repositoriesModule: Module,
     mediaStore: MediaStore,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWith(
     baseUrl = baseUrl,
@@ -428,21 +376,78 @@ suspend fun MatrixClient.Companion.loginWith(
     mediaStoreFactory = { mediaStore },
     getLoginInfo = getLoginInfo,
     configuration = configuration,
-    coroutineScope = coroutineScope,
+    coroutineContext = coroutineContext,
 )
 
 suspend fun MatrixClient.Companion.fromStore(
     repositoriesModule: Module,
     mediaStore: MediaStore,
     onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
-    coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient?> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
 
+    val koinApplication = initMatrixClientKoinApplication(
+        repositoriesModule = repositoriesModule,
+        mediaStore = mediaStore,
+        coroutineContext = coroutineContext,
+        config = config
+    )
+    val di = koinApplication.koin
+
+    val accountStore = di.get<AccountStore>()
+    val olmCryptoStore = di.get<OlmCryptoStore>()
+
+    val account = accountStore.getAccount()
+    val baseUrl = account?.baseUrl?.let { Url(it) }
+    val userId = account?.userId
+    val deviceId = account?.deviceId
+    val olmPickleKey = account?.olmPickleKey
+    val olmAccount = olmCryptoStore.getOlmAccount()
+
+    if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
+        koinApplication.createMatrixClient(
+            baseUrl = baseUrl,
+            userId = userId,
+            deviceId = deviceId,
+            olmPickleKey = olmPickleKey,
+            json = di.get(),
+            eventContentSerializerMappings = di.get(),
+            accountStore = accountStore,
+            olmCryptoStore = olmCryptoStore,
+            config = config
+        ) { matrixClient ->
+            val accessToken = account.accessToken ?: onSoftLogin?.let {
+                val (identifier, password, token, loginType) = onSoftLogin()
+                matrixClient.api.authentication.login(
+                    identifier = identifier,
+                    password = password,
+                    token = token,
+                    type = loginType,
+                    deviceId = deviceId,
+                    refreshToken = true
+                ).getOrThrow().accessToken
+                    .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
+            }
+            if (accessToken != null) {
+                MatrixClientImpl(baseUrl, di).also {
+                    log.trace { "finished creating MatrixClient" }
+                }
+            } else null
+        }
+    } else null
+}
+
+private suspend fun initMatrixClientKoinApplication(
+    repositoriesModule: Module,
+    mediaStore: MediaStore,
+    coroutineContext: CoroutineContext,
+    config: MatrixClientConfiguration
+): KoinApplication {
     val coroutineName = config.name?.let { name -> CoroutineName(name) }
-    val job = SupervisorJob(coroutineScope.coroutineContext.job)
-    val coroutineScope = (coroutineScope + job + coroutineExceptionHandler).apply {
+    val job = SupervisorJob(coroutineContext[Job])
+    val coroutineScope = CoroutineScope(coroutineContext + job + coroutineExceptionHandler).apply {
         if (coroutineName != null) this + coroutineName
     }
 
@@ -456,77 +461,65 @@ suspend fun MatrixClient.Companion.fromStore(
         modules(config.modules ?: config.modulesFactory?.invoke() ?: config.modulesFactories.map { it.invoke() })
     }
     val di = koinApplication.koin
-
     val rootStore = di.get<RootStore>()
-    rootStore.init(coroutineScope)
+    rootStore.init(di.get())
+    return koinApplication
+}
 
-    val accountStore = di.get<AccountStore>()
-    val olmCryptoStore = di.get<OlmCryptoStore>()
+private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
+    baseUrl: Url,
+    userId: UserId,
+    deviceId: String,
+    olmPickleKey: String,
+    json: Json,
+    eventContentSerializerMappings: EventContentSerializerMappings,
+    accountStore: AccountStore,
+    olmCryptoStore: OlmCryptoStore,
+    config: MatrixClientConfiguration,
+    doFinally: suspend (MatrixClient) -> T,
+): T {
+    val api = config.matrixClientServerApiClientFactory.create(
+        baseUrl = baseUrl,
+        authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)),
+        httpClientEngine = config.httpClientEngine,
+        httpClientConfig = config.httpClientConfig,
+        onLogout = { onLogout(it, accountStore) },
+        json = json,
+        eventContentSerializerMappings = eventContentSerializerMappings,
+        syncBatchTokenStore = object : SyncBatchTokenStore {
+            override suspend fun getSyncBatchToken(): String? =
+                accountStore.getAccount()?.syncBatchToken
 
-    val account = accountStore.getAccount()
-    val baseUrl = account?.baseUrl?.let { Url(it) }
-    val userId = account?.userId
-    val deviceId = account?.deviceId
-    val olmPickleKey = account?.olmPickleKey
-    val olmAccount = olmCryptoStore.getOlmAccount()
-
-    if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
-        val api = config.matrixClientServerApiClientFactory.create(
-            baseUrl = baseUrl,
-            authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)),
-            httpClientEngine = config.httpClientEngine,
-            httpClientConfig = config.httpClientConfig,
-            onLogout = { onLogout(it, accountStore) },
-            json = di.get(),
-            eventContentSerializerMappings = di.get(),
-            syncBatchTokenStore = object : SyncBatchTokenStore {
-                override suspend fun getSyncBatchToken(): String? =
-                    accountStore.getAccount()?.syncBatchToken
-
-                override suspend fun setSyncBatchToken(token: String) {
-                    accountStore.updateAccount { it?.copy(syncBatchToken = token) }
-                }
-            },
-            syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
-            syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay,
-        )
-        val accessToken = account.accessToken ?: onSoftLogin?.let {
-            val (identifier, password, token, loginType) = onSoftLogin()
-            api.authentication.login(identifier, password, token, loginType, deviceId, refreshToken = true)
-                .getOrThrow().accessToken
-                .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
-        }
-        if (accessToken != null) {
-            val (signingKey, identityKey) = freeAfter(OlmAccount.unpickle(olmPickleKey, olmAccount)) {
-                Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
-                        Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
+            override suspend fun setSyncBatchToken(token: String) {
+                accountStore.updateAccount { it?.copy(syncBatchToken = token) }
             }
-            koinApplication.modules(module {
-                single { UserInfo(userId, deviceId, signingKey, identityKey) }
-                single<MatrixClientServerApiClient> { api }
-                single { CurrentSyncState(api.sync.currentSyncState) }
-            })
-            MatrixClientImpl(
-                userId = userId,
-                deviceId = deviceId,
-                baseUrl = baseUrl,
-                identityKey = identityKey,
-                signingKey = signingKey,
-                api = api,
-                di = di,
-                rootStore = rootStore,
-                accountStore = accountStore,
-                serverDataStore = di.get(),
-                mediaStore = di.get(),
-                mediaCacheMappingStore = di.get(),
-                eventHandlers = di.getAll(),
-                config = config,
-                coroutineScope = coroutineScope,
-            ).also {
-                log.trace { "finished creating MatrixClient" }
-            }
-        } else null
-    } else null
+        },
+        syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
+        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
+    )
+    val (signingKey, identityKey) = freeAfter(
+        olmCryptoStore.getOlmAccount()
+            ?.let { OlmAccount.unpickle(olmPickleKey, it) }
+            ?: OlmAccount.create()
+                .also { olmAccount -> olmCryptoStore.updateOlmAccount { olmAccount.pickle(olmPickleKey) } }
+    ) {
+        Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
+                Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
+    }
+    modules(module {
+        single { UserInfo(userId, deviceId, signingKey, identityKey) }
+        single<MatrixClientServerApiClient> { api }
+        single { CurrentSyncState(api.sync.currentSyncState) }
+    })
+    val matrixClient = MatrixClientImpl(baseUrl, koin)
+    try {
+        return doFinally(matrixClient)
+    } catch (e: Exception) {
+        matrixClient.logout()
+        matrixClient.deleteAll()
+        matrixClient.close()
+        throw e
+    }
 }
 
 private class AccountStoreBearerAccessTokenStore(
@@ -564,29 +557,30 @@ private suspend fun onLogout(
 }
 
 class MatrixClientImpl internal constructor(
-    override val userId: UserId,
-    override val deviceId: String,
     override val baseUrl: Url,
-    override val identityKey: Key.Curve25519Key,
-    override val signingKey: Key.Ed25519Key,
-    override val api: MatrixClientServerApiClient,
     override val di: Koin,
-    private val rootStore: RootStore,
-    private val accountStore: AccountStore,
-    serverDataStore: ServerDataStore,
-    private val mediaStore: MediaStore,
-    private val mediaCacheMappingStore: MediaCacheMappingStore,
-    private val eventHandlers: List<EventHandler>,
-    private val config: MatrixClientConfiguration,
-    private val coroutineScope: CoroutineScope,
 ) : MatrixClient {
+    private val coroutineScope: CoroutineScope = di.get()
+    private val rootStore: RootStore = di.get()
+    private val accountStore: AccountStore = di.get()
+    private val mediaStore: MediaStore = di.get()
+    private val mediaCacheMappingStore: MediaCacheMappingStore = di.get()
+    private val eventHandlers: List<EventHandler> = di.getAll()
+    private val config: MatrixClientConfiguration = di.get()
+    override val api: MatrixClientServerApiClient = di.get()
+    private val userInfo: UserInfo = di.get()
+    override val userId: UserId = userInfo.userId
+    override val deviceId: String = userInfo.deviceId
+    override val identityKey: Key.Curve25519Key = userInfo.identityPublicKey
+    override val signingKey: Key.Ed25519Key = userInfo.signingPublicKey
+
     private val started = MutableStateFlow(false)
 
     override val displayName: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.displayName }
         .stateIn(coroutineScope, Eagerly, null)
     override val avatarUrl: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.avatarUrl }
         .stateIn(coroutineScope, Eagerly, null)
-    override val serverData: StateFlow<ServerData?> = serverDataStore.getServerDataFlow()
+    override val serverData: StateFlow<ServerData?> = di.get<ServerDataStore>().getServerDataFlow()
         .stateIn(coroutineScope, Eagerly, null)
 
     override val syncState = api.sync.currentSyncState

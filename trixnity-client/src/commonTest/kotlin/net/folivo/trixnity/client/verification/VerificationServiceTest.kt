@@ -664,6 +664,34 @@ class VerificationServiceTest : TrixnityBaseTest() {
         }
 
     @Test
+    fun `don't add CrossSignedDeviceVerification when there is only a dehydrated device`() =
+        runTest(setup = { getSelfVerificationMethodsSetup() }) {
+            keyStore.updateCrossSigningKeys(aliceUserId) {
+                setOf(
+                    StoredCrossSigningKeys(
+                        Signed(CrossSigningKeys(aliceUserId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.Valid(true)
+                    ),
+                )
+            }
+            keyStore.updateDeviceKeys(aliceUserId) {
+                mapOf(
+                    aliceDeviceId to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, aliceDeviceId, setOf(), keysOf()), null),
+                        KeySignatureTrustLevel.NotCrossSigned
+                    ),
+                    "DEV2" to StoredDeviceKeys(
+                        Signed(DeviceKeys(aliceUserId, "DEV2", setOf(), keysOf(), true), null),
+                        KeySignatureTrustLevel.CrossSigned(false)
+                    ),
+                )
+            }
+            cut.getSelfVerificationMethods().first()
+                .shouldBeInstanceOf<SelfVerificationMethods.CrossSigningEnabled>()
+                .methods.size shouldBe 0
+        }
+
+    @Test
     fun `add AesHmacSha2RecoveryKeyWithPbkdf2Passphrase`() = runTest(setup = { getSelfVerificationMethodsSetup() }) {
         val defaultKey = SecretKeyEventContent.AesHmacSha2Key(
             name = "default key",

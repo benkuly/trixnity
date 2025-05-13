@@ -28,6 +28,7 @@ import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
+import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.membershipsAllowedToReceiveKey
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.VerifyResult
