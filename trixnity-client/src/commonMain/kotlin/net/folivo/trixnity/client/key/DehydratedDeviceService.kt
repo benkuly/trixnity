@@ -60,7 +60,6 @@ class DehydratedDeviceService(
         }
     }
 
-    // FIXME test
     // TODO This is not safe against network issues and there is no retry mechanism.
     @OptIn(ExperimentalCoroutinesApi::class)
     internal suspend fun rehydrateDeviceOnSetup() {
@@ -92,7 +91,6 @@ class DehydratedDeviceService(
         }
     }
 
-    // FIXME test
     internal suspend fun rehydrateDevice(dehydratedDeviceKey: ByteArray) {
         val currentDehydratedDevice = api.device.getDehydratedDevice()
             .onFailure {
@@ -171,8 +169,8 @@ class DehydratedDeviceService(
                                 nextBatch = nextBatch
                             ).getOrThrow()
                         nextBatch = eventBatch.nextBatch
-                        eventEmitter.emit(eventBatch.events)
                         if (eventBatch.events.isEmpty()) break
+                        else eventEmitter.emit(eventBatch.events)
                     }
                     coroutineContext.job.cancelChildren()
                 }
@@ -184,7 +182,6 @@ class DehydratedDeviceService(
         }
     }
 
-    // FIXME test
     internal suspend fun dehydrateDevice(dehydratedDeviceKey: ByteArray) {
         log.debug { "create new dehydrated device" }
         freeAfter(OlmAccount.create()) { olmAccount ->
@@ -209,12 +206,14 @@ class DehydratedDeviceService(
             olmAccount.generateFallbackKey()
             val fallbackKey =
                 olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(dehydratedDeviceSignService, true)
+            olmAccount.markKeysAsPublished()
 
             val selfSigningPrivateKey = keyStore.getSecrets()[M_CROSS_SIGNING_SELF_SIGNING]?.decryptedPrivateKey
             requireNotNull(selfSigningPrivateKey) { "could not find private key of $M_CROSS_SIGNING_SELF_SIGNING" }
             val selfSigningPublicKey =
                 keyStore.getCrossSigningKey(userId, SelfSigningKey)?.value?.signed?.get<Ed25519Key>()?.id
             requireNotNull(selfSigningPublicKey) { "could not find public key of $M_CROSS_SIGNING_SELF_SIGNING" }
+
             val deviceKeys = DeviceKeys(
                 userId = userId,
                 deviceId = deviceId,

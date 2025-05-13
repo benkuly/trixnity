@@ -818,6 +818,10 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                         require(this is RoomKeyEventContent)
                         room shouldBe room
                         sessionId shouldBe outboundSession.sessionId
+                        freeAfter(OlmInboundGroupSession.create(sessionKey)) { receivedInboundSession ->
+                            receivedInboundSession.sessionId shouldBe outboundSession.sessionId
+                            receivedInboundSession.firstKnownIndex shouldBe outboundSession.messageIndex - 1
+                        }
                     }
                 }
                 outboundSession.sessionId
@@ -884,6 +888,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
     suspend fun createExistingOutboundSession() {
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
+            repeat(23) { outboundSession.encrypt("bla") }
             olmStoreMock.outboundMegolmSession[room] =
                 StoredOutboundMegolmSession(
                     roomId = room,

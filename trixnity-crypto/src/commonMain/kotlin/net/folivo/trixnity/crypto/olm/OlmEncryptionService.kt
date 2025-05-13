@@ -353,18 +353,18 @@ class OlmEncryptionServiceImpl(
 
                 return when {
                     decryptedEvent.sender != userId ->
-                        throw DecryptOlmError.ValidationFailed("sender did not match")
+                        throw DecryptOlmError.ValidationFailed("sender did not match (expected $userId but got ${decryptedEvent.sender})")
 
                     decryptedEvent.recipient != ownUserId ->
-                        throw DecryptOlmError.ValidationFailed("recipient did not match")
+                        throw DecryptOlmError.ValidationFailed("recipient did not match (expected $ownUserId but got ${decryptedEvent.recipient})")
 
                     decryptedEvent.recipientKeys.filterIsInstance<Ed25519Key>()
                         .firstOrNull()?.value != ownEd25519Key.value ->
-                        throw DecryptOlmError.ValidationFailed("recipientKeys did not match")
+                        throw DecryptOlmError.ValidationFailed("recipientKeys did not match (expected $ownEd25519Key but got ${decryptedEvent.recipientKeys})")
 
                     decryptedEvent.senderKeys.filterIsInstance<Ed25519Key>()
                         .firstOrNull()?.value != senderSigningKey.value ->
-                        throw DecryptOlmError.ValidationFailed("senderKeys did not match")
+                        throw DecryptOlmError.ValidationFailed("senderKeys did not match (expected $senderSigningKey but got ${decryptedEvent.senderKeys})")
 
                     else -> decryptedEvent
                 }
