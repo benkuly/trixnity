@@ -101,7 +101,6 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     @Test
     fun `dehydrateDevice should create a new dehydrated device`() = runTest {
         val dehydratedDeviceKey = SecureRandom.nextBytes(32)
-        val deviceId = "DEHYDRATED_DEVICE_ID"
         var setDehydratedDevice: SetDehydratedDevice.Request? = null
 
         val (selfSigningPublicKey, selfSigningPrivateKey) = freeAfter(OlmPkSigning.create()) {
