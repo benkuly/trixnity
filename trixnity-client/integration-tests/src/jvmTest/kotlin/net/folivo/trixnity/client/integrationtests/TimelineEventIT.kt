@@ -47,6 +47,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class TimelineEventIT {
@@ -238,6 +239,7 @@ class TimelineEventIT {
                 ?.eventId
                 .shouldNotBeNull()
 
+            delay(1.seconds)
             client.stopSync()
             client.close()
 

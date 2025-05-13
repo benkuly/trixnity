@@ -297,7 +297,7 @@ class ActiveVerificationTest : TrixnityBaseTest() {
     fun `handleVerificationStep » current state is Start » handle VerificationStartEventContent » override event from lexicographically smaller deviceId`() =
         runTest(setup = { currentStateIsStartSetup() }) {
             val step = SasStartEventContent(
-                "AAAAAA",
+                "AAABBB", // do NOT confuse with AAAAAA from alice, but be before BBBBBB lexicographically
                 hashes = setOf(SasHash.Sha256),
                 keyAgreementProtocols = setOf(SasKeyAgreementProtocol.Curve25519HkdfSha256),
                 messageAuthenticationCodes = setOf(
@@ -311,7 +311,7 @@ class ActiveVerificationTest : TrixnityBaseTest() {
             val state = cut.state.value
             state.shouldBeInstanceOf<Start>()
             state.senderUserId shouldBe bob
-            state.senderDeviceId shouldBe "AAAAAA"
+            state.senderDeviceId shouldBe "AAABBB"
             val method = state.method
             method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
             val subState = method.state.value
