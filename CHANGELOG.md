@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug, where Media with Content Type Application/Json cannot be downloaded.
 - Fix user verification request going into direct rooms, that the other user left
 - Fix is direct computation of invitations not triggered on sync
+- Only one user should start verification, even if multiple users try to start it
 
 ### Security
 
