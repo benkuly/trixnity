@@ -215,7 +215,7 @@ class DevicesRoutesTest : TrixnityBaseTest() {
                     deviceData = DehydratedDeviceData.DehydrationV2("encrypted dehydrated device", "random nonce")
                 )
             )
-        val response = client.get("/_matrix/client/v3/dehydrated_device") {
+        val response = client.get("/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
         }
@@ -244,7 +244,7 @@ class DevicesRoutesTest : TrixnityBaseTest() {
         initCut()
         everySuspend { handlerMock.setDehydratedDevice(any()) }
             .returns(SetDehydratedDevice.Response("ABCDEFG"))
-        val response = client.put("/_matrix/client/v3/dehydrated_device") {
+        val response = client.put("/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
             setBody(
@@ -386,7 +386,7 @@ class DevicesRoutesTest : TrixnityBaseTest() {
         initCut()
         everySuspend { handlerMock.deleteDehydratedDevice(any()) }
             .returns(DeleteDehydratedDevice.Response("ABCDEFG"))
-        val response = client.delete("/_matrix/client/v3/dehydrated_device") {
+        val response = client.delete("/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
         }
@@ -421,7 +421,7 @@ class DevicesRoutesTest : TrixnityBaseTest() {
                     )
                 )
             )
-        val response = client.post("/_matrix/client/v3/dehydrated_device/ABCDEFG/events") {
+        val response = client.post("/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device/ABCDEFG/events") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
             setBody("""{"next_batch":"batch_me_if_you_can"}""")

@@ -173,7 +173,10 @@ class DevicesApiClientTest : TrixnityBaseTest() {
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/dehydrated_device", request.url.fullPath)
+                    assertEquals(
+                        "/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device",
+                        request.url.fullPath
+                    )
                     assertEquals(HttpMethod.Get, request.method)
                     assertEquals("", request.body.toByteArray().decodeToString())
                     respond(
@@ -206,7 +209,10 @@ class DevicesApiClientTest : TrixnityBaseTest() {
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/dehydrated_device", request.url.fullPath)
+                    assertEquals(
+                        "/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device",
+                        request.url.fullPath
+                    )
                     assertEquals(HttpMethod.Put, request.method)
                     request.body.toByteArray().decodeToString() shouldBe """
                         {
@@ -344,7 +350,10 @@ class DevicesApiClientTest : TrixnityBaseTest() {
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/dehydrated_device", request.url.fullPath)
+                    assertEquals(
+                        "/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device",
+                        request.url.fullPath
+                    )
                     assertEquals(HttpMethod.Delete, request.method)
                     assertEquals("", request.body.toByteArray().decodeToString())
                     respond(
@@ -365,7 +374,10 @@ class DevicesApiClientTest : TrixnityBaseTest() {
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
-                    assertEquals("/_matrix/client/v3/dehydrated_device/ABCDEFG/events", request.url.fullPath)
+                    assertEquals(
+                        "/_matrix/client/unstable/org.matrix.msc3814.v1/dehydrated_device/ABCDEFG/events",
+                        request.url.fullPath
+                    )
                     assertEquals(HttpMethod.Post, request.method)
                     assertEquals(
                         """{"next_batch":"batch_me_if_you_can"}""",
