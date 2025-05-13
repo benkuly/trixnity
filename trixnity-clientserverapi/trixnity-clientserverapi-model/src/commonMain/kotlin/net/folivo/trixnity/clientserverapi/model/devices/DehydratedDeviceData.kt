@@ -50,7 +50,8 @@ sealed interface DehydratedDeviceData {
     data class Unknown(override val algorithm: String, val raw: JsonObject) : DehydratedDeviceData
 }
 
-private class DehydratedDeviceDataSerializer : KSerializer<DehydratedDeviceData> {
+@OptIn(MSC3814::class)
+class DehydratedDeviceDataSerializer : KSerializer<DehydratedDeviceData> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DehydratedDeviceData")
     override fun deserialize(decoder: Decoder): DehydratedDeviceData {
         require(decoder is JsonDecoder)
