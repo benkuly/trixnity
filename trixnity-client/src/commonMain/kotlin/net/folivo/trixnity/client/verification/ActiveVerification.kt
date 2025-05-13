@@ -16,11 +16,17 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.key.verification.*
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationDoneEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveVerification")
 
@@ -98,6 +104,7 @@ abstract class ActiveVerificationImpl(
             if (!(relatesTo != null && step.relatesTo == relatesTo || transactionId != null && step.transactionId == transactionId))
                 cancel(Code.UnknownTransaction, "transaction is unknown")
             val currentState = state.value
+            log.debug { "current state: $currentState" }
             if (currentState is AcceptedByOtherDevice) {
                 if (step is VerificationDoneEventContent) {
                     mutableState.value = Done
@@ -156,13 +163,13 @@ abstract class ActiveVerificationImpl(
     private suspend fun onStart(step: VerificationStartEventContent, sender: UserId, isOurOwn: Boolean) {
         val senderDevice = step.fromDevice
         val currentState = state.value
-        suspend fun setNewStartEvent() {
+        suspend fun setNewStartEvent(weStartedVerification: Boolean) {
             log.debug { "set new start event $step from $sender ($senderDevice)" }
             val method = when (step) {
                 is SasStartEventContent ->
                     ActiveSasVerificationMethod.create(
                         startEventContent = step,
-                        weStartedVerification = isOurOwn,
+                        weStartedVerification = weStartedVerification,
                         ownUserId = ownUserId,
                         ownDeviceId = ownDeviceId,
                         theirUserId = theirUserId,
@@ -184,21 +191,19 @@ abstract class ActiveVerificationImpl(
             if (currentStartContent is SasStartEventContent) {
                 val userIdComparison = currentState.senderUserId.full.compareTo(sender.full)
                 when {
-                    userIdComparison > 0 -> setNewStartEvent()
-                    userIdComparison < 0 -> {// do nothing (we keep the current Start)
-                    }
+                    userIdComparison > 0 -> setNewStartEvent(ownUserId == sender)
+                    userIdComparison < 0 -> {}
 
                     else -> {
-                        val deviceIdComparison = currentState.senderDeviceId.compareTo(step.fromDevice)
+                        val deviceIdComparison = currentState.senderDeviceId.compareTo(senderDevice)
                         when {
-                            deviceIdComparison > 0 -> setNewStartEvent()
-                            else -> {// do nothing (we keep the current Start)
-                            }
+                            deviceIdComparison > 0 -> setNewStartEvent(ownDeviceId == senderDevice)
+                            else -> {}
                         }
                     }
                 }
             } else cancel(UnknownMethod, "the users selected two different verification methods")
-        } else setNewStartEvent()
+        } else setNewStartEvent(isOurOwn)
     }
 
     private fun onDone(isOurOwn: Boolean) {

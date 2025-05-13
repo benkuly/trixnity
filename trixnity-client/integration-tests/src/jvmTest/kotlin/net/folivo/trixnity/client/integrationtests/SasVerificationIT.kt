@@ -5,14 +5,23 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.key
 import net.folivo.trixnity.client.key.DeviceTrustLevel
+import net.folivo.trixnity.client.login
+import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.InMemoryMediaStore
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerification
@@ -60,13 +69,13 @@ class SasVerificationIT {
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStore = InMemoryMediaStore(),
-            getLoginInfo = { it.register("user1", password) }
+            getLoginInfo = { it.register("user1", password, deviceId = "CLIENT1") }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStore = InMemoryMediaStore(),
-            getLoginInfo = { it.register("user2", password) }
+            getLoginInfo = { it.register("user2", password, deviceId = "CLIENT2") }
         ).getOrThrow()
         client3 = MatrixClient.login(
             baseUrl = baseUrl,
@@ -74,6 +83,7 @@ class SasVerificationIT {
             password = password,
             repositoriesModule = repositoriesModule3,
             mediaStore = InMemoryMediaStore(),
+            deviceId = "CLIENT3",
         ) {
             name = "client3"
         }.getOrThrow()
@@ -150,6 +160,30 @@ class SasVerificationIT {
     }
 
     @Test
+    fun shouldDoSasDeviceVerification2(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(30_000) {
+            withClue("bootstrap client1") {
+                client1.key.bootstrapCrossSigning().also {
+                    it.result.getOrThrow()
+                        .shouldBeInstanceOf<UIA.Success<Unit>>()
+                }
+            }
+            withClue("bootstrap client2") {
+                client2.key.bootstrapCrossSigning().also {
+                    it.result.getOrThrow()
+                        .shouldBeInstanceOf<UIA.Success<Unit>>()
+                }
+            }
+            client2.verification.createDeviceVerificationRequest(client1.userId, setOf(client1.deviceId))
+            val client1Verification = client1.verification.activeDeviceVerification.first { it != null }
+            val client2Verification = client2.verification.activeDeviceVerification.first { it != null }
+
+            // change the order
+            checkSasVerification(client2, client1, client2Verification, client1Verification)
+        }
+    }
+
+    @Test
     fun shouldDoSasUserVerification(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             withClue("bootstrap client1") {
@@ -182,47 +216,70 @@ class SasVerificationIT {
         client1Verification: ActiveVerification?,
         client2Verification: ActiveVerification?,
     ) {
-        client1Verification.shouldNotBeNull()
-        client2Verification.shouldNotBeNull()
+        val coroutineScope = CoroutineScope(Dispatchers.Default)
+        try {
+            client1Verification.shouldNotBeNull()
+            client2Verification.shouldNotBeNull()
 
-        client2Verification.state.first { it is TheirRequest }
-            .shouldBeInstanceOf<TheirRequest>().ready()
+            client2Verification.state.first { it is TheirRequest }
+                .shouldBeInstanceOf<TheirRequest>().ready()
 
-        client1Verification.state.first { it is Ready }
-            .shouldBeInstanceOf<Ready>().start(VerificationMethod.Sas)
+            client1Verification.state.first { it is Ready }
+                .shouldBeInstanceOf<Ready>().start(VerificationMethod.Sas)
 
-        val client1SasVerification = client1Verification.state.first { it is Start }
-            .shouldBeInstanceOf<Start>()
-            .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
-        val client2SasVerification = client2Verification.state.first { it is Start }
-            .shouldBeInstanceOf<Start>()
-            .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
+            val client2OverridesSasRequest = client2.userId.full < client1.userId.full ||
+                    (client2.userId == client1.userId && client2.deviceId < client1.deviceId)
+            if (client2OverridesSasRequest) {
+                // this should replace the other verification request
+                client2Verification.state.first { it is Ready }
+                    .shouldBeInstanceOf<Ready>().start(VerificationMethod.Sas)
+            }
 
-        client2SasVerification.state.first { it is TheirSasStart }
-            .shouldBeInstanceOf<TheirSasStart>().accept()
+            val client1SasVerificationState = client1Verification.state.flatMapLatest { verificationState ->
+                if (verificationState is Start) {
+                    (verificationState.method as? ActiveSasVerificationMethod)?.state ?: flowOf(null)
+                } else flowOf(null)
+            }.stateIn(coroutineScope)
+            val client2SasVerificationState = client2Verification.state.flatMapLatest { verificationState ->
+                if (verificationState is Start) {
+                    (verificationState.method as? ActiveSasVerificationMethod)?.state ?: flowOf(null)
+                } else flowOf(null)
+            }.stateIn(coroutineScope)
 
-        val client1Comparison = client1SasVerification.state.first { it is ComparisonByUser }
-            .shouldBeInstanceOf<ComparisonByUser>()
+            if (client2OverridesSasRequest) {
+                client1SasVerificationState.first { it is TheirSasStart }
+                    .shouldBeInstanceOf<TheirSasStart>().accept()
+            } else {
+                client2SasVerificationState.first { it is TheirSasStart }
+                    .shouldBeInstanceOf<TheirSasStart>().accept()
+            }
 
-        val client2Comparison = client2SasVerification.state.first { it is ComparisonByUser }
-            .shouldBeInstanceOf<ComparisonByUser>()
+            val client1Comparison = client1SasVerificationState.first { it is ComparisonByUser }
+                .shouldBeInstanceOf<ComparisonByUser>()
 
-        client1Comparison.decimal shouldBe client2Comparison.decimal
-        client1Comparison.emojis shouldBe client2Comparison.emojis
+            val client2Comparison =
+                client2SasVerificationState.first { it is ComparisonByUser }
+                    .shouldBeInstanceOf<ComparisonByUser>()
 
-        client1Comparison.match()
-        client1SasVerification.state.first { it is WaitForMacs }
-            .shouldBeInstanceOf<WaitForMacs>()
-        client2Comparison.match()
+            client1Comparison.decimal shouldBe client2Comparison.decimal
+            client1Comparison.emojis shouldBe client2Comparison.emojis
 
-        client1Verification.state.first { it is Done }
-            .shouldBeInstanceOf<Done>()
-        client2Verification.state.first { it is Done }
-            .shouldBeInstanceOf<Done>()
+            client1Comparison.match()
+            client1SasVerificationState.first { it is WaitForMacs }
+                .shouldBeInstanceOf<WaitForMacs>()
+            client2Comparison.match()
 
-        client1.key.getTrustLevel(client2.userId, client2.deviceId)
-            .first { it == DeviceTrustLevel.CrossSigned(true) }
-        client2.key.getTrustLevel(client1.userId, client1.deviceId)
-            .first { it == DeviceTrustLevel.CrossSigned(true) }
+            client1Verification.state.first { it is Done }
+                .shouldBeInstanceOf<Done>()
+            client2Verification.state.first { it is Done }
+                .shouldBeInstanceOf<Done>()
+
+            client1.key.getTrustLevel(client2.userId, client2.deviceId)
+                .first { it == DeviceTrustLevel.CrossSigned(true) }
+            client2.key.getTrustLevel(client1.userId, client1.deviceId)
+                .first { it == DeviceTrustLevel.CrossSigned(true) }
+        } finally {
+            coroutineScope.cancel()
+        }
     }
 }
