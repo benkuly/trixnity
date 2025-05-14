@@ -9,12 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added experimental dehydrated devices.
-
 ### Changed
-
-- Keep isDirect for room with membership leave or ban.
-- Keep avatarUrl for room with membership leave or ban.
 
 ### Deprecated
 
@@ -22,9 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix verify of unknown signed json.
-
 ### Security
+
+## 4.15.3
+
+### Added
+
+- Added experimental dehydrated devices.
+
+### Changed
+
+- Keep isDirect for room with membership leave or ban.
+- Keep avatarUrl for room with membership leave or ban.
+
+### Fixed
+
+- Fix verify of unknown signed json.
 
 ## 4.15.2
 
