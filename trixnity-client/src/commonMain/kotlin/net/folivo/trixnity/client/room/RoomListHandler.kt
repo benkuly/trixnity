@@ -218,7 +218,9 @@ class RoomListHandler(
                     allRooms.await().forEach { roomId ->
                         val isDirect = allDirectEventRooms[roomId]?.first() != null
                         roomUpdates.add(roomId) { oldRoom ->
-                            oldRoom?.copy(isDirect = isDirect)
+                            val membership = oldRoom?.membership
+                            if (membership == Membership.LEAVE || membership == Membership.BAN) oldRoom
+                            else oldRoom?.copy(isDirect = isDirect)
                         }
                     }
                 }
