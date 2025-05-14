@@ -250,9 +250,9 @@ class RoomListHandler(
                             } else null
                         val avatarUrl = roomAvatarUrl?.ifEmpty { null } ?: memberAvatarUrl
                         roomUpdates.add(roomId) { oldRoom ->
-                            oldRoom?.copy(
-                                avatarUrl = avatarUrl,
-                            )
+                            val membership = oldRoom?.membership
+                            if (membership == Membership.LEAVE || membership == Membership.BAN) oldRoom
+                            else oldRoom?.copy(avatarUrl = avatarUrl)
                         }
                     }
                 }
