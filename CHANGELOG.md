@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Keep isDirect for room with membership leave or ban.
+- Keep avatarUrl for room with membership leave or ban.
 
 ### Deprecated
 

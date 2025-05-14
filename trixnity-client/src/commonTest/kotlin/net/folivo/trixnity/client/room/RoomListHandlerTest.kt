@@ -175,7 +175,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `isDirect » not change isDirect when a DirectEventContent is found for the room but membership is LEAVE or BAN`() =
+    fun `isDirect » membership is LEAVE or BAN » don't change isDirect`() =
         runTest {
             val roomId2 = RoomId("room2", "server")
             roomStore.update(roomId) { Room(roomId, isDirect = true, membership = Membership.LEAVE) }
@@ -254,6 +254,26 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         )
 
         roomStore.get(roomId).first()?.avatarUrl shouldBe "mxc://localhost/abcdef"
+    }
+
+    @Test
+    fun `avatarUrl » membership is LEAVE or BAN » don't change avatar'`() = runTest {
+        val roomId2 = RoomId("room2", "localhost")
+        roomStore.update(roomId) { Room(roomId, avatarUrl = "mxc://localhost/abcdef", membership = Membership.LEAVE) }
+        roomStore.update(roomId2) { Room(roomId2, avatarUrl = "mxc://localhost/abcdef", membership = Membership.BAN) }
+        val eventContent = DirectEventContent(
+            mappings = mapOf()
+        )
+
+        cut.updateRoomList(
+            SyncEvents(
+                Sync.Response(""),
+                listOf(ClientEvent.GlobalAccountDataEvent(eventContent))
+            )
+        )
+
+        roomStore.get(roomId).first()?.avatarUrl shouldBe "mxc://localhost/abcdef"
+        roomStore.get(roomId2).first()?.avatarUrl shouldBe "mxc://localhost/abcdef"
     }
 
     @Test
