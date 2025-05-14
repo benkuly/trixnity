@@ -3,11 +3,13 @@ package net.folivo.trixnity.crypto.sign
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.SignedCurve25519KeyValue.SignedCurve25519KeyValueSignable
 import net.folivo.trixnity.core.serialization.canonicalJsonString
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkSigning
@@ -16,7 +18,10 @@ import net.folivo.trixnity.olm.freeAfter
 
 interface SignService {
     suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId>
-    suspend fun signatures(jsonObject: JsonObject, signWith: SignWith = SignWith.DeviceKey): Signatures<UserId>
+    suspend fun signatures(
+        jsonObject: JsonObject,
+        signWith: SignWith = SignWith.DeviceKey,
+    ): Signatures<UserId>
 
     suspend fun <T> signatures(
         unsignedObject: T,
@@ -54,8 +59,9 @@ class SignServiceImpl(
             userId = userInfo.userId,
             deviceId = userInfo.deviceId,
             algorithms = setOf(EncryptionAlgorithm.Olm, EncryptionAlgorithm.Megolm),
-            keys = keysOf(userInfo.signingPublicKey, userInfo.identityPublicKey)
-        )
+            keys = keysOf(userInfo.signingPublicKey, userInfo.identityPublicKey),
+        ),
+        SignWith.DeviceKey
     )
 
     override suspend fun signatures(jsonObject: JsonObject, signWith: SignWith): Signatures<UserId> {
@@ -101,8 +107,7 @@ class SignServiceImpl(
         serializer: KSerializer<T>,
         signWith: SignWith
     ): Signatures<UserId> {
-        val jsonObject = json.encodeToJsonElement(serializer, unsignedObject)
-        require(jsonObject is JsonObject)
+        val jsonObject = json.encodeToJsonElement(serializer, unsignedObject).jsonObject
         return signatures(jsonObject, signWith)
     }
 
@@ -113,7 +118,6 @@ class SignServiceImpl(
     ): Signed<T, UserId> {
         return Signed(unsignedObject, signatures(unsignedObject, serializer, signWith))
     }
-
 
     override suspend fun signCurve25519Key(
         keyId: String,
@@ -126,7 +130,7 @@ class SignServiceImpl(
                 value = keyValue,
                 fallback = fallback,
                 signatures = signatures(
-                    KeyValue.SignedCurve25519KeyValue.SignedCurve25519KeyValueSignable(keyValue, fallback)
+                    SignedCurve25519KeyValueSignable(keyValue, fallback)
                 )
             )
         )
@@ -138,10 +142,8 @@ class SignServiceImpl(
         checkSignaturesOf: Map<UserId, Set<Ed25519Key>>
     ): VerifyResult {
         checkSignaturesOf.flatMap { it.value }.ifEmpty { return VerifyResult.MissingSignature("no signing keys given") }
-        val signed = signedObject.signed
-        val jsonObject = json.encodeToJsonElement(serializer, signed)
-        require(jsonObject is JsonObject)
-        val signedJson = canonicalFilteredJson(jsonObject)
+        val signedRaw = signedObject.raw ?: json.encodeToJsonElement(serializer, signedObject.signed).jsonObject
+        val signedString = canonicalFilteredJson(signedRaw)
         val verifyResults = checkSignaturesOf.flatMap { (userId, signingKeys) ->
             signingKeys.map { signingKey ->
                 val signatureKey = signedObject.signatures?.get(userId)?.find { it.id == signingKey.id }
@@ -153,7 +155,7 @@ class SignServiceImpl(
                     freeAfter(OlmUtility.create()) { olmUtility ->
                         olmUtility.verifyEd25519(
                             key = signingKey.value.value,
-                            message = signedJson,
+                            message = signedString,
                             signature = signatureKey.value.value
                         )
                     }
@@ -183,8 +185,12 @@ suspend inline fun <reified T> SignService.sign(
 suspend inline fun <reified T> SignService.sign(
     signedObject: Signed<T, UserId>,
     signWith: SignWith = SignWith.DeviceKey
-): Signed<T, UserId> =
-    signedObject + sign(signedObject.signed, serializer(), signWith).signatures
+): Signed<T, UserId> {
+    val raw = signedObject.raw
+    return signedObject +
+            if (raw == null) signatures(signedObject.signed, serializer(), signWith)
+            else signatures(raw, signWith)
+}
 
 suspend inline fun <reified T> SignService.signatures(
     unsignedObject: T,

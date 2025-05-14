@@ -175,7 +175,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `isDirect » not change isDirect when a DirectEventContent is found for the room, but membership is LEAVE or BAN`() =
+    fun `isDirect » not change isDirect when a DirectEventContent is found for the room but membership is LEAVE or BAN`() =
         runTest {
             val roomId2 = RoomId("room2", "server")
             roomStore.update(roomId) { Room(roomId, isDirect = true, membership = Membership.LEAVE) }

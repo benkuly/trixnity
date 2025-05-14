@@ -12,6 +12,7 @@ import io.kotest.matchers.types.instanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.core.UserInfo
@@ -214,6 +215,23 @@ class SignServiceTest : TrixnityBaseTest() {
         )
         cut.verify(
             signedObject,
+            mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
+        ) shouldBe VerifyResult.Valid
+    }
+
+    @Serializable
+    data class TestSign1(val field1: String)
+
+    @Serializable
+    data class TestSign2(val field1: String, val field2: String)
+
+    @Test
+    fun `verify and return valid with unknown fields`() = runTestWithSetup {
+        val signedObject2 = aliceSigningAccountSignService.sign(TestSign2("value1", "value2"))
+        val signedJsonObject2 = json.encodeToString(signedObject2)
+        val signedObject1 = json.decodeFromString<Signed<TestSign1, UserId>>(signedJsonObject2)
+        cut.verify(
+            signedObject1,
             mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
         ) shouldBe VerifyResult.Valid
     }

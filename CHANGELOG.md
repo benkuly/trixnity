@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix verify of unknown signed json.
+
 ### Security
 
 ## 4.15.2

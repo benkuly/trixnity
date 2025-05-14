@@ -15,7 +15,8 @@ import kotlinx.serialization.json.jsonObject
 @Serializable(with = SignedSerializer::class)
 open class Signed<T, U>(
     open val signed: T,
-    open val signatures: Signatures<U>? = null
+    open val signatures: Signatures<U>? = null,
+    open val raw: JsonObject? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -35,7 +36,8 @@ open class Signed<T, U>(
         if (signatures == null && moreSignatures == null) null
         else (signatures.orEmpty().keys + moreSignatures.orEmpty().keys).associateWith { key ->
             Keys(signatures?.get(key)?.keys.orEmpty() + moreSignatures?.get(key)?.keys.orEmpty())
-        }
+        },
+        raw
     )
 
     override fun hashCode(): Int {
@@ -45,7 +47,7 @@ open class Signed<T, U>(
     }
 
     override fun toString(): String {
-        return "Signed(signed=$signed, signatures=$signatures)"
+        return "Signed(signed=$signed, signedRaw=$raw, signatures=$signatures)"
     }
 }
 
@@ -63,21 +65,29 @@ class SignedSerializer<T, U>(
         }
         return Signed(
             signed = decoder.json.decodeFromJsonElement(valueSerializer, jsonObj),
-            signatures = signatures
+            signatures = signatures,
+            raw = JsonObject(jsonObj - "signatures")
         )
     }
 
     override fun serialize(encoder: Encoder, value: Signed<T, U>) {
         require(encoder is JsonEncoder)
-        val signedValue = encoder.json.encodeToJsonElement(valueSerializer, value.signed)
-        val signaturesSerializer = MapSerializer(signaturesKeySerializer, KeysSerializer)
-        require(signedValue is JsonObject)
-        encoder.encodeJsonElement(
-            JsonObject(buildMap {
-                putAll(signedValue)
-                value.signatures?.let { put("signatures", encoder.json.encodeToJsonElement(signaturesSerializer, it)) }
-            })
-        )
+        val raw = value.raw
+        if (raw != null) {
+            encoder.encodeJsonElement(raw)
+        } else {
+            val signedValue = encoder.json.encodeToJsonElement(valueSerializer, value.signed)
+            val signaturesSerializer = MapSerializer(signaturesKeySerializer, KeysSerializer)
+            require(signedValue is JsonObject)
+            encoder.encodeJsonElement(
+                JsonObject(buildMap {
+                    putAll(signedValue)
+                    value.signatures?.let {
+                        put("signatures", encoder.json.encodeToJsonElement(signaturesSerializer, it))
+                    }
+                })
+            )
+        }
     }
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Signed")
