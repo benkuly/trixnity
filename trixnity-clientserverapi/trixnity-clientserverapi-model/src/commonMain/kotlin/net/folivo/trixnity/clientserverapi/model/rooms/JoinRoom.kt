@@ -25,8 +25,8 @@ data class JoinRoom(
 ) : MatrixEndpoint<JoinRoom.Request, JoinRoom.Response> {
     @Serializable
     data class Request(
-        @SerialName("reason") val reason: String?,
-        @SerialName("third_party_signed") val thirdPartySigned: Signed<ThirdParty, String>?,
+        @SerialName("reason") val reason: String? = null,
+        @SerialName("third_party_signed") val thirdPartySigned: Signed<ThirdParty, String>? = null,
     ) {
         @Serializable
         data class ThirdParty(

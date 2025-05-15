@@ -24,7 +24,7 @@ data class KnockRoom(
 ) : MatrixEndpoint<KnockRoom.Request, KnockRoom.Response> {
     @Serializable
     data class Request(
-        @SerialName("reason") val reason: String?,
+        @SerialName("reason") val reason: String? = null,
     )
 
     @Serializable

@@ -21,6 +21,6 @@ data class LeaveRoom(
 ) : MatrixEndpoint<LeaveRoom.Request, Unit> {
     @Serializable
     data class Request(
-        @SerialName("reason") val reason: String?
+        @SerialName("reason") val reason: String? = null,
     )
 }

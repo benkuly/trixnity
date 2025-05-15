@@ -23,7 +23,7 @@ data class ReportEvent(
 ) : MatrixEndpoint<ReportEvent.Request, Unit> {
     @Serializable
     data class Request(
-        @SerialName("reason") val reason: String?,
+        @SerialName("reason") val reason: String? = null,
         @SerialName("score") val score: Long?,
     )
 }
