@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.PUT
 import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 
 /**
@@ -21,6 +22,8 @@ data class AddTransaction(
     @Serializable
     data class Request(
         @SerialName("events")
-        val events: List<@Contextual RoomEvent<*>>
+        val events: List<@Contextual RoomEvent<*>>,
+        @SerialName("ephemeral")
+        val ephemeral: List<@Contextual ClientEvent.EphemeralEvent<*>>? = null,
     )
 }

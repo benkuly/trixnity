@@ -89,7 +89,7 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
         @SerialName("sender") val sender: UserId
     ) : ClientEvent<C>
 
-    // TODO could be split into GlobalEphemeralEvent and RoomEphemeralEvent
+    // TODO could be split into GlobalEphemeralEvent (without sender and roomId) and RoomEphemeralEvent
     @Serializable
     data class EphemeralEvent<C : EphemeralEventContent>(
         @SerialName("content") override val content: C,
