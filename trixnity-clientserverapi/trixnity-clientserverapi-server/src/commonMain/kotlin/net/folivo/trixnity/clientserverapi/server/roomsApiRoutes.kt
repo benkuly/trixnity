@@ -50,6 +50,7 @@ internal fun Route.roomsApiRoutes(
     matrixEndpoint(json, contentMappings, handler::setTag)
     matrixEndpoint(json, contentMappings, handler::deleteTag)
     matrixEndpoint(json, contentMappings, handler::getEventContext)
+    matrixEndpoint(json, contentMappings, handler::reportRoom)
     matrixEndpoint(json, contentMappings, handler::reportEvent)
     matrixEndpoint(json, contentMappings, handler::upgradeRoom)
     matrixEndpoint(json, contentMappings, handler::getHierarchy)
