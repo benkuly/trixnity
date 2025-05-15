@@ -34,6 +34,15 @@ sealed interface ErrorResponse {
     ) : ErrorResponse
 
     /**
+     * The account has been suspended and can only be used for limited actions at this time.
+     */
+    @Serializable
+    @SerialName("M_USER_SUSPENDED")
+    data class UserSuspended(
+        override val error: String,
+    ) : ErrorResponse
+
+    /**
      * The account has been locked and cannot be used at this time.
      */
     @Serializable
