@@ -146,6 +146,13 @@ sealed interface ErrorResponse {
     data class ThirdPIdInUse(override val error: String) : ErrorResponse
 
     /**
+     * The homeserver does not support adding a third party identifier of the given medium.
+     */
+    @Serializable
+    @SerialName("M_THREEPID_MEDIUM_NOT_SUPPORTED")
+    data class ThirdPartyMediumNotSupported(override val error: String) : ErrorResponse
+
+    /**
      * Sent when a threepid given to an API cannot be used because no record matching the threepid was found.
      */
     @Serializable
