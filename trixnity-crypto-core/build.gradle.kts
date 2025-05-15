@@ -7,7 +7,6 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.kotlinxKover)
-    trixnity.general
     trixnity.publish
 }
 

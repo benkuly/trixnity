@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.konan.target.HostManager
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    trixnity.general
     trixnity.publish
 }
 

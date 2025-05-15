@@ -3,7 +3,6 @@ plugins {
     kotlin("plugin.serialization")
     alias(libs.plugins.kotlinxKover)
     alias(libs.plugins.mokkery)
-    trixnity.general
     trixnity.publish
 }
 
