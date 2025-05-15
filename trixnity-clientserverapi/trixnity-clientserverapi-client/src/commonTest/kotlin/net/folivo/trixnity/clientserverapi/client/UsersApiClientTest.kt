@@ -407,7 +407,7 @@ class UsersApiClientTest : TrixnityBaseTest() {
             })
         val response = matrixRestClient.user.setFilter(
             UserId("dino", "server"),
-            Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true)))
+            Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true)))
         ).getOrThrow()
         assertEquals("0", response)
     }
@@ -437,7 +437,7 @@ class UsersApiClientTest : TrixnityBaseTest() {
             })
         val response = matrixRestClient.user.getFilter(UserId("dino", "server"), "0").getOrThrow()
         assertEquals(
-            Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true))),
+            Filters(room = Filters.RoomFilter(state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true))),
             response
         )
     }

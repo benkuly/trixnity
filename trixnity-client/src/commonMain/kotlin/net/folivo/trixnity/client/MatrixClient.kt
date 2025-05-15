@@ -648,7 +648,7 @@ class MatrixClientImpl internal constructor(
                     api.user.setFilter(
                         userId, config.syncFilter.copy(
                             room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
-                                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                                state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true),
                                 includeLeave = config.deleteRoomsOnLeave.not(),
                             )
                         )
@@ -665,7 +665,7 @@ class MatrixClientImpl internal constructor(
                     api.user.setFilter(
                         userId, config.syncFilter.copy(
                             room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
-                                state = Filters.RoomFilter.StateFilter(lazyLoadMembers = true),
+                                state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true),
                                 includeLeave = config.deleteRoomsOnLeave.not(),
                             ),
                         )

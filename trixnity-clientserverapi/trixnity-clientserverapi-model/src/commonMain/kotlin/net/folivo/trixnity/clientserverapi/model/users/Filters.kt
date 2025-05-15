@@ -36,25 +36,11 @@ data class Filters(
         @SerialName("include_leave") val includeLeave: Boolean? = null,
         @SerialName("not_rooms") val notRooms: Set<String>? = null,
         @SerialName("rooms") val rooms: Set<String>? = null,
-        @SerialName("state") val state: StateFilter? = null,
+        @SerialName("state") val state: RoomEventFilter? = null,
         @SerialName("timeline") val timeline: RoomEventFilter? = null
     ) {
         @Serializable
         data class RoomEventFilter(
-            @SerialName("limit") val limit: Long? = null,
-            @SerialName("not_senders") val notSenders: Set<String>? = null,
-            @SerialName("not_types") val notTypes: Set<String>? = null,
-            @SerialName("senders") val senders: Set<String>? = null,
-            @SerialName("types") val types: Set<String>? = null,
-            @SerialName("lazy_load_members") val lazyLoadMembers: Boolean? = null,
-            @SerialName("include_redundant_members") val includeRedundantMembers: Boolean? = null,
-            @SerialName("not_rooms") val notRooms: Set<String>? = null,
-            @SerialName("rooms") val rooms: Set<String>? = null,
-            @SerialName("contains_url") val containsUrl: Boolean? = null
-        )
-
-        @Serializable
-        data class StateFilter(
             @SerialName("limit") val limit: Long? = null,
             @SerialName("not_senders") val notSenders: Set<String>? = null,
             @SerialName("not_types") val notTypes: Set<String>? = null,
