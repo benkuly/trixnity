@@ -107,15 +107,11 @@ fun MessageBuilder.roomMessageBuilder(
             )
 
             is RelatesTo.Reply, is RelatesTo.Thread -> {
-                val repliedEvent = relatesTo.replyTo?.eventId
-                    ?.let { roomService.getTimelineEventWithContentAndTimeout(roomId, it) }
-                val (richReplyBody, richReplyFormattedBody) =
-                    computeRichReplies(repliedEvent, body, formattedBody)
                 builder(
                     RoomMessageBuilderInfo(
-                        body = richReplyBody,
+                        body = body,
                         format = "org.matrix.custom.html",
-                        formattedBody = richReplyFormattedBody,
+                        formattedBody = formattedBody,
                         relatesTo = relatesTo,
                         mentions = mentions,
                     )

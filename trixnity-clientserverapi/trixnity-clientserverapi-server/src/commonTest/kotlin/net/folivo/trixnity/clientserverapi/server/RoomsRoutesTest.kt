@@ -1898,6 +1898,30 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun shouldReportRoom() = testApplication {
+        initCut()
+        everySuspend { handlerMock.reportRoom(any()) }
+            .returns(Unit)
+        val response =
+            client.post("/_matrix/client/v3/rooms/!room:server/report") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"reason":"someReason"}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verifySuspend {
+            handlerMock.reportRoom(assert {
+                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.requestBody shouldBe ReportRoom.Request("someReason")
+            })
+        }
+    }
+
+    @Test
     fun shouldReportEvent() = testApplication {
         initCut()
         everySuspend { handlerMock.reportEvent(any()) }

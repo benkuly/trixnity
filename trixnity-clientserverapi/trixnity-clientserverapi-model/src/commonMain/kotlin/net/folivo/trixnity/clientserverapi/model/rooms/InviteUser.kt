@@ -22,6 +22,6 @@ data class InviteUser(
     @Serializable
     data class Request(
         @SerialName("user_id") val userId: UserId,
-        @SerialName("reason") val reason: String?
+        @SerialName("reason") val reason: String? = null,
     )
 }

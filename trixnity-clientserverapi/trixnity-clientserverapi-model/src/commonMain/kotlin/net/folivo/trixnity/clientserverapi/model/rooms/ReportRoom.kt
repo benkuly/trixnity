@@ -10,15 +10,15 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 
 /**
- * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#post_matrixclientv3roomsroomidleave">matrix spec</a>
+ * @see <a href="https://spec.matrix.org/v1.13/client-server-api/#post_matrixclientv3roomsroomidreport">matrix spec</a>
  */
 @Serializable
-@Resource("/_matrix/client/v3/rooms/{roomId}/leave")
+@Resource("/_matrix/client/v3/rooms/{roomId}/report")
 @HttpMethod(POST)
-data class LeaveRoom(
+data class ReportRoom(
     @SerialName("roomId") val roomId: RoomId,
     @SerialName("user_id") val asUserId: UserId? = null
-) : MatrixEndpoint<LeaveRoom.Request, Unit> {
+) : MatrixEndpoint<ReportRoom.Request, Unit> {
     @Serializable
     data class Request(
         @SerialName("reason") val reason: String? = null,

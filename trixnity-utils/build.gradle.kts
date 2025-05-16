@@ -1,7 +1,6 @@
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.kotlinxKover)
-    trixnity.general
     trixnity.publish
 }
 

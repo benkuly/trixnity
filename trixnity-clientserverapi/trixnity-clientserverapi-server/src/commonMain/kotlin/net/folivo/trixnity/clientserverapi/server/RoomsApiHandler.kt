@@ -211,6 +211,11 @@ interface RoomsApiHandler {
     suspend fun getEventContext(context: MatrixEndpointContext<GetEventContext, Unit, GetEventContext.Response>): GetEventContext.Response
 
     /**
+     * @see [ReportRoom]
+     */
+    suspend fun reportRoom(context: MatrixEndpointContext<ReportRoom, ReportRoom.Request, Unit>)
+
+    /**
      * @see [ReportEvent]
      */
     suspend fun reportEvent(context: MatrixEndpointContext<ReportEvent, ReportEvent.Request, Unit>)

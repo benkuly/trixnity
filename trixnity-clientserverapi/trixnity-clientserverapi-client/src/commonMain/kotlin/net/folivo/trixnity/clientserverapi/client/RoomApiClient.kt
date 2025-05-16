@@ -456,6 +456,15 @@ interface RoomApiClient {
     ): Result<GetEventContext.Response>
 
     /**
+     * @see [ReportRoom]
+     */
+    suspend fun reportRoom(
+        roomId: RoomId,
+        reason: String? = null,
+        asUserId: UserId? = null
+    ): Result<Unit>
+
+    /**
      * @see [ReportEvent]
      */
     suspend fun reportEvent(
@@ -921,6 +930,13 @@ class RoomApiClientImpl(
     ): Result<GetEventContext.Response> =
         baseClient.request(GetEventContext(roomId, eventId, filter, limit, asUserId))
 
+    override suspend fun reportRoom(
+        roomId: RoomId,
+        reason: String?,
+        asUserId: UserId?
+    ): Result<Unit> =
+        baseClient.request(ReportRoom(roomId, asUserId), ReportRoom.Request(reason))
+    
     override suspend fun reportEvent(
         roomId: RoomId,
         eventId: EventId,

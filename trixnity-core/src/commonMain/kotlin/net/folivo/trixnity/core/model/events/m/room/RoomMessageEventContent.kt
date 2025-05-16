@@ -312,7 +312,7 @@ val RoomMessageEventContent.bodyWithoutFallback: String
         } else body
 
 val RoomMessageEventContent.formattedBodyWithoutFallback: String?
-    get() = formattedBody?.removeFallbackFromFormattedBody()
-
-private fun String.removeFallbackFromFormattedBody(): String =
-    substringAfterLast("</mx-reply>").removePrefix("\n")
+    get() =
+        if (this.relatesTo?.replyTo != null)
+            formattedBody?.substringAfterLast("</mx-reply>")?.removePrefix("\n")
+        else formattedBody

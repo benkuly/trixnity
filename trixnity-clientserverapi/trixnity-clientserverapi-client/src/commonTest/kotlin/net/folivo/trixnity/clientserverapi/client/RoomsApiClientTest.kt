@@ -1872,6 +1872,35 @@ class RoomsApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun shouldReportRoom() = runTest {
+        val response = SendEventResponse(EventId("event"))
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/rooms/!room:server/report",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """{"reason":"someReason"}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        json.encodeToString(response),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.room.reportRoom(
+            roomId = RoomId("room", "server"),
+            reason = "someReason",
+        ).getOrThrow()
+    }
+
+    @Test
     fun shouldReportEvent() = runTest {
         val response = SendEventResponse(EventId("event"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
@@ -1901,6 +1930,7 @@ class RoomsApiClientTest : TrixnityBaseTest() {
             score = -100
         ).getOrThrow()
     }
+
 
     @Test
     fun shouldUpgradeRoom() = runTest {

@@ -1,7 +1,6 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    trixnity.general
 }
 
 kotlin {

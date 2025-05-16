@@ -1,7 +1,6 @@
 plugins {
     id("com.android.library")
     kotlin("multiplatform")
-    trixnity.general
     trixnity.publish
 }
 

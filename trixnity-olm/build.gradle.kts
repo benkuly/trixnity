@@ -10,7 +10,6 @@ plugins {
     kotlin("plugin.serialization")
     alias(libs.plugins.download)
     alias(libs.plugins.kotlinxKover)
-    trixnity.general
     trixnity.publish
 }
 

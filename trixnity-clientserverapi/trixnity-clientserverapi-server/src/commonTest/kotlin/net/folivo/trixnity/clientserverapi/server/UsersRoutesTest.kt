@@ -294,7 +294,7 @@ class UsersRoutesTest : TrixnityBaseTest() {
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.requestBody shouldBe Filters(
                     room = Filters.RoomFilter(
-                        state = Filters.RoomFilter.StateFilter(
+                        state = Filters.RoomFilter.RoomEventFilter(
                             lazyLoadMembers = true
                         )
                     )
@@ -310,7 +310,7 @@ class UsersRoutesTest : TrixnityBaseTest() {
             .returns(
                 Filters(
                     room = Filters.RoomFilter(
-                        state = Filters.RoomFilter.StateFilter(
+                        state = Filters.RoomFilter.RoomEventFilter(
                             lazyLoadMembers = true
                         )
                     )

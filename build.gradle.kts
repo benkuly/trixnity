@@ -14,6 +14,21 @@ plugins {
     alias(libs.plugins.mokkery).apply(false)
 }
 
+val trixnityVersion: String = libs.versions.trixnity.get()
+
+allprojects {
+    group = "net.folivo"
+    version = withVersionSuffix(trixnityVersion)
+
+    if (System.getenv("WITH_LOCK")?.toBoolean() == true) {
+        dependencyLocking {
+            lockAllConfigurations()
+        }
+
+        val dependenciesForAll by tasks.registering(DependencyReportTask::class) { }
+    }
+}
+
 val tmpDir = layout.buildDirectory.get().asFile.resolve("tmp")
 val olmBinariesZipDir = tmpDir.resolve("trixnity-olm-binaries-${libs.versions.trixnityOlmBinaries.get()}.zip")
 val opensslBinariesZipDir =
