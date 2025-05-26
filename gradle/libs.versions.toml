@@ -146,4 +146,5 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 download = { id = "de.undercouch.download", version.ref = "downloadGradlePlugin" }
 kotest = { id = "io.kotest.multiplatform", version.ref = "kotest" }
 mokkery = { id = "dev.mokkery", version.ref = "mokkery" }
+room = { id = "androidx.room", version.ref = "androidxRoom" }
 kotlinxKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kotlinxKover" }

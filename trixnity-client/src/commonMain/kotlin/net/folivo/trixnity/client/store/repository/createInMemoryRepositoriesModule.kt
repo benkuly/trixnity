@@ -32,4 +32,5 @@ fun createInMemoryRepositoriesModule() = module {
     singleOf<MediaCacheMappingRepository>(::InMemoryMediaCacheMappingRepository)
     singleOf<GlobalAccountDataRepository>(::InMemoryGlobalAccountDataRepository)
     singleOf<RoomAccountDataRepository>(::InMemoryRoomAccountDataRepository)
+    singleOf<UserPresenceRepository>(::InMemoryUserPresenceRepository)
 }

@@ -4,7 +4,6 @@ import net.folivo.trixnity.core.EventHandler
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.named
 import org.koin.core.module.dsl.singleOf
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 fun createUserModule() = module {
@@ -13,10 +12,9 @@ fun createUserModule() = module {
         bind<LazyMemberEventHandler>()
         named<UserMemberEventHandler>()
     }
-    singleOf(::PresenceEventHandlerImpl) {
-        bind<PresenceEventHandler>()
+    singleOf(::UserPresenceEventHandler) {
         bind<EventHandler>()
-        named<PresenceEventHandlerImpl>()
+        named<UserPresenceEventHandler>()
     }
     singleOf(::ReceiptEventHandler) {
         bind<EventHandler>()
@@ -42,10 +40,13 @@ fun createUserModule() = module {
             roomStateStore = get(),
             roomTimelineStore = get(),
             globalAccountDataStore = get(),
+            userPresenceStore = get(),
             loadMembersService = get(),
-            presenceEventHandler = get(named<PresenceEventHandlerImpl>()),
             userInfo = get(),
             mappings = get(),
+            currentSyncState = get(),
+            clock = get(),
+            config = get(),
         )
     }
 }

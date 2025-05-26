@@ -1,8 +1,14 @@
 package net.folivo.trixnity.client.user
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.datetime.Clock
+import net.folivo.trixnity.client.CurrentSyncState
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -11,6 +17,7 @@ import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.BAN_DEFAULT
@@ -22,10 +29,12 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Comp
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.USERS_DEFAULT
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
+import kotlin.time.Duration
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.UserService")
 
 interface UserService {
+    @Deprecated("without function, use getPresence() instead", level = DeprecationLevel.ERROR)
     val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
     suspend fun loadMembers(roomId: RoomId, wait: Boolean = true)
 
@@ -55,6 +64,7 @@ interface UserService {
 
     fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean>
 
+    fun getPresence(userId: UserId): Flow<UserPresence?>
 
     fun <C : GlobalAccountDataEventContent> getAccountData(
         eventContentClass: KClass<C>,
@@ -67,14 +77,20 @@ class UserServiceImpl(
     private val roomUserStore: RoomUserStore,
     private val roomStateStore: RoomStateStore,
     private val roomTimelineStore: RoomTimelineStore,
+    private val userPresenceStore: UserPresenceStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val loadMembersService: LoadMembersService,
-    presenceEventHandler: PresenceEventHandler,
     userInfo: UserInfo,
+    private val currentSyncState: CurrentSyncState,
+    private val clock: Clock,
     private val mappings: EventContentSerializerMappings,
+    private val config: MatrixClientConfiguration,
 ) : UserService {
 
-    override val userPresence = presenceEventHandler.userPresence
+
+    @Deprecated("without function, use getPresence() instead", level = DeprecationLevel.ERROR)
+    override val userPresence: StateFlow<Map<UserId, PresenceEventContent>> = MutableStateFlow(mapOf())
+
     private val ownUserId = userInfo.userId
 
     override suspend fun loadMembers(roomId: RoomId, wait: Boolean) = loadMembersService(roomId, wait)
@@ -263,4 +279,34 @@ class UserServiceImpl(
         return globalAccountDataStore.get(eventContentClass, key)
             .map { it?.content }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun getPresence(userId: UserId): Flow<UserPresence?> =
+        combine(currentSyncState, userPresenceStore.getPresence(userId)) { syncState, userPresence ->
+            syncState to userPresence
+        }.transformLatest { (syncState, userPresence) ->
+            val now by lazy { clock.now() }
+            suspend fun unavailable(userPresence: UserPresence) = emit(
+                UserPresence(
+                    presence = Presence.UNAVAILABLE,
+                    lastUpdate = userPresence.lastUpdate,
+                    lastActive = userPresence.lastActive
+                )
+            )
+            log.trace { "getPresence: syncState=$syncState, userPresence=$userPresence, now=$now" }
+            when {
+                userPresence == null -> emit(null)
+                syncState != SyncState.RUNNING -> unavailable(userPresence)
+                userPresence.isCurrentlyActive == true -> emit(userPresence)
+                else -> {
+                    val lastActive = userPresence.lastActive ?: userPresence.lastUpdate
+                    val markAsUnavailableDelay = config.userPresenceActivityThreshold - now.minus(lastActive)
+                    if (markAsUnavailableDelay > Duration.ZERO) {
+                        emit(userPresence)
+                        delay(markAsUnavailableDelay)
+                        unavailable(userPresence)
+                    } else unavailable(userPresence)
+                }
+            }
+        }.distinctUntilChanged()
 }

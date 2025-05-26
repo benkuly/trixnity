@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotest)
     alias(libs.plugins.kotlinxKover)
+    alias(libs.plugins.room)
     trixnity.publish
 }
 
@@ -48,6 +49,10 @@ kotlin {
             }
         }
     }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {

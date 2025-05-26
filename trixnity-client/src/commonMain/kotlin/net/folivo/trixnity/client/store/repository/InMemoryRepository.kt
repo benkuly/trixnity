@@ -137,6 +137,9 @@ class InMemoryMediaCacheMappingRepository : MediaCacheMappingRepository,
 class InMemoryGlobalAccountDataRepository : GlobalAccountDataRepository,
     InMemoryMapRepository<String, String, GlobalAccountDataEvent<*>>()
 
+class InMemoryUserPresenceRepository : UserPresenceRepository,
+    InMemoryMinimalRepository<UserId, UserPresence>()
+
 class InMemoryRoomAccountDataRepository : RoomAccountDataRepository,
     InMemoryMapRepository<RoomAccountDataRepositoryKey, String, RoomAccountDataEvent<*>>() {
     override suspend fun deleteByRoomId(roomId: RoomId) {

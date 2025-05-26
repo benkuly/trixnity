@@ -30,8 +30,6 @@ import net.folivo.trixnity.clientserverapi.client.SyncApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.TypingEventContent
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
@@ -226,12 +224,13 @@ fun createTrixnityBotModules(): List<Module> = listOf(
                 roomStateStore = get(),
                 roomTimelineStore = get(),
                 globalAccountDataStore = get(),
+                userPresenceStore = get(),
                 loadMembersService = get(),
-                presenceEventHandler = object : PresenceEventHandler {
-                    override val userPresence: StateFlow<Map<UserId, PresenceEventContent>> = MutableStateFlow(mapOf())
-                },
                 userInfo = get(),
                 mappings = get(),
+                currentSyncState = get(),
+                clock = get(),
+                config = get(),
             )
         }
     }
@@ -360,13 +359,13 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                     roomStateStore = get(),
                     roomTimelineStore = get(),
                     globalAccountDataStore = get(),
+                    userPresenceStore = get(),
                     loadMembersService = get(),
-                    presenceEventHandler = object : PresenceEventHandler {
-                        override val userPresence: StateFlow<Map<UserId, PresenceEventContent>> =
-                            MutableStateFlow(mapOf())
-                    },
                     userInfo = get(),
                     mappings = get(),
+                    currentSyncState = get(),
+                    clock = get(),
+                    config = get(),
                 )
             }
         }

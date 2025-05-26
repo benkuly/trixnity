@@ -25,13 +25,17 @@ import androidx.room.*
         RoomRoom::class,
         RoomRoomState::class,
         RoomRoomUser::class,
+        RoomUserPresence::class,
         RoomRoomUserReceipts::class,
         RoomSecretKeyRequest::class,
         RoomSecrets::class,
         RoomTimelineEventRelation::class,
         RoomTimelineEvent::class,
     ],
-    version = 3, // tick this value when any entity classes change
+    version = 4, // tick this value when any entity classes change
+    autoMigrations = [
+        AutoMigration(from = 3, to = 4)
+    ],
     exportSchema = true,
 )
 @TypeConverters(
@@ -71,6 +75,7 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun secrets(): SecretsDao
     abstract fun timelineEventRelation(): TimelineEventRelationDao
     abstract fun timelineEvent(): TimelineEventDao
+    abstract fun userPresence(): UserPresenceDao
 }
 
 // The Room compiler generates the `actual` implementations.

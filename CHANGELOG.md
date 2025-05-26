@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support Matrix 1.13.
+- Support Matrix 1.13
+- Persist user presence in database
 
 ### Changed
 
@@ -25,32 +26,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added experimental dehydrated devices.
+- Added experimental dehydrated devices
 
 ### Changed
 
-- Keep isDirect for room with membership leave or ban.
-- Keep avatarUrl for room with membership leave or ban.
+- Keep isDirect for room with membership leave or ban
+- Keep avatarUrl for room with membership leave or ban
 
 ### Fixed
 
-- Fix verify of unknown signed json.
+- Fix verify of unknown signed json
 
 ## 4.15.2
 
 ### Changed
 
 - Mostly switch to kotlin test
-- When creating Timeline, roomId is used in the init block. This is less error-prone, when working with upgraded rooms.
+- When creating Timeline, roomId is used in the init block. This is less error-prone, when working with upgraded rooms
 
 ### Deprecated
 
-- Deprecate creating Timeline with roomId.
+- Deprecate creating Timeline with roomId
 
 ### Removed
 
 - Remove Kotest Runner from most projects
-- Removed `@ForceJson` annotation.
+- Removed `@ForceJson` annotation
 
 ### Fixed
 

@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
@@ -131,6 +133,21 @@ fun TrixnityBaseTest.getInMemoryGlobalAccountDataStore(setup: suspend GlobalAcco
         DefaultEventContentSerializerMappings,
         MatrixClientConfiguration(),
         ObservableCacheStatisticCollector(),
+        testScope.backgroundScope,
+        testScope.testClock,
+    ).apply {
+        scheduleSetup {
+            init(backgroundScope)
+            setup()
+        }
+    }
+
+fun TrixnityBaseTest.getInMemoryUserPresenceStore(setup: suspend UserPresenceStore.() -> Unit = {}) =
+    UserPresenceStore(
+        InMemoryUserPresenceRepository(),
+        RepositoryTransactionManagerMock(),
+        ObservableCacheStatisticCollector(),
+        MatrixClientConfiguration(),
         testScope.backgroundScope,
         testScope.testClock,
     ).apply {
@@ -328,4 +345,10 @@ suspend fun <T> retry(
         exceptionClass = exceptionClass,
         f = f,
     )
+}
+
+
+class ClockMock : Clock {
+    var nowValue: Instant = Instant.fromEpochMilliseconds(24242424)
+    override fun now(): Instant = nowValue
 }

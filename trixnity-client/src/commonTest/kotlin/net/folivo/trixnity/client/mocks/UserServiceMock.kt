@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserReceipts
+import net.folivo.trixnity.client.store.UserPresence
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -108,4 +109,7 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
+    override fun getPresence(userId: UserId): Flow<UserPresence?> {
+        throw NotImplementedError()
+    }
 }
