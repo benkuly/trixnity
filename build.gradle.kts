@@ -14,11 +14,9 @@ plugins {
     alias(libs.plugins.mokkery).apply(false)
 }
 
-val trixnityVersion: String = libs.versions.trixnity.get()
-
 allprojects {
     group = "net.folivo"
-    version = withVersionSuffix(trixnityVersion)
+    version = withVersionSuffix(rootProject.libs.versions.trixnity.get())
 
     if (System.getenv("WITH_LOCK")?.toBoolean() == true) {
         dependencyLocking {
