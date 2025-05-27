@@ -47,7 +47,6 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class TimelineEventIT {
@@ -239,14 +238,14 @@ class TimelineEventIT {
                 ?.eventId
                 .shouldNotBeNull()
 
-            delay(1.seconds)
             client.stopSync()
+            client.syncOnce().getOrThrow()
             client.close()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
                 val roomId = varchar("room_id", length = 255)
                 val eventId = varchar("event_id", length = 255)
-                override val primaryKey = PrimaryKey(roomId, this.eventId)
+                override val primaryKey = PrimaryKey(this.roomId, this.eventId)
                 val value = text("value")
             }
             newSuspendedTransaction(Dispatchers.IO, database) {

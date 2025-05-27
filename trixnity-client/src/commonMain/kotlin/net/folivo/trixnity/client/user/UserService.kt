@@ -17,7 +17,6 @@ import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
-import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.BAN_DEFAULT
@@ -286,26 +285,19 @@ class UserServiceImpl(
             syncState to userPresence
         }.transformLatest { (syncState, userPresence) ->
             val now by lazy { clock.now() }
-            suspend fun unavailable(userPresence: UserPresence) = emit(
-                UserPresence(
-                    presence = Presence.UNAVAILABLE,
-                    lastUpdate = userPresence.lastUpdate,
-                    lastActive = userPresence.lastActive
-                )
-            )
             log.trace { "getPresence: syncState=$syncState, userPresence=$userPresence, now=$now" }
             when {
                 userPresence == null -> emit(null)
-                syncState != SyncState.RUNNING -> unavailable(userPresence)
+                syncState != SyncState.RUNNING -> emit(null)
                 userPresence.isCurrentlyActive == true -> emit(userPresence)
                 else -> {
                     val lastActive = userPresence.lastActive ?: userPresence.lastUpdate
-                    val markAsUnavailableDelay = config.userPresenceActivityThreshold - now.minus(lastActive)
-                    if (markAsUnavailableDelay > Duration.ZERO) {
+                    val markAsUnknownDelay = config.userPresenceActivityThreshold - now.minus(lastActive)
+                    if (markAsUnknownDelay > Duration.ZERO) {
                         emit(userPresence)
-                        delay(markAsUnavailableDelay)
-                        unavailable(userPresence)
-                    } else unavailable(userPresence)
+                        delay(markAsUnknownDelay)
+                        emit(null)
+                    } else emit(null)
                 }
             }
         }.distinctUntilChanged()

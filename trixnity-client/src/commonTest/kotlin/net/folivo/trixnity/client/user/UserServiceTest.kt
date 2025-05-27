@@ -1114,11 +1114,11 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getUserPresence » sync is running » should be unavailable`() = runTest {
+    fun `getUserPresence » sync is running » should be offline`() = runTest {
         val lastActive = Instant.fromEpochMilliseconds(24)
         currentSyncState.value = SyncState.STARTED
         userPresenceStore.setPresence(alice, UserPresence(Presence.ONLINE, clock.now(), lastActive))
-        cut.getPresence(alice).first() shouldBe UserPresence(Presence.UNAVAILABLE, clock.now(), lastActive)
+        cut.getPresence(alice).first() shouldBe null
     }
 
     @Test
@@ -1136,7 +1136,7 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getUserPresence » last active is below threshold » should pass from store and make unavailable later`() =
+    fun `getUserPresence » last active is below threshold » should pass from store and make offline later`() =
         runTest {
             val presence =
                 UserPresence(
@@ -1152,7 +1152,7 @@ class UserServiceTest : TrixnityBaseTest() {
             delay(2.minutes)
             clock.nowValue += 2.minutes
 
-            result.value shouldBe UserPresence(Presence.UNAVAILABLE, clock.now() - 2.minutes, clock.now() - 6.minutes)
+            result.value shouldBe null
 
             // should reset on store update
             val presence2 =
@@ -1183,11 +1183,11 @@ class UserServiceTest : TrixnityBaseTest() {
             delay(2.minutes)
             clock.nowValue += 2.minutes
 
-            result.value shouldBe UserPresence(Presence.UNAVAILABLE, clock.now() - 6.minutes)
+            result.value shouldBe null
         }
 
     @Test
-    fun `getUserPresence » last active is above threshold » should be unavailable`() =
+    fun `getUserPresence » last active is above threshold » should be null`() =
         runTest {
             val presence =
                 UserPresence(
@@ -1196,7 +1196,7 @@ class UserServiceTest : TrixnityBaseTest() {
                     statusMessage = "status"
                 )
             userPresenceStore.setPresence(alice, presence)
-            cut.getPresence(alice).first() shouldBe UserPresence(Presence.UNAVAILABLE, clock.now() - 6.minutes)
+            cut.getPresence(alice).first() shouldBe null
         }
 
     private fun canKickAlice(
