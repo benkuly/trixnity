@@ -96,7 +96,7 @@ class OutdatedKeysHandler(
         // We want to load keys lazily. We don't have any e2e sessions in the initial sync, so we can skip it.
         if (syncState != SyncState.INITIAL_SYNC) {
             val stopTrackingKeys = mutableSetOf<UserId>()
-            val joinedEncryptedRooms by lazy { async { roomStore.encryptedJoinedRooms() } }
+            val encryptedRooms by lazy { async { roomStore.encryptedRooms() } }
             events.forEach { event ->
                 roomStore.get(event.roomId).first()?.let { room ->
                     if (room.encrypted) {
@@ -105,7 +105,7 @@ class OutdatedKeysHandler(
                         if (userId != userInfo.userId && keyStore.isTracked(userId)) {
                             val isActiveMemberOfAnyOtherEncryptedRoom =
                                 roomStateStore.getByRooms<MemberEventContent>(
-                                    joinedEncryptedRooms.await(),
+                                    encryptedRooms.await(),
                                     userId.full,
                                 ).any { event ->
                                     val membership = event.content.membership
@@ -172,16 +172,17 @@ class OutdatedKeysHandler(
             deviceKeys = userIds.associateWith { emptySet() },
         ).getOrThrow()
 
-        val joinedEncryptedRooms by lazy { async { roomStore.encryptedJoinedRooms() } }
+        val encryptedRooms by lazy { async { roomStore.encryptedRooms() } }
         val membershipsAllowedToReceiveKey by lazy {
             async {
                 val historyVisibilities =
-                    roomStateStore.getByRooms<HistoryVisibilityEventContent>(joinedEncryptedRooms.await())
+                    roomStateStore.getByRooms<HistoryVisibilityEventContent>(encryptedRooms.await())
                         .mapNotNull { event ->
                             event.roomIdOrNull?.let { it to event.content.historyVisibility }
                         }
                         .toMap()
-                joinedEncryptedRooms.await().associateWith { historyVisibilities[it].membershipsAllowedToReceiveKey }
+                encryptedRooms.await()
+                    .associateWith { historyVisibilities[it].membershipsAllowedToReceiveKey }
             }
         }
 
@@ -224,7 +225,7 @@ class OutdatedKeysHandler(
                             handleOutdatedDeviceKeys(
                                 userId = userId,
                                 devices = devices,
-                                getJoinedEncryptedRooms = joinedEncryptedRooms,
+                                encryptedRooms = encryptedRooms,
                                 getMembershipsAllowedToReceiveKey = membershipsAllowedToReceiveKey
                             )
                         }
@@ -275,7 +276,7 @@ class OutdatedKeysHandler(
     private suspend fun handleOutdatedDeviceKeys(
         userId: UserId,
         devices: Map<String, SignedDeviceKeys>,
-        getJoinedEncryptedRooms: Deferred<Set<RoomId>>,
+        encryptedRooms: Deferred<Set<RoomId>>,
         getMembershipsAllowedToReceiveKey: Deferred<Map<RoomId, Set<Membership>>>
     ) {
         val oldDevices = keyStore.getDeviceKeys(userId).first().orEmpty()
@@ -297,7 +298,7 @@ class OutdatedKeysHandler(
         // we can do this, because an outbound megolm session does only exist, when loadMembers has been called
         when {
             removedDevices.isNotEmpty() -> {
-                getJoinedEncryptedRooms.await()
+                encryptedRooms.await()
                     .also {
                         if (it.isNotEmpty()) log.debug { "reset megolm sessions in rooms $it because of removed devices $removedDevices from $userId" }
                     }.forEach { roomId ->
@@ -306,7 +307,7 @@ class OutdatedKeysHandler(
             }
 
             addedDevices.isNotEmpty() -> {
-                val joinedEncryptedRooms = getJoinedEncryptedRooms.await()
+                val joinedEncryptedRooms = encryptedRooms.await()
                 if (joinedEncryptedRooms.isNotEmpty()) {
                     coroutineScope {
                         val memberships = async {

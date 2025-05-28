@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix outdated keys not updated on accounts with only on room and invite state
+
 ### Security
 
 ## 4.15.3
