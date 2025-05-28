@@ -3,34 +3,34 @@ package net.folivo.trixnity.client.integrationtests
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.loginWith
+import kotlinx.coroutines.flow.toList
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.InMemoryMediaStore
-import net.folivo.trixnity.client.room
+import net.folivo.trixnity.client.room.firstWithContent
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.membership
 import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
 import net.folivo.trixnity.client.store.roomId
-import net.folivo.trixnity.client.user
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.events.InitialStateEvent
+import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.jetbrains.exposed.sql.Database
+import org.junit.jupiter.api.Disabled
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -136,6 +136,81 @@ class EncryptionIT {
                 .shouldNotBeNull()
                 .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
                 .body shouldBe "Share secret."
+        }
+    }
+
+    @Test
+    @Disabled
+    fun shouldMassivelyDecrypt(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(600_000) {
+            val roomId = client1.api.room.createRoom(
+                invite = setOf(client2.userId),
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
+            ).getOrThrow()
+            client1.room.getById(roomId).first { it?.membership == JOIN }
+            client2.api.room.joinRoom(roomId).getOrThrow()
+            client2.room.getById(roomId).first { it?.membership == JOIN }
+            client2.stopSync()
+            client2.close()
+
+            val repeatCount = 2
+            val messageCount = 200
+            repeat(repeatCount) { iteration ->
+                println(
+                    """
+                    ######
+                    ###### iteration $iteration ######
+                    ######
+                """.trimIndent()
+                )
+                client1.stopSync()
+                coroutineScope {
+                    launch {
+                        repeat(messageCount) { i ->
+                            val senderClient = MatrixClient.login(
+                                baseUrl = baseUrl,
+                                identifier = IdentifierType.User("user2"),
+                                password = password,
+                                repositoriesModule = createInMemoryRepositoriesModule(),
+                                mediaStore = InMemoryMediaStore(),
+                                deviceId = "sender client $i $iteration",
+                            ) {
+                                name = "sender client $i $iteration"
+                            }.getOrThrow()
+                            senderClient.syncOnce() // initial sync
+                            senderClient.startSync()
+                            senderClient.room.sendMessage(roomId) { text("message $i") }
+                            senderClient.room.waitForOutboxSent()
+                            senderClient.stopSync()
+                            senderClient.close()
+                        }
+                    }
+                }
+
+                println(
+                    """
+                    ######
+                    ###### sync receiver client ######
+                    ######
+                """.trimIndent()
+                )
+                client1.syncOnce().getOrThrow()
+                client1.startSync()
+
+                val lastEventId = client1.room.getById(roomId).first()?.lastEventId.shouldNotBeNull()
+                val receivedMessages = client1.room.getTimelineEvents(roomId, lastEventId)
+                    .take(messageCount)
+                    .toList()
+                receivedMessages shouldHaveSize messageCount
+                receivedMessages.reversed().forEachIndexed { i, messageFlow ->
+                    val message = messageFlow.firstWithContent()
+                    message.event.content.shouldBeInstanceOf<EncryptedMessageEventContent>()
+                    message.content?.getOrThrow()
+                        .shouldNotBeNull()
+                        .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
+                        .body shouldBe "message $i"
+                }
+            }
         }
     }
 }
