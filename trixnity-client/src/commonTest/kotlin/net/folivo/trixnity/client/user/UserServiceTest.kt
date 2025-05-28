@@ -1114,7 +1114,7 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getUserPresence » sync is running » should be offline`() = runTest {
+    fun `getUserPresence » sync is not running » should be null`() = runTest {
         val lastActive = Instant.fromEpochMilliseconds(24)
         currentSyncState.value = SyncState.STARTED
         userPresenceStore.setPresence(alice, UserPresence(Presence.ONLINE, clock.now(), lastActive))
@@ -1136,7 +1136,7 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getUserPresence » last active is below threshold » should pass from store and make offline later`() =
+    fun `getUserPresence » last active is below threshold » should pass from store and make null later`() =
         runTest {
             val presence =
                 UserPresence(
