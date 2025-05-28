@@ -11,7 +11,8 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
-private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.repository.exposed.CreateExposedRepositoriesModule")
+private val log =
+    KotlinLogging.logger("net.folivo.trixnity.client.store.repository.exposed.CreateExposedRepositoriesModule")
 
 suspend fun createExposedRepositoriesModule(
     database: Database,
@@ -45,6 +46,7 @@ suspend fun createExposedRepositoriesModule(
             ExposedRoomUser,
             ExposedRoomUserReceipts,
             ExposedMediaCacheMapping,
+            ExposedUserPresence,
         )
         SchemaUtils.createMissingTablesAndColumns(*allTables)
     }
@@ -78,5 +80,6 @@ suspend fun createExposedRepositoriesModule(
         singleOf(::ExposedMediaCacheMappingRepository) { bind<MediaCacheMappingRepository>() }
         singleOf(::ExposedGlobalAccountDataRepository) { bind<GlobalAccountDataRepository>() }
         singleOf(::ExposedRoomAccountDataRepository) { bind<RoomAccountDataRepository>() }
+        singleOf(::ExposedUserPresenceRepository) { bind<UserPresenceRepository>() }
     }
 }

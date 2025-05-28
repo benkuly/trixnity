@@ -25,7 +25,7 @@ import org.testcontainers.utility.DockerImageName
 import kotlin.random.Random
 
 const val synapseVersion =
-    "v1.129.0" // TODO you should update this from time to time. https://github.com/element-hq/synapse/releases
+    "v1.130.0" // TODO you should update this from time to time. https://github.com/element-hq/synapse/releases
 
 fun synapseDocker() =
     GenericContainer<Nothing>(DockerImageName.parse("docker.io/matrixdotorg/synapse:$synapseVersion"))

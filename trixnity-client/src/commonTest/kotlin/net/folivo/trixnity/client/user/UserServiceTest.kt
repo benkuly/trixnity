@@ -1,10 +1,15 @@
 package net.folivo.trixnity.client.user
 
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
@@ -12,24 +17,25 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.EventType
 import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
 import net.folivo.trixnity.core.model.keys.Key
-import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 class UserServiceTest : TrixnityBaseTest() {
 
     private val alice = UserId("alice", "server")
     private val me = UserId("me", "server")
     private val roomId = simpleRoom.roomId
-
-    private val json = createMatrixEventJson()
-    private val api = mockMatrixClientServerApiClient(json = json)
+    private val clock = ClockMock()
 
     private val eventByUser = TimelineEvent(
         event = MessageEvent(
@@ -92,6 +98,7 @@ class UserServiceTest : TrixnityBaseTest() {
 
     private val roomUserStore = getInMemoryRoomUserStore()
     private val globalAccountDataStore = getInMemoryGlobalAccountDataStore()
+    private val userPresenceStore = getInMemoryUserPresenceStore()
     private val roomTimelineStore = getInMemoryRoomTimelineStore()
     private val roomStore = getInMemoryRoomStore { update(roomId) { Room(roomId, membership = JOIN) } }
 
@@ -100,19 +107,28 @@ class UserServiceTest : TrixnityBaseTest() {
         save(getCreateEvent(UserId("creator", "server")))
     }
 
+    private val currentSyncState = MutableStateFlow(SyncState.RUNNING).also {
+        scheduleSetup {
+            it.value = SyncState.RUNNING
+        }
+    }
+
     private val cut = UserServiceImpl(
         roomStore = roomStore,
         roomUserStore = roomUserStore,
         roomStateStore = roomStateStore,
         roomTimelineStore = roomTimelineStore,
         globalAccountDataStore = globalAccountDataStore,
+        userPresenceStore = userPresenceStore,
         loadMembersService = { _, _ -> },
-        presenceEventHandler = PresenceEventHandlerImpl(api),
         userInfo = UserInfo(
             me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(null, ""),
             Key.Curve25519Key(null, "")
         ),
+        currentSyncState = CurrentSyncState(currentSyncState),
+        clock = clock,
         mappings = DefaultEventContentSerializerMappings,
+        config = MatrixClientConfiguration(),
     )
 
     data class KickLevels(
@@ -1090,6 +1106,97 @@ class UserServiceTest : TrixnityBaseTest() {
                 )
             )
             resultFlow.first() shouldBe false
+        }
+
+    @Test
+    fun `getUserPresence » no presence in store » should be null`() = runTest {
+        cut.getPresence(alice).first() shouldBe null
+    }
+
+    @Test
+    fun `getUserPresence » sync is not running » should be null`() = runTest {
+        val lastActive = Instant.fromEpochMilliseconds(24)
+        currentSyncState.value = SyncState.STARTED
+        userPresenceStore.setPresence(alice, UserPresence(Presence.ONLINE, clock.now(), lastActive))
+        cut.getPresence(alice).first() shouldBe null
+    }
+
+    @Test
+    fun `getUserPresence » is currently active » should pass from store`() = runTest {
+        val presence =
+            UserPresence(
+                presence = Presence.ONLINE,
+                lastUpdate = clock.now(),
+                lastActive = Instant.fromEpochMilliseconds(24),
+                isCurrentlyActive = true,
+                statusMessage = "status"
+            )
+        userPresenceStore.setPresence(alice, presence)
+        cut.getPresence(alice).first() shouldBe presence
+    }
+
+    @Test
+    fun `getUserPresence » last active is below threshold » should pass from store and make null later`() =
+        runTest {
+            val presence =
+                UserPresence(
+                    presence = Presence.ONLINE,
+                    lastUpdate = clock.now(),
+                    lastActive = clock.now() - 4.minutes,
+                    statusMessage = "status"
+                )
+            userPresenceStore.setPresence(alice, presence)
+            val result = cut.getPresence(alice).stateIn(backgroundScope)
+            result.value shouldBe presence
+
+            delay(2.minutes)
+            clock.nowValue += 2.minutes
+
+            result.value shouldBe null
+
+            // should reset on store update
+            val presence2 =
+                UserPresence(
+                    presence = Presence.ONLINE,
+                    lastUpdate = clock.now(),
+                    lastActive = clock.now(),
+                    statusMessage = "status"
+                )
+            userPresenceStore.setPresence(alice, presence2)
+            delay(100.milliseconds)
+            result.value shouldBe presence2
+        }
+
+    @Test
+    fun `getUserPresence » last active is below threshold » should fallback to last update`() =
+        runTest {
+            val presence =
+                UserPresence(
+                    presence = Presence.ONLINE,
+                    lastUpdate = clock.now() - 4.minutes,
+                    statusMessage = "status"
+                )
+            userPresenceStore.setPresence(alice, presence)
+            val result = cut.getPresence(alice).stateIn(backgroundScope)
+            result.value shouldBe presence
+
+            delay(2.minutes)
+            clock.nowValue += 2.minutes
+
+            result.value shouldBe null
+        }
+
+    @Test
+    fun `getUserPresence » last active is above threshold » should be null`() =
+        runTest {
+            val presence =
+                UserPresence(
+                    presence = Presence.ONLINE,
+                    lastUpdate = clock.now() - 6.minutes,
+                    statusMessage = "status"
+                )
+            userPresenceStore.setPresence(alice, presence)
+            cut.getPresence(alice).first() shouldBe null
         }
 
     private fun canKickAlice(

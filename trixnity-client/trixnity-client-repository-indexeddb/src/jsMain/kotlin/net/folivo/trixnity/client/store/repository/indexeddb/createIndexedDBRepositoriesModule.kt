@@ -10,7 +10,8 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
-private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.repository.indexeddb.CreateIndexedDBRepositoriesModule")
+private val log =
+    KotlinLogging.logger("net.folivo.trixnity.client.store.repository.indexeddb.CreateIndexedDBRepositoriesModule")
 
 suspend fun createIndexedDBRepositoriesModule(
     databaseName: String = "trixnity",
@@ -52,6 +53,7 @@ suspend fun createIndexedDBRepositoriesModule(
         singleOf(::IndexedDBSecretsRepository) { bind<SecretsRepository>() }
         singleOf(::IndexedDBTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }
         singleOf(::IndexedDBTimelineEventRepository) { bind<TimelineEventRepository>() }
+        singleOf(::IndexedDBUserPresenceRepository) { bind<UserPresenceRepository>() }
     }
 }
 
@@ -82,10 +84,11 @@ internal val allStoreNames = arrayOf(
     IndexedDBSecretsRepository.objectStoreName,
     IndexedDBTimelineEventRelationRepository.objectStoreName,
     IndexedDBTimelineEventRepository.objectStoreName,
+    IndexedDBUserPresenceRepository.objectStoreName,
 )
 
 internal suspend fun createDatabase(databaseName: String) =
-    openDatabase(databaseName, 6) { database, oldVersion, _ ->
+    openDatabase(databaseName, 7) { database, oldVersion, _ ->
         IndexedDBAccountRepository.apply { migrate(database, oldVersion) }
         IndexedServerDataRepository.apply { migrate(database, oldVersion) }
         IndexedDBCrossSigningKeysRepository.apply { migrate(database, oldVersion) }
@@ -112,4 +115,5 @@ internal suspend fun createDatabase(databaseName: String) =
         IndexedDBSecretsRepository.apply { migrate(database, oldVersion) }
         IndexedDBTimelineEventRelationRepository.apply { migrate(database, oldVersion) }
         IndexedDBTimelineEventRepository.apply { migrate(database, oldVersion) }
+        IndexedDBUserPresenceRepository.apply { migrate(database, oldVersion) }
     }

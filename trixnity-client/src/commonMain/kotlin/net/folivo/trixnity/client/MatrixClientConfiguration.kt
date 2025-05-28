@@ -48,6 +48,11 @@ data class MatrixClientConfiguration(
     var deleteSentOutboxMessageDelay: Duration = 10.seconds,
 
     /**
+     * Set the threshold after user presence is marked as unavailable.
+     */
+    var userPresenceActivityThreshold: Duration = 5.minutes,
+
+    /**
      * Specifies how long values are kept in the cache when not used by anyone.
      */
     var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes),
@@ -167,7 +172,10 @@ data class MatrixClientConfiguration(
         val roomKeyRequest: Duration,
         val roomOutboxMessage: Duration,
         val room: Duration,
+        val presence: Duration,
     ) {
+
+
         companion object {
             fun default(duration: Duration) =
                 CacheExpireDurations(
@@ -190,6 +198,7 @@ data class MatrixClientConfiguration(
                     roomKeyRequest = duration,
                     roomOutboxMessage = duration / 2,
                     room = duration * 10,
+                    presence = duration,
                 )
         }
     }
