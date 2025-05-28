@@ -327,7 +327,7 @@ class OlmEncryptionServiceImpl(
         val userId = event.sender
         val senderIdentityKey = encryptedContent.senderKey
         val senderDeviceKeys = store.findDeviceKeys(userId, senderIdentityKey)
-            ?: throw DecryptOlmError.KeyNotFound(KeyAlgorithm.Ed25519)
+            ?: throw DecryptOlmError.KeyNotFound(KeyAlgorithm.Curve25519)
         @OptIn(MSC3814::class)
         if (senderDeviceKeys.dehydrated == true)
             throw DecryptOlmError.DehydratedDeviceNotAllowed
