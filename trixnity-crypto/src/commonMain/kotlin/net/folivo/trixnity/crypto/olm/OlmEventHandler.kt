@@ -83,9 +83,9 @@ class OlmEventHandler(
             ) { olmAccount ->
                 newOneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys()
                 if (newOneTimeKeys != null) log.trace { "found one time keys marked as unpublished" }
-                if (newOneTimeKeys.isNullOrEmpty() && oneTimeKeysCount != null) {
+                if (newOneTimeKeys.isNullOrEmpty()) {
                     val generateOneTimeKeysCount =
-                        (olmAccount.maxNumberOfOneTimeKeys / 2 - (oneTimeKeysCount[KeyAlgorithm.SignedCurve25519]
+                        (olmAccount.maxNumberOfOneTimeKeys / 2 - (oneTimeKeysCount?.get(KeyAlgorithm.SignedCurve25519)
                             ?: 0))
                             .coerceAtLeast(0)
                     if (generateOneTimeKeysCount > 0) {
