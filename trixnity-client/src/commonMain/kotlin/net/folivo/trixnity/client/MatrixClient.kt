@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.SharingStarted.Companion.Eagerly
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.MatrixClient.*
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
+import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
@@ -649,7 +650,7 @@ class MatrixClientImpl internal constructor(
                         userId, config.syncFilter.copy(
                             room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
                                 state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true),
-                                includeLeave = config.deleteRoomsOnLeave.not(),
+                                includeLeave = config.deleteRooms !is DeleteRooms.OnLeave,
                             )
                         )
                     ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
@@ -666,7 +667,7 @@ class MatrixClientImpl internal constructor(
                         userId, config.syncFilter.copy(
                             room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
                                 state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true),
-                                includeLeave = config.deleteRoomsOnLeave.not(),
+                                includeLeave = config.deleteRooms !is DeleteRooms.OnLeave,
                             ),
                         )
                     ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }

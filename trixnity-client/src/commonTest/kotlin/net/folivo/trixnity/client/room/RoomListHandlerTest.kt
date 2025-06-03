@@ -2,12 +2,24 @@ package net.folivo.trixnity.client.room
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
-import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
+import net.folivo.trixnity.client.getInMemoryGlobalAccountDataStore
+import net.folivo.trixnity.client.getInMemoryRoomAccountDataStore
+import net.folivo.trixnity.client.getInMemoryRoomStateStore
+import net.folivo.trixnity.client.getInMemoryRoomStore
+import net.folivo.trixnity.client.mockMatrixClientServerApiClient
+import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.simpleRoom
+import net.folivo.trixnity.client.simpleUserInfo
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomDisplayName
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom
@@ -20,7 +32,13 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
-import net.folivo.trixnity.core.model.events.m.room.*
+import net.folivo.trixnity.core.model.events.m.room.AvatarEventContent
+import net.folivo.trixnity.core.model.events.m.room.CanonicalAliasEventContent
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
+import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
+import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.NameEventContent
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
@@ -45,6 +63,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
     private val config = MatrixClientConfiguration()
     private val forgetRooms = mutableListOf<RoomId>()
     private val api = mockMatrixClientServerApiClient()
+    private val roomServiceMock = RoomServiceMock()
 
     private val cut = RoomListHandler(
         api = api,
@@ -53,6 +72,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         globalAccountDataStore = globalAccountDataStore,
         roomAccountDataStore = roomAccountDataStore,
         forgetRoomService = { forgetRooms.add(it) },
+        roomService = roomServiceMock,
         userInfo = simpleUserInfo,
         tm = TransactionManagerMock(),
         config = config,
@@ -678,6 +698,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `deleteLeftRooms » forget rooms on leave when activated`() = runTest {
+        config.deleteRooms = DeleteRooms.OnLeave
         cut.deleteLeftRooms(
             SyncEvents(
                 Sync.Response(
@@ -695,7 +716,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `deleteLeftRooms » not forget rooms on leave when disabled`() = runTest {
-        config.deleteRoomsOnLeave = false
+        config.deleteRooms = DeleteRooms.Never
         roomStore.update(roomId) { simpleRoom.copy(membership = Membership.LEAVE) }
 
         roomStore.getAll().first { it.size == 1 }
@@ -714,6 +735,206 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         roomStore.get(roomId).first() shouldNotBe null
     }
 
+    @Test
+    fun `deleteLeftRooms » do not forget rooms where there is a timeline, since we joined the room in the past`() =
+        runTest {
+            config.deleteRooms = DeleteRooms.WhenNotJoined
+            val room = simpleRoom.copy(membership = Membership.LEAVE)
+            roomStore.update(roomId) { room }
+            roomServiceMock.rooms.value = mapOf(roomId to MutableStateFlow(room))
+            roomServiceMock.returnGetTimelineEvents = flowOf(
+                flowOf(
+                    TimelineEvent(
+                        event = MessageEvent(
+                            content = RoomMessageEventContent.TextBased.Text(body = "hey"),
+                            id = EventId("2"),
+                            sender = user1,
+                            roomId = roomId,
+                            originTimestamp = 1L,
+                        ),
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = null,
+                    )
+                )
+            )
+
+            cut.deleteLeftRooms(
+                SyncEvents(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                        )
+                    ),
+                    allEvents = listOf()
+                )
+            )
+
+            forgetRooms shouldBe emptyList()
+        }
+
+    @Test
+    fun `deleteLeftRooms » do not forget rooms where there is a JOIN event for us`() =
+        runTest {
+            config.deleteRooms = DeleteRooms.WhenNotJoined
+            val room = simpleRoom.copy(membership = Membership.LEAVE)
+            roomStore.update(roomId) { room }
+            roomServiceMock.rooms.value = mapOf(roomId to MutableStateFlow(room))
+            roomServiceMock.returnGetTimelineEvents = flowOf(
+                flowOf(
+                    TimelineEvent(
+                        event = StateEvent(
+                            MemberEventContent(membership = Membership.JOIN),
+                            id = EventId("1"),
+                            sender = user1,
+                            roomId = roomId,
+                            originTimestamp = 0L,
+                            stateKey = UserId("me", "server").full,
+                        ),
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = null,
+                    )
+                )
+            )
+            cut.deleteLeftRooms(
+                SyncEvents(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            leave = mapOf(
+                                roomId to Sync.Response.Rooms.LeftRoom()
+                            )
+                        )
+                    ),
+                    allEvents = listOf()
+                )
+            )
+
+            forgetRooms shouldBe emptyList()
+        }
+
+    @Test
+    fun `deleteLeftRooms » state event of other user found in room so do NOT delete`() =
+        runTest {
+            config.deleteRooms = DeleteRooms.WhenNotJoined
+            val room = simpleRoom.copy(membership = Membership.LEAVE)
+            roomStore.update(roomId) { room }
+            roomServiceMock.rooms.value = mapOf(roomId to MutableStateFlow(room))
+            roomServiceMock.returnGetTimelineEvents = flowOf(
+                flowOf(
+                    TimelineEvent(
+                        event = StateEvent(
+                            AvatarEventContent(url = "mxc://server.local"),
+                            id = EventId("1"),
+                            sender = user1,
+                            roomId = roomId,
+                            originTimestamp = 0L,
+                            stateKey = user1.full,
+                        ),
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = null,
+                    ),
+                )
+            )
+
+            cut.deleteLeftRooms(
+                SyncEvents(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                        )
+                    ),
+                    allEvents = listOf()
+                )
+            )
+
+            forgetRooms shouldBe emptyList()
+        }
+
+    @Test
+    fun `deleteLeftRooms » only own state events found in room so do delete`() = runTest {
+        config.deleteRooms = DeleteRooms.WhenNotJoined
+        val room = simpleRoom.copy(membership = Membership.LEAVE)
+        roomStore.update(roomId) { room }
+        roomServiceMock.rooms.value = mapOf(roomId to MutableStateFlow(room))
+        roomServiceMock.returnGetTimelineEvents = flowOf(
+            flowOf(
+                TimelineEvent(
+                    event = StateEvent(
+                        MemberEventContent(membership = Membership.BAN),
+                        id = EventId("1"),
+                        sender = user1,
+                        roomId = roomId,
+                        originTimestamp = 0L,
+                        stateKey = UserId("me", "server").full,
+                    ),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null,
+                ),
+            )
+        )
+
+        cut.deleteLeftRooms(
+            SyncEvents(
+                Sync.Response(
+                    nextBatch = "",
+                    room = Sync.Response.Rooms(
+                        leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                    )
+                ),
+                allEvents = listOf()
+            )
+        )
+
+        forgetRooms shouldBe listOf(roomId)
+    }
+
+    @Test
+    fun `deleteLeftRooms » config is set retain all rooms » do not delete left rooms that were never joined`() =
+        runTest {
+            config.deleteRooms = DeleteRooms.Never
+            val room = simpleRoom.copy(membership = Membership.LEAVE)
+            roomStore.update(roomId) { room }
+            roomServiceMock.rooms.value = mapOf(roomId to MutableStateFlow(room))
+            roomServiceMock.returnGetTimelineEvents = flowOf(
+                flowOf(
+                    TimelineEvent(
+                        event = StateEvent(
+                            MemberEventContent(membership = Membership.BAN),
+                            id = EventId("1"),
+                            sender = user1,
+                            roomId = roomId,
+                            originTimestamp = 0L,
+                            stateKey = UserId("me", "server").full,
+                        ),
+                        previousEventId = null,
+                        nextEventId = null,
+                        gap = null,
+                    )
+                )
+            )
+
+            cut.deleteLeftRooms(
+                SyncEvents(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            leave = mapOf(
+                                roomId to Sync.Response.Rooms.LeftRoom()
+                            )
+                        )
+                    ),
+                    allEvents = listOf()
+                )
+            )
+
+            forgetRooms shouldBe emptyList()
+        }
 
     private fun memberEvent(
         i: Long,
