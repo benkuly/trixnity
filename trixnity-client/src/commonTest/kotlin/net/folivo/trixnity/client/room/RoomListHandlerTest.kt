@@ -736,7 +736,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `deleteLeftRooms » do not forget rooms where there is a timeline, since we joined the room in the past`() =
+    fun `deleteLeftRooms » do not forget rooms where there is a timeline since we joined the room in the past`() =
         runTest {
             config.deleteRooms = DeleteRooms.WhenNotJoined
             val room = simpleRoom.copy(membership = Membership.LEAVE)
