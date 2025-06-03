@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.room.getState
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
@@ -115,7 +115,7 @@ class KeySharingIT {
                     identifier = IdentifierType.User("user1"),
                     password = "user$1passw0rd",
                     repositoriesModule = repositoriesModule,
-                    mediaStore = InMemoryMediaStore(),
+                    mediaStoreModule = createInMemoryMediaStoreModule(),
                 ).getOrThrow()
                 client3.startSync()
                 client3.syncState.first { it == SyncState.RUNNING }

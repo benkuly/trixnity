@@ -12,10 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support Matrix 1.13
 - Persist user presence in database
 - Forget rooms the user has never joined
+- Memory caching for media (when used via `PlatformMedia::toByteArray`)
 
 ### Changed
 
 ### Deprecated
+
+- `MatrixClient` creation via `mediaStore` has been changed to `mediaStoreModule`.
 
 ### Removed
 

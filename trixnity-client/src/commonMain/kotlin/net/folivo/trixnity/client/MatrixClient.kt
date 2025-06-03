@@ -34,6 +34,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import kotlin.coroutines.CoroutineContext
+import kotlin.jvm.JvmName
 import kotlin.time.Duration
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.MatrixClient")
@@ -119,6 +120,8 @@ private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception
     log.error(exception) { "There was an unexpected exception. This should never happen!!!" }
 }
 
+@Deprecated("use login with mediaStoreModuleFactory")
+@JvmName("loginDeprecatedMediaStoreFactory")
 suspend fun MatrixClient.Companion.login(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -166,6 +169,48 @@ suspend fun MatrixClient.Companion.login(
     loginType: LoginType = LoginType.Password,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> =
+    loginWith(
+        baseUrl = baseUrl,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreModuleFactory = mediaStoreModuleFactory,
+        getLoginInfo = { api ->
+            api.authentication.login(
+                identifier = identifier,
+                password = password,
+                token = token,
+                type = loginType,
+                deviceId = deviceId,
+                initialDeviceDisplayName = initialDeviceDisplayName,
+                refreshToken = true,
+            ).map { login ->
+                LoginInfo(
+                    userId = login.userId,
+                    deviceId = login.deviceId,
+                    accessToken = login.accessToken,
+                    refreshToken = login.refreshToken,
+                )
+            }
+        },
+        configuration = configuration,
+        coroutineContext = coroutineContext,
+    )
+
+
+@Deprecated("use login with mediaStoreModule")
+@JvmName("loginDeprecatedMediaStore")
+suspend fun MatrixClient.Companion.login(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String? = null,
+    token: String? = null,
+    loginType: LoginType = LoginType.Password,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
     coroutineContext: CoroutineContext = Dispatchers.Default,
@@ -184,6 +229,34 @@ suspend fun MatrixClient.Companion.login(
     coroutineContext = coroutineContext,
 )
 
+suspend fun MatrixClient.Companion.login(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String? = null,
+    token: String? = null,
+    loginType: LoginType = LoginType.Password,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStoreModule: Module,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> = login(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    password = password,
+    token = token,
+    loginType = loginType,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreModuleFactory = { mediaStoreModule },
+    configuration = configuration,
+    coroutineContext = coroutineContext,
+)
+
+@Deprecated("use loginWithPassword with mediaStoreModuleFactory")
+@JvmName("loginWithPasswordDeprecatedMediaStoreFactory")
 suspend fun MatrixClient.Companion.loginWithPassword(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -215,6 +288,33 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     password: String,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> =
+    login(
+        baseUrl = baseUrl,
+        identifier = identifier,
+        password = password,
+        token = null,
+        loginType = LoginType.Password,
+        deviceId = deviceId,
+        initialDeviceDisplayName = initialDeviceDisplayName,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreModuleFactory = mediaStoreModuleFactory,
+        configuration = configuration,
+        coroutineContext = coroutineContext,
+    )
+
+@Deprecated("use loginWithPassword with mediaStoreModule")
+@JvmName("loginWithPasswordDeprecatedMediaStore")
+suspend fun MatrixClient.Companion.loginWithPassword(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
     coroutineContext: CoroutineContext = Dispatchers.Default,
@@ -231,6 +331,30 @@ suspend fun MatrixClient.Companion.loginWithPassword(
     coroutineContext = coroutineContext,
 )
 
+suspend fun MatrixClient.Companion.loginWithPassword(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    password: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStoreModule: Module,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> = loginWithPassword(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    password = password,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreModuleFactory = { mediaStoreModule },
+    configuration = configuration,
+    coroutineContext = coroutineContext,
+)
+
+@Deprecated("use loginWithToken with mediaStoreModuleFactory")
+@JvmName("loginWithTokenDeprecatedMediaStoreFactory")
 suspend fun MatrixClient.Companion.loginWithToken(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -262,6 +386,33 @@ suspend fun MatrixClient.Companion.loginWithToken(
     token: String,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> =
+    login(
+        baseUrl = baseUrl,
+        identifier = identifier,
+        password = null,
+        token = token,
+        loginType = LoginType.Token(),
+        deviceId = deviceId,
+        initialDeviceDisplayName = initialDeviceDisplayName,
+        repositoriesModuleFactory = repositoriesModuleFactory,
+        mediaStoreModuleFactory = mediaStoreModuleFactory,
+        configuration = configuration,
+        coroutineContext = coroutineContext,
+    )
+
+@Deprecated("use loginWithToken with mediaStoreModule")
+@JvmName("loginWithWithTokenDeprecatedMediaStore")
+suspend fun MatrixClient.Companion.loginWithToken(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    token: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
     repositoriesModule: Module,
     mediaStore: MediaStore,
     coroutineContext: CoroutineContext = Dispatchers.Default,
@@ -278,10 +429,53 @@ suspend fun MatrixClient.Companion.loginWithToken(
     coroutineContext = coroutineContext,
 )
 
+suspend fun MatrixClient.Companion.loginWithToken(
+    baseUrl: Url,
+    identifier: IdentifierType? = null,
+    token: String,
+    deviceId: String? = null,
+    initialDeviceDisplayName: String? = null,
+    repositoriesModule: Module,
+    mediaStoreModule: Module,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> = loginWithToken(
+    baseUrl = baseUrl,
+    identifier = identifier,
+    token = token,
+    deviceId = deviceId,
+    initialDeviceDisplayName = initialDeviceDisplayName,
+    repositoriesModuleFactory = { repositoriesModule },
+    mediaStoreModuleFactory = { mediaStoreModule },
+    configuration = configuration,
+    coroutineContext = coroutineContext,
+)
+
+@Deprecated("use loginWith with mediaStoreModuleFactory")
+@JvmName("loginWithDeprecatedMediaStoreFactory")
 suspend fun MatrixClient.Companion.loginWith(
     baseUrl: Url,
     repositoriesModuleFactory: suspend (LoginInfo) -> Module,
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
+    getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient> = loginWith(
+    baseUrl = baseUrl,
+    repositoriesModuleFactory = repositoriesModuleFactory,
+    mediaStoreModuleFactory = {
+        val mediaStore = mediaStoreFactory(it)
+        module { single<MediaStore> { mediaStore } }
+    },
+    getLoginInfo = getLoginInfo,
+    coroutineContext = coroutineContext,
+    configuration = configuration,
+)
+
+suspend fun MatrixClient.Companion.loginWith(
+    baseUrl: Url,
+    repositoriesModuleFactory: suspend (LoginInfo) -> Module,
+    mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
@@ -308,12 +502,12 @@ suspend fun MatrixClient.Companion.loginWith(
         loginApi.user.getProfile(loginInfo.userId).getOrThrow()
     }
 
-    val mediaStore = mediaStoreFactory(loginInfo)
+    val mediaStoreModule = mediaStoreModuleFactory(loginInfo)
     val repositoriesModule = repositoriesModuleFactory(loginInfo)
 
     val koinApplication = initMatrixClientKoinApplication(
         repositoriesModule = repositoriesModule,
-        mediaStore = mediaStore,
+        mediaStoreModule = mediaStoreModule,
         coroutineContext = coroutineContext,
         config = config
     )
@@ -367,22 +561,39 @@ suspend fun MatrixClient.Companion.loginWith(
 suspend fun MatrixClient.Companion.loginWith(
     baseUrl: Url,
     repositoriesModule: Module,
-    mediaStore: MediaStore,
+    mediaStoreModule: Module,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWith(
     baseUrl = baseUrl,
     repositoriesModuleFactory = { repositoriesModule },
-    mediaStoreFactory = { mediaStore },
+    mediaStoreModuleFactory = { mediaStoreModule },
     getLoginInfo = getLoginInfo,
     configuration = configuration,
     coroutineContext = coroutineContext,
 )
 
+@Deprecated("use loginWithToken with mediaStoreModule")
+@JvmName("fromStoreDeprecatedMediaStore")
 suspend fun MatrixClient.Companion.fromStore(
     repositoriesModule: Module,
     mediaStore: MediaStore,
+    onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    configuration: MatrixClientConfiguration.() -> Unit = {},
+): Result<MatrixClient?> =
+    fromStore(
+        repositoriesModule = repositoriesModule,
+        mediaStoreModule = module { single<MediaStore> { mediaStore } },
+        onSoftLogin = onSoftLogin,
+        coroutineContext = coroutineContext,
+        configuration = configuration,
+    )
+
+suspend fun MatrixClient.Companion.fromStore(
+    repositoriesModule: Module,
+    mediaStoreModule: Module,
     onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
     coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
@@ -391,7 +602,7 @@ suspend fun MatrixClient.Companion.fromStore(
 
     val koinApplication = initMatrixClientKoinApplication(
         repositoriesModule = repositoriesModule,
-        mediaStore = mediaStore,
+        mediaStoreModule = mediaStoreModule,
         coroutineContext = coroutineContext,
         config = config
     )
@@ -442,7 +653,7 @@ suspend fun MatrixClient.Companion.fromStore(
 
 private suspend fun initMatrixClientKoinApplication(
     repositoriesModule: Module,
-    mediaStore: MediaStore,
+    mediaStoreModule: Module,
     coroutineContext: CoroutineContext,
     config: MatrixClientConfiguration
 ): KoinApplication {
@@ -456,9 +667,9 @@ private suspend fun initMatrixClientKoinApplication(
         modules(module {
             single { coroutineScope }
             single { config }
-            single { mediaStore }
         })
         modules(repositoriesModule)
+        modules(mediaStoreModule)
         modules(config.modules ?: config.modulesFactory?.invoke() ?: config.modulesFactories.map { it.invoke() })
     }
     val di = koinApplication.koin

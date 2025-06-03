@@ -14,7 +14,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.key.KeyService
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
@@ -74,7 +74,7 @@ class CrossSigningIT {
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user1", password) }
         ) {
             name = "client1"
@@ -84,14 +84,14 @@ class CrossSigningIT {
             identifier = IdentifierType.User("user1"),
             password = password,
             repositoriesModule = repositoriesModule2,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
         ) {
             name = "client2"
         }.getOrThrow()
         client3 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule3,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user3", password) }
         ) {
             name = "client3"

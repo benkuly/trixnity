@@ -5,7 +5,7 @@ import io.ktor.client.engine.java.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -84,7 +84,7 @@ suspend fun registerAndStartClient(
     val client = MatrixClient.loginWith(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
-        mediaStore = InMemoryMediaStore(),
+        mediaStoreModule = createInMemoryMediaStoreModule(),
         getLoginInfo = { it.register(username, defaultPassword, name) },
         configuration = {
             this.name = name
@@ -110,7 +110,7 @@ suspend fun startClient(
         password = defaultPassword,
         deviceId = name,
         repositoriesModule = repositoriesModule,
-        mediaStore = InMemoryMediaStore(),
+        mediaStoreModule = createInMemoryMediaStoreModule(),
         configuration = {
             this.name = name
             httpClientEngine = javaHttpClientEngine
@@ -129,7 +129,7 @@ suspend fun startClientFromStore(
 ): StartedClient {
     val client = MatrixClient.fromStore(
         repositoriesModule = repositoriesModule,
-        mediaStore = InMemoryMediaStore(),
+        mediaStoreModule = createInMemoryMediaStoreModule(),
         configuration = {
             this.name = name
             httpClientEngine = javaHttpClientEngine

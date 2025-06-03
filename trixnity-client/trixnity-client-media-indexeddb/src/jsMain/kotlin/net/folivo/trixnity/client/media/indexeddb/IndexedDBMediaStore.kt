@@ -7,11 +7,13 @@ import js.buffer.ArrayBuffer
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.datetime.Clock
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.media.CachedMediaStore
 import net.folivo.trixnity.client.media.MediaStore
-import net.folivo.trixnity.utils.ByteArrayFlow
-import net.folivo.trixnity.utils.byteArrayFlowFromReadableStream
-import net.folivo.trixnity.utils.nextString
-import net.folivo.trixnity.utils.writeTo
+import net.folivo.trixnity.client.media.PlatformMedia
+import net.folivo.trixnity.utils.*
+import org.koin.dsl.module
 import web.blob.Blob
 import web.events.EventType
 import web.events.addEventHandler
@@ -21,7 +23,11 @@ import web.streams.TransformStream
 import web.window.window
 import kotlin.random.Random
 
-class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaStore {
+@Deprecated("switch to createIndexedDBMediaStoreModule", ReplaceWith("createIndexedDBMediaStoreModule(databaseName)"))
+class IndexedDBMediaStore(
+    val databaseName: String = "trixnity_media",
+    private val toByteArray: (suspend (uri: String, media: ByteArrayFlow, coroutineScope: CoroutineScope?, expectedSize: Long?, maxSize: Long?) -> ByteArray?)? = null,
+) : MediaStore {
     companion object {
         const val MEDIA_OBJECT_STORE_NAME = "media"
         const val TMP_MEDIA_OBJECT_STORE_NAME = "tmp"
@@ -80,7 +86,7 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
             val store = objectStore(MEDIA_OBJECT_STORE_NAME)
             store.get(Key(url))
         }.unsafeCast<Blob?>()
-            ?.let { BlobBasedIndexeddbPlatformMediaImpl(it) }
+            ?.let { BlobBasedIndexeddbPlatformMediaImpl(url, it) }
 
     override suspend fun deleteMedia(url: String): Unit =
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME) {
@@ -99,36 +105,36 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
         }
     }
 
-    // #########################################
-    // ############ temporary files ############
-    // #########################################
-
     private inner class BlobBasedIndexeddbPlatformMediaImpl(
+        private val url: String,
         private val file: Blob,
     ) : IndexeddbPlatformMedia {
         private val delegate = byteArrayFlowFromReadableStream { file.stream() }
 
         override fun transformByteArrayFlow(transformer: (ByteArrayFlow) -> ByteArrayFlow): IndexeddbPlatformMedia =
-            IndexeddbPlatformMediaImpl(delegate.let(transformer))
+            IndexeddbPlatformMediaImpl(url, delegate.let(transformer))
 
         override suspend fun getTemporaryFile(): Result<IndexeddbPlatformMedia.TemporaryFile> = runCatching {
-            val key = Random.nextString(12)
-            val blob = database.writeTransaction(TMP_MEDIA_OBJECT_STORE_NAME) {
-                val store = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
-                store.put(file, Key(key))
-                store.get(Key(key))
-            }.unsafeCast<Blob>()
-            IndexeddbPlatformMediaTemporaryFileImpl(blob, key)
+            getTemporaryFile(file)
         }
 
         override suspend fun collect(collector: FlowCollector<ByteArray>) = delegate.collect(collector)
+
+        override suspend fun toByteArray(
+            coroutineScope: CoroutineScope?,
+            expectedSize: Long?,
+            maxSize: Long?
+        ): ByteArray? =
+            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+                ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
     private inner class IndexeddbPlatformMediaImpl(
+        private val url: String,
         private val delegate: ByteArrayFlow,
     ) : IndexeddbPlatformMedia, ByteArrayFlow by delegate {
         override fun transformByteArrayFlow(transformer: (ByteArrayFlow) -> ByteArrayFlow): IndexeddbPlatformMedia =
-            IndexeddbPlatformMediaImpl(delegate.let(transformer))
+            IndexeddbPlatformMediaImpl(url, delegate.let(transformer))
 
         override suspend fun getTemporaryFile(): Result<IndexeddbPlatformMedia.TemporaryFile> = runCatching {
             coroutineScope {
@@ -137,15 +143,27 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
                     delegate.writeTo(transformStream.writable)
                 }
                 val file = Response(BodyInit(transformStream.readable)).blob()
-                val key = Random.nextString(12)
-                val blob = database.writeTransaction(TMP_MEDIA_OBJECT_STORE_NAME) {
-                    val store = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
-                    store.put(file, Key(key))
-                    store.get(Key(key))
-                }.unsafeCast<Blob>()
-                IndexeddbPlatformMediaTemporaryFileImpl(blob, key)
+                getTemporaryFile(file)
             }
         }
+
+        override suspend fun toByteArray(
+            coroutineScope: CoroutineScope?,
+            expectedSize: Long?,
+            maxSize: Long?
+        ): ByteArray? =
+            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+                ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
+    }
+
+    private suspend fun getTemporaryFile(file: Blob): IndexeddbPlatformMediaTemporaryFileImpl {
+        val key = Random.nextString(12)
+        val blob = database.writeTransaction(TMP_MEDIA_OBJECT_STORE_NAME) {
+            val store = objectStore(TMP_MEDIA_OBJECT_STORE_NAME)
+            store.put(file, Key(key))
+            store.get(Key(key))
+        }.unsafeCast<Blob>()
+        return IndexeddbPlatformMediaTemporaryFileImpl(blob, key)
     }
 
     private inner class IndexeddbPlatformMediaTemporaryFileImpl(
@@ -162,5 +180,33 @@ class IndexedDBMediaStore(val databaseName: String = "trixnity_media") : MediaSt
 
             }
         }
+    }
+}
+
+internal class IndexedDBCachedMediaStore(
+    databaseName: String = "trixnity_media",
+    coroutineScope: CoroutineScope,
+    configuration: MatrixClientConfiguration,
+    clock: Clock,
+) : CachedMediaStore(coroutineScope, configuration, clock) {
+    private val delegate = IndexedDBMediaStore(databaseName, ::toByteArray)
+
+    override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)
+    override suspend fun addMedia(url: String, content: ByteArrayFlow) = delegate.addMedia(url, content)
+    override suspend fun getMedia(url: String): PlatformMedia? = delegate.getMedia(url)
+    override suspend fun deleteMedia(url: String) = delegate.deleteMedia(url)
+    override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = delegate.changeMediaUrl(oldUrl, newUrl)
+    override suspend fun clearCache() = delegate.clearCache()
+    override suspend fun deleteAll() = delegate.deleteAll()
+}
+
+fun createIndexedDBMediaStoreModule(databaseName: String = "trixnity_media") = module {
+    single<MediaStore> {
+        IndexedDBCachedMediaStore(
+            databaseName = databaseName,
+            coroutineScope = get(),
+            configuration = get(),
+            clock = get()
+        )
     }
 }

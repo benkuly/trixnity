@@ -5,19 +5,14 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
-import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
 import net.folivo.trixnity.client.verification.ActiveVerification
@@ -65,13 +60,13 @@ class SasVerificationIT {
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user1", password, deviceId = "CLIENT1") }
         ).getOrThrow()
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user2", password, deviceId = "CLIENT2") }
         ).getOrThrow()
         client3 = MatrixClient.login(
@@ -79,7 +74,7 @@ class SasVerificationIT {
             identifier = IdentifierType.User("user1"),
             password = password,
             repositoriesModule = repositoriesModule3,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             deviceId = "CLIENT3",
         ) {
             name = "client3"
