@@ -76,31 +76,35 @@ class OlmEventHandler(
         var newOneTimeKeys: Keys? = null
         var newFallbackKeys: Keys? = null
 
-        log.trace { "handle change of own olm keys server count" }
+        log.debug { "handle change of own olm keys server count (oneTimeKeysCount=$oneTimeKeysCount, fallbackKeyTypes=$fallbackKeyTypes)" }
         store.updateOlmAccount { pickledOlmAccount ->
             freeAfter(
                 OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount)
             ) { olmAccount ->
                 newOneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys()
-                if (newOneTimeKeys != null) log.trace { "found one time keys marked as unpublished" }
-                if (newOneTimeKeys.isNullOrEmpty()) {
+                if (newOneTimeKeys != null) log.debug { "found one time keys marked as unpublished" }
+                if (oneTimeKeysCount != null // violates the spec, but Synapse is doing it
+                    && newOneTimeKeys.isNullOrEmpty()
+                ) {
                     val generateOneTimeKeysCount =
-                        (olmAccount.maxNumberOfOneTimeKeys / 2 - (oneTimeKeysCount?.get(KeyAlgorithm.SignedCurve25519)
-                            ?: 0))
+                        (olmAccount.maxNumberOfOneTimeKeys / 2 - (oneTimeKeysCount[KeyAlgorithm.SignedCurve25519] ?: 0))
                             .coerceAtLeast(0)
                     if (generateOneTimeKeysCount > 0) {
-                        log.trace { "generate $generateOneTimeKeysCount new one time key" }
-                        olmAccount.generateOneTimeKeys(generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4)
+                        val generateOneTimeKeysCountWithBuffer =
+                            generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4
+                        log.debug { "generate $generateOneTimeKeysCountWithBuffer new one time key" }
+                        olmAccount.generateOneTimeKeys(generateOneTimeKeysCountWithBuffer)
                         newOneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys()
                     } else null
                 } else null
 
                 newFallbackKeys = olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(fallback = true)
-                if (newFallbackKeys != null) log.trace { "found fallback key marked as unpublished" }
+                if (newFallbackKeys != null) log.debug { "found fallback key marked as unpublished" }
                 if (newFallbackKeys.isNullOrEmpty()
-                    && fallbackKeyTypes?.contains(KeyAlgorithm.SignedCurve25519)?.not() == true
+                    && fallbackKeyTypes != null // violates the spec, but Synapse is doing it
+                    && fallbackKeyTypes.contains(KeyAlgorithm.SignedCurve25519).not()
                 ) {
-                    log.trace { "generate new fallback key" }
+                    log.debug { "generate new fallback key" }
                     olmAccount.generateFallbackKey()
                     newFallbackKeys = olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(fallback = true)
                 } else null
@@ -122,7 +126,7 @@ class OlmEventHandler(
                 freeAfter(
                     OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount)
                 ) { olmAccount ->
-                    log.trace { "mark keys as published" }
+                    log.debug { "mark keys as published" }
                     olmAccount.markKeysAsPublished()
                     olmAccount.pickle(store.getOlmPickleKey())
                 }
@@ -131,7 +135,7 @@ class OlmEventHandler(
             newFallbackKeys // we can forget the old fallback key, when we had to generate a new one and successfully set it
                 ?.also {
                     val forgetAfter = clock.now() + 1.hours
-                    log.trace { "mark fallback key to be forget after $forgetAfter" }
+                    log.debug { "mark fallback key to be forget after $forgetAfter" }
                     store.updateForgetFallbackKeyAfter { clock.now() + 1.hours }
                 }
         }

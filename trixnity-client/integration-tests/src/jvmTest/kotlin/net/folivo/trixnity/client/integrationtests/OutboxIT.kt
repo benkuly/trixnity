@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.user.canSendEvent
@@ -48,7 +48,7 @@ class OutboxIT {
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()
         client.startSync()

@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.room.firstWithContent
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.OlmCryptoStore
@@ -62,7 +62,7 @@ class EncryptionIT {
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = createInMemoryRepositoriesModule(),
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user1", password) }
         ) {
             name = "client1"
@@ -70,7 +70,7 @@ class EncryptionIT {
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = createInMemoryRepositoriesModule(),
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user2", password) }
         ) {
             name = "client2"
@@ -172,7 +172,7 @@ class EncryptionIT {
                                 identifier = IdentifierType.User("user2"),
                                 password = password,
                                 repositoriesModule = createInMemoryRepositoriesModule(),
-                                mediaStore = InMemoryMediaStore(),
+                                mediaStoreModule = createInMemoryMediaStoreModule(),
                                 deviceId = "sender client $i $iteration",
                             ) {
                                 name = "sender client $i $iteration"

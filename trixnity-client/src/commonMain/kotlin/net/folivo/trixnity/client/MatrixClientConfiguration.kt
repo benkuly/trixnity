@@ -173,6 +173,7 @@ data class MatrixClientConfiguration(
         val roomOutboxMessage: Duration,
         val room: Duration,
         val presence: Duration,
+        val media: Duration,
     ) {
 
 
@@ -199,6 +200,7 @@ data class MatrixClientConfiguration(
                     roomOutboxMessage = duration / 2,
                     room = duration * 10,
                     presence = duration,
+                    media = duration / 6
                 )
         }
     }

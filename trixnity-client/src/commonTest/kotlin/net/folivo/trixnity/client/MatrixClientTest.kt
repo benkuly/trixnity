@@ -8,7 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.repository.*
@@ -76,7 +76,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                 identifier = IdentifierType.User(userId.full),
                 password = "p4ssw0rd!",
                 repositoriesModule = repositoriesModule,
-                mediaStore = InMemoryMediaStore(),
+                mediaStoreModule = createInMemoryMediaStoreModule(),
                 coroutineContext = backgroundScope.coroutineContext,
                 configuration = {
                     httpClientEngine = scopedMockEngine(false) {
@@ -181,7 +181,7 @@ class MatrixClientTest : TrixnityBaseTest() {
             }
             val cut = MatrixClient.fromStore(
                 repositoriesModule = repositoriesModule,
-                mediaStore = InMemoryMediaStore(),
+                mediaStoreModule = createInMemoryMediaStoreModule(),
                 coroutineContext = backgroundScope.coroutineContext,
                 configuration = {
                     httpClientEngine = scopedMockEngine(false) {
@@ -356,7 +356,7 @@ class MatrixClientTest : TrixnityBaseTest() {
         var logoutCalled = false
         val cut = MatrixClient.fromStore(
             repositoriesModule = repositoriesModule(),
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
@@ -384,7 +384,7 @@ class MatrixClientTest : TrixnityBaseTest() {
         var logoutCalled = false
         val cut = MatrixClient.fromStore(
             repositoriesModule = repositoriesModule(),
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
@@ -434,7 +434,7 @@ class MatrixClientTest : TrixnityBaseTest() {
         }
         return MatrixClient.fromStore(
             repositoriesModule = repositoriesModule,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = backgroundScope.scopedMockEngine(false) {

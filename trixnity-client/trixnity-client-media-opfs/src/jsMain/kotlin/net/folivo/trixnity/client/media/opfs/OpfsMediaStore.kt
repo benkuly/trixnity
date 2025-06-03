@@ -5,9 +5,14 @@ import js.buffer.ArrayBuffer
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.datetime.Clock
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.media.CachedMediaStore
 import net.folivo.trixnity.client.media.MediaStore
+import net.folivo.trixnity.client.media.PlatformMedia
 import net.folivo.trixnity.utils.*
 import okio.ByteString.Companion.toByteString
+import org.koin.dsl.module
 import web.events.EventType
 import web.events.addEventHandler
 import web.file.File
@@ -21,9 +26,14 @@ import kotlin.random.Random
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.media.opfs.OpfsMediaStore")
 
-class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaStore {
+@Deprecated("switch to createOpfsMediaStoreModule", ReplaceWith("createOpfsMediaStoreModule(basePath)"))
+class OpfsMediaStore(
+    private val basePath: FileSystemDirectoryHandle,
+    private val toByteArray: (suspend (uri: String, media: ByteArrayFlow, coroutineScope: CoroutineScope?, expectedSize: Long?, maxSize: Long?) -> ByteArray?)? = null,
+) : MediaStore {
 
     private val basePathLock = KeyedMutex<String>()
+    private suspend fun tmpPath() = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
 
     override suspend fun init(coroutineScope: CoroutineScope) {
         suspend fun delTmp() {
@@ -105,12 +115,6 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
         }
     }
 
-    // #########################################
-    // ############ temporary files ############
-    // #########################################
-
-    private suspend fun tmpPath() = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
-
     private inner class FileBasedOpfsPlatformMediaImpl(
         private val url: String,
         private val file: File,
@@ -140,6 +144,14 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
             }
 
         override suspend fun collect(collector: FlowCollector<ByteArray>) = delegate.collect(collector)
+
+        override suspend fun toByteArray(
+            coroutineScope: CoroutineScope?,
+            expectedSize: Long?,
+            maxSize: Long?
+        ): ByteArray? =
+            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+                ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
     private inner class OpfsPlatformMediaImpl(
@@ -167,6 +179,14 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
                     OpfsPlatformMediaTemporaryFileImpl(fileHandle.getFile(), fileName)
                 }
             }
+
+        override suspend fun toByteArray(
+            coroutineScope: CoroutineScope?,
+            expectedSize: Long?,
+            maxSize: Long?
+        ): ByteArray? =
+            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+                ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
     private inner class OpfsPlatformMediaTemporaryFileImpl(
@@ -180,5 +200,33 @@ class OpfsMediaStore(private val basePath: FileSystemDirectoryHandle) : MediaSto
             } catch (_: Exception) {
             }
         }
+    }
+}
+
+internal class OpfsCachedMediaStore(
+    basePath: FileSystemDirectoryHandle,
+    coroutineScope: CoroutineScope,
+    configuration: MatrixClientConfiguration,
+    clock: Clock,
+) : CachedMediaStore(coroutineScope, configuration, clock) {
+    private val delegate = OpfsMediaStore(basePath, ::toByteArray)
+
+    override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)
+    override suspend fun addMedia(url: String, content: ByteArrayFlow) = delegate.addMedia(url, content)
+    override suspend fun getMedia(url: String): PlatformMedia? = delegate.getMedia(url)
+    override suspend fun deleteMedia(url: String) = delegate.deleteMedia(url)
+    override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = delegate.changeMediaUrl(oldUrl, newUrl)
+    override suspend fun clearCache() = delegate.clearCache()
+    override suspend fun deleteAll() = delegate.deleteAll()
+}
+
+fun createOpfsMediaStoreModule(basePath: FileSystemDirectoryHandle) = module {
+    single<MediaStore> {
+        OpfsCachedMediaStore(
+            basePath = basePath,
+            coroutineScope = get(),
+            configuration = get(),
+            clock = get()
+        )
     }
 }
