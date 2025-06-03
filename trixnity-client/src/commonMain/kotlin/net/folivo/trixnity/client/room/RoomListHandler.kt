@@ -6,11 +6,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -32,6 +35,7 @@ import net.folivo.trixnity.utils.ConcurrentList
 import net.folivo.trixnity.utils.ConcurrentMap
 import net.folivo.trixnity.utils.concurrentMutableList
 import net.folivo.trixnity.utils.concurrentMutableMap
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.RoomListHandler")
 
@@ -42,6 +46,7 @@ class RoomListHandler(
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val roomAccountDataStore: RoomAccountDataStore,
     private val forgetRoomService: ForgetRoomService,
+    private val roomService: RoomService,
     private val userInfo: UserInfo,
     private val tm: TransactionManager,
     private val config: MatrixClientConfiguration,
@@ -340,24 +345,60 @@ class RoomListHandler(
 
     internal suspend fun deleteLeftRooms(syncEvents: SyncEvents) {
         val syncLeaveRooms = syncEvents.syncResponse.room?.leave?.keys
-        if (syncLeaveRooms != null && config.deleteRoomsOnLeave) {
-            val existingLeaveRooms = roomStore.getAll().first()
-                .filter { it.value.first()?.membership == Membership.LEAVE }
-                .keys
+        if (syncLeaveRooms != null) {
+            if (config.deleteRooms is DeleteRooms.OnLeave) {
+                val existingLeaveRooms = roomStore.getAll().first()
+                    .filter { it.value.first()?.membership == Membership.LEAVE }
+                    .keys
 
-            if ((existingLeaveRooms - syncLeaveRooms).isNotEmpty()) {
-                log.warn { "there were LEAVE rooms which should have already been deleted (existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms)" }
+                if ((existingLeaveRooms - syncLeaveRooms).isNotEmpty()) {
+                    log.warn { "there were LEAVE rooms which should have already been deleted (existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms)" }
+                }
+
+                val forgetRooms = existingLeaveRooms + syncLeaveRooms
+
+                log.trace { "existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms" }
+                forgetRooms(forgetRooms)
             }
 
-            val forgetRooms = existingLeaveRooms + syncLeaveRooms
+            if (config.deleteRooms is DeleteRooms.WhenNotJoined) {
+                log.trace { "check rooms that were never joined" }
+                findDeletedRoomsThatWereNeverJoined(syncLeaveRooms)
+            }
+        }
+    }
 
-            log.trace { "existingLeaveRooms=$existingLeaveRooms syncLeaveRooms=$syncLeaveRooms" }
-            if (forgetRooms.isNotEmpty()) {
-                log.debug { "forget rooms: $forgetRooms" }
-                tm.transaction {
-                    forgetRooms.forEach { roomId ->
-                        forgetRoomService(roomId)
-                    }
+    private suspend fun findDeletedRoomsThatWereNeverJoined(leave: Set<RoomId>) {
+        val forgetRooms = leave.mapNotNull { roomId ->
+            log.trace { "look into the timeline if we find any events that indicate that we were part of the room $roomId" }
+            val hasTimelineEvents = roomService.getById(roomId).first()?.lastEventId?.let { lastEventId ->
+                withTimeoutOrNull(5.seconds) {
+                    roomService.getTimelineEvents(roomId, lastEventId).map { flow ->
+                        val event = flow.firstOrNull()?.event
+                        val content = event?.content
+                        (event == null ||
+                                event is ClientEvent.StateBaseEvent<*> &&
+                                content is MemberEventContent &&
+                                content.membership != Membership.JOIN &&
+                                event.stateKey == userInfo.userId.full).not()
+                    }.firstOrNull { it }
+                }
+            } ?: false
+            if (hasTimelineEvents.not()) {
+                log.debug { "delete room $roomId that was never joined" }
+                roomId
+            } else null
+        }
+
+        forgetRooms(forgetRooms)
+    }
+
+    private suspend fun forgetRooms(forgetRooms: Collection<RoomId>) {
+        if (forgetRooms.isNotEmpty()) {
+            log.debug { "forget rooms: $forgetRooms" }
+            tm.transaction {
+                forgetRooms.forEach { roomId ->
+                    forgetRoomService(roomId)
                 }
             }
         }

@@ -40,7 +40,13 @@ data class MatrixClientConfiguration(
     /**
      * Delete a room, when it's membership is [Membership.LEAVE].
      */
+    @Deprecated("Use deleteRooms enum instead", ReplaceWith("deleteRooms"), DeprecationLevel.ERROR)
     var deleteRoomsOnLeave: Boolean = true,
+
+    /**
+     * How to handle left rooms. See [DeleteRooms]. Convention is [DeleteRooms.WhenNotJoined].
+     */
+    var deleteRooms: DeleteRooms = DeleteRooms.WhenNotJoined,
 
     /**
      * Set the delay, after which a sent outbox message is deleted. The delay is checked each time a sync is received.
@@ -213,4 +219,27 @@ data class MatrixClientConfiguration(
         @MSC3814
         var enableMSC3814: Boolean = false
     )
+
+    /**
+     * Trixnity will delete rooms based on different conditions:
+     *  * [Never]
+     *  * [WhenNotJoined]
+     *  * [OnLeave]
+     */
+    sealed interface DeleteRooms {
+        /**
+         * Retain all rooms the user has left.
+         */
+        object Never : DeleteRooms
+
+        /**
+         * Delete rooms the user has left, but only if they were never joined.
+         */
+        object WhenNotJoined : DeleteRooms
+
+        /**
+         * Delete all rooms the user has left.
+         */
+        object OnLeave : DeleteRooms
+    }
 }
