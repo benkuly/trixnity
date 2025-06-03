@@ -10,7 +10,7 @@ import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.loginWith
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
@@ -55,7 +55,7 @@ class ForgetRoomsIT {
         client1 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user1", password) }
         ) {
             name = "client1"
@@ -63,7 +63,7 @@ class ForgetRoomsIT {
         client2 = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user2", password) },
         ) {
             name = "client2"
