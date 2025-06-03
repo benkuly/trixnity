@@ -13,17 +13,17 @@ Secrets are also stored in the store. Therefore, you should encrypt the store!
 
 ```kotlin
 val repositoriesModule = createRepositoriesModule() // e.g. createExposedRepositoriesModule(...)
-val mediaStore = createMediaStore() // e.g. OkioMediaStore(...)
+val mediaStoreModule = createMediaStoreModule() // e.g. createOkioMediaStoreModule(...)
 
 val matrixClient = MatrixClient.fromStore(
     repositoriesModule = repositoriesModule,
-    mediaStore = mediaStore,
+    mediaStoreModule = mediaStoreModule,
 ).getOrThrow() ?: MatrixClient.login(
     baseUrl = Url("https://example.org"),
     identifier = User("username"),
     password = "password",
     repositoriesModule = repositoriesModule,
-    mediaStore = mediaStore,
+    mediaStoreModule = mediaStoreModule,
 ).getOrThrow()
 
 matrixClient.startSync() // important to fully start the client!

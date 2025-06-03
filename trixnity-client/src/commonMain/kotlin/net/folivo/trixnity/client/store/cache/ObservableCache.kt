@@ -181,9 +181,10 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                     val cacheEntry = values.get(key)
                     if (cacheEntry != null) {
                         log.trace { "$name (set): skipped cache but found a cache entry and therefore filling it for key $key" }
-                        cacheEntry.set(key, value, transaction, null, forceCacheOnly = true)?.also { (oldValue, newValue) ->
-                            possiblyRemoveFromCache(oldValue, newValue, key)
-                        }
+                        cacheEntry.set(key, value, transaction, null, forceCacheOnly = true)
+                            ?.also { (oldValue, newValue) ->
+                                possiblyRemoveFromCache(oldValue, newValue, key)
+                            }
                     }
                 }
             }
@@ -205,7 +206,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         transaction: Transaction?,
         noinline persist: (suspend (newValue: V?) -> Unit)? = null,
         forceCacheOnly: Boolean = false,
-    ) : ValueUpdate<V>? {
+    ): ValueUpdate<V>? {
         while (true) {
             val oldRawValue = value
             val oldValue = oldRawValue.valueOrNull()
@@ -301,19 +302,17 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
     }
 }
 
-private class RemoverJobExecutingIndex<K : Any, V>(
+internal class RemoverJobExecutingIndex<K : Any, V>(
     private val name: String,
     private val cacheValues: ConcurrentObservableMap<K, MutableStateFlow<CacheValue<V?>>>,
     private val clock: Clock,
     private val expireDuration: Duration,
 ) : ObservableCacheIndex<K> {
-    private val activityCount = MutableStateFlow(0)
     private val removeAfter = concurrentMutableMap<K, Instant>()
 
     suspend fun invalidateCache() {
         if (removeAfter.read { isNotEmpty() }) {
             log.trace { "$name: start invalidate cache" }
-            activityCount.first { it == 0 }
             val now = clock.now()
             val (unsubscribed, subscribed) = removeAfter.read {
                 val partition = entries.partition { (key, _) ->

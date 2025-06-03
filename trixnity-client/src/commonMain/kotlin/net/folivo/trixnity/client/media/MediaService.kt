@@ -68,7 +68,6 @@ class MediaServiceImpl(
         private const val MATRIX_SPEC_1_11 = "v1.11"
         const val UPLOAD_MEDIA_CACHE_URI_PREFIX = "upload://"
         const val UPLOAD_MEDIA_MXC_URI_PREFIX = "mxc://"
-        const val maxFileSizeForThumbnail = 1024 * 50_000 // = 50MB
     }
 
     private suspend fun <T : ByteArrayFlow> Media.saveMedia(
@@ -121,7 +120,9 @@ class MediaServiceImpl(
                             }
                         }.getOrThrow()
                     }
-                    requireNotNull(mediaStore.getMedia(uri)) { "media should not be null, because it has just been saved" }
+                    requireNotNull(
+                        mediaStore.getMedia(uri)
+                    ) { "media should not be null, because it has just been saved" }
                         .transformByteArrayFlow { it.onCompletion { if (!saveToCache) mediaStore.deleteMedia(uri) } }
                 } else {
                     log.debug { "found media in store: $uri" }
@@ -142,8 +143,7 @@ class MediaServiceImpl(
         uri: String,
         progress: MutableStateFlow<FileTransferProgress?>?,
         saveToCache: Boolean
-    ): Result<PlatformMedia> =
-        getMedia(uri, saveToCache, null, progress)
+    ): Result<PlatformMedia> = getMedia(uri, saveToCache, null, progress)
 
     override suspend fun getEncryptedMedia(
         encryptedFile: EncryptedFile,
@@ -161,6 +161,27 @@ class MediaServiceImpl(
                         .decodeUnpaddedBase64Bytes()
                 )
             }
+    }
+
+    override suspend fun getThumbnail(
+        uri: String,
+        width: Long,
+        height: Long,
+        method: ThumbnailResizingMethod,
+        progress: MutableStateFlow<FileTransferProgress?>?,
+        saveToCache: Boolean
+    ): Result<PlatformMedia> = kotlin.runCatching {
+        val thumbnailUrl = "$uri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
+        val existingMedia = mediaStore.getMedia(thumbnailUrl)
+        if (existingMedia == null) {
+            api.media.downloadThumbnailDependingOnServerVersion(uri, width, height, method, progress = progress) {
+                it.saveMedia(thumbnailUrl) { this }
+            }.getOrThrow()
+            requireNotNull(
+                mediaStore.getMedia(thumbnailUrl)
+            ) { "media should not be null, because it has just been saved" }
+                .transformByteArrayFlow { it.onCompletion { if (!saveToCache) mediaStore.deleteMedia(thumbnailUrl) } }
+        } else existingMedia
     }
 
     private suspend fun MediaApiClient.downloadThumbnailDependingOnServerVersion(
@@ -183,25 +204,6 @@ class MediaServiceImpl(
                 downloadHandler = downloadHandler
             )
         }
-
-    override suspend fun getThumbnail(
-        uri: String,
-        width: Long,
-        height: Long,
-        method: ThumbnailResizingMethod,
-        progress: MutableStateFlow<FileTransferProgress?>?,
-        saveToCache: Boolean
-    ): Result<PlatformMedia> = kotlin.runCatching {
-        val thumbnailUrl = "$uri/${width}x$height/${api.json.encodeToJsonElement(method).jsonPrimitive.content}"
-        val existingMedia = mediaStore.getMedia(thumbnailUrl)
-        if (existingMedia == null) {
-            api.media.downloadThumbnailDependingOnServerVersion(uri, width, height, method, progress = progress) {
-                it.saveMedia(thumbnailUrl) { this }
-            }.getOrThrow()
-            requireNotNull(mediaStore.getMedia(thumbnailUrl)) { "media should not be null, because it has just been saved" }
-                .transformByteArrayFlow { it.onCompletion { if (!saveToCache) mediaStore.deleteMedia(thumbnailUrl) } }
-        } else existingMedia
-    }
 
     override suspend fun prepareUploadMedia(content: ByteArrayFlow, contentType: ContentType?): String {
         return "$UPLOAD_MEDIA_CACHE_URI_PREFIX${SecureRandom.nextString(22)}".also { cacheUri ->
@@ -259,7 +261,7 @@ class MediaServiceImpl(
                         ?.let {
                             try {
                                 ContentType.parse(it)
-                            } catch (exception: Exception) {
+                            } catch (_: Exception) {
                                 null
                             }
                         }

@@ -10,10 +10,9 @@ import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media
-import net.folivo.trixnity.client.media.InMemoryMediaStore
+import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
 import org.jetbrains.exposed.sql.Database
 import org.testcontainers.junit.jupiter.Container
@@ -46,7 +45,7 @@ class MediaIT {
         client = MatrixClient.loginWith(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
-            mediaStore = InMemoryMediaStore(),
+            mediaStoreModule = createInMemoryMediaStoreModule(),
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client.startSync()
@@ -64,7 +63,7 @@ class MediaIT {
             val cacheUri =
                 client.media.prepareUploadMedia("Test".toByteArray().toByteArrayFlow(), ContentType.Text.Plain)
             val mxcUri = client.media.uploadMedia(cacheUri).getOrThrow()
-            client.media.getMedia(mxcUri).getOrThrow().toByteArray().decodeToString() shouldBe "Test"
+            client.media.getMedia(mxcUri).getOrThrow().toByteArray()?.decodeToString() shouldBe "Test"
         }
     }
 
@@ -84,7 +83,7 @@ class MediaIT {
             val cacheUri =
                 client.media.prepareUploadMedia(miniPng.toByteArrayFlow(), ContentType.Image.PNG)
             val mxcUri = client.media.uploadMedia(cacheUri).getOrThrow()
-            client.media.getThumbnail(mxcUri, 100, 100).getOrThrow().toByteArray().size shouldNotBe 0
+            client.media.getThumbnail(mxcUri, 100, 100).getOrThrow().toByteArray()?.size shouldNotBe 0
         }
     }
 }

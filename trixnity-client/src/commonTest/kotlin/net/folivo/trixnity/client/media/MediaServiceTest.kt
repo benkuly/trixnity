@@ -22,7 +22,6 @@ import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
-import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
 import kotlin.test.Test
 
@@ -43,7 +42,7 @@ class MediaServiceTest : TrixnityBaseTest() {
     @Test
     fun `getMedia » is mxc uri » prefer cache`() = runTest {
         mediaStore.addMedia(mxcUri, "test".encodeToByteArray().toByteArrayFlow())
-        cut.getMedia(mxcUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+        cut.getMedia(mxcUri).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
     }
 
     @Test
@@ -54,7 +53,7 @@ class MediaServiceTest : TrixnityBaseTest() {
                 respond(ByteReadChannel("test"), HttpStatusCode.OK)
             }
         }
-        cut.getMedia(mxcUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+        cut.getMedia(mxcUri).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
 
         mediaStore.getMedia(mxcUri)?.toByteArray() shouldBe "test".encodeToByteArray()
     }
@@ -62,14 +61,14 @@ class MediaServiceTest : TrixnityBaseTest() {
     @Test
     fun `getMedia » is cache uri » prefer cache`() = runTest {
         mediaStore.addMedia(cacheUri, "test".encodeToByteArray().toByteArrayFlow())
-        cut.getMedia(cacheUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+        cut.getMedia(cacheUri).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
     }
 
     @Test
     fun `getMedia » is cache uri » prefer cache but use mxcUri when already uploaded`() = runTest {
         mediaCacheMappingStore.updateMediaCacheMapping(cacheUri) { MediaCacheMapping(cacheUri, mxcUri, 4) }
         mediaStore.addMedia(mxcUri, "test".encodeToByteArray().toByteArrayFlow())
-        cut.getMedia(cacheUri).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+        cut.getMedia(cacheUri).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
     }
 
     private val rawFile = "lQ/twg".decodeUnpaddedBase64Bytes()
@@ -85,7 +84,7 @@ class MediaServiceTest : TrixnityBaseTest() {
     @Test
     fun `getEncryptedMedia » prefer cache and decrypt`() = runTest {
         mediaStore.addMedia(mxcUri, rawFile.toByteArrayFlow())
-        cut.getEncryptedMedia(encryptedFile).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+        cut.getEncryptedMedia(encryptedFile).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
     }
 
     @Test
@@ -96,7 +95,7 @@ class MediaServiceTest : TrixnityBaseTest() {
                 respond(rawFile, HttpStatusCode.OK)
             }
         }
-        cut.getEncryptedMedia(encryptedFile).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+        cut.getEncryptedMedia(encryptedFile).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
         mediaStore.getMedia(mxcUri)?.toByteArray() shouldBe rawFile
     }
 
@@ -109,7 +108,7 @@ class MediaServiceTest : TrixnityBaseTest() {
             }
         }
         cut.getEncryptedMedia(encryptedFile, saveToCache = false).getOrThrow().toByteArray()
-            .decodeToString() shouldBe "test"
+            ?.decodeToString() shouldBe "test"
         mediaStore.getMedia(mxcUri) shouldBe null
     }
 
@@ -123,7 +122,7 @@ class MediaServiceTest : TrixnityBaseTest() {
         }
         val encryptedFileWithWrongHash = encryptedFile.copy(hashes = mapOf("sha256" to "nope"))
         shouldThrow<MediaValidationException> {
-            cut.getEncryptedMedia(encryptedFileWithWrongHash).getOrThrow().toByteArray().decodeToString()
+            cut.getEncryptedMedia(encryptedFileWithWrongHash).getOrThrow().toByteArray()?.decodeToString()
         }
         mediaStore.getMedia(mxcUri) shouldBe null
     }
@@ -131,7 +130,7 @@ class MediaServiceTest : TrixnityBaseTest() {
     @Test
     fun `getThumbnail » prefer cache`() = runTest {
         mediaStore.addMedia("$mxcUri/32x32/crop", "test".encodeToByteArray().toByteArrayFlow())
-        cut.getThumbnail(mxcUri, 32, 32).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+        cut.getThumbnail(mxcUri, 32, 32).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
     }
 
     @Test
@@ -142,7 +141,7 @@ class MediaServiceTest : TrixnityBaseTest() {
                 respond(ByteReadChannel("test"), HttpStatusCode.OK)
             }
         }
-        cut.getThumbnail(mxcUri, 32, 32).getOrThrow().toByteArray().decodeToString() shouldBe "test"
+        cut.getThumbnail(mxcUri, 32, 32).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
         mediaStore.getMedia("$mxcUri/32x32/crop")?.toByteArray() shouldBe "test".encodeToByteArray()
     }
 
