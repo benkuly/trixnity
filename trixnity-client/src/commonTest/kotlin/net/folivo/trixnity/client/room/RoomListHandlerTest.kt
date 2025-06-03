@@ -736,6 +736,30 @@ class RoomListHandlerTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun `deleteLeftRooms » do forget rooms where timeline is empty`() =
+        runTest {
+            config.deleteRooms = DeleteRooms.WhenNotJoined
+            val room = simpleRoom.copy(membership = Membership.LEAVE)
+            roomStore.update(roomId) { room }
+            roomServiceMock.rooms.value = mapOf(roomId to MutableStateFlow(room))
+            roomServiceMock.returnGetTimelineEvents = flowOf(flowOf())
+
+            cut.deleteLeftRooms(
+                SyncEvents(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                        )
+                    ),
+                    allEvents = listOf()
+                )
+            )
+
+            forgetRooms shouldBe listOf(roomId)
+        }
+
+    @Test
     fun `deleteLeftRooms » do not forget rooms where there is a timeline since we joined the room in the past`() =
         runTest {
             config.deleteRooms = DeleteRooms.WhenNotJoined

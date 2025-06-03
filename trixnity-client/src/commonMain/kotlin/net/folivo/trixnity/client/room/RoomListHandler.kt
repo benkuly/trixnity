@@ -374,9 +374,10 @@ class RoomListHandler(
             val hasTimelineEvents = roomService.getById(roomId).first()?.lastEventId?.let { lastEventId ->
                 withTimeoutOrNull(5.seconds) {
                     roomService.getTimelineEvents(roomId, lastEventId).map { flow ->
-                        val event = flow.first().event
-                        val content = event.content
-                        (event is ClientEvent.StateBaseEvent<*> &&
+                        val event = flow.firstOrNull()?.event
+                        val content = event?.content
+                        (event == null ||
+                                event is ClientEvent.StateBaseEvent<*> &&
                                 content is MemberEventContent &&
                                 content.membership != Membership.JOIN &&
                                 event.stateKey == userInfo.userId.full).not()
