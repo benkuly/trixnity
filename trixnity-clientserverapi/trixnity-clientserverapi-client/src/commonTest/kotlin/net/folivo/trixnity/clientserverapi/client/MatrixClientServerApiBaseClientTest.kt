@@ -318,6 +318,118 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun itShouldRefreshTokenWithOldRefreshToken() = runTest {
+        var refreshCalled = 0
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classicInMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+            ),
+            onLogout = { onLogout = it },
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v3/refresh" -> {
+                            request.body.toByteArray().decodeToString() shouldBe """{"refresh_token":"refresh"}"""
+                            refreshCalled++
+                            when (refreshCalled) {
+                                1 -> respond(
+                                    """
+                                    {
+                                        "access_token": "access1",
+                                        "expires_in_ms": 60000
+                                    }
+                                """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+
+                                else -> respond(
+                                    """
+                                    {
+                                        "access_token": "access2",
+                                        "expires_in_ms": 60000
+                                    }
+                                """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access1"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        "/path/2?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access1") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access2"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            httpClientConfig = {
+                install(SaveBodyPlugin) {
+                    disabled = true
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+        refreshCalled shouldBe 1
+        cut.request(PostPath("2", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+        refreshCalled shouldBe 2
+        onLogout shouldBe null
+    }
+
+    @Test
     fun itShouldCallOnLogout() = runTest {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
