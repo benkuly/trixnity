@@ -9,24 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support Matrix 1.13
-- Persist user presence in database
-- Forget rooms the user has never joined
-- Memory caching for media (when used via `PlatformMedia::toByteArray`)
-
 ### Changed
 
 ### Deprecated
-
-- `MatrixClient` creation via `mediaStore` has been changed to `mediaStoreModule`.
 
 ### Removed
 
 ### Fixed
 
-- Fix outdated keys not updated on accounts with only on room and invite state
+- Fix refresh token not being reused when no new is given
 
 ### Security
+
+## 4.16.0
+
+### Added
+
+- Support Matrix 1.13
+- Persist user presence in database
+- Forget rooms the user has never joined
+- Memory caching for media (when used via `PlatformMedia::toByteArray`)
+
+### Deprecated
+
+- `MatrixClient` creation via `mediaStore` has been changed to `mediaStoreModule`.
+
+### Fixed
+
+- Fix outdated keys not updated on accounts with only on room and invite state
 
 ## 4.15.3
 

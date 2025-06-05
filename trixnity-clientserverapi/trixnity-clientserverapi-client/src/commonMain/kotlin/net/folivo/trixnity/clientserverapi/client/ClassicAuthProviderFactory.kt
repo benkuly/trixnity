@@ -91,7 +91,7 @@ class ClassicMatrixAuthProvider(
                         }.body<Refresh.Response>()
                     val newTokens = BearerTokens(
                         accessToken = refreshResponse.accessToken,
-                        refreshToken = refreshResponse.refreshToken,
+                        refreshToken = refreshResponse.refreshToken ?: refreshToken,
                     )
                     bearerTokensStore.setBearerTokens(newTokens)
                     return@async true
