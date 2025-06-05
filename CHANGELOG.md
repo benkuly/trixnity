@@ -17,9 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix refresh token not being reused when no new is given
-
 ### Security
+
+## 4.16.1
+
+### Fixed
+
+- Fix refresh token not being reused when no new is given
 
 ## 4.16.0
 
