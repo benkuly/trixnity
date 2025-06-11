@@ -3,6 +3,17 @@ plugins {
 }
 
 repositories {
+    val dependencyCacheUrl = System.getenv("GRADLE_DEPENDENCY_CACHE_URL")
+    if (dependencyCacheUrl != null)
+        maven {
+            url = uri(dependencyCacheUrl)
+            authentication {
+                credentials {
+                    username = System.getenv("GRADLE_DEPENDENCY_CACHE_USERNAME")
+                    password = System.getenv("GRADLE_DEPENDENCY_CACHE_PASSWORD")
+                }
+            }
+        }
     mavenCentral()
     google()
 }
