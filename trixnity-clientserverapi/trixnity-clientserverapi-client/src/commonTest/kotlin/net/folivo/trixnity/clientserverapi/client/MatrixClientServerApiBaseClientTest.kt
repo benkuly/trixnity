@@ -9,6 +9,11 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.*
 import io.ktor.http.HttpMethod.Companion.Post
 import io.ktor.resources.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -29,6 +34,7 @@ import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.seconds
 
 class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
@@ -426,6 +432,91 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         cut.request(PostPath("2", "2"), PostPath.Request(true)).getOrThrow() shouldBe
                 PostPath.Response("ok")
         refreshCalled shouldBe 2
+        onLogout shouldBe null
+    }
+
+    @Test
+    fun itShouldRefreshTokenWithParallelRequests() = runTest {
+        val refreshCalled = MutableStateFlow(false)
+        val continueRefresh = MutableStateFlow(false)
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.classicInMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+            ),
+            onLogout = { onLogout = it },
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v3/refresh" -> {
+                            request.body.toByteArray().decodeToString() shouldBe """{"refresh_token":"refresh"}"""
+                            refreshCalled.value = true
+                            continueRefresh.first { it }
+                            respond(
+                                """
+                                    {
+                                        "access_token": "access",
+                                        "expires_in_ms": 60000,
+                                        "refresh_token": "refresh2"
+                                    }
+                                """,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            httpClientConfig = {
+                install(SaveBodyPlugin) {
+                    disabled = true
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        coroutineScope {
+            repeat(20) {
+                launch {
+                    cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                            PostPath.Response("ok")
+                }
+            }
+            refreshCalled.first { it }
+            delay(1.seconds)
+            continueRefresh.value = true
+        }
+
+        refreshCalled.value shouldBe true
         onLogout shouldBe null
     }
 
