@@ -114,7 +114,7 @@ test:mac:
   script:
     - ./gradlew
       {iosSimulatorArm64,iosX64,macosArm64,macosX64}Test
-      --stacktrace
+      --stacktrace --debug
 
 test:linux:
   stage: test
