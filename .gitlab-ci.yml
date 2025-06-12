@@ -80,7 +80,7 @@ build:mac:
       compileKotlin{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
       compileTestKotlin{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
       linkDebugTest{IosSimulatorArm64,IosX64,MacosX64}
-      --stacktrace
+      --stacktrace --debug
 
 build:linux:
   stage: build
@@ -114,7 +114,7 @@ test:mac:
   script:
     - ./gradlew
       {iosSimulatorArm64,iosX64,macosArm64,macosX64}Test
-      --stacktrace --debug
+      --stacktrace
 
 test:linux:
   stage: test
