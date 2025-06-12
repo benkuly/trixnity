@@ -24,53 +24,16 @@ variables:
   BUILD_LINUX_IMAGE_NAME: registry.gitlab.com/trixnity/kmp-dockerfiles/kmp-dockerfiles-base:latest
   TRIVY_LINUX_IMAGE_NAME: registry.gitlab.com/trixnity/kmp-dockerfiles/kmp-dockerfiles-trivy:latest
 
-.cache-linux: &cache-linux
-  - key: global-trixnity-cache-linux
-    policy: pull-push
+.cache: &cache
+  - key:
+      files:
+        - gradle/wrapper/gradle-wrapper.properties
+        - gradle/libs.versions.toml
     paths:
-      - $GRADLE_USER_HOME
-      - $KONAN_DATA_DIR
-      - $KOTLIN_DATA_DIR
-
-.push-cache-linux: &push-cache-linux
-  - key: "$CI_COMMIT_REF_NAME-linux"
-    policy: push
-    paths:
-      - $GRADLE_USER_HOME
-      - $KONAN_DATA_DIR
-      - $KOTLIN_DATA_DIR
-
-.pull-cache-linux: &pull-cache-linux
-  - key: "$CI_COMMIT_REF_NAME-linux"
-    fallback_keys: [ "global-trixnity-cache-linux" ]
-    policy: pull
-    paths:
-      - $GRADLE_USER_HOME
-      - $KONAN_DATA_DIR
-      - $KOTLIN_DATA_DIR
-
-.cache-mac: &cache-mac
-  - key: global-trixnity-cache-mac
-    policy: pull-push
-    paths:
-      - $GRADLE_USER_HOME
-      - $KONAN_DATA_DIR
-      - $KOTLIN_DATA_DIR
-
-.push-cache-mac: &push-cache-mac
-  - key: "$CI_COMMIT_REF_NAME-mac"
-    policy: push
-    paths:
-      - $GRADLE_USER_HOME
-      - $KONAN_DATA_DIR
-      - $KOTLIN_DATA_DIR
-
-.pull-cache-mac: &pull-cache-mac
-  - key: "$CI_COMMIT_REF_NAME-mac"
-    fallback_keys: [ "global-trixnity-cache-mac" ]
-    policy: pull
-    paths:
-      - $GRADLE_USER_HOME
+      - $GRADLE_USER_HOME/wrapper
+      - $GRADLE_USER_HOME/nodejs
+      - $GRADLE_USER_HOME/yarn
+      - $GRADLE_USER_HOME/native
       - $KONAN_DATA_DIR
       - $KOTLIN_DATA_DIR
 
@@ -109,15 +72,14 @@ build:mac:
   interruptible: true
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *cache-mac
-    - *push-cache-mac
+    - *cache
   rules:
     - *if-merge-request
   script:
     - ./gradlew
       compileKotlin{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
       compileTestKotlin{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
-      linkDebugTest{IosX64,MacosX64}
+      linkDebugTest{IosSimulatorArm64,IosX64,MacosX64}
       --stacktrace
 
 build:linux:
@@ -126,8 +88,7 @@ build:linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *cache-linux
-    - *push-cache-linux
+    - *cache
   rules:
     - *if-merge-request
   script:
@@ -146,7 +107,7 @@ test:mac:
   needs: [ "build:mac" ]
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *pull-cache-mac
+    - *cache
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
@@ -163,7 +124,7 @@ test:linux:
   tags: [ "saas-linux-large-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *pull-cache-linux
+    - *cache
   artifacts: *artifact-reports
   rules:
     - *if-merge-request
@@ -185,7 +146,7 @@ test:integration-test:
     - name: docker:dind
       command: [ "--tls=false" ]
   cache:
-    - *pull-cache-linux
+    - *cache
   variables: *docker-variables
   artifacts: *artifact-reports
   rules:
@@ -206,8 +167,13 @@ security:dependencies:
     TRIVY_CACHE_DIR: ".trivycache/"
     WITH_LOCK: true
   cache:
-    paths:
-      - .trivycache/
+    - *cache
+    - key:
+        files:
+          - gradle/wrapper/gradle-wrapper.properties
+          - gradle/libs.versions.toml
+      paths:
+        - .trivycache/
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       allow_failure: true
@@ -246,7 +212,7 @@ publish-snapshot:mac:
   stage: publish-snapshot
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *cache-mac
+    - *cache
   rules:
     - *if-main
   script:
@@ -259,7 +225,7 @@ publish-snapshot:linux:
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *cache-linux
+    - *cache
   rules:
     - *if-main
   artifacts:
@@ -302,7 +268,7 @@ publish:mac:
   needs: [ "publish:create-nexus-staging-repo" ]
   tags: [ "trixnity-mac-internal" ]
   cache:
-    - *cache-mac
+    - *cache
   rules:
     - *if-release
   script:
@@ -317,7 +283,7 @@ publish:linux:
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
-    - *cache-linux
+    - *cache
   rules:
     - *if-release
   script:

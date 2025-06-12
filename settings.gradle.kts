@@ -37,13 +37,37 @@ include("trixnity-test-utils")
 include("ktor-test-utils")
 
 buildCache {
+    val buildCacheUrl = System.getenv("GRADLE_BUILD_CACHE_URL")
     local {
+        isEnabled = buildCacheUrl == null
         directory = File(rootDir, ".gradle").resolve("build-cache")
+    }
+    remote<HttpBuildCache> {
+        isEnabled = buildCacheUrl != null
+        if (buildCacheUrl != null) {
+            url = uri(buildCacheUrl)
+            isPush = true
+            credentials {
+                username = System.getenv("GRADLE_BUILD_CACHE_USERNAME")
+                password = System.getenv("GRADLE_BUILD_CACHE_PASSWORD")
+            }
+        }
     }
 }
 
 pluginManagement {
     repositories {
+        val dependencyCacheUrl = System.getenv("GRADLE_DEPENDENCY_CACHE_URL")
+        if (dependencyCacheUrl != null)
+            maven {
+                url = uri(dependencyCacheUrl)
+                authentication {
+                    credentials {
+                        username = System.getenv("GRADLE_DEPENDENCY_CACHE_USERNAME")
+                        password = System.getenv("GRADLE_DEPENDENCY_CACHE_PASSWORD")
+                    }
+                }
+            }
         mavenCentral()
         gradlePluginPortal()
         google()
@@ -52,6 +76,17 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
+        val dependencyCacheUrl = System.getenv("GRADLE_DEPENDENCY_CACHE_URL")
+        if (dependencyCacheUrl != null)
+            maven {
+                url = uri(dependencyCacheUrl)
+                authentication {
+                    credentials {
+                        username = System.getenv("GRADLE_DEPENDENCY_CACHE_USERNAME")
+                        password = System.getenv("GRADLE_DEPENDENCY_CACHE_PASSWORD")
+                    }
+                }
+            }
         mavenCentral()
         google()
     }
