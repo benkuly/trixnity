@@ -79,8 +79,7 @@ build:mac:
     - ./gradlew
       compileKotlin{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
       compileTestKotlin{IosSimulatorArm64,IosX64,MacosArm64,MacosX64}
-      linkDebugTest{IosSimulatorArm64,IosX64,MacosX64}
-      --stacktrace --debug
+      --stacktrace
 
 build:linux:
   stage: build
@@ -96,7 +95,6 @@ build:linux:
       compileKotlin{Jvm,Js,LinuxX64,MingwX64}
       compileReleaseKotlinAndroid
       compileTestKotlin{Jvm,Js,LinuxX64,MingwX64}
-      linkDebugTest{LinuxX64,MingwX64}
       compileReleaseUnitTestKotlinAndroid
       --stacktrace
 
