@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - User verification with user we have no direct room with, always creates an encrypted, trusted private, direct room
 - Fix timing issue when creating dehydrated device
+- Fix that olm sessions from dehydrated device must not be stored
 
 ### Security
 

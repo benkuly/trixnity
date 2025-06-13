@@ -299,6 +299,10 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             megolmSession.sessionId,
             megolmSession.roomId
         ).shouldNotBeNull()
+
+        olmStore.updateOlmSessions(KeyValue.Curve25519KeyValue(bobAccount.identityKeys.curve25519)) {
+            it shouldBe null
+        }
     }
 
     @Test

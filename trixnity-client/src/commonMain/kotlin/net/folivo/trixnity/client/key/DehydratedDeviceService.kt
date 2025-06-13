@@ -126,6 +126,16 @@ class DehydratedDeviceService(
                     override suspend fun updateOlmAccount(updater: suspend (String) -> String) {
                         updater(olmAccountPickle)
                     }
+
+                    private val temporaryOlmSessions = MutableStateFlow<Set<StoredOlmSession>?>(null)
+                    override suspend fun updateOlmSessions(
+                        senderKeyValue: KeyValue.Curve25519KeyValue,
+                        updater: suspend (Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
+                    ) {
+                        temporaryOlmSessions.update {
+                            updater.invoke(it)
+                        }
+                    }
                 }
                 val eventEmitter = object : ClientEventEmitterImpl<List<ClientEvent<*>>>() {}
                 // TODO at the end, we only use ::handleOlmEncryptedRoomKeyEventContent and ::handleOlmEvents, so maybe just extract it
