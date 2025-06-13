@@ -109,7 +109,6 @@ class DehydratedDeviceIT {
             foundContent.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>().body shouldBe "some encrypted message"
             startedClient3.client.syncOnce()
 
-            println("+++++++++")
             withClue("send message from client3") {
                 startedClient3.client.room.sendMessage(roomId) { text("hi") }
                 startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().flatMapLatest { it }
