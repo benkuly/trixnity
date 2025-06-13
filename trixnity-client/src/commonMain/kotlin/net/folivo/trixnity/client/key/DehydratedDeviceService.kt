@@ -220,7 +220,7 @@ class DehydratedDeviceService(
             olmAccount.markKeysAsPublished()
 
 
-            val selfSigningPrivateKey = withTimeoutOrNull(5.seconds) {
+            val selfSigningPrivateKey = withTimeoutOrNull(10.seconds) {
                 keyStore.getSecretsFlow().map { it[M_CROSS_SIGNING_SELF_SIGNING] }.filterNotNull().first()
             }?.decryptedPrivateKey
             if (selfSigningPrivateKey == null) {
@@ -228,7 +228,11 @@ class DehydratedDeviceService(
                 return
             }
             val selfSigningPublicKey =
-                keyStore.getCrossSigningKey(userId, SelfSigningKey)?.value?.signed?.get<Ed25519Key>()?.id
+                withTimeoutOrNull(10.seconds) {
+                    keyStore.getCrossSigningKeys(userId).map { crossSigningKeys ->
+                        crossSigningKeys?.firstOrNull { it.value.signed.usage.contains(SelfSigningKey) }
+                    }.filterNotNull().first()
+                }?.value?.signed?.get<Ed25519Key>()?.id
             if (selfSigningPublicKey == null) {
                 log.warn { "could not find public key of $M_CROSS_SIGNING_SELF_SIGNING" }
                 return
