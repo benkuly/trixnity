@@ -5,6 +5,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.client.*
@@ -47,6 +49,7 @@ import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(MSC3814::class)
 class DehydratedDeviceServiceTest : TrixnityBaseTest() {
@@ -128,15 +131,6 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             }
         }
 
-        keyStore.updateSecrets {
-            mapOf(
-                SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
-                    ClientEvent.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
-                    selfSigningPrivateKey
-                )
-            )
-        }
-
         keyStore.updateCrossSigningKeys(alice) {
             setOf(
                 StoredCrossSigningKeys(
@@ -151,7 +145,19 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             )
         }
 
-        cut.dehydrateDevice(dehydratedDeviceKey)
+        val dehydrateDeviceJob = launch {
+            cut.dehydrateDevice(dehydratedDeviceKey)
+        }
+        delay(1.seconds)
+        keyStore.updateSecrets {
+            mapOf(
+                SecretType.M_CROSS_SIGNING_SELF_SIGNING to StoredSecret(
+                    ClientEvent.GlobalAccountDataEvent(SelfSigningKeyEventContent(mapOf())),
+                    selfSigningPrivateKey
+                )
+            )
+        }
+        dehydrateDeviceJob.join()
 
         val deviceData =
             setDehydratedDevice?.deviceData.shouldBeInstanceOf<DehydratedDeviceData.DehydrationV2Compatibility>()
