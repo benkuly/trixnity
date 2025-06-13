@@ -24,7 +24,7 @@ class RoomAccountDataEventHandler(
 
     internal suspend fun setRoomAccountData(accountData: List<RoomAccountDataEvent<RoomAccountDataEventContent>>) {
         if (accountData.isNotEmpty())
-            tm.transaction {
+            tm.writeTransaction {
                 accountData.forEach { roomAccountDataStore.save(it) }
             }
     }

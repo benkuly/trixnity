@@ -360,7 +360,7 @@ class ObservableCacheTest : TrixnityBaseTest() {
     fun `update cache entry when read during transaction after transaction`() = runTest {
         val transactionManager = TransactionManagerImpl(NoOpRepositoryTransactionManager)
         launch {
-            transactionManager.transaction {
+            transactionManager.writeTransaction {
                 cut.set("key", "value")
                 cacheStore.persist("key", null) // simulate that write is only visible after transaction
                 delay(100.milliseconds)
@@ -379,7 +379,7 @@ class ObservableCacheTest : TrixnityBaseTest() {
         cut.update("key2") { null }
         launch {
             shouldThrow<CancellationException> {
-                transactionManager.transaction {
+                transactionManager.writeTransaction {
                     cut.update("key1") { "value1" }
                     cut.set("key1", "value2")
                     cut.set("key2", "value3")
@@ -395,6 +395,25 @@ class ObservableCacheTest : TrixnityBaseTest() {
         delay(51.milliseconds)
         cut.get("key1").first() shouldBe "value0"
         cut.get("key2").first() shouldBe null
+    }
+
+    @Test
+    fun `rollback cache entry when not used during transaction`() = runTest {
+        val throwingCacheStore = object : ObservableCacheStore<String, String> {
+            override suspend fun get(key: String): String? = "old"
+
+            override suspend fun persist(key: String, value: String?) {
+                throw RuntimeException("upsi")
+            }
+
+            override suspend fun deleteAll() {}
+        }
+        val cut = ObservableCache("test", throwingCacheStore, testScope.backgroundScope, testScope.testClock)
+        cut.get("key").first() shouldBe "old"
+        shouldThrow<RuntimeException> {
+            cut.update("key") { "new" }
+        }.message shouldBe "upsi"
+        cut.get("key").first() shouldBe "old"
     }
 
 

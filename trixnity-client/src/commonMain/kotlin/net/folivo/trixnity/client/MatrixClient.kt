@@ -759,12 +759,15 @@ private suspend fun onLogout(
     accountStore: AccountStore
 ) {
     log.debug { "This device has been logged out ($logoutInfo)." }
-    accountStore.updateAccount {
-        it?.copy(
-            accessToken = if (logoutInfo.isLocked) it.accessToken else null,
-            syncBatchToken = if (logoutInfo.isSoft) it.syncBatchToken else null,
-            isLocked = logoutInfo.isLocked
-        )
+    withContext(NonCancellable) {
+        accountStore.updateAccount {
+            it?.copy(
+                accessToken = if (logoutInfo.isLocked) it.accessToken else null,
+                refreshToken = if (logoutInfo.isLocked) it.refreshToken else null,
+                syncBatchToken = if (logoutInfo.isSoft) it.syncBatchToken else null,
+                isLocked = logoutInfo.isLocked
+            )
+        }
     }
 }
 

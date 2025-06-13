@@ -152,8 +152,8 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
         val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
         captureOneTimeKeys shouldHaveSize 2
-        captureOneTimeKeys[0].keys shouldHaveSize 26
-        captureOneTimeKeys[1].keys shouldHaveSize 75
+        captureOneTimeKeys[0].keys shouldHaveSize 11
+        captureOneTimeKeys[1].keys shouldHaveSize 60
 
         captureOneTimeKeys[0].keys shouldNotContainAnyOf captureOneTimeKeys[1].keys
     }
@@ -175,7 +175,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
         val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
         captureOneTimeKeys shouldHaveSize 2
-        captureOneTimeKeys[0].keys shouldHaveSize 26
+        captureOneTimeKeys[0].keys shouldHaveSize 11
         captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
     }
 
@@ -207,7 +207,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
         val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
         captureOneTimeKeys shouldHaveSize 2
-        captureOneTimeKeys[0].keys shouldHaveSize 26
+        captureOneTimeKeys[0].keys shouldHaveSize 11
         captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
     }
 

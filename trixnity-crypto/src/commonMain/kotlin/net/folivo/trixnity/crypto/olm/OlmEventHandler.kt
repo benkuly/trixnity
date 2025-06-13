@@ -91,12 +91,12 @@ class OlmEventHandler(
                             .coerceAtLeast(0)
                     if (generateOneTimeKeysCount > 0) {
                         val generateOneTimeKeysCountWithBuffer =
-                            generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4
+                            generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 10
                         log.debug { "generate $generateOneTimeKeysCountWithBuffer new one time key" }
                         olmAccount.generateOneTimeKeys(generateOneTimeKeysCountWithBuffer)
                         newOneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys()
-                    } else null
-                } else null
+                    }
+                }
 
                 newFallbackKeys = olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(fallback = true)
                 if (newFallbackKeys != null) log.debug { "found fallback key marked as unpublished" }
@@ -107,7 +107,7 @@ class OlmEventHandler(
                     log.debug { "generate new fallback key" }
                     olmAccount.generateFallbackKey()
                     newFallbackKeys = olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(fallback = true)
-                } else null
+                }
                 olmAccount.pickle(store.getOlmPickleKey())
             }
         }
@@ -118,7 +118,10 @@ class OlmEventHandler(
                 fallbackKeys = newFallbackKeys
             ).onFailure {
                 if (it is MatrixServerException && it.statusCode.value in (400 until 500)) {
-                    log.warn(it) { "seems like our keys were already uploaded, so just marking them as published" }
+                    log.error(it) {
+                        "Possibly detected OTKs on the server with key ids that have already been uploaded. " +
+                                "This is a severe misbehavior and must be fixed in Trixnity!!!"
+                    }
                 } else throw it
             }
 

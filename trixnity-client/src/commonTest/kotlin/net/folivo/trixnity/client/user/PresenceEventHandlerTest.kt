@@ -24,7 +24,12 @@ class PresenceEventHandlerTest : TrixnityBaseTest() {
     private val clock = ClockMock()
 
     private val cut =
-        UserPresenceEventHandler(userPresenceStore, TransactionManagerMock(), clock, mockMatrixClientServerApiClient())
+        UserPresenceEventHandler(
+            userPresenceStore,
+            TransactionManagerMock(),
+            clock,
+            mockMatrixClientServerApiClient()
+        )
 
     @Test
     fun `setPresence » set the presence for a user`() = runTest {
