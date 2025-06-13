@@ -11,11 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Internal: add remote caching
-
 ### Deprecated
 
 ### Removed
+
+### Fixed
+
+### Security
+
+## 4.16.2
+
+### Changed
+
+- Internal: add remote caching
 
 ### Fixed
 
@@ -23,8 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix timing issue when creating dehydrated device
 - Fix that olm sessions from dehydrated device must not be stored
 - Fix race condition where the cache does no rollback, when no explicit transaction has been opened
-
-### Security
 
 ## 4.16.1
 
