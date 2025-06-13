@@ -5,10 +5,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.key
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
@@ -67,7 +64,7 @@ class DehydratedDeviceIT {
         scope.cancel()
     }
 
-    @OptIn(FlowPreview::class)
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     @Test
     fun createAndUseDehydratedDevice(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
@@ -110,6 +107,16 @@ class DehydratedDeviceIT {
                 .map { it?.content?.getOrNull() }.filterNotNull()
                 .first()
             foundContent.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>().body shouldBe "some encrypted message"
+            startedClient3.client.syncOnce()
+
+            withClue("send message from client3") {
+                startedClient3.client.room.sendMessage(roomId) { text("hi") }
+                startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().flatMapLatest { it }
+                    .first {
+                        val content = it.content?.getOrNull()
+                        content is RoomMessageEventContent.TextBased.Text && content.body == "hi"
+                    }
+            }
         }
     }
 }
