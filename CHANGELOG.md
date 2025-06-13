@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## 4.16.3
+
+### Fixed
+
+- Fix another timing issue when creating dehydrated device
+
 ## 4.16.2
 
 ### Changed
