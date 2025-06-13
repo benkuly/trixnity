@@ -64,7 +64,7 @@ class OutboxMessageEventHandler(
             } else null
         }
         if (removeOutboxMessages.isNotEmpty())
-            tm.transaction {
+            tm.writeTransaction {
                 removeOutboxMessages.forEach { roomOutboxMessageStore.update(it.first, it.second) { null } }
             }
     }

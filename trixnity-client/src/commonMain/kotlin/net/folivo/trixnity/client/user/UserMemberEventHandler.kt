@@ -128,7 +128,7 @@ class UserMemberEventHandler(
                             }
                         }
                     }.awaitAll().flatten().toMap()
-                tm.transaction {
+                tm.writeTransaction {
                     roomUserUpdates.forEach { (key, roomUser) ->
                         roomUserStore.update(key.first, key.second) { oldRoomUser ->
                             if (skipWhenAlreadyPresent && oldRoomUser != null) oldRoomUser

@@ -13,9 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
@@ -970,28 +970,40 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateOutdatedkey » device keys » master key is present » at least one device key is not cross signed » keep trust level » Valid false`() =
-        keepTrustLevel(KeySignatureTrustLevel.Valid(false),
-            )
+        keepTrustLevel(
+            KeySignatureTrustLevel.Valid(false),
+        )
+
     @Test
     fun `updateOutdatedkey » device keys » master key is present » at least one device key is not cross signed » keep trust level » Valid true`() =
-        keepTrustLevel(KeySignatureTrustLevel.Valid(true),
-            )
+        keepTrustLevel(
+            KeySignatureTrustLevel.Valid(true),
+        )
+
     @Test
     fun `updateOutdatedkey » device keys » master key is present » at least one device key is not cross signed » keep trust level » NotAllDeviceKeysCrossSigned true`() =
-        keepTrustLevel(KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true),
-            )
+        keepTrustLevel(
+            KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true),
+        )
+
     @Test
     fun `updateOutdatedkey » device keys » master key is present » at least one device key is not cross signed » keep trust level » NotAllDeviceKeysCrossSigned false`() =
-        keepTrustLevel(KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(false),
-            )
+        keepTrustLevel(
+            KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(false),
+        )
+
     @Test
     fun `updateOutdatedkey » device keys » master key is present » at least one device key is not cross signed » keep trust level » NotCrossSigned`() =
-        keepTrustLevel(KeySignatureTrustLevel.NotCrossSigned,
-            )
+        keepTrustLevel(
+            KeySignatureTrustLevel.NotCrossSigned,
+        )
+
     @Test
     fun `updateOutdatedkey » device keys » master key is present » at least one device key is not cross signed » keep trust level » Invalid`() =
-        keepTrustLevel(KeySignatureTrustLevel.Invalid(""),
-            )
+        keepTrustLevel(
+            KeySignatureTrustLevel.Invalid(""),
+        )
+
     @Test
     fun `updateOutdatedkey » device keys » master key is present » at least one device key is not cross signed » keep trust level » Blocked`() =
         keepTrustLevel(KeySignatureTrustLevel.Blocked)
@@ -1004,32 +1016,33 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
     )
 
     @Test
-    fun `updateOutdatedkey » device keys » master key is present » all device keys are cross signed » do nothing when his trust level is CrossSigned`() = runTest {
-        currentSyncState.value = SyncState.RUNNING
-        apiConfig.endpoints {
-            matrixJsonEndpoint(GetKeys()) {
-                GetKeys.Response(
-                    mapOf(),
-                    mapOf(
-                        alice to mapOf(
-                            aliceDevice2 to Signed(
-                                aliceKey2.signed,
-                                mapOf(alice to keysOf(Key.Ed25519Key("ALICE_MSK", "...")))
+    fun `updateOutdatedkey » device keys » master key is present » all device keys are cross signed » do nothing when his trust level is CrossSigned`() =
+        runTest {
+            currentSyncState.value = SyncState.RUNNING
+            apiConfig.endpoints {
+                matrixJsonEndpoint(GetKeys()) {
+                    GetKeys.Response(
+                        mapOf(),
+                        mapOf(
+                            alice to mapOf(
+                                aliceDevice2 to Signed(
+                                    aliceKey2.signed,
+                                    mapOf(alice to keysOf(Key.Ed25519Key("ALICE_MSK", "...")))
+                                )
                             )
-                        )
-                    ),
-                    mapOf(), mapOf(), mapOf()
-                )
+                        ),
+                        mapOf(), mapOf(), mapOf()
+                    )
+                }
             }
+            keyStore.updateCrossSigningKeys(alice) {
+                setOf(StoredCrossSigningKeys(aliceMasterKey, KeySignatureTrustLevel.CrossSigned(true)))
+            }
+            keyStore.updateOutdatedKeys { setOf(alice) }
+            keyStore.getOutdatedKeysFlow().first { it.isEmpty() }
+            keyStore.getCrossSigningKey(alice, CrossSigningKeysUsage.MasterKey)
+                ?.trustLevel shouldBe KeySignatureTrustLevel.CrossSigned(true)
         }
-        keyStore.updateCrossSigningKeys(alice) {
-            setOf(StoredCrossSigningKeys(aliceMasterKey, KeySignatureTrustLevel.CrossSigned(true)))
-        }
-        keyStore.updateOutdatedKeys { setOf(alice) }
-        keyStore.getOutdatedKeysFlow().first { it.isEmpty() }
-        keyStore.getCrossSigningKey(alice, CrossSigningKeysUsage.MasterKey)
-            ?.trustLevel shouldBe KeySignatureTrustLevel.CrossSigned(true)
-    }
 
     @Test
     fun `updateOutdatedkey » device keys » manipulation of » signature`() = runTest {

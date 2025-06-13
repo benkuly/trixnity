@@ -1,20 +1,13 @@
 package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -154,7 +147,7 @@ class RoomListHandler(
 
         updateIsDirectAndAvatarUrls(syncEvents, roomUpdates)
 
-        tm.transaction {
+        tm.writeTransaction {
             roomUpdates.read { toMap() }.forEach { (roomId, updates) ->
                 roomStore.update(roomId) { oldRoom ->
                     updates.read { toList() }.fold(oldRoom) { room, update ->
@@ -396,7 +389,7 @@ class RoomListHandler(
     private suspend fun forgetRooms(forgetRooms: Collection<RoomId>) {
         if (forgetRooms.isNotEmpty()) {
             log.debug { "forget rooms: $forgetRooms" }
-            tm.transaction {
+            tm.writeTransaction {
                 forgetRooms.forEach { roomId ->
                     forgetRoomService(roomId)
                 }

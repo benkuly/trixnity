@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
@@ -89,7 +90,7 @@ class TimelineEventHandlerImpl(
         hasGapBefore: Boolean,
     ) {
         timelineMutex.withLock(roomId) {
-            tm.transaction {
+            tm.writeTransaction {
                 val events =
                     roomTimelineStore.filterDuplicateEvents(newEvents)
                         ?.handleRedactions()
@@ -201,7 +202,7 @@ class TimelineEventHandlerImpl(
             }
 
             if (insertNewEvents)
-                tm.transaction {
+                tm.writeTransaction {
                     roomTimelineStore.addEventsToTimeline(
                         startEvent = startEvent,
                         roomId = roomId,

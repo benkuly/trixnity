@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.message.image
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings

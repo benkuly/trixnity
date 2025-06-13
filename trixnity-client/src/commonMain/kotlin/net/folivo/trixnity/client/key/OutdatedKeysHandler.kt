@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.PAUSE
 import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
@@ -128,7 +129,7 @@ class OutdatedKeysHandler(
 
     private suspend fun updateKeyTracking(startTracking: Set<UserId>, stopTracking: Set<UserId>, reason: String) {
         if (startTracking.isNotEmpty() || stopTracking.isNotEmpty()) {
-            tm.transaction {
+            tm.writeTransaction {
                 log.debug { "change tracking keys because of $reason (start=$startTracking stop=$stopTracking)" }
                 keyStore.updateOutdatedKeys { it + startTracking - stopTracking }
                 stopTracking.forEach { userId ->
@@ -187,7 +188,7 @@ class OutdatedKeysHandler(
         }
 
         userIds.chunked(25).forEach { userIdChunk ->
-            tm.transaction {
+            tm.writeTransaction {
                 userIdChunk.forEach { userId ->
                     launch {
                         keysResponse.masterKeys?.get(userId)?.let { masterKey ->

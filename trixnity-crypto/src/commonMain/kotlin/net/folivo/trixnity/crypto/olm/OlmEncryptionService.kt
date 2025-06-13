@@ -370,6 +370,7 @@ class OlmEncryptionServiceImpl(
                 }
             }
 
+            // TODO notify megolm sessions to send next time again
             suspend fun createRecoveryOlmSession(storedSessions: Set<StoredOlmSession>?) {
                 if (!hasCreatedTooManyOlmOutboundSessions(storedSessions)) {
                     encryptOlm(DummyEventContent, userId, deviceId, true)

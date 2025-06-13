@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.store
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.client.MatrixClientConfiguration
@@ -112,5 +113,36 @@ class OlmStoreTest : TrixnityBaseTest() {
             session.copy(hasBeenBackedUp = true)
         }
         cut.notBackedUpInboundMegolmSessions.value.values.shouldBeEmpty()
+    }
+
+    @Test
+    fun `updateOlmAccount » handle rollback`() = runTest {
+        val olmAccountRepositoryMock = object : OlmAccountRepository {
+            override suspend fun get(key: Long): String? = "old_account"
+            override suspend fun save(key: Long, value: String) {
+                throw RuntimeException("upsi")
+            }
+
+            override suspend fun delete(key: Long) {}
+            override suspend fun deleteAll() {}
+        }
+        val cut = OlmCryptoStore(
+            olmAccountRepositoryMock,
+            InMemoryOlmForgetFallbackKeyAfterRepository(),
+            InMemoryOlmSessionRepository(),
+            inboundMegolmSessionRepository,
+            InMemoryInboundMegolmMessageIndexRepository(),
+            InMemoryOutboundMegolmSessionRepository(),
+            RepositoryTransactionManagerMock(),
+            MatrixClientConfiguration(),
+            ObservableCacheStatisticCollector(),
+            testScope.backgroundScope,
+            testScope.testClock,
+        )
+        cut.init(this)
+        shouldThrow<RuntimeException> {
+            cut.updateOlmAccount { "new_account" }
+        }.message shouldBe "upsi"
+        cut.getOlmAccount() shouldBe "old_account"
     }
 }
