@@ -37,6 +37,7 @@ import net.folivo.trixnity.crypto.sign.sign
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.DehydratedDeviceService")
 
@@ -125,6 +126,16 @@ class DehydratedDeviceService(
                     override suspend fun updateOlmAccount(updater: suspend (String) -> String) {
                         updater(olmAccountPickle)
                     }
+
+                    private val temporaryOlmSessions = MutableStateFlow<Set<StoredOlmSession>?>(null)
+                    override suspend fun updateOlmSessions(
+                        senderKeyValue: KeyValue.Curve25519KeyValue,
+                        updater: suspend (Set<StoredOlmSession>?) -> Set<StoredOlmSession>?
+                    ) {
+                        temporaryOlmSessions.update {
+                            updater.invoke(it)
+                        }
+                    }
                 }
                 val eventEmitter = object : ClientEventEmitterImpl<List<ClientEvent<*>>>() {}
                 // TODO at the end, we only use ::handleOlmEncryptedRoomKeyEventContent and ::handleOlmEvents, so maybe just extract it
@@ -208,7 +219,10 @@ class DehydratedDeviceService(
                 olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(dehydratedDeviceSignService, true)
             olmAccount.markKeysAsPublished()
 
-            val selfSigningPrivateKey = keyStore.getSecrets()[M_CROSS_SIGNING_SELF_SIGNING]?.decryptedPrivateKey
+
+            val selfSigningPrivateKey = withTimeoutOrNull(5.seconds) {
+                keyStore.getSecretsFlow().map { it[M_CROSS_SIGNING_SELF_SIGNING] }.filterNotNull().first()
+            }?.decryptedPrivateKey
             if (selfSigningPrivateKey == null) {
                 log.warn { "could not find private key of $M_CROSS_SIGNING_SELF_SIGNING" }
                 return

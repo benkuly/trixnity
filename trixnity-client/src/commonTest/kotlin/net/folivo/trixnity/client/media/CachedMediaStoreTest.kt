@@ -6,10 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -110,6 +107,7 @@ class CachedMediaStoreTest : LoggedTest {
         media1 shouldBeSameInstanceAs media2
 
         usageScope.cancel()
+        usageScope.coroutineContext.job.join()
         advanceCacheExpiration()
 
         val media3 = cut.getMedia(url)?.toByteArray()
