@@ -126,6 +126,7 @@ class OlmStoreTest : TrixnityBaseTest() {
             override suspend fun delete(key: Long) {}
             override suspend fun deleteAll() {}
         }
+        
         val cut = OlmCryptoStore(
             olmAccountRepositoryMock,
             InMemoryOlmForgetFallbackKeyAfterRepository(),
