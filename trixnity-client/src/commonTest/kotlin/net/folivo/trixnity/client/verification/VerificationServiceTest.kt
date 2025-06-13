@@ -8,10 +8,8 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.currentTime
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -520,6 +518,54 @@ class VerificationServiceTest : TrixnityBaseTest() {
                     )
                 )
             result.await()
+        }
+
+    @Test
+    fun `activeUserVerifications » should update active verifications list according to verification states`() =
+        runTest {
+            globalAccountDataStore.save(
+                GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(roomId))))
+            )
+            userServiceMock.roomUsers.put(
+                Pair(bobUserId, roomId), flowOf(
+                    RoomUser(
+                        roomId, bobUserId, "Bob",
+                        ClientEvent.RoomEvent.StateEvent(
+                            MemberEventContent(membership = Membership.JOIN),
+                            id = EventId("0"),
+                            sender = bobUserId,
+                            roomId = roomId,
+                            Clock.System.now().toEpochMilliseconds(),
+                            stateKey = bobUserId.full
+                        )
+                    )
+                )
+            )
+            val job = testScope.launch {
+                cut.activeUserVerificationUserIDs.launchIn(this)
+            }
+            cut.activeUserVerificationUserIDs.value.isEmpty() shouldBe true
+            val request = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
+            val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
+            roomServiceMock.outbox.value =
+                listOf(
+                    flowOf(
+                        RoomOutboxMessage(
+                            transactionId = "1",
+                            roomId = roomId,
+                            content = message,
+                            eventId = EventId("bla"),
+                            createdAt = Instant.fromEpochMilliseconds(currentTime),
+                        )
+                    )
+                )
+            cut.activeUserVerificationUserIDs.first { it.isNotEmpty() }
+            cut.activeUserVerificationUserIDs.value shouldContain bobUserId
+            val result = request.await()
+            result.cancel()
+            delay(200)
+            cut.activeUserVerificationUserIDs.value.isEmpty() shouldBe true
+            job.cancel()
         }
 
     @Test
