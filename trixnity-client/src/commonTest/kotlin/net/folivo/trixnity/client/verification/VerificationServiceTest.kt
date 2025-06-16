@@ -2,6 +2,8 @@ package net.folivo.trixnity.client.verification
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldExist
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -542,9 +544,9 @@ class VerificationServiceTest : TrixnityBaseTest() {
                 )
             )
             val job = testScope.launch {
-                cut.activeUserVerificationUserIDs.launchIn(this)
+                cut.activeUserVerifications.launchIn(this)
             }
-            cut.activeUserVerificationUserIDs.value.isEmpty() shouldBe true
+            cut.activeUserVerifications.value.isEmpty() shouldBe true
             val request = async { cut.createUserVerificationRequest(bobUserId).getOrThrow() }
             val message = roomServiceMock.sentMessages.first { it.isNotEmpty() }.first().second
             roomServiceMock.outbox.value =
@@ -559,12 +561,13 @@ class VerificationServiceTest : TrixnityBaseTest() {
                         )
                     )
                 )
-            cut.activeUserVerificationUserIDs.first { it.isNotEmpty() }
-            cut.activeUserVerificationUserIDs.value shouldContain bobUserId
+            cut.activeUserVerifications.first { it.isNotEmpty() }
+            cut.activeUserVerifications.value shouldHaveSize 1
+            cut.activeUserVerifications.value shouldExist { it.theirUserId == bobUserId }
             val result = request.await()
             result.cancel()
             delay(200)
-            cut.activeUserVerificationUserIDs.value.isEmpty() shouldBe true
+            cut.activeUserVerifications.value.isEmpty() shouldBe true
             job.cancel()
         }
 

@@ -50,6 +50,8 @@ private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.
 interface VerificationService {
     val activeDeviceVerification: StateFlow<ActiveDeviceVerification?>
 
+    val activeUserVerifications: StateFlow<List<ActiveUserVerification>>
+
     suspend fun createDeviceVerificationRequest(
         theirUserId: UserId,
         theirDeviceIds: Set<String>
@@ -58,8 +60,6 @@ interface VerificationService {
     suspend fun createUserVerificationRequest(
         theirUserId: UserId
     ): Result<ActiveUserVerification>
-
-    val activeUserVerificationUserIDs: StateFlow<Set<UserId>>
 
     /**
      * Possible states include:
@@ -132,8 +132,9 @@ class VerificationServiceImpl(
     private val ownDeviceId = userInfo.deviceId
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerificationImpl?>(null)
     override val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
-    private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerificationImpl>>(listOf())
-    override val activeUserVerificationUserIDs = MutableStateFlow(setOf<UserId>())
+    private val _activeUserVerifications = MutableStateFlow<List<ActiveUserVerificationImpl>>(listOf())
+    override val activeUserVerifications: StateFlow<List<ActiveUserVerificationImpl>> =
+        _activeUserVerifications.asStateFlow()
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -143,10 +144,7 @@ class VerificationServiceImpl(
             .unsubscribeOnCompletion(scope)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {
-            activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
-        }
-        scope.launch(start = UNDISPATCHED) {
-            activeUserVerifications.collect { activeUserVerificationUserIDs.value = it.map { it.theirUserId }.toSet() }
+            _activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
         }
         scope.launch(start = UNDISPATCHED) {
             activeDeviceVerification.collect { it?.let { startLifecycleOfActiveVerifications(listOf(it), this) } }
@@ -262,7 +260,7 @@ class VerificationServiceImpl(
                     verification.state.first { verification.state.value is Done || verification.state.value is Cancel }
                     when (verification) {
                         is ActiveUserVerificationImpl -> {
-                            activeUserVerifications.update { it - verification }
+                            _activeUserVerifications.update { it - verification }
                         }
 
                         is ActiveDeviceVerificationImpl -> {
@@ -349,7 +347,7 @@ class VerificationServiceImpl(
                 room = roomService,
                 keyTrust = keyTrustService,
                 clock = clock,
-            ).also { auv -> activeUserVerifications.update { it + auv } }
+            ).also { auv -> _activeUserVerifications.update { it + auv } }
         }
     }
 
@@ -470,7 +468,7 @@ class VerificationServiceImpl(
         return if (isVerificationRequestActive(timelineEvent.event.originTimestamp, clock)) {
             getActiveUserVerificationMutex.withLock {
                 val cache =
-                    activeUserVerifications.value.find { it.roomId == roomId && it.relatesTo?.eventId == eventId }
+                    _activeUserVerifications.value.find { it.roomId == roomId && it.relatesTo?.eventId == eventId }
                 if (cache != null) cache
                 else {
                     val sender = timelineEvent.event.sender
@@ -491,7 +489,7 @@ class VerificationServiceImpl(
                             room = roomService,
                             keyTrust = keyTrustService,
                             clock = clock,
-                        ).also { auv -> activeUserVerifications.update { it + auv } }
+                        ).also { auv -> _activeUserVerifications.update { it + auv } }
                     } else null
                 }
             }

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Expose list of active user verification IDs to allow checking if a verification with a user is in progress
+- Expose list of active user verifications to allow checking if a verification with a user is in progress
 
 ### Deprecated
 
