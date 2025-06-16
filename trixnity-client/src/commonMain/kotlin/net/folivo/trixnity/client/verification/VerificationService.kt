@@ -1,42 +1,18 @@
 package net.folivo.trixnity.client.verification
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.transformLatest
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.key.KeySecretService
 import net.folivo.trixnity.client.key.KeyService
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.room.RoomService
-import net.folivo.trixnity.client.store.GlobalAccountDataStore
-import net.folivo.trixnity.client.store.KeySignatureTrustLevel
-import net.folivo.trixnity.client.store.KeyStore
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.eventId
-import net.folivo.trixnity.client.store.get
-import net.folivo.trixnity.client.store.membership
-import net.folivo.trixnity.client.store.roomId
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Cancel
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Done
@@ -45,9 +21,7 @@ import net.folivo.trixnity.client.verification.VerificationService.SelfVerificat
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.MSC3814
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -64,20 +38,19 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Veri
 import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
-import net.folivo.trixnity.core.subscribeContent
-import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import net.folivo.trixnity.utils.nextString
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.VerificationService")
 
 interface VerificationService {
     val activeDeviceVerification: StateFlow<ActiveDeviceVerification?>
+
+    val activeUserVerifications: StateFlow<List<ActiveUserVerification>>
 
     suspend fun createDeviceVerificationRequest(
         theirUserId: UserId,
@@ -159,7 +132,9 @@ class VerificationServiceImpl(
     private val ownDeviceId = userInfo.deviceId
     private val _activeDeviceVerification = MutableStateFlow<ActiveDeviceVerificationImpl?>(null)
     override val activeDeviceVerification = _activeDeviceVerification.asStateFlow()
-    private val activeUserVerifications = MutableStateFlow<List<ActiveUserVerificationImpl>>(listOf())
+    private val _activeUserVerifications = MutableStateFlow<List<ActiveUserVerificationImpl>>(listOf())
+    override val activeUserVerifications: StateFlow<List<ActiveUserVerificationImpl>> =
+        _activeUserVerifications.asStateFlow()
     private val supportedMethods: Set<VerificationMethod> = setOf(Sas)
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -169,7 +144,7 @@ class VerificationServiceImpl(
             .unsubscribeOnCompletion(scope)
         // we use UNDISPATCHED because we want to ensure, that collect is called immediately
         scope.launch(start = UNDISPATCHED) {
-            activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
+            _activeUserVerifications.collect { startLifecycleOfActiveVerifications(it, this) }
         }
         scope.launch(start = UNDISPATCHED) {
             activeDeviceVerification.collect { it?.let { startLifecycleOfActiveVerifications(listOf(it), this) } }
@@ -285,8 +260,7 @@ class VerificationServiceImpl(
                     verification.state.first { verification.state.value is Done || verification.state.value is Cancel }
                     when (verification) {
                         is ActiveUserVerificationImpl -> {
-                            delay(20.minutes)
-                            activeUserVerifications.update { it - verification }
+                            _activeUserVerifications.update { it - verification }
                         }
 
                         is ActiveDeviceVerificationImpl -> {
@@ -373,7 +347,7 @@ class VerificationServiceImpl(
                 room = roomService,
                 keyTrust = keyTrustService,
                 clock = clock,
-            ).also { auv -> activeUserVerifications.update { it + auv } }
+            ).also { auv -> _activeUserVerifications.update { it + auv } }
         }
     }
 
@@ -494,7 +468,7 @@ class VerificationServiceImpl(
         return if (isVerificationRequestActive(timelineEvent.event.originTimestamp, clock)) {
             getActiveUserVerificationMutex.withLock {
                 val cache =
-                    activeUserVerifications.value.find { it.roomId == roomId && it.relatesTo?.eventId == eventId }
+                    _activeUserVerifications.value.find { it.roomId == roomId && it.relatesTo?.eventId == eventId }
                 if (cache != null) cache
                 else {
                     val sender = timelineEvent.event.sender
@@ -515,7 +489,7 @@ class VerificationServiceImpl(
                             room = roomService,
                             keyTrust = keyTrustService,
                             clock = clock,
-                        ).also { auv -> activeUserVerifications.update { it + auv } }
+                        ).also { auv -> _activeUserVerifications.update { it + auv } }
                     } else null
                 }
             }
