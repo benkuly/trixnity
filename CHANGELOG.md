@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix inbound megolm session from dehydrated device not used when a session is already present
+
 ### Security
 
 ## 4.16.3

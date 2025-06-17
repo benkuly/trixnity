@@ -163,30 +163,29 @@ class OlmEventHandler(
                 log.warn { "ignore inbound megolm session because it did not contain any sender signing key" }
                 return
             }
-            store.updateInboundMegolmSession(content.sessionId, content.roomId) {
-                it
-                    ?: try {
-                        freeAfter(
-                            OlmInboundGroupSession.create(content.sessionKey)
-                        ) { session ->
-                            StoredInboundMegolmSession(
-                                senderKey = event.encrypted.content.senderKey,
-                                senderSigningKey = senderSigningKey.value,
-                                sessionId = content.sessionId,
-                                roomId = content.roomId,
-                                firstKnownIndex = session.firstKnownIndex,
-                                hasBeenBackedUp = false,
-                                isTrusted = true,
-                                forwardingCurve25519KeyChain = emptyList(),
-                                pickled = session.pickle(store.getOlmPickleKey())
-                            )
-                        }
-                    } catch (exception: OlmLibraryException) {
-                        log.warn { "ignore inbound megolm session due to: ${exception.message}" }
-                        null
+            try {
+                val (firstKnownIndex, pickledSession) =
+                    freeAfter(OlmInboundGroupSession.create(content.sessionKey)) {
+                        it.firstKnownIndex to it.pickle(checkNotNull(store.getOlmPickleKey()))
                     }
+                store.updateInboundMegolmSession(content.sessionId, content.roomId) {
+                    if (it != null && it.firstKnownIndex <= firstKnownIndex) it
+                    else StoredInboundMegolmSession(
+                        senderKey = event.encrypted.content.senderKey,
+                        senderSigningKey = senderSigningKey.value,
+                        sessionId = content.sessionId,
+                        roomId = content.roomId,
+                        firstKnownIndex = firstKnownIndex,
+                        hasBeenBackedUp = false,
+                        isTrusted = true,
+                        forwardingCurve25519KeyChain = emptyList(),
+                        pickled = pickledSession,
+                    )
+                }
+            } catch (exception: OlmLibraryException) {
+                log.warn { "ignore inbound megolm session due to: ${exception.message}" }
+                null
             }
-
         }
     }
 

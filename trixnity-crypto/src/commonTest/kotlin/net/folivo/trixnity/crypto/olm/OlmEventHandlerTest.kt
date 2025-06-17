@@ -246,7 +246,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
     // handleOlmEncryptedRoomKeyEventContent
     // ##########################
     @Test
-    fun `store inbound megolm session`() = runTest {
+    fun `store new inbound megolm session`() = runTest {
         val outboundSession = OlmOutboundGroupSession.create()
 
         val eventContent = RoomKeyEventContent(
@@ -283,6 +283,120 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
             sessionId shouldBe outboundSession.sessionId
             senderKey shouldBe Curve25519KeyValue("BOB_IDEN")
             senderSigningKey shouldBe Ed25519KeyValue("BOB_SIGN")
+        }
+    }
+
+    @Test
+    fun `store inbound megolm session when existing index higher`() = runTest {
+        val outboundSession = OlmOutboundGroupSession.create()
+
+        val eventContent = RoomKeyEventContent(
+            roomId,
+            outboundSession.sessionId,
+            outboundSession.sessionKey,
+            EncryptionAlgorithm.Megolm
+        )
+        val encryptedEvent = ToDeviceEvent(
+            OlmEncryptedToDeviceEventContent(
+                ciphertext = mapOf(),
+                senderKey = Curve25519KeyValue("BOB_IDEN"),
+            ), bob
+        )
+
+        olmStoreMock.inboundMegolmSession.put(
+            outboundSession.sessionId to roomId,
+            StoredInboundMegolmSession(
+                senderKey = Curve25519KeyValue("BOB_IDEN"),
+                senderSigningKey = Ed25519KeyValue("BOB_SIGN"),
+                sessionId = outboundSession.sessionId,
+                roomId = roomId,
+                firstKnownIndex = 1,
+                hasBeenBackedUp = false,
+                isTrusted = true,
+                forwardingCurve25519KeyChain = listOf(),
+                pickled = "existing_pickled"
+            )
+        )
+
+        cut.handleOlmEncryptedRoomKeyEventContent(
+            DecryptedOlmEventContainer(
+                encryptedEvent,
+                DecryptedOlmEvent(
+                    eventContent,
+                    bob,
+                    keysOf(Key.Ed25519Key(null, "BOB_SIGN")),
+                    alice,
+                    keysOf()
+                )
+            )
+        )
+
+        assertSoftly(
+            olmStoreMock.inboundMegolmSession[outboundSession.sessionId to roomId]
+                .shouldNotBeNull()
+        ) {
+            roomId shouldBe roomId
+            sessionId shouldBe outboundSession.sessionId
+            senderKey shouldBe Curve25519KeyValue("BOB_IDEN")
+            senderSigningKey shouldBe Ed25519KeyValue("BOB_SIGN")
+            pickled shouldNotBe "existing_pickled"
+        }
+    }
+
+    @Test
+    fun `not store inbound megolm session when existing index lower or same`() = runTest {
+        val outboundSession = OlmOutboundGroupSession.create()
+
+        val eventContent = RoomKeyEventContent(
+            roomId,
+            outboundSession.sessionId,
+            outboundSession.sessionKey,
+            EncryptionAlgorithm.Megolm
+        )
+        val encryptedEvent = ToDeviceEvent(
+            OlmEncryptedToDeviceEventContent(
+                ciphertext = mapOf(),
+                senderKey = Curve25519KeyValue("BOB_IDEN"),
+            ), bob
+        )
+
+        olmStoreMock.inboundMegolmSession.put(
+            outboundSession.sessionId to roomId,
+            StoredInboundMegolmSession(
+                senderKey = Curve25519KeyValue("BOB_IDEN"),
+                senderSigningKey = Ed25519KeyValue("BOB_SIGN"),
+                sessionId = outboundSession.sessionId,
+                roomId = roomId,
+                firstKnownIndex = 0,
+                hasBeenBackedUp = false,
+                isTrusted = true,
+                forwardingCurve25519KeyChain = listOf(),
+                pickled = "existing_pickled"
+            )
+        )
+
+        cut.handleOlmEncryptedRoomKeyEventContent(
+            DecryptedOlmEventContainer(
+                encryptedEvent,
+                DecryptedOlmEvent(
+                    eventContent,
+                    bob,
+                    keysOf(Key.Ed25519Key(null, "BOB_SIGN")),
+                    alice,
+                    keysOf()
+                )
+            )
+        )
+
+        assertSoftly(
+            olmStoreMock.inboundMegolmSession[outboundSession.sessionId to roomId]
+                .shouldNotBeNull()
+        ) {
+            roomId shouldBe roomId
+            sessionId shouldBe outboundSession.sessionId
+            senderKey shouldBe Curve25519KeyValue("BOB_IDEN")
+            senderSigningKey shouldBe Ed25519KeyValue("BOB_SIGN")
+            pickled shouldBe "existing_pickled"
         }
     }
 
