@@ -57,11 +57,13 @@ suspend fun MatrixClientServerApiClient.register(
         username = username,
         deviceId = deviceId,
         accountType = AccountType.USER,
+        refreshToken = true,
     ).getOrThrow()
     registerStep.shouldBeInstanceOf<UIA.Step<Register.Response>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy).getOrThrow()
     registerResult.shouldBeInstanceOf<UIA.Success<Register.Response>>()
     val (userId, createdDeviceId, accessToken, _, refreshToken) = registerResult.value
+    println("--- " + registerResult.value.accessTokenExpiresInMs)
     requireNotNull(createdDeviceId)
     requireNotNull(accessToken)
     return Result.success(MatrixClient.LoginInfo(userId, createdDeviceId, accessToken, refreshToken))
