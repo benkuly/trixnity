@@ -56,7 +56,6 @@ private class UIAInterception(val body: JsonObject, val errorResponse: ErrorResp
 class MatrixClientServerApiBaseClient(
     val baseUrl: Url? = null,
     authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
-    private val onLogout: suspend (LogoutInfo) -> Unit = { },
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientEngine: HttpClientEngine? = null,
@@ -82,21 +81,10 @@ class MatrixClientServerApiBaseClient(
                 if (request.attributes.getOrNull(IsUIA) == null) return@on call
                 val body = json.decodeFromString<JsonObject>(response.bodyAsText())
                 val errorResponse = if (body["errcode"] != null) json.decodeErrorResponse(body) else null
-                if (errorResponse is ErrorResponse.UnknownToken) return@on call
+                if (errorResponse is ErrorResponse.UnknownToken || errorResponse is ErrorResponse.UserLocked) return@on call
                 throw UIAInterception(body, errorResponse)
             }
         })
-        install(HttpCallValidator) {
-            handleResponseException { cause, _ ->
-                if (cause is MatrixServerException) {
-                    when (val errorResponse = cause.errorResponse) {
-                        is ErrorResponse.UnknownToken -> onLogout(LogoutInfo(errorResponse.softLogout, false))
-                        is ErrorResponse.UserLocked -> onLogout(LogoutInfo(errorResponse.softLogout, true))
-                        else -> {}
-                    }
-                }
-            }
-        }
         install(ConvertMediaPlugin)
         install(ContentNegotiation) {
             ignoreType(Media::class)
@@ -187,12 +175,6 @@ class MatrixClientServerApiBaseClient(
 
             val errorResponse = exception.errorResponse
             if (errorResponse != null) {
-                if (errorResponse is ErrorResponse.UnknownToken) {
-                    onLogout(LogoutInfo(errorResponse.softLogout, false))
-                }
-                if (errorResponse is ErrorResponse.UserLocked) {
-                    onLogout(LogoutInfo(errorResponse.softLogout, true))
-                }
                 UIA.Error(state, errorResponse, getFallbackUrl, authenticate)
             } else {
                 UIA.Step(state, getFallbackUrl, authenticate)

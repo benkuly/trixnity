@@ -262,8 +262,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh",
+                onLogout = { onLogout = it },
             ),
-            onLogout = { onLogout = it },
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -335,8 +335,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh",
+                onLogout = { onLogout = it },
             ),
-            onLogout = { onLogout = it },
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -409,8 +409,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh",
+                onLogout = { onLogout = it },
             ),
-            onLogout = { onLogout = it },
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -473,8 +473,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh",
+                onLogout = { onLogout = it },
             ),
-            onLogout = { onLogout = it },
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -587,8 +587,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh",
+                onLogout = { onLogout = it },
             ),
-            onLogout = { onLogout = it },
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -675,8 +675,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh",
+                onLogout = { onLogout = it },
             ),
-            onLogout = { onLogout = it },
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -753,8 +753,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh",
+                onLogout = { onLogout = it },
             ),
-            onLogout = { onLogout = it },
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -850,7 +850,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            authProvider = MatrixAuthProvider.classicInMemory("access") { onLogout = it },
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -864,7 +864,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     )
                 }
             },
-            onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -885,7 +884,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            authProvider = MatrixAuthProvider.classicInMemory("access") { onLogout = it },
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -899,7 +898,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     )
                 }
             },
-            onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -923,8 +921,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.classicInMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh",
+                onLogout = { onLogout = it },
             ),
-            onLogout = { onLogout = it },
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -1039,7 +1037,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            authProvider = MatrixAuthProvider.classicInMemory("access") { onLogout = it },
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -1053,7 +1051,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     )
                 }
             },
-            onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -1074,7 +1071,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         var refreshCalled = false
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory("access_old", "refresh"),
+            authProvider = MatrixAuthProvider.classicInMemory("access_old", "refresh") { onLogout = it },
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -1127,13 +1124,13 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     disabled = true
                 }
             },
-            onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
         )
 
         cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
         refreshCalled shouldBe true
+        onLogout shouldBe null
     }
 
     @Test
@@ -1141,7 +1138,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            authProvider = MatrixAuthProvider.classicInMemory("access") { onLogout = it },
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -1155,17 +1152,13 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     )
                 }
             },
-            onLogout = { onLogout = it },
             json = json,
             eventContentSerializerMappings = mappings,
         )
 
-        val error = cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
-            .shouldBeInstanceOf<UIA.Error<*>>()
-        assertEquals(
-            ErrorResponse.UserLocked::class,
-            error.errorResponse::class
-        )
+        shouldThrow<MatrixServerException> {
+            cut.uiaRequest(PostPathWithUIA("1", "2"), PostPath.Request(true)).getOrThrow()
+        }.errorResponse.shouldBeInstanceOf<ErrorResponse.UserLocked>()
         onLogout shouldBe LogoutInfo(true, true)
     }
 

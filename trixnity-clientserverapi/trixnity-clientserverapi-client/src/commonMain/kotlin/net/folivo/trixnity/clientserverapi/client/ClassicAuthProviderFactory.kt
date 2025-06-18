@@ -12,18 +12,24 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.clientserverapi.model.authentication.Refresh
 import net.folivo.trixnity.core.AuthRequired
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.decodeErrorResponse
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.ClassicMatrixAuthProvider")
 
 fun MatrixAuthProvider.Companion.classic(
     bearerTokensStore: ClassicMatrixAuthProvider.BearerTokensStore,
-) = ClassicMatrixAuthProvider(bearerTokensStore)
+    onLogout: suspend (LogoutInfo) -> Unit = {},
+) = ClassicMatrixAuthProvider(bearerTokensStore, onLogout)
 
 fun MatrixAuthProvider.Companion.classicInMemory(
     accessToken: String? = null,
     refreshToken: String? = null,
+    onLogout: suspend (LogoutInfo) -> Unit = {},
 ) = classic(
     bearerTokensStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory(
         accessToken?.let {
@@ -33,10 +39,12 @@ fun MatrixAuthProvider.Companion.classicInMemory(
             )
         },
     ),
+    onLogout = onLogout,
 )
 
 class ClassicMatrixAuthProvider(
     private val bearerTokensStore: BearerTokensStore,
+    private val onLogout: suspend (LogoutInfo) -> Unit,
 ) : MatrixAuthProvider {
     private val isRefreshingToken = MutableStateFlow(false)
 
@@ -84,14 +92,52 @@ class ClassicMatrixAuthProvider(
                 log.debug { "refresh tokens oldTokens=$oldTokens" }
                 isRefreshingToken.value = true
 
-                val refreshToken = oldTokens.refreshToken ?: return false
+                val refreshToken = oldTokens.refreshToken
+                if (refreshToken == null) {
+                    if (response.status == HttpStatusCode.Unauthorized) {
+                        val errorResponse = Json.decodeErrorResponse(response.bodyAsText())
+                        when (errorResponse) {
+                            is ErrorResponse.UnknownToken -> {
+                                log.info { "no refresh token present, therefore call onLogout" }
+                                onLogout(LogoutInfo(errorResponse.softLogout, false))
+                            }
+
+                            is ErrorResponse.UserLocked -> {
+                                log.info { "no refresh token present, therefore call onLogout" }
+                                onLogout(LogoutInfo(errorResponse.softLogout, true))
+                            }
+
+                            else -> {}
+                        }
+                        throw MatrixServerException(response.status, errorResponse, null)
+                    }
+                    return false
+                }
                 val refreshResponse =
-                    response.call.client.post("/_matrix/client/v3/refresh") {
-                        attributes.put(AuthCircuitBreaker, Unit)
-                        contentType(ContentType.Application.Json)
-                        accept(ContentType.Application.Json)
-                        setBody(Refresh.Request(refreshToken))
-                    }.body<Refresh.Response>()
+                    try {
+                        response.call.client.post("/_matrix/client/v3/refresh") {
+                            attributes.put(AuthCircuitBreaker, Unit)
+                            contentType(ContentType.Application.Json)
+                            accept(ContentType.Application.Json)
+                            setBody(Refresh.Request(refreshToken))
+                        }.body<Refresh.Response>()
+                    } catch (matrixServerException: MatrixServerException) {
+                        if (matrixServerException.statusCode == HttpStatusCode.Unauthorized)
+                            when (val errorResponse = matrixServerException.errorResponse) {
+                                is ErrorResponse.UnknownToken -> {
+                                    log.info { "could not refresh token, therefore call onLogout" }
+                                    onLogout(LogoutInfo(errorResponse.softLogout, false))
+                                }
+
+                                is ErrorResponse.UserLocked -> {
+                                    log.info { "could not refresh token, therefore call onLogout" }
+                                    onLogout(LogoutInfo(errorResponse.softLogout, true))
+                                }
+
+                                else -> {}
+                            }
+                        throw matrixServerException
+                    }
                 val newTokens = BearerTokens(
                     accessToken = refreshResponse.accessToken,
                     refreshToken = refreshResponse.refreshToken ?: refreshToken,

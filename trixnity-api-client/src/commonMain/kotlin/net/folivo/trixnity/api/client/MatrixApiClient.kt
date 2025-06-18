@@ -1,5 +1,6 @@
 package net.folivo.trixnity.api.client
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.*
@@ -17,6 +18,8 @@ import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+
+private val log = KotlinLogging.logger("net.folivo.trixnity.api.client.MatrixApiClient")
 
 open class MatrixApiClient(
     val contentMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
@@ -36,6 +39,7 @@ open class MatrixApiClient(
             validateResponse { response ->
                 val status = response.status
                 if (status.isSuccess()) return@validateResponse
+                log.trace { "try decode error response" }
                 val errorResponse = json.decodeErrorResponse(response.bodyAsText())
                 throw MatrixServerException(response.status, errorResponse, null)
             }

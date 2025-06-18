@@ -24,6 +24,7 @@ class LogoutIT {
     fun shouldLogoutOnDeviceDeletion(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val synapseDocker = synapseDocker()
+            synapseDocker.start()
 
             fun getBaseUrl() = URLBuilder(
                 protocol = URLProtocol.HTTP,

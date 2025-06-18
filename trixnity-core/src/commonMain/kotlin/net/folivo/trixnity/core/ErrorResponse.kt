@@ -330,7 +330,7 @@ object ErrorResponseSerializer : KSerializer<ErrorResponse> {
         val jsonElement = decoder.decodeJsonElement()
         return try {
             decoder.json.decodeFromJsonElement(jsonElement)
-        } catch (error: SerializationException) {
+        } catch (_: SerializationException) {
             decoder.json.decodeFromJsonElement<ErrorResponse.CustomErrorResponse>(jsonElement)
         }
     }

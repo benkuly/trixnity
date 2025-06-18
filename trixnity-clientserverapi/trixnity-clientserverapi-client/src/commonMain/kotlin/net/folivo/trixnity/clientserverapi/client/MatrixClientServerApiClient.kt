@@ -54,7 +54,6 @@ interface MatrixClientServerApiClientFactory {
     fun create(
         baseUrl: Url? = null,
         authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
-        onLogout: suspend (LogoutInfo) -> Unit = { },
         eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
         json: Json = createMatrixEventJson(eventContentSerializerMappings),
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
@@ -67,7 +66,6 @@ interface MatrixClientServerApiClientFactory {
         MatrixClientServerApiClientImpl(
             baseUrl = baseUrl,
             authProvider = authProvider,
-            onLogout = onLogout,
             eventContentSerializerMappings = eventContentSerializerMappings,
             json = json,
             syncBatchTokenStore = syncBatchTokenStore,
@@ -82,7 +80,6 @@ interface MatrixClientServerApiClientFactory {
 class MatrixClientServerApiClientImpl(
     baseUrl: Url? = null,
     authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
-    onLogout: suspend (LogoutInfo) -> Unit = { },
     override val eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
     syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
@@ -95,7 +92,6 @@ class MatrixClientServerApiClientImpl(
     override val baseClient = MatrixClientServerApiBaseClient(
         baseUrl = baseUrl,
         authProvider = authProvider,
-        onLogout = onLogout,
         eventContentSerializerMappings = eventContentSerializerMappings,
         json = json,
         httpClientEngine = httpClientEngine,
