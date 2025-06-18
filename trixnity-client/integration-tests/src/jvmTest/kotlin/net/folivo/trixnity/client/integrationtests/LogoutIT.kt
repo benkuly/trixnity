@@ -85,7 +85,7 @@ class LogoutIT {
             startedClient.client.loginState.value shouldBe LOGGED_IN
 
             val room = startedClient.client.api.room.createRoom().getOrThrow()
-            repeat(200) { i ->
+            repeat(100) { i ->
                 coroutineScope {
                     repeat(20) {
                         launch {

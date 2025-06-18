@@ -62,4 +62,4 @@ experimental_features:
   msc2697_enabled: false
   msc3814_enabled: true
 
-refreshable_access_token_lifetime: 5s
+refreshable_access_token_lifetime: 3s
