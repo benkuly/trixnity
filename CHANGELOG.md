@@ -11,17 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Expose list of active user verifications to allow checking if a verification with a user is in progress
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Fix inbound megolm session from dehydrated device not used when a session is already present
-
 ### Security
+
+## 4.16.4
+
+### Changed
+
+- Expose list of active user verifications to allow checking if a verification with a user is in progress
+
+### Fixed
+
+- Fix inbound megolm session from dehydrated device not used when a session is already present
 
 ## 4.16.3
 
