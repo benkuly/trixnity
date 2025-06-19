@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed wrong mac encoding
 - Fix exception leaks in ClassicMatrixAuthProvider
 - Fix edge cases, where client is logged out accidentally when using a refresh token
 
