@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.matchers.shouldBe
 import io.ktor.util.*
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key.SecretStorageKeyPassphrase.Pbkdf2
 import net.folivo.trixnity.crypto.core.generatePbkdf2Sha512
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -81,5 +82,68 @@ class RecoveryKeyUtilsTest : TrixnityBaseTest() {
             "super secret passphrase",
             Pbkdf2(salt = salt, iterations = 10_000, bits = 32 * 8)
         ) shouldBe key
+    }
+
+    @Test
+    fun `checkRecoveryKey - success`() = runTest {
+        val key = "KSEbjMN+jOZMNDA36/n9CUkREWGNFuD5RqHNYDcjs0M"
+        val iv = "9c0YLX0Wl4I61FE2H3A0Xg"
+        val mac = "uj0Uwiqyr44yMPBaJ+2NuJ/5hjdrVbRxd53AnUQ9Tso"
+        val info = SecretKeyEventContent.AesHmacSha2Key(
+            name = "",
+            passphrase = null,
+            mac = mac,
+            iv = iv
+        )
+
+        val result = checkRecoveryKey(key.decodeBase64Bytes(), info)
+        result.isSuccess shouldBe true
+    }
+
+    @Test
+    fun `checkRecoveryKey - success with wrong encoding`() = runTest {
+        val key = "KSEbjMN+jOZMNDA36/n9CUkREWGNFuD5RqHNYDcjs0M="
+        val iv = "9c0YLX0Wl4I61FE2H3A0Xg=="
+        val mac = "uj0Uwiqyr44yMPBaJ+2NuJ/5hjdrVbRxd53AnUQ9Tso="
+        val info = SecretKeyEventContent.AesHmacSha2Key(
+            name = "",
+            passphrase = null,
+            mac = mac,
+            iv = iv
+        )
+
+        val result = checkRecoveryKey(key.decodeBase64Bytes(), info)
+        result.isSuccess shouldBe true
+    }
+
+    @Test
+    fun `checkRecoveryKey - success with null mac`() = runTest {
+        val key = "KSEbjMN+jOZMNDA36/n9CUkREWGNFuD5RqHNYDcjs0M="
+        val iv = "9c0YLX0Wl4I61FE2H3A0Xg=="
+        val info = SecretKeyEventContent.AesHmacSha2Key(
+            name = "",
+            passphrase = null,
+            mac = null,
+            iv = iv
+        )
+
+        val result = checkRecoveryKey(key.decodeBase64Bytes(), info)
+        result.isSuccess shouldBe true
+    }
+
+    @Test
+    fun `checkRecoveryKey - with bad mac`() = runTest {
+        val key = "KSEbjMN+jOZMNDA36/n9CUkREWGNFuD5RqHNYDcjs0M="
+        val iv = "9c0YLX0Wl4I61FE2H3A0Xg=="
+        val mac = "baaaaaaad"
+        val info = SecretKeyEventContent.AesHmacSha2Key(
+            name = "",
+            passphrase = null,
+            mac = mac,
+            iv = iv
+        )
+
+        val result = checkRecoveryKey(key.decodeBase64Bytes(), info)
+        result.exceptionOrNull() shouldBe RecoveryKeyInvalidException("expected mac uj0Uwiqyr44yMPBaJ+2NuJ/5hjdrVbRxd53AnUQ9Tso, but got $mac")
     }
 }

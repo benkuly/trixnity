@@ -50,10 +50,12 @@ suspend fun recoveryKeyFromPassphrase(
 }
 
 suspend fun checkRecoveryKey(key: ByteArray, info: AesHmacSha2Key): Result<Unit> {
-    val mac = createAesHmacSha2MacFromKey(
+    val expectedMac = createAesHmacSha2MacFromKey(
         key, info.iv?.decodeBase64Bytes()
             ?: throw IllegalArgumentException("iv was null")
     )
-    return if (info.mac != mac) Result.failure(RecoveryKeyInvalidException("expected mac ${mac}, but got ${info.mac}"))
+    val mac = info.mac
+    return if (mac != null && !mac.decodeBase64Bytes().contentEquals(expectedMac.decodeBase64Bytes()))
+        Result.failure(RecoveryKeyInvalidException("expected mac ${expectedMac}, but got ${info.mac}"))
     else Result.success(Unit)
 }
