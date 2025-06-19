@@ -97,12 +97,12 @@ class ClassicMatrixAuthProvider(
                         val errorResponse = Json.decodeErrorResponse(response.bodyAsText())
                         when (errorResponse) {
                             is ErrorResponse.UnknownToken -> {
-                                log.info { "no refresh token present, therefore call onLogout" }
+                                log.info { "no refresh token present, therefore call onLogout (unknown token)" }
                                 onLogout(LogoutInfo(errorResponse.softLogout, false))
                             }
 
                             is ErrorResponse.UserLocked -> {
-                                log.info { "no refresh token present, therefore call onLogout" }
+                                log.info { "no refresh token present, therefore call onLogout (user locked)" }
                                 onLogout(LogoutInfo(errorResponse.softLogout, true))
                             }
 
@@ -126,12 +126,12 @@ class ClassicMatrixAuthProvider(
                         if (matrixServerException.statusCode == HttpStatusCode.Unauthorized)
                             when (val errorResponse = matrixServerException.errorResponse) {
                                 is ErrorResponse.UnknownToken -> {
-                                    log.info { "could not refresh token, therefore call onLogout" }
+                                    log.info { "could not refresh token, therefore call onLogout (unknown token)" }
                                     onLogout(LogoutInfo(errorResponse.softLogout, false))
                                 }
 
                                 is ErrorResponse.UserLocked -> {
-                                    log.info { "could not refresh token, therefore call onLogout" }
+                                    log.info { "could not refresh token, therefore call onLogout (user locked)" }
                                     onLogout(LogoutInfo(errorResponse.softLogout, true))
                                 }
 
