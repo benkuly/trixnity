@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.decodeErrorResponse
+import okio.ByteString.Companion.toByteString
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.ClassicMatrixAuthProvider")
 
@@ -87,10 +88,8 @@ class ClassicMatrixAuthProvider(
         val oldTokens = bearerTokensStore.getBearerTokens() ?: return false
         refreshTokenMutex.withLock {
             try {
-                if (oldTokens != bearerTokensStore.getBearerTokens()) return true
-
-                log.debug { "refresh tokens oldTokens=$oldTokens" }
-                isRefreshingToken.value = true
+                val newOldTokens = bearerTokensStore.getBearerTokens()
+                if (oldTokens != newOldTokens) return true
 
                 val refreshToken = oldTokens.refreshToken
                 if (refreshToken == null) {
@@ -113,6 +112,8 @@ class ClassicMatrixAuthProvider(
                     }
                     return false
                 }
+                isRefreshingToken.value = true
+                log.trace { "start refresh tokens oldTokens=$oldTokens, newOldTokens=$newOldTokens" }
                 val refreshResponse =
                     try {
                         response.call.client.post("/_matrix/client/v3/refresh") {
@@ -143,6 +144,7 @@ class ClassicMatrixAuthProvider(
                     refreshToken = refreshResponse.refreshToken ?: refreshToken,
                 )
                 bearerTokensStore.setBearerTokens(newTokens)
+                log.debug { "finish refresh tokens oldTokens=$oldTokens, newTokens=$newTokens" }
                 return true
             } finally {
                 isRefreshingToken.value = false
@@ -166,9 +168,11 @@ class ClassicMatrixAuthProvider(
     ) {
         override fun toString(): String =
             "BearerTokens(" +
-                    "accessToken=hash:${accessToken.hashCode()}, " +
-                    "refreshToken=${refreshToken?.hashCode()?.let { "hash:$it" }}" +
+                    "accessToken=${accessToken.passwordHash()}, " +
+                    "refreshToken=${refreshToken?.passwordHash()?.let { "hash:$it" }}" +
                     ")"
+
+        private fun String.passwordHash() = "[hash:" + encodeToByteArray().toByteString().sha256().hex().take(6) + "]"
     }
 
     interface BearerTokensStore {
