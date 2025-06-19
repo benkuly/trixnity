@@ -57,6 +57,7 @@ suspend fun MatrixClientServerApiClient.register(
         username = username,
         deviceId = deviceId,
         accountType = AccountType.USER,
+        refreshToken = true,
     ).getOrThrow()
     registerStep.shouldBeInstanceOf<UIA.Step<Register.Response>>()
     val registerResult = registerStep.authenticate(AuthenticationRequest.Dummy).getOrThrow()

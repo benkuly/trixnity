@@ -692,10 +692,11 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
 ): T {
     val api = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
-        authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)),
+        authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)) {
+            onLogout(it, accountStore)
+        },
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
-        onLogout = { onLogout(it, accountStore) },
         json = json,
         eventContentSerializerMappings = eventContentSerializerMappings,
         syncBatchTokenStore = object : SyncBatchTokenStore {

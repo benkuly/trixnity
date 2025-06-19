@@ -7,24 +7,30 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.auth.*
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.clientserverapi.model.authentication.Refresh
 import net.folivo.trixnity.core.AuthRequired
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.decodeErrorResponse
+import okio.ByteString.Companion.toByteString
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.ClassicMatrixAuthProvider")
 
 fun MatrixAuthProvider.Companion.classic(
     bearerTokensStore: ClassicMatrixAuthProvider.BearerTokensStore,
-) = ClassicMatrixAuthProvider(bearerTokensStore)
+    onLogout: suspend (LogoutInfo) -> Unit = {},
+) = ClassicMatrixAuthProvider(bearerTokensStore, onLogout)
 
 fun MatrixAuthProvider.Companion.classicInMemory(
     accessToken: String? = null,
     refreshToken: String? = null,
+    onLogout: suspend (LogoutInfo) -> Unit = {},
 ) = classic(
     bearerTokensStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory(
         accessToken?.let {
@@ -34,16 +40,18 @@ fun MatrixAuthProvider.Companion.classicInMemory(
             )
         },
     ),
+    onLogout = onLogout,
 )
 
 class ClassicMatrixAuthProvider(
     private val bearerTokensStore: BearerTokensStore,
+    private val onLogout: suspend (LogoutInfo) -> Unit,
 ) : MatrixAuthProvider {
-    private val refreshTokensDeferred = MutableStateFlow<Lazy<Deferred<Boolean>>?>(null)
+    private val isRefreshingToken = MutableStateFlow(false)
 
     override fun isApplicable(auth: HttpAuthHeader): Boolean =
         if (auth.authScheme != AuthScheme.Bearer) {
-            log.trace { "Bearer Auth Provider is not applicable for $auth" }
+            log.error { "Bearer Auth Provider is not applicable for $auth" }
             false
         } else true
 
@@ -56,12 +64,13 @@ class ClassicMatrixAuthProvider(
             log.trace { "addRequestHeaders: skip due to AuthCircuitBreaker" }
             return
         }
-        refreshTokensDeferred
-            .value?.value
-            ?.also { log.trace { "addRequestHeaders: wait for refreshing to finish" } }
-            ?.join()
+
+        isRefreshingToken.first {
+            if (it) log.trace { "addRequestHeaders: wait for refreshing to finish" }
+            it.not()
+        }
         val token = bearerTokensStore.getBearerTokens() ?: run {
-            log.trace { "addRequestHeaders: no bearer tokens found" }
+            log.warn { "no bearer tokens found even after waiting for refresh" }
             return
         }
 
@@ -74,34 +83,73 @@ class ClassicMatrixAuthProvider(
         }
     }
 
-    override suspend fun refreshToken(response: HttpResponse): Boolean = coroutineScope {
-        val lazyRefreshToken = lazy {
-            async {
-                try {
-                    val oldTokens = bearerTokensStore.getBearerTokens() ?: return@async false
-                    log.trace { "refreshTokens: oldTokens=$oldTokens" }
+    private val refreshTokenMutex = Mutex()
+    override suspend fun refreshToken(response: HttpResponse): Boolean {
+        val oldTokens = bearerTokensStore.getBearerTokens() ?: return false
+        refreshTokenMutex.withLock {
+            try {
+                val newOldTokens = bearerTokensStore.getBearerTokens()
+                if (oldTokens != newOldTokens) return true
 
-                    val refreshToken = oldTokens.refreshToken ?: return@async false
-                    val refreshResponse =
+                val refreshToken = oldTokens.refreshToken
+                if (refreshToken == null) {
+                    if (response.status == HttpStatusCode.Unauthorized) {
+                        val errorResponse = Json.decodeErrorResponse(response.bodyAsText())
+                        when (errorResponse) {
+                            is ErrorResponse.UnknownToken -> {
+                                log.info { "no refresh token present, therefore call onLogout (unknown token)" }
+                                onLogout(LogoutInfo(errorResponse.softLogout, false))
+                            }
+
+                            is ErrorResponse.UserLocked -> {
+                                log.info { "no refresh token present, therefore call onLogout (user locked)" }
+                                onLogout(LogoutInfo(errorResponse.softLogout, true))
+                            }
+
+                            else -> {}
+                        }
+                        throw MatrixServerException(response.status, errorResponse, null)
+                    }
+                    return false
+                }
+                isRefreshingToken.value = true
+                log.trace { "start refresh tokens oldTokens=$oldTokens, newOldTokens=$newOldTokens" }
+                val refreshResponse =
+                    try {
                         response.call.client.post("/_matrix/client/v3/refresh") {
                             attributes.put(AuthCircuitBreaker, Unit)
                             contentType(ContentType.Application.Json)
                             accept(ContentType.Application.Json)
                             setBody(Refresh.Request(refreshToken))
                         }.body<Refresh.Response>()
-                    val newTokens = BearerTokens(
-                        accessToken = refreshResponse.accessToken,
-                        refreshToken = refreshResponse.refreshToken ?: refreshToken,
-                    )
-                    bearerTokensStore.setBearerTokens(newTokens)
-                    return@async true
-                } finally {
-                    refreshTokensDeferred.value = null
-                }
+                    } catch (matrixServerException: MatrixServerException) {
+                        if (matrixServerException.statusCode == HttpStatusCode.Unauthorized)
+                            when (val errorResponse = matrixServerException.errorResponse) {
+                                is ErrorResponse.UnknownToken -> {
+                                    log.info { "could not refresh token, therefore call onLogout (unknown token)" }
+                                    onLogout(LogoutInfo(errorResponse.softLogout, false))
+                                }
+
+                                is ErrorResponse.UserLocked -> {
+                                    log.info { "could not refresh token, therefore call onLogout (user locked)" }
+                                    onLogout(LogoutInfo(errorResponse.softLogout, true))
+                                }
+
+                                else -> {}
+                            }
+                        throw matrixServerException
+                    }
+                val newTokens = BearerTokens(
+                    accessToken = refreshResponse.accessToken,
+                    refreshToken = refreshResponse.refreshToken ?: refreshToken,
+                )
+                bearerTokensStore.setBearerTokens(newTokens)
+                log.debug { "finish refresh tokens oldTokens=$oldTokens, newTokens=$newTokens" }
+                return true
+            } finally {
+                isRefreshingToken.value = false
             }
         }
-        refreshTokensDeferred.updateAndGet { it ?: lazyRefreshToken }?.value?.await()
-            ?: throw IllegalStateException("should never be null")
     }
 
     override fun sendWithoutRequest(request: HttpRequestBuilder): Boolean =
@@ -119,7 +167,12 @@ class ClassicMatrixAuthProvider(
         val refreshToken: String?,
     ) {
         override fun toString(): String =
-            "BearerTokens(accessToken=***, refreshToken=${refreshToken?.let { "***" }})"
+            "BearerTokens(" +
+                    "accessToken=${accessToken.passwordHash()}, " +
+                    "refreshToken=${refreshToken?.passwordHash()?.let { "hash:$it" }}" +
+                    ")"
+
+        private fun String.passwordHash() = "[hash:" + encodeToByteArray().toByteString().sha256().hex().take(6) + "]"
     }
 
     interface BearerTokensStore {
