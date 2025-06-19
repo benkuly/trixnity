@@ -33,14 +33,26 @@ class AesHmacSha2Test : TrixnityBaseTest() {
         val content = "this is really fancy content with more then 128 bit block size".encodeToByteArray()
         encryptAesHmacSha2(content, key, "KEY", initialisationVector) shouldBe
                 AesHmacSha2EncryptedData(
-                    iv = "AQIDBAUGBwgAAAAAAAAAAA==",
-                    ciphertext = "vLdCiyNTr8HhSFeOhQJsp6eS/CwbZLtfzcknG3I721SFmwLzUIrlmyhf9hzfgzCGw2cITIk6RyA3TmF6elU=",
-                    mac = "2Q8Bt/Y8jABla2lTi0G3j3inwxkUWX85NNdkkKxwK0I="
+                    iv = "AQIDBAUGBwgAAAAAAAAAAA",
+                    ciphertext = "vLdCiyNTr8HhSFeOhQJsp6eS/CwbZLtfzcknG3I721SFmwLzUIrlmyhf9hzfgzCGw2cITIk6RyA3TmF6elU",
+                    mac = "2Q8Bt/Y8jABla2lTi0G3j3inwxkUWX85NNdkkKxwK0I"
                 )
     }
 
     @Test
     fun decrypt() = runTest {
+        val content = "this is really fancy content with more then 128 bit block size".encodeToByteArray()
+        decryptAesHmacSha2(
+            AesHmacSha2EncryptedData(
+                iv = "AQIDBAUGBwgAAAAAAAAAAA",
+                ciphertext = "vLdCiyNTr8HhSFeOhQJsp6eS/CwbZLtfzcknG3I721SFmwLzUIrlmyhf9hzfgzCGw2cITIk6RyA3TmF6elU",
+                mac = "2Q8Bt/Y8jABla2lTi0G3j3inwxkUWX85NNdkkKxwK0I"
+            ), key, "KEY"
+        ) shouldBe content
+    }
+
+    @Test
+    fun decryptPaddedBase64() = runTest {
         val content = "this is really fancy content with more then 128 bit block size".encodeToByteArray()
         decryptAesHmacSha2(
             AesHmacSha2EncryptedData(

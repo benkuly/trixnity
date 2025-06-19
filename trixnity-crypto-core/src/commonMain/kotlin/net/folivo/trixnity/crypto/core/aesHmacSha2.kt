@@ -1,6 +1,7 @@
 package net.folivo.trixnity.crypto.core
 
 import io.ktor.util.*
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
 import kotlin.experimental.and
@@ -35,9 +36,9 @@ suspend fun encryptAesHmacSha2(
         initialisationVector = iv
     ).toByteArray()
     return AesHmacSha2EncryptedData(
-        iv = iv.encodeBase64(),
-        ciphertext = ciphertext.encodeBase64(),
-        mac = hmacSha256(keys.hmacKey, ciphertext).encodeBase64()
+        iv = iv.encodeUnpaddedBase64(),
+        ciphertext = ciphertext.encodeUnpaddedBase64(),
+        mac = hmacSha256(keys.hmacKey, ciphertext).encodeUnpaddedBase64()
     )
 }
 
@@ -48,8 +49,8 @@ suspend fun decryptAesHmacSha2(
 ): ByteArray {
     val keys = deriveKeys(key, name)
     val ciphertextBytes = content.ciphertext.decodeBase64Bytes()
-    val hmac = hmacSha256(keys.hmacKey, ciphertextBytes).encodeBase64()
-    if (hmac != content.mac) throw IllegalArgumentException("bad mac")
+    val hmac = hmacSha256(keys.hmacKey, ciphertextBytes)
+    if (!hmac.contentEquals(content.mac.decodeBase64Bytes())) throw IllegalArgumentException("bad mac")
     return ciphertextBytes.toByteArrayFlow().decryptAes256Ctr(
         key = keys.aesKey,
         initialisationVector = content.iv.decodeBase64Bytes()
