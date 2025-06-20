@@ -17,13 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+### Security
+
+## 4.16.5
+
+### Fixed
+
 - Fixed wrong mac encoding
 - Fix exception leaks in ClassicMatrixAuthProvider
 - Fix edge cases, where client is logged out accidentally when using a refresh token
 - Fix failed device rehydration should not prevent device hydration
 - Fix device dehydration should wait for matching self-signing public key
-
-### Security
 
 ## 4.16.4
 
