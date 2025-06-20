@@ -69,7 +69,7 @@ fun Set<EventContentSerializerMapping<GlobalAccountDataEventContent>>.contentSer
     content: GlobalAccountDataEventContent? = null,
 ): KSerializer<GlobalAccountDataEventContent> =
     if (content != null) contentSerializer(content)
-    else firstOrNull { type.startsWith(it.type) }?.serializer
+    else firstOrNull { type.startsWith(it.type.removeSuffix("*")) }?.serializer
         ?: @Suppress("UNCHECKED_CAST") (UnknownEventContentSerializer(type) as KSerializer<GlobalAccountDataEventContent>)
 
 @JvmName("contentSerializerFromContent")

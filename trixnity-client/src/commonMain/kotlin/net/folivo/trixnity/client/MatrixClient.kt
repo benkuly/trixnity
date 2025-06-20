@@ -861,14 +861,9 @@ class MatrixClientImpl internal constructor(
                     flowOf(RUN),
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
-                    api.user.setFilter(
-                        userId, config.syncFilter.copy(
-                            room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
-                                state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true),
-                                includeLeave = config.deleteRooms !is DeleteRooms.OnLeave,
-                            )
-                        )
-                    ).getOrThrow().also { log.debug { "set new filter for sync: $it" } }
+                    val filter = config.syncFilter.applyDefaultFilter()
+                    api.user.setFilter(userId, filter)
+                        .getOrThrow().also { log.debug { "set new filter for sync with id $it: $filter" } }
                 }
                 accountStore.updateAccount { it?.copy(filterId = newFilterId) }
             }
@@ -878,19 +873,39 @@ class MatrixClientImpl internal constructor(
                     flowOf(RUN),
                     onError = { log.warn(it) { "could not set filter" } }
                 ) {
-                    api.user.setFilter(
-                        userId, config.syncFilter.copy(
-                            room = (config.syncFilter.room ?: Filters.RoomFilter()).copy(
-                                state = Filters.RoomFilter.RoomEventFilter(lazyLoadMembers = true),
-                                includeLeave = config.deleteRooms !is DeleteRooms.OnLeave,
-                            ),
-                        )
-                    ).getOrThrow().also { log.debug { "set new background filter for sync: $it" } }
+                    val filter = config.syncOnceFilter.applyDefaultFilter()
+                    api.user.setFilter(userId, filter)
+                        .getOrThrow().also { log.debug { "set new background filter for sync with id $it: $filter" } }
                 }
                 accountStore.updateAccount { it?.copy(backgroundFilterId = newFilterId) }
             }
             started.value = true
         }
+    }
+
+    private fun Filters.applyDefaultFilter(): Filters {
+        val mappings = di.get<EventContentSerializerMappings>()
+        return copy(
+            accountData = (accountData ?: Filters.EventFilter()).copy(
+                types = mappings.globalAccountData.map { it.type }.toSet(),
+            ),
+            room = (room ?: Filters.RoomFilter()).copy(
+                accountData = (room?.accountData ?: Filters.RoomFilter.RoomEventFilter()).copy(
+                    types = mappings.roomAccountData.map { it.type }.toSet(),
+                ),
+                ephemeral = (room?.ephemeral ?: Filters.RoomFilter.RoomEventFilter()).copy(
+                    types = mappings.ephemeral.map { it.type }.toSet(),
+                ),
+                state = (room?.state ?: Filters.RoomFilter.RoomEventFilter()).copy(
+                    lazyLoadMembers = true,
+                    types = mappings.state.map { it.type }.toSet(),
+                ),
+                timeline = (room?.timeline ?: Filters.RoomFilter.RoomEventFilter()).copy(
+                    types = (mappings.message + mappings.state).map { it.type }.toSet(),
+                ),
+                includeLeave = config.deleteRooms !is DeleteRooms.OnLeave,
+            )
+        )
     }
 
     override suspend fun logout(): Result<Unit> {

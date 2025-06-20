@@ -279,7 +279,7 @@ class UserApiClientImpl(
         key: String,
         asUserId: UserId?
     ): Result<GlobalAccountDataEventContent> {
-        val actualType = if (key.isEmpty()) type else type + key
+        val actualType = if (key.isEmpty()) type else type.removeSuffix("*") + key
         return baseClient.request(GetGlobalAccountData(userId, actualType, asUserId))
     }
 
@@ -290,7 +290,7 @@ class UserApiClientImpl(
         asUserId: UserId?
     ): Result<Unit> {
         val eventType = contentMappings.globalAccountData.contentType(content)
-            .let { type -> if (key.isEmpty()) type else type + key }
+            .let { type -> if (key.isEmpty()) type else type.removeSuffix("*") + key }
 
         return baseClient.request(SetGlobalAccountData(userId, eventType, asUserId), content)
     }
