@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
@@ -42,7 +41,6 @@ class TimelineEventHandlerImpl(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
-    private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val tm: TransactionManager,
 ) : EventHandler, TimelineEventHandler {
     companion object {

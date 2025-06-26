@@ -23,22 +23,22 @@ internal suspend fun withCacheTransaction(block: suspend (CacheTransaction) -> U
     if (existingCacheTransaction != null) block(existingCacheTransaction)
     else {
         val newCacheTransaction = CacheTransaction()
-        try {
-            block(newCacheTransaction)
-            val onCommitActions = newCacheTransaction.onCommitActions.read { toList() }
-            if (onCommitActions.isNotEmpty()) {
-                log.trace { "apply commit actions for transaction" }
-                onCommitActions.forEach { it() }
-            }
-        } catch (exception: Exception) {
-            withContext(NonCancellable) {
+        withContext(NonCancellable) { // prevent that the store and cache get out of sync on a CancellationException
+            try {
+                block(newCacheTransaction)
+                val onCommitActions = newCacheTransaction.onCommitActions.read { toList() }
+                if (onCommitActions.isNotEmpty()) {
+                    log.trace { "apply commit actions for transaction" }
+                    onCommitActions.forEach { it() }
+                }
+            } catch (exception: Exception) {
                 val onRollbackActions = newCacheTransaction.onRollbackActions.read { reversed() }
                 if (onRollbackActions.isNotEmpty()) {
-                    log.debug { "apply rollback actions for transaction" }
+                    log.debug { "apply rollback actions for transaction due to $exception" }
                     onRollbackActions.forEach { it() }
                 }
+                throw exception
             }
-            throw exception
         }
     }
 }

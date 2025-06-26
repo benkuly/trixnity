@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Prevent that the store and cache get out of sync on a CancellationException
+
 ### Security
 
 ## 4.16.5
