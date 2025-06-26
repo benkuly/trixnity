@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.*
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.repository.RoomUserReceiptsRepository
@@ -68,8 +67,8 @@ internal class RoomRoomUserReceiptsRepository(
         )
     }
 
-    override suspend fun deleteByRoomId(key: RoomId) = withRoomWrite {
-        dao.delete(key)
+    override suspend fun deleteByRoomId(roomId: RoomId) = withRoomWrite {
+        dao.delete(roomId)
     }
 
     override suspend fun delete(firstKey: RoomId, secondKey: UserId) = withRoomWrite {

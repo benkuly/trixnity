@@ -194,6 +194,7 @@ internal class OkioCachedMediaStore(
     configuration: MatrixClientConfiguration,
     clock: Clock,
 ) : CachedMediaStore(coroutineScope, configuration, clock) {
+    @Suppress("DEPRECATION")
     private val delegate = OkioMediaStore(basePath, fileSystem, coroutineContext, ::toByteArray)
 
     override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)

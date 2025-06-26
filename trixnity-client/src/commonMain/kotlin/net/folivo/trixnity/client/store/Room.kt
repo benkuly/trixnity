@@ -34,4 +34,5 @@ val Room.joinedMemberCount: Long? get() = name?.summary?.joinedMemberCount
 val Room.invitedMemberCount: Long? get() = name?.summary?.invitedMemberCount
 
 @Deprecated("use sender of CreateEventContent instead")
+@Suppress("DEPRECATION")
 val Room.creator: UserId? get() = createEventContent?.creator

@@ -4,7 +4,6 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.replace
@@ -48,9 +47,5 @@ val TimelineEvent.isReplacing: Boolean
 
 val TimelineEvent.relatesTo: RelatesTo?
     get() =
-        if (event is MessageEvent) {
-            val content = event.content
-            if (content is MessageEventContent) {
-                content.relatesTo
-            } else null
-        } else null
+        if (event is MessageEvent) event.content.relatesTo
+        else null

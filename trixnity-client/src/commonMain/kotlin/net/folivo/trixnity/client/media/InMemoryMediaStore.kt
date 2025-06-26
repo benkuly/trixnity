@@ -69,6 +69,7 @@ internal class InMemoryCachedMediaStore(
     configuration: MatrixClientConfiguration,
     clock: Clock,
 ) : CachedMediaStore(coroutineScope, configuration, clock) {
+    @Suppress("DEPRECATION")
     private val delegate = InMemoryMediaStore(::toByteArray)
 
     override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)

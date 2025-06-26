@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Only sync supported events (registered in EventContentSerializerMappings)
+- Upgrade dependencies
 
 ### Deprecated
 

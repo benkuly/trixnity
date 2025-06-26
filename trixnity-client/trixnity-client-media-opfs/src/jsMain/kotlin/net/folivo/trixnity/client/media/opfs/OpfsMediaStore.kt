@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.media.opfs
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import js.buffer.ArrayBuffer
+import js.iterable.iterator
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
@@ -209,6 +210,7 @@ internal class OpfsCachedMediaStore(
     configuration: MatrixClientConfiguration,
     clock: Clock,
 ) : CachedMediaStore(coroutineScope, configuration, clock) {
+    @Suppress("DEPRECATION")
     private val delegate = OpfsMediaStore(basePath, ::toByteArray)
 
     override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)

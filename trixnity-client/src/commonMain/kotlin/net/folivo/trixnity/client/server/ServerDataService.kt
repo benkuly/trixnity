@@ -41,6 +41,7 @@ class ServerDataService(
                             if (newVersions.versions.contains(MATRIX_SPEC_1_11)) {
                                 api.media.getConfig()
                             } else {
+                                @Suppress("DEPRECATION")
                                 api.media.getConfigLegacy().map { GetMediaConfig.Response(it.maxUploadSize) }
                             }.onFailure { log.warn(it) { "failed get media config" } }
                                 .getOrNull()

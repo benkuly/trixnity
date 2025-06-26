@@ -1,6 +1,6 @@
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
-import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
@@ -17,7 +17,7 @@ val olmBinariesDirs = TrixnityOlmBinariesDirs(project, libs.versions.trixnityOlm
 
 class OlmNativeTarget(
     val target: KonanTarget,
-    val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> KotlinNativeTarget,
+    val createTarget: KotlinMultiplatformExtension.() -> KotlinNativeTarget,
 ) {
     val libPath: File = olmBinariesDirs.binStatic.resolve(target.name).resolve("libolm.a")
 }
@@ -84,10 +84,6 @@ android {
         manifest.srcFile("src/androidMain/AndroidManifest.xml")
         jniLibs.srcDirs(olmBinariesDirs.binSharedAndroid)
     }
-    compileOptions {
-        sourceCompatibility = kotlinJvmTarget
-        targetCompatibility = kotlinJvmTarget
-    }
     buildTypes {
         release {
             isDefault = true
@@ -131,8 +127,10 @@ kotlin {
                             }
                         }
                     }
-                    kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
                 }
+            }
+            compilerOptions {
+                freeCompilerArgs.addAll(listOf("-include-binary", target.libPath.absolutePath))
             }
         }
     }

@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinTargetContainerWithNativeShortcuts
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -14,7 +14,7 @@ val opensslBinariesDirs = TrixnityOpensslBinariesDirs(project, libs.versions.tri
 
 class OpensslNativeTarget(
     val target: KonanTarget,
-    val createTarget: KotlinTargetContainerWithNativeShortcuts.() -> KotlinNativeTarget,
+    val createTarget: KotlinMultiplatformExtension.() -> KotlinNativeTarget,
 ) {
     val libPath: File = opensslBinariesDirs.lib(target).resolve("libcrypto.a")
     val includePath: File = opensslBinariesDirs.include(target)
@@ -57,8 +57,10 @@ kotlin {
                             }
                         }
                     }
-                    kotlinOptions.freeCompilerArgs = listOf("-include-binary", target.libPath.absolutePath)
                 }
+            }
+            compilerOptions {
+                freeCompilerArgs.addAll(listOf("-include-binary", target.libPath.absolutePath))
             }
         }
     }

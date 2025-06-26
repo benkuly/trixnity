@@ -122,6 +122,7 @@ private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception
 
 @Deprecated("use login with mediaStoreModuleFactory")
 @JvmName("loginDeprecatedMediaStoreFactory")
+@Suppress("DEPRECATION")
 suspend fun MatrixClient.Companion.login(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -203,6 +204,7 @@ suspend fun MatrixClient.Companion.login(
 
 @Deprecated("use login with mediaStoreModule")
 @JvmName("loginDeprecatedMediaStore")
+@Suppress("DEPRECATION")
 suspend fun MatrixClient.Companion.login(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -257,6 +259,7 @@ suspend fun MatrixClient.Companion.login(
 
 @Deprecated("use loginWithPassword with mediaStoreModuleFactory")
 @JvmName("loginWithPasswordDeprecatedMediaStoreFactory")
+@Suppress("DEPRECATION")
 suspend fun MatrixClient.Companion.loginWithPassword(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -309,6 +312,7 @@ suspend fun MatrixClient.Companion.loginWithPassword(
 
 @Deprecated("use loginWithPassword with mediaStoreModule")
 @JvmName("loginWithPasswordDeprecatedMediaStore")
+@Suppress("DEPRECATION")
 suspend fun MatrixClient.Companion.loginWithPassword(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -355,6 +359,7 @@ suspend fun MatrixClient.Companion.loginWithPassword(
 
 @Deprecated("use loginWithToken with mediaStoreModuleFactory")
 @JvmName("loginWithTokenDeprecatedMediaStoreFactory")
+@Suppress("DEPRECATION")
 suspend fun MatrixClient.Companion.loginWithToken(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -407,6 +412,7 @@ suspend fun MatrixClient.Companion.loginWithToken(
 
 @Deprecated("use loginWithToken with mediaStoreModule")
 @JvmName("loginWithWithTokenDeprecatedMediaStore")
+@Suppress("DEPRECATION")
 suspend fun MatrixClient.Companion.loginWithToken(
     baseUrl: Url,
     identifier: IdentifierType? = null,
@@ -670,6 +676,7 @@ private suspend fun initMatrixClientKoinApplication(
         })
         modules(repositoriesModule)
         modules(mediaStoreModule)
+        @Suppress("DEPRECATION")
         modules(config.modules ?: config.modulesFactory?.invoke() ?: config.modulesFactories.map { it.invoke() })
     }
     val di = koinApplication.koin

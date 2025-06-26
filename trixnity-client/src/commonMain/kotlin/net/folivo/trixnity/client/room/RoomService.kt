@@ -606,6 +606,7 @@ class RoomServiceImpl(
     }
 
     @Deprecated("use getTimeline without roomId instead")
+    @Suppress("DEPRECATION")
     override fun <T> getTimeline(
         roomId: RoomId,
         onStateChange: suspend (TimelineStateChange<T>) -> Unit,

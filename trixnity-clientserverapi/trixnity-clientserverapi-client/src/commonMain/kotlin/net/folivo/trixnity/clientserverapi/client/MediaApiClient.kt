@@ -118,6 +118,7 @@ class MediaApiClientImpl(
 ) : MediaApiClient {
 
     @Deprecated("use getConfig instead")
+    @Suppress("DEPRECATION")
     override suspend fun getConfigLegacy(): Result<GetMediaConfigLegacy.Response> =
         baseClient.request(GetMediaConfigLegacy)
 
@@ -166,6 +167,7 @@ class MediaApiClientImpl(
         }
 
     @Deprecated("use download instead")
+    @Suppress("DEPRECATION")
     override suspend fun <T> downloadLegacy(
         mxcUri: String,
         allowRemote: Boolean?,
@@ -222,6 +224,7 @@ class MediaApiClientImpl(
     }
 
     @Deprecated("use downloadThumbnail instead")
+    @Suppress("DEPRECATION")
     override suspend fun <T> downloadThumbnailLegacy(
         mxcUri: String,
         width: Long,
@@ -300,6 +303,7 @@ class MediaApiClientImpl(
     }
 
     @Deprecated("use getUrlPreview instead")
+    @Suppress("DEPRECATION")
     override suspend fun getUrlPreviewLegacy(
         url: String,
         timestamp: Long?,

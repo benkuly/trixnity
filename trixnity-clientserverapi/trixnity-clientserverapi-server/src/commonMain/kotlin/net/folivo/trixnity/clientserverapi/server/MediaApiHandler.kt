@@ -8,6 +8,7 @@ interface MediaApiHandler {
      * @see [GetMediaConfigLegacy]
      */
     @Deprecated("use getMediaConfig instead")
+    @Suppress("DEPRECATION")
     suspend fun getMediaConfigLegacy(context: MatrixEndpointContext<GetMediaConfigLegacy, Unit, GetMediaConfigLegacy.Response>): GetMediaConfigLegacy.Response
 
     /**
@@ -34,6 +35,7 @@ interface MediaApiHandler {
      * @see [DownloadMediaLegacy]
      */
     @Deprecated("use downloadMedia instead")
+    @Suppress("DEPRECATION")
     suspend fun downloadMediaLegacy(context: MatrixEndpointContext<DownloadMediaLegacy, Unit, Media>): Media
 
     /**
@@ -50,6 +52,7 @@ interface MediaApiHandler {
      * @see [DownloadThumbnailLegacy]
      */
     @Deprecated("use downloadThumbnail instead")
+    @Suppress("DEPRECATION")
     suspend fun downloadThumbnailLegacy(context: MatrixEndpointContext<DownloadThumbnailLegacy, Unit, Media>): Media
 
     /**
@@ -61,6 +64,7 @@ interface MediaApiHandler {
      * @see [GetUrlPreviewLegacy]
      */
     @Deprecated("use getUrlPreview instead")
+    @Suppress("DEPRECATION")
     suspend fun getUrlPreviewLegacy(context: MatrixEndpointContext<GetUrlPreviewLegacy, Unit, GetUrlPreviewLegacy.Response>): GetUrlPreviewLegacy.Response
 
     /**

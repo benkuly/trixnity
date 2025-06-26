@@ -12,9 +12,6 @@ fun KotlinMultiplatformExtension.addJvmTarget(
     testConfig: KotlinJvmTest.() -> Unit = {},
 ): KotlinJvmTarget =
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = kotlinJvmTarget.toString()
-        }
         testRuns["test"].executionTask.configure {
             enabled = testEnabled
             if (useJUnitPlatform) useJUnitPlatform()
@@ -25,9 +22,6 @@ fun KotlinMultiplatformExtension.addJvmTarget(
 fun KotlinMultiplatformExtension.addAndroidTarget() =
     androidTarget { // TODO use androidLibrary
         publishLibraryVariants("release")
-        compilations.all {
-            kotlinOptions.jvmTarget = kotlinJvmTarget.toString()
-        }
     }
 
 fun KotlinMultiplatformExtension.addJsTarget(

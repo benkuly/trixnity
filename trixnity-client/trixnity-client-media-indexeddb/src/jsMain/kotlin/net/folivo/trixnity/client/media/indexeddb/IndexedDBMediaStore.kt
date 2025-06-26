@@ -189,6 +189,7 @@ internal class IndexedDBCachedMediaStore(
     configuration: MatrixClientConfiguration,
     clock: Clock,
 ) : CachedMediaStore(coroutineScope, configuration, clock) {
+    @Suppress("DEPRECATION")
     private val delegate = IndexedDBMediaStore(databaseName, ::toByteArray)
 
     override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)

@@ -70,8 +70,4 @@ android {
     defaultConfig {
         minSdk = libs.versions.androidMinSdk.get().toInt()
     }
-    compileOptions {
-        sourceCompatibility = kotlinJvmTarget
-        targetCompatibility = kotlinJvmTarget
-    }
 }

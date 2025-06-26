@@ -88,6 +88,7 @@ class MediaServiceImpl(
         if (serverDataStore.getServerData().versions.versions.contains(MATRIX_SPEC_1_11)) {
             download(mxcUri, progress = progress, downloadHandler = downloadHandler)
         } else {
+            @Suppress("DEPRECATION")
             downloadLegacy(mxcUri, progress = progress, downloadHandler = downloadHandler)
         }
 
@@ -195,6 +196,7 @@ class MediaServiceImpl(
         if (serverDataStore.getServerData().versions.versions.contains(MATRIX_SPEC_1_11)) {
             downloadThumbnail(mxcUri, width, height, method, progress = progress, downloadHandler = downloadHandler)
         } else {
+            @Suppress("DEPRECATION")
             downloadThumbnailLegacy(
                 mxcUri,
                 width,
