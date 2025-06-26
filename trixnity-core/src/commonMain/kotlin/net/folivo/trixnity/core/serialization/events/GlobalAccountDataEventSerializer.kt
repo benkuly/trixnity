@@ -20,7 +20,7 @@ import net.folivo.trixnity.core.serialization.canonicalJson
 private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.GlobalAccountDataEventSerializer")
 
 class GlobalAccountDataEventSerializer(
-    private val globalAccountDataEventContentSerializers: Set<EventContentSerializerMapping<GlobalAccountDataEventContent>>,
+    globalAccountDataEventContentSerializers: Set<EventContentSerializerMapping<GlobalAccountDataEventContent>>,
 ) : KSerializer<GlobalAccountDataEvent<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("GlobalAccountDataEventSerializer")
     private val mappings = EventContentToEventSerializerMappings(
@@ -30,13 +30,16 @@ class GlobalAccountDataEventSerializer(
         typeField = null,
     )
 
+    private val wildcardMappings = globalAccountDataEventContentSerializers.filter { it.type.endsWith("*") }
+
     override fun deserialize(decoder: Decoder): GlobalAccountDataEvent<*> {
         require(decoder is JsonDecoder)
         val jsonObj = decoder.decodeJsonElement().jsonObject
         val type = (jsonObj["type"] as? JsonPrimitive)?.content ?: throw SerializationException("type must not be null")
-        val mappingType = globalAccountDataEventContentSerializers.find { type.startsWith(it.type) }?.type
+        val mappingType = wildcardMappings.find { type.startsWith(it.type.removeSuffix("*")) }?.type
         val baseSerializer = mappings[mappingType ?: type]
-        val key = if (mappingType != null && mappingType != type) type.substringAfter(mappingType) else ""
+        val key =
+            if (mappingType != null && mappingType != type) type.substringAfter(mappingType.removeSuffix("*")) else ""
         return decoder.json.tryDeserializeOrElse(
             AddFieldsSerializer(
                 baseSerializer,
@@ -56,7 +59,7 @@ class GlobalAccountDataEventSerializer(
             (HideFieldsSerializer(
                 AddFieldsSerializer(
                     @Suppress("UNCHECKED_CAST") (baseSerializer as KSerializer<GlobalAccountDataEvent<*>>),
-                    "type" to type + value.key
+                    "type" to type.removeSuffix("*") + value.key
                 ), "key"
             )), value
         )

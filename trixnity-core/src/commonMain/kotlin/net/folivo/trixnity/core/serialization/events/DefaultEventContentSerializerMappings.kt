@@ -84,7 +84,7 @@ val DefaultEventContentSerializerMappings = createEventContentSerializerMappings
     globalAccountDataOf<DirectEventContent>("m.direct")
     globalAccountDataOf<PushRulesEventContent>("m.push_rules")
     globalAccountDataOf<DefaultSecretKeyEventContent>("m.secret_storage.default_key")
-    globalAccountDataOf<SecretKeyEventContent>("m.secret_storage.key.")
+    globalAccountDataOf<SecretKeyEventContent>("m.secret_storage.key.*")
     globalAccountDataOf<MasterKeyEventContent>("m.cross_signing.master")
     globalAccountDataOf<SelfSigningKeyEventContent>("m.cross_signing.self_signing")
     globalAccountDataOf<UserSigningKeyEventContent>("m.cross_signing.user_signing")
