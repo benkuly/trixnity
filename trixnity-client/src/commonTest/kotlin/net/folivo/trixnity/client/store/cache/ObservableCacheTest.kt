@@ -373,12 +373,12 @@ class ObservableCacheTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `rollback cache entry when used during transaction`() = runTest {
+    fun `rollback cache entry when used during transaction and failing`() = runTest {
         val transactionManager = TransactionManagerImpl(NoOpRepositoryTransactionManager)
         cut.update("key1") { "value0" }
         cut.update("key2") { null }
         launch {
-            shouldThrow<CancellationException> {
+            shouldThrow<RuntimeException> {
                 transactionManager.writeTransaction {
                     cut.update("key1") { "value1" }
                     cut.set("key1", "value2")
@@ -398,7 +398,7 @@ class ObservableCacheTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `rollback cache entry when not used during transaction`() = runTest {
+    fun `rollback cache entry on error`() = runTest {
         val throwingCacheStore = object : ObservableCacheStore<String, String> {
             override suspend fun get(key: String): String? = "old"
 
@@ -416,6 +416,31 @@ class ObservableCacheTest : TrixnityBaseTest() {
         cut.get("key").first() shouldBe "old"
     }
 
+    @Test
+    fun `not rollback cache entry on cancellation`() = runTest {
+        val onPersist = MutableStateFlow(false)
+        val throwingCacheStore = object : ObservableCacheStore<String, String> {
+            var value: String? = "old"
+            override suspend fun get(key: String): String? = value
+
+            override suspend fun persist(key: String, value: String?) {
+                onPersist.value = true
+                delay(50.milliseconds)
+                this.value = value
+            }
+
+            override suspend fun deleteAll() {}
+        }
+        val cut = ObservableCache("test", throwingCacheStore, testScope.backgroundScope, testScope.testClock)
+        cut.get("key").first() shouldBe "old"
+        val job = async {
+            cut.update("key") { "new" }
+        }
+        onPersist.first { it }
+        job.cancel()
+        delay(100.milliseconds)
+        cut.get("key").first() shouldBe "new"
+    }
 
     @Test
     fun `index » call onPut on cache insert`() = runTest {

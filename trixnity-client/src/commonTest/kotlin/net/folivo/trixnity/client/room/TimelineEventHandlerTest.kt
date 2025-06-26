@@ -54,7 +54,6 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
         api,
         roomStore,
         roomTimelineStore,
-        getInMemoryRoomOutboxMessageStore(),
         TransactionManagerMock(),
     )
 
