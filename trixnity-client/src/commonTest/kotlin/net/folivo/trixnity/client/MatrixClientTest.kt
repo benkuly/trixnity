@@ -162,7 +162,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                         deviceId = "deviceId",
                         baseUrl = "http://localhost",
                         filterId = "someFilter",
-                        backgroundFilterId = "backgroundFilter",
+                        backgroundFilterId = "someFilter",
                         displayName = "bob",
                         avatarUrl = "mxc://localhost/123456",
                         syncBatchToken = null,
@@ -296,11 +296,10 @@ class MatrixClientTest : TrixnityBaseTest() {
             cut.displayName.first { it != null } shouldBe "bob"
             cut.avatarUrl.first { it != null } shouldBe "mxc://localhost/123456"
 
-            cut.startSync()
+            cut.syncOnce()
 
             cut.displayName.first { it == "bobby" } shouldBe "bobby"
             cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"
-            cut.stopSync()
             cut.close()
         }
 
