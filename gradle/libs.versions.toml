@@ -5,7 +5,7 @@ trixnity = "4.16.7"
 ### build ###
 kotlin = "2.1.21" # https://github.com/JetBrains/kotlin/releases
 ksp = "2.1.21-2.0.2" # https://github.com/google/ksp/releases
-kotlinWrappers = "2025.6.11" # https://github.com/JetBrains/kotlin-wrappers/releases
+kotlinWrappers = "2025.6.9" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "2.0.0" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.9.3" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
