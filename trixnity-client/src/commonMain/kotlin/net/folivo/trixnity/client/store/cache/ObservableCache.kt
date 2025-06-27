@@ -214,16 +214,16 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             if (forceCacheOnly.not() && newValue != null && persist == null && oldRawValue is CacheValue.Value)
                 return null
             val newRawValue = CacheValue.Value(newValue)
-            cacheTransaction.onRollbackActions.write {
-                add {
-                    log.trace { "$name (set): rollback cache update for key $key" }
-                    if (compareAndSet(newRawValue, oldRawValue).not()) {
-                        log.warn { "$name (set): cache entry has been updated outside of this transaction. Force rollback for key $key" }
-                        value = oldRawValue
+            if (compareAndSet(oldRawValue, newRawValue)) {
+                cacheTransaction.onRollbackActions.write {
+                    add {
+                        log.trace { "$name (set): rollback cache update for key $key" }
+                        if (compareAndSet(newRawValue, oldRawValue).not()) {
+                            log.warn { "$name (set): cache entry has been updated outside of this transaction. Force rollback for key $key" }
+                            value = oldRawValue
+                        }
                     }
                 }
-            }
-            if (compareAndSet(oldRawValue, newRawValue)) {
                 if (forceCacheOnly.not() && persist != null && (oldValue != newValue)) persist(newValue)
                 return ValueUpdate(oldValue, newValue)
             }
@@ -273,16 +273,16 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             }
             val newValue = updater(oldValue)
             val newRawValue = CacheValue.Value(newValue)
-            cacheTransaction.onRollbackActions.write {
-                add {
-                    log.trace { "$name (update): rollback cache update for key $key" }
-                    if (compareAndSet(newRawValue, oldRawValue).not()) {
-                        log.warn { "$name (update): cache entry has been updated outside of this transaction. Force rollback for key $key" }
-                        value = oldRawValue
+            if (compareAndSet(oldRawValue, newRawValue)) {
+                cacheTransaction.onRollbackActions.write {
+                    add {
+                        log.trace { "$name (update): rollback cache update for key $key" }
+                        if (compareAndSet(newRawValue, oldRawValue).not()) {
+                            log.warn { "$name (update): cache entry has been updated outside of this transaction. Force rollback for key $key" }
+                            value = oldRawValue
+                        }
                     }
                 }
-            }
-            if (compareAndSet(oldRawValue, newRawValue)) {
                 if (persist != null && (oldValue != newValue)) persist(newValue)
                 return ValueUpdate(oldValue, newValue)
             }

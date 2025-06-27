@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Only add rollback action on cache value update
+
 ### Security
 
 ## 4.16.6
