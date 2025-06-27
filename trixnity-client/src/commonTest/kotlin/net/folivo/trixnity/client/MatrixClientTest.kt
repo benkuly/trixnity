@@ -300,6 +300,7 @@ class MatrixClientTest : TrixnityBaseTest() {
 
             cut.displayName.first { it == "bobby" } shouldBe "bobby"
             cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"
+            cut.stopSync()
             cut.close()
         }
 

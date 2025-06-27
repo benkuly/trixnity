@@ -1,9 +1,6 @@
 package net.folivo.trixnity.core.model.events.m.call
 
-import kotlinx.serialization.EncodeDefault
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -47,7 +44,8 @@ sealed interface CallEventContent : MessageEventContent {
 
         @Serializable
         enum class OfferType {
-            @SerialName("offer") OFFER,
+            @SerialName("offer")
+            OFFER,
         }
 
         @Serializable
@@ -105,7 +103,8 @@ sealed interface CallEventContent : MessageEventContent {
 
         @Serializable
         enum class AnswerType {
-            @SerialName("answer") ANSWER,
+            @SerialName("answer")
+            ANSWER,
         }
 
         @Serializable
@@ -134,14 +133,22 @@ sealed interface CallEventContent : MessageEventContent {
 
         @Serializable
         enum class Reason {
-            @SerialName("ice_failed") ICE_FAILED,
-            @SerialName("invite_timeout") INVITE_TIMEOUT,
+            @SerialName("ice_failed")
+            ICE_FAILED,
+            @SerialName("invite_timeout")
+            INVITE_TIMEOUT,
+
             // Added in v1.7:
-            @SerialName("ice_timeout") ICE_TIMEOUT,
-            @SerialName("user_hangup") USER_HANGUP,
-            @SerialName("user_media_failed") USER_MEDIA_FAILED,
-            @SerialName("user_busy") USER_BUSY,
-            @SerialName("unknown_error") UNKNOWN_ERROR,
+            @SerialName("ice_timeout")
+            ICE_TIMEOUT,
+            @SerialName("user_hangup")
+            USER_HANGUP,
+            @SerialName("user_media_failed")
+            USER_MEDIA_FAILED,
+            @SerialName("user_busy")
+            USER_BUSY,
+            @SerialName("unknown_error")
+            UNKNOWN_ERROR,
         }
     }
 
@@ -153,7 +160,8 @@ sealed interface CallEventContent : MessageEventContent {
      * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#mcallnegotiate">matrix spec</a>
      */
     @Serializable
-    data class Negotiate(
+    data class Negotiate constructor(
+        @OptIn(ExperimentalSerializationApi::class)
         @EncodeDefault
         @Serializable(with = VersionSerializer::class)
         @SerialName("version") override val version: String = "1",
@@ -172,8 +180,10 @@ sealed interface CallEventContent : MessageEventContent {
 
         @Serializable
         enum class DescriptionType {
-            @SerialName("offer") OFFER,
-            @SerialName("answer") ANSWER
+            @SerialName("offer")
+            OFFER,
+            @SerialName("answer")
+            ANSWER
         }
 
         @Serializable
@@ -190,6 +200,7 @@ sealed interface CallEventContent : MessageEventContent {
      */
     @Serializable
     data class Reject(
+        @OptIn(ExperimentalSerializationApi::class)
         @EncodeDefault
         @Serializable(with = VersionSerializer::class)
         @SerialName("version") override val version: String = "1",
@@ -208,6 +219,7 @@ sealed interface CallEventContent : MessageEventContent {
      */
     @Serializable
     data class SelectAnswer(
+        @OptIn(ExperimentalSerializationApi::class)
         @EncodeDefault
         @Serializable(with = VersionSerializer::class)
         @SerialName("version") override val version: String = "1",
@@ -229,6 +241,7 @@ sealed interface CallEventContent : MessageEventContent {
      */
     @Serializable
     data class SdpStreamMetadataChanged(
+        @OptIn(ExperimentalSerializationApi::class)
         @EncodeDefault
         @Serializable(with = VersionSerializer::class)
         @SerialName("version") override val version: String = "1",
@@ -243,7 +256,8 @@ sealed interface CallEventContent : MessageEventContent {
 }
 
 internal object VersionSerializer : KSerializer<String> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("net.folivo.trixnity.core.model.call.Version")
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("net.folivo.trixnity.core.model.call.Version")
 
     override fun deserialize(decoder: Decoder): String {
         val jsonDecoder = decoder as? JsonDecoder ?: throw IllegalStateException("Expected JsonDecoder")
