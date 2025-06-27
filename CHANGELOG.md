@@ -11,18 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Only sync supported events (registered in EventContentSerializerMappings)
-- Upgrade dependencies
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Prevent that the store and cache get out of sync on a CancellationException
-
 ### Security
+
+## 4.16.6
+
+### Changed
+
+- Only sync supported events (registered in EventContentSerializerMappings)
+- Upgrade dependencies
+
+### Fixed
+
+- Prevent that the store and cache get out of sync on a CancellationException
 
 ## 4.16.5
 
