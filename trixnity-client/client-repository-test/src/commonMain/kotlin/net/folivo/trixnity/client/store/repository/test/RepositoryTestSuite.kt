@@ -89,7 +89,7 @@ abstract class RepositoryTestSuite(
                 )
             )
         }.koin
-        rtm = customRepositoryTransactionManager() ?: di.get()
+        rtm = di.get()
         testBody()
     }
 
@@ -120,6 +120,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - write does not lock`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         rtm.writeTransaction {
             rtmTestWrite(0)
             rtmTestRead(0)
@@ -136,6 +137,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - write allows simultaneous transactions`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         val calls = 10
         val callCount = MutableStateFlow(0)
         repeat(calls) { i ->
@@ -151,6 +153,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - write allows simultaneous writes`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         val calls = 10
         val callCount = MutableStateFlow(0)
         rtm.writeTransaction {
@@ -168,6 +171,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - write allows simultaneous reads`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         val calls = 10
         val callCount = MutableStateFlow(0)
         rtm.writeTransaction {
@@ -185,6 +189,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - read does not lock`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         rtm.readTransaction {
             rtmTestRead(0)
             rtm.readTransaction {
@@ -198,6 +203,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - allow read in write transaction`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         rtm.writeTransaction {
             rtmTestRead(0)
         }
@@ -205,6 +211,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - allow read in parallel to write transaction`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         val startWrite = MutableStateFlow(false)
         val finishedRead = MutableStateFlow(false)
         launch {
@@ -223,6 +230,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - read allows simultaneous reads`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         val calls = 10
         val callCount = MutableStateFlow(0)
         rtm.readTransaction {
@@ -240,6 +248,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - allow work within write transaction`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         val dummy = MutableStateFlow(listOf<Int>())
         suspend fun work() = coroutineScope {
             repeat(10) { i ->
@@ -262,6 +271,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - allow work within read transaction`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         val dummy = MutableStateFlow(listOf<Int>())
         suspend fun work() = coroutineScope {
             repeat(10) { i ->
@@ -287,6 +297,7 @@ abstract class RepositoryTestSuite(
 
     @Test
     fun `RepositoryTransactionManager - rollback on exception`() = runTestWithSetup {
+        rtm = customRepositoryTransactionManager() ?: di.get()
         val thrownException = CancellationException("dino")
         var caughtException: Exception? = null
         try {

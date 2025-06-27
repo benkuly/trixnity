@@ -34,6 +34,7 @@ kotlin {
                 implementation(libs.ktor.client.mock)
 
                 implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.common)
                 implementation(libs.kotest.assertions.core)
                 implementation(projects.trixnityTestUtils)
             }
