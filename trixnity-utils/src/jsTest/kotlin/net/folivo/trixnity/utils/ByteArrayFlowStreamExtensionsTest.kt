@@ -5,7 +5,7 @@ import io.ktor.utils.io.core.*
 import js.buffer.ArrayBuffer
 import js.objects.unsafeJso
 import js.promise.Promise
-import js.promise.Promise.Companion.resolve
+import js.promise.invoke
 import js.typedarrays.Uint8Array
 import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
