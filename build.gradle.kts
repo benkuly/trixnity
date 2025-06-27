@@ -10,7 +10,6 @@ plugins {
     id(libs.plugins.dokka.get().pluginId)
     alias(libs.plugins.kotlinxKover)
     alias(libs.plugins.download).apply(false)
-    alias(libs.plugins.kotest).apply(false)
     alias(libs.plugins.mokkery).apply(false)
 }
 

@@ -18,6 +18,7 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import kotlin.reflect.KClass
 
 class UserServiceMock : UserService {
+    @Deprecated("without function, use getPresence() instead", level = DeprecationLevel.ERROR)
     override val userPresence: StateFlow<Map<UserId, PresenceEventContent>>
         get() = throw NotImplementedError()
 

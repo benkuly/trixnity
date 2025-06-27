@@ -29,6 +29,8 @@ class MediaServiceTest : TrixnityBaseTest() {
 
     private val mediaCacheMappingStore = getInMemoryMediaCacheMapping()
     private val serverDataStore = getInMemoryServerDataStore()
+
+    @Suppress("DEPRECATION")
     private val mediaStore = InMemoryMediaStore()
 
     private val apiConfig = PortableMockEngineConfig()

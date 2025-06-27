@@ -2,7 +2,6 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.ksp)
-    alias(libs.plugins.kotest)
     alias(libs.plugins.kotlinxKover)
     alias(libs.plugins.room)
     trixnity.publish
@@ -38,13 +37,10 @@ kotlin {
                 implementation(libs.androidx.sqlite.bundled)
 
                 implementation(libs.kotest.assertions.core)
-                implementation(libs.kotest.common)
-                implementation(libs.kotest.framework.engine)
             }
         }
         jvmTest {
             dependencies {
-                implementation(libs.kotest.runner.junit5)
                 implementation(libs.logback.classic)
             }
         }

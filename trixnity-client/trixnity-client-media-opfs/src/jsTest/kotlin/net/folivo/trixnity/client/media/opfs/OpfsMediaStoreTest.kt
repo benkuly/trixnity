@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.media.opfs
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import js.iterable.AsyncIterator
+import js.iterable.iterator
 import js.typedarrays.Uint8Array
 import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
@@ -11,7 +12,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
 import web.fs.FileSystemDirectoryHandle
 import web.fs.FileSystemGetDirectoryOptions

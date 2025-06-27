@@ -1,19 +1,19 @@
 package net.folivo.trixnity.client.store.repository.indexeddb
 
-import io.kotest.core.spec.style.ShouldSpec
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.client.store.repository.test.repositoryTestSuite
+import net.folivo.trixnity.client.store.repository.test.RepositoryTestSuite
 import net.folivo.trixnity.utils.nextString
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import kotlin.random.Random
 
-class RepositoryTestSuite : ShouldSpec({
+class IndexedDBRepositoryTestSuite : RepositoryTestSuite(
     // remove customRepositoryTransactionManager as soon as a solution is found for async work within a transaction
-    repositoryTestSuite(customRepositoryTransactionManager = {
+    customRepositoryTransactionManager = {
         IndexedDBRepositoryTransactionManager(createDatabase(Random.nextString(22)), allStoreNames)
-    }) {
+    },
+    repositoriesModuleBuilder = {
         val database = createDatabase(Random.nextString(22))
         module {
             single { database }
@@ -48,5 +48,5 @@ class RepositoryTestSuite : ShouldSpec({
             singleOf(::IndexedDBTimelineEventRepository) { bind<TimelineEventRepository>() }
         }
     }
-})
+)
 

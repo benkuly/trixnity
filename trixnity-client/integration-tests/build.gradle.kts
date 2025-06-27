@@ -24,7 +24,6 @@ kotlin {
                 implementation(projects.trixnityClient.trixnityClientRepositoryRoom)
                 implementation(libs.androidx.sqlite.bundled)
                 implementation(kotlin("test"))
-                implementation(libs.kotest.common)
                 implementation(libs.kotest.assertions.core)
                 implementation(libs.oshai.logging)
             }

@@ -5,11 +5,11 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceUntilIdle
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class KeyedMutexTest : TrixnityBaseTest() {
 
@@ -28,7 +28,7 @@ class KeyedMutexTest : TrixnityBaseTest() {
                 }
             }
         }
-        advanceUntilIdle()
+        delay(1.seconds)
         jobs.forEach { it.cancel() }
         locked.value shouldBe 1
     }
@@ -45,7 +45,7 @@ class KeyedMutexTest : TrixnityBaseTest() {
                 }
             }
         }
-        advanceUntilIdle()
+        delay(1.seconds)
         jobs.forEach { it.cancel() }
         locked.value shouldBe 1000
     }

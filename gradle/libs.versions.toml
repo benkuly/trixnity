@@ -126,9 +126,6 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 ### testing ###
-kotest-common = { module = "io.kotest:kotest-common", version.ref = "kotest" }
-kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
-kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testContainers" }
@@ -144,7 +141,6 @@ openjdk-jol = { module = "org.openjdk.jol:jol-core", version.ref = "openjdkJol" 
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 download = { id = "de.undercouch.download", version.ref = "downloadGradlePlugin" }
-kotest = { id = "io.kotest.multiplatform", version.ref = "kotest" }
 mokkery = { id = "dev.mokkery", version.ref = "mokkery" }
 room = { id = "androidx.room", version.ref = "androidxRoom" }
 kotlinxKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kotlinxKover" }

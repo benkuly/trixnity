@@ -3,8 +3,9 @@ package net.folivo.trixnity.utils
 import io.kotest.matchers.shouldBe
 import io.ktor.utils.io.core.*
 import js.buffer.ArrayBuffer
-import js.objects.jso
+import js.objects.unsafeJso
 import js.promise.Promise
+import js.promise.Promise.Companion.resolve
 import js.typedarrays.Uint8Array
 import js.typedarrays.toByteArray
 import js.typedarrays.toUint8Array
@@ -22,7 +23,7 @@ class ByteArrayFlowStreamExtensionsTest : TrixnityBaseTest() {
     @Test
     fun shouldCreateByteArrayFlow() = runTest {
         byteArrayFlowFromReadableStream {
-            ReadableStream(jso<UnderlyingDefaultSource<Uint8Array<ArrayBuffer>>> {
+            ReadableStream(unsafeJso<UnderlyingDefaultSource<Uint8Array<ArrayBuffer>>> {
                 start = { controller ->
                     controller.enqueue("he".encodeToByteArray().toUint8Array())
                     controller.enqueue("llo".encodeToByteArray().toUint8Array())

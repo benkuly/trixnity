@@ -1,7 +1,6 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    alias(libs.plugins.kotest)
     trixnity.publish
 }
 
@@ -21,9 +20,14 @@ kotlin {
 
                 implementation(libs.oshai.logging)
 
-                api(libs.kotest.common)
-                api(libs.kotest.framework.engine)
-                implementation(libs.kotest.assertions.core)
+                api(kotlin("test"))
+                api(libs.kotlinx.coroutines.test)
+                api(libs.kotest.assertions.core)
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation(kotlin("test-junit5"))
             }
         }
     }
