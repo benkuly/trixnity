@@ -648,11 +648,8 @@ suspend fun MatrixClient.Companion.fromStore(
                 ).getOrThrow().accessToken
                     .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
             }
-            if (accessToken != null) {
-                MatrixClientImpl(baseUrl, di).also {
-                    log.trace { "finished creating MatrixClient" }
-                }
-            } else null
+            if (accessToken != null) matrixClient
+            else null
         }
     } else null
 }

@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.16.7
+
+### Added
+
+### Changed
+
 - Downgrade Kotlin and Ktor
 
 ### Deprecated
@@ -20,8 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Only add rollback action on cache value update
-
-### Security
+- Fix bug that two MatrixClients are created
 
 ## 4.16.6
 
