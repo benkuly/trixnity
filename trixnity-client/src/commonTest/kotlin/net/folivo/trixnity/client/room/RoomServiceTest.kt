@@ -66,7 +66,7 @@ class RoomServiceTest : TrixnityBaseTest() {
         roomOutboxMessageStore = roomOutboxMessageStore,
         roomEventEncryptionServices = listOf(roomEventDecryptionServiceMock),
         mediaService = mediaServiceMock,
-        forgetRoomService = {},
+        forgetRoomService = { _, _ -> },
         userInfo = simpleUserInfo,
         timelineEventHandler = TimelineEventHandlerMock(),
         clock = testScope.testClock,

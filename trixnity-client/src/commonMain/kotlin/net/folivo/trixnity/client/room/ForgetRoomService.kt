@@ -6,7 +6,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
 fun interface ForgetRoomService {
-    suspend operator fun invoke(roomId: RoomId)
+    suspend operator fun invoke(roomId: RoomId, force: Boolean)
 }
 
 class ForgetRoomServiceImpl(
@@ -17,8 +17,8 @@ class ForgetRoomServiceImpl(
     private val roomTimelineStore: RoomTimelineStore,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
 ) : ForgetRoomService {
-    override suspend fun invoke(roomId: RoomId) {
-        if (roomStore.get(roomId).first()?.membership == Membership.LEAVE) {
+    override suspend fun invoke(roomId: RoomId, force: Boolean) {
+        if (force || roomStore.get(roomId).first()?.membership == Membership.LEAVE) {
             roomStore.delete(roomId)
             roomTimelineStore.deleteByRoomId(roomId)
             roomStateStore.deleteByRoomId(roomId)

@@ -58,7 +58,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         roomStateStore = roomStateStore,
         globalAccountDataStore = globalAccountDataStore,
         roomAccountDataStore = roomAccountDataStore,
-        forgetRoomService = { forgetRooms.add(it) },
+        forgetRoomService = { roomId, _ -> forgetRooms.add(roomId) },
         roomService = roomServiceMock,
         userInfo = simpleUserInfo,
         tm = TransactionManagerMock(),

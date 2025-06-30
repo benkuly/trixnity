@@ -105,7 +105,7 @@ class ForgetRoomsTest : TrixnityBaseTest() {
 
         roomStore.getAll().first { it.size == 1 }
 
-        cut(room)
+        cut(room, false)
 
         roomStore.get(room).first() shouldBe null
 
@@ -130,14 +130,19 @@ class ForgetRoomsTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `invoke » not forget rooms when membershipt is not leave`() = runTest {
+    fun `invoke » not forget rooms when membership is not leave`() = runTest {
         roomStore.update(room) { simpleRoom.copy(room) }
-
         roomStore.getAll().first { it.size == 1 }
-
-        cut(room)
-
+        cut(room, false)
         roomStore.get(room).first() shouldNotBe null
+    }
+
+    @Test
+    fun `invoke » forget rooms when membership is not leave if forced`() = runTest {
+        roomStore.update(room) { simpleRoom.copy(room) }
+        roomStore.getAll().first { it.size == 1 }
+        cut(room, true)
+        roomStore.get(room).first() shouldBe null
     }
 
 }

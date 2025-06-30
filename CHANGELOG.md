@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Downgrade Kotlin and Ktor
+- Add force argument to `ForgetRoomService` and optional argument to forgetRoom in `RoomService`
 
 ### Deprecated
 
