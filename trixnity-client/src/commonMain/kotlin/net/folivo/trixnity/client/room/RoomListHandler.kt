@@ -391,7 +391,7 @@ class RoomListHandler(
             log.debug { "forget rooms: $forgetRooms" }
             tm.writeTransaction {
                 forgetRooms.forEach { roomId ->
-                    forgetRoomService(roomId)
+                    forgetRoomService(roomId, false)
                 }
             }
         }

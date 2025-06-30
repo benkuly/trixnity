@@ -177,7 +177,7 @@ interface RoomService {
     /**
      * If the room has [Membership.LEAVE], you can delete it locally.
      */
-    suspend fun forgetRoom(roomId: RoomId)
+    suspend fun forgetRoom(roomId: RoomId, force: Boolean = false)
 
     fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,
@@ -671,7 +671,7 @@ class RoomServiceImpl(
         return roomStore.get(roomId)
     }
 
-    override suspend fun forgetRoom(roomId: RoomId) = forgetRoomService(roomId)
+    override suspend fun forgetRoom(roomId: RoomId, force: Boolean) = forgetRoomService(roomId, force)
 
     override fun <C : RoomAccountDataEventContent> getAccountData(
         roomId: RoomId,

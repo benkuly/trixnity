@@ -145,7 +145,7 @@ class RoomServiceMock : RoomService {
     }
 
     val forgetRooms = MutableStateFlow(listOf<RoomId>())
-    override suspend fun forgetRoom(roomId: RoomId) {
+    override suspend fun forgetRoom(roomId: RoomId, force: Boolean) {
         forgetRooms.update { it + roomId }
     }
 
