@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## 4.16.8
+
+### Changed
+
+- Add force argument to `ForgetRoomService` and optional argument to forgetRoom in `RoomService`
+
+### Fixed
+
+- Fix bug that two MatrixClients are created
+
 ## 4.16.7
 
 ### Added
@@ -26,7 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Downgrade Kotlin and Ktor
-- Add force argument to `ForgetRoomService` and optional argument to forgetRoom in `RoomService`
 
 ### Deprecated
 
@@ -35,7 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Only add rollback action on cache value update
-- Fix bug that two MatrixClients are created
 
 ## 4.16.6
 
