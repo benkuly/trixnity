@@ -6,11 +6,13 @@ import io.ktor.client.engine.*
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -59,7 +61,7 @@ interface MatrixClientServerApiClientFactory {
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
         syncLoopDelay: Duration = 2.seconds,
         syncLoopErrorDelay: Duration = 5.seconds,
-        syncCoroutineScope: CoroutineScope? = null,
+        coroutineContext: CoroutineContext = Dispatchers.Default,
         httpClientEngine: HttpClientEngine? = null,
         httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
     ): MatrixClientServerApiClient =
@@ -71,7 +73,7 @@ interface MatrixClientServerApiClientFactory {
             syncBatchTokenStore = syncBatchTokenStore,
             syncLoopDelay = syncLoopDelay,
             syncLoopErrorDelay = syncLoopErrorDelay,
-            syncCoroutineScope = syncCoroutineScope,
+            coroutineContext = coroutineContext,
             httpClientEngine = httpClientEngine,
             httpClientConfig = httpClientConfig,
         )
@@ -85,7 +87,7 @@ class MatrixClientServerApiClientImpl(
     syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
     syncLoopDelay: Duration = 2.seconds,
     syncLoopErrorDelay: Duration = 5.seconds,
-    syncCoroutineScope: CoroutineScope? = null,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixClientServerApiClient {
@@ -102,7 +104,7 @@ class MatrixClientServerApiClientImpl(
         log.error(exception) { "There was an unexpected exception in sync. This should never happen!!!" }
     }
     private val finalSyncCoroutineScope: CoroutineScope =
-        syncCoroutineScope ?: CoroutineScope(coroutineExceptionHandler)
+        CoroutineScope(coroutineContext + coroutineExceptionHandler)
 
     override val appservice: AppserviceApiClient = AppserviceApiClientImpl(baseClient)
     override val authentication = AuthenticationApiClientImpl(baseClient)

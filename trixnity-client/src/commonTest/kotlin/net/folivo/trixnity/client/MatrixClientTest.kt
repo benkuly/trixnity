@@ -186,7 +186,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                 mediaStoreModule = createInMemoryMediaStoreModule(),
                 coroutineContext = backgroundScope.coroutineContext,
                 configuration = {
-                    httpClientEngine = scopedMockEngine(false) {
+                    httpClientEngine = backgroundScope.scopedMockEngine(false) {
                         addHandler { request ->
                             val path = request.url.fullPath
                             when {
@@ -298,7 +298,7 @@ class MatrixClientTest : TrixnityBaseTest() {
             cut.displayName.first { it != null } shouldBe "bob"
             cut.avatarUrl.first { it != null } shouldBe "mxc://localhost/123456"
 
-            cut.syncOnce()
+            cut.syncOnce().getOrThrow()
 
             cut.displayName.first { it == "bobby" } shouldBe "bobby"
             cut.avatarUrl.first { it == "mxc://localhost/abcdef" } shouldBe "mxc://localhost/abcdef"

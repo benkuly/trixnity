@@ -548,6 +548,7 @@ suspend fun MatrixClient.Companion.loginWith(
         eventContentSerializerMappings = di.get(),
         accountStore = accountStore,
         olmCryptoStore = di.get(),
+        coroutineContext = coroutineContext,
         config = config
     ) { matrixClient ->
         val keyStore = di.get<KeyStore>()
@@ -634,7 +635,8 @@ suspend fun MatrixClient.Companion.fromStore(
             eventContentSerializerMappings = di.get(),
             accountStore = accountStore,
             olmCryptoStore = olmCryptoStore,
-            config = config
+            config = config,
+            coroutineContext = coroutineContext,
         ) { matrixClient ->
             val accessToken = account.accessToken ?: onSoftLogin?.let {
                 val (identifier, password, token, loginType) = onSoftLogin()
@@ -692,6 +694,7 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
     accountStore: AccountStore,
     olmCryptoStore: OlmCryptoStore,
     config: MatrixClientConfiguration,
+    coroutineContext: CoroutineContext,
     doFinally: suspend (MatrixClient) -> T,
 ): T {
     val api = config.matrixClientServerApiClientFactory.create(
@@ -712,7 +715,8 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
             }
         },
         syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
-        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay
+        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay,
+        coroutineContext = coroutineContext,
     )
     val (signingKey, identityKey) = freeAfter(
         olmCryptoStore.getOlmAccount()
