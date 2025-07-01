@@ -16,7 +16,8 @@ publishing {
         maven {
             name = "Release"
             val repositoryId = System.getenv("OSSRH_REPOSITORY_ID")
-            url = uri("https://oss.sonatype.org/service/local/staging/deployByRepositoryId/$repositoryId")
+            url =
+                uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deployByRepositoryId/$repositoryId")
             credentials {
                 username = System.getenv("OSSRH_USERNAME")
                 password = System.getenv("OSSRH_PASSWORD")
