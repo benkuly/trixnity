@@ -20,6 +20,7 @@ import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.OlmCryptoStore
 import net.folivo.trixnity.client.store.membership
 import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
@@ -30,7 +31,6 @@ import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.jetbrains.exposed.sql.Database
-import org.junit.jupiter.api.Disabled
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -140,21 +140,50 @@ class EncryptionIT {
     }
 
     @Test
-    @Disabled
     fun shouldMassivelyDecrypt(): Unit = runBlocking(Dispatchers.Default) {
-        withTimeout(600_000) {
+        withTimeout(60_000) {
             val roomId = client1.api.room.createRoom(
                 invite = setOf(client2.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
             client1.room.getById(roomId).first { it?.membership == JOIN }
+            client1.stopSync()
+            client1.close()
+
             client2.api.room.joinRoom(roomId).getOrThrow()
             client2.room.getById(roomId).first { it?.membership == JOIN }
             client2.stopSync()
             client2.close()
 
-            val repeatCount = 2
-            val messageCount = 200
+
+            val clientFromStoreDatabase = newDatabase()
+            MatrixClient.login(
+                baseUrl = baseUrl,
+                identifier = IdentifierType.User("user1"),
+                password = password,
+                repositoriesModule = createExposedRepositoriesModule(clientFromStoreDatabase),
+                mediaStoreModule = createInMemoryMediaStoreModule(),
+                deviceId = "stored client",
+            ).getOrThrow().apply {
+                syncOnce().getOrThrow()
+                close()
+            }
+            val clientFromLogin = run {
+                val database = newDatabase()
+                MatrixClient.login(
+                    baseUrl = baseUrl,
+                    identifier = IdentifierType.User("user1"),
+                    password = password,
+                    repositoriesModule = createExposedRepositoriesModule(database),
+                    mediaStoreModule = createInMemoryMediaStoreModule(),
+                    deviceId = "loggedin client",
+                ).getOrThrow().apply {
+                    syncOnce().getOrThrow()
+                }
+            }
+
+            val repeatCount = 4
+            val messageCount = 10
             repeat(repeatCount) { iteration ->
                 println(
                     """
@@ -163,26 +192,34 @@ class EncryptionIT {
                     ######
                 """.trimIndent()
                 )
-                client1.stopSync()
-                coroutineScope {
-                    launch {
-                        repeat(messageCount) { i ->
-                            val senderClient = MatrixClient.login(
-                                baseUrl = baseUrl,
-                                identifier = IdentifierType.User("user2"),
-                                password = password,
-                                repositoriesModule = createInMemoryRepositoriesModule(),
-                                mediaStoreModule = createInMemoryMediaStoreModule(),
-                                deviceId = "sender client $i $iteration",
-                            ) {
-                                name = "sender client $i $iteration"
-                            }.getOrThrow()
-                            senderClient.syncOnce() // initial sync
-                            senderClient.startSync()
-                            senderClient.room.sendMessage(roomId) { text("message $i") }
-                            senderClient.room.waitForOutboxSent()
-                            senderClient.stopSync()
-                            senderClient.close()
+                val clientFromStore = run {
+                    MatrixClient.fromStore(
+                        repositoriesModule = createExposedRepositoriesModule(clientFromStoreDatabase),
+                        mediaStoreModule = createInMemoryMediaStoreModule(),
+                    ).getOrThrow()
+                }
+                checkNotNull(clientFromStore)
+                withClue("send messages") {
+                    coroutineScope {
+                        launch {
+                            repeat(messageCount) { i ->
+                                val senderClient = MatrixClient.login(
+                                    baseUrl = baseUrl,
+                                    identifier = IdentifierType.User("user2"),
+                                    password = password,
+                                    repositoriesModule = createInMemoryRepositoriesModule(),
+                                    mediaStoreModule = createInMemoryMediaStoreModule(),
+                                    deviceId = "sender client ($iteration - $i)",
+                                ) {
+                                    name = "sender client ($iteration - $i)"
+                                }.getOrThrow()
+                                senderClient.syncOnce().getOrThrow() // initial sync
+                                senderClient.startSync()
+                                senderClient.room.sendMessage(roomId) { text("message ($iteration - $i)") }
+                                senderClient.room.waitForOutboxSent()
+                                senderClient.stopSync()
+                                senderClient.close()
+                            }
                         }
                     }
                 }
@@ -194,22 +231,44 @@ class EncryptionIT {
                     ######
                 """.trimIndent()
                 )
-                client1.syncOnce().getOrThrow()
-                client1.startSync()
+                clientFromStore.syncOnce().getOrThrow()
+                clientFromLogin.syncOnce().getOrThrow()
+                clientFromStore.startSync()
+                clientFromLogin.startSync()
 
-                val lastEventId = client1.room.getById(roomId).first()?.lastEventId.shouldNotBeNull()
-                val receivedMessages = client1.room.getTimelineEvents(roomId, lastEventId)
-                    .take(messageCount)
-                    .toList()
-                receivedMessages shouldHaveSize messageCount
-                receivedMessages.reversed().forEachIndexed { i, messageFlow ->
-                    val message = messageFlow.firstWithContent()
-                    message.event.content.shouldBeInstanceOf<EncryptedMessageEventContent>()
-                    message.content?.getOrThrow()
-                        .shouldNotBeNull()
-                        .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
-                        .body shouldBe "message $i"
+                withClue("decrypt messages from store") {
+                    val lastEventId = clientFromStore.room.getById(roomId).first()?.lastEventId.shouldNotBeNull()
+                    val receivedMessages = clientFromStore.room.getTimelineEvents(roomId, lastEventId)
+                        .take(messageCount)
+                        .toList()
+                    receivedMessages shouldHaveSize messageCount
+                    receivedMessages.reversed().forEachIndexed { i, messageFlow ->
+                        val message = messageFlow.firstWithContent()
+                        message.event.content.shouldBeInstanceOf<EncryptedMessageEventContent>()
+                        message.content?.getOrThrow()
+                            .shouldNotBeNull()
+                            .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
+                            .body shouldBe "message ($iteration - $i)"
+                    }
                 }
+                withClue("decrypt messages from login") {
+                    val lastEventId = clientFromLogin.room.getById(roomId).first()?.lastEventId.shouldNotBeNull()
+                    val receivedMessages = clientFromLogin.room.getTimelineEvents(roomId, lastEventId)
+                        .take(messageCount)
+                        .toList()
+                    receivedMessages shouldHaveSize messageCount
+                    receivedMessages.reversed().forEachIndexed { i, messageFlow ->
+                        val message = messageFlow.firstWithContent()
+                        message.event.content.shouldBeInstanceOf<EncryptedMessageEventContent>()
+                        message.content?.getOrThrow()
+                            .shouldNotBeNull()
+                            .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
+                            .body shouldBe "message ($iteration - $i)"
+                    }
+                }
+                clientFromStore.stopSync()
+                clientFromLogin.stopSync()
+                clientFromStore.close()
             }
         }
     }
