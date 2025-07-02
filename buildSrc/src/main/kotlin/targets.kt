@@ -65,11 +65,16 @@ fun KotlinMultiplatformExtension.addNativeDesktopTargets(configure: (KotlinNativ
         mingwX64(configure),
     )
 
-fun KotlinMultiplatformExtension.addNativeAppleTargets(configure: (KotlinNativeTarget.() -> Unit) = {}): Set<KotlinNativeTarget> =
-    setOf(
-        macosX64(configure),
-        macosArm64(configure),
-        iosArm64(configure),
-        iosSimulatorArm64(configure),
-        iosX64(configure),
+fun KotlinMultiplatformExtension.addNativeAppleTargets(configure: (KotlinNativeTarget.() -> Unit) = {}): Set<KotlinNativeTarget> {
+    val fullConfigure: (KotlinNativeTarget.() -> Unit) = {
+        compilerOptions.freeCompilerArgs.add("-Xbinary=coreSymbolicationImageListType=ALL_LOADED")
+        configure()
+    }
+    return setOf(
+        macosX64(fullConfigure),
+        macosArm64(fullConfigure),
+        iosArm64(fullConfigure),
+        iosSimulatorArm64(fullConfigure),
+        iosX64(fullConfigure),
     )
+}

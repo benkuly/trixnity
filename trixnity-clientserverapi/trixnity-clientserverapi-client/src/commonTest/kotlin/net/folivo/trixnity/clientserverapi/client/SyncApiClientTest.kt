@@ -815,7 +815,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `should sync loop with error state`() = runTest(timeout = 2.minutes) {
+    fun `should sync loop with error state`() = runTest {
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             coroutineContext = backgroundScope.coroutineContext,

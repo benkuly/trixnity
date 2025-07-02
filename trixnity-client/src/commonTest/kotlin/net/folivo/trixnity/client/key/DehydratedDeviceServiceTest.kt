@@ -349,7 +349,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `rehydrateDevice should ignore wrong key`() = runTest(2.minutes) {
+    fun `rehydrateDevice should ignore wrong key`() = runTest {
         val dehydratedDeviceKey = SecureRandom.nextBytes(32)
         val deviceId = "DEHYDRATED_DEVICE_ID"
         var getDehydratedDeviceCalled = false
