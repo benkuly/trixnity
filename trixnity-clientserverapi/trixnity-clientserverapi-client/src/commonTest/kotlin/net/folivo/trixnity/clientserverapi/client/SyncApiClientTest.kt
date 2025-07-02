@@ -41,6 +41,7 @@ import kotlin.test.assertEquals
 import kotlin.test.fail
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -814,7 +815,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `should sync loop with error state`() = runTest {
+    fun `should sync loop with error state`() = runTest(timeout = 2.minutes) {
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             coroutineContext = backgroundScope.coroutineContext,

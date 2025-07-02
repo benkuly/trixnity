@@ -523,7 +523,18 @@ class MatrixClientTest : TrixnityBaseTest() {
 
                             path == "/_matrix/client/v3/capabilities" -> {
                                 respond(
-                                    """{capabilities:[]}""",
+                                    """{"capabilities":{}}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/media/v3/config" -> {
+                                respond(
+                                    """{"m.upload.size":24}""",
                                     HttpStatusCode.OK,
                                     headersOf(
                                         HttpHeaders.ContentType,

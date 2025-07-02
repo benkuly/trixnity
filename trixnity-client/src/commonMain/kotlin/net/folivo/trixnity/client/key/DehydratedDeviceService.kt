@@ -50,7 +50,6 @@ class DehydratedDeviceService(
     private val json: Json,
     private val olmStore: OlmStore,
     private val signService: SignService,
-    private val keyService: KeyService,
     private val clock: Clock,
     private val config: MatrixClientConfiguration,
 ) : EventHandler {
@@ -181,7 +180,7 @@ class DehydratedDeviceService(
                             if (eventBatch.events.isEmpty()) break
                             else eventEmitter.emit(eventBatch.events)
                         }
-                        coroutineContext.job.cancelChildren()
+                        currentCoroutineContext().cancelChildren()
                     }
                 }
 

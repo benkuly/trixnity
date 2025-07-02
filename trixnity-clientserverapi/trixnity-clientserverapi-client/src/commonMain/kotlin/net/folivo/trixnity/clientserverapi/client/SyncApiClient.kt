@@ -294,7 +294,7 @@ class SyncApiClientImpl(
                             ).getOrThrow()
                         }
                     }.onAwait { it }
-                }.also { coroutineContext.cancelChildren() }
+                }.also { currentCoroutineContext().cancelChildren() }
             }
         log.info { "received sync response after about $measuredSyncDuration with token $batchToken" }
 
