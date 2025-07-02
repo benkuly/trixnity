@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
@@ -34,7 +35,6 @@ import net.folivo.trixnity.testutils.scopedMockEngine
 import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -129,6 +129,39 @@ class MatrixClientTest : TrixnityBaseTest() {
                                     )
                                 }
 
+                                "/_matrix/client/versions" -> {
+                                    respond(
+                                        """{}""",
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
+                                        )
+                                    )
+                                }
+
+                                "/_matrix/client/v3/capabilities" -> {
+                                    respond(
+                                        """{"capabilities":{}}""",
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
+                                        )
+                                    )
+                                }
+
+                                "/_matrix/media/v3/config" -> {
+                                    respond(
+                                        """{"m.upload.size":24}""",
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
+                                        )
+                                    )
+                                }
+
                                 else -> {
                                     respond(
                                         "",
@@ -150,7 +183,6 @@ class MatrixClientTest : TrixnityBaseTest() {
             cut.getOrNull()?.close()
         }
 
-    @Ignore // broken since Kotlin 2.1.21
     @Test
     fun `MatrixClientImpl displayName » use the display name and avatar URL from the store when matrixClient is retrieved from the store and update when room user updates`() =
         runTest {
@@ -181,6 +213,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                         single<OlmAccountRepository> { olmAccountRepository }
                     })
             }
+            val log = KotlinLogging.logger("MatrixClientImplTest")
             val cut = MatrixClient.fromStore(
                 repositoriesModule = repositoriesModule,
                 mediaStoreModule = createInMemoryMediaStoreModule(),
@@ -189,42 +222,8 @@ class MatrixClientTest : TrixnityBaseTest() {
                     httpClientEngine = backgroundScope.scopedMockEngine(false) {
                         addHandler { request ->
                             val path = request.url.fullPath
+                            log.debug { "path: $path" }
                             when {
-                                path.startsWith("/_matrix/client/v3/sync?filter=someFilter&set_presence=online") -> {
-                                    assertEquals(HttpMethod.Get, request.method)
-                                    val roomId = RoomId("room1", "localhost")
-                                    respond(
-                                        json.encodeToString(
-                                            serverResponse.copy(
-                                                room = Sync.Response.Rooms(
-                                                    join = mapOf(
-                                                        roomId to Sync.Response.Rooms.JoinedRoom(
-                                                            timeline = Sync.Response.Rooms.Timeline(
-                                                                events = listOf(
-                                                                    StateEvent(
-                                                                        MemberEventContent(membership = JOIN),
-                                                                        sender = userId,
-                                                                        id = EventId("event1"),
-                                                                        roomId = roomId,
-                                                                        originTimestamp = 0L,
-                                                                        stateKey = userId.full,
-                                                                    )
-                                                                ),
-                                                                previousBatch = "prevBatch"
-                                                            )
-                                                        )
-                                                    )
-                                                )
-                                            )
-                                        ),
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
-                                    )
-                                }
-
                                 path.startsWith("/_matrix/client/v3/sync?filter=someFilter") -> {
                                     assertEquals(HttpMethod.Get, request.method)
                                     val roomId = RoomId("room1", "localhost")
@@ -278,6 +277,39 @@ class MatrixClientTest : TrixnityBaseTest() {
                                     assertEquals(HttpMethod.Post, request.method)
                                     respond(
                                         """{"one_time_key_counts":{"ed25519":1}}""",
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
+                                        )
+                                    )
+                                }
+
+                                path == "/_matrix/client/versions" -> {
+                                    respond(
+                                        """{}""",
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
+                                        )
+                                    )
+                                }
+
+                                path == "/_matrix/client/v3/capabilities" -> {
+                                    respond(
+                                        """{"capabilities":{}}""",
+                                        HttpStatusCode.OK,
+                                        headersOf(
+                                            HttpHeaders.ContentType,
+                                            ContentType.Application.Json.toString()
+                                        )
+                                    )
+                                }
+
+                                path == "/_matrix/media/v3/config" -> {
+                                    respond(
+                                        """{"m.upload.size":24}""",
                                         HttpStatusCode.OK,
                                         headersOf(
                                             HttpHeaders.ContentType,
@@ -470,6 +502,28 @@ class MatrixClientTest : TrixnityBaseTest() {
                                 assertEquals(HttpMethod.Post, request.method)
                                 respond(
                                     """{"one_time_key_counts":{"ed25519":1}}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/client/versions" -> {
+                                respond(
+                                    """{}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
+                                    )
+                                )
+                            }
+
+                            path == "/_matrix/client/v3/capabilities" -> {
+                                respond(
+                                    """{capabilities:[]}""",
                                     HttpStatusCode.OK,
                                     headersOf(
                                         HttpHeaders.ContentType,
