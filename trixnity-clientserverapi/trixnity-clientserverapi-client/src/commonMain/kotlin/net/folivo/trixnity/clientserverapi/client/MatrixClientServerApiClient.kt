@@ -4,10 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
@@ -104,7 +101,7 @@ class MatrixClientServerApiClientImpl(
         log.error(exception) { "There was an unexpected exception in sync. This should never happen!!!" }
     }
     private val finalSyncCoroutineScope: CoroutineScope =
-        CoroutineScope(coroutineContext + coroutineExceptionHandler)
+        CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
     override val appservice: AppserviceApiClient = AppserviceApiClientImpl(baseClient)
     override val authentication = AuthenticationApiClientImpl(baseClient)

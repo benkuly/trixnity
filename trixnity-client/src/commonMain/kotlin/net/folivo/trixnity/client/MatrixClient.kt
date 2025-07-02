@@ -663,10 +663,10 @@ private suspend fun initMatrixClientKoinApplication(
     config: MatrixClientConfiguration
 ): KoinApplication {
     val coroutineName = config.name?.let { name -> CoroutineName(name) }
-    val job = SupervisorJob(coroutineContext[Job])
-    val coroutineScope = CoroutineScope(coroutineContext + job + coroutineExceptionHandler).apply {
-        if (coroutineName != null) this + coroutineName
-    }
+    val coroutineScope =
+        CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler).apply {
+            if (coroutineName != null) this + coroutineName
+        }
 
     val koinApplication = koinApplication {
         modules(module {
