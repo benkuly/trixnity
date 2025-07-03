@@ -206,7 +206,7 @@ changelog:
       fi
 
 publish:mac-snapshot:
-  stage: publish-snapshot
+  stage: publish
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache
@@ -218,7 +218,7 @@ publish:mac-snapshot:
       --stacktrace
 
 publish:linux-snapshot:
-  stage: publish-snapshot
+  stage: publish
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
