@@ -215,7 +215,7 @@ publish-snapshot:mac:
     - *if-main
   script:
     - ./gradlew
-      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToSnapshotRepository
+      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToGitLabRepository
       --stacktrace
 
 publish-snapshot:linux:
@@ -231,12 +231,46 @@ publish-snapshot:linux:
       - website/static/api/
   script:
     - ./gradlew
-      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationToSnapshotRepository
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationToGitLabRepository
       dokkaHtmlToWebsite
       --stacktrace
 
-publish:create-nexus-staging-repo:
+publish:mac:
   stage: publish
+  tags: [ "trixnity-mac-internal" ]
+  cache:
+    - *cache
+  rules:
+    - *if-release
+  artifacts:
+    paths:
+      - build/maven-central-bundle
+  script:
+    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
+    - ./gradlew
+      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationTo{Central,Gitlab}Repository
+      --stacktrace
+
+publish:linux:
+  stage: publish
+  tags: [ "saas-linux-medium-amd64" ]
+  image: $BUILD_LINUX_IMAGE_NAME
+  cache:
+    - *cache
+  rules:
+    - *if-release
+  artifacts:
+    paths:
+      - build/maven-central-bundle
+  script:
+    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
+    - ./gradlew
+      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationTo{Central,Gitlab}Repository
+      --stacktrace
+
+publish:upload-to-maven-central:
+  stage: publish
+  needs: [ "publish:linux", "publish:mac" ]
   tags: [ "saas-linux-small-amd64" ]
   image: ubuntu:latest
   rules:
@@ -244,51 +278,36 @@ publish:create-nexus-staging-repo:
   artifacts:
     paths: [ "./OSSRH_REPOSITORY_ID" ]
   script:
-    - apt-get update && apt-get install -y curl jq
-    - >
-      jsonOutput=$(curl -s
-      --request POST -u "$OSSRH_USERNAME:$OSSRH_PASSWORD"
-      --url https://ossrh-staging-api.central.sonatype.com/service/local/staging/profiles/65b35e28422b2/start
-      --header 'Accept: application/json'
-      --header 'Content-Type: application/json'
-      --data '{ "data": {"description" : "'"$CI_COMMIT_TAG"'"} }'
-      )
-    - OSSRH_REPOSITORY_ID=$(echo "$jsonOutput" | jq -r '.data.stagedRepositoryId')
-    - >
-      if [ -z "$OSSRH_REPOSITORY_ID" ]; then
-      echo "Error while creating the staging repository. Response: $jsonOutput";
-      exit 1;
-      fi
-    - echo -n $OSSRH_REPOSITORY_ID > ./OSSRH_REPOSITORY_ID
-
-publish:mac:
-  stage: publish
-  needs: [ "publish:create-nexus-staging-repo" ]
-  tags: [ "trixnity-mac-internal" ]
-  cache:
-    - *cache
-  rules:
-    - *if-release
-  script:
-    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-    - ./gradlew
-      publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToReleaseRepository
-      --stacktrace
-
-publish:linux:
-  stage: publish
-  needs: [ "publish:create-nexus-staging-repo" ]
-  tags: [ "saas-linux-medium-amd64" ]
-  image: $BUILD_LINUX_IMAGE_NAME
-  cache:
-    - *cache
-  rules:
-    - *if-release
-  script:
-    - export OSSRH_REPOSITORY_ID=$(cat ./OSSRH_REPOSITORY_ID)
-    - ./gradlew
-      publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationToReleaseRepository
-      --stacktrace
+    - apt-get update && apt-get install -y curl jq zip
+    - cd build/maven-central-bundle && zip -r ../maven-central-bundle.zip . * && cd ../.
+    - TOKEN=$(printf "%s:%s" "$OSSRH_USERNAME" "$OSSRH_PASSWORD" | base64)
+    - |
+      DEPLOY_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
+      -F "bundle=@build/maven-central-bundle.zip" \
+      "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC")
+    - echo "Deployment ID: $DEPLOY_ID"
+    - |
+      echo "Polling status…"
+      STATUS=""
+      for i in $(seq 1 60); do
+        STATUS=$(curl -s -H "Authorization: Bearer $TOKEN" \
+          -X POST \
+          "https://central.sonatype.com/api/v1/publisher/status?id=$DEPLOY_ID" \
+          | jq -r .deploymentState)
+        echo "  [$(date +%T)] Status = $STATUS"
+        if [[ "$STATUS" == "FAILED" ]]; then
+          echo "❌ Deployment failed."
+          curl -v -X DELETE -H "Authorization: Bearer $TOKEN" \
+            "https://central.sonatype.com/api/v1/publisher/deployment/$DEPLOY_ID" || true
+          exit 1
+        elif [[ "$STATUS" == "PUBLISHED" ]]; then
+          echo "✅ Deployment published to Maven Central."
+          exit 0
+        fi
+        sleep 10
+      done
+    - echo "⏰ Timeout waiting for publish. Final status: $STATUS"
+    - exit 1
 
 pages:
   stage: website

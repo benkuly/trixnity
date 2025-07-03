@@ -14,18 +14,12 @@ val dokkaJar by tasks.registering(Jar::class) {
 publishing {
     repositories {
         maven {
-            name = "Release"
-            val repositoryId = System.getenv("OSSRH_REPOSITORY_ID")
-            url =
-                uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deployByRepositoryId/$repositoryId")
-            credentials {
-                username = System.getenv("OSSRH_USERNAME")
-                password = System.getenv("OSSRH_PASSWORD")
-            }
+            url = uri(rootProject.layout.buildDirectory.map { it.dir("maven-central-bundle") })
+            name = "Central"
         }
         maven {
             url = uri("${System.getenv("CI_API_V4_URL")}/projects/26519650/packages/maven")
-            name = "Snapshot"
+            name = "GitLab"
             credentials(HttpHeaderCredentials::class) {
                 name = "Job-Token"
                 value = System.getenv("CI_JOB_TOKEN")
