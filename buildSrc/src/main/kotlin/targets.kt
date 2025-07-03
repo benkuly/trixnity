@@ -67,7 +67,7 @@ fun KotlinMultiplatformExtension.addNativeDesktopTargets(configure: (KotlinNativ
 
 fun KotlinMultiplatformExtension.addNativeAppleTargets(configure: (KotlinNativeTarget.() -> Unit) = {}): Set<KotlinNativeTarget> {
     val fullConfigure: (KotlinNativeTarget.() -> Unit) = {
-        compilerOptions.freeCompilerArgs.add("-Xbinary=coreSymbolicationImageListType=ALL_LOADED")
+        compilerOptions.freeCompilerArgs.add("-Xbinary=coreSymbolicationImageListType=ALL_LOADED") // TODO workaround for bug introduced in Kotlin 2.1.21
         configure()
     }
     return setOf(
