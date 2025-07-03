@@ -47,6 +47,8 @@ interface MatrixClientServerApiClient : AutoCloseable {
 
     val eventContentSerializerMappings: EventContentSerializerMappings
     val json: Json
+
+    suspend fun closeSuspending()
 }
 
 interface MatrixClientServerApiClientFactory {
@@ -100,7 +102,7 @@ class MatrixClientServerApiClientImpl(
     private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) { "There was an unexpected exception in sync. This should never happen!!!" }
     }
-    private val finalSyncCoroutineScope: CoroutineScope =
+    private val coroutineScope: CoroutineScope =
         CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
     override val appservice: AppserviceApiClient = AppserviceApiClientImpl(baseClient)
@@ -111,7 +113,7 @@ class MatrixClientServerApiClientImpl(
     override val room = RoomApiClientImpl(baseClient, eventContentSerializerMappings)
     override val sync = SyncApiClientImpl(
         baseClient,
-        finalSyncCoroutineScope,
+        coroutineScope,
         syncBatchTokenStore,
         syncLoopDelay,
         syncLoopErrorDelay
@@ -122,7 +124,13 @@ class MatrixClientServerApiClientImpl(
     override val push = PushApiClientImpl(baseClient)
 
     override fun close() {
-        finalSyncCoroutineScope.cancel()
+        coroutineScope.cancel()
         baseClient.close()
+    }
+
+    override suspend fun closeSuspending() {
+        val job = coroutineScope.coroutineContext.job
+        close()
+        job.join()
     }
 }

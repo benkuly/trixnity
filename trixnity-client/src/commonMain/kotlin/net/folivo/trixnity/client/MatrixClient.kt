@@ -114,6 +114,8 @@ interface MatrixClient : AutoCloseable {
     suspend fun setDisplayName(displayName: String?): Result<Unit>
 
     suspend fun setAvatarUrl(avatarUrl: String?): Result<Unit>
+
+    suspend fun closeSuspending()
 }
 
 private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
@@ -987,6 +989,12 @@ class MatrixClientImpl internal constructor(
         api.close()
         di.close()
         coroutineScope.cancel("stopped MatrixClient")
+    }
+
+    override suspend fun closeSuspending() {
+        val job = coroutineScope.coroutineContext.job
+        close()
+        job.join()
     }
 
     override suspend fun setDisplayName(displayName: String?): Result<Unit> {

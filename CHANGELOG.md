@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Added tests
+- Introduced `MatrixClient::closeSuspending`
+- Introduced `MatrixClientServerApiClient::closeSuspending`
 
 ### Deprecated
 
