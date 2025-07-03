@@ -275,6 +275,7 @@ publish:maven-central:
   rules:
     - *if-release
   script:
+    - chmod +x ./publish-to-maven-central.sh
     - ./publish-to-maven-central.sh
 
 pages:
