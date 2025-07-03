@@ -12,7 +12,6 @@ stages:
   - build
   - test
   - security
-  - publish-snapshot
   - publish
   - website
 
@@ -206,7 +205,7 @@ changelog:
         exit 1
       fi
 
-publish-snapshot:mac:
+publish:mac-snapshot:
   stage: publish-snapshot
   tags: [ "trixnity-mac-internal" ]
   cache:
@@ -218,7 +217,7 @@ publish-snapshot:mac:
       publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToGitLabRepository
       --stacktrace
 
-publish-snapshot:linux:
+publish:linux-snapshot:
   stage: publish-snapshot
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
