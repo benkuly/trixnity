@@ -268,46 +268,15 @@ publish:linux:
       publish{KotlinMultiplatform,Jvm,Js,LinuxX64,MingwX64,AndroidRelease,TrixnityPlatform}PublicationTo{Central,Gitlab}Repository
       --stacktrace
 
-publish:upload-to-maven-central:
+publish:maven-central:
   stage: publish
   needs: [ "publish:linux", "publish:mac" ]
   tags: [ "saas-linux-small-amd64" ]
   image: ubuntu:latest
   rules:
     - *if-release
-  artifacts:
-    paths: [ "./OSSRH_REPOSITORY_ID" ]
   script:
-    - apt-get update && apt-get install -y curl jq zip
-    - cd build/maven-central-bundle && zip -r ../maven-central-bundle.zip . * && cd ../.
-    - TOKEN=$(printf "%s:%s" "$OSSRH_USERNAME" "$OSSRH_PASSWORD" | base64)
-    - |
-      DEPLOY_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
-      -F "bundle=@build/maven-central-bundle.zip" \
-      "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC")
-    - echo "Deployment ID: $DEPLOY_ID"
-    - |
-      echo "Polling status…"
-      STATUS=""
-      for i in $(seq 1 60); do
-        STATUS=$(curl -s -H "Authorization: Bearer $TOKEN" \
-          -X POST \
-          "https://central.sonatype.com/api/v1/publisher/status?id=$DEPLOY_ID" \
-          | jq -r .deploymentState)
-        echo "  [$(date +%T)] Status = $STATUS"
-        if [[ "$STATUS" == "FAILED" ]]; then
-          echo "❌ Deployment failed."
-          curl -v -X DELETE -H "Authorization: Bearer $TOKEN" \
-            "https://central.sonatype.com/api/v1/publisher/deployment/$DEPLOY_ID" || true
-          exit 1
-        elif [[ "$STATUS" == "PUBLISHED" ]]; then
-          echo "✅ Deployment published to Maven Central."
-          exit 0
-        fi
-        sleep 10
-      done
-    - echo "⏰ Timeout waiting for publish. Final status: $STATUS"
-    - exit 1
+    - ./publish-to-maven-central.sh
 
 pages:
   stage: website
