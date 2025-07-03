@@ -127,7 +127,7 @@ suspend fun SyncApiClient.startOnce(
 
 class SyncApiClientImpl(
     private val baseClient: MatrixClientServerApiBaseClient,
-    private val syncCoroutineScope: CoroutineScope,
+    private val coroutineScope: CoroutineScope,
     private val syncBatchTokenStore: SyncBatchTokenStore,
     private val syncLoopDelay: Duration,
     private val syncLoopErrorDelay: Duration,
@@ -186,9 +186,9 @@ class SyncApiClientImpl(
     private val syncLoopStartMutex = Mutex()
 
     init {
-        syncCoroutineScope.launch { syncLoop() }
+        coroutineScope.launch { syncLoop() }
         if (log.isInfoEnabled()) {
-            syncCoroutineScope.launch {
+            coroutineScope.launch {
                 currentSyncState.collect {
                     log.info { "current sync state: $it" }
                 }
@@ -199,7 +199,7 @@ class SyncApiClientImpl(
     private suspend fun syncLoop() {
         syncLoopStartMutex.withLock {
             syncLoopJob?.cancelAndJoin()
-            syncLoopJob = syncCoroutineScope.launch {
+            syncLoopJob = coroutineScope.launch {
                 log.info { "started syncLoop" }
                 while (currentCoroutineContext().isActive) {
                     val (syncParameter, currentBatchToken) =
@@ -294,7 +294,7 @@ class SyncApiClientImpl(
                             ).getOrThrow()
                         }
                     }.onAwait { it }
-                }.also { coroutineContext.cancelChildren() }
+                }.also { currentCoroutineContext().cancelChildren() }
             }
         log.info { "received sync response after about $measuredSyncDuration with token $batchToken" }
 
@@ -394,6 +394,6 @@ class SyncApiClientImpl(
     override suspend fun cancel() {
         syncLoopRequest.value = null
         syncOnceRequests.value = emptyList()
-        syncCoroutineScope.launch { syncLoop() }
+        coroutineScope.launch { syncLoop() }
     }
 }

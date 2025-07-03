@@ -51,6 +51,7 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(MSC3814::class)
 class DehydratedDeviceServiceTest : TrixnityBaseTest() {
@@ -99,7 +100,6 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         json = json,
         olmStore = olmStore,
         signService = signServiceMock,
-        keyService = keyServiceMock,
         clock = clock,
         config = matrixClientConfiguration,
     )

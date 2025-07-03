@@ -162,7 +162,7 @@ class KeyBackupServiceImpl(
         val runningKey = Pair(roomId, sessionId)
         if (currentlyLoadingMegolmSessions.getAndUpdate { it + runningKey }.contains(runningKey).not()) {
             scope.launch {
-                coroutineContext.job.invokeOnCompletion {
+                currentCoroutineContext().job.invokeOnCompletion {
                     currentlyLoadingMegolmSessions.update { it - runningKey }
                 }
                 retryWhen(

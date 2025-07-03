@@ -136,7 +136,7 @@ test:linux:
 test:integration-test:
   stage: test
   interruptible: true
-  timeout: 30m
+  timeout: 45m
   needs: [ "build:linux" ]
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME

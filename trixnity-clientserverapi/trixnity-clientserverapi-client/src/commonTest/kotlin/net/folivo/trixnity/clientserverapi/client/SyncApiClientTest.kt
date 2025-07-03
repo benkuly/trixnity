@@ -41,6 +41,7 @@ import kotlin.test.assertEquals
 import kotlin.test.fail
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -295,7 +296,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
     fun shouldSyncAndHandleLongTimeout() = runTest(timeout = 30.seconds) {
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
@@ -366,7 +367,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
             },
             syncBatchTokenStore = syncBatchTokenStore,
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
         ).use { matrixRestClient ->
             val syncResponses = MutableSharedFlow<Response>(replay = 5)
             matrixRestClient.sync.subscribe { syncResponses.emit(it.syncResponse) }
@@ -445,7 +446,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
             },
             syncBatchTokenStore = syncBatchTokenStore,
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
         ).use { matrixRestClient ->
             syncBatchTokenStore.setSyncBatchToken("some")
             val syncResponses = MutableSharedFlow<Response>(replay = 5)
@@ -491,7 +492,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
             },
             syncBatchTokenStore = syncBatchTokenStore,
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
         ).use { matrixRestClient ->
             syncBatchTokenStore.setSyncBatchToken("some")
 
@@ -527,7 +528,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
             },
             syncBatchTokenStore = syncBatchTokenStore,
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
         ).use { matrixRestClient ->
             syncBatchTokenStore.setSyncBatchToken("some")
 
@@ -584,7 +585,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
             },
             syncBatchTokenStore = syncBatchTokenStore,
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
         ).use { matrixRestClient ->
             syncBatchTokenStore.setSyncBatchToken("some")
             matrixRestClient.sync.start()
@@ -663,7 +664,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
             },
             syncBatchTokenStore = syncBatchTokenStore,
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
         ).use { matrixRestClient ->
             syncBatchTokenStore.setSyncBatchToken("some")
             val syncResponses = MutableSharedFlow<Response>(replay = 5)
@@ -699,7 +700,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
     fun `should sync loop with timeout state and initial sync state`() = runTest {
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
@@ -744,7 +745,13 @@ class SyncApiClientTest : TrixnityBaseTest() {
             matrixRestClient.sync.stop()
 
             stateResult.take(5).toList() shouldBe
-                    listOf(SyncState.STOPPED, SyncState.INITIAL_SYNC, SyncState.RUNNING, SyncState.TIMEOUT, SyncState.STOPPED)
+                    listOf(
+                        SyncState.STOPPED,
+                        SyncState.INITIAL_SYNC,
+                        SyncState.RUNNING,
+                        SyncState.TIMEOUT,
+                        SyncState.STOPPED
+                    )
         }
     }
 
@@ -752,7 +759,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
     fun `should sync loop without initial sync state`() = runTest {
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("ananas") },
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
@@ -811,7 +818,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
     fun `should sync loop with error state`() = runTest {
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
@@ -845,13 +852,17 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 setPresence = null,
             )
 
-            stateResult.take(5).toList() shouldBe listOf(SyncState.STOPPED, SyncState.INITIAL_SYNC,
-                SyncState.ERROR, SyncState.INITIAL_SYNC, SyncState.RUNNING)
+            stateResult.take(5).toList() shouldBe listOf(
+                SyncState.STOPPED, SyncState.INITIAL_SYNC,
+                SyncState.ERROR, SyncState.INITIAL_SYNC, SyncState.RUNNING
+            )
 
             matrixRestClient.sync.stop()
 
-            stateResult.take(6).toList() shouldBe listOf(SyncState.STOPPED, SyncState.INITIAL_SYNC,
-                SyncState.ERROR, SyncState.INITIAL_SYNC, SyncState.RUNNING, SyncState.STOPPED)
+            stateResult.take(6).toList() shouldBe listOf(
+                SyncState.STOPPED, SyncState.INITIAL_SYNC,
+                SyncState.ERROR, SyncState.INITIAL_SYNC, SyncState.RUNNING, SyncState.STOPPED
+            )
         }
     }
 
@@ -860,7 +871,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
         val requestCount = MutableStateFlow(0)
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
@@ -908,8 +919,8 @@ class SyncApiClientTest : TrixnityBaseTest() {
         val syncBatchTokenStore = SyncBatchTokenStore.inMemory()
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
-            syncBatchTokenStore =  syncBatchTokenStore,
+            coroutineContext = backgroundScope.coroutineContext,
+            syncBatchTokenStore = syncBatchTokenStore,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     assertEquals(
@@ -982,8 +993,8 @@ class SyncApiClientTest : TrixnityBaseTest() {
         val requestCount = MutableStateFlow(0)
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
-            syncBatchTokenStore =  syncBatchTokenStore,
+            coroutineContext = backgroundScope.coroutineContext,
+            syncBatchTokenStore = syncBatchTokenStore,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (requestCount.value) {
@@ -1164,7 +1175,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
@@ -1245,7 +1256,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
@@ -1302,7 +1313,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
@@ -1350,7 +1361,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
         val requestCount = MutableStateFlow(0)
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("some") },
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
@@ -1382,12 +1393,13 @@ class SyncApiClientTest : TrixnityBaseTest() {
             requestCount.value shouldBe 1
         }
     }
+
     @Test
     fun `should allow multiple stop sync loop`() = runTest {
         val requestCount = MutableStateFlow(0)
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("some") },
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
@@ -1441,7 +1453,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
         val barrier = CompletableDeferred<Unit>()
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("some") },
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
@@ -1471,7 +1483,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
         val secondEndpoint = CompletableDeferred<Unit>()
         MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
-            syncCoroutineScope = backgroundScope,
+            coroutineContext = backgroundScope.coroutineContext,
             syncBatchTokenStore = SyncBatchTokenStore.inMemory().apply { setSyncBatchToken("some") },
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
@@ -1480,6 +1492,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                             firstEndpoint.complete(Unit)
                             delay(Duration.INFINITE)
                         }
+
                         "/_matrix/client/v3/sync?set_presence=offline&since=some&timeout=0" -> {
                             secondEndpoint.complete(Unit)
                             return@addHandler respond(

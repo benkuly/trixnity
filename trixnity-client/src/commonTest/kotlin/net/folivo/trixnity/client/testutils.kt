@@ -58,7 +58,7 @@ fun TrixnityBaseTest.mockMatrixClientServerApiClient(
             portableConfig = config
         ),
         syncBatchTokenStore = syncBatchTokenStore,
-        syncCoroutineScope = testScope.backgroundScope,
+        coroutineContext = testScope.backgroundScope.coroutineContext,
     )
 
 fun TrixnityBaseTest.getInMemoryAccountStore(setup: suspend AccountStore.() -> Unit = {}) = AccountStore(

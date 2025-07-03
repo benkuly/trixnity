@@ -298,7 +298,7 @@ abstract class TimelineBase<T>(
                             async {
                                 val startFrom = internalState.value.lastLoadedEventBefore?.first()
                                     ?: throw IllegalStateException("Timeline not initialized")
-                                coroutineContext.job.invokeOnCompletion { error ->
+                                currentCoroutineContext().job.invokeOnCompletion { error ->
                                     if (error != null) internalState.update { it.copy(isLoadingBefore = false) }
                                 }
                                 internalState.update { it.copy(isLoadingBefore = true) }
@@ -352,7 +352,7 @@ abstract class TimelineBase<T>(
                                 async {
                                     val startFrom = internalState.value.lastLoadedEventAfter?.first()
                                         ?: throw IllegalStateException("Timeline not initialized")
-                                    coroutineContext.job.invokeOnCompletion { error ->
+                                    currentCoroutineContext().job.invokeOnCompletion { error ->
                                         if (error != null) internalState.update { it.copy(isLoadingAfter = false) }
                                     }
                                     internalState.update { it.copy(isLoadingAfter = true) }

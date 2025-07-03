@@ -1,7 +1,10 @@
 package net.folivo.trixnity.client.notification
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -64,7 +67,7 @@ class NotificationServiceImpl(
     override fun getNotifications(
         response: Sync.Response,
         decryptionTimeout: Duration,
-    ) : Flow<Notification> = evaluateDefaultPushRules(
+    ): Flow<Notification> = evaluateDefaultPushRules(
         extractClientEvents(response, decryptionTimeout)
     )
 
@@ -285,12 +288,12 @@ class NotificationServiceImpl(
             event?.content?.global?.let { globalRuleSet ->
                 log.trace { "global rule set: $globalRuleSet" }
                 (
-                    globalRuleSet.override.orEmpty() +
-                    globalRuleSet.content.orEmpty() +
-                    globalRuleSet.room.orEmpty() +
-                    globalRuleSet.sender.orEmpty() +
-                    globalRuleSet.underride.orEmpty()
-                )
+                        globalRuleSet.override.orEmpty() +
+                                globalRuleSet.content.orEmpty() +
+                                globalRuleSet.room.orEmpty() +
+                                globalRuleSet.sender.orEmpty() +
+                                globalRuleSet.underride.orEmpty()
+                        )
             } ?: emptyList()
         }
 
@@ -339,7 +342,7 @@ class NotificationServiceImpl(
                 emit(it)
             }
 
-            coroutineContext.cancelChildren()
+            currentCoroutineContext().cancelChildren()
         }
     }
 
