@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added tests
 - Introduced `MatrixClient::closeSuspending`
 - Introduced `MatrixClientServerApiClient::closeSuspending`
+- Update Android target SDK to 36
 
 ### Deprecated
 

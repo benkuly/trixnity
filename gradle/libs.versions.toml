@@ -52,7 +52,7 @@ robolectric = "4.15.1" # https://github.com/robolectric/robolectric/releases
 
 ### android ###
 # make sure to update Dockerfile, when you change a version here!
-androidTargetSdk = "35"
+androidTargetSdk = "36"
 androidMinSdk = "24"
 
 [libraries]
