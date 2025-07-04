@@ -1,39 +1,52 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Debug helpers
+log() { echo "[$(date +%T)] $*"; }
+
+log "Checking environment variables..."
+: "${OSSRH_USERNAME:?Environment variable OSSRH_USERNAME not set}"
+: "${OSSRH_PASSWORD:?Environment variable OSSRH_PASSWORD not set}"
+
 BUNDLE="build/maven-central-bundle.zip"
 API_BASE="https://central.sonatype.com/api/v1/publisher"
 TOKEN=$(printf "%s:%s" "$OSSRH_USERNAME" "$OSSRH_PASSWORD" | base64)
 AUTH_HEADER="Authorization: Bearer $TOKEN"
 
-echo "Uploading bundle: $BUNDLE..."
+log "Checking if bundle exists at: $BUNDLE"
+if [[ ! -f "$BUNDLE" ]]; then
+  log "❌ Bundle not found at $BUNDLE"
+  exit 1
+fi
+
+log "Uploading bundle..."
 DEPLOY_ID=$(curl -s -H "$AUTH_HEADER" \
   -F "bundle=@$BUNDLE" \
   "$API_BASE/upload?publishingType=AUTOMATIC")
 
-if [[ -z "$DEPLOY_ID" ]]; then
-  echo "❌ No deployment ID received; upload likely failed."
+if [[ -z "$DEPLOY_ID" || "$DEPLOY_ID" == "null" ]]; then
+  log "❌ No deployment ID received. Upload failed."
   exit 1
 fi
 
-echo "📦 Deployment ID: $DEPLOY_ID"
-echo "⏳ Polling deployment status (every 10s for up to 10 minutes)..."
+log "📦 Deployment ID: $DEPLOY_ID"
+log "⏳ Polling deployment status (every 10s for up to 30 minutes)..."
 
 FAIL=false
-for i in {1..60}; do
+for i in {1..180}; do
   STATUS=$(curl -s -H "$AUTH_HEADER" \
     -X POST \
     "$API_BASE/status?id=$DEPLOY_ID" \
     | jq -r ".deploymentState")
-  echo "  [$(date +%T)] Status = $STATUS"
+  log "Status = $STATUS"
 
   case "$STATUS" in
     PUBLISHED)
-      echo "✅ Successfully PUBLISHED to Maven Central."
+      log "✅ Successfully PUBLISHED to Maven Central."
       exit 0
       ;;
     FAILED)
-      echo "❌ Deployment FAILED. Cleaning up..."
+      log "❌ Deployment FAILED. Cleaning up..."
       curl -s -X DELETE -H "$AUTH_HEADER" \
         "$API_BASE/deployment/$DEPLOY_ID" || true
       FAIL=true
@@ -41,6 +54,7 @@ for i in {1..60}; do
       ;;
     *)
       # PENDING, VALIDATING, VALIDATED, PUBLISHING
+      :
       ;;
   esac
 
@@ -51,5 +65,5 @@ if [ "$FAIL" = true ]; then
   exit 1
 fi
 
-echo "⏰ Timeout: still '$STATUS' after 10 minutes."
+log "⏰ Timeout: still '$STATUS' after 10 minutes."
 exit 1
