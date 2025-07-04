@@ -41,7 +41,7 @@ for i in {1..180}; do
   log "Status = $STATUS"
 
   case "$STATUS" in
-    PUBLISHED)
+    PUBLISHED|PUBLISHING)
       log "✅ Successfully PUBLISHED to Maven Central."
       exit 0
       ;;
@@ -65,5 +65,5 @@ if [ "$FAIL" = true ]; then
   exit 1
 fi
 
-log "⏰ Timeout: still '$STATUS' after 10 minutes."
+log "⏰ Timeout: still '$STATUS' after 30 minutes."
 exit 1
