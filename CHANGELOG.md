@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Use event filter when filling timeline gaps
+
 ### Deprecated
 
 ### Removed
