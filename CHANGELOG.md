@@ -11,10 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Added tests
-- Introduced `MatrixClient::closeSuspending`
-- Introduced `MatrixClientServerApiClient::closeSuspending`
-- Update Android target SDK to 36
+- Use event filter when filling timeline gaps
 
 ### Deprecated
 
@@ -23,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## 4.16.9
+
+### Changed
+
+- Added tests
+- Introduced `MatrixClient::closeSuspending`
+- Introduced `MatrixClientServerApiClient::closeSuspending`
+- Update Android target SDK to 36
 
 ## 4.16.8
 
