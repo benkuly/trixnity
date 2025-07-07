@@ -30,6 +30,7 @@ import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
@@ -44,6 +45,9 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
     private val event4 = plainEvent(4)
     private val event5 = plainEvent(5)
 
+    private val accountStore = getInMemoryAccountStore().apply {
+        scheduleSetup { updateAccount { it?.copy(filterId = "1") } }
+    }
     private val roomStore = getInMemoryRoomStore()
     private val roomTimelineStore = getInMemoryRoomTimelineStore()
 
@@ -52,6 +56,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
 
     private val cut = TimelineEventHandlerImpl(
         api,
+        accountStore,
         roomStore,
         roomTimelineStore,
         TransactionManagerMock(),
@@ -691,7 +696,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -729,7 +734,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -766,7 +771,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -805,7 +810,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -845,7 +850,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -887,7 +892,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -929,7 +934,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -971,7 +976,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         null,
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1013,7 +1018,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1056,7 +1061,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1094,7 +1099,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1139,7 +1144,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1184,7 +1189,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1230,7 +1235,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "next",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1278,7 +1283,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1320,7 +1325,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "after-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1374,7 +1379,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "after-2",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1391,7 +1396,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "before-4",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1439,7 +1444,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "after-2",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1456,7 +1461,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "before-4",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                        filter = "1"
                     )
                 ) {
                     GetEvents.Response(
@@ -1513,7 +1518,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                     "start",
                     dir = GetEvents.Direction.BACKWARDS,
                     limit = 20,
-                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                    filter = "1"
                 )
             ) {
                 GetEvents.Response(
@@ -1561,7 +1566,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                     "before-3",
                     dir = GetEvents.Direction.BACKWARDS,
                     limit = 20,
-                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                    filter = "1"
                 )
             ) {
                 firstEndpointCalled.value = true
@@ -1579,7 +1584,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                     "before-3",
                     dir = GetEvents.Direction.BACKWARDS,
                     limit = 20,
-                    filter = TimelineEventHandlerImpl.LAZY_LOAD_MEMBERS_FILTER
+                    filter = "1"
                 )
             ) {
                 GetEvents.Response(
