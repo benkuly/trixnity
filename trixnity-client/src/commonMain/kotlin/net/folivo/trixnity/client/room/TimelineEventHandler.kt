@@ -39,14 +39,11 @@ interface TimelineEventHandler {
 
 class TimelineEventHandlerImpl(
     private val api: MatrixClientServerApiClient,
+    private val accountStore: AccountStore,
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
     private val tm: TransactionManager,
 ) : EventHandler, TimelineEventHandler {
-    companion object {
-        const val LAZY_LOAD_MEMBERS_FILTER = """{"lazy_load_members":true}"""
-    }
-
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(Priority.STORE_TIMELINE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
     }
@@ -154,7 +151,7 @@ class TimelineEventHandlerImpl(
                     to = destinationBatch,
                     dir = GetEvents.Direction.BACKWARDS,
                     limit = limit,
-                    filter = LAZY_LOAD_MEMBERS_FILTER
+                    filter = accountStore.getAccount()?.filterId
                 ).getOrThrow()
                 previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
                 previousEvent = possiblyPreviousEvent?.eventId
@@ -182,7 +179,7 @@ class TimelineEventHandlerImpl(
                     to = destinationBatch,
                     dir = GetEvents.Direction.FORWARDS,
                     limit = limit,
-                    filter = LAZY_LOAD_MEMBERS_FILTER
+                    filter = accountStore.getAccount()?.filterId
                 ).getOrThrow()
                 nextToken = response.end
                 nextEvent = possiblyNextEvent?.eventId
