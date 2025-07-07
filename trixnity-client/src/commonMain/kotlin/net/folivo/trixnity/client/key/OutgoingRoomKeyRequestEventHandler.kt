@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.utils.retryLoop
+import net.folivo.trixnity.client.utils.retry
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
@@ -129,7 +129,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
         if (keyStore.getAllRoomKeyRequests()
                 .none { it.content.body?.roomId == roomId && it.content.body?.sessionId == sessionId }
         ) {
-            currentSyncState.retryLoop(
+            currentSyncState.retry(
                 onError = { error, delay -> log.warn(error) { "failed request room keys, try again in $delay" } },
             ) {
                 val receiverDeviceIds = keyStore.getDeviceKeys(ownUserId).first()
@@ -141,7 +141,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                     ?.map { it.value.value.signed.deviceId }?.toSet()
                 if (receiverDeviceIds.isNullOrEmpty()) {
                     log.debug { "there are no receivers, that we can request room keys from" }
-                    return@retryLoop
+                    return@retry
                 }
                 val requestId = SecureRandom.nextString(22)
                 val request = RoomKeyRequestEventContent(

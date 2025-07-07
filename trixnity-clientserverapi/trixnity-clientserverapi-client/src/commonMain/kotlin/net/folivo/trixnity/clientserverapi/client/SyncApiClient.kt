@@ -203,50 +203,52 @@ class SyncApiClientImpl(
             syncLoopJob?.cancelAndJoin()
             syncLoopJob = coroutineScope.launch {
                 log.info { "started syncLoop" }
-                retryLoop(flowOf(syncErrorDelayConfig)) {
-                    while (currentCoroutineContext().isActive) {
-                        val (syncParameter, currentBatchToken) =
-                            combine(syncOnceRequests, syncLoopRequest) { syncOnceRequests, syncLoopRequest ->
-                                syncOnceRequests.firstOrNull() ?: syncLoopRequest
-                            }.onEach { req ->
-                                if (req == null) {
-                                    _currentSyncState.value = STOPPED
-                                }
-                            }.filterNotNull()
-                                .map { req ->
-                                    val currentBatchToken = syncBatchTokenStore.getSyncBatchToken()
-                                    _currentSyncState.update { prev ->
-                                        when {
-                                            currentBatchToken == null -> INITIAL_SYNC
-                                            prev != RUNNING -> STARTED
-                                            else -> prev
-                                        }
+                retryLoop(
+                    delayConfig = flowOf(syncErrorDelayConfig),
+                ) {
+                    val (syncParameter, currentBatchToken) =
+                        combine(syncOnceRequests, syncLoopRequest) { syncOnceRequests, syncLoopRequest ->
+                            syncOnceRequests.firstOrNull() ?: syncLoopRequest
+                        }.onEach { req ->
+                            if (req == null) {
+                                _currentSyncState.value = STOPPED
+                            }
+                        }.filterNotNull()
+                            .map { req ->
+                                val currentBatchToken = syncBatchTokenStore.getSyncBatchToken()
+                                _currentSyncState.update { prev ->
+                                    when {
+                                        currentBatchToken == null -> INITIAL_SYNC
+                                        prev != RUNNING -> STARTED
+                                        else -> prev
                                     }
-                                    req to currentBatchToken
                                 }
-                                .first()
-                        try {
-                            syncAndResponse(syncParameter, currentBatchToken)
-                            if (syncParameter.doOnce) {
-                                log.trace { "remove sync once request from queue" }
-                                syncOnceRequests.update { it.filter { it.epoch != syncParameter.epoch } }
+                                req to currentBatchToken
                             }
-                            _currentSyncState.value = RUNNING
-                        } catch (error: Throwable) {
-                            when (error) {
-                                is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
-                                    log.info { "timeout while sync with token $currentBatchToken" }
-                                    _currentSyncState.value = TIMEOUT
-                                }
-
-                                is SyncStoppedException -> continue // skip syncLoopErrorDelay
-                                else -> {
-                                    log.error(error) { "error while sync with token $currentBatchToken" }
-                                    _currentSyncState.value = ERROR
-                                }
-                            }
-                            throw error
+                            .first()
+                    try {
+                        syncAndResponse(syncParameter, currentBatchToken)
+                        if (syncParameter.doOnce) {
+                            log.trace { "remove sync once request from queue" }
+                            syncOnceRequests.update { it.filter { it.epoch != syncParameter.epoch } }
                         }
+                        _currentSyncState.value = RUNNING
+                    } catch (error: Throwable) {
+                        when (error) {
+                            is SyncStoppedException -> return@retryLoop // skip syncLoopErrorDelay
+                            is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
+                                log.info { "timeout while sync with token $currentBatchToken" }
+                                _currentSyncState.value = TIMEOUT
+                            }
+
+                            is CancellationException -> throw error
+
+                            else -> {
+                                log.error(error) { "error while sync with token $currentBatchToken" }
+                                _currentSyncState.value = ERROR
+                            }
+                        }
+                        throw error
                     }
                 }
             }

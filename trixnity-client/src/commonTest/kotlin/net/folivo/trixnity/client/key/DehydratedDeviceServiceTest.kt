@@ -15,7 +15,6 @@ import net.folivo.trixnity.client.mocks.KeyServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
-import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredSecret
 import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
@@ -51,7 +50,6 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 
 @OptIn(MSC3814::class)
 class DehydratedDeviceServiceTest : TrixnityBaseTest() {
@@ -148,38 +146,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             )
         }
         delay(100.milliseconds)
-        dehydrateDeviceJob.isActive shouldBe true
-        keyStore.updateOutdatedKeys { setOf() }
-        delay(100.milliseconds)
-        dehydrateDeviceJob.isActive shouldBe true
-        keyStore.updateCrossSigningKeys(alice) {
-            setOf(
-                StoredCrossSigningKeys(
-                    SignedCrossSigningKeys(
-                        CrossSigningKeys(
-                            alice, setOf(CrossSigningKeysUsage.SelfSigningKey), keysOf(
-                                Ed25519Key("wrong public key", "wrong public key")
-                            )
-                        ), mapOf()
-                    ), Valid(true)
-                )
-            )
-        }
-        delay(100.milliseconds)
-        dehydrateDeviceJob.isActive shouldBe true
-        keyStore.updateCrossSigningKeys(alice) {
-            setOf(
-                StoredCrossSigningKeys(
-                    SignedCrossSigningKeys(
-                        CrossSigningKeys(
-                            alice, setOf(CrossSigningKeysUsage.SelfSigningKey), keysOf(
-                                Ed25519Key(selfSigningPublicKey, selfSigningPublicKey)
-                            )
-                        ), mapOf()
-                    ), Valid(true)
-                )
-            )
-        }
+        dehydrateDeviceJob.isActive shouldBe false
 
         dehydrateDeviceJob.join()
 

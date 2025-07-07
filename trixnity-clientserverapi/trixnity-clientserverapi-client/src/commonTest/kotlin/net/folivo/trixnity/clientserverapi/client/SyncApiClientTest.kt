@@ -41,7 +41,6 @@ import kotlin.test.assertEquals
 import kotlin.test.fail
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -1350,7 +1349,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 allEventsCount.first { it == 1 }
                 currentTime shouldBe 500
                 allEventsCount.first { it == 2 }
-                currentTime shouldBe 3000
+                currentTime shouldBe 1000
             }.join()
         }
     }

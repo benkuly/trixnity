@@ -82,6 +82,9 @@ class DehydratedDeviceIT {
             }
             startedClient2.client.room.getById(roomId).filterNotNull().first()
             startedClient2.client.api.room.joinRoom(roomId)
+            startedClient2.client.key.getDeviceKeys(startedClient2.client.userId).first { deviceKeys ->
+                deviceKeys?.any { it.dehydrated == true } == true
+            }
             startedClient2.client.logout()
             startedClient2.client.close()
 
@@ -109,7 +112,7 @@ class DehydratedDeviceIT {
                 .map { it?.content?.getOrNull() }.filterNotNull()
                 .first()
             foundContent.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>().body shouldBe "some encrypted message"
-            startedClient3.client.syncOnce()
+            startedClient3.client.syncOnce().getOrThrow()
 
             withClue("send message from client3") {
                 startedClient3.client.room.sendMessage(roomId) { text("hi") }

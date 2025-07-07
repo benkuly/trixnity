@@ -712,7 +712,7 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
                 accountStore.getAccount()?.syncBatchToken
 
             override suspend fun setSyncBatchToken(token: String) {
-                accountStore.updateAccount { it?.copy(syncBatchToken = token) }
+                accountStore.updateAccount { if (it?.accessToken != null) it.copy(syncBatchToken = token) else it }
             }
         },
         syncErrorDelayConfig = config.syncErrorDelayConfig,

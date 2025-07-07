@@ -58,12 +58,10 @@ fun <T> retryFlow(
                 select {
                     launch {
                         delay(retryDelay * jitter)
-                        println("finished delay $retryDelay")
                         retryCounter++
                     }.onJoin {}
                     launch {
                         delayConfig.firstOrNull { currentDelayConfig != it } ?: delay(Duration.INFINITE)
-                        println("finished config change")
                         retryCounter = 0
                     }.onJoin {}
                 }

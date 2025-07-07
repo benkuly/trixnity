@@ -16,17 +16,11 @@ import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationDoneEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveVerification")
 
@@ -233,19 +227,21 @@ abstract class ActiveVerificationImpl(
         log.trace { "send verification step and handle it: $step" }
         when (step) {
             is VerificationCancelEventContent -> {
-                if (state.value !is Cancel)
+                val sendEvent = state.value !is Cancel
+                handleVerificationStep(step, ownUserId, true)
+                if (sendEvent) {
                     try {
                         sendVerificationStep(step)
                     } catch (error: Exception) {
                         log.warn(error) { "could not send cancel event: ${error.message}" }
                         // we just ignore when we could not send it, because it would time out on the other side anyway
                     }
-                handleVerificationStep(step, ownUserId, true)
+                }
             }
 
             else -> try {
-                sendVerificationStep(step)
                 handleVerificationStep(step, ownUserId, true)
+                sendVerificationStep(step)
             } catch (error: Exception) {
                 log.debug { "could not send step $step because: ${error.message}" }
                 handleVerificationStep(

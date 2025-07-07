@@ -89,7 +89,6 @@ class KeyBackupServiceImpl(
         currentSyncState.retryLoop(
             onError = { error, delay -> log.warn(error) { "failed get (and sign) current room key version, try again in $delay" } },
         ) {
-            accountStore.getAccountAsFlow().first { it?.syncBatchToken != null }
             keyStore.getSecretsFlow().mapNotNull { it[SecretType.M_MEGOLM_BACKUP_V1] }
                 .distinctUntilChanged()
                 // TODO should use the version from secret, when MSC2474 is merged
@@ -161,6 +160,7 @@ class KeyBackupServiceImpl(
                 currentCoroutineContext().job.invokeOnCompletion {
                     currentlyLoadingMegolmSessions.update { it - runningKey }
                 }
+                val version = version.filterNotNull().first().version
                 retry(
                     scheduleBase = 1.seconds,
                     scheduleLimit = 6.hours,
@@ -172,7 +172,6 @@ class KeyBackupServiceImpl(
                         else log.warn(error) { "failed load megolm session from key backup, try again in $delay" }
                     },
                 ) {
-                    val version = version.filterNotNull().first().version
                     log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
                     val encryptedSessionData = api.key.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
                     require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
