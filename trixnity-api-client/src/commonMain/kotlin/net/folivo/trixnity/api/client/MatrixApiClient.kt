@@ -11,6 +11,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.core.*
@@ -71,6 +72,7 @@ open class MatrixApiClient(
         requestBuilder: HttpRequestBuilder.() -> Unit = {},
     ): Result<RESPONSE> = withRequest(endpoint, body, requestBuilder) { it }
 
+    @OptIn(ExperimentalSerializationApi::class)
     suspend inline fun <reified ENDPOINT : MatrixEndpoint<REQUEST, RESPONSE>, reified REQUEST, reified RESPONSE, T> withRequest(
         endpoint: ENDPOINT,
         body: REQUEST,

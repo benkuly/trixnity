@@ -9,9 +9,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
+import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
@@ -101,9 +100,8 @@ class OutgoingSecretKeyRequestEventHandler(
     }
 
     internal suspend fun requestSecretKeysWhenCrossSigned() {
-        currentSyncState.retryLoopWhenSyncIs(
-            SyncState.RUNNING,
-            onError = { log.warn(it) { "failed request secrets" } },
+        currentSyncState.retryLoop(
+            onError = { error, delay -> log.warn(error) { "failed request secret keys, try again in $delay" } },
         ) {
             keyStore.getDeviceKey(ownUserId, ownDeviceId).collect { deviceKeys ->
                 if (deviceKeys?.trustLevel == KeySignatureTrustLevel.CrossSigned(true)) {

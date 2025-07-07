@@ -7,10 +7,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.RoomStore
-import net.folivo.trixnity.client.utils.retryWhenSyncIs
+import net.folivo.trixnity.client.utils.retry
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
-import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -32,9 +31,8 @@ class LoadMembersServiceImpl(
     override suspend fun invoke(roomId: RoomId, wait: Boolean) {
         if (currentlyLoadingMembers.getAndUpdate { it + roomId }.contains(roomId).not()) {
             scope.launch {
-                currentSyncState.retryWhenSyncIs(
-                    SyncState.RUNNING,
-                    onError = { log.warn(it) { "failed loading members" } },
+                currentSyncState.retry(
+                    onError = { error, delay -> log.warn(error) { "failed loading members, try again in $delay" } },
                 ) {
                     val room = roomStore.get(roomId).filterNotNull().first()
 

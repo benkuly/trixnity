@@ -2,16 +2,10 @@ package net.folivo.trixnity.client.key
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.user.LazyMemberEventHandler
-import net.folivo.trixnity.client.utils.RetryLoopFlowState.PAUSE
-import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
 import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
@@ -34,7 +28,6 @@ import net.folivo.trixnity.crypto.olm.membershipsAllowedToReceiveKey
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.crypto.sign.verify
-import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.OutdatedKeysHandler")
 
@@ -50,9 +43,6 @@ class OutdatedKeysHandler(
     private val userInfo: UserInfo,
     private val tm: TransactionManager,
 ) : EventHandler, LazyMemberEventHandler {
-    private val syncProcessingRunning = MutableStateFlow(false)
-    private val normalLoopRunning = MutableStateFlow(false)
-
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(Priority.DEVICE_LISTS) {
             handleDeviceLists(it.syncResponse.deviceLists, api.sync.currentSyncState.value)
@@ -140,28 +130,13 @@ class OutdatedKeysHandler(
         }
     }
 
-    private val loopSyncStates = setOf(SyncState.STARTED, SyncState.INITIAL_SYNC, SyncState.RUNNING)
     private suspend fun updateLoop() {
-        val requestedState =
-            combine(
-                currentSyncState,
-                syncProcessingRunning,
-                keyStore.getOutdatedKeysFlow()
-            ) { currentSyncState, syncProcessingRunning, outdatedKeys ->
-                syncProcessingRunning.not()
-                        && loopSyncStates.any { it == currentSyncState }
-                        && outdatedKeys.isNotEmpty()
-            }.map { if (it) RUN else PAUSE }
-        retryLoop(
-            requestedState = requestedState,
-            scheduleLimit = 30.seconds,
-            onError = { log.warn(it) { "failed update outdated keys" } },
-            onCancel = { log.info { "stop update outdated keys, because job was cancelled" } },
+        currentSyncState.retryLoop(
+            onError = { error, delay -> log.warn(error) { "failed update outdated keys, try again in $delay" } },
         ) {
-            log.debug { "update outdated keys in normal update loop" }
-            normalLoopRunning.value = true
+            log.debug { "update outdated keys" }
+            keyStore.getOutdatedKeysFlow().first { it.isNotEmpty() }
             updateOutdatedKeys()
-            normalLoopRunning.value = false
         }
     }
 

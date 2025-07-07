@@ -42,11 +42,11 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoo
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
+import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.getValue
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.suspendLazy
-import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.random.Random
@@ -59,7 +59,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
     private val ownUserId = UserId("alice", "server")
     private val ownDeviceId = "DEV"
 
-    private val accountStore = getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "") } }
+    private val accountStore =
+        getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "", syncBatchToken = "batch") } }
     private val olmCryptoStore = getInMemoryOlmStore()
     private val keyStore = getInMemoryKeyStore()
 
@@ -69,7 +70,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
 
     private val olmSignMock = SignServiceMock()
 
-    private val _validKeyBackup = suspendLazy { freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey } }
+    private val _validKeyBackup =
+        suspendLazy { freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey } }
     private val validKeyBackupPrivateKey by _validKeyBackup.map { it.first }
     private val validKeyBackupPublicKey by _validKeyBackup.map { it.second }
 

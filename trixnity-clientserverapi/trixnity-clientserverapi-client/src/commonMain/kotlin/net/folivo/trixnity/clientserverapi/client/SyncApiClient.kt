@@ -16,8 +16,11 @@ import net.folivo.trixnity.core.ClientEventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.Presence
+import net.folivo.trixnity.utils.RetryFlowDelayConfig
+import net.folivo.trixnity.utils.retryLoop
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
@@ -129,8 +132,7 @@ class SyncApiClientImpl(
     private val baseClient: MatrixClientServerApiBaseClient,
     private val coroutineScope: CoroutineScope,
     private val syncBatchTokenStore: SyncBatchTokenStore,
-    private val syncLoopDelay: Duration,
-    private val syncLoopErrorDelay: Duration,
+    private val syncErrorDelayConfig: RetryFlowDelayConfig,
 ) : ClientEventEmitterImpl<SyncEvents>(), SyncApiClient {
 
     override suspend fun sync(
@@ -201,50 +203,50 @@ class SyncApiClientImpl(
             syncLoopJob?.cancelAndJoin()
             syncLoopJob = coroutineScope.launch {
                 log.info { "started syncLoop" }
-                while (currentCoroutineContext().isActive) {
-                    val (syncParameter, currentBatchToken) =
-                        combine(syncOnceRequests, syncLoopRequest) { syncOnceRequests, syncLoopRequest ->
-                            syncOnceRequests.firstOrNull() ?: syncLoopRequest
-                        }.onEach { req ->
-                            if (req == null) {
-                                _currentSyncState.value = STOPPED
-                            }
-                        }.filterNotNull()
-                            .map { req ->
-                                val currentBatchToken = syncBatchTokenStore.getSyncBatchToken()
-                                _currentSyncState.update { prev ->
-                                    when {
-                                        currentBatchToken == null -> INITIAL_SYNC
-                                        prev != RUNNING -> STARTED
-                                        else -> prev
-                                    }
+                retryLoop(flowOf(syncErrorDelayConfig)) {
+                    while (currentCoroutineContext().isActive) {
+                        val (syncParameter, currentBatchToken) =
+                            combine(syncOnceRequests, syncLoopRequest) { syncOnceRequests, syncLoopRequest ->
+                                syncOnceRequests.firstOrNull() ?: syncLoopRequest
+                            }.onEach { req ->
+                                if (req == null) {
+                                    _currentSyncState.value = STOPPED
                                 }
-                                req to currentBatchToken
+                            }.filterNotNull()
+                                .map { req ->
+                                    val currentBatchToken = syncBatchTokenStore.getSyncBatchToken()
+                                    _currentSyncState.update { prev ->
+                                        when {
+                                            currentBatchToken == null -> INITIAL_SYNC
+                                            prev != RUNNING -> STARTED
+                                            else -> prev
+                                        }
+                                    }
+                                    req to currentBatchToken
+                                }
+                                .first()
+                        try {
+                            syncAndResponse(syncParameter, currentBatchToken)
+                            if (syncParameter.doOnce) {
+                                log.trace { "remove sync once request from queue" }
+                                syncOnceRequests.update { it.filter { it.epoch != syncParameter.epoch } }
                             }
-                            .first()
-                    try {
-                        syncAndResponse(syncParameter, currentBatchToken)
-                        if (syncParameter.doOnce) {
-                            log.trace { "remove sync once request from queue" }
-                            syncOnceRequests.update { it.filter { it.epoch != syncParameter.epoch } }
-                        }
-                        _currentSyncState.value = RUNNING
-                    } catch (error: Throwable) {
-                        when (error) {
-                            is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
-                                log.info { "timeout while sync with token $currentBatchToken" }
-                                _currentSyncState.value = TIMEOUT
-                            }
+                            _currentSyncState.value = RUNNING
+                        } catch (error: Throwable) {
+                            when (error) {
+                                is HttpRequestTimeoutException, is ConnectTimeoutException, is SocketTimeoutException -> {
+                                    log.info { "timeout while sync with token $currentBatchToken" }
+                                    _currentSyncState.value = TIMEOUT
+                                }
 
-                            is CancellationException -> throw error
-                            is SyncStoppedException -> continue // skip syncLoopErrorDelay
-
-                            else -> {
-                                log.error(error) { "error while sync with token $currentBatchToken" }
-                                _currentSyncState.value = ERROR
+                                is SyncStoppedException -> continue // skip syncLoopErrorDelay
+                                else -> {
+                                    log.error(error) { "error while sync with token $currentBatchToken" }
+                                    _currentSyncState.value = ERROR
+                                }
                             }
+                            throw error
                         }
-                        delay(syncLoopErrorDelay) // TODO better retry policy!
                     }
                 }
             }
@@ -279,10 +281,6 @@ class SyncApiClientImpl(
                         }.onAwait { it }
                     }
                     async {
-                        if (currentSyncState.value == RUNNING) {
-                            log.trace { "wait sync loop delay of $syncLoopDelay before starting the next sync request" }
-                            delay(syncLoopDelay)
-                        }
                         log.trace { "do sync request $queueItem" }
                         measureTimedValue {
                             sync(
@@ -397,3 +395,10 @@ class SyncApiClientImpl(
         coroutineScope.launch { syncLoop() }
     }
 }
+
+val RetryFlowDelayConfig.Companion.sync: RetryFlowDelayConfig
+    get() = RetryFlowDelayConfig.default.copy(
+        scheduleBase = 200.milliseconds,
+        scheduleFactor = 2.0,
+        scheduleLimit = 5.seconds,
+    )

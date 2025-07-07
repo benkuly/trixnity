@@ -10,7 +10,8 @@ import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.datetime.Clock
@@ -25,22 +26,13 @@ import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesMod
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
 import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
-import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
-import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.roomIdOrNull
-import net.folivo.trixnity.core.model.events.stateKeyOrNull
-import net.folivo.trixnity.core.subscribeContentAsFlow
-import net.folivo.trixnity.core.subscribeContentList
 import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
@@ -374,215 +366,6 @@ class PerformanceIT {
                 memoryFootprint = checkNotNull(memAfter)
             )
         }
-
-    private suspend fun throughput(
-        configuration: MatrixClientConfiguration.() -> Unit = {},
-    ): Duration = withTimeout(4.minutes) {
-        val requestsCount = 20
-        val parallelRequestsCount = 10
-        val messagesPerRequestCount = 10
-
-        val network = Network.newNetwork()
-        val matrixPostgresql = PostgreSQLContainer("postgres:16").apply { start() }
-        val synapsePostgresql = PostgreSQLContainer("postgres:16").apply {
-            withNetworkAliases("synapse-postgresql")
-            withNetwork(network)
-            withEnv(mapOf("POSTGRES_INITDB_ARGS" to "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"))
-            start()
-        }
-        val synapse = synapseDocker()
-            .apply {
-                withNetwork(network)
-                withEnv(mapOf("SYNAPSE_CONFIG_PATH" to "/data/homeserver-postgresql.yaml"))
-                start()
-            }
-
-        val baseUrl = URLBuilder(
-            protocol = URLProtocol.HTTP,
-            host = synapse.host,
-            port = synapse.firstMappedPort
-        ).build()
-        val api = MatrixClientServerApiClientImpl(baseUrl)
-        log.info { "register clients" }
-        coroutineScope {
-            repeat(requestsCount) { i ->
-                launch {
-                    api.register("sender-$i")
-                }
-            }
-        }
-        val receivingClient = registerAndStartClient(
-            "receiver", "receiver", baseUrl,
-            createExposedRepositoriesModule(matrixPostgresql.getDatabase())
-        ) {
-            name = "receiver"
-            syncLoopDelays = MatrixClientConfiguration.SyncLoopDelays(Duration.ZERO, Duration.ZERO)
-            cacheExpireDurations = MatrixClientConfiguration.CacheExpireDurations.default(30.seconds)
-            syncFilter = Filters(
-                room = Filters.RoomFilter(
-                    timeline = Filters.RoomFilter.RoomEventFilter(limit = 20)
-                )
-            )
-            configuration()
-        }.client
-
-        val sentMessages = MutableStateFlow(0)
-        val answeredMessages = MutableStateFlow(0)
-        val totalRoomEvents = MutableStateFlow(0)
-
-        log.info { "start" }
-
-        val startInstant = Clock.System.now()
-        var syncTime = Duration.ZERO
-        var syncStartInstant = Clock.System.now()
-        receivingClient.api.sync.subscribe(Int.MAX_VALUE) { syncStartInstant = Clock.System.now() }
-        receivingClient.api.sync.subscribe(Int.MIN_VALUE) { syncTime += Clock.System.now() - syncStartInstant }
-        val sendingJob = launch {
-            val currentParallelRequestsCount = MutableStateFlow(0)
-            repeat(requestsCount) { i ->
-                currentParallelRequestsCount.first { it < parallelRequestsCount }
-                currentParallelRequestsCount.update { it + 1 }
-                launch {
-                    val sendingClient =
-                        startClient("sender-$i", "sender-$i", baseUrl, createInMemoryRepositoriesModule()) {
-                            name = "sender-$i"
-                            syncLoopDelays = MatrixClientConfiguration.SyncLoopDelays(Duration.ZERO, Duration.ZERO)
-                            configuration()
-                        }.client
-                    val roomId = sendingClient.api.room.createRoom(
-                        initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), "")),
-                        invite = setOf(receivingClient.userId),
-                    ).getOrThrow()
-                    sendingClient.api.sync.subscribeContentAsFlow<MemberEventContent>()
-                        .first {
-                            it.roomIdOrNull == roomId &&
-                                    it.stateKeyOrNull == receivingClient.userId.full &&
-                                    it.content.membership == JOIN
-                        }
-                    repeat(messagesPerRequestCount) {
-                        val encryptedEvent = sendingClient.roomEventEncryptionServices
-                            .encrypt(RoomMessageEventContent.TextBased.Text("ping $it"), roomId)
-                            ?.getOrThrow()
-                        encryptedEvent.shouldNotBeNull()
-                        sendingClient.api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
-                        sentMessages.getAndUpdate { it + 1 }
-                    }
-                    sendingClient.close()
-                    currentParallelRequestsCount.update { it - 1 }
-                }
-            }
-        }
-        val autoJoinAndAnswerJob = launch {
-            launch {
-                receivingClient.api.sync.subscribeContentList<MemberEventContent> { events ->
-                    coroutineScope {
-                        events.forEach { event ->
-                            launch {
-                                if (event.content.membership == INVITE && event.stateKeyOrNull == receivingClient.userId.full) {
-                                    val roomId = event.roomIdOrNull
-                                    roomId.shouldNotBeNull()
-                                    receivingClient.api.room.joinRoom(roomId).getOrThrow()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            launch {
-                receivingClient.api.sync.subscribeEventList<RoomEventContent, RoomEvent<RoomEventContent>> { events ->
-                    coroutineScope {
-                        events.forEach { event ->
-                            launch {
-                                val content = event.content
-                                if (event is RoomEvent.MessageEvent && content is EncryptedMessageEventContent && event.sender != receivingClient.userId) {
-                                    val decryptedContent = withTimeout(5.seconds) {
-                                        receivingClient.roomEventEncryptionServices
-                                            .decrypt(event)
-                                            ?.getOrThrow()
-                                    }
-                                    decryptedContent.shouldNotBeNull()
-                                    if (decryptedContent is RoomMessageEventContent.TextBased.Text) {
-                                        receivingClient.api.room.sendMessageEvent(event.roomId, content)
-                                            .getOrThrow()
-                                        answeredMessages.getAndUpdate { it + 1 }
-                                    }
-                                }
-                                totalRoomEvents.update { it + 1 }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        val progressJob = launch {
-            combine(
-                sentMessages,
-                answeredMessages,
-            ) { sent, answered ->
-                val percent = (100F * answered / (requestsCount * messagesPerRequestCount)).roundToInt()
-
-                "====== progress: " +
-                        "sent=${sent.toString().padStart(8, '0')} " +
-                        "answered=${answered.toString().padStart(8, '0')} " +
-                        "\n" +
-                        "||" +
-                        (0..percent).joinToString("") { "#" } +
-                        (percent..100).joinToString("") { "-" } +
-                        "||"
-                            .also { delay(1.seconds) }
-            }.collect {
-                println(it)
-            }
-        }
-        sendingJob.join()
-        log.trace { "sender sent all messages" }
-        sentMessages.first { it == requestsCount * messagesPerRequestCount }
-        answeredMessages.first { it == requestsCount * messagesPerRequestCount }
-
-        val measuredTime = Clock.System.now() - startInstant
-
-        progressJob.cancelAndJoin()
-        autoJoinAndAnswerJob.cancelAndJoin()
-        receivingClient.close()
-
-        val allMessagesCount = requestsCount * messagesPerRequestCount * 2
-        val allRoomEventsCount = totalRoomEvents.value
-        println("")
-        println("################################")
-        println(
-            "parameters: requestsCount=$requestsCount " +
-                    "parallelRequestsCount=$parallelRequestsCount " +
-                    "messagesPerRequestCount=$messagesPerRequestCount " +
-                    "allMessagesCount=$allMessagesCount " +
-                    "allRoomEventsCount=$allRoomEventsCount"
-        )
-        println("################################")
-        println("syncTime=$syncTime")
-        println("################################")
-        println("eventsThroughputPerSecond=${allRoomEventsCount / syncTime.inWholeSeconds}")
-        println("averageTimePerEvent: ${syncTime / allRoomEventsCount}")
-        println("################################")
-        println("messageThroughputPerSecond=${allMessagesCount / syncTime.inWholeSeconds}")
-        println("averageTimePerMessage: ${syncTime / allMessagesCount}")
-        println("################################")
-        println("")
-        println("################################")
-        println("measuredTime=$measuredTime")
-        println("################################")
-        println("eventsRoundtripPerSecond=${allRoomEventsCount / measuredTime.inWholeSeconds}")
-        println("averageRoundtripTimePerEvent: ${measuredTime / allRoomEventsCount}")
-        println("################################")
-        println("messageRoundtripPerSecond=${allMessagesCount / measuredTime.inWholeSeconds}")
-        println("averageRoundtripTimePerMessage: ${measuredTime / allMessagesCount}")
-        println("################################")
-        println("")
-
-        synapse.stop()
-        matrixPostgresql.stop()
-        synapsePostgresql.stop()
-
-        syncTime
-    }
 
     private fun PostgreSQLContainer<out PostgreSQLContainer<*>>.getDatabase(): Database {
         val config = HikariConfig().apply {

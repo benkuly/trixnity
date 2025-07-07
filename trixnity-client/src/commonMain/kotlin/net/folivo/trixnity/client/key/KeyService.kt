@@ -5,6 +5,7 @@ import io.ktor.util.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.flatMap
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.CrossSigned
@@ -44,7 +45,6 @@ import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import kotlin.random.Random
-import arrow.core.flatMap as flatMapResult
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.KeyService")
 
@@ -139,8 +139,8 @@ class KeyServiceImpl(
         return KeyService.BootstrapCrossSigning(
             recoveryKey = encodeRecoveryKey(recoveryKey),
             result = api.user.setAccountData(secretKeyEventContent, userInfo.userId, keyId)
-                .flatMapResult { api.user.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
-                .flatMapResult {
+                .flatMap { api.user.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
+                .flatMap {
                     val (masterSigningPrivateKey, masterSigningPublicKey) =
                         freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
                     val masterSigningKey = signService.sign(
@@ -191,7 +191,7 @@ class KeyServiceImpl(
                         )
                     )
                     api.user.setAccountData(masterKeyEventContent, userInfo.userId)
-                        .flatMapResult {
+                        .flatMap {
                             val userSigningKeyEventContent = UserSigningKeyEventContent(
                                 encryptSecret(
                                     key = recoveryKey,
@@ -212,7 +212,7 @@ class KeyServiceImpl(
                                 }
                             }
                         }
-                        .flatMapResult {
+                        .flatMap {
                             val selfSigningKeyEventContent = SelfSigningKeyEventContent(
                                 encryptSecret(
                                     key = recoveryKey,
@@ -233,7 +233,7 @@ class KeyServiceImpl(
                                 }
                             }
                         }
-                        .flatMapResult @OptIn(MSC3814::class) {
+                        .flatMap @OptIn(MSC3814::class) {
                             if (matrixClientConfiguration.experimentalFeatures.enableMSC3814) {
                                 val dehydratedDeviceKey =
                                     Random.nextBytes(32).encodeUnpaddedBase64()
@@ -259,7 +259,7 @@ class KeyServiceImpl(
                                 }
                             } else Result.success(Unit)
                         }
-                        .flatMapResult {
+                        .flatMap {
                             keyBackupService.bootstrapRoomKeyBackup(
                                 recoveryKey,
                                 keyId,
@@ -267,7 +267,7 @@ class KeyServiceImpl(
                                 masterSigningPublicKey
                             )
                         }
-                        .flatMapResult {
+                        .flatMap {
                             api.key.setCrossSigningKeys(
                                 masterKey = masterSigningKey,
                                 selfSigningKey = selfSigningKey,

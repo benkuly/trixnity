@@ -6,10 +6,12 @@ import kotlinx.coroutines.CoroutineName
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientFactory
+import net.folivo.trixnity.clientserverapi.client.sync
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.utils.RetryFlowDelayConfig
 import org.koin.core.module.Module
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
@@ -66,12 +68,20 @@ data class MatrixClientConfiguration(
     /**
      * The timeout for the normal sync loop.
      */
+
     var syncLoopTimeout: Duration = 30.seconds,
 
     /**
      * Set custom delays for the sync loop.
      */
+    @Deprecated("use syncErrorDelayConfig instead")
+    @Suppress("DEPRECATION")
     var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default(),
+
+    /**
+     * Set custom delays for the sync loop.
+     */
+    var syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
 
     /**
      * Allows you to customize, which [Room.lastRelevantEventId] is set.
@@ -146,11 +156,13 @@ data class MatrixClientConfiguration(
 
     val experimentalFeatures: ExperimentalFeatures = ExperimentalFeatures(),
 ) {
+    @Deprecated("use syncErrorDelayConfig instead")
     data class SyncLoopDelays(
         val syncLoopDelay: Duration,
         val syncLoopErrorDelay: Duration
     ) {
         companion object {
+            @Suppress("DEPRECATION")
             fun default() = SyncLoopDelays(
                 syncLoopDelay = 2.seconds,
                 syncLoopErrorDelay = 5.seconds

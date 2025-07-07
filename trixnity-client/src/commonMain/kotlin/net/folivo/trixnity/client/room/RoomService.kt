@@ -10,9 +10,8 @@ import net.folivo.trixnity.client.media.MediaService
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
-import net.folivo.trixnity.client.utils.retryWhenSyncIs
+import net.folivo.trixnity.client.utils.retry
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
@@ -227,9 +226,8 @@ class RoomServiceImpl(
         limit: Long
     ) {
         scope.async {
-            currentSyncState.retryWhenSyncIs(
-                RUNNING,
-                onError = { log.error(it) { "could not fill gap starting from event $startEventId" } },
+            currentSyncState.retry(
+                onError = { error, delay -> log.warn(error) { "failed fill timeline gaps, try again in $delay" } },
             ) {
                 timelineEventHandler.unsafeFillTimelineGaps(startEventId, roomId, limit).getOrThrow()
             }

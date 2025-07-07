@@ -11,8 +11,6 @@ import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
-import net.folivo.trixnity.client.utils.retryWhen
 import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
@@ -28,6 +26,7 @@ import net.folivo.trixnity.core.subscribeAsFlow
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.utils.retry
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
@@ -716,8 +715,7 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
                 accountStore.updateAccount { it?.copy(syncBatchToken = token) }
             }
         },
-        syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
-        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay,
+        syncErrorDelayConfig = config.syncErrorDelayConfig,
         coroutineContext = coroutineContext,
     )
     val (signingKey, identityKey) = freeAfter(
@@ -867,9 +865,8 @@ class MatrixClientImpl internal constructor(
 
             val filterId = accountStore.getAccount()?.filterId
             if (filterId == null) {
-                val newFilterId = retryWhen(
-                    flowOf(RUN),
-                    onError = { log.warn(it) { "could not set filter" } }
+                val newFilterId = retry(
+                    onError = { error, delay -> log.warn(error) { "could not set filter, retry again in $delay" } }
                 ) {
                     val filter = config.syncFilter.applyDefaultFilter()
                     api.user.setFilter(userId, filter)
@@ -879,9 +876,8 @@ class MatrixClientImpl internal constructor(
             }
             val backgroundFilterId = accountStore.getAccount()?.backgroundFilterId
             if (backgroundFilterId == null) {
-                val newFilterId = retryWhen(
-                    flowOf(RUN),
-                    onError = { log.warn(it) { "could not set filter" } }
+                val newFilterId = retry(
+                    onError = { error, delay -> log.warn(error) { "could not set background filter, retry again in $delay" } }
                 ) {
                     val filter = config.syncOnceFilter.applyDefaultFilter()
                     api.user.setFilter(userId, filter)
