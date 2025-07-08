@@ -240,7 +240,7 @@ class TimelineEventIT {
 
             client.stopSync()
             client.syncOnce().getOrThrow()
-            client.close()
+            client.closeSuspending()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
                 val roomId = varchar("room_id", length = 255)
@@ -283,7 +283,7 @@ class TimelineEventIT {
                 .shouldNotBeNull()
 
             client.stopSync()
-            client.close()
+            client.closeSuspending()
 
             val exposedTimelineEvent = object : Table("room_timeline_event") {
                 val roomId = varchar("room_id", length = 255)

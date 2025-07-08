@@ -273,13 +273,13 @@ class PerformanceIT {
                     encryptedEvent.shouldNotBeNull()
                     api.room.sendMessageEvent(roomId, encryptedEvent).getOrThrow()
                 }
-                it.close()
+                it.closeSuspending()
             }
             log.info { "all messages sent" }
 
             val messagesResults = clients.measureSync(decrypt)
 
-            clients.forEach { it.close() }
+            clients.forEach { it.closeSuspending() }
             synapse.stop()
             synapsePostgresql.stop()
 

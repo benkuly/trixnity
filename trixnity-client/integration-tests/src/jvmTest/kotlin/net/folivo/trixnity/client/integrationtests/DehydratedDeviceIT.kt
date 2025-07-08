@@ -86,7 +86,7 @@ class DehydratedDeviceIT {
                 deviceKeys?.any { it.dehydrated == true } == true
             }
             startedClient2.client.logout()
-            startedClient2.client.close()
+            startedClient2.client.closeSuspending()
 
             startedClient1.client.user.getAll(roomId).first { it.size == 2 }
             startedClient1.client.room.sendMessage(roomId) {
@@ -122,7 +122,7 @@ class DehydratedDeviceIT {
                         content is RoomMessageEventContent.TextBased.Text && content.body == "hi"
                     }
             }
-            startedClient3.client.close()
+            startedClient3.client.closeSuspending()
         }
     }
 
@@ -140,7 +140,7 @@ class DehydratedDeviceIT {
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
             startedClient2.client.logout()
-            startedClient2.client.close()
+            startedClient2.client.closeSuspending()
 
             val startedClient3 =
                 startClient("client3", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
@@ -162,7 +162,7 @@ class DehydratedDeviceIT {
             startedClient3.client.room.getById(roomId).filterNotNull().first()
             startedClient3.client.api.room.joinRoom(roomId)
             startedClient3.client.logout()
-            startedClient3.client.close()
+            startedClient3.client.closeSuspending()
 
             startedClient1.client.user.getAll(roomId).first { it.size == 2 }
             startedClient1.client.room.sendMessage(roomId) {
@@ -202,7 +202,7 @@ class DehydratedDeviceIT {
                     }
             }
 
-            startedClient4.client.close()
+            startedClient4.client.closeSuspending()
         }
     }
 }

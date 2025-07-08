@@ -58,8 +58,8 @@ class LogoutIT {
                 }
             }
 
-            startedClient1.client.close()
-            startedClient2.client.close()
+            startedClient1.client.closeSuspending()
+            startedClient2.client.closeSuspending()
             synapseDocker.stop()
         }
     }
@@ -108,7 +108,7 @@ class LogoutIT {
                 }
             }
             startedClient.client.loginState.value shouldBe LOGGED_IN
-            startedClient.client.close()
+            startedClient.client.closeSuspending()
             synapse.stop()
         }
     }

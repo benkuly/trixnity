@@ -186,7 +186,7 @@ class KeySharingIT {
                     .first { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextBased.Text("hi from client1", mentions = Mentions()))
 
-                client3.close()
+                client3.closeSuspending()
             }
         }
     }

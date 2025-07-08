@@ -79,7 +79,7 @@ class OutboxIT {
 
             client.room.getOutbox().flatten().first { outbox -> outbox.none { it.sentAt != null } }
             client.room.getOutbox().flatten().first { it.isEmpty() }
-            client.close()
+            client.closeSuspending()
 
             val exposedRoomOutbox = object : Table("room_outbox_2") {
                 val transactionId = varchar("transaction_id", length = 255)

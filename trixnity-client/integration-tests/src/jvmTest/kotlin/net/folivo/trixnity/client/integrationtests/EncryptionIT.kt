@@ -148,12 +148,12 @@ class EncryptionIT {
             ).getOrThrow()
             client1.room.getById(roomId).first { it?.membership == JOIN }
             client1.stopSync()
-            client1.close()
+            client1.closeSuspending()
 
             client2.api.room.joinRoom(roomId).getOrThrow()
             client2.room.getById(roomId).first { it?.membership == JOIN }
             client2.stopSync()
-            client2.close()
+            client2.closeSuspending()
 
 
             val clientFromStoreDatabase = newDatabase()
@@ -218,7 +218,7 @@ class EncryptionIT {
                                 senderClient.room.sendMessage(roomId) { text("message ($iteration - $i)") }
                                 senderClient.room.waitForOutboxSent()
                                 senderClient.stopSync()
-                                senderClient.close()
+                                senderClient.closeSuspending()
                             }
                         }
                     }
@@ -268,7 +268,7 @@ class EncryptionIT {
                 }
                 clientFromStore.stopSync()
                 clientFromLogin.stopSync()
-                clientFromStore.close()
+                clientFromStore.closeSuspending()
             }
         }
     }
