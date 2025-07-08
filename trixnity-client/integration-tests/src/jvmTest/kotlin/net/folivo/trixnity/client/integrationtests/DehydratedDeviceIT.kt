@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -139,9 +140,10 @@ class DehydratedDeviceIT {
                 startedClient2.client.key.bootstrapCrossSigning().result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
-            startedClient2.client.key.getDeviceKeys(startedClient2.client.userId).first { deviceKeys ->
-                deviceKeys?.any { it.dehydrated == true } == true
-            }
+            val firstDehydratedDeviceId = startedClient2.client.key.getDeviceKeys(startedClient2.client.userId)
+                .map { deviceKeys -> deviceKeys?.firstOrNull { it.dehydrated == true } }
+                .filterNotNull().first().deviceId
+
             startedClient2.client.closeSuspending()
 
             val startedClient3 =
@@ -161,6 +163,9 @@ class DehydratedDeviceIT {
                     .getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
+            startedClient3.client.key.getDeviceKeys(startedClient3.client.userId)
+                .map { deviceKeys -> deviceKeys?.firstOrNull { it.dehydrated == true && it.deviceId != firstDehydratedDeviceId } }
+                .filterNotNull().first().deviceId shouldNotBe firstDehydratedDeviceId
             startedClient3.client.room.getById(roomId).filterNotNull().first()
             startedClient3.client.api.room.joinRoom(roomId)
             startedClient3.client.logout()
