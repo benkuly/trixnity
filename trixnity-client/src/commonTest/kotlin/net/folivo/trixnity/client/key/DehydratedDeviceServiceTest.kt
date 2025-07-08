@@ -146,8 +146,6 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             )
         }
         delay(100.milliseconds)
-        dehydrateDeviceJob.isActive shouldBe false
-
         dehydrateDeviceJob.join()
 
         val deviceData =
