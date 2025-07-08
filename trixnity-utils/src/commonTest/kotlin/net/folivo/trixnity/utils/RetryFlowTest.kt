@@ -55,7 +55,6 @@ class RetryFlowTest : TrixnityBaseTest() {
                 scheduleFactor = 2.0,
                 scheduleLimit = 5.minutes,
                 scheduleJitter = 1.0..1.0,
-                onError = { e, d -> println(d) }
             ) {
                 attempts++
                 if (attempts < 4) {
@@ -115,7 +114,6 @@ class RetryFlowTest : TrixnityBaseTest() {
             delay(1.milliseconds)
             retryFlow(
                 configFlow,
-                onError = { e, d -> println(d) }
             ) {
                 attempts++
                 if (attempts < 4) {
