@@ -139,7 +139,9 @@ class DehydratedDeviceIT {
                 startedClient2.client.key.bootstrapCrossSigning().result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
-            startedClient2.client.logout()
+            startedClient2.client.key.getDeviceKeys(startedClient2.client.userId).first { deviceKeys ->
+                deviceKeys?.any { it.dehydrated == true } == true
+            }
             startedClient2.client.closeSuspending()
 
             val startedClient3 =
