@@ -274,6 +274,7 @@ class TimelineEventIT {
             val room = client.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
+            client.room.getById(room).first { it?.encrypted == true }
             client.room.sendMessage(room) { text("dino") }
 
             val eventId = client.room.getLastTimelineEvent(room).flatMapLatest { it ?: flowOf(null) }
