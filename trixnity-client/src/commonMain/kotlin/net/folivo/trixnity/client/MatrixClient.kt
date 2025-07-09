@@ -33,6 +33,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 
@@ -488,6 +489,7 @@ suspend fun MatrixClient.Companion.loginWith(
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
+    val finalCoroutineContext = (config.name?.let { CoroutineName(it) } ?: EmptyCoroutineContext) + coroutineContext
 
     val loginInfo = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
@@ -505,6 +507,7 @@ suspend fun MatrixClient.Companion.loginWith(
         ),
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
+        coroutineContext = finalCoroutineContext,
     ).use { loginApi ->
         loginApi.user.getProfile(loginInfo.userId).getOrThrow()
     }
@@ -515,7 +518,7 @@ suspend fun MatrixClient.Companion.loginWith(
     val koinApplication = initMatrixClientKoinApplication(
         repositoriesModule = repositoriesModule,
         mediaStoreModule = mediaStoreModule,
-        coroutineContext = coroutineContext,
+        coroutineContext = finalCoroutineContext,
         config = config
     )
     val di = koinApplication.koin
@@ -549,7 +552,7 @@ suspend fun MatrixClient.Companion.loginWith(
         eventContentSerializerMappings = di.get(),
         accountStore = accountStore,
         olmCryptoStore = di.get(),
-        coroutineContext = coroutineContext,
+        coroutineContext = finalCoroutineContext,
         config = config
     ) { matrixClient ->
         val keyStore = di.get<KeyStore>()
@@ -663,11 +666,8 @@ private suspend fun initMatrixClientKoinApplication(
     coroutineContext: CoroutineContext,
     config: MatrixClientConfiguration
 ): KoinApplication {
-    val coroutineName = config.name?.let { name -> CoroutineName(name) }
     val coroutineScope =
-        CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler).apply {
-            if (coroutineName != null) this + coroutineName
-        }
+        CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
     val koinApplication = koinApplication {
         modules(module {

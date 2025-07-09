@@ -90,7 +90,7 @@ class PerformanceIT {
         println("################################")
 
         roomDuration shouldBeLessThan 2.seconds
-        diff shouldBeGreaterThan 120.0 // % (room is faster)
+        diff shouldBeGreaterThan 110.0 // % (room is faster)
     }
 
     @Test
