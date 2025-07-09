@@ -289,7 +289,7 @@ class KeyTrustServiceImpl(
     }
 
     override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {
-        log.debug { "sign keys (when possible): $keys" }
+        log.debug { "sign keys of $userId (when possible): $keys" }
         val signedDeviceKeys = keys.mapNotNull { key ->
             val deviceKey = key.id?.let { keyStore.getDeviceKey(userId, it).first() }?.value?.signed
             if (deviceKey != null) {

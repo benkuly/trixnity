@@ -54,8 +54,6 @@ abstract class ActiveVerificationImpl(
     final override var theirDeviceId: String? = theirInitialDeviceId
         private set
 
-    private val mutex = Mutex()
-
     protected val mutableState: MutableStateFlow<ActiveVerificationState> =
         MutableStateFlow(
             if (requestIsFromOurOwn) OwnRequest(request)
@@ -81,17 +79,24 @@ abstract class ActiveVerificationImpl(
     private fun lifecycleAlreadyStarted() = lifecycleStarted.getAndUpdate { true }
 
     private val handleVerificationStepMutex = Mutex()
-    
+
     protected suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
         handleVerificationStepMutex.withReentrantLock {
             try {
-                log.debug { "handle verification step: $step from $sender" }
                 if (sender != theirUserId && sender != ownUserId)
                     cancel(Code.UserMismatch, "the user did not match the expected user, we want to verify")
                 if (!(relatesTo != null && step.relatesTo == relatesTo || transactionId != null && step.transactionId == transactionId))
                     cancel(Code.UnknownTransaction, "transaction is unknown")
                 val currentState = state.value
-                log.debug { "current state: $currentState" }
+                log.debug {
+                    """
+                        handle verification step:
+                            step=$step
+                            sender=$sender
+                            isOurOwn=$isOurOwn ($ownUserId/$ownDeviceId)
+                            current state: $currentState
+                    """.trimIndent()
+                }
                 if (currentState is AcceptedByOtherDevice) {
                     if (step is VerificationDoneEventContent) {
                         mutableState.value = Done

@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -130,7 +129,7 @@ class KeyBackupIT {
 
                 val events = client3.room.getLastTimelineEvents(roomId)
                     .toFlowList(MutableStateFlow(2))
-                    .map { it.map { it.first().eventId } }
+                    .map { it.map { it.firstWithTimeout().eventId } }
                     .firstWithTimeout { it.size == 2 }
                 events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
                     .firstWithTimeout { it?.content != null }?.content?.getOrThrow()

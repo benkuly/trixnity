@@ -209,8 +209,15 @@ class OutdatedKeysHandler(
                         keyStore.updateCrossSigningKeys(userId) { it ?: setOf() }
                         keyStore.updateDeviceKeys(userId) { it ?: mapOf() }
 
-                        log.debug { "updated outdated keys of $userId" }
-                        keyStore.updateOutdatedKeys { it - userId }
+                        if (userId != userInfo.userId
+                            || keysResponse.deviceKeys?.get(userId)
+                                ?.any { it.value.signed.deviceId == userInfo.deviceId } == true
+                        ) {
+                            log.debug { "updated outdated keys of $userId" }
+                            keyStore.updateOutdatedKeys { it - userId }
+                        } else {
+                            throw IllegalStateException("updated outdated keys did not contain our own device")
+                        }
                     }
                 }
             }

@@ -115,7 +115,8 @@ class KeySharingIT {
                     password = "user$1passw0rd",
                     repositoriesModule = repositoriesModule,
                     mediaStoreModule = createInMemoryMediaStoreModule(),
-                ).getOrThrow()
+                    deviceId = "client3"
+                ) { name = "client3" }.getOrThrow()
                 client3.startSync()
                 client3.syncState.firstWithTimeout { it == SyncState.RUNNING }
 

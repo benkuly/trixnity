@@ -85,7 +85,7 @@ class FallbackKeyIT {
             startedClient1.client.startSync()
             val message =
                 startedClient1.client.room.getLastTimelineEvent(roomId).firstWithTimeout {
-                    val eventId = it?.first()?.eventId
+                    val eventId = it?.firstWithTimeout()?.eventId
                     eventId != null && eventId != startFrom
                 }
             message.shouldNotBeNull()

@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed timing issue in verification
 - Fixed timing issue when creating dehydrated devices
+- Fixed timing issue when fetching own device keys directly after login
 
 ### Security
 

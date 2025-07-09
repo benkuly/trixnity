@@ -16,6 +16,7 @@ import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveDeviceVerification")
 
@@ -72,7 +73,7 @@ class ActiveDeviceVerificationImpl(
         try {
             // we do this, because otherwise the timeline job could run infinite, when no new timeline event arrives
             while (isVerificationRequestActive(timestamp, clock, state.value)) {
-                delay(500)
+                delay(1.seconds)
             }
             if (isVerificationTimedOut(timestamp, clock, state.value)) {
                 cancel(Timeout, "verification timed out")

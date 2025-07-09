@@ -131,7 +131,7 @@ class KeyStore(
                 log.trace { "add $userId to outdated keys, because key ($reason) not found" }
                 updateOutdatedKeys { it + userId }
             }
-            log.debug { "wait for outdated keys ($reason) of $userId" }
+            log.debug { "possibly wait for outdated keys ($reason) of $userId" }
             getOutdatedKeysFlow().first { !it.contains(userId) }
             log.trace { "finished wait for outdated keys ($reason) of $userId" }
         }

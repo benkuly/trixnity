@@ -13,8 +13,8 @@ import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Duration.Companion.minutes
 
 fun isVerificationRequestActive(timestamp: Long, clock: Clock): Boolean {
-    val timegap = clock.now() - Instant.fromEpochMilliseconds(timestamp)
-    return timegap < 10.minutes && timegap > (-5).minutes
+    val duration = clock.now() - Instant.fromEpochMilliseconds(timestamp)
+    return duration < 10.minutes && duration > (-5).minutes
 }
 
 fun isVerificationRequestActive(timestamp: Long, clock: Clock, state: ActiveVerificationState): Boolean {
