@@ -111,7 +111,7 @@ class ActiveDeviceVerificationImpl(
                     }
                 }
             }
-            handleIncomingVerificationStep(step, sender, false)
+            handleVerificationStep(step, sender, false)
         }
     }
 }

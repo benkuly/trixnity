@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.store.KeyStore
@@ -21,6 +20,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
+import net.folivo.trixnity.utils.withReentrantLock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveVerification")
 
@@ -80,62 +80,56 @@ abstract class ActiveVerificationImpl(
 
     private fun lifecycleAlreadyStarted() = lifecycleStarted.getAndUpdate { true }
 
-    protected suspend fun handleIncomingVerificationStep(
-        step: VerificationStep,
-        sender: UserId,
-        isOurOwn: Boolean
-    ) {
-        mutex.withLock { // we just want to be sure, that only one coroutine can access this simultaneously
-            handleVerificationStep(step, sender, isOurOwn)
-        }
-    }
+    private val handleVerificationStepMutex = Mutex()
+    
+    protected suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
+        handleVerificationStepMutex.withReentrantLock {
+            try {
+                log.debug { "handle verification step: $step from $sender" }
+                if (sender != theirUserId && sender != ownUserId)
+                    cancel(Code.UserMismatch, "the user did not match the expected user, we want to verify")
+                if (!(relatesTo != null && step.relatesTo == relatesTo || transactionId != null && step.transactionId == transactionId))
+                    cancel(Code.UnknownTransaction, "transaction is unknown")
+                val currentState = state.value
+                log.debug { "current state: $currentState" }
+                if (currentState is AcceptedByOtherDevice) {
+                    if (step is VerificationDoneEventContent) {
+                        mutableState.value = Done
+                    }
+                    if (step is VerificationCancelEventContent) {
+                        mutableState.value = Cancel(step, isOurOwn)
+                    }
+                } else when (step) {
+                    is VerificationReadyEventContent -> {
+                        if (currentState is OwnRequest || currentState is TheirRequest)
+                            onReady(step)
+                        else cancelUnexpectedMessage(currentState)
+                    }
 
-    private suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
-        try {
-            log.debug { "handle verification step: $step from $sender" }
-            if (sender != theirUserId && sender != ownUserId)
-                cancel(Code.UserMismatch, "the user did not match the expected user, we want to verify")
-            if (!(relatesTo != null && step.relatesTo == relatesTo || transactionId != null && step.transactionId == transactionId))
-                cancel(Code.UnknownTransaction, "transaction is unknown")
-            val currentState = state.value
-            log.debug { "current state: $currentState" }
-            if (currentState is AcceptedByOtherDevice) {
-                if (step is VerificationDoneEventContent) {
-                    mutableState.value = Done
-                }
-                if (step is VerificationCancelEventContent) {
-                    mutableState.value = Cancel(step, isOurOwn)
-                }
-            } else when (step) {
-                is VerificationReadyEventContent -> {
-                    if (currentState is OwnRequest || currentState is TheirRequest)
-                        onReady(step)
-                    else cancelUnexpectedMessage(currentState)
-                }
+                    is VerificationStartEventContent -> {
+                        if (currentState is Ready || currentState is Start)
+                            onStart(step, sender, isOurOwn)
+                        else cancelUnexpectedMessage(currentState)
+                    }
 
-                is VerificationStartEventContent -> {
-                    if (currentState is Ready || currentState is Start)
-                        onStart(step, sender, isOurOwn)
-                    else cancelUnexpectedMessage(currentState)
-                }
+                    is VerificationDoneEventContent -> {
+                        if (currentState is Start || currentState is WaitForDone)
+                            onDone(isOurOwn)
+                        else cancelUnexpectedMessage(currentState)
+                    }
 
-                is VerificationDoneEventContent -> {
-                    if (currentState is Start || currentState is WaitForDone)
-                        onDone(isOurOwn)
-                    else cancelUnexpectedMessage(currentState)
-                }
+                    is VerificationCancelEventContent -> {
+                        onCancel(step, isOurOwn)
+                    }
 
-                is VerificationCancelEventContent -> {
-                    onCancel(step, isOurOwn)
+                    else -> when (currentState) {
+                        is Start -> currentState.method.handleVerificationStep(step, isOurOwn)
+                        else -> cancelUnexpectedMessage(currentState)
+                    }
                 }
-
-                else -> when (currentState) {
-                    is Start -> currentState.method.handleVerificationStep(step, isOurOwn)
-                    else -> cancelUnexpectedMessage(currentState)
-                }
+            } catch (error: Exception) {
+                cancel(Code.InternalError, "something went wrong: ${error.message}")
             }
-        } catch (error: Exception) {
-            cancel(Code.InternalError, "something went wrong: ${error.message}")
         }
     }
 

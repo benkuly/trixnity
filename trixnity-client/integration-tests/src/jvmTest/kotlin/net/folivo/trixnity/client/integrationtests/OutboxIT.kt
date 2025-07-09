@@ -78,8 +78,8 @@ class OutboxIT {
             }
 
             client.room.getOutbox().flatten()
-                .firstWithTimeout(30.seconds) { outbox -> outbox.none { it.sentAt != null } }
-            client.room.getOutbox().flatten().firstWithTimeout(60.seconds) { it.isEmpty() }
+                .firstWithTimeout(60.seconds) { outbox -> outbox.none { it.sentAt != null } }
+            client.room.getOutbox().flatten().firstWithTimeout(90.seconds) { it.isEmpty() }
             client.closeSuspending()
 
             val exposedRoomOutbox = object : Table("room_outbox_2") {

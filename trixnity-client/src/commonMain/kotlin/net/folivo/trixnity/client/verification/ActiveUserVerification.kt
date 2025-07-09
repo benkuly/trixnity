@@ -103,7 +103,7 @@ class ActiveUserVerificationImpl(
 
                             state.value == AcceptedByOtherDevice || state.value == Undefined -> {}
                             // ignore own events (we already processed them)
-                            searchResult.sender != ownUserId -> handleIncomingVerificationStep(
+                            searchResult.sender != ownUserId -> handleVerificationStep(
                                 searchResult.stepContent,
                                 searchResult.sender,
                                 searchResult.sender == ownUserId
