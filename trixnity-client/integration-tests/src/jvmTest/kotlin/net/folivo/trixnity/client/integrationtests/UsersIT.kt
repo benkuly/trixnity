@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
@@ -66,8 +65,8 @@ class UsersIT {
         ).getOrThrow()
         client1.startSync()
         client2.startSync()
-        client1.syncState.first { it == SyncState.RUNNING }
-        client2.syncState.first { it == SyncState.RUNNING }
+        client1.syncState.firstWithTimeout { it == SyncState.RUNNING }
+        client2.syncState.firstWithTimeout { it == SyncState.RUNNING }
     }
 
     @AfterTest
@@ -84,15 +83,21 @@ class UsersIT {
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), "")),
                 isDirect = true,
             ).getOrThrow()
-            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.membership == JOIN }
+            client2.room.getById(room).firstWithTimeout { it?.membership == JOIN }
 
-            client1.user.getById(room, client2.userId).first { it?.membership == JOIN }
-            client2.user.getById(room, client2.userId).first { it?.membership == JOIN }
+            client1.user.getById(room, client2.userId).firstWithTimeout { it?.membership == JOIN }
+            client2.user.getById(room, client2.userId).firstWithTimeout { it?.membership == JOIN }
             assertSoftly {
-                client1.user.getAll(room).filterNotNull().first().keys shouldBe setOf(client1.userId, client2.userId)
-                client2.user.getAll(room).filterNotNull().first().keys shouldBe setOf(client1.userId, client2.userId)
+                client1.user.getAll(room).filterNotNull().firstWithTimeout().keys shouldBe setOf(
+                    client1.userId,
+                    client2.userId
+                )
+                client2.user.getAll(room).filterNotNull().firstWithTimeout().keys shouldBe setOf(
+                    client1.userId,
+                    client2.userId
+                )
             }
         }
     }

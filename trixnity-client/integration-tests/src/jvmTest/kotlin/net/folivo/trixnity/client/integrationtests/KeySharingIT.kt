@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -73,7 +72,7 @@ class KeySharingIT {
         withTimeout(30_000) {
             startedClient1.client.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
-                .first()
+                .firstWithTimeout()
 
             val bootstrap = startedClient1.client.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
@@ -88,14 +87,14 @@ class KeySharingIT {
             }
 
             withClue("join and wait for join") {
-                startedClient1.client.room.getById(roomId).first { it != null && it.membership == JOIN }
+                startedClient1.client.room.getById(roomId).firstWithTimeout { it != null && it.membership == JOIN }
                 startedClient2.client.api.room.joinRoom(roomId).getOrThrow()
-                startedClient2.client.room.getById(roomId).first { it != null && it.membership == JOIN }
+                startedClient2.client.room.getById(roomId).firstWithTimeout { it != null && it.membership == JOIN }
                 // we need to wait until the clients know the room is encrypted
                 startedClient1.client.room.getState<EncryptionEventContent>(roomId)
-                    .first { it != null }
+                    .firstWithTimeout { it != null }
                 startedClient2.client.room.getState<EncryptionEventContent>(roomId)
-                    .first { it != null }
+                    .firstWithTimeout { it != null }
             }
             withClue("send some messages") {
                 startedClient1.client.room.sendMessage(roomId) { text("hi from client1") }
@@ -118,7 +117,7 @@ class KeySharingIT {
                     mediaStoreModule = createInMemoryMediaStoreModule(),
                 ).getOrThrow()
                 client3.startSync()
-                client3.syncState.first { it == SyncState.RUNNING }
+                client3.syncState.firstWithTimeout { it == SyncState.RUNNING }
 
                 withClue("verify client3") {
                     startedClient1.client.verification.createDeviceVerificationRequest(
@@ -127,63 +126,66 @@ class KeySharingIT {
                     ).getOrThrow()
 
                     val client1Verification =
-                        startedClient1.client.verification.activeDeviceVerification.first { it != null }
-                    val client3Verification = client3.verification.activeDeviceVerification.first { it != null }
+                        startedClient1.client.verification.activeDeviceVerification.firstWithTimeout { it != null }
+                    val client3Verification =
+                        client3.verification.activeDeviceVerification.firstWithTimeout { it != null }
 
                     client1Verification.shouldNotBeNull()
                     client3Verification.shouldNotBeNull()
 
-                    client3Verification.state.first { it is ActiveVerificationState.TheirRequest }
+                    client3Verification.state.firstWithTimeout { it is ActiveVerificationState.TheirRequest }
                         .shouldBeInstanceOf<ActiveVerificationState.TheirRequest>().ready()
-                    client1Verification.state.first { it is ActiveVerificationState.Ready }
+                    client1Verification.state.firstWithTimeout { it is ActiveVerificationState.Ready }
                         .shouldBeInstanceOf<ActiveVerificationState.Ready>().start(VerificationMethod.Sas)
 
-                    val client1SasVerification = client1Verification.state.first { it is ActiveVerificationState.Start }
-                        .shouldBeInstanceOf<ActiveVerificationState.Start>()
-                        .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
-                    val client3SasVerification = client3Verification.state.first { it is ActiveVerificationState.Start }
-                        .shouldBeInstanceOf<ActiveVerificationState.Start>()
-                        .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
+                    val client1SasVerification =
+                        client1Verification.state.firstWithTimeout { it is ActiveVerificationState.Start }
+                            .shouldBeInstanceOf<ActiveVerificationState.Start>()
+                            .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
+                    val client3SasVerification =
+                        client3Verification.state.firstWithTimeout { it is ActiveVerificationState.Start }
+                            .shouldBeInstanceOf<ActiveVerificationState.Start>()
+                            .method.shouldBeInstanceOf<ActiveSasVerificationMethod>()
 
-                    client3SasVerification.state.first { it is ActiveSasVerificationState.TheirSasStart }
+                    client3SasVerification.state.firstWithTimeout { it is ActiveSasVerificationState.TheirSasStart }
                         .shouldBeInstanceOf<ActiveSasVerificationState.TheirSasStart>().accept()
 
                     val client1Comparison =
-                        client1SasVerification.state.first { it is ActiveSasVerificationState.ComparisonByUser }
+                        client1SasVerification.state.firstWithTimeout { it is ActiveSasVerificationState.ComparisonByUser }
                             .shouldBeInstanceOf<ActiveSasVerificationState.ComparisonByUser>()
 
                     val client3Comparison =
-                        client3SasVerification.state.first { it is ActiveSasVerificationState.ComparisonByUser }
+                        client3SasVerification.state.firstWithTimeout { it is ActiveSasVerificationState.ComparisonByUser }
                             .shouldBeInstanceOf<ActiveSasVerificationState.ComparisonByUser>()
 
                     client1Comparison.decimal shouldBe client3Comparison.decimal
                     client1Comparison.emojis shouldBe client3Comparison.emojis
 
                     client1Comparison.match()
-                    client1SasVerification.state.first { it is ActiveSasVerificationState.WaitForMacs }
+                    client1SasVerification.state.firstWithTimeout { it is ActiveSasVerificationState.WaitForMacs }
                         .shouldBeInstanceOf<ActiveSasVerificationState.WaitForMacs>()
                     client3Comparison.match()
 
-                    client1Verification.state.first { it is ActiveVerificationState.Done }
+                    client1Verification.state.firstWithTimeout { it is ActiveVerificationState.Done }
                         .shouldBeInstanceOf<ActiveVerificationState.Done>()
-                    client3Verification.state.first { it is ActiveVerificationState.Done }
+                    client3Verification.state.firstWithTimeout { it is ActiveVerificationState.Done }
                         .shouldBeInstanceOf<ActiveVerificationState.Done>()
 
                     startedClient1.client.key.getTrustLevel(client3.userId, client3.deviceId)
-                        .first { it == DeviceTrustLevel.CrossSigned(true) }
+                        .firstWithTimeout { it == DeviceTrustLevel.CrossSigned(true) }
                     client3.key.getTrustLevel(startedClient1.client.userId, startedClient1.client.deviceId)
-                        .first { it == DeviceTrustLevel.CrossSigned(true) }
+                        .firstWithTimeout { it == DeviceTrustLevel.CrossSigned(true) }
                 }
 
                 val events = client3.room.getLastTimelineEvents(roomId)
                     .toFlowList(MutableStateFlow(2))
-                    .map { it.map { it.first().eventId } }
-                    .first { it.size == 2 }
+                    .map { it.map { it.firstWithTimeout().eventId } }
+                    .firstWithTimeout { it.size == 2 }
                 events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
-                    .first { it?.content != null }?.content?.getOrThrow()
+                    .firstWithTimeout { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextBased.Text("hi from client2", mentions = Mentions()))
                 events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
-                    .first { it?.content != null }?.content?.getOrThrow()
+                    .firstWithTimeout { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextBased.Text("hi from client1", mentions = Mentions()))
 
                 client3.closeSuspending()

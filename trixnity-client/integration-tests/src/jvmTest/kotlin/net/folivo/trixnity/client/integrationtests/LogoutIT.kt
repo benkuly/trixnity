@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClient.LoginState
 import net.folivo.trixnity.client.MatrixClient.LoginState.LOGGED_IN
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
@@ -41,8 +40,8 @@ class LogoutIT {
 
             withClue("check client2 is logged in and sync is running") {
                 withTimeout(30_000) {
-                    startedClient2.client.syncState.first { it == SyncState.RUNNING }
-                    startedClient2.client.loginState.first { it == LOGGED_IN }
+                    startedClient2.client.syncState.firstWithTimeout { it == SyncState.RUNNING }
+                    startedClient2.client.loginState.firstWithTimeout { it == LOGGED_IN }
                 }
             }
 
@@ -53,8 +52,8 @@ class LogoutIT {
 
             withClue("check client2 is logged out and sync is stopped") {
                 withTimeout(30_000) {
-                    startedClient2.client.syncState.first { it == SyncState.STOPPED }
-                    startedClient2.client.loginState.first { it == LoginState.LOGGED_OUT }
+                    startedClient2.client.syncState.firstWithTimeout { it == SyncState.STOPPED }
+                    startedClient2.client.loginState.firstWithTimeout { it == LoginState.LOGGED_OUT }
                 }
             }
 
@@ -81,7 +80,7 @@ class LogoutIT {
                 "client1", "user1", baseUrl,
                 createExposedRepositoriesModule(newDatabase())
             )
-            startedClient.client.syncState.first { it == SyncState.RUNNING }
+            startedClient.client.syncState.firstWithTimeout { it == SyncState.RUNNING }
             startedClient.client.loginState.value shouldBe LOGGED_IN
 
             val room = startedClient.client.api.room.createRoom().getOrThrow()

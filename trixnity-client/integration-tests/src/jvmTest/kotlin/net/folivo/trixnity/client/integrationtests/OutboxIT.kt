@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.integrationtests
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
@@ -23,6 +22,7 @@ import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class OutboxIT {
@@ -52,7 +52,7 @@ class OutboxIT {
             getLoginInfo = { it.register("user", password) }
         ).getOrThrow()
         client.startSync()
-        client.syncState.first { it == SyncState.RUNNING }
+        client.syncState.firstWithTimeout { it == SyncState.RUNNING }
     }
 
     @AfterTest
@@ -71,14 +71,15 @@ class OutboxIT {
     fun shouldSendManyMessagesAndHaveEmptyOutboxAfterThat(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(180_000) {
             val room = client.api.room.createRoom().getOrThrow()
-            client.user.canSendEvent<RoomMessageEventContent>(room).first() shouldBe true
+            client.user.canSendEvent<RoomMessageEventContent>(room).firstWithTimeout() shouldBe true
 
             repeat(30) {
                 client.room.sendMessage(room) { text("message $it") }
             }
 
-            client.room.getOutbox().flatten().first { outbox -> outbox.none { it.sentAt != null } }
-            client.room.getOutbox().flatten().first { it.isEmpty() }
+            client.room.getOutbox().flatten()
+                .firstWithTimeout(30.seconds) { outbox -> outbox.none { it.sentAt != null } }
+            client.room.getOutbox().flatten().firstWithTimeout(60.seconds) { it.isEmpty() }
             client.closeSuspending()
 
             val exposedRoomOutbox = object : Table("room_outbox_2") {

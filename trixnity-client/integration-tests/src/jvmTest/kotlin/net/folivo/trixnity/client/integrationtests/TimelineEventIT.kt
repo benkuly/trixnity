@@ -92,8 +92,8 @@ class TimelineEventIT {
         }.getOrThrow()
         client1.startSync()
         client2.startSync()
-        client1.syncState.first { it == SyncState.RUNNING }
-        client2.syncState.first { it == SyncState.RUNNING }
+        client1.syncState.firstWithTimeout { it == SyncState.RUNNING }
+        client2.syncState.firstWithTimeout { it == SyncState.RUNNING }
     }
 
     @AfterTest
@@ -109,18 +109,20 @@ class TimelineEventIT {
                 invite = setOf(client2.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            client1.room.getById(room).first { it?.encrypted == true }
+            client1.room.getById(room).firstWithTimeout { it?.encrypted == true }
             client1.room.sendMessage(room) { text("Hello!") }
             client1.room.waitForOutboxSent()
 
-            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.membership == JOIN }
+            client2.room.getById(room).firstWithTimeout { it?.membership == JOIN }
 
-            val lastEventId = client2.room.getById(room).map { it?.lastEventId }.filterNotNull().first()
+            val lastEventId = client2.room.getById(room).map { it?.lastEventId }.filterNotNull().firstWithTimeout()
             val timeline = client2.room.getTimeline()
             timeline.init(room, lastEventId)
-            timeline.state.first().elements.map { it.map { it.content }.filterNotNull().first().getOrThrow() }
+            timeline.state.firstWithTimeout().elements.map {
+                it.map { it.content }.filterNotNull().firstWithTimeout().getOrThrow()
+            }
                 .any { it is RoomMessageEventContent.TextBased.Text && it.body == "Hello!" } shouldBe true
         }
     }
@@ -132,53 +134,57 @@ class TimelineEventIT {
                 invite = setOf(client2.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.membership == JOIN }
+            client2.room.getById(room).firstWithTimeout { it?.membership == JOIN }
 
             val txnA = client2.room.sendMessage(room) { text("A") }
             val eventIdA = client2.room.getOutbox(room).flatten()
-                .map { it.find { it.transactionId == txnA && it.eventId != null }?.eventId }.filterNotNull().first()
+                .map { it.find { it.transactionId == txnA && it.eventId != null }?.eventId }.filterNotNull()
+                .firstWithTimeout()
             val txnB = client2.room.sendMessage(room) {
                 replace(eventIdA)
                 text("B")
             }
             val eventIdB = client2.room.getOutbox(room).flatten()
-                .map { it.find { it.transactionId == txnB && it.eventId != null }?.eventId }.filterNotNull().first()
+                .map { it.find { it.transactionId == txnB && it.eventId != null }?.eventId }.filterNotNull()
+                .firstWithTimeout()
             val txnC = client2.room.sendMessage(room) {
                 replace(eventIdA)
                 text("C")
             }
             val eventIdC = client2.room.getOutbox(room).flatten()
-                .map { it.find { it.transactionId == txnC && it.eventId != null }?.eventId }.filterNotNull().first()
+                .map { it.find { it.transactionId == txnC && it.eventId != null }?.eventId }.filterNotNull()
+                .firstWithTimeout()
             val txnD = client2.room.sendMessage(room) {
                 replace(eventIdA)
                 text("D")
             }
             val eventIdD = client2.room.getOutbox(room).flatten()
-                .map { it.find { it.transactionId == txnD && it.eventId != null }?.eventId }.filterNotNull().first()
+                .map { it.find { it.transactionId == txnD && it.eventId != null }?.eventId }.filterNotNull()
+                .firstWithTimeout()
 
-            client1.room.getById(room).first { it?.lastEventId == eventIdD }
+            client1.room.getById(room).firstWithTimeout { it?.lastEventId == eventIdD }
             val coroutineScope = CoroutineScope(Dispatchers.Default)
             val timelineEvent = client1.room.getTimelineEvent(room, eventIdA).filterNotNull().stateIn(coroutineScope)
             withClue("wait for D") {
                 timelineEvent.map { it.content?.getOrNull() }
-                    .first { (it as? RoomMessageEventContent.TextBased.Text)?.body == "D" }
+                    .firstWithTimeout { (it as? RoomMessageEventContent.TextBased.Text)?.body == "D" }
             }
             client2.api.room.redactEvent(room, eventIdD).getOrThrow()
             withClue("wait for C") {
                 timelineEvent.map { it.content?.getOrNull() }
-                    .first { (it as? RoomMessageEventContent.TextBased.Text)?.body == "C" }
+                    .firstWithTimeout { (it as? RoomMessageEventContent.TextBased.Text)?.body == "C" }
             }
             client2.api.room.redactEvent(room, eventIdC).getOrThrow()
             withClue("wait for B") {
                 timelineEvent.map { it.content?.getOrNull() }
-                    .first { (it as? RoomMessageEventContent.TextBased.Text)?.body == "B" }
+                    .firstWithTimeout { (it as? RoomMessageEventContent.TextBased.Text)?.body == "B" }
             }
             client2.api.room.redactEvent(room, eventIdA).getOrThrow()
             withClue("wait for redact") {
                 timelineEvent.map { it.content?.getOrNull() }
-                    .first { it is RedactedEventContent }
+                    .firstWithTimeout { it is RedactedEventContent }
             }
 
             coroutineScope.cancel()
@@ -192,7 +198,7 @@ class TimelineEventIT {
                 invite = setOf(client2.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            client1.room.getById(room).first { it?.encrypted == true }
+            client1.room.getById(room).firstWithTimeout { it?.encrypted == true }
             client1.room.sendMessage(room) { text("Hello!") }
             client1.room.waitForOutboxSent()
 
@@ -203,9 +209,9 @@ class TimelineEventIT {
                     .take(3)
             }
 
-            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.encrypted == true }
+            client2.room.getById(room).firstWithTimeout { it?.encrypted == true }
 
             client2.room.sendMessage(room) { text("Hello to you, too!") }
             client1.room.sendMessage(room) { text("How are you?") }
@@ -234,7 +240,7 @@ class TimelineEventIT {
             client.room.sendMessage(room) { text("dino") }
 
             val eventId = client.room.getLastTimelineEvent(room).flatMapLatest { it ?: flowOf(null) }
-                .first { it?.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
+                .firstWithTimeout { it?.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
                 ?.eventId
                 .shouldNotBeNull()
 
@@ -274,11 +280,11 @@ class TimelineEventIT {
             val room = client.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            client.room.getById(room).first { it?.encrypted == true }
+            client.room.getById(room).firstWithTimeout { it?.encrypted == true }
             client.room.sendMessage(room) { text("dino") }
 
             val eventId = client.room.getLastTimelineEvent(room).flatMapLatest { it ?: flowOf(null) }
-                .first { it?.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
+                .firstWithTimeout { it?.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
                 ?.eventId
                 .shouldNotBeNull()
 
@@ -303,9 +309,9 @@ class TimelineEventIT {
     fun shouldHandleGappySyncsAndGetEventsFromEndOfTheTimeline(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
-            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.membership == JOIN }
+            client2.room.getById(room).firstWithTimeout { it?.membership == JOIN }
 
             client2.cancelSync()
 
@@ -313,14 +319,14 @@ class TimelineEventIT {
                 client1.room.sendMessage(room) { text(it.toString()) }
                 delay(50) // give it time to sync back
             }
-            val startFrom = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.first()?.content?.getOrNull()
+            val startFrom = client1.room.getLastTimelineEvent(room).firstWithTimeout {
+                val content = it?.firstWithTimeout()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
-            }?.first()?.eventId.shouldNotBeNull()
+            }?.firstWithTimeout()?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.room.getTimelineEvents(room, startFrom)
                 .toFlowList(MutableStateFlow(31), MutableStateFlow(31))
-                .first()
-                .mapNotNull { it.first().removeUnsigned() }
+                .firstWithTimeout()
+                .mapNotNull { it.firstWithTimeout().removeUnsigned() }
 
             expectedTimeline shouldHaveSize 31
 
@@ -337,14 +343,14 @@ class TimelineEventIT {
             }
 
             client2.startSync()
-            client2.room.getLastTimelineEvent(room).first {
-                val content = it?.first()?.content?.getOrNull()
+            client2.room.getLastTimelineEvent(room).firstWithTimeout {
+                val content = it?.firstWithTimeout()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
             val timelineFromGappySync = client2.room.getTimelineEvents(room, startFrom)
                 .toFlowList(MutableStateFlow(31), MutableStateFlow(31))
-                .first()
-                .mapNotNull { it.first().removeUnsigned() }
+                .firstWithTimeout()
+                .mapNotNull { it.firstWithTimeout().removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
         }
@@ -354,30 +360,30 @@ class TimelineEventIT {
     fun shouldHandleGappySyncsAndGetEventsFromStartOfTheTimeline(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
-            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.membership == JOIN }
+            client2.room.getById(room).firstWithTimeout { it?.membership == JOIN }
             client2.cancelSync()
             (0..29).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
                 delay(50) // give it time to sync back
             }
-            val startFrom = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.first()?.content?.getOrNull()
+            val startFrom = client1.room.getLastTimelineEvent(room).firstWithTimeout {
+                val content = it?.firstWithTimeout()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
-            }?.first()?.eventId.shouldNotBeNull()
+            }?.firstWithTimeout()?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
 
             client2.startSync()
-            client2.room.getLastTimelineEvent(room).first {
-                val content = it?.first()?.content?.getOrNull()
+            client2.room.getLastTimelineEvent(room).firstWithTimeout {
+                val content = it?.firstWithTimeout()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
             val timelineFromGappySync =
                 client2.room.getTimelineEvents(room, expectedTimeline.last().eventId, direction = FORWARDS)
                     .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-                    .first { list -> list.any { it.first().nextEventId == null } }
-                    .mapNotNull { it.first().removeUnsigned() }
+                    .firstWithTimeout { list -> list.any { it.firstWithTimeout().nextEventId == null } }
+                    .mapNotNull { it.firstWithTimeout().removeUnsigned() }
 
             // drop because the first event may have a gap due to the FORWARDS direction
             timelineFromGappySync.reversed().dropLast(1) shouldBe expectedTimeline.dropLast(1)
@@ -389,9 +395,9 @@ class TimelineEventIT {
     fun shouldHandleGappySyncsAndFillTimelineFromTheMiddle(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(invite = setOf(client2.userId)).getOrThrow()
-            client2.room.getById(room).first { it?.membership == INVITE }
+            client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             client2.api.room.joinRoom(room).getOrThrow()
-            client2.room.getById(room).first { it?.membership == JOIN }
+            client2.room.getById(room).firstWithTimeout { it?.membership == JOIN }
 
             client2.cancelSync()
 
@@ -399,15 +405,15 @@ class TimelineEventIT {
                 client1.room.sendMessage(room) { text(it.toString()) }
                 delay(50) // give it time to sync back
             }
-            val startFrom = client1.room.getLastTimelineEvent(room).first {
-                val content = it?.first()?.content?.getOrNull()
+            val startFrom = client1.room.getLastTimelineEvent(room).firstWithTimeout {
+                val content = it?.firstWithTimeout()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
-            }?.first()?.eventId.shouldNotBeNull()
+            }?.firstWithTimeout()?.eventId.shouldNotBeNull()
             val expectedTimeline = client1.getExpectedTimelineToBeginning(startFrom, room)
 
             client2.startSync()
-            client2.room.getLastTimelineEvent(room).first {
-                val content = it?.first()?.content?.getOrNull()
+            client2.room.getLastTimelineEvent(room).firstWithTimeout {
+                val content = it?.firstWithTimeout()?.content?.getOrNull()
                 content is RoomMessageEventContent && content.body == "29"
             }
             val timelineFromGappySync =
@@ -418,15 +424,15 @@ class TimelineEventIT {
                     maxSizeAfter = MutableStateFlow(100)
                 ).debounce(100)
                     .map { it.reversed() }
-                    .first { list ->
+                    .firstWithTimeout { list ->
                         list.size > 31
-                                && list.map { it.first() }.any { it.previousEventId == null }
-                                && list.map { it.first() }.any { it.nextEventId == null }
+                                && list.map { it.firstWithTimeout() }.any { it.previousEventId == null }
+                                && list.map { it.firstWithTimeout() }.any { it.nextEventId == null }
                     }.also { list ->
-                        val last = list.last().first().shouldNotBeNull()
-                        while (list.last().first().gap != null)
+                        val last = list.last().firstWithTimeout().shouldNotBeNull()
+                        while (list.last().firstWithTimeout().gap != null)
                             client2.room.fillTimelineGaps(last.roomId, last.eventId)
-                    }.mapNotNull { it.first().removeUnsigned() }
+                    }.mapNotNull { it.firstWithTimeout().removeUnsigned() }
 
             timelineFromGappySync shouldBe expectedTimeline
         }
@@ -443,21 +449,22 @@ class TimelineEventIT {
             client1.room.sendMessage(oldRoom) { text("hi old") }
             client1.room.getLastTimelineEvent(oldRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
                 timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
-            }.first { it } // wait for sync
+            }.firstWithTimeout { it } // wait for sync
 
             val newRoom = client1.api.room.upgradeRoom(oldRoom, "10").getOrThrow()
             client1.room.sendMessage(newRoom) { text("hi new") }
             client1.room.getLastTimelineEvent(newRoom).filterNotNull().flatMapLatest { timelineEventFlow ->
                 timelineEventFlow.map { it.content?.getOrNull() is RoomMessageEventContent.TextBased.Text }
-            }.first { it } // wait for sync
+            }.firstWithTimeout { it } // wait for sync
 
             val timelineFromOldRoom =
                 client1.room.getTimeline().apply {
                     init(
                         oldRoom,
-                        client1.room.getState<CreateEventContent>(oldRoom).first()?.idOrNull.shouldNotBeNull(),
+                        client1.room.getState<CreateEventContent>(oldRoom)
+                            .firstWithTimeout()?.idOrNull.shouldNotBeNull(),
                         configAfter = { maxSize = 20 })
-                }.state.first().elements.map { it.first() }
+                }.state.firstWithTimeout().elements.map { it.firstWithTimeout() }
                     .map { it.eventId to it.event.content::class.simpleName }
             println(
                 """
@@ -467,9 +474,9 @@ class TimelineEventIT {
             )
             val timelineFromNewRoom =
                 client1.room.getTimeline().apply {
-                    init(newRoom, client1.room.getById(newRoom).first()?.lastEventId.shouldNotBeNull())
+                    init(newRoom, client1.room.getById(newRoom).firstWithTimeout()?.lastEventId.shouldNotBeNull())
                     loadBefore { maxSize = 20 }
-                }.state.first().elements.map { it.first() }
+                }.state.firstWithTimeout().elements.map { it.firstWithTimeout() }
                     .map { it.eventId to it.event.content::class.simpleName }
             println(
                 """
@@ -480,7 +487,7 @@ class TimelineEventIT {
 
             timelineFromOldRoom shouldBe timelineFromNewRoom
 
-            client1.room.getAll().flattenValues(filterUpgradedRooms = true).first()
+            client1.room.getAll().flattenValues(filterUpgradedRooms = true).firstWithTimeout()
                 .map { it.roomId } shouldNotContain oldRoom
         }
     }
@@ -490,13 +497,13 @@ class TimelineEventIT {
         roomId: RoomId
     ) = room.getTimelineEvents(roomId, startFrom)
         .toFlowList(MutableStateFlow(100), MutableStateFlow(31))
-        .first { list -> list.map { it.first() }.any { it.previousEventId == null } }
+        .firstWithTimeout { list -> list.map { it.firstWithTimeout() }.any { it.previousEventId == null } }
         .also { list ->
-            val last = list.last().first().shouldNotBeNull()
-            while (list.last().first().gap != null)
+            val last = list.last().firstWithTimeout().shouldNotBeNull()
+            while (list.last().firstWithTimeout().gap != null)
                 client1.room.fillTimelineGaps(last.roomId, last.eventId)
         }
-        .mapNotNull { it.first().removeUnsigned() }
+        .mapNotNull { it.firstWithTimeout().removeUnsigned() }
 
     @Suppress("UNCHECKED_CAST")
     private fun TimelineEvent.removeUnsigned(): TimelineEvent? {

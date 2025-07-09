@@ -3,7 +3,10 @@ package net.folivo.trixnity.client.integrationtests
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.java.*
 import io.ktor.http.*
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.timeout
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.room.RoomService
@@ -23,6 +26,8 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 import kotlin.random.Random
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 const val synapseVersion =
     "v1.130.0" // TODO you should update this from time to time. https://github.com/element-hq/synapse/releases
@@ -94,7 +99,7 @@ suspend fun registerAndStartClient(
         },
     ).getOrThrow()
     client.startSync()
-    client.syncState.first { it == SyncState.RUNNING }
+    client.syncState.firstWithTimeout { it == SyncState.RUNNING }
     return StartedClient(client, defaultPassword)
 }
 
@@ -119,7 +124,7 @@ suspend fun startClient(
         },
     ).getOrThrow()
     client.startSync()
-    client.syncState.first { it == SyncState.RUNNING }
+    client.syncState.firstWithTimeout { it == SyncState.RUNNING }
     return StartedClient(client, defaultPassword)
 }
 
@@ -139,9 +144,17 @@ suspend fun startClientFromStore(
     ).getOrThrow()
     checkNotNull(client)
     client.startSync()
-    client.syncState.first { it == SyncState.RUNNING }
+    client.syncState.firstWithTimeout { it == SyncState.RUNNING }
     return StartedClient(client, defaultPassword)
 }
 
 suspend fun RoomService.waitForOutboxSent() =
-    getOutbox().flatten().first { outbox -> outbox.all { it.sentAt != null } }
+    getOutbox().flatten().firstWithTimeout { outbox -> outbox.all { it.sentAt != null } }
+
+@OptIn(FlowPreview::class)
+suspend fun <T> Flow<T>.firstWithTimeout(timeout: Duration = 5.seconds, predicate: suspend (T) -> Boolean): T =
+    timeout(timeout).first(predicate)
+
+@OptIn(FlowPreview::class)
+suspend fun <T> Flow<T>.firstWithTimeout(timeout: Duration = 5.seconds): T =
+    timeout(timeout).first()
