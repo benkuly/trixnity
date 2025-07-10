@@ -9,24 +9,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent
+import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationDoneEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationRequest
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
-import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
+import net.folivo.trixnity.utils.withReentrantLock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveVerification")
 
@@ -60,8 +54,6 @@ abstract class ActiveVerificationImpl(
     final override var theirDeviceId: String? = theirInitialDeviceId
         private set
 
-    private val mutex = Mutex()
-
     protected val mutableState: MutableStateFlow<ActiveVerificationState> =
         MutableStateFlow(
             if (requestIsFromOurOwn) OwnRequest(request)
@@ -86,62 +78,63 @@ abstract class ActiveVerificationImpl(
 
     private fun lifecycleAlreadyStarted() = lifecycleStarted.getAndUpdate { true }
 
-    protected suspend fun handleIncomingVerificationStep(
-        step: VerificationStep,
-        sender: UserId,
-        isOurOwn: Boolean
-    ) {
-        mutex.withLock { // we just want to be sure, that only one coroutine can access this simultaneously
-            handleVerificationStep(step, sender, isOurOwn)
-        }
-    }
+    private val handleVerificationStepMutex = Mutex()
 
-    private suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
-        try {
-            log.debug { "handle verification step: $step from $sender" }
-            if (sender != theirUserId && sender != ownUserId)
-                cancel(Code.UserMismatch, "the user did not match the expected user, we want to verify")
-            if (!(relatesTo != null && step.relatesTo == relatesTo || transactionId != null && step.transactionId == transactionId))
-                cancel(Code.UnknownTransaction, "transaction is unknown")
-            val currentState = state.value
-            log.debug { "current state: $currentState" }
-            if (currentState is AcceptedByOtherDevice) {
-                if (step is VerificationDoneEventContent) {
-                    mutableState.value = Done
+    protected suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
+        handleVerificationStepMutex.withReentrantLock {
+            try {
+                if (sender != theirUserId && sender != ownUserId)
+                    cancel(Code.UserMismatch, "the user did not match the expected user, we want to verify")
+                if (!(relatesTo != null && step.relatesTo == relatesTo || transactionId != null && step.transactionId == transactionId))
+                    cancel(Code.UnknownTransaction, "transaction is unknown")
+                val currentState = state.value
+                log.debug {
+                    """
+                        handle verification step:
+                            step=$step
+                            sender=$sender
+                            isOurOwn=$isOurOwn ($ownUserId/$ownDeviceId)
+                            current state: $currentState
+                    """.trimIndent()
                 }
-                if (step is VerificationCancelEventContent) {
-                    mutableState.value = Cancel(step, isOurOwn)
-                }
-            } else when (step) {
-                is VerificationReadyEventContent -> {
-                    if (currentState is OwnRequest || currentState is TheirRequest)
-                        onReady(step)
-                    else cancelUnexpectedMessage(currentState)
-                }
+                if (currentState is AcceptedByOtherDevice) {
+                    if (step is VerificationDoneEventContent) {
+                        mutableState.value = Done
+                    }
+                    if (step is VerificationCancelEventContent) {
+                        mutableState.value = Cancel(step, isOurOwn)
+                    }
+                } else when (step) {
+                    is VerificationReadyEventContent -> {
+                        if (currentState is OwnRequest || currentState is TheirRequest)
+                            onReady(step)
+                        else cancelUnexpectedMessage(currentState)
+                    }
 
-                is VerificationStartEventContent -> {
-                    if (currentState is Ready || currentState is Start)
-                        onStart(step, sender, isOurOwn)
-                    else cancelUnexpectedMessage(currentState)
-                }
+                    is VerificationStartEventContent -> {
+                        if (currentState is Ready || currentState is Start)
+                            onStart(step, sender, isOurOwn)
+                        else cancelUnexpectedMessage(currentState)
+                    }
 
-                is VerificationDoneEventContent -> {
-                    if (currentState is Start || currentState is WaitForDone)
-                        onDone(isOurOwn)
-                    else cancelUnexpectedMessage(currentState)
-                }
+                    is VerificationDoneEventContent -> {
+                        if (currentState is Start || currentState is WaitForDone)
+                            onDone(isOurOwn)
+                        else cancelUnexpectedMessage(currentState)
+                    }
 
-                is VerificationCancelEventContent -> {
-                    onCancel(step, isOurOwn)
-                }
+                    is VerificationCancelEventContent -> {
+                        onCancel(step, isOurOwn)
+                    }
 
-                else -> when (currentState) {
-                    is Start -> currentState.method.handleVerificationStep(step, isOurOwn)
-                    else -> cancelUnexpectedMessage(currentState)
+                    else -> when (currentState) {
+                        is Start -> currentState.method.handleVerificationStep(step, isOurOwn)
+                        else -> cancelUnexpectedMessage(currentState)
+                    }
                 }
+            } catch (error: Exception) {
+                cancel(Code.InternalError, "something went wrong: ${error.message}")
             }
-        } catch (error: Exception) {
-            cancel(Code.InternalError, "something went wrong: ${error.message}")
         }
     }
 
@@ -233,19 +226,21 @@ abstract class ActiveVerificationImpl(
         log.trace { "send verification step and handle it: $step" }
         when (step) {
             is VerificationCancelEventContent -> {
-                if (state.value !is Cancel)
+                val sendEvent = state.value !is Cancel
+                handleVerificationStep(step, ownUserId, true)
+                if (sendEvent) {
                     try {
                         sendVerificationStep(step)
                     } catch (error: Exception) {
                         log.warn(error) { "could not send cancel event: ${error.message}" }
                         // we just ignore when we could not send it, because it would time out on the other side anyway
                     }
-                handleVerificationStep(step, ownUserId, true)
+                }
             }
 
             else -> try {
-                sendVerificationStep(step)
                 handleVerificationStep(step, ownUserId, true)
+                sendVerificationStep(step)
             } catch (error: Exception) {
                 log.debug { "could not send step $step because: ${error.message}" }
                 handleVerificationStep(

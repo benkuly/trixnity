@@ -10,7 +10,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import net.folivo.trixnity.client.*
@@ -77,8 +76,8 @@ class EncryptionIT {
         }.getOrThrow()
         client1.startSync()
         client2.startSync()
-        client1.syncState.first { it == SyncState.RUNNING }
-        client2.syncState.first { it == SyncState.RUNNING }
+        client1.syncState.firstWithTimeout { it == SyncState.RUNNING }
+        client2.syncState.firstWithTimeout { it == SyncState.RUNNING }
     }
 
     @AfterTest
@@ -96,7 +95,7 @@ class EncryptionIT {
                     initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
                 client2.api.room.joinRoom(initialRoomId).getOrThrow()
-                client1.user.getById(initialRoomId, client2.userId).first { it?.membership == JOIN }
+                client1.user.getById(initialRoomId, client2.userId).firstWithTimeout { it?.membership == JOIN }
                 client1.room.sendMessage(initialRoomId) { text("Share secret.") }
                 client1.room.waitForOutboxSent()
             }
@@ -105,12 +104,12 @@ class EncryptionIT {
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
             withClue("prepare room") {
-                client1.room.getById(roomId).first { it?.encrypted == true }
+                client1.room.getById(roomId).firstWithTimeout { it?.encrypted == true }
                 client1.room.sendMessage(roomId) { text("Keep secret!") }
                 client1.room.waitForOutboxSent()
 
                 client1.api.room.inviteUser(roomId, client2.userId).getOrThrow()
-                client2.room.getById(roomId).first { it?.membership == INVITE }
+                client2.room.getById(roomId).firstWithTimeout { it?.membership == INVITE }
             }
 
 
@@ -123,7 +122,7 @@ class EncryptionIT {
 
             withClue("join room") {
                 client2.api.room.joinRoom(roomId).getOrThrow()
-                client1.user.getById(roomId, client2.userId).first { it?.membership == JOIN }
+                client1.user.getById(roomId, client2.userId).firstWithTimeout { it?.membership == JOIN }
             }
 
             eventually(4.seconds) {
@@ -132,7 +131,7 @@ class EncryptionIT {
             }
 
             client1.room.sendMessage(roomId) { text("Share secret.") }
-            collectMessages.await().first().content?.getOrThrow()
+            collectMessages.await().firstWithTimeout().content?.getOrThrow()
                 .shouldNotBeNull()
                 .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
                 .body shouldBe "Share secret."
@@ -146,14 +145,14 @@ class EncryptionIT {
                 invite = setOf(client2.userId),
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            client1.room.getById(roomId).first { it?.membership == JOIN }
+            client1.room.getById(roomId).firstWithTimeout { it?.membership == JOIN }
             client1.stopSync()
-            client1.close()
+            client1.closeSuspending()
 
             client2.api.room.joinRoom(roomId).getOrThrow()
-            client2.room.getById(roomId).first { it?.membership == JOIN }
+            client2.room.getById(roomId).firstWithTimeout { it?.membership == JOIN }
             client2.stopSync()
-            client2.close()
+            client2.closeSuspending()
 
 
             val clientFromStoreDatabase = newDatabase()
@@ -218,7 +217,7 @@ class EncryptionIT {
                                 senderClient.room.sendMessage(roomId) { text("message ($iteration - $i)") }
                                 senderClient.room.waitForOutboxSent()
                                 senderClient.stopSync()
-                                senderClient.close()
+                                senderClient.closeSuspending()
                             }
                         }
                     }
@@ -237,7 +236,8 @@ class EncryptionIT {
                 clientFromLogin.startSync()
 
                 withClue("decrypt messages from store") {
-                    val lastEventId = clientFromStore.room.getById(roomId).first()?.lastEventId.shouldNotBeNull()
+                    val lastEventId =
+                        clientFromStore.room.getById(roomId).firstWithTimeout()?.lastEventId.shouldNotBeNull()
                     val receivedMessages = clientFromStore.room.getTimelineEvents(roomId, lastEventId)
                         .take(messageCount)
                         .toList()
@@ -252,7 +252,8 @@ class EncryptionIT {
                     }
                 }
                 withClue("decrypt messages from login") {
-                    val lastEventId = clientFromLogin.room.getById(roomId).first()?.lastEventId.shouldNotBeNull()
+                    val lastEventId =
+                        clientFromLogin.room.getById(roomId).firstWithTimeout()?.lastEventId.shouldNotBeNull()
                     val receivedMessages = clientFromLogin.room.getTimelineEvents(roomId, lastEventId)
                         .take(messageCount)
                         .toList()
@@ -268,7 +269,7 @@ class EncryptionIT {
                 }
                 clientFromStore.stopSync()
                 clientFromLogin.stopSync()
-                clientFromStore.close()
+                clientFromStore.closeSuspending()
             }
         }
     }

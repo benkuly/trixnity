@@ -25,9 +25,8 @@ import net.folivo.trixnity.client.store.RoomOutboxMessage.SendError
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
-import net.folivo.trixnity.client.utils.retryLoopWhenSyncIs
+import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
@@ -70,10 +69,8 @@ class OutboxMessageEventHandler(
     }
 
     internal suspend fun processOutboxMessages(outboxMessages: Flow<Map<RoomOutboxMessageRepositoryKey, Flow<RoomOutboxMessage<*>?>>>) {
-        currentSyncState.retryLoopWhenSyncIs(
-            SyncState.RUNNING,
-            onError = { log.warn(it) { "failed sending outbox messages" } },
-            onCancel = { log.info { "stop sending outbox messages, because job was cancelled" } },
+        currentSyncState.retryLoop(
+            onError = { error, delay -> log.warn(error) { "failed sending outbox messages, try again in $delay" } },
         ) {
             log.debug { "start sending outbox messages" }
             val alreadyProcessedOutboxMessages = mutableSetOf<RoomOutboxMessageRepositoryKey>()

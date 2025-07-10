@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -82,9 +81,9 @@ class SasVerificationIT {
         client1.startSync()
         client2.startSync()
         client3.startSync()
-        client1.syncState.first { it == SyncState.RUNNING }
-        client2.syncState.first { it == SyncState.RUNNING }
-        client3.syncState.first { it == SyncState.RUNNING }
+        client1.syncState.firstWithTimeout { it == SyncState.RUNNING }
+        client2.syncState.firstWithTimeout { it == SyncState.RUNNING }
+        client3.syncState.firstWithTimeout { it == SyncState.RUNNING }
     }
 
     @AfterTest
@@ -104,8 +103,8 @@ class SasVerificationIT {
                 }
             }
             client1.verification.createDeviceVerificationRequest(client3.userId, setOf(client3.deviceId))
-            val client1Verification = client1.verification.activeDeviceVerification.first { it != null }
-            val client3Verification = client3.verification.activeDeviceVerification.first { it != null }
+            val client1Verification = client1.verification.activeDeviceVerification.firstWithTimeout { it != null }
+            val client3Verification = client3.verification.activeDeviceVerification.firstWithTimeout { it != null }
 
             checkSasVerification(client1, client3, client1Verification, client3Verification)
         }
@@ -121,8 +120,8 @@ class SasVerificationIT {
                 }
             }
             client1.verification.createDeviceVerificationRequest(client3.userId, setOf(client3.deviceId))
-            val client1Verification = client1.verification.activeDeviceVerification.first { it != null }
-            val client3Verification = client3.verification.activeDeviceVerification.first { it != null }
+            val client1Verification = client1.verification.activeDeviceVerification.firstWithTimeout { it != null }
+            val client3Verification = client3.verification.activeDeviceVerification.firstWithTimeout { it != null }
 
             checkSasVerification(client1, client3, client1Verification, client3Verification)
         }
@@ -144,8 +143,8 @@ class SasVerificationIT {
                 }
             }
             client1.verification.createDeviceVerificationRequest(client2.userId, setOf(client2.deviceId))
-            val client1Verification = client1.verification.activeDeviceVerification.first { it != null }
-            val client2Verification = client2.verification.activeDeviceVerification.first { it != null }
+            val client1Verification = client1.verification.activeDeviceVerification.firstWithTimeout { it != null }
+            val client2Verification = client2.verification.activeDeviceVerification.firstWithTimeout { it != null }
 
             checkSasVerification(client1, client2, client1Verification, client2Verification)
         }
@@ -167,8 +166,8 @@ class SasVerificationIT {
                 }
             }
             client2.verification.createDeviceVerificationRequest(client1.userId, setOf(client1.deviceId))
-            val client1Verification = client1.verification.activeDeviceVerification.first { it != null }
-            val client2Verification = client2.verification.activeDeviceVerification.first { it != null }
+            val client1Verification = client1.verification.activeDeviceVerification.firstWithTimeout { it != null }
+            val client2Verification = client2.verification.activeDeviceVerification.firstWithTimeout { it != null }
 
             // change the order
             checkSasVerification(client2, client1, client2Verification, client1Verification)
@@ -213,17 +212,17 @@ class SasVerificationIT {
             client1Verification.shouldNotBeNull()
             client2Verification.shouldNotBeNull()
 
-            client2Verification.state.first { it is TheirRequest }
+            client2Verification.state.firstWithTimeout { it is TheirRequest }
                 .shouldBeInstanceOf<TheirRequest>().ready()
 
-            client1Verification.state.first { it is Ready }
+            client1Verification.state.firstWithTimeout { it is Ready }
                 .shouldBeInstanceOf<Ready>().start(VerificationMethod.Sas)
 
             val client2OverridesSasRequest = client2.userId.full < client1.userId.full ||
                     (client2.userId == client1.userId && client2.deviceId < client1.deviceId)
             if (client2OverridesSasRequest) {
                 // this should replace the other verification request
-                client2Verification.state.first { it is Ready }
+                client2Verification.state.firstWithTimeout { it is Ready }
                     .shouldBeInstanceOf<Ready>().start(VerificationMethod.Sas)
             }
 
@@ -239,37 +238,37 @@ class SasVerificationIT {
             }.stateIn(coroutineScope)
 
             if (client2OverridesSasRequest) {
-                client1SasVerificationState.first { it is TheirSasStart }
+                client1SasVerificationState.firstWithTimeout { it is TheirSasStart }
                     .shouldBeInstanceOf<TheirSasStart>().accept()
             } else {
-                client2SasVerificationState.first { it is TheirSasStart }
+                client2SasVerificationState.firstWithTimeout { it is TheirSasStart }
                     .shouldBeInstanceOf<TheirSasStart>().accept()
             }
 
-            val client1Comparison = client1SasVerificationState.first { it is ComparisonByUser }
+            val client1Comparison = client1SasVerificationState.firstWithTimeout { it is ComparisonByUser }
                 .shouldBeInstanceOf<ComparisonByUser>()
 
             val client2Comparison =
-                client2SasVerificationState.first { it is ComparisonByUser }
+                client2SasVerificationState.firstWithTimeout { it is ComparisonByUser }
                     .shouldBeInstanceOf<ComparisonByUser>()
 
             client1Comparison.decimal shouldBe client2Comparison.decimal
             client1Comparison.emojis shouldBe client2Comparison.emojis
 
             client1Comparison.match()
-            client1SasVerificationState.first { it is WaitForMacs }
+            client1SasVerificationState.firstWithTimeout { it is WaitForMacs }
                 .shouldBeInstanceOf<WaitForMacs>()
             client2Comparison.match()
 
-            client1Verification.state.first { it is Done }
+            client1Verification.state.firstWithTimeout { it is Done }
                 .shouldBeInstanceOf<Done>()
-            client2Verification.state.first { it is Done }
+            client2Verification.state.firstWithTimeout { it is Done }
                 .shouldBeInstanceOf<Done>()
 
             client1.key.getTrustLevel(client2.userId, client2.deviceId)
-                .first { it == DeviceTrustLevel.CrossSigned(true) }
+                .firstWithTimeout { it == DeviceTrustLevel.CrossSigned(true) }
             client2.key.getTrustLevel(client1.userId, client1.deviceId)
-                .first { it == DeviceTrustLevel.CrossSigned(true) }
+                .firstWithTimeout { it == DeviceTrustLevel.CrossSigned(true) }
         } finally {
             coroutineScope.cancel()
         }

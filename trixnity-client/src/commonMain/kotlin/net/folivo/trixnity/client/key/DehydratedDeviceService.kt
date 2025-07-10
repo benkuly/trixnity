@@ -18,7 +18,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.SelfSigningKey
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.crypto.SecretType
@@ -26,7 +25,6 @@ import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.crypto.core.AesHmacSha2EncryptedData
 import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
 import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
-import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.*
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignServiceImpl
@@ -223,6 +221,7 @@ class DehydratedDeviceService(
                     olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(dehydratedDeviceSignService, true)
                 olmAccount.markKeysAsPublished()
 
+                log.debug { "wait for M_CROSS_SIGNING_SELF_SIGNING private key" }
                 val selfSigningPrivateKey = withTimeoutOrNull(10.seconds) {
                     keyStore.getSecretsFlow().map { it[M_CROSS_SIGNING_SELF_SIGNING] }.filterNotNull().first()
                 }?.decryptedPrivateKey
@@ -231,20 +230,7 @@ class DehydratedDeviceService(
                     return
                 }
                 val selfSigningPublicKey =
-                    withTimeoutOrNull(10.seconds) {
-                        keyStore.getCrossSigningKeys(userId).map { crossSigningKeys ->
-                            crossSigningKeys?.firstOrNull { it.value.signed.usage.contains(SelfSigningKey) }
-                        }.mapNotNull { it?.value?.signed?.get<Ed25519Key>()?.id }
-                            .first { expectedPublicKey ->
-                                freeAfter(OlmPkSigning.create(selfSigningPrivateKey)) {
-                                    it.publicKey == expectedPublicKey
-                                }
-                            }
-                    }
-                if (selfSigningPublicKey == null) {
-                    log.warn { "could not find public key of $M_CROSS_SIGNING_SELF_SIGNING" }
-                    return
-                }
+                    freeAfter(OlmPkSigning.create(selfSigningPrivateKey)) { it.publicKey }
 
                 val deviceKeys = DeviceKeys(
                     userId = userId,
@@ -258,6 +244,7 @@ class DehydratedDeviceService(
                                 .signatures
                 }
 
+                log.debug { "upload device" }
                 api.device.setDehydratedDevice(
                     deviceId = deviceId,
                     deviceData = with(

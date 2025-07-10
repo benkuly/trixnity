@@ -4,7 +4,6 @@ import io.kotest.assertions.withClue
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
@@ -71,8 +70,8 @@ class ForgetRoomsIT {
         }.getOrThrow()
         client1.startSync()
         client2.startSync()
-        client1.syncState.first { it == SyncState.RUNNING }
-        client2.syncState.first { it == SyncState.RUNNING }
+        client1.syncState.firstWithTimeout { it == SyncState.RUNNING }
+        client2.syncState.firstWithTimeout { it == SyncState.RUNNING }
     }
 
     @AfterTest
@@ -82,17 +81,17 @@ class ForgetRoomsIT {
     }
 
     @Test
-    fun `should delete rooms that were not joined`():Unit = runBlocking(Dispatchers.Default) {
+    fun `should delete rooms that were not joined`(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
             val room = client1.api.room.createRoom(
                 initialState = listOf(
                     InitialStateEvent(content = EncryptionEventContent(), ""),
 
-                ),
+                    ),
             ).getOrThrow()
 
             withClue("Client1 creates a room and writes messages") {
-                client1.room.getById(room).first { it?.encrypted == true }
+                client1.room.getById(room).firstWithTimeout { it?.encrypted == true }
                 client1.room.sendMessage(room) { text("Hello!") }
                 client1.room.waitForOutboxSent()
                 client1.room.sendMessage(room) { text("Anybody?") }
@@ -103,7 +102,7 @@ class ForgetRoomsIT {
             }
 
             withClue("client2 sees invitation") {
-                client2.room.getById(room).first { it?.membership == INVITE }
+                client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             }
 
             withClue("client1 kicks client2") {
@@ -112,7 +111,7 @@ class ForgetRoomsIT {
             }
 
             withClue("client2 does not see the room after kicking") {
-                client2.room.getById(room).first { it == null }
+                client2.room.getById(room).firstWithTimeout { it == null }
             }
         }
     }

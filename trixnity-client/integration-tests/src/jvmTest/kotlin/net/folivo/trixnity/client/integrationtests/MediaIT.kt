@@ -4,7 +4,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.MatrixClient
@@ -49,7 +48,7 @@ class MediaIT {
             getLoginInfo = { it.register("user1", password) }
         ).getOrThrow()
         client.startSync()
-        client.syncState.first { it == SyncState.RUNNING }
+        client.syncState.firstWithTimeout { it == SyncState.RUNNING }
     }
 
     @AfterTest

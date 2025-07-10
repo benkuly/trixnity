@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -69,7 +68,7 @@ class KeyBackupIT {
         withTimeout(30_000) {
             startedClient1.client.verification.getSelfVerificationMethods()
                 .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
-                .first()
+                .firstWithTimeout()
 
             val bootstrap = startedClient1.client.key.bootstrapCrossSigning()
             withClue("bootstrap client1") {
@@ -84,14 +83,14 @@ class KeyBackupIT {
             }
 
             withClue("join and wait for join") {
-                startedClient1.client.room.getById(roomId).first { it != null && it.membership == JOIN }
+                startedClient1.client.room.getById(roomId).firstWithTimeout { it != null && it.membership == JOIN }
                 startedClient2.client.api.room.joinRoom(roomId).getOrThrow()
-                startedClient2.client.room.getById(roomId).first { it != null && it.membership == JOIN }
+                startedClient2.client.room.getById(roomId).firstWithTimeout { it != null && it.membership == JOIN }
                 // we need to wait until the clients know the room is encrypted
                 startedClient1.client.room.getState<EncryptionEventContent>(roomId)
-                    .first { it != null }
+                    .firstWithTimeout { it != null }
                 startedClient2.client.room.getState<EncryptionEventContent>(roomId)
-                    .first { it != null }
+                    .firstWithTimeout { it != null }
             }
             withClue("send some messages") {
                 startedClient1.client.room.sendMessage(roomId) { text("hi from client1") }
@@ -114,13 +113,13 @@ class KeyBackupIT {
                     mediaStoreModule = createInMemoryMediaStoreModule(),
                 ).getOrThrow()
                 client3.startSync()
-                client3.syncState.first { it == SyncState.RUNNING }
+                client3.syncState.firstWithTimeout { it == SyncState.RUNNING }
 
                 withClue("self verify client3") {
                     val client3VerificationMethods =
                         client3.verification.getSelfVerificationMethods()
                             .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
-                            .first().methods
+                            .firstWithTimeout().methods
                     client3VerificationMethods.filterIsInstance<SelfVerificationMethod.CrossSignedDeviceVerification>().size shouldBe 1
                     client3VerificationMethods.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>().size shouldBe 1
                     client3VerificationMethods.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>()
@@ -130,16 +129,16 @@ class KeyBackupIT {
 
                 val events = client3.room.getLastTimelineEvents(roomId)
                     .toFlowList(MutableStateFlow(2))
-                    .map { it.map { it.first().eventId } }
-                    .first { it.size == 2 }
+                    .map { it.map { it.firstWithTimeout().eventId } }
+                    .firstWithTimeout { it.size == 2 }
                 events[0].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
-                    .first { it?.content != null }?.content?.getOrThrow()
+                    .firstWithTimeout { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextBased.Text("hi from client2", mentions = Mentions()))
                 events[1].shouldNotBeNull().let { client3.room.getTimelineEvent(roomId, it) }
-                    .first { it?.content != null }?.content?.getOrThrow()
+                    .firstWithTimeout { it?.content != null }?.content?.getOrThrow()
                     .shouldBe(RoomMessageEventContent.TextBased.Text("hi from client1", mentions = Mentions()))
 
-                client3.close()
+                client3.closeSuspending()
             }
         }
     }

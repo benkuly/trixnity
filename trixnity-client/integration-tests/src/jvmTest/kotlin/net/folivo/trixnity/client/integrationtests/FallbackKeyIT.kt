@@ -61,9 +61,10 @@ class FallbackKeyIT {
             val roomId = startedClient1.client.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            startedClient1.client.room.getAll().first { it.size == 1 }
+            startedClient1.client.room.getAll().firstWithTimeout { it.size == 1 }
             val startFrom =
-                startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().first().first().eventId
+                startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().firstWithTimeout()
+                    .first().eventId
             startedClient1.client.cancelSync()
 
 
@@ -83,13 +84,13 @@ class FallbackKeyIT {
 
             startedClient1.client.startSync()
             val message =
-                startedClient1.client.room.getLastTimelineEvent(roomId).first {
-                    val eventId = it?.first()?.eventId
+                startedClient1.client.room.getLastTimelineEvent(roomId).firstWithTimeout {
+                    val eventId = it?.firstWithTimeout()?.eventId
                     eventId != null && eventId != startFrom
                 }
             message.shouldNotBeNull()
             withTimeoutOrNull(1.seconds) {
-                message.first { it.content != null }
+                message.firstWithTimeout { it.content != null }
             } ?: fail { "could not decrypt event (maybe there was no fallback key)" }
             startedClient1.client.stopSync()
 

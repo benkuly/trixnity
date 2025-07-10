@@ -11,8 +11,6 @@ import net.folivo.trixnity.client.MatrixClient.LoginState.*
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.media.MediaStore
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.utils.RetryLoopFlowState.RUN
-import net.folivo.trixnity.client.utils.retryWhen
 import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
@@ -28,12 +26,14 @@ import net.folivo.trixnity.core.subscribeAsFlow
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.utils.retry
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 
@@ -489,6 +489,7 @@ suspend fun MatrixClient.Companion.loginWith(
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
+    val finalCoroutineContext = (config.name?.let { CoroutineName(it) } ?: EmptyCoroutineContext) + coroutineContext
 
     val loginInfo = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
@@ -506,6 +507,7 @@ suspend fun MatrixClient.Companion.loginWith(
         ),
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
+        coroutineContext = finalCoroutineContext,
     ).use { loginApi ->
         loginApi.user.getProfile(loginInfo.userId).getOrThrow()
     }
@@ -516,7 +518,7 @@ suspend fun MatrixClient.Companion.loginWith(
     val koinApplication = initMatrixClientKoinApplication(
         repositoriesModule = repositoriesModule,
         mediaStoreModule = mediaStoreModule,
-        coroutineContext = coroutineContext,
+        coroutineContext = finalCoroutineContext,
         config = config
     )
     val di = koinApplication.koin
@@ -550,7 +552,7 @@ suspend fun MatrixClient.Companion.loginWith(
         eventContentSerializerMappings = di.get(),
         accountStore = accountStore,
         olmCryptoStore = di.get(),
-        coroutineContext = coroutineContext,
+        coroutineContext = finalCoroutineContext,
         config = config
     ) { matrixClient ->
         val keyStore = di.get<KeyStore>()
@@ -664,11 +666,8 @@ private suspend fun initMatrixClientKoinApplication(
     coroutineContext: CoroutineContext,
     config: MatrixClientConfiguration
 ): KoinApplication {
-    val coroutineName = config.name?.let { name -> CoroutineName(name) }
     val coroutineScope =
-        CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler).apply {
-            if (coroutineName != null) this + coroutineName
-        }
+        CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
     val koinApplication = koinApplication {
         modules(module {
@@ -713,11 +712,10 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
                 accountStore.getAccount()?.syncBatchToken
 
             override suspend fun setSyncBatchToken(token: String) {
-                accountStore.updateAccount { it?.copy(syncBatchToken = token) }
+                accountStore.updateAccount { if (it?.accessToken != null) it.copy(syncBatchToken = token) else it }
             }
         },
-        syncLoopDelay = config.syncLoopDelays.syncLoopDelay,
-        syncLoopErrorDelay = config.syncLoopDelays.syncLoopErrorDelay,
+        syncErrorDelayConfig = config.syncErrorDelayConfig,
         coroutineContext = coroutineContext,
     )
     val (signingKey, identityKey) = freeAfter(
@@ -867,9 +865,8 @@ class MatrixClientImpl internal constructor(
 
             val filterId = accountStore.getAccount()?.filterId
             if (filterId == null) {
-                val newFilterId = retryWhen(
-                    flowOf(RUN),
-                    onError = { log.warn(it) { "could not set filter" } }
+                val newFilterId = retry(
+                    onError = { error, delay -> log.warn(error) { "could not set filter, retry again in $delay" } }
                 ) {
                     val filter = config.syncFilter.applyDefaultFilter()
                     api.user.setFilter(userId, filter)
@@ -879,9 +876,8 @@ class MatrixClientImpl internal constructor(
             }
             val backgroundFilterId = accountStore.getAccount()?.backgroundFilterId
             if (backgroundFilterId == null) {
-                val newFilterId = retryWhen(
-                    flowOf(RUN),
-                    onError = { log.warn(it) { "could not set filter" } }
+                val newFilterId = retry(
+                    onError = { error, delay -> log.warn(error) { "could not set background filter, retry again in $delay" } }
                 ) {
                     val filter = config.syncOnceFilter.applyDefaultFilter()
                     api.user.setFilter(userId, filter)

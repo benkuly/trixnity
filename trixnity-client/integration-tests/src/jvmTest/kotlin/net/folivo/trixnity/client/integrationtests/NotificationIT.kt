@@ -7,7 +7,6 @@ import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.notification
@@ -72,17 +71,17 @@ class NotificationIT {
             ).getOrThrow()
 
             withClue("first notification") {
-                notifications.first { it.size == 1 }.getOrNull(0).shouldNotBeNull()
+                notifications.firstWithTimeout { it.size == 1 }.getOrNull(0).shouldNotBeNull()
                     .event.shouldBeInstanceOf<StrippedStateEvent<*>>()
                     .content.shouldBeInstanceOf<MemberEventContent>().displayName shouldBe "user2"
             }
 
-            startedClient2.client.room.getById(room).first { it?.membership == INVITE }
+            startedClient2.client.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             startedClient2.client.api.room.joinRoom(room).getOrThrow()
 
             startedClient1.client.room.sendMessage(room) { text("Hello ${startedClient2.client.userId.full}!") }
             withClue("second notification") {
-                notifications.first { it.size == 3 }.getOrNull(2).shouldNotBeNull()
+                notifications.firstWithTimeout { it.size == 3 }.getOrNull(2).shouldNotBeNull()
                     .event.content.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
                     .body shouldStartWith "Hello"
             }

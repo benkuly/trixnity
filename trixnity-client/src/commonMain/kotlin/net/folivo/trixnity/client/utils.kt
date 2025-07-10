@@ -8,6 +8,7 @@ import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.previousRoomId
 import net.folivo.trixnity.core.model.RoomId
 import org.koin.core.module.Module
+import kotlin.Result.Companion.failure
 import kotlin.jvm.JvmName
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -123,3 +124,7 @@ fun Flow<Map<RoomId, Flow<Room?>>>.flattenValues(
             } else true
         }.toSet()
     }
+
+internal inline fun <A, B> Result<A>.flatMap(transform: (value: A) -> Result<B>): Result<B> {
+    return map(transform).fold({ it }, ::failure)
+}

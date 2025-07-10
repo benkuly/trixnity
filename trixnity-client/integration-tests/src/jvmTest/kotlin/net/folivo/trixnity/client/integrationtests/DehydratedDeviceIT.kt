@@ -2,10 +2,14 @@ package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.key
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
@@ -80,17 +84,22 @@ class DehydratedDeviceIT {
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
-            startedClient2.client.room.getById(roomId).filterNotNull().first()
+            startedClient2.client.room.getById(roomId).filterNotNull().firstWithTimeout()
             startedClient2.client.api.room.joinRoom(roomId)
+            startedClient2.client.key.getDeviceKeys(startedClient2.client.userId).firstWithTimeout { deviceKeys ->
+                deviceKeys?.any { it.dehydrated == true } == true
+            }
             startedClient2.client.logout()
-            startedClient2.client.close()
+            startedClient2.client.closeSuspending()
 
-            startedClient1.client.user.getAll(roomId).first { it.size == 2 }
+            startedClient1.client.user.getAll(roomId).firstWithTimeout { it.size == 2 }
             startedClient1.client.room.sendMessage(roomId) {
                 text("some encrypted message")
             }
             startedClient1.client.room.waitForOutboxSent()
-            val eventId = checkNotNull(startedClient1.client.room.getOutbox(roomId).first().first().first()?.eventId)
+            val eventId = checkNotNull(
+                startedClient1.client.room.getOutbox(roomId).firstWithTimeout().first().firstWithTimeout()?.eventId
+            )
 
             val startedClient3 =
                 startClient("client3", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
@@ -100,26 +109,26 @@ class DehydratedDeviceIT {
                 val client3VerificationMethods =
                     startedClient3.client.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
-                        .first().methods
+                        .firstWithTimeout().methods
                 client3VerificationMethods.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>()
                     .first()
                     .verify(bootstrap.recoveryKey).getOrThrow()
             }
             val foundContent = startedClient3.client.room.getTimelineEvent(roomId, eventId)
                 .map { it?.content?.getOrNull() }.filterNotNull()
-                .first()
+                .firstWithTimeout()
             foundContent.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>().body shouldBe "some encrypted message"
-            startedClient3.client.syncOnce()
+            startedClient3.client.syncOnce().getOrThrow()
 
             withClue("send message from client3") {
                 startedClient3.client.room.sendMessage(roomId) { text("hi") }
                 startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().flatMapLatest { it }
-                    .first {
+                    .firstWithTimeout {
                         val content = it.content?.getOrNull()
                         content is RoomMessageEventContent.TextBased.Text && content.body == "hi"
                     }
             }
-            startedClient3.client.close()
+            startedClient3.client.closeSuspending()
         }
     }
 
@@ -136,8 +145,11 @@ class DehydratedDeviceIT {
                 startedClient2.client.key.bootstrapCrossSigning().result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
-            startedClient2.client.logout()
-            startedClient2.client.close()
+            val firstDehydratedDeviceId = startedClient2.client.key.getDeviceKeys(startedClient2.client.userId)
+                .map { deviceKeys -> deviceKeys?.firstOrNull { it.dehydrated == true } }
+                .filterNotNull().firstWithTimeout().deviceId
+
+            startedClient2.client.closeSuspending()
 
             val startedClient3 =
                 startClient("client3", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
@@ -156,18 +168,23 @@ class DehydratedDeviceIT {
                     .getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
-            startedClient3.client.room.getById(roomId).filterNotNull().first()
+            startedClient3.client.key.getDeviceKeys(startedClient3.client.userId)
+                .map { deviceKeys -> deviceKeys?.firstOrNull { it.dehydrated == true && it.deviceId != firstDehydratedDeviceId } }
+                .filterNotNull().firstWithTimeout().deviceId shouldNotBe firstDehydratedDeviceId
+            startedClient3.client.room.getById(roomId).filterNotNull().firstWithTimeout()
             startedClient3.client.api.room.joinRoom(roomId)
             startedClient3.client.logout()
-            startedClient3.client.close()
+            startedClient3.client.closeSuspending()
 
-            startedClient1.client.user.getAll(roomId).first { it.size == 2 }
+            startedClient1.client.user.getAll(roomId).firstWithTimeout { it.size == 2 }
             startedClient1.client.room.sendMessage(roomId) {
                 text("some encrypted message")
             }
             startedClient1.client.room.waitForOutboxSent()
             val eventId =
-                checkNotNull(startedClient1.client.room.getOutbox(roomId).first().first().first()?.eventId)
+                checkNotNull(
+                    startedClient1.client.room.getOutbox(roomId).firstWithTimeout().first().firstWithTimeout()?.eventId
+                )
 
             val startedClient4 =
                 startClient("client4", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
@@ -177,7 +194,7 @@ class DehydratedDeviceIT {
                 val client4VerificationMethods =
                     startedClient4.client.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
-                        .first().methods
+                        .firstWithTimeout().methods
                 client4VerificationMethods.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>()
                     .first()
                     .verify(bootstrap.recoveryKey).getOrThrow()
@@ -185,7 +202,7 @@ class DehydratedDeviceIT {
             withClue("decrypt content in client4") {
                 val foundContent = startedClient4.client.room.getTimelineEvent(roomId, eventId)
                     .map { it?.content?.getOrNull() }.filterNotNull()
-                    .first()
+                    .firstWithTimeout()
                 foundContent.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>().body shouldBe "some encrypted message"
                 startedClient4.client.syncOnce()
             }
@@ -193,13 +210,13 @@ class DehydratedDeviceIT {
             withClue("send message from client4") {
                 startedClient4.client.room.sendMessage(roomId) { text("hi") }
                 startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().flatMapLatest { it }
-                    .first {
+                    .firstWithTimeout {
                         val content = it.content?.getOrNull()
                         content is RoomMessageEventContent.TextBased.Text && content.body == "hi"
                     }
             }
 
-            startedClient4.client.close()
+            startedClient4.client.closeSuspending()
         }
     }
 }

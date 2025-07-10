@@ -558,7 +558,7 @@ class ActiveVerificationTest : TrixnityBaseTest() {
         }
 
         suspend fun handleStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
-            super.handleIncomingVerificationStep(step, sender, isOurOwn)
+            super.handleVerificationStep(step, sender, isOurOwn)
         }
 
         fun setState(state: ActiveVerificationState) {

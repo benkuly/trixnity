@@ -22,7 +22,6 @@ kotlin {
                 api(libs.koin.core)
                 api(libs.kotlinx.datetime)
 
-                implementation(libs.arrow.resilience)
                 implementation(libs.oshai.logging)
             }
         }

@@ -169,6 +169,7 @@ class ActiveSasVerificationMethod private constructor(
     }
 
     private suspend fun onAccept(stepContent: SasAcceptEventContent, isOurOwn: Boolean) {
+        log.trace { "onAccept $stepContent (isOurOwn=$isOurOwn)" }
         _state.value = Accept(isOurOwn)
         messageAuthenticationCode = stepContent.messageAuthenticationCode
         if (!isOurOwn) {
@@ -224,6 +225,8 @@ class ActiveSasVerificationMethod private constructor(
     }
 
     private suspend fun onKey(stepContent: SasKeyEventContent, isOurOwn: Boolean) {
+        log.trace { "onKey $stepContent (isOurOwn=$isOurOwn)" }
+
         if (!isOurOwn) theirPublicKey = stepContent.key
 
         when (val currentState = state.value) {
@@ -303,6 +306,8 @@ class ActiveSasVerificationMethod private constructor(
     }
 
     private suspend fun onMac(stepContent: SasMacEventContent, isOurOwn: Boolean) {
+        log.trace { "onMac $stepContent (isOurOwn=$isOurOwn)" }
+
         if (!isOurOwn) theirMac = stepContent
         val theirMac = theirMac
 
@@ -344,7 +349,7 @@ class ActiveSasVerificationMethod private constructor(
                 ownUserId.full + ownDeviceId +
                 actualTransactionId
         val theirMacs = theirMac.mac.keys.filterIsInstance<Ed25519Key>()
-        val theirMacIds = theirMacs.mapNotNull { it.fullId }
+        val theirMacIds = theirMacs.map { it.fullId }
         val input = theirMacIds.sortedBy { it }.joinToString(",")
         val info = baseInfo + "KEY_IDS"
         log.trace { "create keys mac from input $input and info $info" }
