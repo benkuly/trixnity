@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed timing issue in verification
 - Fixed timing issue when creating dehydrated devices
 - Fixed timing issue when fetching own device keys directly after login
+- Fixed bug, that sending an OutboxMessage into an unknown room leads to an outbox deadlock
 
 ### Security
 

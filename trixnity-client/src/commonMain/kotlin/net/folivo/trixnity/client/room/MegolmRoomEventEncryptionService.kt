@@ -34,8 +34,7 @@ class MegolmRoomEventEncryptionService(
         content: MessageEventContent,
         roomId: RoomId,
     ): Result<MessageEventContent>? {
-        if (roomStore.get(roomId).first() == null) log.warn { "could not find $roomId in local data, waiting started" }
-        if (!roomStore.get(roomId).filterNotNull().first().encrypted) return null
+        if (roomStore.get(roomId).first()?.encrypted != true) return null
         val encryptionEventContent = withTimeoutOrNull(30.seconds) {
             roomStateStore.getByStateKey<EncryptionEventContent>(roomId).filterNotNull().first().content
         }

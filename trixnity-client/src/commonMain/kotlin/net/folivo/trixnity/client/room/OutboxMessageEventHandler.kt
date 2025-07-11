@@ -2,15 +2,9 @@ package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
 import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
@@ -23,6 +17,7 @@ import net.folivo.trixnity.client.room.outbox.findUploaderOrFallback
 import net.folivo.trixnity.client.store.RoomOutboxMessage
 import net.folivo.trixnity.client.store.RoomOutboxMessage.SendError
 import net.folivo.trixnity.client.store.RoomOutboxMessageStore
+import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
 import net.folivo.trixnity.client.utils.retryLoop
@@ -31,12 +26,14 @@ import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.OutboxMessageEventHandler")
 
 class OutboxMessageEventHandler(
     private val config: MatrixClientConfiguration,
     private val api: MatrixClientServerApiClient,
+    private val roomStore: RoomStore,
     private val roomEventEncryptionServices: List<RoomEventEncryptionService>,
     private val mediaService: MediaService,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
@@ -93,16 +90,29 @@ class OutboxMessageEventHandler(
                     coroutineScope {
                         outboxMessagesGroupedByRoom.forEach { (roomId, outboxMessagesInRoom) ->
                             launch {
-                                for (outboxMessage in outboxMessagesInRoom) {
-                                    val sendMessage = async { sendOutboxMessage(outboxMessage, roomId) }
-                                    val checkCancelled = async { checkWhetherCancelled(outboxMessage) }
-                                    select {
-                                        sendMessage.onAwait {}
-                                        checkCancelled.onAwait {}
+                                log.trace { "start send outbox messages in $roomId" }
+                                val doesRoomExist = withTimeoutOrNull(30.seconds) {
+                                    roomStore.get(roomId).onEach {
+                                        if (it == null) log.warn { "could not find $roomId and wait" }
+                                    }.filterNotNull().first()
+                                    log.info { "waited and found $roomId" }
+                                } != null
+                                if (doesRoomExist) {
+                                    for (outboxMessage in outboxMessagesInRoom) {
+                                        val sendMessage = async { sendOutboxMessage(outboxMessage, roomId) }
+                                        val checkCancelled = async { checkWhetherCancelled(outboxMessage) }
+                                        select {
+                                            sendMessage.onAwait {}
+                                            checkCancelled.onAwait {}
+                                        }
+                                        sendMessage.cancel()
+                                        checkCancelled.cancel()
                                     }
-                                    sendMessage.cancel()
-                                    checkCancelled.cancel()
+                                } else {
+                                    log.warn { "delete all outbox messages with $roomId because room does not exist" }
+                                    roomOutboxMessageStore.deleteByRoomId(roomId)
                                 }
+                                log.trace { "finished send outbox messages in $roomId" }
                             }
                         }
                     }
@@ -117,7 +127,8 @@ class OutboxMessageEventHandler(
     }
 
     private suspend fun sendOutboxMessage(outboxMessage: RoomOutboxMessage<*>, roomId: RoomId) {
-        log.trace { "send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})" }
+        val transactionId = outboxMessage.transactionId
+        log.trace { "send outbox message (transactionId=${transactionId}, roomId=${outboxMessage.roomId})" }
         val originalContent = outboxMessage.content
         val uploader =
             outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)
@@ -132,7 +143,6 @@ class OutboxMessageEventHandler(
                     outboxMessage.keepMediaInCache,
                 ).getOrThrow()
             }
-
         } catch (exception: Exception) {
             val sendError = when (exception) {
                 is MatrixServerException -> when (exception.statusCode) {
@@ -152,7 +162,7 @@ class OutboxMessageEventHandler(
                     throw exception
                 }
             }
-            roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
+            roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
                 it?.copy(sendError = sendError)
             }
             return
@@ -162,7 +172,7 @@ class OutboxMessageEventHandler(
         val content = when {
             contentResult == null -> {
                 log.warn { "cannot send message, because encryption algorithm not supported" }
-                roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
+                roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
                     it?.copy(sendError = SendError.EncryptionAlgorithmNotSupported)
                 }
                 return
@@ -170,7 +180,7 @@ class OutboxMessageEventHandler(
 
             contentResult.isFailure -> {
                 log.warn(contentResult.exceptionOrNull()) { "cannot send message" }
-                roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
+                roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
                     it?.copy(sendError = SendError.EncryptionError(contentResult.exceptionOrNull()?.message))
                 }
                 return
@@ -179,8 +189,8 @@ class OutboxMessageEventHandler(
             else -> contentResult.getOrThrow()
         }
         val eventId = try {
-            log.debug { "send event into $roomId" }
-            api.room.sendMessageEvent(roomId, content, outboxMessage.transactionId)
+            log.debug { "send outbox message ${transactionId} into $roomId" }
+            api.room.sendMessageEvent(roomId, content, transactionId)
                 .getOrThrow() // TODO fold as soon as continue is supported in inline lambdas
         } catch (exception: MatrixServerException) {
             val sendError = when (exception.statusCode) {
@@ -189,12 +199,12 @@ class OutboxMessageEventHandler(
                 HttpStatusCode.TooManyRequests -> throw exception
                 else -> SendError.Unknown(exception.errorResponse)
             }
-            roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
+            roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
                 it?.copy(sendError = sendError)
             }
             return
         }
-        roomOutboxMessageStore.update(outboxMessage.roomId, outboxMessage.transactionId) {
+        roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
             it?.copy(sentAt = clock.now(), eventId = eventId)
         }
         if (config.markOwnMessageAsRead) {
@@ -214,7 +224,7 @@ class OutboxMessageEventHandler(
             }
         }
         log.trace {
-            "finished send outbox message (transactionId=${outboxMessage.transactionId}, roomId=${outboxMessage.roomId})"
+            "finished send outbox message (transactionId=${transactionId}, roomId=${outboxMessage.roomId})"
         }
     }
 }

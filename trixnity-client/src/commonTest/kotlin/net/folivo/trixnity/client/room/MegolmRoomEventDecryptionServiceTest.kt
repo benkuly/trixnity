@@ -13,6 +13,7 @@ import net.folivo.trixnity.client.mocks.OutgoingRoomKeyRequestEventHandlerMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
@@ -88,6 +89,21 @@ class MegolmRoomEventDecryptionServiceTest : TrixnityBaseTest() {
     )
     private val expectedDecryptedEvent =
         DecryptedMegolmEvent(RoomMessageEventContent.TextBased.Text("decrypted"), room)
+
+    @Test
+    fun `encrypt » return null when room does not exist`() = runTest {
+        roomStateStore.save(
+            ClientEvent.RoomEvent.StateEvent(
+                EncryptionEventContent(algorithm = EncryptionAlgorithm.Unknown("super-duper-crypto")),
+                EventId("enc_state"),
+                alice,
+                room,
+                1234,
+                stateKey = "",
+            )
+        )
+        cut.encrypt(RoomMessageEventContent.TextBased.Text("hi"), RoomId("unknown")) shouldBe null
+    }
 
     @Test
     fun `encrypt » only encrypt in room with megolm algorithm`() = runTest {
