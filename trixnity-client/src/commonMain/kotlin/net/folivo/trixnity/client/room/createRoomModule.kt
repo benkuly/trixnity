@@ -22,6 +22,7 @@ fun createRoomModule() = module {
         OutboxMessageEventHandler(
             config = get(),
             api = get(),
+            roomStore = get(),
             roomEventEncryptionServices = getAll(),
             mediaService = get(),
             roomOutboxMessageStore = get(),

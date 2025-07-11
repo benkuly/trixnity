@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.mocks.MediaServiceMock
 import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.message.image
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
@@ -32,6 +32,7 @@ import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent.MegolmEncryptedMessageEventContent
@@ -41,6 +42,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.test.utils.testClock
 import net.folivo.trixnity.testutils.CustomErrorResponse
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -66,6 +68,9 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         rooms.value = mapOf(room to MutableStateFlow(Room(room)))
     }
 
+    private val roomStore = getInMemoryRoomStore().apply {
+        scheduleSetup { update(room) { simpleRoom } }
+    }
     private val roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore()
 
 
@@ -77,6 +82,7 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
             deleteSentOutboxMessageDelay = 10.seconds
         },
         api,
+        roomStore,
         listOf(roomEventDecryptionServiceMock),
         mediaServiceMock,
         roomOutboxMessageStore,
@@ -199,6 +205,40 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
             outboxMessages.first().sentAt shouldNotBe null
         }
         sendMessageEventCalled shouldBe true
+    }
+
+    @Test
+    fun `processOutboxMessages » delete messages from unknown room`() = runTest {
+        currentSyncState.value = SyncState.RUNNING
+        val message =
+            RoomOutboxMessage(
+                RoomId("!unknown"),
+                "transaction",
+                RoomMessageEventContent.TextBased.Text("hi"),
+                testClock.now()
+            )
+        roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
+        val megolmEventContent =
+            MegolmEncryptedMessageEventContent(
+                "cipher",
+                Curve25519KeyValue("key"),
+                "device",
+                "session"
+            )
+        var sendMessageEventCalled = false
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                SendMessageEvent(room, "m.room.encrypted", "transaction"),
+            ) {
+                it shouldBe megolmEventContent
+                sendMessageEventCalled = true
+                SendEventResponse(EventId("event"))
+            }
+        }
+        backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
+        delay(35.seconds)
+        roomOutboxMessageStore.getAll().flattenValues().first() shouldHaveSize 0
+        sendMessageEventCalled shouldBe false
     }
 
     @Test

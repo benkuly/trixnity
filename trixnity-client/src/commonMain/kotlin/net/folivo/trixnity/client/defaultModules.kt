@@ -177,6 +177,7 @@ fun createTrixnityBotModules(): List<Module> = listOf(
             OutboxMessageEventHandler(
                 config = get(),
                 api = get(),
+                roomStore = get(),
                 roomEventEncryptionServices = getAll(),
                 mediaService = get(),
                 roomOutboxMessageStore = get(),
@@ -312,6 +313,7 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                 OutboxMessageEventHandler(
                     config = get(),
                     api = get(),
+                    roomStore = get(),
                     roomEventEncryptionServices = getAll(),
                     mediaService = get(),
                     roomOutboxMessageStore = get(),

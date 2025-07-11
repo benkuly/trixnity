@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.room
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.core.model.RoomId
@@ -18,8 +17,8 @@ class UnencryptedRoomEventEncryptionService(
         content: MessageEventContent,
         roomId: RoomId,
     ): Result<MessageEventContent>? {
-        if (roomStore.get(roomId).first() == null) log.warn { "could not find $roomId in local data, waiting started" }
-        if (roomStore.get(roomId).filterNotNull().first().encrypted) return null
+        val room = roomStore.get(roomId).first()
+        if (room == null || room.encrypted) return null
         return Result.success(content)
     }
 
