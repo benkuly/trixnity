@@ -39,7 +39,7 @@ class TimelineEventSerializerTest : TrixnityBaseTest() {
                 MegolmEncryptedMessageEventContent(ciphertext = "cipher", sessionId = "sessionId"),
                 EventId("$1event"),
                 UserId("sender", "server"),
-                RoomId("room", "server"),
+                RoomId("!room:server"),
                 24,
             ),
             content = content,

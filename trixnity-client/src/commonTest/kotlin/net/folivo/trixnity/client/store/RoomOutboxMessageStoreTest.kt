@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class RoomOutboxMessageStoreTest : TrixnityBaseTest() {
 
-    private val room = RoomId("room", "server")
+    private val room = RoomId("!room:server")
 
     private val roomOutboxMessageRepository = InMemoryRoomOutboxMessageRepository() as RoomOutboxMessageRepository
     private val cut = RoomOutboxMessageStore(

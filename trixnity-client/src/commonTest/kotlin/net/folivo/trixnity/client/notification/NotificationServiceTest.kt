@@ -58,7 +58,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
 
     private val room = RoomServiceMock()
 
-    private val roomId = RoomId("room", "localhost")
+    private val roomId = RoomId("!room:localhost")
     private val user1 = UserId("user1", "localhost")
     private val otherUser = UserId("otherUser", "localhost")
     private val user1DisplayName = "User1 🦊"

@@ -89,7 +89,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
         requireNotNull(json.serializersModule.getContextual(DecryptedMegolmEvent::class))
 
     val decryptedOlmEventContent = RoomKeyEventContent(
-        RoomId("room", "server"),
+        RoomId("!room:server"),
         "sessionId",
         "sessionKey",
         EncryptionAlgorithm.Megolm,
@@ -99,7 +99,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
     val relatesTo = RelatesTo.Replace(EventId("$1fancyEvent"), RoomMessageEventContent.TextBased.Text("Hi"))
     val decryptedMegolmEventContent = RoomMessageEventContent.TextBased.Text("*Hi", relatesTo = relatesTo)
-    val room = RoomId("room", "server")
+    val room = RoomId("!room:server")
     val decryptedMegolmEvent = DecryptedMegolmEvent(decryptedMegolmEventContent, room)
 
     private suspend fun TestScope.setup() {
@@ -1058,7 +1058,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             val ciphertext = outboundSession.encrypt(
                 json.encodeToString(
                     decryptedMegolmEventSerializer,
-                    decryptedMegolmEvent.copy(roomId = RoomId("other", "server"))
+                    decryptedMegolmEvent.copy(roomId = RoomId("!other:server"))
                 )
             )
             cut.decryptMegolm(

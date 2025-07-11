@@ -41,7 +41,7 @@ class OlmStoreTest : TrixnityBaseTest() {
     private val session = StoredInboundMegolmSession(
         senderKey = Curve25519KeyValue("senderCurve"),
         sessionId = "session",
-        roomId = RoomId("room", "server"),
+        roomId = RoomId("!room:server"),
         firstKnownIndex = 24,
         hasBeenBackedUp = false,
         isTrusted = true,
@@ -65,12 +65,12 @@ class OlmStoreTest : TrixnityBaseTest() {
             inboundMegolmSessionRepository.save(
                 InboundMegolmSessionRepositoryKey(
                     sessionId = "session1",
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                 ), StoredInboundMegolmSession(
                     senderKey = Curve25519KeyValue("senderCurve1"),
                     senderSigningKey = Ed25519KeyValue("senderEd1"),
                     sessionId = "session1",
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                     firstKnownIndex = 1,
                     hasBeenBackedUp = false,
                     isTrusted = true,
@@ -81,12 +81,12 @@ class OlmStoreTest : TrixnityBaseTest() {
             inboundMegolmSessionRepository.save(
                 InboundMegolmSessionRepositoryKey(
                     sessionId = "session2",
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                 ), StoredInboundMegolmSession(
                     senderKey = Curve25519KeyValue("senderCurve2"),
                     senderSigningKey = Ed25519KeyValue("senderEd2"),
                     sessionId = "session2",
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                     firstKnownIndex = 1,
                     hasBeenBackedUp = false,
                     isTrusted = true,
@@ -126,7 +126,7 @@ class OlmStoreTest : TrixnityBaseTest() {
             override suspend fun delete(key: Long) {}
             override suspend fun deleteAll() {}
         }
-        
+
         val cut = OlmCryptoStore(
             olmAccountRepositoryMock,
             InMemoryOlmForgetFallbackKeyAfterRepository(),

@@ -13,9 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
@@ -47,7 +47,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class OutdatedKeysHandlerTest : TrixnityBaseTest() {
 
-    private val room = RoomId("room", "server")
+    private val room = RoomId("!room:server")
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
     private val us = UserId("us", "server")
@@ -165,7 +165,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
     @Test
     fun `updateDeviceKeysFromChangedMembership » ignore unencrypted rooms`() = runTest {
         roomStore.update(room) { simpleRoom.copy(roomId = room, encrypted = true) }
-        val room2 = RoomId("roo2", "server")
+        val room2 = RoomId("!roo2:server")
         roomStore.update(room2) { simpleRoom.copy(roomId = room2) }
         cut.updateDeviceKeysFromChangedMembership(
             listOf(
@@ -228,7 +228,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
     fun `updateDeviceKeysFromChangedMembership » not remove device keys on leave or ban when there are more rooms`() =
         runTest {
             roomStore.update(room) { simpleRoom.copy(roomId = room, encrypted = true) }
-            val otherRoom = RoomId("otherRoom", "server")
+            val otherRoom = RoomId("!otherRoom:server")
             keyStore.updateDeviceKeys(alice) { mapOf(aliceDevice to aliceKeys) }
             roomStore.update(otherRoom) {
                 simpleRoom.copy(roomId = otherRoom, encrypted = true)
@@ -773,9 +773,9 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
                     )
                 }
             }
-            val room1 = RoomId("room1", "server")
-            val room2 = RoomId("room2", "server")
-            val room3 = RoomId("room3", "server")
+            val room1 = RoomId("!room1:server")
+            val room2 = RoomId("!room2:server")
+            val room3 = RoomId("!room3:server")
             roomStore.update(room1) {
                 simpleRoom.copy(roomId = room1, encrypted = true)
             }
@@ -878,7 +878,7 @@ class OutdatedKeysHandlerTest : TrixnityBaseTest() {
                     )
                 }
             }
-            val room1 = RoomId("room1", "server")
+            val room1 = RoomId("!room1:server")
             roomStore.update(room1) {
                 simpleRoom.copy(roomId = room1, encrypted = true)
             }

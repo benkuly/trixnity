@@ -27,8 +27,8 @@ import kotlin.test.Test
 class MessageBuilderTest : TrixnityBaseTest() {
 
     private val ownUserId = UserId("me", "server")
-    private val encryptedRoom = RoomId("encryptedRoom", "server")
-    private val unencryptedRoom = RoomId("unencryptedRoom", "server")
+    private val encryptedRoom = RoomId("!encryptedRoom:server")
+    private val unencryptedRoom = RoomId("!unencryptedRoom:server")
 
     private val mediaService = MediaServiceMock()
     private val roomService = RoomServiceMock().apply {
@@ -47,7 +47,7 @@ class MessageBuilderTest : TrixnityBaseTest() {
                     ),
                     EventId("dino"),
                     UserId("sender", "server"),
-                    RoomId("room", "server"),
+                    RoomId("!room:server"),
                     1234
                 ),
                 gap = null,
@@ -493,7 +493,7 @@ class MessageBuilderTest : TrixnityBaseTest() {
                 content = RoomMessageEventContent.TextBased.Text("hi", relatesTo = relatesTo, mentions = mentions),
                 id = eventId,
                 sender = UserId("sender", "server"),
-                roomId = RoomId("room", "server"),
+                roomId = RoomId("!room:server"),
                 originTimestamp = 24,
             ),
             previousEventId = null,

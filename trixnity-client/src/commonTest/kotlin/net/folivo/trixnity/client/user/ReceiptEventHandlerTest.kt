@@ -21,7 +21,7 @@ import kotlin.test.Test
 
 class ReceiptEventHandlerTest : TrixnityBaseTest() {
 
-    private val room = RoomId("room", "localhost")
+    private val room = RoomId("!room:localhost")
     private val alice = UserId("alice", "localhost")
     private val bob = UserId("bob", "localhost")
 

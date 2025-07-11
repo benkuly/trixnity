@@ -56,7 +56,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     override val packageLogLevels: Map<String, Level>
         get() = super.packageLogLevels + mapOf("net.folivo.trixnity.client.store.cache" to Level.INFO)
 
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
     private val aliceDevice = "ALICEDEVICE"

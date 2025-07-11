@@ -323,7 +323,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
     }
 
     // Room IDs
-    private fun roomIdTest(id: String, localpart: String, domain: String, expected: Boolean) {
+    private fun roomIdTest(id: String, expected: Boolean) {
         val result = findMentions("omw to $id now")
 
         result.values.any {
@@ -332,10 +332,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         if (expected) {
             result.size shouldBe 1
-            (result.entries.first { it.value.match == id }.value as Mention.Room).roomId shouldBe RoomId(
-                localpart,
-                domain
-            )
+            (result.entries.first { it.value.match == id }.value as Mention.Room).roomId shouldBe RoomId(id)
         } else {
             result.size shouldBe 0
         }
@@ -343,52 +340,22 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
     @Test
     fun shouldPassRoomIdentifier() {
-        roomIdTest("!a9._~B-:example.com", "a9._~B-", "example.com", expected = true)
-    }
-
-    @Test
-    fun shouldPassRoomIdentifierWithPort() {
-        roomIdTest("!room:sub.example.com:8000", "room", "sub.example.com:8000", expected = true)
-    }
-
-    @Test
-    fun shouldPassRoomIdentifierWithIPV4() {
-        roomIdTest("!room:1.1.1.1", "room", "1.1.1.1", expected = true)
-    }
-
-    @Test
-    fun shouldPassRoomIdentifierWithIPV6() {
-        roomIdTest(
-            "!room:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
-            "room",
-            "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
-            expected = true
-        )
+        roomIdTest("!a9._~B-:example.com", expected = true)
     }
 
     @Test
     fun shouldFailRoomIdOver255Bytes() {
-        roomIdTest("!${"roomi".repeat(50)}:example.com", "roomi".repeat(50), "example.com", expected = false)
+        roomIdTest("!${"roomi".repeat(50)}:example.com", expected = false)
     }
 
     @Test
     fun shouldFailRoomIdWithIllegalSymboleInLocalpart() {
-        roomIdTest("!room&:example.com", "room&", "example.com", expected = false)
+        roomIdTest("!room&:example.com", expected = false)
     }
 
     @Test
     fun shouldFailRoomIdWithNonOpaqueLocalpart() {
-        roomIdTest("!ro+om:example.com", "ro+om", "example.com", expected = false)
-    }
-
-    @Test
-    fun shouldFailRoomIdWithIllegalSymboleInDomain() {
-        roomIdTest("!room:ex&mple.com", "room", "ex&ample.com", expected = false)
-    }
-
-    @Test
-    fun shouldFailRoomIdIPV6WithIllegalCharacters() {
-        roomIdTest("!room:[2001:8a2e:0370:733G]", "room", "[2001:8a2e:0370:733G]", expected = false)
+        roomIdTest("!ro+om:example.com", expected = false)
     }
 
     // Room Alias
@@ -510,7 +477,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
             }
         }
 
-        fun roomId(uri: String, localpart: String, domain: String, expected: Boolean) {
+        fun roomId(uri: String, id: String, expected: Boolean) {
             val result = findMentions("omw to $uri now")
 
             result.values.any {
@@ -519,10 +486,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
             if (expected) {
                 result.size shouldBe 1
-                (result.entries.first { it.value.match == uri }.value as Mention.Room).roomId shouldBe RoomId(
-                    localpart,
-                    domain
-                )
+                (result.entries.first { it.value.match == uri }.value as Mention.Room).roomId shouldBe RoomId(id)
             }
         }
 
@@ -544,7 +508,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
             }
         }
 
-        fun event(uri: String, localpart: String, domain: String, id: String, expected: Boolean) {
+        fun event(uri: String, roomId: String, eventId: String, expected: Boolean) {
             val result = findMentions("You can find it at $uri :)")
 
             result.values.any {
@@ -558,8 +522,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
                 if (mention !is Mention.Event) {
                     fail("Wrong Mention type")
                 } else {
-                    mention.eventId shouldBe EventId("$$id")
-                    mention.roomId shouldBe RoomId(localpart, domain)
+                    mention.eventId shouldBe EventId(eventId)
+                    mention.roomId shouldBe RoomId(roomId)
                 }
             } else {
                 result.size shouldBe 0
@@ -652,35 +616,34 @@ class MatrixRegexTest : TrixnityBaseTest() {
     // URIs: Room ID
     @Test
     fun shouldPassRoomIdURIWithActionQuery() {
-        UriTest.roomId("matrix:roomid/room:example.com?action=join", "room", "example.com", expected = true)
+        UriTest.roomId("matrix:roomid/room:example.com?action=join", "!room:example.com", expected = true)
     }
 
     @Test
     fun shouldPassRoomIdURIWithUnkownQuery() {
-        UriTest.roomId("matrix:roomid/room:example.com?actiooon=message", "room", "example.com", expected = true)
+        UriTest.roomId("matrix:roomid/room:example.com?actiooon=message", "!room:example.com", expected = true)
     }
 
     @Test
     fun shouldFailRoomIdURIWithIllegalQuery() {
-        UriTest.roomId("matrix:roomid/room:example.com?actioné=messager", "room", "example.com", expected = false)
+        UriTest.roomId("matrix:roomid/room:example.com?actioné=messager", "!room:example.com", expected = false)
     }
 
     @Test
     fun shouldFailRoomIdURIWithReservedQuery() {
-        UriTest.roomId("matrix:roomid/room:example.com?m.action=join", "room", "example.com", expected = false)
+        UriTest.roomId("matrix:roomid/room:example.com?m.action=join", "!room:example.com", expected = false)
     }
 
     @Test
     fun shouldPassRoomIdURIWithViaQuery() {
-        UriTest.roomId("matrix:roomid/room:example.com?via=example.com", "room", "example.com", expected = true)
+        UriTest.roomId("matrix:roomid/room:example.com?via=example.com", "!room:example.com", expected = true)
     }
 
     @Test
     fun shouldPassRoomIdURIWithViaAndActionQuery() {
         UriTest.roomId(
             "matrix:roomid/room:example.com?via=example.com&action=join",
-            "room",
-            "example.com",
+            "!room:example.com",
             expected = true
         )
     }
@@ -689,15 +652,14 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun shouldPassRoomIdURIWithActionAndViaQuery() {
         UriTest.roomId(
             "matrix:roomid/room:example.com?action=chat&via=example.com",
-            "room",
-            "example.com",
+            "!room:example.com",
             expected = true
         )
     }
 
     @Test
     fun shouldPassRoomIdURI() {
-        UriTest.roomId("matrix:roomid/room:example.com", "room", "example.com", expected = true)
+        UriTest.roomId("matrix:roomid/room:example.com", "!room:example.com", expected = true)
     }
 
     // URIs: Event ID
@@ -705,9 +667,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun shouldPassEventURIWithActionQuery() {
         UriTest.event(
             "matrix:roomid/room:example.com/e/event?action=join",
-            "room",
-            "example.com",
-            "event",
+            "!room:example.com",
+            "\$event",
             expected = true
         )
     }
@@ -716,9 +677,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun shouldPassEventURIWithViaQuery() {
         UriTest.event(
             "matrix:roomid/room:example.com/e/event?via=example.com",
-            "room",
-            "example.com",
-            "event",
+            "!room:example.com",
+            "\$event",
             expected = true
         )
     }
@@ -727,9 +687,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun shouldPassEventURIWithViaAndActionQuery() {
         UriTest.event(
             "matrix:roomid/room:example.com/e/event?via=example.com&action=join",
-            "room",
-            "example.com",
-            "event",
+            "!room:example.com",
+            "\$event",
             expected = true
         )
     }
@@ -738,16 +697,15 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun shouldPassEventURIWithActionAndViaQuery() {
         UriTest.event(
             "matrix:roomid/room:example.com/e/event?action=chat&via=example.com",
-            "room",
-            "example.com",
-            "event",
+            "!room:example.com",
+            "\$event",
             expected = true
         )
     }
 
     @Test
     fun shouldPassEventURI() {
-        UriTest.event("matrix:roomid/room:example.com/e/event", "room", "example.com", "event", expected = true)
+        UriTest.event("matrix:roomid/room:example.com/e/event", "!room:example.com", "\$event", expected = true)
     }
 
     // Permalinks (matrix.to)
@@ -770,7 +728,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
             }
         }
 
-        fun roomId(permalink: String, localpart: String, domain: String, expected: Boolean) {
+        fun roomId(permalink: String, roomId: String, expected: Boolean) {
             val result = findMentions("omw to $permalink now")
 
             result.values.any {
@@ -779,10 +737,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
             if (expected) {
                 result.size shouldBe 1
-                (result.entries.first { it.value.match == permalink }.value as Mention.Room).roomId shouldBe RoomId(
-                    localpart,
-                    domain
-                )
+                (result.entries.first { it.value.match == permalink }.value as Mention.Room).roomId shouldBe
+                        RoomId(roomId)
             } else {
                 result.size shouldBe 0
             }
@@ -806,7 +762,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
             }
         }
 
-        fun event(permalink: String, localpart: String, domain: String, id: String, expected: Boolean) {
+        fun event(permalink: String, roomId: String, eventId: String, expected: Boolean) {
             val result = findMentions("You can find it at $permalink :)")
 
             result.values.any {
@@ -820,8 +776,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
                 if (mention !is Mention.Event) {
                     fail("Wrong Mention type")
                 } else {
-                    mention.eventId shouldBe EventId("$$id")
-                    mention.roomId shouldBe RoomId(localpart, domain)
+                    mention.eventId shouldBe EventId(eventId)
+                    mention.roomId shouldBe RoomId(roomId)
                 }
             } else {
                 result.size shouldBe 0
@@ -919,23 +875,21 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun shouldPassRoomIdPermalinkWithinAnchorTag() {
         PermalinkTest.roomId(
             "<a href=\"https://matrix.to/#/!room:example.com\">Hallo</a>",
-            "room",
-            "example.com",
+            "!room:example.com",
             expected = true
         )
     }
 
     @Test
     fun shouldPassRoomIdPermalink() {
-        PermalinkTest.roomId("https://matrix.to/#/!room:example.com", "room", "example.com", expected = true)
+        PermalinkTest.roomId("https://matrix.to/#/!room:example.com", "!room:example.com", expected = true)
     }
 
     @Test
     fun shouldPassEncodedRoomIdPermalink() {
         PermalinkTest.roomId(
-            "https://matrix.to/#/!somewhere%3Aexample.org?via=elsewhere.ca",
-            "somewhere",
-            "example.org",
+            "https://matrix.to/#/!room%3Aexample.com?via=elsewhere.ca",
+            "!room:example.com",
             expected = true
         )
     }
@@ -945,9 +899,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun shouldPassEventIDPermalinkWithinAnchorTag() {
         PermalinkTest.event(
             "<a href=\"https://matrix.to/#/!room:example.com/\$event\">Hallo</a>",
-            "room",
-            "example.com",
-            "event",
+            "!room:example.com",
+            "\$event",
             expected = true
         )
     }
@@ -956,9 +909,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun shouldPassEventIDPermalink() {
         PermalinkTest.event(
             "https://matrix.to/#/!room:example.com/\$event",
-            "room",
-            "example.com",
-            "event",
+            "!room:example.com",
+            "\$event",
             expected = true
         )
     }
@@ -966,10 +918,9 @@ class MatrixRegexTest : TrixnityBaseTest() {
     @Test
     fun shouldPassEncodedEventIDPermalink() {
         PermalinkTest.event(
-            "https://matrix.to/#/!somewhere%3Aexample.org/%24event%3Aexample.org?via=elsewhere.ca",
-            "somewhere",
-            "example.org",
-            "event%3Aexample.org",
+            "https://matrix.to/#/!room%3Aexample.com/%24event%3Aexample.org?via=elsewhere.ca",
+            "!room:example.com",
+            "\$event%3Aexample.org",
             expected = true
         )
     }

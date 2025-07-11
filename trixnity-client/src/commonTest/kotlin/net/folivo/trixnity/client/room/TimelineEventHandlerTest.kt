@@ -38,7 +38,7 @@ import kotlin.test.Test
 class TimelineEventHandlerTest : TrixnityBaseTest() {
 
     private val alice = UserId("alice", "server")
-    private val room = RoomId("room", "server")
+    private val room = RoomId("!room:server")
     private val event1 = plainEvent(1)
     private val event2 = plainEvent(2)
     private val event3 = plainEvent(3)
@@ -594,14 +594,14 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
             RedactionEventContent(redacts = EventId("\$event1")),
             EventId("\$event3"),
             UserId("sender", "server"),
-            RoomId("room", "server"),
+            RoomId("!room:server"),
             3
         )
         val redactionEvent2 = MessageEvent(
             RedactionEventContent(redacts = EventId("\$event2")),
             EventId("\$event4"),
             UserId("sender", "server"),
-            RoomId("room", "server"),
+            RoomId("!room:server"),
             4
         )
         roomStore.update(room) { Room(roomId = room, lastEventId = event1.id) }
@@ -1501,14 +1501,14 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
             RedactionEventContent(redacts = EventId("\$event1")),
             EventId("\$event3"),
             UserId("sender", "server"),
-            RoomId("room", "server"),
+            RoomId("!room:server"),
             3
         )
         val redactionEvent2 = MessageEvent(
             RedactionEventContent(redacts = EventId("\$event2")),
             EventId("\$event4"),
             UserId("sender", "server"),
-            RoomId("room", "server"),
+            RoomId("!room:server"),
             4
         )
         apiConfig.endpoints {
@@ -1631,16 +1631,16 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                 ),
                 EventId("$1event"),
                 UserId("sender", "server"),
-                RoomId("room", "server"),
+                RoomId("!room:server"),
                 1234,
             )
         )
-        roomTimelineStore.getRelations(EventId("$1other"), RoomId("room", "server"), RelationType.Reference)
+        roomTimelineStore.getRelations(EventId("$1other"), RoomId("!room:server"), RelationType.Reference)
             .flatten().first() shouldBe
                 mapOf(
                     EventId("$1event") to
                             TimelineEventRelation(
-                                RoomId("room", "server"),
+                                RoomId("!room:server"),
                                 EventId("$1event"),
                                 RelationType.Reference,
                                 EventId("$1other")

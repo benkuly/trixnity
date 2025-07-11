@@ -266,7 +266,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         }
 
 
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
     private val sessionId = "sessionId"
     private val version = "1"
     private val senderKey = Curve25519KeyValue("senderKey")
@@ -501,8 +501,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         keyStore.getSecrets().keys shouldContain M_MEGOLM_BACKUP_V1
     }
 
-    private val room1 = RoomId("room1", "server")
-    private val room2 = RoomId("room2", "server")
+    private val room1 = RoomId("!room1:server")
+    private val room2 = RoomId("!room2:server")
     private val sessionId1 = "session1"
     private val sessionId2 = "session2"
     private val pickle1 by suspendLazy {
@@ -600,7 +600,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         var setRoomKeyBackupDataCalled = false
         apiConfig.endpoints {
             matrixJsonEndpoint(SetRoomsKeyBackup("1")) {
-                it.rooms.keys shouldBe setOf(RoomId("room1", "server"), RoomId("room2", "server"))
+                it.rooms.keys shouldBe setOf(RoomId("!room1:server"), RoomId("!room2:server"))
                 assertSoftly(it.rooms[room1]?.sessions?.get(sessionId1)) {
                     assertNotNull(this)
                     this.firstMessageIndex shouldBe 2

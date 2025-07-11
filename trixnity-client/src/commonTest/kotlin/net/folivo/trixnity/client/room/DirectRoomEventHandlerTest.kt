@@ -38,7 +38,7 @@ class DirectRoomEventHandlerTest : TrixnityBaseTest() {
         globalAccountDataStore,
     )
 
-    private val otherRoom = RoomId("other", "server")
+    private val otherRoom = RoomId("!other:server")
     private val event = StateEvent(
         MemberEventContent(membership = Membership.JOIN, isDirect = true),
         EventId("$123"),
@@ -89,7 +89,7 @@ class DirectRoomEventHandlerTest : TrixnityBaseTest() {
     fun `setNewDirectEventFromMemberEvent » membership is direct » there are no direct rooms with that user » add multiple direct rooms`() =
         runTest {
             noDirectRoomsWithThatUserSetup()
-            val yetAnotherRoom = RoomId("yar", "server")
+            val yetAnotherRoom = RoomId("!yar:server")
             var setDirectCalled = false
             apiConfig.endpoints {
                 matrixJsonEndpoint(SetGlobalAccountData(bob, "m.direct")) {

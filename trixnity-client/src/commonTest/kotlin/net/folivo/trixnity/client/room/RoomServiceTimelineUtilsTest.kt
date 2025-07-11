@@ -41,7 +41,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
     private val room = simpleRoom.roomId
-    private val newRoom = RoomId("new", "server")
+    private val newRoom = RoomId("!new:server")
 
     private val sender = UserId("sender", "server")
 
@@ -520,7 +520,7 @@ class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
         roomTimelineStore.addAll(
             listOf(
                 timelineEvent1,
-                timelineEvent1.copy(event = event1.copy(id = event10.id, roomId = RoomId("other", "server")))
+                timelineEvent1.copy(event = event1.copy(id = event10.id, roomId = RoomId("!other:server")))
             )
         )
         apiConfig.endpoints {
@@ -541,7 +541,7 @@ class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "nextBatch2", room = Sync.Response.Rooms(
                         join = mapOf(
-                            RoomId("other", "server") to Sync.Response.Rooms.JoinedRoom(
+                            RoomId("!other:server") to Sync.Response.Rooms.JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(event10)
                                 )

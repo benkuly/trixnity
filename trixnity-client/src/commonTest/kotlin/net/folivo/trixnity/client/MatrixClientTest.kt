@@ -226,7 +226,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                             when {
                                 path.startsWith("/_matrix/client/v3/sync?filter=someFilter") -> {
                                     assertEquals(HttpMethod.Get, request.method)
-                                    val roomId = RoomId("room1", "localhost")
+                                    val roomId = RoomId("!room1:localhost")
                                     respond(
                                         json.encodeToString(
                                             serverResponse.copy(

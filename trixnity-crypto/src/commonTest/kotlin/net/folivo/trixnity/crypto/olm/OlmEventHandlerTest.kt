@@ -42,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
 class OlmEventHandlerTest : TrixnityBaseTest() {
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
 
     private val dummyPickledAccount =
         "3/r66zrJBjq31k9A1hFSvIjAhA1PWCM1QEsOSl18NppbOMdV1pCpr+R6gJxRN7QHLYTyClCLJp5cpSEOwj8bVTP4uAAF0SEOdvo26OdV0b6dq85NyIYNmkC+lbuvFerVEhmFHqRNsAkYlr0r+XNa4STYVY9Y1ks5ZEXXqmzYf+hVx1fNRPIyPzn/z6ZxCPwo2MoAHLr7VjotOX3vgz8vGzLoS4Dc2476M45rp2Jnjo4NRVHQeSQgcw"

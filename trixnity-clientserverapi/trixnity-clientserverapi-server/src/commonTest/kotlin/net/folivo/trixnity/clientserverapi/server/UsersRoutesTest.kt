@@ -344,7 +344,7 @@ class UsersRoutesTest : TrixnityBaseTest() {
         everySuspend { handlerMock.getAccountData(any()) }
             .returns(
                 DirectEventContent(
-                    mapOf(UserId("bob", "server") to setOf(RoomId("someRoom", "server")))
+                    mapOf(UserId("bob", "server") to setOf(RoomId("!someRoom:server")))
                 )
             )
         val response =
@@ -408,7 +408,7 @@ class UsersRoutesTest : TrixnityBaseTest() {
                 it.endpoint.userId shouldBe UserId("@alice:example.com")
                 it.requestBody shouldBe DirectEventContent(
                     mapOf(
-                        UserId("bob", "server") to setOf(RoomId("someRoom", "server"))
+                        UserId("bob", "server") to setOf(RoomId("!someRoom:server"))
                     )
                 )
             })

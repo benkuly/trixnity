@@ -33,7 +33,7 @@ class RoomUserStoreTest : TrixnityBaseTest() {
         testScope.testClock,
     )
 
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
     private val aliceId = UserId("alice", "server")
     private val bobId = UserId("bob", "server")
     private val aliceUser = RoomUser(

@@ -40,7 +40,7 @@ import kotlin.time.Duration.Companion.seconds
 fun String.trimToFlatJson() =
     this.trimIndent().lines().filter { it.isNotEmpty() }.joinToString("") { it.replace(": ", ":").trim() }
 
-val simpleRoom = Room(RoomId("room", "server"), lastEventId = EventId("\$event"))
+val simpleRoom = Room(RoomId("!room:server"), lastEventId = EventId("\$event"))
 val simpleUserInfo =
     UserInfo(UserId("me", "server"), "myDevice", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, ""))
 

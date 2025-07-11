@@ -10,6 +10,10 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable(with = EventIdSerializer::class)
 data class EventId(val full: String) {
+    companion object {
+        const val sigilCharacter = '$'
+    }
+
     override fun toString() = full
 }
 

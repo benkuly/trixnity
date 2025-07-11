@@ -49,7 +49,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
     private val aliceDevice = "ALICEDEVICE"
-    private val room = RoomId("room", "server")
+    private val room = RoomId("!room:server")
     private val sessionId = "sessionId"
     private val senderKey = Key.Curve25519Key(null, "sender")
     private val senderSigningKey = Key.Ed25519Key(null, "senderSigning")

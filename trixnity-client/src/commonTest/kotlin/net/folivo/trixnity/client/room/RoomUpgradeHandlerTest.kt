@@ -21,9 +21,9 @@ import kotlin.test.Test
 
 class RoomUpgradeHandlerTest : TrixnityBaseTest() {
 
-    private val roomId1 = RoomId("room1", "server")
-    private val roomId2 = RoomId("room2", "server")
-    private val roomId3 = RoomId("room3", "server")
+    private val roomId1 = RoomId("!room1:server")
+    private val roomId2 = RoomId("!room2:server")
+    private val roomId3 = RoomId("!room3:server")
 
     private val config = MatrixClientConfiguration()
 

@@ -35,12 +35,12 @@ import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
 import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
 import net.folivo.trixnity.serverserverapi.model.federation.ThumbnailResizingMethod.SCALE
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -1467,7 +1467,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getHierarchy(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.suggestedOnly shouldBe true
             })
         }
@@ -1940,7 +1940,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.timestampToEvent(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.timestamp shouldBe 24
                 it.endpoint.dir shouldBe TimestampToEvent.Direction.FORWARDS
             })
