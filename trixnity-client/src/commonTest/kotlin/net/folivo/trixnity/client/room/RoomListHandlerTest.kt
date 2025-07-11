@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
+import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomDisplayName
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -34,7 +34,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
 
     private val user1 = UserId("user1", "server")
     private val user2 = UserId("user2", "server")
@@ -166,7 +166,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             roomStore.update(roomId) { Room(roomId, isDirect = false) }
             val eventContent = DirectEventContent(
                 mappings = mapOf(
-                    UserId("user1", "localhost") to setOf(RoomId("room2", "localhost"), roomId)
+                    UserId("user1", "localhost") to setOf(RoomId("!room2:localhost"), roomId)
                 )
             )
             roomStore.getAll().first { it.size == 1 }
@@ -184,7 +184,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
     @Test
     fun `isDirect » membership is LEAVE or BAN » don't change isDirect`() =
         runTest {
-            val roomId2 = RoomId("room2", "server")
+            val roomId2 = RoomId("!room2:server")
             roomStore.update(roomId) { Room(roomId, isDirect = true, membership = Membership.LEAVE) }
             roomStore.update(roomId2) { Room(roomId2, isDirect = true, membership = Membership.BAN) }
             val eventContent = DirectEventContent(
@@ -206,8 +206,8 @@ class RoomListHandlerTest : TrixnityBaseTest() {
     @Test
     fun `isDirect » set the room to direct == 'false' when no DirectEventContent is found for the room`() =
         runTest {
-            val room1 = RoomId("room1", "localhost")
-            val room2 = RoomId("room2", "localhost")
+            val room1 = RoomId("!room1:localhost")
+            val room2 = RoomId("!room2:localhost")
             val roomStore = roomStore
 
             roomStore.update(room1) { Room(room1, isDirect = true) }
@@ -248,7 +248,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             mappings = mapOf(
                 alice to setOf(
                     roomId,
-                    RoomId("room2", "localhost")
+                    RoomId("!room2:localhost")
                 )
             )
         )
@@ -265,7 +265,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `avatarUrl » membership is LEAVE or BAN » don't change avatar'`() = runTest {
-        val roomId2 = RoomId("room2", "localhost")
+        val roomId2 = RoomId("!room2:localhost")
         roomStore.update(roomId) { Room(roomId, avatarUrl = "mxc://localhost/abcdef", membership = Membership.LEAVE) }
         roomStore.update(roomId2) { Room(roomId2, avatarUrl = "mxc://localhost/abcdef", membership = Membership.BAN) }
         val eventContent = DirectEventContent(
@@ -347,7 +347,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 mappings = mapOf(
                     alice to setOf(
                         roomId,
-                        RoomId("room2", "localhost")
+                        RoomId("!room2:localhost")
                     )
                 )
             )
@@ -368,7 +368,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             roomStore.update(roomId) { Room(roomId, isDirect = true, avatarUrl = "mxc://localhost/abcdef") }
             globalAccountDataStore.save(
                 ClientEvent.GlobalAccountDataEvent(
-                    DirectEventContent(mappings = mapOf(bob to setOf(roomId, RoomId("room2", "localhost"))))
+                    DirectEventContent(mappings = mapOf(bob to setOf(roomId, RoomId("!room2:localhost"))))
                 )
             )
             roomStateStore.save(

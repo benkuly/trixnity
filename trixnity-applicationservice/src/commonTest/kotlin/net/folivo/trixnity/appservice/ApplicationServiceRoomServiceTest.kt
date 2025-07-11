@@ -23,7 +23,7 @@ class ApplicationServiceRoomServiceTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
     private val mappings = createDefaultEventContentSerializerMappings()
     private val roomAlias = RoomAliasId("alias", "server")
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
 
     @Test
     fun `should create and save room`() = runTest {

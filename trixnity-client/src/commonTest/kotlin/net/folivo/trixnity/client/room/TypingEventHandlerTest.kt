@@ -11,8 +11,8 @@ import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
 
 class TypingEventHandlerTest : TrixnityBaseTest() {
-    private val room1 = RoomId("room1", "localhost")
-    private val room2 = RoomId("room2", "localhost")
+    private val room1 = RoomId("!room1:localhost")
+    private val room2 = RoomId("!room2:localhost")
 
     private val cut = TypingEventHandlerImpl(
         mockMatrixClientServerApiClient(),

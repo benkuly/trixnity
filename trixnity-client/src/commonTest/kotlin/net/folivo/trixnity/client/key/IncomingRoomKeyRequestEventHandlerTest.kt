@@ -24,18 +24,18 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
-import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.OlmOutboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
 
 class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
 
-    private val room = RoomId("room", "server")
+    private val room = RoomId("!room:server")
     private val senderKey = Key.Curve25519Key("sender", "sender")
     private val senderSigningKey = Key.Ed25519Key("sender", "sender")
     private val sessionId = "sessionId"

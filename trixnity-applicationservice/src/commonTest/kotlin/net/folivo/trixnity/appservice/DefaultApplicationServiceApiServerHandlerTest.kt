@@ -66,7 +66,7 @@ class DefaultApplicationServiceApiServerHandlerTest : TrixnityBaseTest() {
             RoomMessageEventContent.TextBased.Notice("hi"),
             EventId("event4"),
             userId,
-            RoomId("room2", "server"),
+            RoomId("!room2:server"),
             1234L
         )
 
@@ -165,7 +165,7 @@ class DefaultApplicationServiceApiServerHandlerTest : TrixnityBaseTest() {
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(CreateRoom()) {
-                    CreateRoom.Response(RoomId("room", "server"))
+                    CreateRoom.Response(RoomId("!room:server"))
                 }
             })
         initCut(api)

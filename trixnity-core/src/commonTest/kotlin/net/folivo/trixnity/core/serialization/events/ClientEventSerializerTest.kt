@@ -37,7 +37,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedStateEventData(1234),
             ""
@@ -91,7 +91,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 CanonicalAliasEventContent(RoomAliasId("somewhere", "example.org")),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedStateEventData(1234),
                 ""
@@ -108,7 +108,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             ),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedMessageEventData(
                 1234, relations =
@@ -173,7 +173,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             ),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedMessageEventData(),
         )
@@ -221,7 +221,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             ),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedMessageEventData(),
         )
@@ -262,7 +262,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             ),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedMessageEventData(),
         )
@@ -335,7 +335,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedMessageEventData(
                     1234, relations =
@@ -396,7 +396,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedMessageEventData(),
             ), result
@@ -438,7 +438,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedMessageEventData(1234)
             ), result
@@ -475,7 +475,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedMessageEventData(1234)
             ), result
@@ -528,7 +528,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedMessageEventData(1234)
             ), result
@@ -580,7 +580,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedMessageEventData(1234)
             ), result
@@ -592,7 +592,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
         val content = listOf(
             StateEvent(
                 id = EventId("$143273582443PhrSn"),
-                roomId = RoomId("room", "server"),
+                roomId = RoomId("!room:server"),
                 unsigned = UnsignedStateEventData(),
                 originTimestamp = 1234,
                 sender = UserId("sender", "server"),
@@ -601,7 +601,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             ),
             StateEvent(
                 id = EventId("$143273584443PhrSn"),
-                roomId = RoomId("room", "server"),
+                roomId = RoomId("!room:server"),
                 unsigned = UnsignedStateEventData(),
                 originTimestamp = 1234,
                 sender = UserId("sender", "server"),
@@ -653,7 +653,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             RedactionEventContent(EventId("$123"), "spam"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedMessageEventData(1234)
         )
@@ -722,14 +722,14 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 RedactedEventContent("m.room.encrypted"),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedMessageEventData(
                     1234, redactedBecause = MessageEvent(
                         RedactionEventContent(EventId("$143273582443PhrSn"), "spam"),
                         EventId("$143273582443PhrSn"),
                         UserId("example", "example.org"),
-                        RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                        RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                         1432735824653,
                         UnsignedMessageEventData(1234)
                     )
@@ -761,7 +761,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 AvatarEventContent(),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 stateKey = "",
             ), result
@@ -774,14 +774,14 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             RedactedEventContent("m.room.encrypted"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedMessageEventData(
                 1234, redactedBecause = MessageEvent(
                     RedactionEventContent(EventId("$143273582443PhrSn"), "spam"),
                     EventId("$143273582443PhrSn"),
                     UserId("example", "example.org"),
-                    RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                    RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                     1432735824653,
                     UnsignedMessageEventData(1234)
                 )
@@ -852,7 +852,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             NameEventContent("name"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedStateEventData(
                 previousContent = RedactedEventContent("m.room.name")
@@ -867,7 +867,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             NameEventContent("name"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedStateEventData(
                 previousContent = RedactedEventContent("m.room.name")
@@ -928,7 +928,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                     RedactedEventContent("m.room.name"),
                     EventId("$143273582443PhrSn"),
                     UserId("example", "example.org"),
-                    RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                    RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                     1432735824653,
                     UnsignedStateEventData(
                         previousContent = NameEventContent("prev")
@@ -943,7 +943,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             RedactedEventContent("m.room.name"),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedStateEventData(
                 previousContent = NameEventContent("prev")
@@ -1068,7 +1068,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
                 ),
                 EventId("$143273582443PhrSn"),
                 UserId("example", "example.org"),
-                RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+                RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
                 1432735824653,
                 UnsignedStateEventData(1234),
                 ""
@@ -1090,7 +1090,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
             ),
             EventId("$143273582443PhrSn"),
             UserId("example", "example.org"),
-            RoomId("jEsUZKDJdhlrceRyVU", "example.org"),
+            RoomId("!jEsUZKDJdhlrceRyVU:example.org"),
             1432735824653,
             UnsignedStateEventData(1234),
             ""

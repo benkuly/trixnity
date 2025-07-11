@@ -21,7 +21,7 @@ import kotlin.test.Test
 
 class MemberEventHandlerTest : TrixnityBaseTest() {
 
-    private val roomId = RoomId("room", "localhost")
+    private val roomId = RoomId("!room:localhost")
     private val user1 = UserId("user1", "server")
     private val user2 = UserId("user2", "server")
     private val user3 = UserId("user3", "server")

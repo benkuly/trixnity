@@ -16,7 +16,7 @@ class RoomOutboxMessageSerializationTest : TrixnityBaseTest() {
 
     private val roomOutboxMessage = RoomOutboxMessage(
         transactionId = "t1",
-        roomId = RoomId("room", "server"),
+        roomId = RoomId("!room:server"),
         content = RoomMessageEventContent.TextBased.Text("dino"),
         createdAt = Instant.fromEpochMilliseconds(12),
         sentAt = Instant.fromEpochMilliseconds(24),

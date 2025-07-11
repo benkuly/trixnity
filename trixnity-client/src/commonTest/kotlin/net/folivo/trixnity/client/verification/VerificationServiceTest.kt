@@ -83,7 +83,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
     private val bobUserId = UserId("bob", "server")
     private val bobDeviceId = "BBBBBB"
     private val eventId = EventId("$1event")
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
 
     private val currentSyncState = MutableStateFlow(SyncState.STOPPED)
     private val olmDecrypterMock = OlmDecrypterMock()
@@ -471,7 +471,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
     @Test
     fun `createUserVerificationRequest » direct room with user exists but other user left and a new direct room was created » send request to room with other user present`() =
         runTest {
-            val abandonedRoom = RoomId("abandonedRoom", "Server")
+            val abandonedRoom = RoomId("!abandonedRoom:Server")
             globalAccountDataStore.save(
                 GlobalAccountDataEvent(DirectEventContent(mapOf(bobUserId to setOf(abandonedRoom, roomId))))
             )

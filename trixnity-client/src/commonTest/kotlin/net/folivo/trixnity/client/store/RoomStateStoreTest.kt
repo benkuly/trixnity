@@ -44,7 +44,7 @@ class RoomStateStoreTest : TrixnityBaseTest() {
         testScope.testClock,
     )
 
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
     private val event1 = StateEvent(
         MemberEventContent(membership = LEAVE),
         EventId("\$event"),

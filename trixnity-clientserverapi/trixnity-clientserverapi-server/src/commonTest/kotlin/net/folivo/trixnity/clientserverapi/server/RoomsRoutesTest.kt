@@ -75,7 +75,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
             .returns(
                 StateEvent(
                     id = EventId("event"),
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                     unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
                     originTimestamp = 1234,
                     sender = UserId("sender", "server"),
@@ -105,7 +105,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         verifySuspend {
             handlerMock.getEvent(assert {
                 it.endpoint.evenId shouldBe EventId("\$event")
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
             })
         }
     }
@@ -130,7 +130,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
             handlerMock.getStateEvent(assert {
                 it.endpoint.type shouldBe "m.room.name"
                 it.endpoint.stateKey shouldBe ""
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
             })
         }
     }
@@ -143,7 +143,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                 listOf(
                     StateEvent(
                         id = EventId("event1"),
-                        roomId = RoomId("room", "server"),
+                        roomId = RoomId("!room:server"),
                         unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
                         originTimestamp = 12341,
                         sender = UserId("sender", "server"),
@@ -152,7 +152,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                     ),
                     StateEvent(
                         id = EventId("event2"),
-                        roomId = RoomId("room", "server"),
+                        roomId = RoomId("!room:server"),
                         unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
                         originTimestamp = 12342,
                         sender = UserId("sender", "server"),
@@ -197,7 +197,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getState(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
             })
         }
     }
@@ -211,7 +211,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                     setOf(
                         StateEvent(
                             id = EventId("event1"),
-                            roomId = RoomId("room", "server"),
+                            roomId = RoomId("!room:server"),
                             unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
                             originTimestamp = 12341,
                             sender = UserId("sender", "server"),
@@ -220,7 +220,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                         ),
                         StateEvent(
                             id = EventId("event2"),
-                            roomId = RoomId("room", "server"),
+                            roomId = RoomId("!room:server"),
                             unsigned = UnsignedRoomEventData.UnsignedStateEventData(),
                             originTimestamp = 12342,
                             sender = UserId("sender", "server"),
@@ -270,7 +270,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
             handlerMock.getMembers(assert {
                 it.endpoint.at shouldBe "someAt"
                 it.endpoint.membership shouldBe Membership.JOIN
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
             })
         }
     }
@@ -313,7 +313,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getJoinedMembers(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
             })
         }
     }
@@ -331,7 +331,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                             RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("event"),
                             UserId("user", "server"),
-                            RoomId("room", "server"),
+                            RoomId("!room:server"),
                             1234L
                         )
                     ),
@@ -340,7 +340,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                             MemberEventContent(membership = Membership.JOIN),
                             EventId("event"),
                             UserId("user", "server"),
-                            RoomId("room", "server"),
+                            RoomId("!room:server"),
                             1234L,
                             stateKey = UserId("dino", "server").full
                         )
@@ -387,7 +387,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getEvents(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.from shouldBe "from"
                 it.endpoint.to shouldBe null
                 it.endpoint.filter shouldBe null
@@ -410,7 +410,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                             RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("$2event"),
                             UserId("user", "server"),
-                            RoomId("room", "server"),
+                            RoomId("!room:server"),
                             1234L
                         )
                     )
@@ -446,7 +446,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         verifySuspend {
             handlerMock.getRelations(assert {
                 it.endpoint shouldBe GetRelations(
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                     eventId = EventId("$1event"),
                     from = "from",
                     limit = 10
@@ -468,7 +468,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                             RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("$2event"),
                             UserId("user", "server"),
-                            RoomId("room", "server"),
+                            RoomId("!room:server"),
                             1234L
                         )
                     )
@@ -504,7 +504,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         verifySuspend {
             handlerMock.getRelationsByRelationType(assert {
                 it.endpoint shouldBe GetRelationsByRelationType(
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                     eventId = EventId("$1event"),
                     relationType = RelationType.Reference,
                     from = "from",
@@ -527,7 +527,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                             RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("$2event"),
                             UserId("user", "server"),
-                            RoomId("room", "server"),
+                            RoomId("!room:server"),
                             1234L
                         )
                     )
@@ -563,7 +563,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         verifySuspend {
             handlerMock.getRelationsByRelationTypeAndEventType(assert {
                 it.endpoint shouldBe GetRelationsByRelationTypeAndEventType(
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                     eventId = EventId("$1event"),
                     relationType = RelationType.Reference,
                     eventType = "m.room.message",
@@ -586,7 +586,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                             RoomMessageEventContent.TextBased.Text("hi"),
                             EventId("$2event"),
                             UserId("user", "server"),
-                            RoomId("room", "server"),
+                            RoomId("!room:server"),
                             1234L
                         )
                     )
@@ -621,7 +621,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         verifySuspend {
             handlerMock.getThreads(assert {
                 it.endpoint shouldBe GetThreads(
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                     from = "from",
                     include = GetThreads.Include.ALL,
                     limit = 10
@@ -652,7 +652,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.sendStateEvent(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.stateKey shouldBe ""
                 it.endpoint.type shouldBe "m.room.name"
                 it.requestBody shouldBe NameEventContent("name")
@@ -682,7 +682,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.sendStateEvent(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.stateKey shouldBe ""
                 it.endpoint.type shouldBe "m.unknown"
                 it.requestBody shouldBe UnknownEventContent(
@@ -715,7 +715,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.sendMessageEvent(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.type shouldBe "m.room.message"
                 it.requestBody shouldBe RoomMessageEventContent.TextBased.Text("someBody")
@@ -745,7 +745,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.sendMessageEvent(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.type shouldBe "m.unknown"
                 it.requestBody shouldBe UnknownEventContent(
@@ -778,7 +778,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.redactEvent(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.txnId shouldBe "someTxnId"
                 it.endpoint.eventId shouldBe EventId("\$eventToRedact")
                 it.requestBody shouldBe RedactEvent.Request("someReason")
@@ -790,7 +790,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     fun shouldCreateRoom() = testApplication {
         initCut()
         everySuspend { handlerMock.createRoom(any()) }
-            .returns(CreateRoom.Response(RoomId("room", "server")))
+            .returns(CreateRoom.Response(RoomId("!room:server")))
         val response = client.post("/_matrix/client/v3/createRoom") {
             bearerAuth("token")
             contentType(ContentType.Application.Json)
@@ -877,7 +877,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         everySuspend { handlerMock.getRoomAlias(any()) }
             .returns(
                 GetRoomAlias.Response(
-                    roomId = RoomId("room", "server"),
+                    roomId = RoomId("!room:server"),
                     servers = listOf("server1", "server2")
                 )
             )
@@ -930,7 +930,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getRoomAliases(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
             })
         }
     }
@@ -961,7 +961,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
             .returns(
                 GetJoinedRooms.Response(
                     setOf(
-                        RoomId("room1", "server"), RoomId("room2", "server")
+                        RoomId("!room1:server"), RoomId("!room2:server")
                     )
                 )
             )
@@ -1079,7 +1079,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     fun shouldJoinRoom() = testApplication {
         initCut()
         everySuspend { handlerMock.joinRoom(any()) }
-            .returns(JoinRoom.Response(RoomId("room", "server")))
+            .returns(JoinRoom.Response(RoomId("!room:server")))
         val response =
             client.post("/_matrix/client/v3/join/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com") {
                 bearerAuth("token")
@@ -1133,7 +1133,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     fun shouldKnockRoom() = testApplication {
         initCut()
         everySuspend { handlerMock.knockRoom(any()) }
-            .returns(KnockRoom.Response(RoomId("room", "server")))
+            .returns(KnockRoom.Response(RoomId("!room:server")))
         val response =
             client.post("/_matrix/client/v3/knock/!room:server?via=server1.com&via=server2.com&server_name=server1.com&server_name=server2.com") {
                 bearerAuth("token")
@@ -1400,7 +1400,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getDirectoryVisibility(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
             })
         }
     }
@@ -1423,7 +1423,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.setDirectoryVisibility(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe SetDirectoryVisibility.Request(DirectoryVisibility.PUBLIC)
             })
         }
@@ -1596,7 +1596,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getTags(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.userId shouldBe UserId("user", "server")
             })
         }
@@ -1620,7 +1620,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.setTag(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.endpoint.tag shouldBe "m.dino"
                 it.requestBody shouldBe TagEventContent.Tag(0.25)
@@ -1644,7 +1644,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.deleteTag(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.userId shouldBe UserId("user", "server")
                 it.endpoint.tag shouldBe "m.dino"
             })
@@ -1889,7 +1889,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getEventContext(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("event")
                 it.endpoint.filter shouldBe "filter"
                 it.endpoint.limit shouldBe 10
@@ -1915,7 +1915,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.reportRoom(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe ReportRoom.Request("someReason")
             })
         }
@@ -1939,7 +1939,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.reportEvent(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("\$eventToRedact")
                 it.requestBody shouldBe ReportEvent.Request("someReason", -100)
             })
@@ -1950,7 +1950,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
     fun shouldUpgradeRoom() = testApplication {
         initCut()
         everySuspend { handlerMock.upgradeRoom(any()) }
-            .returns(UpgradeRoom.Response(RoomId("nextRoom", "server")))
+            .returns(UpgradeRoom.Response(RoomId("!nextRoom:server")))
         val response =
             client.post("/_matrix/client/v3/rooms/!room:server/upgrade") {
                 bearerAuth("token")
@@ -2044,7 +2044,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.getHierarchy(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.from shouldBe "from"
                 it.endpoint.limit shouldBe 10
                 it.endpoint.maxDepth shouldBe 4
@@ -2079,7 +2079,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
         }
         verifySuspend {
             handlerMock.timestampToEvent(assert {
-                it.endpoint.roomId shouldBe RoomId("room", "server")
+                it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.timestamp shouldBe 24
                 it.endpoint.dir shouldBe TimestampToEvent.Direction.FORWARDS
             })

@@ -46,7 +46,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
     private val bob = UserId("bob", "server")
     private val bobDevice = "BBBBBB"
     private val event = EventId("$1")
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
     private val relatesTo = RelatesTo.Reference(event)
 
     private val json = createMatrixEventJson()

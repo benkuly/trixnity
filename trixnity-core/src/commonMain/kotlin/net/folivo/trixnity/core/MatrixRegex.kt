@@ -40,7 +40,7 @@ object MatrixRegex {
     private val userIdRegex = """@($userLocalpartRegex):($servernameRegex)"""
 
     // https://spec.matrix.org/v1.11/appendices/#room-ids
-    private val roomIdRegex = """!($opaqueIdRegex):($servernameRegex)"""
+    private val roomIdRegex = """!($opaqueIdRegex):($servernameRegex)""" // TODO is opaque in future room versions
 
     // https://spec.matrix.org/v1.11/appendices/#room-aliases
     private val roomAliasRegex = """#($roomAliasLocalpartRegex):($servernameRegex)"""
@@ -156,6 +156,7 @@ object MatrixRegex {
             val domain = result[2]
             val (params, label) = parseOptions(options, anchor = match.startsWith("<a") && match.endsWith("</a>"))
 
+            // TODO is opaque String in future room versions
             return Mention.Room(RoomId(localpart, domain), match, params, label)
         }
 

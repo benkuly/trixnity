@@ -137,7 +137,7 @@ class SignServiceTest : TrixnityBaseTest() {
             NameEventContent("room name"),
             EventId("\$eventId"),
             UserId("their", "server"),
-            RoomId("room", "server"),
+            RoomId("!room:server"),
             originTimestamp = 24,
             stateKey = ""
         )
@@ -161,7 +161,7 @@ class SignServiceTest : TrixnityBaseTest() {
             NameEventContent("room name"),
             EventId("\$eventId"),
             UserId("their", "server"),
-            RoomId("room", "server"),
+            RoomId("!room:server"),
             originTimestamp = 24,
             stateKey = ""
         )
@@ -169,7 +169,7 @@ class SignServiceTest : TrixnityBaseTest() {
             NameEventContent("room name"),
             EventId("\$eventId"),
             UserId("their", "server"),
-            RoomId("room", "server"),
+            RoomId("!room:server"),
             originTimestamp = 24,
             unsigned = UnsignedStateEventData(1234),
             stateKey = ""
@@ -207,7 +207,7 @@ class SignServiceTest : TrixnityBaseTest() {
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
-                RoomId("room", "server"),
+                RoomId("!room:server"),
                 originTimestamp = 24,
                 unsigned = UnsignedStateEventData(1234),
                 stateKey = ""
@@ -243,7 +243,7 @@ class SignServiceTest : TrixnityBaseTest() {
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
-                RoomId("room", "server"),
+                RoomId("!room:server"),
                 originTimestamp = 24,
                 unsigned = UnsignedStateEventData(1234),
                 stateKey = ""
@@ -259,7 +259,7 @@ class SignServiceTest : TrixnityBaseTest() {
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
-                RoomId("room", "server"),
+                RoomId("!room:server"),
                 originTimestamp = 24,
                 unsigned = UnsignedStateEventData(1234),
                 stateKey = ""
@@ -288,7 +288,7 @@ class SignServiceTest : TrixnityBaseTest() {
                 NameEventContent("room name"),
                 EventId("\$eventId"),
                 UserId("their", "server"),
-                RoomId("room", "server"),
+                RoomId("!room:server"),
                 originTimestamp = 24,
                 unsigned = UnsignedStateEventData(1234),
                 stateKey = ""

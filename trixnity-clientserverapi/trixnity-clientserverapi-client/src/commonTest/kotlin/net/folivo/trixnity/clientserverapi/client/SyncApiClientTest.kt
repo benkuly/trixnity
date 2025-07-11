@@ -1058,7 +1058,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     ClientEvent.GlobalAccountDataEvent(
                         DirectEventContent(
                             mapOf(
-                                UserId("alice", "server") to setOf(RoomId("room1", "server"))
+                                UserId("alice", "server") to setOf(RoomId("!room1:server"))
                             )
                         )
                     )
@@ -1076,14 +1076,14 @@ class SyncApiClientTest : TrixnityBaseTest() {
             ),
             room = Response.Rooms(
                 join = mapOf(
-                    RoomId("room1", "Server") to Response.Rooms.JoinedRoom(
+                    RoomId("!room1:Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
                                 MessageEvent(
                                     RoomMessageEventContent.TextBased.Text("hi"),
                                     EventId("event1"),
                                     UserId("user", "server"),
-                                    RoomId("room1", "server"),
+                                    RoomId("!room1:server"),
                                     1234L
                                 )
                             )
@@ -1094,7 +1094,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                                     MemberEventContent(membership = Membership.JOIN),
                                     EventId("event2"),
                                     UserId("user", "server"),
-                                    RoomId("room1", "server"),
+                                    RoomId("!room1:server"),
                                     1235L,
                                     stateKey = UserId("joinedUser", "server").toString()
                                 )
@@ -1105,28 +1105,28 @@ class SyncApiClientTest : TrixnityBaseTest() {
                             listOf(
                                 ClientEvent.RoomAccountDataEvent(
                                     FullyReadEventContent(EventId("event1")),
-                                    RoomId("room1", "server")
+                                    RoomId("!room1:server")
                                 ),
                                 ClientEvent.RoomAccountDataEvent(
                                     UnknownEventContent(
                                         JsonObject(mapOf("cool" to JsonPrimitive("trixnity"))),
                                         "org.example.mynamespace"
                                     ),
-                                    RoomId("room1", "server")
+                                    RoomId("!room1:server")
                                 )
                             )
                         )
                     )
                 ),
                 leave = mapOf(
-                    RoomId("room2", "Server") to Response.Rooms.LeftRoom(
+                    RoomId("!room2:Server") to Response.Rooms.LeftRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
                                 MessageEvent(
                                     RoomMessageEventContent.TextBased.Notice("hi"),
                                     EventId("event4"),
                                     UserId("user", "server"),
-                                    RoomId("room2", "server"),
+                                    RoomId("!room2:server"),
                                     1234L
                                 )
                             )
@@ -1137,7 +1137,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                                     MemberEventContent(membership = Membership.JOIN),
                                     EventId("event5"),
                                     UserId("user", "server"),
-                                    RoomId("room2", "server"),
+                                    RoomId("!room2:server"),
                                     1235L,
                                     stateKey = UserId("joinedUser", "server").toString()
                                 )
@@ -1146,14 +1146,14 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                 ),
                 invite = mapOf(
-                    RoomId("room3", "Server") to Response.Rooms.InvitedRoom(
+                    RoomId("!room3:Server") to Response.Rooms.InvitedRoom(
                         Response.Rooms.InvitedRoom.InviteState(
                             listOf(
                                 ClientEvent.StrippedStateEvent(
                                     MemberEventContent(membership = Membership.INVITE),
                                     null,
                                     UserId("user", "server"),
-                                    RoomId("room3", "server"),
+                                    RoomId("!room3:server"),
                                     stateKey = UserId("joinedUser", "server").toString()
                                 )
                             )
@@ -1164,7 +1164,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             toDevice = Response.ToDevice(
                 listOf(
                     ClientEvent.ToDeviceEvent(
-                        RoomKeyEventContent(RoomId("room", "server"), "se", "sk", EncryptionAlgorithm.Megolm),
+                        RoomKeyEventContent(RoomId("!room:server"), "se", "sk", EncryptionAlgorithm.Megolm),
                         UserId("dino", "server")
                     )
                 )
@@ -1234,14 +1234,14 @@ class SyncApiClientTest : TrixnityBaseTest() {
             presence = Response.Presence(emptyList()),
             room = Response.Rooms(
                 join = mapOf(
-                    RoomId("room", "Server") to Response.Rooms.JoinedRoom(
+                    RoomId("!room:Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
                                 MessageEvent(
                                     RoomMessageEventContent.TextBased.Text("hi"),
                                     EventId("event"),
                                     UserId("user", "server"),
-                                    RoomId("room", "server"),
+                                    RoomId("!room:server"),
                                     1234L
                                 )
                             )
@@ -1292,14 +1292,14 @@ class SyncApiClientTest : TrixnityBaseTest() {
             presence = Response.Presence(emptyList()),
             room = Response.Rooms(
                 join = mapOf(
-                    RoomId("room", "Server") to Response.Rooms.JoinedRoom(
+                    RoomId("!room:Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
                                 MessageEvent(
                                     RoomMessageEventContent.TextBased.Text("hi"),
                                     EventId("event"),
                                     UserId("user", "server"),
-                                    RoomId("room", "server"),
+                                    RoomId("!room:server"),
                                     1234L
                                 )
                             )

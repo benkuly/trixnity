@@ -20,7 +20,7 @@ import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
 
 class TimelineTest : TrixnityBaseTest() {
-    private val roomId = RoomId("room", "server")
+    private val roomId = RoomId("!room:server")
 
     private val roomServiceMock = RoomServiceMock()
     private val cut = TimelineImpl(roomService = roomServiceMock) { it }

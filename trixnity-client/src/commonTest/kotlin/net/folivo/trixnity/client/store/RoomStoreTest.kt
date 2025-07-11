@@ -30,8 +30,8 @@ class RoomStoreTest : TrixnityBaseTest() {
 
     @Test
     fun `init » fill cache with values from repository`() = runTest {
-        val room1 = Room(RoomId("room1", "server"))
-        val room2 = Room(RoomId("room2", "server"))
+        val room1 = Room(RoomId("!room1:server"))
+        val room2 = Room(RoomId("!room2:server"))
 
         roomRepository.save(room1.roomId, room1)
         roomRepository.save(room2.roomId, room2)

@@ -21,7 +21,7 @@ Example 1: You can send messages.
 
 ```kotlin
 matrixRestClient.room.sendRoomEvent(
-    RoomId("awoun3w8fqo3bfq92a", "your.home.server"),
+    RoomId("!awoun3w8fqo3bfq92a:your.home.server"),
     RoomMessageEventContent.TextBased.Text("hello from platform $Platform")
 )
 ```

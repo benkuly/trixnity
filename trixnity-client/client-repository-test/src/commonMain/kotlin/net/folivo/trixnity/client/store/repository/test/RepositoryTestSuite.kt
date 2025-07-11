@@ -352,7 +352,7 @@ abstract class RepositoryTestSuite(
                     UserId(
                         "alice",
                         "server.org"
-                    ) to setOf(RoomId("!room", "server"))
+                    ) to setOf(RoomId("!!room:server"))
                 )
             ), ""
         )
@@ -401,7 +401,7 @@ abstract class RepositoryTestSuite(
     @Test
     fun `InboundMegolmMessageIndexRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<InboundMegolmMessageIndexRepository>()
-        val roomId = RoomId("room", "server")
+        val roomId = RoomId("!room:server")
         val messageIndexKey1 =
             InboundMegolmMessageIndexRepositoryKey("session1", roomId, 24)
         val messageIndexKey2 =
@@ -433,7 +433,7 @@ abstract class RepositoryTestSuite(
     @Test
     fun `InboundMegolmSessionRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<InboundMegolmSessionRepository>()
-        val roomId = RoomId("room", "server")
+        val roomId = RoomId("!room:server")
         val inboundSessionKey1 = InboundMegolmSessionRepositoryKey("session1", roomId)
         val inboundSessionKey2 = InboundMegolmSessionRepositoryKey("session2", roomId)
         val inboundSession1 =
@@ -635,8 +635,8 @@ abstract class RepositoryTestSuite(
     @Test
     fun `OutboundMegolmSessionRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<OutboundMegolmSessionRepository>()
-        val key1 = RoomId("room1", "server")
-        val key2 = RoomId("room2", "server")
+        val key1 = RoomId("!room1:server")
+        val key2 = RoomId("!room2:server")
         val session1 = StoredOutboundMegolmSession(key1, pickled = "1")
         val session2 = StoredOutboundMegolmSession(key2, pickled = "2")
         val session2Copy = session2.copy(
@@ -677,8 +677,8 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomAccountDataRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<RoomAccountDataRepository>()
-        val roomId1 = RoomId("room1", "server")
-        val roomId2 = RoomId("room2", "server")
+        val roomId1 = RoomId("!room1:server")
+        val roomId2 = RoomId("!room2:server")
         val key1 = RoomAccountDataRepositoryKey(roomId1, "m.fully_read")
         val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
         val accountDataEvent1 = RoomAccountDataEvent(FullyReadEventContent(EventId("event1")), roomId1, "")
@@ -713,8 +713,8 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomAccountDataRepository - deleteByRoomId`() = runTestWithSetup {
         val cut = di.get<RoomAccountDataRepository>()
-        val roomId1 = RoomId("room1", "server")
-        val roomId2 = RoomId("room2", "server")
+        val roomId1 = RoomId("!room1:server")
+        val roomId2 = RoomId("!room2:server")
         val key1 = RoomAccountDataRepositoryKey(roomId1, "m.fully_read")
         val key2 = RoomAccountDataRepositoryKey(roomId2, "org.example.mynamespace")
         val key3 = RoomAccountDataRepositoryKey(roomId1, "org.example.mynamespace")
@@ -787,8 +787,8 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomOutboxMessageRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<RoomOutboxMessageRepository>()
-        val key1 = RoomOutboxMessageRepositoryKey(RoomId("room", "server"), "transaction1")
-        val key2 = RoomOutboxMessageRepositoryKey(RoomId("room", "server"), "transaction2")
+        val key1 = RoomOutboxMessageRepositoryKey(RoomId("!room:server"), "transaction1")
+        val key2 = RoomOutboxMessageRepositoryKey(RoomId("!room:server"), "transaction2")
         val message1 = RoomOutboxMessage(
             key1.roomId,
             key1.transactionId,
@@ -824,8 +824,8 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomOutboxMessageRepository - get all`() = runTestWithSetup {
         val cut = di.get<RoomOutboxMessageRepository>()
-        val key1 = RoomOutboxMessageRepositoryKey(RoomId("room1", "server"), "transaction1")
-        val key2 = RoomOutboxMessageRepositoryKey(RoomId("room2", "server"), "transaction2")
+        val key1 = RoomOutboxMessageRepositoryKey(RoomId("!room1:server"), "transaction1")
+        val key2 = RoomOutboxMessageRepositoryKey(RoomId("!room2:server"), "transaction2")
         val message1 = RoomOutboxMessage(
             key1.roomId,
             key1.transactionId,
@@ -849,9 +849,9 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomOutboxMessageRepository - delete by roomId`() = runTestWithSetup {
         val cut = di.get<RoomOutboxMessageRepository>()
-        val key1 = RoomOutboxMessageRepositoryKey(RoomId("room1", "server"), "transaction1")
-        val key2 = RoomOutboxMessageRepositoryKey(RoomId("room2", "server"), "transaction2")
-        val key3 = RoomOutboxMessageRepositoryKey(RoomId("room2", "server"), "transaction3")
+        val key1 = RoomOutboxMessageRepositoryKey(RoomId("!room1:server"), "transaction1")
+        val key2 = RoomOutboxMessageRepositoryKey(RoomId("!room2:server"), "transaction2")
+        val key3 = RoomOutboxMessageRepositoryKey(RoomId("!room2:server"), "transaction3")
         val message1 = RoomOutboxMessage(
             key1.roomId,
             key1.transactionId,
@@ -883,13 +883,13 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomStateRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<RoomStateRepository>()
-        val key1 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.member")
-        val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")
+        val key1 = RoomStateRepositoryKey(RoomId("!room1:server"), "m.room.member")
+        val key2 = RoomStateRepositoryKey(RoomId("!room2:server"), "m.room.name")
         val state1 = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("$1event"),
             UserId("alice", "server"),
-            RoomId("room1", "server"),
+            RoomId("!room1:server"),
             1234,
             stateKey = "@alice:server"
         )
@@ -898,7 +898,7 @@ abstract class RepositoryTestSuite(
             NameEventContent("room name"),
             EventId("$2eventId"),
             UserId("bob", "server"),
-            RoomId("room2", "server"),
+            RoomId("!room2:server"),
             originTimestamp = 24,
             stateKey = ""
         )
@@ -906,7 +906,7 @@ abstract class RepositoryTestSuite(
             NameEventContent("room name"),
             EventId("$2eventId"),
             UserId("celina", "server"),
-            RoomId("room2", "server"),
+            RoomId("!room2:server"),
             originTimestamp = 24,
             stateKey = ""
         )
@@ -931,12 +931,12 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomStateRepository - save and get by second key`() = runTestWithSetup {
         val cut = di.get<RoomStateRepository>()
-        val key = RoomStateRepositoryKey(RoomId("room3", "server"), "m.room.member")
+        val key = RoomStateRepositoryKey(RoomId("!room3:server"), "m.room.member")
         val event = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("\$event"),
             UserId("alice", "server"),
-            RoomId("room1", "server"),
+            RoomId("!room1:server"),
             1234,
             stateKey = "@cedric:server"
         )
@@ -950,14 +950,14 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomStateRepository - getByRoomIds`() = runTestWithSetup {
         val cut = di.get<RoomStateRepository>()
-        val key1 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.member")
-        val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")
-        val key3 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.member")
+        val key1 = RoomStateRepositoryKey(RoomId("!room1:server"), "m.room.member")
+        val key2 = RoomStateRepositoryKey(RoomId("!room2:server"), "m.room.name")
+        val key3 = RoomStateRepositoryKey(RoomId("!room2:server"), "m.room.member")
         val state1 = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("$1event"),
             UserId("alice", "server"),
-            RoomId("room1", "server"),
+            RoomId("!room1:server"),
             1234,
             stateKey = "@alice:server"
         )
@@ -965,7 +965,7 @@ abstract class RepositoryTestSuite(
             NameEventContent("room name"),
             EventId("$2event"),
             UserId("bob", "server"),
-            RoomId("room2", "server"),
+            RoomId("!room2:server"),
             originTimestamp = 24,
             stateKey = ""
         )
@@ -973,7 +973,7 @@ abstract class RepositoryTestSuite(
             MemberEventContent(membership = Membership.INVITE),
             EventId("$1event"),
             UserId("alice", "server"),
-            RoomId("room2", "server"),
+            RoomId("!room2:server"),
             1234,
             stateKey = "@alice:server"
         )
@@ -983,11 +983,11 @@ abstract class RepositoryTestSuite(
             cut.save(key2, "@bob:server", state2)
             cut.save(key3, "@alice:server", state3)
             cut.getByRooms(
-                setOf(RoomId("room2", "server")),
+                setOf(RoomId("!room2:server")),
                 "m.room.member", "@alice:server"
             ) shouldContainExactly setOf(state3)
             cut.getByRooms(
-                setOf(RoomId("room1", "server"), RoomId("room2", "server")),
+                setOf(RoomId("!room1:server"), RoomId("!room2:server")),
                 "m.room.member",
                 "@alice:server"
             ) shouldContainExactly setOf(state1, state3)
@@ -997,15 +997,15 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomStateRepository - deleteByRoomId`() = runTestWithSetup {
         val cut = di.get<RoomStateRepository>()
-        val key1 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.member")
-        val key2 = RoomStateRepositoryKey(RoomId("room2", "server"), "m.room.name")
-        val key3 = RoomStateRepositoryKey(RoomId("room1", "server"), "m.room.name")
+        val key1 = RoomStateRepositoryKey(RoomId("!room1:server"), "m.room.member")
+        val key2 = RoomStateRepositoryKey(RoomId("!room2:server"), "m.room.name")
+        val key3 = RoomStateRepositoryKey(RoomId("!room1:server"), "m.room.name")
 
         val state1 = StateEvent(
             MemberEventContent(membership = Membership.JOIN),
             EventId("$1event"),
             UserId("alice", "server"),
-            RoomId("room1", "server"),
+            RoomId("!room1:server"),
             1234,
             stateKey = "@alice:server"
         )
@@ -1013,7 +1013,7 @@ abstract class RepositoryTestSuite(
             NameEventContent("room name"),
             EventId("$2eventId"),
             UserId("bob", "server"),
-            RoomId("room2", "server"),
+            RoomId("!room2:server"),
             originTimestamp = 24,
             stateKey = ""
         )
@@ -1021,7 +1021,7 @@ abstract class RepositoryTestSuite(
             NameEventContent("room name"),
             EventId("$2eventId"),
             UserId("bob", "server"),
-            RoomId("room1", "server"),
+            RoomId("!room1:server"),
             originTimestamp = 24,
             stateKey = ""
         )
@@ -1030,7 +1030,7 @@ abstract class RepositoryTestSuite(
             cut.save(key1, "@alice:server", state1)
             cut.save(key2, "", state2)
             cut.save(key3, "", state3)
-            cut.deleteByRoomId(RoomId("room1", "server"))
+            cut.deleteByRoomId(RoomId("!room1:server"))
             cut.get(key1) shouldHaveSize 0
             cut.get(key2) shouldBe mapOf("" to state2)
             cut.get(key3) shouldHaveSize 0
@@ -1040,8 +1040,8 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomUserReceiptsRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<RoomUserReceiptsRepository>()
-        val key1 = RoomId("room1", "server")
-        val key2 = RoomId("room2", "server")
+        val key1 = RoomId("!room1:server")
+        val key2 = RoomId("!room2:server")
         val userReceipt1 = RoomUserReceipts(
             key1, UserId("alice", "server"), mapOf(
                 ReceiptType.FullyRead to RoomUserReceipts.Receipt(
@@ -1083,7 +1083,7 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomUserReceiptsRepository - save and get by second key`() = runTestWithSetup {
         val cut = di.get<RoomUserReceiptsRepository>()
-        val key = RoomId("room1", "server")
+        val key = RoomId("!room1:server")
         val userReceipt = RoomUserReceipts(
             key, UserId("alice", "server"), mapOf(
                 ReceiptType.FullyRead to RoomUserReceipts.Receipt(
@@ -1102,8 +1102,8 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomUserRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<RoomUserRepository>()
-        val key1 = RoomId("room1", "server")
-        val key2 = RoomId("room2", "server")
+        val key1 = RoomId("!room1:server")
+        val key2 = RoomId("!room2:server")
         val user1 = RoomUser(
             key1, UserId("alice", "server"), "ALIC", StateEvent(
                 MemberEventContent(membership = Membership.JOIN),
@@ -1151,7 +1151,7 @@ abstract class RepositoryTestSuite(
     @Test
     fun `RoomUserRepository - save and get by second key`() = runTestWithSetup {
         val cut = di.get<RoomUserRepository>()
-        val key = RoomId("room1", "server")
+        val key = RoomId("!room1:server")
         val user = RoomUser(
             key, UserId("alice", "server"), "ALIC", StateEvent(
                 MemberEventContent(membership = Membership.JOIN),
@@ -1248,19 +1248,19 @@ abstract class RepositoryTestSuite(
     fun `TimelineEventRelationRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<TimelineEventRelationRepository>()
         val relation1 = TimelineEventRelation(
-            RoomId("room1", "server"),
+            RoomId("!room1:server"),
             EventId("$1event"),
             RelationType.Reference,
             EventId("\$relatedEvent1")
         )
         val relation2 = TimelineEventRelation(
-            RoomId("room1", "server"),
+            RoomId("!room1:server"),
             EventId("$2event"),
             RelationType.Unknown("bla"),
             EventId("\$relatedEvent1"),
         )
         val relation3 = TimelineEventRelation(
-            RoomId("room1", "server"),
+            RoomId("!room1:server"),
             EventId("$3event"),
             RelationType.Unknown("bla"),
             EventId("\$relatedEvent1"),
@@ -1337,28 +1337,28 @@ abstract class RepositoryTestSuite(
         val cut = di.get<TimelineEventRelationRepository>()
         val relation1 =
             TimelineEventRelation(
-                RoomId("room1", "server"),
+                RoomId("!room1:server"),
                 EventId("$1event"),
                 RelationType.Reference,
                 EventId("\$relatedEvent1")
             )
         val relation2 =
             TimelineEventRelation(
-                RoomId("room2", "server"),
+                RoomId("!room2:server"),
                 EventId("$1event"),
                 RelationType.Reference,
                 EventId("\$relatedEvent2")
             )
         val relation3 =
             TimelineEventRelation(
-                RoomId("room1", "server"),
+                RoomId("!room1:server"),
                 EventId("$1event"),
                 RelationType.Reference,
                 EventId("\$relatedEvent3")
             )
         val relation4 =
             TimelineEventRelation(
-                RoomId("room1", "server"),
+                RoomId("!room1:server"),
                 EventId("$1event"),
                 RelationType.Reference,
                 EventId("\$relatedEvent24")
@@ -1386,7 +1386,7 @@ abstract class RepositoryTestSuite(
                 relation4
             )
 
-            cut.deleteByRoomId(RoomId("room1", "server"))
+            cut.deleteByRoomId(RoomId("!room1:server"))
             cut.get(
                 TimelineEventRelationKey(relation1.relatedEventId, relation1.roomId, relation1.relationType),
                 relation1.eventId,
@@ -1410,14 +1410,14 @@ abstract class RepositoryTestSuite(
     @Test
     fun `TimelineEventRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<TimelineEventRepository>()
-        val key1 = TimelineEventKey(EventId("\$event1"), RoomId("room1", "server"))
-        val key2 = TimelineEventKey(EventId("\$event2"), RoomId("room1", "server"))
+        val key1 = TimelineEventKey(EventId("\$event1"), RoomId("!room1:server"))
+        val key2 = TimelineEventKey(EventId("\$event2"), RoomId("!room1:server"))
         val event1 = TimelineEvent(
             MessageEvent(
                 TextBased.Text("message"),
                 EventId("\$event1"),
                 UserId("sender", "server"),
-                RoomId("room1", "server"),
+                RoomId("!room1:server"),
                 1234
             ),
             previousEventId = null,
@@ -1429,7 +1429,7 @@ abstract class RepositoryTestSuite(
                 TextBased.Text("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
-                RoomId("room1", "server"),
+                RoomId("!room1:server"),
                 1234
             ),
             previousEventId = null,
@@ -1453,13 +1453,13 @@ abstract class RepositoryTestSuite(
     @Test
     fun `TimelineEventRepository - redacted events`() = runTestWithSetup {
         val cut = di.get<TimelineEventRepository>()
-        val key = TimelineEventKey(EventId("\$event1"), RoomId("room1", "server"))
+        val key = TimelineEventKey(EventId("\$event1"), RoomId("!room1:server"))
         val event = TimelineEvent(
             MessageEvent(
                 RedactedEventContent("m.room.message"),
                 EventId("\$event1"),
                 UserId("sender", "server"),
-                RoomId("room1", "server"),
+                RoomId("!room1:server"),
                 1234
             ),
             content = Result.success(RedactedEventContent("m.room.message")),
@@ -1476,15 +1476,15 @@ abstract class RepositoryTestSuite(
     @Test
     fun `TimelineEventRepository - deleteByRoomId`() = runTestWithSetup {
         val cut = di.get<TimelineEventRepository>()
-        val key1 = TimelineEventKey(EventId("\$event1"), RoomId("room1", "server"))
-        val key2 = TimelineEventKey(EventId("\$event2"), RoomId("room2", "server"))
-        val key3 = TimelineEventKey(EventId("\$event3"), RoomId("room1", "server"))
+        val key1 = TimelineEventKey(EventId("\$event1"), RoomId("!room1:server"))
+        val key2 = TimelineEventKey(EventId("\$event2"), RoomId("!room2:server"))
+        val key3 = TimelineEventKey(EventId("\$event3"), RoomId("!room1:server"))
         val event1 = TimelineEvent(
             MessageEvent(
                 TextBased.Text("message"),
                 EventId("\$event1"),
                 UserId("sender", "server"),
-                RoomId("room1", "server"),
+                RoomId("!room1:server"),
                 1234
             ),
             previousEventId = null,
@@ -1496,7 +1496,7 @@ abstract class RepositoryTestSuite(
                 TextBased.Text("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
-                RoomId("room2", "server"),
+                RoomId("!room2:server"),
                 1234
             ),
             previousEventId = null,
@@ -1508,7 +1508,7 @@ abstract class RepositoryTestSuite(
                 TextBased.Text("message"),
                 EventId("\$event2"),
                 UserId("sender", "server"),
-                RoomId("room1", "server"),
+                RoomId("!room1:server"),
                 1234
             ),
             previousEventId = null,
@@ -1521,7 +1521,7 @@ abstract class RepositoryTestSuite(
             cut.save(key2, event2)
             cut.save(key3, event3)
 
-            cut.deleteByRoomId(RoomId("room1", "server"))
+            cut.deleteByRoomId(RoomId("!room1:server"))
             cut.get(key1) shouldBe null
             cut.get(key2) shouldBe event2
             cut.get(key3) shouldBe null

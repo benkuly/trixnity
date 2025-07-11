@@ -18,12 +18,12 @@ import net.folivo.trixnity.core.model.events.m.PresenceDataUnitContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.space.ChildEventContent
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.serverserverapi.model.SignedPersistentDataUnit
 import net.folivo.trixnity.serverserverapi.model.federation.*
 import net.folivo.trixnity.serverserverapi.model.federation.OnBindThirdPid.Request.ThirdPartyInvite
 import net.folivo.trixnity.serverserverapi.model.federation.SendTransaction.Response.PDUProcessingResult
 import net.folivo.trixnity.serverserverapi.model.federation.ThumbnailResizingMethod.SCALE
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1421,7 +1421,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             })
         matrixRestClient.federation.getHierarchy(
             Url(""),
-            RoomId("room", "server"), true
+            RoomId("!room:server"), true
         ).getOrThrow() shouldBe GetHierarchy.Response(
             rooms = listOf(
                 GetHierarchy.Response.PublicRoomsChunk(
@@ -1964,7 +1964,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
                 }
             })
         matrixRestClient.federation.timestampToEvent(
-            roomId = RoomId("room", "server"),
+            roomId = RoomId("!room:server"),
             timestamp = 24,
             dir = TimestampToEvent.Direction.FORWARDS,
         ).getOrThrow() shouldBe TimestampToEvent.Response(

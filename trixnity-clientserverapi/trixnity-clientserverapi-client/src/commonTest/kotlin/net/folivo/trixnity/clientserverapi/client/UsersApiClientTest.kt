@@ -464,7 +464,7 @@ class UsersApiClientTest : TrixnityBaseTest() {
             .shouldBe(
                 DirectEventContent(
                     mapOf(
-                        UserId("bob", "server") to setOf(RoomId("someRoom", "server"))
+                        UserId("bob", "server") to setOf(RoomId("!someRoom:server"))
                     )
                 )
             )
@@ -518,7 +518,7 @@ class UsersApiClientTest : TrixnityBaseTest() {
         matrixRestClient.user.setAccountData(
             DirectEventContent(
                 mapOf(
-                    UserId("bob", "server") to setOf(RoomId("someRoom", "server"))
+                    UserId("bob", "server") to setOf(RoomId("!someRoom:server"))
                 )
             ),
             UserId("alice", "example.com")
