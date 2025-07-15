@@ -28,6 +28,8 @@ import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.*
+import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -54,11 +56,17 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
     private val apiConfig = PortableMockEngineConfig()
     private val api = mockMatrixClientServerApiClient(config = apiConfig)
 
+    private val filter ="""
+        {"room":{"state":{"types":[]},"timeline":{"types":["m.room.message","m.reaction","m.room.redaction","m.room.encrypted","m.key.verification.start","m.key.verification.ready","m.key.verification.done","m.key.verification.cancel","m.key.verification.accept","m.key.verification.key","m.key.verification.mac","m.call.invite","m.call.candidates","m.call.answer","m.call.hangup","m.call.negotiate","m.call.reject","m.call.select_answer","m.call.sdp_stream_metadata_changed","m.room.avatar","m.room.canonical_alias","m.room.create","m.room.join_rules","m.room.member","m.room.name","m.room.pinned_events","m.room.power_levels","m.room.topic","m.room.encryption","m.room.history_visibility","m.room.third_party_invite","m.room.guest_access","m.room.server_acl","m.room.tombstone","m.policy.rule.user","m.policy.rule.room","m.policy.rule.server","m.space.parent","m.space.child"]}}}
+    """.trimIndent()
+
     private val cut = TimelineEventHandlerImpl(
         api,
-        accountStore,
         roomStore,
         roomTimelineStore,
+        createMatrixEventJson(),
+        createDefaultEventContentSerializerMappings(),
+        MatrixClientConfiguration(),
         TransactionManagerMock(),
     )
 
@@ -696,7 +704,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -734,7 +742,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -771,7 +779,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -810,7 +818,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -850,7 +858,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -892,7 +900,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -934,7 +942,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -976,7 +984,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         null,
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1018,7 +1026,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1061,7 +1069,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1099,7 +1107,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1144,7 +1152,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1189,7 +1197,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "end",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1235,7 +1243,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "next",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1283,7 +1291,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "start",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1325,7 +1333,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "after-1",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1379,7 +1387,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "after-2",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1396,7 +1404,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "before-4",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1444,7 +1452,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "after-2",
                         dir = GetEvents.Direction.BACKWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1461,7 +1469,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                         "before-4",
                         dir = GetEvents.Direction.FORWARDS,
                         limit = 20,
-                        filter = "1"
+                        filter = filter,
                     )
                 ) {
                     GetEvents.Response(
@@ -1518,7 +1526,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                     "start",
                     dir = GetEvents.Direction.BACKWARDS,
                     limit = 20,
-                    filter = "1"
+                    filter = filter,
                 )
             ) {
                 GetEvents.Response(
@@ -1566,7 +1574,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                     "before-3",
                     dir = GetEvents.Direction.BACKWARDS,
                     limit = 20,
-                    filter = "1"
+                    filter = filter,
                 )
             ) {
                 firstEndpointCalled.value = true
@@ -1584,7 +1592,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                     "before-3",
                     dir = GetEvents.Direction.BACKWARDS,
                     limit = 20,
-                    filter = "1"
+                    filter = filter,
                 )
             ) {
                 GetEvents.Response(
