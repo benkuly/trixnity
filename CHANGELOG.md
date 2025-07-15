@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Use json for /messages filter instead of filter id
+
+### Security
+
+## 4.17.0
+
+### Added
+
 - Added exponential retry for sync loop
 
 ### Changed
@@ -20,16 +36,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Deprecated old RoomId scheme (MSC4291)
 
-### Removed
-
 ### Fixed
 
 - Fixed timing issue in verification
 - Fixed timing issue when creating dehydrated devices
 - Fixed timing issue when fetching own device keys directly after login
 - Fixed bug, that sending an OutboxMessage into an unknown room leads to an outbox deadlock
-
-### Security
 
 ## 4.16.9
 

@@ -5,10 +5,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.Json
+import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
+import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
@@ -21,6 +25,7 @@ import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.utils.KeyedMutex
 
@@ -39,13 +44,31 @@ interface TimelineEventHandler {
 
 class TimelineEventHandlerImpl(
     private val api: MatrixClientServerApiClient,
-    private val accountStore: AccountStore,
     private val roomStore: RoomStore,
     private val roomTimelineStore: RoomTimelineStore,
+    private val json: Json,
+    private val mappings: EventContentSerializerMappings,
+    private val config: MatrixClientConfiguration,
     private val tm: TransactionManager,
 ) : EventHandler, TimelineEventHandler {
     override fun startInCoroutineScope(scope: CoroutineScope) {
         api.sync.subscribe(Priority.STORE_TIMELINE_EVENTS, ::handleSyncResponse).unsubscribeOnCompletion(scope)
+    }
+
+    private val timelineFilter by lazy {
+        val baseFilter = config.syncFilter
+        val filter = baseFilter.copy(
+            room = (baseFilter.room ?: Filters.RoomFilter()).copy(
+                state = (baseFilter.room?.state ?: Filters.RoomFilter.RoomEventFilter()).copy(
+                    types = emptySet(),
+                ),
+                timeline = (baseFilter.room?.timeline ?: Filters.RoomFilter.RoomEventFilter()).copy(
+                    types = (mappings.message + mappings.state).map { it.type }.toSet(),
+                ),
+                includeLeave = config.deleteRooms !is DeleteRooms.OnLeave,
+            )
+        )
+        json.encodeToString(filter)
     }
 
     private val timelineMutex = KeyedMutex<RoomId>()
@@ -151,7 +174,7 @@ class TimelineEventHandlerImpl(
                     to = destinationBatch,
                     dir = GetEvents.Direction.BACKWARDS,
                     limit = limit,
-                    filter = accountStore.getAccount()?.filterId
+                    filter = timelineFilter
                 ).getOrThrow()
                 previousToken = response.end?.takeIf { it != response.start } // detects start of timeline
                 previousEvent = possiblyPreviousEvent?.eventId
@@ -179,7 +202,7 @@ class TimelineEventHandlerImpl(
                     to = destinationBatch,
                     dir = GetEvents.Direction.FORWARDS,
                     limit = limit,
-                    filter = accountStore.getAccount()?.filterId
+                    filter = timelineFilter
                 ).getOrThrow()
                 nextToken = response.end
                 nextEvent = possiblyNextEvent?.eventId
