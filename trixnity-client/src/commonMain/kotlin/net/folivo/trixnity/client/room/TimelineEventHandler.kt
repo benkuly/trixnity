@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -59,13 +58,10 @@ class TimelineEventHandlerImpl(
         val baseFilter = config.syncFilter
         val filter = baseFilter.copy(
             room = (baseFilter.room ?: Filters.RoomFilter()).copy(
-                state = (baseFilter.room?.state ?: Filters.RoomFilter.RoomEventFilter()).copy(
-                    types = emptySet(),
-                ),
+                state = Filters.RoomFilter.RoomEventFilter(types = emptySet()),
                 timeline = (baseFilter.room?.timeline ?: Filters.RoomFilter.RoomEventFilter()).copy(
                     types = (mappings.message + mappings.state).map { it.type }.toSet(),
                 ),
-                includeLeave = config.deleteRooms !is DeleteRooms.OnLeave,
             )
         )
         json.encodeToString(filter)
