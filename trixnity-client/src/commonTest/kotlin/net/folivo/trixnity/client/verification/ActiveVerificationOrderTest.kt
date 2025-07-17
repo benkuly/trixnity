@@ -83,7 +83,7 @@ class ActiveVerificationOrderTest : TrixnityBaseTest() {
         override suspend fun lifecycle() = Unit
 
         suspend fun sendAndHandleVerificationStep(step: VerificationStep) {
-            this.sendVerificationStepAndHandleIt(step)
+            this.queueStep(step)
         }
 
         override suspend fun sendVerificationStep(step: VerificationStep) {
