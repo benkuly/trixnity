@@ -58,6 +58,7 @@ class ActiveSasVerificationMethod private constructor(
     private var theirCommitment: String? = null
     private var theirPublicKey: String? = null
     private var theirMac: SasMacEventContent? = null
+    private var ourMac: SasMacEventContent? = null
     private var messageAuthenticationCode: SasMessageAuthenticationCode? = null
 
     companion object {
@@ -306,40 +307,42 @@ class ActiveSasVerificationMethod private constructor(
     }
 
     private suspend fun onMac(stepContent: SasMacEventContent, isOurOwn: Boolean) {
-        log.trace { "onMac $stepContent (isOurOwn=$isOurOwn)" }
+        log.trace { "onMac $stepContent (isOurOwn=$isOurOwn, hasOwnMac=${ourMac != null}, hasTheirMac = ${theirMac != null})" }
 
-        if (!isOurOwn) theirMac = stepContent
+        if (isOurOwn) {
+            ourMac = stepContent
+        } else {
+            theirMac = stepContent
+        }
+        val ourMac = ourMac
         val theirMac = theirMac
 
-        when {
-            theirMac == null && state.value is ComparisonByUser -> _state.value = WaitForMacs
-            theirMac != null && (state.value == WaitForMacs || isOurOwn) -> {
-                when (messageAuthenticationCode) {
-                    HkdfHmacSha256 -> {
-                        log.trace { "checkHkdfHmacSha256Mac with old (wrong) base64" }
+        if (ourMac != null && theirMac != null) {
+            when (messageAuthenticationCode) {
+                HkdfHmacSha256 -> {
+                    log.trace { "checkHkdfHmacSha256Mac with old (wrong) base64" }
                         checkHkdfHmacSha256Mac(theirMac, olmSas::calculateMac)
-                    }
+                }
 
-                    HkdfHmacSha256V2 -> {
-                        log.trace { "checkHkdfHmacSha256Mac with fixed base64" }
+                HkdfHmacSha256V2 -> {
+                    log.trace { "checkHkdfHmacSha256Mac with fixed base64" }
                         checkHkdfHmacSha256Mac(theirMac, olmSas::calculateMacFixedBase64)
-                    }
+                }
 
-                    else -> {
-                        log.warn { "messageAuthenticationCode is not set" }
-                        sendVerificationStep(
-                            VerificationCancelEventContent(
-                                UnexpectedMessage,
-                                "messageAuthenticationCode is not set",
-                                relatesTo,
-                                transactionId
-                            )
+                else -> {
+                    log.warn { "messageAuthenticationCode is not set" }
+                    sendVerificationStep(
+                        VerificationCancelEventContent(
+                            UnexpectedMessage,
+                            "messageAuthenticationCode is not set",
+                            relatesTo,
+                            transactionId
                         )
-                    }
+                    )
                 }
             }
-
-            else -> {}
+        } else if (isOurOwn) {
+            _state.value = WaitForMacs
         }
     }
 
