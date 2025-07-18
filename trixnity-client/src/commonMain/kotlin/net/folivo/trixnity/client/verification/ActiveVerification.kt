@@ -80,7 +80,7 @@ abstract class ActiveVerificationImpl(
 
     private val handleVerificationStepMutex = Mutex()
 
-    protected suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
+    protected open suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
         handleVerificationStepMutex.withReentrantLock {
             try {
                 if (sender != theirUserId && sender != ownUserId)
@@ -222,7 +222,7 @@ abstract class ActiveVerificationImpl(
 
     protected abstract suspend fun sendVerificationStep(step: VerificationStep)
 
-    private suspend fun sendVerificationStepAndHandleIt(step: VerificationStep) {
+    protected suspend fun sendVerificationStepAndHandleIt(step: VerificationStep) {
         log.trace { "send verification step and handle it: $step" }
         when (step) {
             is VerificationCancelEventContent -> {
