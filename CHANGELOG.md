@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Use json for /messages filter instead of filter id
+- Fix Verification getting stuck
 
 ### Security
 

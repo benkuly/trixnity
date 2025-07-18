@@ -58,7 +58,7 @@ abstract class ActiveVerificationImpl(
         MutableStateFlow(
             if (requestIsFromOurOwn) OwnRequest(request)
             else TheirRequest(
-                request, ownDeviceId, supportedMethods, relatesTo, transactionId, ::sendVerificationStepAndHandleIt
+                request, ownDeviceId, supportedMethods, relatesTo, transactionId, ::queueStep
             )
         )
     override val state = mutableState.asStateFlow()
@@ -80,7 +80,7 @@ abstract class ActiveVerificationImpl(
 
     private val handleVerificationStepMutex = Mutex()
 
-    protected suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
+    protected open suspend fun handleVerificationStep(step: VerificationStep, sender: UserId, isOurOwn: Boolean) {
         handleVerificationStepMutex.withReentrantLock {
             try {
                 if (sender != theirUserId && sender != ownUserId)
@@ -149,7 +149,7 @@ abstract class ActiveVerificationImpl(
             step.methods.intersect(supportedMethods),
             relatesTo,
             transactionId,
-            ::sendVerificationStepAndHandleIt
+            ::queueStep
         )
     }
 
@@ -170,7 +170,7 @@ abstract class ActiveVerificationImpl(
                             ?: throw IllegalArgumentException("their device id should never be null at this step"),
                         relatesTo = relatesTo,
                         transactionId = transactionId,
-                        sendVerificationStep = ::sendVerificationStepAndHandleIt,
+                        sendVerificationStep = ::queueStep,
                         keyStore = keyStore,
                         keyTrustService = keyTrustService,
                         json = json,
@@ -222,6 +222,32 @@ abstract class ActiveVerificationImpl(
 
     protected abstract suspend fun sendVerificationStep(step: VerificationStep)
 
+    private val sendQueue = ArrayDeque<VerificationStep>()
+    private val queueMutex = Mutex()
+    private val sendMutex = Mutex()
+
+    protected suspend fun queueStep(step: VerificationStep, clearQueue: Boolean = false) {
+        log.trace { "queuing verification step for send: $step" }
+        queueMutex.withReentrantLock {
+            if (clearQueue) {
+                sendQueue.clear()
+            }
+            sendQueue.addLast(step)
+        }
+        if (sendMutex.tryLock()) {
+            var step = queueMutex.withReentrantLock {
+                sendQueue.removeFirstOrNull()
+            }
+            while (step != null) {
+                sendVerificationStepAndHandleIt(step)
+                step = queueMutex.withReentrantLock {
+                    sendQueue.removeFirstOrNull()
+                }
+            }
+            sendMutex.unlock()
+        }
+    }
+
     private suspend fun sendVerificationStepAndHandleIt(step: VerificationStep) {
         log.trace { "send verification step and handle it: $step" }
         when (step) {
@@ -257,7 +283,7 @@ abstract class ActiveVerificationImpl(
     }
 
     protected suspend fun cancel(code: Code, reason: String) {
-        sendVerificationStepAndHandleIt(VerificationCancelEventContent(code, reason, relatesTo, transactionId))
+        queueStep(VerificationCancelEventContent(code, reason, relatesTo, transactionId), clearQueue = true)
     }
 
     override suspend fun cancel(message: String) {
