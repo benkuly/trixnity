@@ -11,7 +11,7 @@ private val log = KotlinLogging.logger {}
 
 object MatrixRegex {
     // language=Regexp
-    private const val ID_PATTERN = """[@#][0-9a-z\-.=_/+]+:(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|\[[0-9a-fA-F:.]{2,45}]|[0-9a-zA-Z\-.]{1,255})(?::[0-9]{1,5})?"""
+    private const val ID_PATTERN = """[@#][0-9a-z\-.=_/+]+:(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|\[[0-9a-fA-F:.]{2,45}\]|[0-9a-zA-Z\-.]{1,255})(?::[0-9]{1,5})?"""
     private val idRegex = ID_PATTERN.toRegex()
 
     fun findMentions(message: String): Map<IntRange, Mention> {
