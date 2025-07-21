@@ -39,7 +39,7 @@ object MatrixLinks {
             when {
                 id.length > 255 -> {
                     log.trace { "malformed matrix link: id too long: ${id.length} (max length: 255)" }
-                    null
+                    return null
                 }
                 id.startsWith(RoomAliasId.sigilCharacter) -> RoomAliasId(id)
                 id.startsWith(RoomId.sigilCharacter) -> RoomId(id)
@@ -71,7 +71,7 @@ object MatrixLinks {
             when {
                 id.length > 255 -> {
                     log.trace { "malformed matrix link: id too long: ${id.length} (max length: 255)" }
-                    null
+                    return null
                 }
                 type == "roomid" -> RoomId("!$id")
                 type == "r" -> RoomAliasId("#$id")
