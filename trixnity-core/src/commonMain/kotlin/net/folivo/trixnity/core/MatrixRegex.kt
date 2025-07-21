@@ -39,6 +39,16 @@ object MatrixRegex {
         }.toMap()
     }
 
+    fun isValidUserId(id: String): Boolean =
+        id.length <= 255
+            && id.startsWith(UserId.sigilCharacter)
+            && id.matches(idRegex)
+
+    fun isValidRoomAliasId(id: String): Boolean =
+        id.length <= 255
+            && id.startsWith(RoomAliasId.sigilCharacter)
+            && id.matches(idRegex)
+
     private fun parseMatrixId(id: String): Mention? {
         return when {
             id.length > 255 -> {
