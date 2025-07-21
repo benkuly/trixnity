@@ -301,4 +301,156 @@ class MatrixLinkTest {
             actual = MatrixLinks.parse("matrix:roomid/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE/e/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE?via=example.org&action=join&via=elsewhere.ca")
         )
     }
+
+    @Test
+    fun `allows long matrixto links`() {
+        val longId = (
+            "aaaaaaaaa1aaaaaaaaa2aaaaaaaaa3aaaaaaaaa4aaaaaaaaa5aaaaaaaaa6aaaaaaaaa7aaaaaaaaa8aaaaaaaaa9aaaaaaaa10" +
+                "aaaaaaaa11aaaaaaaa12aaaaaaaa13aaaaaaaa14aaaaaaaa15aaaaaaaa16aaaaaaaa17aaaaaaaa18aaaaaaaa19aaaaaaaa20" +
+                "aaaaaaaa21aaaaaaaa22aaaaaaaa23aaaaaaaa24aa:example.org"
+            )
+        assertEquals(
+            expected = 254,
+            actual = longId.length,
+        )
+        assertEquals(
+            expected = Mention.User(UserId(UserId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("https://matrix.to/#/@$longId")
+        )
+        assertEquals(
+            expected = Mention.RoomAlias(RoomAliasId(RoomAliasId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("https://matrix.to/#/#$longId")
+        )
+        assertEquals(
+            expected = Mention.Room(RoomId(RoomId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("https://matrix.to/#/!$longId")
+        )
+        assertEquals(
+            expected = Mention.Event(RoomId(RoomId.sigilCharacter + longId), EventId(EventId.sigilCharacter + "NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")),
+            actual = MatrixLinks.parse("https://matrix.to/#/!$longId/\$NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")
+        )
+        assertEquals(
+            expected = Mention.Event(RoomId(RoomId.sigilCharacter + "NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE"), EventId(EventId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("https://matrix.to/#/!NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE/$$longId")
+        )
+        assertEquals(
+            expected = Mention.Event(RoomId(RoomId.sigilCharacter + longId), EventId(EventId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("https://matrix.to/#/!$longId/$$longId")
+        )
+        assertEquals(
+            expected = Mention.Event(null, EventId(EventId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("https://matrix.to/#/$$longId")
+        )
+    }
+
+    @Test
+    fun `allows long matrix protocol links`() {
+        val longId = (
+            "aaaaaaaaa1aaaaaaaaa2aaaaaaaaa3aaaaaaaaa4aaaaaaaaa5aaaaaaaaa6aaaaaaaaa7aaaaaaaaa8aaaaaaaaa9aaaaaaaa10" +
+                "aaaaaaaa11aaaaaaaa12aaaaaaaa13aaaaaaaa14aaaaaaaa15aaaaaaaa16aaaaaaaa17aaaaaaaa18aaaaaaaa19aaaaaaaa20" +
+                "aaaaaaaa21aaaaaaaa22aaaaaaaa23aaaaaaaa24aa:example.org"
+            )
+        assertEquals(
+            expected = 254,
+            actual = longId.length,
+        )
+        assertEquals(
+            expected = Mention.User(UserId(UserId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("matrix:u/$longId")
+        )
+        assertEquals(
+            expected = Mention.RoomAlias(RoomAliasId(RoomAliasId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("matrix:r/$longId")
+        )
+        assertEquals(
+            expected = Mention.Room(RoomId(RoomId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("matrix:roomid/$longId")
+        )
+        assertEquals(
+            expected = Mention.Event(RoomId(RoomId.sigilCharacter + longId), EventId(EventId.sigilCharacter + "NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")),
+            actual = MatrixLinks.parse("matrix:roomid/$longId/e/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")
+        )
+        assertEquals(
+            expected = Mention.Event(RoomId(RoomId.sigilCharacter + "NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE"), EventId(EventId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("matrix:roomid/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE/e/$longId")
+        )
+        assertEquals(
+            expected = Mention.Event(RoomId(RoomId.sigilCharacter + longId), EventId(EventId.sigilCharacter + longId)),
+            actual = MatrixLinks.parse("matrix:roomid/$longId/e/$longId")
+        )
+    }
+
+    @Test
+    fun `rejects too long matrixto links`() {
+        val tooLongId = (
+            "aaaaaaaaa1aaaaaaaaa2aaaaaaaaa3aaaaaaaaa4aaaaaaaaa5aaaaaaaaa6aaaaaaaaa7aaaaaaaaa8aaaaaaaaa9aaaaaaaa10" +
+                "aaaaaaaa11aaaaaaaa12aaaaaaaa13aaaaaaaa14aaaaaaaa15aaaaaaaa16aaaaaaaa17aaaaaaaa18aaaaaaaa19aaaaaaaa20" +
+                "aaaaaaaa21aaaaaaaa22aaaaaaaa23aaaaaaaa24aaaaaaaa25aaaaaaaa26:example.org"
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("https://matrix.to/#/@$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("https://matrix.to/#/#$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("https://matrix.to/#/!$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("https://matrix.to/#/!$tooLongId/\$NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("https://matrix.to/#/!NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE/e/$$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("https://matrix.to/#/!$tooLongId/$$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("https://matrix.to/#/$$tooLongId")
+        )
+    }
+
+    @Test
+    fun `rejects too long matrix protocol links`() {
+        val tooLongId = (
+            "aaaaaaaaa1aaaaaaaaa2aaaaaaaaa3aaaaaaaaa4aaaaaaaaa5aaaaaaaaa6aaaaaaaaa7aaaaaaaaa8aaaaaaaaa9aaaaaaaa10" +
+                "aaaaaaaa11aaaaaaaa12aaaaaaaa13aaaaaaaa14aaaaaaaa15aaaaaaaa16aaaaaaaa17aaaaaaaa18aaaaaaaa19aaaaaaaa20" +
+                "aaaaaaaa21aaaaaaaa22aaaaaaaa23aaaaaaaa24aaaaaaaa25aaaaaaaa26:example.org"
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("matrix:u/$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("matrix:r/$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("matrix:roomid/$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("matrix:roomid/$tooLongId/e/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("matrix:roomid/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE/e/$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("matrix:roomid/$tooLongId/e/$tooLongId")
+        )
+        assertEquals(
+            expected = null,
+            actual = MatrixLinks.parse("matrix:e/$tooLongId")
+        )
+    }
 }
