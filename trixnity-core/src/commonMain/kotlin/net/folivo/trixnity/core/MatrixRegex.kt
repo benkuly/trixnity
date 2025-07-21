@@ -16,14 +16,9 @@ object MatrixRegex {
         val users = findIdMentions(message)
         val linksRange = links.keys.sortedBy { it.first }
         val uniqueUsers = users.filter { (user, _) ->
-            val index = linksRange.binarySearch { link ->
-                when {
-                    link.first > user.first -> -1
-                    link.last < user.last -> 1
-                    else -> 0
-                }
-            }
-            index < 0
+            // We don't want id matches that overlap with link matches,
+            // as matrix.to urls will match both as link and as id
+            !linksRange.overlaps(user)
         }
         return links.plus(uniqueUsers).toMap()
     }
@@ -47,5 +42,16 @@ object MatrixRegex {
             id.startsWith(RoomAliasId.sigilCharacter) -> Mention.RoomAlias(RoomAliasId(id))
             else -> null
         }
+    }
+
+    private fun List<IntRange>.overlaps(match: IntRange): Boolean {
+        val index = binarySearch { other ->
+            when {
+                other.first > match.first -> -1
+                other.last < match.last -> 1
+                else -> 0
+            }
+        }
+        return index >= 0
     }
 }

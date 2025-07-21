@@ -18,7 +18,13 @@ object MatrixLinks {
         if (url.protocol == matrixProtocol) {
             return parseMatrixProtocol(url.segments, url.parameters)
         }
+        // matrix.to URLs look like this:
+        // https://matrix.to/#/!roomId?via=example.org
+        // protocol=https host=matrix.to segments=[] fragment=/!roomId?via=example.org
         if (url.protocol == URLProtocol.HTTPS && url.host == "matrix.to" && url.segments.isEmpty()) {
+            // matrix.to uses AJAX hash routing, where the entire path is passed within the hash fragment to prevent
+            // the server from seeing the roomId.
+            // This means we have to parse this hash back into path segments and query parameters
             val path = url.fragment.substringBefore('?').removePrefix("/")
             val query = url.fragment.substringAfter('?', missingDelimiterValue = "")
             val segments = path.removePrefix("/").split('/')
