@@ -136,7 +136,7 @@ class MatrixLinkTest {
     }
 
     @Test
-    fun `parses matrixto roomid (v12) links`() {
+    fun `parses matrixto roomid v12 links`() {
         assertEquals(
             expected = Mention.Room(RoomId("!NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")),
             actual = MatrixLinks.parse("https://matrix.to/#/!NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")
@@ -162,7 +162,7 @@ class MatrixLinkTest {
     }
 
     @Test
-    fun `parses matrix protocol roomid (v12) links`() {
+    fun `parses matrix protocol roomid v12 links`() {
         assertEquals(
             expected = Mention.Room(RoomId("!NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")),
             actual = MatrixLinks.parse("matrix:roomid/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")
@@ -240,7 +240,7 @@ class MatrixLinkTest {
     }
 
     @Test
-    fun `parses matrixto event (v12) links`() {
+    fun `parses matrixto event v12 links`() {
         assertEquals(
             expected = Mention.Event(RoomId("!NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE"), EventId("\$NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")),
             actual = MatrixLinks.parse("https://matrix.to/#/!NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE/\$NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")
@@ -288,7 +288,7 @@ class MatrixLinkTest {
     }
 
     @Test
-    fun `parses matrix protocol event (v12) links`() {
+    fun `parses matrix protocol event v12 links`() {
         assertEquals(
             expected = Mention.Event(RoomId("!NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE"), EventId("\$NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")),
             actual = MatrixLinks.parse("matrix:roomid/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE/e/NXTQJLZfL7TpVrS6TcznngpZiiuwZcJXdr1ODlnT-sE")
