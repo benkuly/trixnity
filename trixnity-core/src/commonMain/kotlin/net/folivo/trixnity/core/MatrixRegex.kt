@@ -1,10 +1,13 @@
 package net.folivo.trixnity.core
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import net.folivo.trixnity.core.model.Mention
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.util.MatrixLinks
 import net.folivo.trixnity.core.util.Patterns
+
+private val log = KotlinLogging.logger {}
 
 object MatrixRegex {
     // language=Regexp
@@ -38,6 +41,10 @@ object MatrixRegex {
 
     private fun parseMatrixId(id: String): Mention? {
         return when {
+            id.length > 255 -> {
+                log.trace { "malformed matrix id: id too long: ${id.length} (max length: 255)" }
+                null
+            }
             id.startsWith(UserId.sigilCharacter) -> Mention.User(UserId(id))
             id.startsWith(RoomAliasId.sigilCharacter) -> Mention.RoomAlias(RoomAliasId(id))
             else -> null
