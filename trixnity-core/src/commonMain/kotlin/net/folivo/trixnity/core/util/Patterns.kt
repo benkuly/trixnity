@@ -257,7 +257,7 @@ internal object Patterns {
     private const val DOMAIN_NAME = """($HOST_NAME|$IP_ADDRESS)"""
 
     // language=RegExp
-    private const val PROTOCOL = "(?i:http|https|rtsp)://"
+    private const val PROTOCOL = "(?:[hH][tT][tT][pP][sS]?)://"
 
     /* A word boundary or end of input.  This is to stop foo.sure from matching as foo.su */
     // NOTE: We've modified the word boundary matcher to add (?=\s) to match trailing slashes
