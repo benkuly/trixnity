@@ -11,18 +11,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- New mention matcher & parser
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Use json for /messages filter instead of filter id
+### Security
+
+## 4.18.0
+
+### Changed
+
+- New mention matcher & parser (small API break in MatrixRegex and Mentions, removing `match` and `label`)
+
+### Fixed
+
 - Fix Verification getting stuck
 
-### Security
+## 4.17.1
+
+### Fixed
+
+- Use json for /messages filter instead of filter id
 
 ## 4.17.0
 
