@@ -645,5 +645,17 @@ class MatrixRegexTest : TrixnityBaseTest() {
             ),
             actual = MatrixRegex.findMentions(content)
         )
+        assertEquals(
+            expected = mapOf(
+                9..44 to Mention.User(userId=UserId("@user:matrix.org")),
+                92..171 to Mention.Room(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
+                199..323 to Mention.Event(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), eventId=EventId("\$KoEcMwZKqGpCeuMjAmt9zvmWgO72f7hDFkvfBMS479A"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
+            ),
+            actual = MatrixRegex.findMentions(
+                "<a href=\"https://matrix.to/#/@user:matrix.org\">Some Username</a>: This is a user mention<br>" +
+                    "https://matrix.to/#/!WvOltebgJfkgHzhfpW:matrix.org?via=matrix.org&via=imbitbu.de This is a room mention<br>" +
+                    "https://matrix.to/#/!WvOltebgJfkgHzhfpW:matrix.org/\$KoEcMwZKqGpCeuMjAmt9zvmWgO72f7hDFkvfBMS479A?via=matrix.org&via=imbitbu.de This is an event mention"
+            )
+        )
     }
 }

@@ -16,6 +16,7 @@ object MatrixRegex {
 
     fun findMentions(message: String): Map<IntRange, Mention> {
         val links = findLinkMentions(message)
+        println(links)
         val users = findIdMentions(message)
         val linksRange = links.keys.sortedBy { it.first }
         val uniqueUsers = users.filter { (user, _) ->
@@ -61,12 +62,13 @@ object MatrixRegex {
         }
     }
 
-    private fun List<IntRange>.overlaps(match: IntRange): Boolean {
-        val index = binarySearch { other ->
+    private fun List<IntRange>.overlaps(user: IntRange): Boolean {
+        val index = binarySearch { link ->
             when {
-                other.first > match.first -> -1
-                other.last < match.last -> 1
-                else -> 0
+                user.last < link.first -> 1
+                user.first > link.last -> -1
+                user.first >= link.first && user.last <= link.last -> 0
+                else -> -1
             }
         }
         return index >= 0
