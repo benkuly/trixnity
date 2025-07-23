@@ -16,7 +16,6 @@ object MatrixRegex {
 
     fun findMentions(message: String): Map<IntRange, Mention> {
         val links = findLinkMentions(message)
-        println(links)
         val users = findIdMentions(message)
         val linksRange = links.keys.sortedBy { it.first }
         val uniqueUsers = users.filter { (user, _) ->
@@ -54,6 +53,7 @@ object MatrixRegex {
             .findAll(content, startIndex = from)
             .filter { it.range.last < to }
             .map {
+                println(it.value)
                 val trimmedContent = it.value.trimLink()
                 Pair(
                     it.range.first.until(it.range.first + trimmedContent.length),
@@ -109,5 +109,5 @@ object MatrixRegex {
         } else this
 
     private fun String.trimLink(): String =
-        trimEnd('.', '!', '?', ':').trimParens()
+        trimEnd(',', '.', '!', '?', ':').trimParens()
 }

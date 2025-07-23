@@ -658,4 +658,16 @@ class MatrixRegexTest : TrixnityBaseTest() {
             )
         )
     }
+
+    @Test
+    fun `finds regular links`() {
+        assertEquals(
+            expected = mapOf(
+                19..65 to "https://en.wikipedia.org/wiki/Matrix_(protocol)",
+            ),
+            actual = MatrixRegex.findLinks(
+                "I saw that online (https://en.wikipedia.org/wiki/Matrix_(protocol)), neat eh?"
+            )
+        )
+    }
 }
