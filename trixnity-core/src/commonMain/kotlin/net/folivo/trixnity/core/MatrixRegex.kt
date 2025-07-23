@@ -53,7 +53,6 @@ object MatrixRegex {
             .findAll(content, startIndex = from)
             .filter { it.range.last < to }
             .map {
-                println(it.value)
                 val trimmedContent = it.value.trimLink()
                 Pair(
                     it.range.first.until(it.range.first + trimmedContent.length),
