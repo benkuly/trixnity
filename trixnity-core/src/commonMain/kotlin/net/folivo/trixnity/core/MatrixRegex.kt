@@ -16,7 +16,6 @@ object MatrixRegex {
 
     fun findMentions(message: String): Map<IntRange, Mention> {
         val links = findLinkMentions(message)
-        println(links)
         val users = findIdMentions(message)
         val linksRange = links.keys.sortedBy { it.first }
         val uniqueUsers = users.filter { (user, _) ->
@@ -27,17 +26,39 @@ object MatrixRegex {
         return links.plus(uniqueUsers).toMap()
     }
 
-    fun findIdMentions(content: String): Map<IntRange, Mention> {
-        return idRegex.findAll(content)
+    fun findIdMentions(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Mention> {
+        return idRegex
+            .findAll(content, startIndex = from)
+            .filter { it.range.last < to }
             .filter { it.range.last - it.range.first <= 255 }
             .mapNotNull { Pair(it.range, parseMatrixId(it.value) ?: return@mapNotNull null) }
             .toMap()
     }
 
-    fun findLinkMentions(content: String): Map<IntRange, Mention> {
-        return Patterns.AUTOLINK_MATRIX_URI.findAll(content).mapNotNull {
-            Pair(it.range, MatrixLinks.parse(it.value) ?: return@mapNotNull null)
-        }.toMap()
+    fun findLinkMentions(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Mention> {
+        return Patterns.AUTOLINK_MATRIX_URI
+            .findAll(content, startIndex = from)
+            .filter { it.range.last < to }
+            .mapNotNull {
+                val trimmedContent = it.value.trimLink()
+                Pair(
+                    it.range.first.until(it.range.first + trimmedContent.length),
+                    MatrixLinks.parse(trimmedContent) ?: return@mapNotNull null
+                )
+            }.toMap()
+    }
+
+    fun findLinks(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, String> {
+        return Patterns.AUTOLINK_MATRIX_URI
+            .findAll(content, startIndex = from)
+            .filter { it.range.last < to }
+            .map {
+                val trimmedContent = it.value.trimLink()
+                Pair(
+                    it.range.first.until(it.range.first + trimmedContent.length),
+                    trimmedContent,
+                )
+            }.toMap()
     }
 
     fun isValidUserId(id: String): Boolean =
@@ -73,4 +94,19 @@ object MatrixRegex {
         }
         return index >= 0
     }
+
+    private fun String.trimParens(): String =
+        if (endsWith(')')) {
+            val trimmed = trimEnd(')')
+            val openingParens = trimmed.count { it == '(' }
+            val closingParens = trimmed.count { it == ')' }
+            val endingParens = length - trimmed.length
+            val openParens = openingParens - closingParens
+
+            val desiredParens = minOf(endingParens, openParens)
+            take(trimmed.length + desiredParens)
+        } else this
+
+    private fun String.trimLink(): String =
+        trimEnd(',', '.', '!', '?', ':').trimParens()
 }
