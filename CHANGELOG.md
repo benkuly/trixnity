@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Do not suspend infinitely LoadMembersService on MatrixServerException
 - Fix withReentrantLock did not use unique context
 - Check for permissions when sending an event
+- Fix wrong effectless filter for timeline gap filling
 
 ### Security
 

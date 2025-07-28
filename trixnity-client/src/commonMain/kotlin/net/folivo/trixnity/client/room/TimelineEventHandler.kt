@@ -56,13 +56,8 @@ class TimelineEventHandlerImpl(
 
     private val timelineFilter by lazy {
         val baseFilter = config.syncFilter
-        val filter = baseFilter.copy(
-            room = (baseFilter.room ?: Filters.RoomFilter()).copy(
-                state = Filters.RoomFilter.RoomEventFilter(types = emptySet()),
-                timeline = (baseFilter.room?.timeline ?: Filters.RoomFilter.RoomEventFilter()).copy(
-                    types = (mappings.message + mappings.state).map { it.type }.toSet(),
-                ),
-            )
+        val filter = (baseFilter.room?.timeline ?: Filters.RoomFilter.RoomEventFilter()).copy(
+            types = (mappings.message + mappings.state).map { it.type }.toSet(),
         )
         json.encodeToString(filter)
     }

@@ -32,7 +32,6 @@ import net.folivo.trixnity.core.serialization.createDefaultEventContentSerialize
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
-import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
@@ -47,17 +46,14 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
     private val event4 = plainEvent(4)
     private val event5 = plainEvent(5)
 
-    private val accountStore = getInMemoryAccountStore().apply {
-        scheduleSetup { updateAccount { it?.copy(filterId = "1") } }
-    }
     private val roomStore = getInMemoryRoomStore()
     private val roomTimelineStore = getInMemoryRoomTimelineStore()
 
     private val apiConfig = PortableMockEngineConfig()
     private val api = mockMatrixClientServerApiClient(config = apiConfig)
 
-    private val filter ="""
-        {"room":{"state":{"types":[]},"timeline":{"types":["m.room.message","m.reaction","m.room.redaction","m.room.encrypted","m.key.verification.start","m.key.verification.ready","m.key.verification.done","m.key.verification.cancel","m.key.verification.accept","m.key.verification.key","m.key.verification.mac","m.call.invite","m.call.candidates","m.call.answer","m.call.hangup","m.call.negotiate","m.call.reject","m.call.select_answer","m.call.sdp_stream_metadata_changed","m.room.avatar","m.room.canonical_alias","m.room.create","m.room.join_rules","m.room.member","m.room.name","m.room.pinned_events","m.room.power_levels","m.room.topic","m.room.encryption","m.room.history_visibility","m.room.third_party_invite","m.room.guest_access","m.room.server_acl","m.room.tombstone","m.policy.rule.user","m.policy.rule.room","m.policy.rule.server","m.space.parent","m.space.child"]}}}
+    private val filter = """
+        {"types":["m.room.message","m.reaction","m.room.redaction","m.room.encrypted","m.key.verification.start","m.key.verification.ready","m.key.verification.done","m.key.verification.cancel","m.key.verification.accept","m.key.verification.key","m.key.verification.mac","m.call.invite","m.call.candidates","m.call.answer","m.call.hangup","m.call.negotiate","m.call.reject","m.call.select_answer","m.call.sdp_stream_metadata_changed","m.room.avatar","m.room.canonical_alias","m.room.create","m.room.join_rules","m.room.member","m.room.name","m.room.pinned_events","m.room.power_levels","m.room.topic","m.room.encryption","m.room.history_visibility","m.room.third_party_invite","m.room.guest_access","m.room.server_acl","m.room.tombstone","m.policy.rule.user","m.policy.rule.room","m.policy.rule.server","m.space.parent","m.space.child"]}
     """.trimIndent()
 
     private val cut = TimelineEventHandlerImpl(
