@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Move remaining link matching and filtering functions from trixnity-messenger
-- Refactor Mentions
+- Refactor Mentions (now named References) and made MatrixRegex internal
 
 ### Deprecated
 
