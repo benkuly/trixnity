@@ -20,6 +20,7 @@ import net.folivo.trixnity.client.store.RoomOutboxMessageStore
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
+import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
@@ -35,6 +36,7 @@ class OutboxMessageEventHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomEventEncryptionServices: List<RoomEventEncryptionService>,
+    private val userService: UserService,
     private val mediaService: MediaService,
     private val roomOutboxMessageStore: RoomOutboxMessageStore,
     private val outboxMessageMediaUploaderMappings: OutboxMessageMediaUploaderMappings,
@@ -129,6 +131,14 @@ class OutboxMessageEventHandler(
     private suspend fun sendOutboxMessage(outboxMessage: RoomOutboxMessage<*>, roomId: RoomId) {
         val transactionId = outboxMessage.transactionId
         log.trace { "send outbox message (transactionId=${transactionId}, roomId=${outboxMessage.roomId})" }
+        val canSendMessage = userService.canSendEvent(roomId, outboxMessage.content).first()
+        if (!canSendMessage) {
+            log.warn { "cannot send message, because of missing permissions in this room" }
+            roomOutboxMessageStore.update(outboxMessage.roomId, transactionId) {
+                it?.copy(sendError = SendError.NoEventPermission)
+            }
+            return
+        }
         val originalContent = outboxMessage.content
         val uploader =
             outboxMessageMediaUploaderMappings.findUploaderOrFallback(originalContent)

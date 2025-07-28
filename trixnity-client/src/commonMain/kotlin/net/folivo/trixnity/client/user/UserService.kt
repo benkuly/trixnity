@@ -13,10 +13,10 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.BAN_DEFAULT
@@ -61,7 +61,8 @@ interface UserService {
 
     fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<Long?>
 
-    fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean>
+    fun canSendEvent(roomId: RoomId, eventClass: KClass<out RoomEventContent>): Flow<Boolean>
+    fun canSendEvent(roomId: RoomId, eventContent: RoomEventContent): Flow<Boolean>
 
     fun getPresence(userId: UserId): Flow<UserPresence?>
 
@@ -231,7 +232,7 @@ class UserServiceImpl(
         }.distinctUntilChanged()
 
 
-    override fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean> =
+    override fun canSendEvent(roomId: RoomId, eventClass: KClass<out RoomEventContent>): Flow<Boolean> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
@@ -248,6 +249,14 @@ class UserServiceImpl(
                 ownPowerLevel >= sendEventPowerLevel
             } else false
         }.distinctUntilChanged()
+
+    override fun canSendEvent(roomId: RoomId, eventContent: RoomEventContent): Flow<Boolean> {
+        val baseEventClass =
+            mappings.message.find { it.kClass.isInstance(eventContent) }?.kClass
+                ?: mappings.state.find { it.kClass.isInstance(eventContent) }?.kClass
+                ?: throw IllegalArgumentException("eventContent ${eventContent::class} does not match any event in mappings")
+        return canSendEvent(roomId, baseEventClass)
+    }
 
     override fun canSetPowerLevelToMax(
         roomId: RoomId,

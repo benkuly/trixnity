@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Do not suspend infinitely LoadMembersService on MatrixServerException
+- Fix withReentrantLock did not use unique context
+- Check for permissions when sending an event
 
 ### Security
 
