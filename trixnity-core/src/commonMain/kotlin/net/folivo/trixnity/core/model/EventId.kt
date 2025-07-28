@@ -12,7 +12,13 @@ import kotlinx.serialization.encoding.Encoder
 data class EventId(val full: String) {
     companion object {
         const val sigilCharacter = '$'
+
+        fun isValid(id: String): Boolean =
+            id.length <= 255
+                    && id.startsWith(sigilCharacter)
     }
+
+    val isValid by lazy { isValid(full) }
 
     override fun toString() = full
 }

@@ -16,6 +16,10 @@ data class RoomId(val full: String) {
 
     companion object {
         const val sigilCharacter = '!'
+
+        fun isValid(id: String): Boolean =
+            id.length <= 255
+                    && id.startsWith(sigilCharacter)
     }
 
     @Deprecated("RoomId should be considered as opaque String")
@@ -25,6 +29,8 @@ data class RoomId(val full: String) {
     @Deprecated("RoomId should be considered as opaque String")
     val domain: String
         get() = full.trimStart(sigilCharacter).substringAfter(':')
+
+    val isValid by lazy { EventId.Companion.isValid(full) }
 
     override fun toString() = full
 }
