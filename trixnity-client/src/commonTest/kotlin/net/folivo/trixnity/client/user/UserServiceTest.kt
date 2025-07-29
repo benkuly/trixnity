@@ -789,8 +789,16 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun `canSetPowerLevelToMax » other user not member`() =
+        runTest {
+            roomStateStore.save(powerLevelsEvent)
+            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe null
+        }
+
+    @Test
     fun `canSetPowerLevelToMax » return null when not member of room`() = runTest {
         roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+        roomUserStore.update(alice, roomId) { aliceRoomUser }
         val powerLevelsEvent = getPowerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
@@ -808,6 +816,7 @@ class UserServiceTest : TrixnityBaseTest() {
     @Test
     fun `canSetPowerLevelToMax » eventsMap is not null » not allow to change the power level when events power_levels value gt own power level`() =
         runTest {
+            roomUserStore.update(alice, roomId) { aliceRoomUser }
             val powerLevelsEvent = getPowerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
@@ -825,6 +834,7 @@ class UserServiceTest : TrixnityBaseTest() {
     @Test
     fun `canSetPowerLevelToMax » eventsMap is not null » return own power level as max power level value when events power_levels value == own power level`() =
         runTest {
+            roomUserStore.update(alice, roomId) { aliceRoomUser }
             val powerLevelsEvent = getPowerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
@@ -842,6 +852,7 @@ class UserServiceTest : TrixnityBaseTest() {
     @Test
     fun `canSetPowerLevelToMax » eventsMap is null » not allow to change the power level when stateDefault value gt own power level`() =
         runTest {
+            roomUserStore.update(alice, roomId) { aliceRoomUser }
             val powerLevelsEvent = getPowerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
@@ -858,6 +869,7 @@ class UserServiceTest : TrixnityBaseTest() {
     @Test
     fun `canSetPowerLevelToMax » eventsMap is null » return own power level as max power level value when stateDefault value == own power level`() =
         runTest {
+            roomUserStore.update(alice, roomId) { aliceRoomUser }
             val powerLevelsEvent = getPowerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
@@ -875,6 +887,7 @@ class UserServiceTest : TrixnityBaseTest() {
     @Test
     fun `canSetPowerLevelToMax » oldUserPowerLevel gt ownPowerLevel » not allow to change the power level when otherUserId != me`() =
         runTest {
+            roomUserStore.update(alice, roomId) { aliceRoomUser }
             val powerLevelsEvent = getPowerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
@@ -893,6 +906,7 @@ class UserServiceTest : TrixnityBaseTest() {
     @Test
     fun `canSetPowerLevelToMax » oldUserPowerLevel == ownPowerLevel » not allow to change the power level when otherUserId != me`() =
         runTest {
+            roomUserStore.update(alice, roomId) { aliceRoomUser }
             roomStateStore.save(powerLevelsEvent)
             cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe null
         }
@@ -900,6 +914,7 @@ class UserServiceTest : TrixnityBaseTest() {
     @Test
     fun `canSetPowerLevelToMax » oldUserPowerLevel == ownPowerLevel » return own power level as max power level value when otherUserId == me`() =
         runTest {
+            roomUserStore.update(me, roomId) { aliceRoomUser }
             roomStateStore.save(powerLevelsEvent)
             cut.canSetPowerLevelToMax(roomId, me).first() shouldBe 55
         }
@@ -907,6 +922,7 @@ class UserServiceTest : TrixnityBaseTest() {
     @Test
     fun `canSetPowerLevelToMax » oldUserPowerLevel == ownPowerLevel » return own power level as max power level value when all criteria are met`() =
         runTest {
+            roomUserStore.update(alice, roomId) { aliceRoomUser }
             val powerLevelsEvent = getPowerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
@@ -1279,6 +1295,8 @@ class UserServiceTest : TrixnityBaseTest() {
         aliceLevel: Long,
         expect: Boolean
     ) = runTest {
+        roomUserStore.update(alice, roomId) { aliceRoomUserBanned }
+
         val powerLevelsEvent =
             getPowerLevelsEvent(
                 PowerLevelsEventContent(

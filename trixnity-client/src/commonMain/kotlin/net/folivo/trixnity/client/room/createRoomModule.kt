@@ -24,6 +24,7 @@ fun createRoomModule() = module {
             api = get(),
             roomStore = get(),
             roomEventEncryptionServices = getAll(),
+            userService = get(),
             mediaService = get(),
             roomOutboxMessageStore = get(),
             outboxMessageMediaUploaderMappings = get(),

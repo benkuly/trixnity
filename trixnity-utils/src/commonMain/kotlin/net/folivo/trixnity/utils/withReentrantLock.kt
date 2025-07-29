@@ -7,13 +7,17 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 
 suspend fun <T> Mutex.withReentrantLock(block: suspend () -> T): T {
-    if (currentCoroutineContext()[ReentrantMutexContextElement] != null) return block()
-    return withContext(ReentrantMutexContextElement) {
+    val key = ReentrantMutexContextKey(this)
+    if (currentCoroutineContext()[key] != null) return block()
+    return withContext(ReentrantMutexContextElement(key)) {
         withLock { block() }
     }
 }
 
-private object ReentrantMutexContextElement : CoroutineContext.Element,
-    CoroutineContext.Key<ReentrantMutexContextElement> {
-    override val key: CoroutineContext.Key<*> = this
-}
+class ReentrantMutexContextElement(
+    override val key: ReentrantMutexContextKey
+) : CoroutineContext.Element
+
+data class ReentrantMutexContextKey(
+    val mutex: Mutex
+) : CoroutineContext.Key<ReentrantMutexContextElement>

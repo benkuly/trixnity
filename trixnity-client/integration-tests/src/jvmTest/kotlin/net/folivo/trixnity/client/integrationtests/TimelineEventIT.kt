@@ -11,6 +11,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.Serializable
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.room.getState
@@ -21,27 +22,37 @@ import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.room.toFlowList
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.eventId
+import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
 import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.idOrNull
+import net.folivo.trixnity.core.model.events.m.Mentions
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.messageOf
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.koin.dsl.module
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
@@ -305,6 +316,15 @@ class TimelineEventIT {
         }
     }
 
+    @Serializable
+    class TestUnknownEventContent(
+        val test: String
+    ) : MessageEventContent {
+        override val relatesTo: RelatesTo? = null
+        override val mentions: Mentions? = null
+        override val externalUrl: String? = null
+    }
+
     @Test
     fun shouldHandleGappySyncsAndGetEventsFromEndOfTheTimeline(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
@@ -315,8 +335,33 @@ class TimelineEventIT {
 
             client2.cancelSync()
 
+            val client3 = MatrixClient.login(
+                baseUrl = URLBuilder(
+                    protocol = URLProtocol.HTTP,
+                    host = synapseDocker.host,
+                    port = synapseDocker.firstMappedPort
+                ).build(),
+                identifier = IdentifierType.User("user1"),
+                password = "user$1passw0rd",
+                repositoriesModule = createInMemoryRepositoriesModule(),
+                mediaStoreModule = createInMemoryMediaStoreModule(),
+                deviceId = "client3"
+            ) {
+                name = "client3"
+                modulesFactories += {
+                    module {
+                        single<EventContentSerializerMappings> {
+                            DefaultEventContentSerializerMappings + createEventContentSerializerMappings {
+                                messageOf<TestUnknownEventContent>("net.folivo.test")
+                            }
+                        }
+                    }
+                }
+            }.getOrThrow()
+
             (0..29).forEach {
                 client1.room.sendMessage(room) { text(it.toString()) }
+                client3.api.room.sendMessageEvent(room, TestUnknownEventContent(it.toString()))
                 delay(50) // give it time to sync back
             }
             val startFrom = client1.room.getLastTimelineEvent(room).firstWithTimeout {
