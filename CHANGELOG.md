@@ -11,8 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Move remaining link matching and filtering functions from trixnity-messenger
-
 ### Deprecated
 
 ### Removed
@@ -20,6 +18,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## 4.19.0
+
+### Changed
+
+- Move remaining link matching and filtering functions from trixnity-messenger
+- Refactor Mentions (now named References) and made MatrixRegex internal
+- Upgrade olm binaries to support Android 16 KB page size
+- Improved membership power level calculations
+
+### Fixed
+
+- Do not suspend infinitely LoadMembersService on MatrixServerException
+- Fix withReentrantLock did not use unique context
+- Check for permissions when sending an event
+- Fix wrong effectless filter for timeline gap filling
 
 ## 4.18.0
 
