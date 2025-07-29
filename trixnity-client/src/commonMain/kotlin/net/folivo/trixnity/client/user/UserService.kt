@@ -136,10 +136,11 @@ class UserServiceImpl(
     override fun canKickUser(roomId: RoomId, userId: UserId): Flow<Boolean> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
+            roomUserStore.get(userId, roomId).map { it?.membership },
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { membership, powerLevels, createEvent ->
-            if (membership == Membership.JOIN) {
+        ) { ownMembership, otherMembership, powerLevels, createEvent ->
+            if (ownMembership == Membership.JOIN && otherMembership != Membership.LEAVE) {
                 val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
                 val otherPowerLevel = getPowerLevel(userId, createEvent.sender, powerLevels)
                 val kickLevel = powerLevels?.kick ?: KICK_DEFAULT
@@ -151,10 +152,11 @@ class UserServiceImpl(
     override fun canBanUser(roomId: RoomId, userId: UserId): Flow<Boolean> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
+            roomUserStore.get(userId, roomId).map { it?.membership },
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { membership, powerLevels, createEvent ->
-            if (membership == Membership.JOIN) {
+        ) { ownMembership, otherMembership, powerLevels, createEvent ->
+            if (ownMembership == Membership.JOIN && otherMembership != Membership.BAN) {
                 val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
                 val otherPowerLevel = getPowerLevel(userId, createEvent.sender, powerLevels)
                 val banLevel = powerLevels?.ban ?: BAN_DEFAULT
@@ -166,10 +168,11 @@ class UserServiceImpl(
     override fun canUnbanUser(roomId: RoomId, userId: UserId): Flow<Boolean> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
+            roomUserStore.get(userId, roomId).map { it?.membership },
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { membership, powerLevels, createEvent ->
-            if (membership == Membership.JOIN) {
+        ) { ownMembership, otherMembership, powerLevels, createEvent ->
+            if (ownMembership == Membership.JOIN && otherMembership == Membership.BAN) {
                 val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
                 val otherPowerLevel = getPowerLevel(userId, createEvent.sender, powerLevels)
                 val banLevel = powerLevels?.ban ?: BAN_DEFAULT
@@ -182,11 +185,11 @@ class UserServiceImpl(
     override fun canInviteUser(roomId: RoomId, userId: UserId): Flow<Boolean> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
-            getById(roomId, userId).map { it?.membership },
+            roomUserStore.get(userId, roomId).map { it?.membership },
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { membership, otherMembership, powerLevels, createEvent ->
-            if (membership == Membership.JOIN) {
+        ) { ownMembership, otherMembership, powerLevels, createEvent ->
+            if (ownMembership == Membership.JOIN && otherMembership != Membership.JOIN) {
                 val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
                 val inviteLevel = powerLevels?.invite ?: INVITE_DEFAULT
 
@@ -264,10 +267,11 @@ class UserServiceImpl(
     ): Flow<Long?> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
+            roomUserStore.get(userId, roomId).map { it?.membership },
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { membership, powerLevels, createEvent ->
-            if (membership == Membership.JOIN) {
+        ) { ownMembership, otherMembership, powerLevels, createEvent ->
+            if (ownMembership == Membership.JOIN && otherMembership != null) {
                 val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
                 val otherPowerLevel = getPowerLevel(userId, createEvent.sender, powerLevels)
                 when {
