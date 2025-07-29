@@ -14,7 +14,7 @@ private val log = KotlinLogging.logger("net.folivo.trixnity.core.util.References
  */
 sealed interface Reference {
     /**
-     * If exists, the orignal uri.
+     * If exists, the original uri.
      */
     val uri: String?
 
