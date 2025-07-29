@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.user
 
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -9,6 +10,8 @@ import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.rooms.GetMembers
+import net.folivo.trixnity.core.ErrorResponse
+import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
@@ -121,5 +124,28 @@ class LoadMembersServiceTest : TrixnityBaseTest() {
         roomStore.get(roomId).first { it?.membersLoaded == true }?.membersLoaded shouldBe true
         loadMembers.isCompleted shouldBe true
         newMemberEvents shouldContainExactly listOf(aliceEvent, bobEvent)
+    }
+
+    @Test
+    fun `invoke » do not suspend infinitely on MatrixServerException`() = runTest {
+        val storedRoom = simpleRoom.copy(roomId = roomId, membersLoaded = false)
+        roomStore.update(roomId) { storedRoom }
+        apiConfig.endpoints {
+            matrixJsonEndpoint(GetMembers(roomId, notMembership = LEAVE)) {
+                throw MatrixServerException(HttpStatusCode.Unauthorized, ErrorResponse.Unauthorized("not allowed"))
+            }
+        }
+        val newMemberEvents = mutableListOf<Event<MemberEventContent>>()
+        api.sync.subscribeContent<MemberEventContent> {
+            newMemberEvents += it
+        }
+
+        val loadMembers = launch {
+            cut(roomId, true)
+        }
+        delay(1.seconds)
+        loadMembers.join()
+        roomStore.get(roomId).first()?.membersLoaded shouldBe false
+        loadMembers.isCompleted shouldBe true
     }
 }

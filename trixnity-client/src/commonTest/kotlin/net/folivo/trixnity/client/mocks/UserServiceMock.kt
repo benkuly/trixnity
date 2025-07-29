@@ -11,8 +11,8 @@ import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.EventContent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
+import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import kotlin.reflect.KClass
@@ -80,8 +80,15 @@ class UserServiceMock : UserService {
         throw NotImplementedError()
     }
 
-    override fun canSendEvent(roomId: RoomId, eventClass: KClass<out EventContent>): Flow<Boolean> {
-        throw NotImplementedError()
+    val canSendEvent = mutableMapOf<Pair<RoomId, KClass<out RoomEventContent>>, Flow<Boolean>>()
+    override fun canSendEvent(roomId: RoomId, eventClass: KClass<out RoomEventContent>): Flow<Boolean> {
+        return canSendEvent[roomId to eventClass] ?: MutableStateFlow(true)
+    }
+
+    override fun canSendEvent(roomId: RoomId, eventContent: RoomEventContent): Flow<Boolean> {
+        return canSendEvent.entries.find { it.key.first == roomId && it.key.second.isInstance(eventContent) }
+            ?.value
+            ?: MutableStateFlow(true)
     }
 
     override fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Long> {

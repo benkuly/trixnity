@@ -14,10 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.mocks.MediaServiceMock
-import net.folivo.trixnity.client.mocks.RoomEventEncryptionServiceMock
-import net.folivo.trixnity.client.mocks.RoomServiceMock
-import net.folivo.trixnity.client.mocks.TransactionManagerMock
+import net.folivo.trixnity.client.mocks.*
 import net.folivo.trixnity.client.room.message.MessageBuilder
 import net.folivo.trixnity.client.room.message.image
 import net.folivo.trixnity.client.room.outbox.defaultOutboxMessageMediaUploaderMappings
@@ -64,6 +61,11 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
     private val currentSyncState = MutableStateFlow(SyncState.RUNNING)
     private val roomEventDecryptionServiceMock = RoomEventEncryptionServiceMock(useInput = true)
     private val mediaServiceMock = MediaServiceMock()
+    private val userService = UserServiceMock().apply {
+        scheduleSetup {
+            canSendEvent.clear()
+        }
+    }
     private val roomServiceMock = RoomServiceMock().apply {
         rooms.value = mapOf(room to MutableStateFlow(Room(room)))
     }
@@ -72,7 +74,6 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         scheduleSetup { update(room) { simpleRoom } }
     }
     private val roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore()
-
 
     private val apiConfig = PortableMockEngineConfig()
     private val api = mockMatrixClientServerApiClient(config = apiConfig)
@@ -84,6 +85,7 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
         api,
         roomStore,
         listOf(roomEventDecryptionServiceMock),
+        userService,
         mediaServiceMock,
         roomOutboxMessageStore,
         defaultOutboxMessageMediaUploaderMappings,
@@ -334,6 +336,29 @@ class OutboxMessageEventHandlerTest : TrixnityBaseTest() {
             outboxMessages shouldHaveSize 1
             outboxMessages.first().sentAt shouldBe null
             outboxMessages.first().sendError shouldNotBe null
+        }
+    }
+
+    @Test
+    fun `processOutboxMessages » not send without permissions`() = runTest {
+        val message =
+            RoomOutboxMessage(room, "transaction", RoomMessageEventContent.TextBased.Text("hi"), testClock.now())
+        roomOutboxMessageStore.update(message.roomId, message.transactionId) { message }
+        userService.canSendEvent[room to RoomMessageEventContent::class] = flowOf(false)
+        apiConfig.endpoints {
+            matrixJsonEndpoint(
+                SendMessageEvent(room, "m.room.message", "transaction"),
+            ) {
+                throw MatrixServerException(HttpStatusCode.InternalServerError, ErrorResponse.Unknown(""))
+            }
+        }
+        backgroundScope.launch { cut.processOutboxMessages(roomOutboxMessageStore.getAll()) }
+
+        eventually(3.seconds) {// we need this, because the cache may not be fast enough
+            val outboxMessages = roomOutboxMessageStore.getAll().flattenValues().first()
+            outboxMessages shouldHaveSize 1
+            outboxMessages.first().sentAt shouldBe null
+            outboxMessages.first().sendError shouldBe RoomOutboxMessage.SendError.NoEventPermission
         }
     }
 
