@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Move remaining link matching and filtering functions from trixnity-messenger
 - Refactor Mentions (now named References) and made MatrixRegex internal
+- Upgrade olm binaries to support Android 16 KB page size
 
 ### Deprecated
 
