@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix OOM gradle dependencies tasks
+
 ### Security
 
 ## 4.19.0

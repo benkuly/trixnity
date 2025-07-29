@@ -16,7 +16,7 @@ stages:
   - website
 
 variables:
-  GRADLE_OPTS: -Dorg.gradle.daemon=false
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Xmx1g
   GRADLE_USER_HOME: $CI_PROJECT_DIR/.gradle
   KONAN_DATA_DIR: $CI_PROJECT_DIR/.konan
   KOTLIN_DATA_DIR: $CI_PROJECT_DIR/.kotlin
