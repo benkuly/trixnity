@@ -8,7 +8,7 @@ import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
 import net.folivo.trixnity.core.serialization.events.DefaultDataUnitContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.GetRoomVersionFunction
+import net.folivo.trixnity.core.serialization.events.RoomVersionStore
 
 interface MatrixServerServerApiClient : AutoCloseable {
     val baseClient: MatrixApiClient
@@ -20,9 +20,9 @@ class MatrixServerServerApiClientImpl(
     hostname: String,
     getDelegatedDestination: (String, Int) -> Pair<String, Int>,
     sign: (String) -> Key.Ed25519Key,
-    getRoomVersion: GetRoomVersionFunction,
+    roomVersionStore: RoomVersionStore,
     private val eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
-    private val json: Json = createMatrixEventAndDataUnitJson(getRoomVersion, eventContentSerializerMappings),
+    private val json: Json = createMatrixEventAndDataUnitJson(roomVersionStore, eventContentSerializerMappings),
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : MatrixServerServerApiClient {

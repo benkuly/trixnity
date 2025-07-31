@@ -1730,7 +1730,8 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                     state = listOf(
                         StateEvent(
                             content = CreateEventContent(
-                                creator = UserId("@example:example.org"), federate = true, roomVersion = "1",
+                                federate = true,
+                                roomVersion = "1",
                                 predecessor = CreateEventContent.PreviousRoom(
                                     roomId = RoomId("!oldroom:example.org"),
                                     eventId = EventId("\$something:example.org")
@@ -1847,7 +1848,6 @@ class RoomsRoutesTest : TrixnityBaseTest() {
                   "state": [
                     {
                       "content": {
-                        "creator": "@example:example.org",
                         "m.federate": true,
                         "predecessor": {
                           "event_id": "${'$'}something:example.org",

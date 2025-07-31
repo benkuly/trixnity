@@ -234,7 +234,6 @@ class TimelineEventHandlerImpl(
         if (event is RoomEvent) {
             roomStore.update(event.roomId) { oldRoom ->
                 oldRoom?.copy(lastEventId = event.id)
-                    ?: Room(roomId = event.roomId, lastEventId = event.id)
             }
         }
     }

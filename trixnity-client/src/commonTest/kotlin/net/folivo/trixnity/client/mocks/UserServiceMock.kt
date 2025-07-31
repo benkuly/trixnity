@@ -7,13 +7,16 @@ import kotlinx.coroutines.flow.flowOf
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.UserPresence
+import net.folivo.trixnity.client.user.PowerLevel
 import net.folivo.trixnity.client.user.UserService
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
 import net.folivo.trixnity.core.model.events.RoomEventContent
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
 import kotlin.reflect.KClass
 
@@ -91,15 +94,15 @@ class UserServiceMock : UserService {
             ?: MutableStateFlow(true)
     }
 
-    override fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Long> {
+    override fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<PowerLevel> {
         throw NotImplementedError()
     }
 
     override fun getPowerLevel(
         userId: UserId,
-        roomCreator: UserId,
+        createEvent: ClientEvent.StateBaseEvent<CreateEventContent>,
         powerLevelsEventContent: PowerLevelsEventContent?
-    ): Long {
+    ): PowerLevel {
         throw NotImplementedError()
     }
 

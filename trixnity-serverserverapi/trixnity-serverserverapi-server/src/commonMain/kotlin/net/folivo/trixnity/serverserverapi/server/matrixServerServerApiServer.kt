@@ -8,14 +8,14 @@ import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.core.serialization.createMatrixEventAndDataUnitJson
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.GetRoomVersionFunction
+import net.folivo.trixnity.core.serialization.events.RoomVersionStore
 
 fun Application.matrixServerServerApiServer(
     hostname: String,
     signatureAuthenticationFunction: SignatureAuthenticationFunction,
-    getRoomVersionFunction: GetRoomVersionFunction,
+    roomVersionStore: RoomVersionStore,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
-    json: Json = createMatrixEventAndDataUnitJson(getRoomVersionFunction, eventContentSerializerMappings),
+    json: Json = createMatrixEventAndDataUnitJson(roomVersionStore, eventContentSerializerMappings),
     routes: Route.() -> Unit,
 ) {
     installMatrixSignatureAuth("matrix-signature-auth", hostname = hostname) {

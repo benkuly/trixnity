@@ -25,7 +25,7 @@ class MatrixServerServerApiClientTest : TrixnityBaseTest() {
                 "otherHostDelegate" to 443
             },
             sign = { Key.Ed25519Key("ABC", "signature") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.url.host shouldBe "otherHostDelegate"
@@ -51,7 +51,7 @@ class MatrixServerServerApiClientTest : TrixnityBaseTest() {
                 it shouldBe """{"content":{"key":"value"},"destination":"otherHost:80","method":"POST","origin":"myHost","uri":"/test"}"""
                 Key.Ed25519Key("ABC", "signature")
             },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",destination="otherHost:80",key="ed25519:ABC",sig="signature""""
@@ -79,7 +79,7 @@ class MatrixServerServerApiClientTest : TrixnityBaseTest() {
                 it shouldBe """{"destination":"otherHost:80","method":"GET","origin":"myHost","uri":"/test"}"""
                 Key.Ed25519Key("ABC", "signature")
             },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe """X-Matrix origin="myHost",destination="otherHost:80",key="ed25519:ABC",sig="signature""""

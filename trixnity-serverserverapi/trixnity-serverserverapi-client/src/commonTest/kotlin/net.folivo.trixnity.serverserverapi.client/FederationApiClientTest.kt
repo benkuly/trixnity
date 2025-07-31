@@ -30,7 +30,7 @@ import kotlin.test.assertEquals
 
 class FederationApiClientTest : TrixnityBaseTest() {
     private val pdu: SignedPersistentDataUnit<*> = Signed(
-        PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3(
+        PersistentDataUnit.PersistentDataUnitV12.PersistentMessageDataUnitV12(
             authEvents = listOf(),
             content = RoomMessageEventContent.TextBased.Text("hi"),
             depth = 12u,
@@ -85,7 +85,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/send/someTransactionId", request.url.fullPath)
@@ -164,7 +164,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/event_auth/!room:server/$1event", request.url.fullPath)
@@ -192,7 +192,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -227,7 +227,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/get_missing_events/!room:server", request.url.fullPath)
@@ -281,7 +281,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/event/$1event", request.url.fullPath)
@@ -313,7 +313,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -346,7 +346,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -379,7 +379,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -416,7 +416,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             })
         matrixRestClient.federation.makeJoin(Url(""), RoomId("!room:server"), UserId("@alice:example.com"), setOf("3"))
             .getOrThrow() shouldBe MakeJoin.Response(
-            eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+            eventTemplate = PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                 authEvents = listOf(),
                 content = MemberEventContent(
                     joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
@@ -441,7 +441,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v2/send_join/!room:server/$1event", request.url.fullPath)
@@ -513,7 +513,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             RoomId("!room:server"),
             EventId("$1event"),
             Signed(
-                PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                     authEvents = listOf(),
                     content = MemberEventContent(
                         joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
@@ -540,7 +540,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
         ).getOrThrow() shouldBe SendJoin.Response(
             authChain = listOf(pdu),
             event = Signed(
-                PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                     authEvents = listOf(),
                     content = MemberEventContent(
                         joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
@@ -581,7 +581,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -617,7 +617,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             })
         matrixRestClient.federation.makeKnock(Url(""), RoomId("!room:server"), UserId("@alice:example.com"), setOf("3"))
             .getOrThrow() shouldBe MakeKnock.Response(
-            eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+            eventTemplate = PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                 authEvents = listOf(),
                 content = MemberEventContent(
                     membership = Membership.KNOCK
@@ -641,7 +641,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/send_knock/!room:server/$1event", request.url.fullPath)
@@ -703,7 +703,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             RoomId("!room:server"),
             EventId("$1event"),
             Signed(
-                PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                     authEvents = listOf(),
                     content = MemberEventContent(
                         membership = Membership.KNOCK
@@ -748,7 +748,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v2/invite/!room:server/$1event", request.url.fullPath)
@@ -834,7 +834,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             EventId("$1event"),
             Invite.Request(
                 Signed(
-                    PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                    PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                         authEvents = listOf(),
                         content = MemberEventContent(
                             membership = Membership.INVITE
@@ -873,7 +873,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             )
         ).getOrThrow() shouldBe Invite.Response(
             event = Signed(
-                PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                     authEvents = listOf(),
                     content = MemberEventContent(
                         membership = Membership.INVITE
@@ -905,7 +905,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -941,7 +941,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             })
         matrixRestClient.federation.makeLeave(Url(""), RoomId("!room:server"), UserId("@alice:example.com"))
             .getOrThrow() shouldBe MakeLeave.Response(
-            eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+            eventTemplate = PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                 authEvents = listOf(),
                 content = MemberEventContent(
                     membership = Membership.LEAVE
@@ -965,7 +965,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v2/send_leave/!room:server/$1event", request.url.fullPath)
@@ -1006,7 +1006,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             RoomId("!room:server"),
             EventId("$1event"),
             Signed(
-                PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                     authEvents = listOf(),
                     content = MemberEventContent(
                         membership = Membership.LEAVE
@@ -1038,7 +1038,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/3pid/onbind", request.url.fullPath)
@@ -1106,7 +1106,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1156,7 +1156,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             Url(""),
             RoomId("!room:server"),
             Signed(
-                PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                     authEvents = listOf(),
                     content = MemberEventContent(
                         membership = Membership.INVITE,
@@ -1197,7 +1197,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1262,7 +1262,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1340,7 +1340,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1477,7 +1477,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1520,7 +1520,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1555,7 +1555,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1587,7 +1587,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1721,7 +1721,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1799,7 +1799,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1943,7 +1943,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -1979,7 +1979,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -2026,7 +2026,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -2066,7 +2066,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
@@ -2113,7 +2113,7 @@ class FederationApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(

@@ -17,6 +17,7 @@ import net.folivo.trixnity.core.model.UserId
 @HttpMethod(POST)
 data class UpgradeRoom(
     @SerialName("roomId") val roomId: RoomId,
+    @SerialName("additional_creators") val additionalCreators: Set<UserId>? = null,
     @SerialName("user_id") val asUserId: UserId? = null
 ) : MatrixEndpoint<UpgradeRoom.Request, UpgradeRoom.Response> {
     @Serializable

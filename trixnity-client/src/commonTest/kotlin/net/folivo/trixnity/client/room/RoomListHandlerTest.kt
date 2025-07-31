@@ -67,6 +67,15 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » unreadMessageCount » set unread message count`() = runTest {
+        val createEvent = StateEvent(
+            CreateEventContent(),
+            EventId("event1"),
+            UserId("user1", "localhost"),
+            roomId,
+            0,
+            stateKey = ""
+        )
+        roomStateStore.save(createEvent)
         cut.updateRoomList(
             SyncEvents(
                 Sync.Response(
@@ -87,6 +96,15 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » markedUnread » not mark as unread when not set`() = runTest {
+        val createEvent = StateEvent(
+            CreateEventContent(),
+            EventId("event1"),
+            UserId("user1", "localhost"),
+            roomId,
+            0,
+            stateKey = ""
+        )
+        roomStateStore.save(createEvent)
         cut.updateRoomList(
             SyncEvents(
                 Sync.Response(
@@ -101,6 +119,15 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » markedUnread » mark as unread when set`() = runTest {
+        val createEvent = StateEvent(
+            CreateEventContent(),
+            EventId("event1"),
+            UserId("user1", "localhost"),
+            roomId,
+            0,
+            stateKey = ""
+        )
+        roomStateStore.save(createEvent)
         roomAccountDataStore.save(ClientEvent.RoomAccountDataEvent(MarkedUnreadEventContent(true), roomId))
         cut.updateRoomList(
             SyncEvents(
@@ -117,6 +144,15 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » lastRelevantEventId » setlastRelevantEventId `() = runTest {
+        val createEvent = StateEvent(
+            CreateEventContent(),
+            EventId("event1"),
+            UserId("user1", "localhost"),
+            roomId,
+            0,
+            stateKey = ""
+        )
+        roomStateStore.save(createEvent)
         cut.updateRoomList(
             SyncEvents(
                 Sync.Response(
@@ -125,14 +161,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                             roomId to JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(
-                                        StateEvent(
-                                            CreateEventContent(UserId("user1", "localhost")),
-                                            EventId("event1"),
-                                            UserId("user1", "localhost"),
-                                            roomId,
-                                            0,
-                                            stateKey = ""
-                                        ),
+                                        createEvent,
                                         MessageEvent(
                                             RoomMessageEventContent.TextBased.Text("Hello!"),
                                             EventId("event2"),

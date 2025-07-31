@@ -4,7 +4,6 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 
@@ -32,7 +31,3 @@ val Room.federate: Boolean? get() = createEventContent?.federate
 val Room.version: String? get() = createEventContent?.roomVersion
 val Room.joinedMemberCount: Long? get() = name?.summary?.joinedMemberCount
 val Room.invitedMemberCount: Long? get() = name?.summary?.invitedMemberCount
-
-@Deprecated("use sender of CreateEventContent instead")
-@Suppress("DEPRECATION")
-val Room.creator: UserId? get() = createEventContent?.creator

@@ -9,8 +9,8 @@ import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.serverserverapi.model.discovery.*
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,7 +22,7 @@ class DiscoveryApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/.well-known/matrix/server", request.url.encodedPath)
@@ -48,7 +48,7 @@ class DiscoveryApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/.well-known/matrix/server", request.url.encodedPath)
@@ -73,7 +73,7 @@ class DiscoveryApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/federation/v1/version", request.url.fullPath)
@@ -107,7 +107,7 @@ class DiscoveryApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/key/v2/server", request.url.fullPath)
@@ -171,7 +171,7 @@ class DiscoveryApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals("/_matrix/key/v2/query", request.url.fullPath)
@@ -264,7 +264,7 @@ class DiscoveryApiClientTest : TrixnityBaseTest() {
             hostname = "hostname",
             getDelegatedDestination = { host, port -> host to port },
             sign = { Key.Ed25519Key("key", "value") },
-            getRoomVersion = { "3" },
+            roomVersionStore = TestRoomVersionStore("12"),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     assertEquals(
