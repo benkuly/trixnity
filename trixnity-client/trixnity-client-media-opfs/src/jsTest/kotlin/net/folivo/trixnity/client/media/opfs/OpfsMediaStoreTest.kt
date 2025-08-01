@@ -161,7 +161,7 @@ class OpfsMediaStoreTest {
         tmpPath.values().toList().size shouldBe 1
         coroutineScope.cancel()
         withContext(Dispatchers.Default) {
-            delay(50.milliseconds)
+            delay(100.milliseconds)
         }
         tmpPath.values().toList().size shouldBe 0
     }
