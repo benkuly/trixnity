@@ -1009,7 +1009,7 @@ class UserServiceTest : TrixnityBaseTest() {
                 )
             )
             roomStateStore.save(powerLevelsEvent)
-            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe 55
+            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe PowerLevel.User(55)
         }
 
     @Test
@@ -1043,7 +1043,7 @@ class UserServiceTest : TrixnityBaseTest() {
                 )
             )
             roomStateStore.save(powerLevelsEvent)
-            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe 55
+            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe PowerLevel.User(55)
         }
 
 
@@ -1079,7 +1079,7 @@ class UserServiceTest : TrixnityBaseTest() {
         runTest {
             roomUserStore.update(me, roomId) { aliceRoomUser() }
             roomStateStore.save(powerLevelsEvent)
-            cut.canSetPowerLevelToMax(roomId, me).first() shouldBe 55
+            cut.canSetPowerLevelToMax(roomId, me).first() shouldBe PowerLevel.User(55)
         }
 
     @Test
@@ -1097,7 +1097,7 @@ class UserServiceTest : TrixnityBaseTest() {
                 )
             )
             roomStateStore.save(powerLevelsEvent)
-            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe 55
+            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe PowerLevel.User(55)
         }
 
 
