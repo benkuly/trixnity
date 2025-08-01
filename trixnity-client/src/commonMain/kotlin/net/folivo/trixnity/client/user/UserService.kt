@@ -31,6 +31,16 @@ private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.UserServ
 sealed interface PowerLevel {
     object Creator : PowerLevel
     data class User(val level: Long) : PowerLevel
+
+    operator fun compareTo(other: PowerLevel): Int {
+        return when (this) {
+            is Creator -> if (other is Creator) 0 else 1
+            is User -> when (other) {
+                is Creator -> -1
+                is User -> this.level.compareTo(other.level)
+            }
+        }
+    }
 }
 
 interface UserService {
