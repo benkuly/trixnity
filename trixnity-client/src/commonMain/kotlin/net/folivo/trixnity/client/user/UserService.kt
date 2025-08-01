@@ -28,11 +28,11 @@ import kotlin.time.Duration
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.UserService")
 
-sealed interface PowerLevel {
+sealed interface PowerLevel : Comparable<PowerLevel> {
     object Creator : PowerLevel
     data class User(val level: Long) : PowerLevel
 
-    operator fun compareTo(other: PowerLevel): Int {
+    override operator fun compareTo(other: PowerLevel): Int {
         return when (this) {
             is Creator -> if (other is Creator) 0 else 1
             is User -> when (other) {
@@ -70,7 +70,7 @@ interface UserService {
     fun canInvite(roomId: RoomId): Flow<Boolean>
     fun canRedactEvent(roomId: RoomId, eventId: EventId): Flow<Boolean>
 
-    fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<Long?>
+    fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<PowerLevel.User?>
 
     fun canSendEvent(roomId: RoomId, eventClass: KClass<out RoomEventContent>): Flow<Boolean>
     fun canSendEvent(roomId: RoomId, eventContent: RoomEventContent): Flow<Boolean>
@@ -307,7 +307,7 @@ class UserServiceImpl(
     override fun canSetPowerLevelToMax(
         roomId: RoomId,
         userId: UserId
-    ): Flow<Long?> =
+    ): Flow<PowerLevel.User?> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomUserStore.get(userId, roomId).map { it?.membership },
@@ -319,7 +319,7 @@ class UserServiceImpl(
                 is PowerLevel.Creator -> null
                 is PowerLevel.User ->
                     when (val ownPowerLevel = getPowerLevel(ownUserId, createEvent, powerLevelsEventContent)) {
-                        is PowerLevel.Creator -> null
+                        is PowerLevel.Creator -> PowerLevel.User(Long.MAX_VALUE)
                         is PowerLevel.User -> {
                             val sendPowerLevelEventPowerLevel =
                                 (powerLevelsEventContent?.events?.get<PowerLevelsEventContent>()
@@ -329,7 +329,7 @@ class UserServiceImpl(
                             when {
                                 ownPowerLevel.level < sendPowerLevelEventPowerLevel -> null
                                 userId != ownUserId && ownPowerLevel.level <= otherPowerLevel.level -> null
-                                else -> ownPowerLevel.level
+                                else -> PowerLevel.User(ownPowerLevel.level)
                             }
                         }
                     }

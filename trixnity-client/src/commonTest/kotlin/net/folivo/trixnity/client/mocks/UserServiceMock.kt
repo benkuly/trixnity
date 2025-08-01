@@ -109,7 +109,7 @@ class UserServiceMock : UserService {
     override fun canSetPowerLevelToMax(
         roomId: RoomId,
         userId: UserId
-    ): Flow<Long?> {
+    ): Flow<PowerLevel.User?> {
         throw NotImplementedError()
     }
 
