@@ -7,7 +7,6 @@ import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.utils.filterContent
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
@@ -51,7 +50,7 @@ class RoomListHandler(
     }
 
     internal suspend fun updateRoomList(syncEvents: SyncEvents) = coroutineScope {
-        val roomUpdates: ConcurrentMap<RoomId, ConcurrentList<(Room?) -> Room?>> = concurrentMutableMap()
+        val roomUpdates: ConcurrentMap<RoomId, ConcurrentList<suspend (Room?) -> Room?>> = concurrentMutableMap()
 
         val syncRooms = syncEvents.syncResponse.room
 
@@ -62,25 +61,36 @@ class RoomListHandler(
             unreadMessageCount: Long?,
             markedUnread: Boolean?,
             name: RoomDisplayName?,
-        ): (Room?) -> Room {
-            val createEventContent = roomStateStore.getByStateKey<CreateEventContent>(roomId).first()?.content
+        ): suspend (Room?) -> Room {
             val encrypted = roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first() != null
             val nextRoomId =
                 roomStateStore.getByStateKey<TombstoneEventContent>(roomId).first()?.content?.replacementRoom
             val lastRelevantEventTimestamp = lastRelevantEvent?.originTimestamp
                 ?.let { Instant.fromEpochMilliseconds(it) }
             return { oldRoom ->
-                (oldRoom ?: Room(roomId)).copy(
-                    membership = membership,
-                    createEventContent = createEventContent ?: oldRoom?.createEventContent,
-                    encrypted = encrypted || oldRoom?.encrypted == true,
-                    lastRelevantEventId = lastRelevantEvent?.id ?: oldRoom?.lastRelevantEventId,
-                    lastRelevantEventTimestamp = lastRelevantEventTimestamp ?: oldRoom?.lastRelevantEventTimestamp,
-                    unreadMessageCount = unreadMessageCount ?: oldRoom?.unreadMessageCount ?: 0,
-                    markedUnread = markedUnread ?: oldRoom?.markedUnread ?: false,
-                    nextRoomId = nextRoomId ?: oldRoom?.nextRoomId,
-                    name = name ?: oldRoom?.name,
-                )
+                coroutineScope {
+                    val createEvent by lazy {
+                        async {
+                            checkNotNull(
+                                roomStateStore.getByStateKey<CreateEventContent>(roomId).first()
+                            ) { "m.room.create must be given" }
+                        }
+                    }
+                    (oldRoom ?: Room(
+                        roomId = roomId,
+                        createEventContent = createEvent.await().content
+                    )).copy(
+                        membership = membership,
+                        createEventContent = oldRoom?.createEventContent ?: createEvent.await().content,
+                        encrypted = encrypted || oldRoom?.encrypted == true,
+                        lastRelevantEventId = lastRelevantEvent?.id ?: oldRoom?.lastRelevantEventId,
+                        lastRelevantEventTimestamp = lastRelevantEventTimestamp ?: oldRoom?.lastRelevantEventTimestamp,
+                        unreadMessageCount = unreadMessageCount ?: oldRoom?.unreadMessageCount ?: 0,
+                        markedUnread = markedUnread ?: oldRoom?.markedUnread ?: false,
+                        nextRoomId = nextRoomId ?: oldRoom?.nextRoomId,
+                        name = name ?: oldRoom?.name,
+                    )
+                }
             }
         }
 
@@ -102,7 +112,7 @@ class RoomListHandler(
                 markedUnread = roomAccountDataStore.get<MarkedUnreadEventContent>(roomId).first()?.content?.unread,
                 name = name,
             )
-            roomUpdates.add(roomId) { mergeRoom(it) }
+            roomUpdates.add(roomId, mergeRoom)
         }
         syncRooms?.leave?.entries?.forEachParallel { (roomId, roomInfo) ->
             val lastRelevantEvent = roomInfo.timeline?.events?.lastOrNull { config.lastRelevantEventFilter(it) }
@@ -160,7 +170,7 @@ class RoomListHandler(
 
     private suspend fun updateIsDirectAndAvatarUrls(
         syncEvents: SyncEvents,
-        roomUpdates: ConcurrentMap<RoomId, ConcurrentList<(Room?) -> Room?>>,
+        roomUpdates: ConcurrentMap<RoomId, ConcurrentList<suspend (Room?) -> Room?>>,
     ) = coroutineScope {
         val directEvent = syncEvents.filterContent<DirectEventContent>().firstOrNull()?.content
         val syncRooms = syncEvents.syncResponse.room
@@ -401,9 +411,9 @@ class RoomListHandler(
         forEach { launch { block(it) } }
     }
 
-    private suspend fun ConcurrentMap<RoomId, ConcurrentList<(Room?) -> Room?>>.add(
+    private suspend fun ConcurrentMap<RoomId, ConcurrentList<suspend (Room?) -> Room?>>.add(
         roomId: RoomId,
-        value: (Room?) -> Room?
+        value: suspend (Room?) -> Room?
     ) = write {
         getOrPut(roomId) { concurrentMutableList() }.write { add(value) }
     }

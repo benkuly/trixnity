@@ -2,10 +2,7 @@ package net.folivo.trixnity.client.user
 
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
@@ -19,8 +16,7 @@ import net.folivo.trixnity.core.model.events.EventType
 import net.folivo.trixnity.core.model.events.RedactedEventContent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.room.*
-import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
-import net.folivo.trixnity.core.model.events.m.room.Membership.LEAVE
+import net.folivo.trixnity.core.model.events.m.room.Membership.*
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -63,7 +59,7 @@ class UserServiceTest : TrixnityBaseTest() {
         gap = null,
     )
 
-    private val powerLevelsEvent = getPowerLevelsEvent(
+    private val powerLevelsEvent = powerLevelsEvent(
         PowerLevelsEventContent(
             users = mapOf(
                 me to 55,
@@ -74,20 +70,9 @@ class UserServiceTest : TrixnityBaseTest() {
         )
     )
 
-    private val aliceRoomUserBanned = RoomUser(
+    private fun aliceRoomUser(membership: Membership = JOIN) = RoomUser(
         roomId, alice, "Alice", StateEvent(
-            MemberEventContent(membership = Membership.BAN),
-            EventId(""),
-            alice,
-            roomId,
-            0L,
-            stateKey = ""
-        )
-    )
-
-    private val aliceRoomUser = RoomUser(
-        roomId, alice, "Alice", StateEvent(
-            MemberEventContent(membership = LEAVE),
+            MemberEventContent(membership = membership),
             EventId(""),
             alice,
             roomId,
@@ -103,8 +88,8 @@ class UserServiceTest : TrixnityBaseTest() {
     private val roomStore = getInMemoryRoomStore { update(roomId) { Room(roomId, membership = JOIN) } }
 
     private val roomStateStore = getInMemoryRoomStateStore {
-        save(getPowerLevelsEvent(PowerLevelsEventContent()))
-        save(getCreateEvent(UserId("creator", "server")))
+        save(powerLevelsEvent(PowerLevelsEventContent()))
+        save(createEvent(UserId("creator", "server")))
     }
 
     private val currentSyncState = MutableStateFlow(SyncState.RUNNING).also {
@@ -192,10 +177,42 @@ class UserServiceTest : TrixnityBaseTest() {
     )
 
     @Test
-    fun `getPowerLevel » the room contains a power_level event » return the value in the user_id list when I am in the user_id list`() =
+    fun `getPowerLevel - is creator`() =
         runTest {
-            roomStateStore.save(getCreateEvent(me))
-            val powerLevelsEvent = getPowerLevelsEvent(
+            roomStateStore.save(createEvent(me, roomVersion = "12"))
+            val powerLevelsEvent = powerLevelsEvent(
+                PowerLevelsEventContent( // should be ignored
+                    users = mapOf(
+                        me to 60L,
+                        alice to 50
+                    )
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.getPowerLevel(roomId, me).first() shouldBe PowerLevel.Creator
+        }
+
+    @Test
+    fun `getPowerLevel - is additional creator`() =
+        runTest {
+            roomStateStore.save(createEvent(me, roomVersion = "12", additionalCreators = setOf(alice)))
+            val powerLevelsEvent = powerLevelsEvent(
+                PowerLevelsEventContent( // should be ignored
+                    users = mapOf(
+                        me to 60L,
+                        alice to 50
+                    )
+                )
+            )
+            roomStateStore.save(powerLevelsEvent)
+            cut.getPowerLevel(roomId, alice).first() shouldBe PowerLevel.Creator
+        }
+
+    @Test
+    fun `getPowerLevel - the room contains a power_level event - return the value in the user_id list when I am in the user_id list`() =
+        runTest {
+            roomStateStore.save(createEvent(me))
+            val powerLevelsEvent = powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
                         me to 60L,
@@ -204,522 +221,668 @@ class UserServiceTest : TrixnityBaseTest() {
                 )
             )
             roomStateStore.save(powerLevelsEvent)
-            cut.getPowerLevel(roomId, me).first { it != 0L } shouldBe 60L
+            cut.getPowerLevel(roomId, me).firstPowerLevel() shouldBe 60L
         }
 
     @Test
-    fun `getPowerLevel » the room contains a power_level event » return the usersDefault value when I am not in the user_id list`() =
+    fun `getPowerLevel - the room contains a power_level event - return the usersDefault value when I am not in the user_id list`() =
         runTest {
-            roomStateStore.save(getCreateEvent(me))
-            val powerLevelsEvent = getPowerLevelsEvent(
+            roomStateStore.save(createEvent(me))
+            val powerLevelsEvent = powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(alice to 50),
                     usersDefault = 40
                 )
             )
             roomStateStore.save(powerLevelsEvent)
-            cut.getPowerLevel(roomId, me).first { it != 0L } shouldBe 40
+            cut.getPowerLevel(roomId, me).firstPowerLevel() shouldBe 40
         }
 
     @Test
-    fun `canKickUser » return false when not member of room`() =
+    fun `canKickUser - return false when not member of room`() = runTest {
         canKickAlice(
-            meLevel = 56,
-            aliceLevel = 54,
+            ownLevel = 56,
+            otherLevel = 54,
             kickLevel = 55,
-            expect = false,
-        ) {
-            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
-        }
-
-    @Test
-    fun `canKickUser » my power level lt kick level » return true when my level gt other user level`() =
-        canKickAlice(
-            meLevel = 56,
-            aliceLevel = 54,
-            kickLevel = 55,
-            expect = true,
-        )
-
-    @Test
-    fun `canKickUser » my power level less than kick level » return false when my level == other user level`() =
-        canKickAlice(
-            meLevel = 56,
-            aliceLevel = 56,
-            kickLevel = 55,
+            ownMembership = LEAVE,
             expect = false,
         )
-
-    @Test
-    fun `canKickUser » my power level less than kick level » return false when my level lt other user level`() =
-        canKickAlice(
-            meLevel = 56,
-            aliceLevel = 57,
-            kickLevel = 55,
-            expect = false,
-        )
-
-    @Test
-    fun `canKickUser » my power level == kick level » return true when my level gt other user level`() =
-        canKickAlice(
-            meLevel = 55,
-            aliceLevel = 54,
-            kickLevel = 55,
-            expect = true,
-        )
-
-    @Test
-    fun `canKickUser » my power level == kick level » return false when my level == other user level`() =
-        canKickAlice(
-            meLevel = 55,
-            aliceLevel = 55,
-            kickLevel = 55,
-            expect = false,
-        )
-
-    @Test
-    fun `canKickUser » my power level == kick level » return false when my level lt other user level`() =
-        canKickAlice(
-            meLevel = 55,
-            aliceLevel = 56,
-            kickLevel = 55,
-            expect = false,
-        )
-
-    @Test
-    fun `canKickUser » my power level lt kick level » return false when my level gt other user level`() =
-        canKickAlice(
-            meLevel = 54,
-            aliceLevel = 53,
-            kickLevel = 55,
-            expect = false,
-        )
-
-    @Test
-    fun `canKickUser » my power level lt kick level » return false when my level == other user level`() =
-        canKickAlice(
-            meLevel = 54,
-            aliceLevel = 54,
-            kickLevel = 55,
-            expect = false,
-        )
-
-    @Test
-    fun `canKickUser » my power level lt kick level » return false when my level lt other user level`() =
-        canKickAlice(
-            meLevel = 54,
-            aliceLevel = 55,
-            kickLevel = 55,
-            expect = false,
-        )
-
-    @Test
-    fun `canBanUser » return false when not member of room`() =
-        canBanAlice(
-            meLevel = 56,
-            aliceLevel = 54,
-            banLevel = 55,
-            expect = false
-        ) {
-            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
-        }
-
-    @Test
-    fun `canBanUser » my power level gt ban level » return true when my level gt other user level`() =
-        canBanAlice(
-            meLevel = 56,
-            aliceLevel = 54,
-            banLevel = 55,
-            expect = true
-        )
-
-
-    @Test
-    fun `canBanUser » my power level gt ban level » return false when my level == other user level`() =
-        canBanAlice(
-            meLevel = 56,
-            aliceLevel = 56,
-            banLevel = 55,
-            expect = false
-        )
-
-    @Test
-    fun `canBanUser » my power level gt ban level » return false when my level lt other user level`() =
-        canBanAlice(
-            meLevel = 56,
-            aliceLevel = 57,
-            banLevel = 55,
-            expect = false
-        )
-
-    @Test
-    fun `canBanUser » my power level == ban level » return true when my level gt other user level`() =
-        canBanAlice(
-            meLevel = 55,
-            aliceLevel = 54,
-            banLevel = 55,
-            expect = true
-        )
-
-    @Test
-    fun `canBanUser » my power level == ban level » return false when my level == other user level`() =
-        canBanAlice(
-            meLevel = 55,
-            aliceLevel = 55,
-            banLevel = 55,
-            expect = false
-        )
-
-    @Test
-    fun `canBanUser » my power level == ban level » return false when my level lt other user level`() =
-        canBanAlice(
-            meLevel = 55,
-            aliceLevel = 56,
-            banLevel = 55,
-            expect = false
-        )
-
-    @Test
-    fun `canBanUser » my power level lt ban level » return false when my level gt other user level`() =
-        canBanAlice(
-            meLevel = 54,
-            aliceLevel = 53,
-            banLevel = 55,
-            expect = false
-        )
-
-    @Test
-    fun `canBanUser » my power level lt ban level » return false when my level == other user level`() =
-        canBanAlice(
-            meLevel = 54,
-            aliceLevel = 54,
-            banLevel = 55,
-            expect = false
-        )
-
-    @Test
-    fun `canBanUser » my power level lt ban level » return false when my level lt other user level`() =
-        canBanAlice(
-            meLevel = 54,
-            aliceLevel = 55,
-            banLevel = 55,
-            expect = false
-        )
-
-    @Test
-    fun `canUnbanUser » return false when not member of room`() = runTest {
-        roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
-        val otherUserLevel = 60L
-        val powerLevelsEvent = getPowerLevelsEvent(
-            PowerLevelsEventContent(
-                users = mapOf(
-                    me to 61L,
-                    alice to otherUserLevel
-                ), kick = 60L,
-                ban = 60L
-            )
-        )
-        roomStateStore.save(powerLevelsEvent)
-        cut.canUnbanUser(roomId, alice).first() shouldBe false
     }
 
     @Test
-    fun `canUnbanUser » my level gt kick level » my power level gt ban level » return true when my level gt other user level`() =
-        myLevelGtKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
+    fun `canKickUser - other user is already LEAVE - return false`() = runTest {
+        canKickAlice(
+            ownLevel = 56,
+            otherLevel = 54,
+            kickLevel = 55,
+            otherMembership = LEAVE,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canKickUser - my power level lt kick level - return true when my level gt other user level`() = runTest {
+        canKickAlice(
+            ownLevel = 56,
+            otherLevel = 54,
+            kickLevel = 55,
             expect = true,
         )
+    }
 
     @Test
-    fun `canUnbanUser » my level gt kick level » my power level gt ban level » return false when my level == other user level`() =
-        myLevelGtKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level gt kick level » my power level gt ban level » return false when my level lt other user level`() =
-        myLevelGtKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level gt kick level » my power level == ban level » return true when my level gt other user level`() =
-        myLevelGtKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
-            expect = true,
-        )
-
-    @Test
-    fun `canUnbanUser » my level gt kick level » my power level == ban level » return false when my level == other user level`() =
-        myLevelGtKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level gt kick level » my power level == ban level » return false when my level lt other user level`() =
-        myLevelGtKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level gt kick level » my power level lt ban level » return false when my level gt other user level`() =
-        myLevelGtKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level gt kick level » my power level lt ban level » return false when my level == other user level`() =
-        myLevelGtKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level gt kick level » my power level lt ban level » return false when my level lt other user level`() =
-        myLevelGtKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level gt ban level » return true when my level gt other user level`() =
-        myLevelEqKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
-            expect = true,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level gt ban level » return false when my level == other user level`() =
-        myLevelEqKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level gt ban level » return false when my level lt other user level`() =
-        myLevelEqKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level == ban level » return true when my level gt other user level`() =
-        myLevelEqKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
-            expect = true,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level == ban level » return false when my level == other user level`() =
-        myLevelEqKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level == ban level » return false when my level lt other user level`() =
-        myLevelEqKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level lt ban level » return false when my level gt other user level`() =
-        myLevelEqKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level lt ban level » return false when my level == other user level`() =
-        myLevelEqKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level == kick level » my power level lt ban level » return false when my level lt other user level`() =
-        myLevelEqKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level gt ban level » return false when my level gt other user level`() =
-        myLevelLtKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level gt ban level » return false when my level == other user level`() =
-        myLevelLtKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level gt ban level » return false when my level lt other user level`() =
-        myLevelLtKickLevelGtBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level == ban level » return false when my level gt other user level`() =
-        myLevelLtKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level == ban level » return false when my level == other user level`() =
-        myLevelLtKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level == ban level » return false when my level lt other user level`() =
-        myLevelLtKickLevelEqBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level lt ban level » return false when my level gt other user level`() =
-        myLevelLtKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 60L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level lt ban level return false when my level == other user level`() =
-        myLevelLtKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 61L,
-            expect = false,
-        )
-
-    @Test
-    fun `canUnbanUser » my level lt kick level » my power level lt ban level return false when my level lt other user level`() =
-        myLevelLtKickLevelLtBanLevel.canUnbanAlice(
-            aliceLevel = 62L,
-            expect = false,
-        )
-
-    @Test
-    fun `canInvite » return false when not member of room`() =
-        canInvite(
-            meLevel = 56,
-            inviteLevel = 55,
-            expect = false,
-        ) {
-            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+    fun `canKickUser - my power level less than kick level - return false when my level == other user level`() =
+        runTest {
+            canKickAlice(
+                ownLevel = 56,
+                otherLevel = 56,
+                kickLevel = 55,
+                expect = false,
+            )
         }
 
     @Test
-    fun `canInvite » return true when my power level gt invite level`() =
-        canInvite(
-            meLevel = 56,
-            inviteLevel = 55,
-            expect = true,
-        )
-
-    @Test
-    fun `canInvite » return true when my power level == invite level`() =
-        canInvite(
-            meLevel = 55,
-            inviteLevel = 55,
-            expect = true,
-        )
-
-    @Test
-    fun `canInvite » return false when my power level lt invite level`() =
-        canInvite(
-            meLevel = 54,
-            inviteLevel = 55,
-            expect = false,
-        )
-
-    @Test
-    fun `canInviteUser » return false when not member of room`() =
-        canInviteUser(
-            meLevel = 56,
-            inviteLevel = 55,
-            expect = false,
-        ) {
-            roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
+    fun `canKickUser - my power level less than kick level - return false when my level lt other user level`() =
+        runTest {
+            canKickAlice(
+                ownLevel = 56,
+                otherLevel = 57,
+                kickLevel = 55,
+                expect = false,
+            )
         }
 
     @Test
-    fun `canInviteUser » User I want to invite is banned » return false when my power level gt invite level`() =
-        canInviteUser(
-            meLevel = 56,
-            inviteLevel = 55,
-            expect = false,
-        ) {
-            roomUserStore.update(alice, roomId) { aliceRoomUserBanned }
-        }
+    fun `canKickUser - my power level == kick level - return true when my level gt other user level`() = runTest {
+        canKickAlice(
+            ownLevel = 55,
+            otherLevel = 54,
+            kickLevel = 55,
+            expect = true,
+        )
+    }
 
     @Test
-    fun `canInviteUser » User I want to invite is banned » return false when my power level == invite level`() =
-        canInviteUser(
-            meLevel = 55,
-            inviteLevel = 55,
+    fun `canKickUser - my power level == kick level - return false when my level == other user level`() = runTest {
+        canKickAlice(
+            ownLevel = 55,
+            otherLevel = 55,
+            kickLevel = 55,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canKickUser - my power level == kick level - return false when my level lt other user level`() = runTest {
+        canKickAlice(
+            ownLevel = 55,
+            otherLevel = 56,
+            kickLevel = 55,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canKickUser - my power level lt kick level - return false when my level gt other user level`() = runTest {
+        canKickAlice(
+            ownLevel = 54,
+            otherLevel = 53,
+            kickLevel = 55,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canKickUser - my power level lt kick level - return false when my level == other user level`() = runTest {
+        canKickAlice(
+            ownLevel = 54,
+            otherLevel = 54,
+            kickLevel = 55,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canKickUser - my power level lt kick level - return false when my level lt other user level`() = runTest {
+        canKickAlice(
+            ownLevel = 54,
+            otherLevel = 55,
+            kickLevel = 55,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canBanUser - not member of room - return false`() = runTest {
+        canBanAlice(
+            ownLevel = 56,
+            otherLevel = 54,
+            banLevel = 55,
+            ownMembership = LEAVE,
             expect = false
-        ) {
-            roomUserStore.update(alice, roomId) { aliceRoomUserBanned }
-        }
+        )
+    }
 
     @Test
-    fun `canInviteUser » User I want to invite is banned » return false when my power level lt invite level`() =
-        canInviteUser(
-            meLevel = 54,
-            inviteLevel = 55,
+    fun `canBanUser - other user already ban - return false`() = runTest {
+        canBanAlice(
+            ownLevel = 56,
+            otherLevel = 54,
+            banLevel = 55,
+            otherMembership = BAN,
             expect = false
-        ) {
-            roomUserStore.update(alice, roomId) { aliceRoomUserBanned }
-        }
+        )
+    }
 
     @Test
-    fun `canInviteUser » User I want to invite is not banned » return true when my power level gt invite level`() =
-        canInviteUser(
-            meLevel = 56,
-            inviteLevel = 55,
+    fun `canBanUser - my power level gt ban level - return true when my level gt other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 56,
+            otherLevel = 54,
+            banLevel = 55,
             expect = true
-        ) {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
-        }
+        )
+    }
+
 
     @Test
-    fun `canInviteUser » User I want to invite is not banned » return true when my power level == invite level`() =
-        canInviteUser(
-            meLevel = 55,
-            inviteLevel = 55,
-            expect = true
-        ) {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
-        }
-
-    @Test
-    fun `canInviteUser » User I want to invite is not banned » return false when my power level lt invite level`() =
-        canInviteUser(
-            meLevel = 54,
-            inviteLevel = 55,
+    fun `canBanUser - my power level gt ban level - return false when my level == other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 56,
+            otherLevel = 56,
+            banLevel = 55,
             expect = false
-        ) {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
+        )
+    }
+
+    @Test
+    fun `canBanUser - my power level gt ban level - return false when my level lt other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 56,
+            otherLevel = 57,
+            banLevel = 55,
+            expect = false
+        )
+    }
+
+    @Test
+    fun `canBanUser - my power level == ban level - return true when my level gt other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 55,
+            otherLevel = 54,
+            banLevel = 55,
+            expect = true
+        )
+    }
+
+    @Test
+    fun `canBanUser - my power level == ban level - return false when my level == other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 55,
+            otherLevel = 55,
+            banLevel = 55,
+            expect = false
+        )
+    }
+
+    @Test
+    fun `canBanUser - my power level == ban level - return false when my level lt other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 55,
+            otherLevel = 56,
+            banLevel = 55,
+            expect = false
+        )
+    }
+
+    @Test
+    fun `canBanUser - my power level lt ban level - return false when my level gt other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 54,
+            otherLevel = 53,
+            banLevel = 55,
+            expect = false
+        )
+    }
+
+    @Test
+    fun `canBanUser - my power level lt ban level - return false when my level == other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 54,
+            otherLevel = 54,
+            banLevel = 55,
+            expect = false
+        )
+    }
+
+    @Test
+    fun `canBanUser - my power level lt ban level - return false when my level lt other user level`() = runTest {
+        canBanAlice(
+            ownLevel = 54,
+            otherLevel = 55,
+            banLevel = 55,
+            expect = false
+        )
+    }
+
+    @Test
+    fun `canUnbanUser - not member of room - return false`() = runTest {
+        myLevelGtKickLevelGtBanLevel.canUnbanAlice(
+            otherLevel = 60L,
+            ownMembership = LEAVE,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canUnbanUser - other user not ban - return false`() = runTest {
+        (Membership.entries - BAN).forEach { membership ->
+            myLevelGtKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = membership,
+                expect = false,
+            )
+        }
+    }
+
+    @Test
+    fun `canUnbanUser - my level gt kick level - my power level gt ban level - return true when my level gt other user level`() =
+        runTest {
+            myLevelGtKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = true,
+            )
         }
 
     @Test
-    fun `canSendEvent » return false when not member of room`() = runTest {
+    fun `canUnbanUser - my level gt kick level - my power level gt ban level - return false when my level == other user level`() =
+        runTest {
+            myLevelGtKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level gt kick level - my power level gt ban level - return false when my level lt other user level`() =
+        runTest {
+            myLevelGtKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level gt kick level - my power level == ban level - return true when my level gt other user level`() =
+        runTest {
+            myLevelGtKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = true,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level gt kick level - my power level == ban level - return false when my level == other user level`() =
+        runTest {
+            myLevelGtKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level gt kick level - my power level == ban level - return false when my level lt other user level`() =
+        runTest {
+            myLevelGtKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level gt kick level - my power level lt ban level - return false when my level gt other user level`() =
+        runTest {
+            myLevelGtKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level gt kick level - my power level lt ban level - return false when my level == other user level`() =
+        runTest {
+            myLevelGtKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level gt kick level - my power level lt ban level - return false when my level lt other user level`() =
+        runTest {
+            myLevelGtKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level gt ban level - return true when my level gt other user level`() =
+        runTest {
+            myLevelEqKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = true,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level gt ban level - return false when my level == other user level`() =
+        runTest {
+            myLevelEqKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level gt ban level - return false when my level lt other user level`() =
+        runTest {
+            myLevelEqKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level == ban level - return true when my level gt other user level`() =
+        runTest {
+            myLevelEqKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = true,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level == ban level - return false when my level == other user level`() =
+        runTest {
+            myLevelEqKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level == ban level - return false when my level lt other user level`() =
+        runTest {
+            myLevelEqKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level lt ban level - return false when my level gt other user level`() =
+        runTest {
+            myLevelEqKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level lt ban level - return false when my level == other user level`() =
+        runTest {
+            myLevelEqKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level == kick level - my power level lt ban level - return false when my level lt other user level`() =
+        runTest {
+            myLevelEqKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level gt ban level - return false when my level gt other user level`() =
+        runTest {
+            myLevelLtKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level gt ban level - return false when my level == other user level`() =
+        runTest {
+            myLevelLtKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level gt ban level - return false when my level lt other user level`() =
+        runTest {
+            myLevelLtKickLevelGtBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level == ban level - return false when my level gt other user level`() =
+        runTest {
+            myLevelLtKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level == ban level - return false when my level == other user level`() =
+        runTest {
+            myLevelLtKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level == ban level - return false when my level lt other user level`() =
+        runTest {
+            myLevelLtKickLevelEqBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level lt ban level - return false when my level gt other user level`() =
+        runTest {
+            myLevelLtKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 60L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level lt ban level return false when my level == other user level`() =
+        runTest {
+            myLevelLtKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 61L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canUnbanUser - my level lt kick level - my power level lt ban level return false when my level lt other user level`() =
+        runTest {
+            myLevelLtKickLevelLtBanLevel.canUnbanAlice(
+                otherLevel = 62L,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canInvite - not member of room - return false`() = runTest {
+        canInvite(
+            ownLevel = 56,
+            inviteLevel = 55,
+            ownMembership = LEAVE,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canInvite - return true when my power level gt invite level`() = runTest {
+        canInvite(
+            ownLevel = 56,
+            inviteLevel = 55,
+            expect = true,
+        )
+    }
+
+    @Test
+    fun `canInvite - return true when my power level == invite level`() = runTest {
+        canInvite(
+            ownLevel = 55,
+            inviteLevel = 55,
+            expect = true,
+        )
+    }
+
+    @Test
+    fun `canInvite - return false when my power level lt invite level`() = runTest {
+        canInvite(
+            ownLevel = 54,
+            inviteLevel = 55,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canInviteUser - not member of room - return false`() = runTest {
+        canInviteUser(
+            ownLevel = 56,
+            inviteLevel = 55,
+            otherMembership = BAN,
+            expect = false,
+        )
+    }
+
+    @Test
+    fun `canInviteUser - other is INVITE JOIN or BAN - return false`() =
+        runTest {
+            listOf(BAN, INVITE, JOIN).forEach { membership ->
+                canInviteUser(
+                    ownLevel = 56,
+                    inviteLevel = 55,
+                    otherMembership = membership,
+                    expect = false
+                )
+            }
+        }
+
+    @Test
+    fun `canInviteUser - User I want to invite is banned - return false when my power level gt invite level`() =
+        runTest {
+            canInviteUser(
+                ownLevel = 56,
+                inviteLevel = 55,
+                otherMembership = BAN,
+                expect = false,
+            )
+        }
+
+    @Test
+    fun `canInviteUser - User I want to invite is banned - return false when my power level == invite level`() =
+        runTest {
+            canInviteUser(
+                ownLevel = 55,
+                inviteLevel = 55,
+                otherMembership = BAN,
+                expect = false
+            )
+        }
+
+    @Test
+    fun `canInviteUser - User I want to invite is banned - return false when my power level lt invite level`() =
+        runTest {
+            canInviteUser(
+                ownLevel = 54,
+                inviteLevel = 55,
+                otherMembership = BAN,
+                expect = false
+            )
+        }
+
+    @Test
+    fun `canInviteUser - User I want to invite is not banned - return true when my power level gt invite level`() =
+        runTest {
+            canInviteUser(
+                ownLevel = 56,
+                inviteLevel = 55,
+                otherMembership = LEAVE,
+                expect = true
+            )
+        }
+
+    @Test
+    fun `canInviteUser - User I want to invite is not banned - return true when my power level == invite level`() =
+        runTest {
+            canInviteUser(
+                ownLevel = 55,
+                inviteLevel = 55,
+                otherMembership = LEAVE,
+                expect = true
+            )
+        }
+
+    @Test
+    fun `canInviteUser - User I want to invite is not banned - return false when my power level lt invite level`() =
+        runTest {
+            canInviteUser(
+                ownLevel = 54,
+                inviteLevel = 55,
+                expect = false
+            )
+        }
+
+    @Test
+    fun `canSendEvent - return false when not member of room`() = runTest {
         roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
-        val powerLevelsEvent = getPowerLevelsEvent(
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
                     me to 55,
@@ -733,8 +896,8 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `canSendEvent » be true when allowed to send`() = runTest {
-        val powerLevelsEvent = getPowerLevelsEvent(
+    fun `canSendEvent - be true when allowed to send`() = runTest {
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
                     me to 55,
@@ -748,8 +911,8 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `canSendEvent » be false when not allowed to send`() = runTest {
-        val powerLevelsEvent = getPowerLevelsEvent(
+    fun `canSendEvent - be false when not allowed to send`() = runTest {
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
                     me to 55,
@@ -763,8 +926,8 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `canSendEvent » use stateDefault`() = runTest {
-        val powerLevelsEvent = getPowerLevelsEvent(
+    fun `canSendEvent - use stateDefault`() = runTest {
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(me to 50),
                 events = mapOf(),
@@ -776,8 +939,8 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `canSendEvent » use eventDefaults`() = runTest {
-        val powerLevelsEvent = getPowerLevelsEvent(
+    fun `canSendEvent - use eventDefaults`() = runTest {
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(me to 50),
                 events = mapOf(),
@@ -789,17 +952,17 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `canSetPowerLevelToMax » other user not member`() =
+    fun `canSetPowerLevelToMax - other user not member`() =
         runTest {
             roomStateStore.save(powerLevelsEvent)
             cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe null
         }
 
     @Test
-    fun `canSetPowerLevelToMax » return null when not member of room`() = runTest {
+    fun `canSetPowerLevelToMax - return null when not member of room`() = runTest {
         roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
-        roomUserStore.update(alice, roomId) { aliceRoomUser }
-        val powerLevelsEvent = getPowerLevelsEvent(
+        roomUserStore.update(alice, roomId) { aliceRoomUser() }
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
                     me to 55,
@@ -814,10 +977,10 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `canSetPowerLevelToMax » eventsMap is not null » not allow to change the power level when events power_levels value gt own power level`() =
+    fun `canSetPowerLevelToMax - eventsMap is not null - not allow to change the power level when events power_levels value gt own power level`() =
         runTest {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
-            val powerLevelsEvent = getPowerLevelsEvent(
+            roomUserStore.update(alice, roomId) { aliceRoomUser() }
+            val powerLevelsEvent = powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
                         me to 55,
@@ -832,10 +995,10 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `canSetPowerLevelToMax » eventsMap is not null » return own power level as max power level value when events power_levels value == own power level`() =
+    fun `canSetPowerLevelToMax - eventsMap is not null - return own power level as max power level value when events power_levels value == own power level`() =
         runTest {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
-            val powerLevelsEvent = getPowerLevelsEvent(
+            roomUserStore.update(alice, roomId) { aliceRoomUser() }
+            val powerLevelsEvent = powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
                         me to 55,
@@ -846,14 +1009,14 @@ class UserServiceTest : TrixnityBaseTest() {
                 )
             )
             roomStateStore.save(powerLevelsEvent)
-            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe 55
+            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe PowerLevel.User(55)
         }
 
     @Test
-    fun `canSetPowerLevelToMax » eventsMap is null » not allow to change the power level when stateDefault value gt own power level`() =
+    fun `canSetPowerLevelToMax - eventsMap is null - not allow to change the power level when stateDefault value gt own power level`() =
         runTest {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
-            val powerLevelsEvent = getPowerLevelsEvent(
+            roomUserStore.update(alice, roomId) { aliceRoomUser() }
+            val powerLevelsEvent = powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
                         me to 55,
@@ -867,10 +1030,10 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `canSetPowerLevelToMax » eventsMap is null » return own power level as max power level value when stateDefault value == own power level`() =
+    fun `canSetPowerLevelToMax - eventsMap is null - return own power level as max power level value when stateDefault value == own power level`() =
         runTest {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
-            val powerLevelsEvent = getPowerLevelsEvent(
+            roomUserStore.update(alice, roomId) { aliceRoomUser() }
+            val powerLevelsEvent = powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
                         me to 55,
@@ -880,15 +1043,15 @@ class UserServiceTest : TrixnityBaseTest() {
                 )
             )
             roomStateStore.save(powerLevelsEvent)
-            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe 55
+            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe PowerLevel.User(55)
         }
 
 
     @Test
-    fun `canSetPowerLevelToMax » oldUserPowerLevel gt ownPowerLevel » not allow to change the power level when otherUserId != me`() =
+    fun `canSetPowerLevelToMax - oldUserPowerLevel gt ownPowerLevel - not allow to change the power level when otherUserId != me`() =
         runTest {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
-            val powerLevelsEvent = getPowerLevelsEvent(
+            roomUserStore.update(alice, roomId) { aliceRoomUser() }
+            val powerLevelsEvent = powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
                         me to 55,
@@ -904,26 +1067,26 @@ class UserServiceTest : TrixnityBaseTest() {
 
 
     @Test
-    fun `canSetPowerLevelToMax » oldUserPowerLevel == ownPowerLevel » not allow to change the power level when otherUserId != me`() =
+    fun `canSetPowerLevelToMax - oldUserPowerLevel == ownPowerLevel - not allow to change the power level when otherUserId != me`() =
         runTest {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
+            roomUserStore.update(alice, roomId) { aliceRoomUser() }
             roomStateStore.save(powerLevelsEvent)
             cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe null
         }
 
     @Test
-    fun `canSetPowerLevelToMax » oldUserPowerLevel == ownPowerLevel » return own power level as max power level value when otherUserId == me`() =
+    fun `canSetPowerLevelToMax - oldUserPowerLevel == ownPowerLevel - return own power level as max power level value when otherUserId == me`() =
         runTest {
-            roomUserStore.update(me, roomId) { aliceRoomUser }
+            roomUserStore.update(me, roomId) { aliceRoomUser() }
             roomStateStore.save(powerLevelsEvent)
-            cut.canSetPowerLevelToMax(roomId, me).first() shouldBe 55
+            cut.canSetPowerLevelToMax(roomId, me).first() shouldBe PowerLevel.User(55)
         }
 
     @Test
-    fun `canSetPowerLevelToMax » oldUserPowerLevel == ownPowerLevel » return own power level as max power level value when all criteria are met`() =
+    fun `canSetPowerLevelToMax - oldUserPowerLevel == ownPowerLevel - return own power level as max power level value when all criteria are met`() =
         runTest {
-            roomUserStore.update(alice, roomId) { aliceRoomUser }
-            val powerLevelsEvent = getPowerLevelsEvent(
+            roomUserStore.update(alice, roomId) { aliceRoomUser() }
+            val powerLevelsEvent = powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
                         me to 55,
@@ -934,12 +1097,12 @@ class UserServiceTest : TrixnityBaseTest() {
                 )
             )
             roomStateStore.save(powerLevelsEvent)
-            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe 55
+            cut.canSetPowerLevelToMax(roomId, alice).first() shouldBe PowerLevel.User(55)
         }
 
 
     @Test
-    fun `canRedactEvent » return false when not member of room`() = runTest {
+    fun `canRedactEvent - return false when not member of room`() = runTest {
         roomStore.update(roomId) { Room(roomId, membership = LEAVE) }
         roomStateStore.save(
             StateEvent(
@@ -961,7 +1124,7 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `canRedactEvent » return true if it is the event of the user and the user's power level is at least as high as the needed event redaction level`() =
+    fun `canRedactEvent - return true if it is the event of the user and the user's power level is at least as high as the needed event redaction level`() =
         runTest {
             roomStateStore.save(
                 StateEvent(
@@ -985,7 +1148,7 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `canRedactEvent » return true if it is the event of another user but the user's power level is at least as high as the needed redaction power level`() =
+    fun `canRedactEvent - return true if it is the event of another user but the user's power level is at least as high as the needed redaction power level`() =
         runTest {
             roomStateStore.save(
                 StateEvent(
@@ -1007,7 +1170,7 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `canRedactEvent » return false if the user has no high enough power level for event redactions`() =
+    fun `canRedactEvent - return false if the user has no high enough power level for event redactions`() =
         runTest {
             roomStateStore.save(
                 StateEvent(
@@ -1031,7 +1194,7 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `canRedactEvent » return false if the user has no high enough power level for redactions of events of other users`() =
+    fun `canRedactEvent - return false if the user has no high enough power level for redactions of events of other users`() =
         runTest {
             roomStateStore.save(
                 StateEvent(
@@ -1053,7 +1216,7 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `canRedactEvent » not allow to redact an already redacted event`() = runTest {
+    fun `canRedactEvent - not allow to redact an already redacted event`() = runTest {
         roomStateStore.save(
             StateEvent(
                 content = PowerLevelsEventContent(
@@ -1086,7 +1249,7 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `canRedactEvent » react to changes in the power levels » react to changes in the user's power levels`() =
+    fun `canRedactEvent - react to changes in the power levels - react to changes in the user's power levels`() =
         runTest {
             roomStateStore.save(
                 StateEvent(
@@ -1125,12 +1288,12 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `getUserPresence » no presence in store » should be null`() = runTest {
+    fun `getUserPresence - no presence in store - should be null`() = runTest {
         cut.getPresence(alice).first() shouldBe null
     }
 
     @Test
-    fun `getUserPresence » sync is not running » should be null`() = runTest {
+    fun `getUserPresence - sync is not running - should be null`() = runTest {
         val lastActive = Instant.fromEpochMilliseconds(24)
         currentSyncState.value = SyncState.STARTED
         userPresenceStore.setPresence(alice, UserPresence(Presence.ONLINE, clock.now(), lastActive))
@@ -1138,7 +1301,7 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getUserPresence » is currently active » should pass from store`() = runTest {
+    fun `getUserPresence - is currently active - should pass from store`() = runTest {
         val presence =
             UserPresence(
                 presence = Presence.ONLINE,
@@ -1152,7 +1315,7 @@ class UserServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getUserPresence » last active is below threshold » should pass from store and make null later`() =
+    fun `getUserPresence - last active is below threshold - should pass from store and make null later`() =
         runTest {
             val presence =
                 UserPresence(
@@ -1184,7 +1347,7 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `getUserPresence » last active is below threshold » should fallback to last update`() =
+    fun `getUserPresence - last active is below threshold - should fallback to last update`() =
         runTest {
             val presence =
                 UserPresence(
@@ -1203,7 +1366,7 @@ class UserServiceTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `getUserPresence » last active is above threshold » should be null`() =
+    fun `getUserPresence - last active is above threshold - should be null`() =
         runTest {
             val presence =
                 UserPresence(
@@ -1215,113 +1378,128 @@ class UserServiceTest : TrixnityBaseTest() {
             cut.getPresence(alice).first() shouldBe null
         }
 
-    private fun canKickAlice(
-        meLevel: Long,
-        aliceLevel: Long,
+    private suspend fun canKickAlice(
+        ownLevel: Long,
+        otherLevel: Long,
         kickLevel: Long = PowerLevelsEventContent.KICK_DEFAULT,
+        ownMembership: Membership = JOIN,
+        otherMembership: Membership = JOIN,
         expect: Boolean,
-        setup: suspend () -> Unit = {},
-    ) = runTest {
-        setup()
-        val powerLevelsEvent = getPowerLevelsEvent(
+    ) {
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
-                    me to meLevel,
-                    alice to aliceLevel
+                    me to ownLevel,
+                    alice to otherLevel
                 ), kick = kickLevel
             )
         )
         roomStateStore.save(powerLevelsEvent)
+        roomStore.update(roomId) { Room(roomId, membership = ownMembership) }
+        roomUserStore.update(alice, roomId) { aliceRoomUser(otherMembership) }
         cut.canKickUser(roomId, alice).first() shouldBe expect
     }
 
-    private fun canBanAlice(
-        meLevel: Long,
-        aliceLevel: Long,
+    private suspend fun canBanAlice(
+        ownLevel: Long,
+        otherLevel: Long,
         banLevel: Long = PowerLevelsEventContent.BAN_DEFAULT,
+        ownMembership: Membership = JOIN,
+        otherMembership: Membership = JOIN,
         expect: Boolean,
-        setup: suspend () -> Unit = {},
-    ) = runTest {
-        setup()
-        val powerLevelsEvent = getPowerLevelsEvent(
+    ) {
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
-                    me to meLevel,
-                    alice to aliceLevel
+                    me to ownLevel,
+                    alice to otherLevel
                 ), ban = banLevel
             )
         )
         roomStateStore.save(powerLevelsEvent)
+        roomStore.update(roomId) { Room(roomId, membership = ownMembership) }
+        roomUserStore.update(alice, roomId) { aliceRoomUser(otherMembership) }
         cut.canBanUser(roomId, alice).first() shouldBe expect
     }
 
-    private fun canInvite(
-        meLevel: Long,
+    private suspend fun canInvite(
+        ownLevel: Long,
+        ownMembership: Membership = JOIN,
         inviteLevel: Long = PowerLevelsEventContent.INVITE_DEFAULT,
         expect: Boolean,
-        setup: suspend () -> Unit = {},
-    ) = runTest {
-        setup()
-        val powerLevelsEvent = getPowerLevelsEvent(
+    ) {
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
-                    me to meLevel,
+                    me to ownLevel,
                 ), invite = inviteLevel
             )
         )
         roomStateStore.save(powerLevelsEvent)
+        roomStore.update(roomId) { Room(roomId, membership = ownMembership) }
         cut.canInvite(roomId).first() shouldBe expect
     }
 
-    private fun canInviteUser(
-        meLevel: Long,
+    private suspend fun canInviteUser(
+        ownLevel: Long,
         inviteLevel: Long = PowerLevelsEventContent.INVITE_DEFAULT,
+        ownMembership: Membership = JOIN,
+        otherMembership: Membership = JOIN,
         expect: Boolean,
-        setup: suspend () -> Unit = {}
-    ) = runTest {
-        setup()
-        val powerLevelsEvent = getPowerLevelsEvent(
+    ) {
+        val powerLevelsEvent = powerLevelsEvent(
             PowerLevelsEventContent(
                 users = mapOf(
-                    me to meLevel,
+                    me to ownLevel,
                 ), invite = inviteLevel
             )
         )
         roomStateStore.save(powerLevelsEvent)
+        roomStore.update(roomId) { Room(roomId, membership = ownMembership) }
+        roomUserStore.update(alice, roomId) { aliceRoomUser(otherMembership) }
         cut.canInviteUser(roomId, alice).first() shouldBe expect
     }
 
-    private fun KickLevels.canUnbanAlice(
-        aliceLevel: Long,
+    private suspend fun KickLevels.canUnbanAlice(
+        otherLevel: Long,
+        ownMembership: Membership = JOIN,
+        otherMembership: Membership = JOIN,
         expect: Boolean
-    ) = runTest {
-        roomUserStore.update(alice, roomId) { aliceRoomUserBanned }
+    ) {
+        roomUserStore.update(alice, roomId) { aliceRoomUser(BAN) }
 
         val powerLevelsEvent =
-            getPowerLevelsEvent(
+            powerLevelsEvent(
                 PowerLevelsEventContent(
                     users = mapOf(
                         me to myLevel,
-                        alice to aliceLevel
+                        alice to otherLevel
                     ), kick = kickLevel,
                     ban = banLevel
                 )
             )
 
         roomStateStore.save(powerLevelsEvent)
+        roomStore.update(roomId) { Room(roomId, membership = ownMembership) }
+        roomUserStore.update(alice, roomId) { aliceRoomUser(otherMembership) }
         cut.canUnbanUser(roomId, alice).first() shouldBe expect
     }
 
-    private fun getCreateEvent(creator: UserId) = StateEvent(
-        CreateEventContent(creator = creator),
-        EventId("\$event"),
-        creator,
-        roomId,
-        1234,
-        stateKey = ""
-    )
+    private fun createEvent(
+        creator: UserId,
+        roomVersion: String? = null,
+        additionalCreators: Set<UserId> = emptySet()
+    ) =
+        StateEvent(
+            CreateEventContent(roomVersion = roomVersion, additionalCreators = additionalCreators),
+            EventId("\$event"),
+            creator,
+            roomId,
+            1234,
+            stateKey = ""
+        )
 
-    private fun getPowerLevelsEvent(powerLevelsEventContent: PowerLevelsEventContent) = StateEvent(
+    private fun powerLevelsEvent(powerLevelsEventContent: PowerLevelsEventContent) = StateEvent(
         powerLevelsEventContent,
         EventId("\$event"),
         me,
@@ -1329,4 +1507,7 @@ class UserServiceTest : TrixnityBaseTest() {
         1234,
         stateKey = ""
     )
+
+    private suspend fun Flow<PowerLevel>.firstPowerLevel() =
+        filterIsInstance<PowerLevel.User>().map { it.level }.first()
 }

@@ -424,15 +424,15 @@ class RoomServiceImpl(
                         val currentTimelineEventContent = currentTimelineEvent.event.content
                         val predecessor: RoomEventIdPair? =
                             if (direction == BACKWARDS && currentTimelineEvent.isFirst && currentTimelineEventContent is CreateEventContent) {
-                                currentTimelineEventContent.predecessor
-                                    ?.let {
-                                        val tombstone = getState<TombstoneEventContent>(it.roomId).first()
-                                        if (tombstone != null) RoomEventIdPair(it.eventId, it.roomId)
-                                        else {
-                                            log.warn { "getTimelineEvents: found predecessor of room, but room does not exist locally" }
-                                            null
-                                        }
+                                val predecessor = currentTimelineEventContent.predecessor
+                                if (predecessor != null) {
+                                    val tombstone = getState<TombstoneEventContent>(predecessor.roomId).first()?.id
+                                    if (tombstone != null) RoomEventIdPair(tombstone, predecessor.roomId)
+                                    else {
+                                        log.warn { "getTimelineEvents: found predecessor of room, but room or tombstone does not exist locally" }
+                                        null
                                     }
+                                } else null
                             } else null
                         val successor: RoomEventIdPair? =
                             if (direction == FORWARDS && (currentTimelineEvent.isLast || currentTimelineEventContent is TombstoneEventContent)) {
@@ -487,6 +487,7 @@ class RoomServiceImpl(
                                     } else {
                                         log.trace { "getTimelineEvents: continue with predecessor ($predecessor) of $currentEventId" }
                                         getTimelineEvent(
+                                            // FIXME
                                             eventId = predecessor.eventId,
                                             roomId = predecessor.roomId,
                                             config = { apply(cfg) },

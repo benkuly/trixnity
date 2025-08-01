@@ -11,17 +11,19 @@ import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV1.PersistentMessageDataUnitV1
+import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV12.PersistentMessageDataUnitV12
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3
 import net.folivo.trixnity.core.model.events.PersistentDataUnit.PersistentMessageDataUnit
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.serialization.AddFieldsSerializer
 import net.folivo.trixnity.core.serialization.canonicalJson
 
-private val log = KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.PersistentMessageDataUnitSerializer")
+private val log =
+    KotlinLogging.logger("net.folivo.trixnity.core.serialization.events.PersistentMessageDataUnitSerializer")
 
 class PersistentMessageDataUnitSerializer(
     messageEventContentSerializers: Set<EventContentSerializerMapping<MessageEventContent>>,
-    private val getRoomVersion: (RoomId) -> String,
+    private val roomVersionStore: RoomVersionStore,
 ) : KSerializer<PersistentMessageDataUnit<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PersistentMessageDataUnitSerializer")
     private val mappingV1 = RoomEventContentToEventSerializerMappings(
@@ -37,12 +39,13 @@ class PersistentMessageDataUnitSerializer(
                         return if (redacts != null && content != null)
                             JsonObject(buildMap {
                                 putAll(jsonObject)
-                                put("content", JsonObject(
-                                    buildMap {
-                                        put("redacts", redacts)
-                                        putAll(content)
-                                    }
-                                ))
+                                put(
+                                    "content", JsonObject(
+                                        buildMap {
+                                            put("redacts", redacts)
+                                            putAll(content)
+                                        }
+                                    ))
                             })
                         else element
                     }
@@ -85,12 +88,13 @@ class PersistentMessageDataUnitSerializer(
                         return if (redacts != null && content != null)
                             JsonObject(buildMap {
                                 putAll(jsonObject)
-                                put("content", JsonObject(
-                                    buildMap {
-                                        put("redacts", redacts)
-                                        putAll(content)
-                                    }
-                                ))
+                                put(
+                                    "content", JsonObject(
+                                        buildMap {
+                                            put("redacts", redacts)
+                                            putAll(content)
+                                        }
+                                    ))
                             })
                         else element
                     }
@@ -120,6 +124,55 @@ class PersistentMessageDataUnitSerializer(
         unknownEventSerializer = { PersistentMessageDataUnitV3.serializer(UnknownEventContentSerializer(it)) },
         redactedEventSerializer = { PersistentMessageDataUnitV3.serializer(RedactedEventContentSerializer(it)) },
     )
+    private val mappingV12 = RoomEventContentToEventSerializerMappings(
+        baseMapping = messageEventContentSerializers,
+        eventDeserializer = {
+            val baseSerializer = PersistentMessageDataUnitV12.serializer(it.serializer)
+            if (it.kClass == RedactionEventContent::class)
+                object : JsonTransformingSerializer<PersistentMessageDataUnitV12<MessageEventContent>>(baseSerializer) {
+                    override fun transformDeserialize(element: JsonElement): JsonElement {
+                        val jsonObject = element.jsonObject
+                        val redacts = jsonObject["redacts"]
+                        val content = jsonObject["content"] as? JsonObject
+                        return if (redacts != null && content != null)
+                            JsonObject(buildMap {
+                                putAll(jsonObject)
+                                put(
+                                    "content", JsonObject(
+                                        buildMap {
+                                            put("redacts", redacts)
+                                            putAll(content)
+                                        }
+                                    ))
+                            })
+                        else element
+                    }
+                }
+            else baseSerializer
+        },
+        eventSerializer = {
+            val baseSerializer = AddFieldsSerializer(
+                PersistentMessageDataUnitV12.serializer(it.serializer),
+                "type" to it.type
+            )
+            if (it.kClass == RedactionEventContent::class)
+                object : JsonTransformingSerializer<PersistentMessageDataUnitV12<MessageEventContent>>(baseSerializer) {
+                    override fun transformSerialize(element: JsonElement): JsonElement {
+                        val jsonObject = element.jsonObject
+                        val redacts = (jsonObject["content"] as? JsonObject)?.get("redacts")
+                        return if (redacts != null)
+                            JsonObject(buildMap {
+                                put("redacts", redacts)
+                                putAll(jsonObject)
+                            })
+                        else element
+                    }
+                }
+            else baseSerializer
+        },
+        unknownEventSerializer = { PersistentMessageDataUnitV12.serializer(UnknownEventContentSerializer(it)) },
+        redactedEventSerializer = { PersistentMessageDataUnitV12.serializer(RedactedEventContentSerializer(it)) },
+    )
 
     override fun deserialize(decoder: Decoder): PersistentMessageDataUnit<*> {
         require(decoder is JsonDecoder)
@@ -127,9 +180,12 @@ class PersistentMessageDataUnitSerializer(
         val type = (jsonObj["type"] as? JsonPrimitive)?.content ?: throw SerializationException("type must not be null")
         val roomId = (jsonObj["room_id"] as? JsonPrimitive)?.content
         requireNotNull(roomId)
-        return when (val roomVersion = getRoomVersion(RoomId(roomId))) {
+        return when (val roomVersion = roomVersionStore.getRoomVersion(RoomId(roomId))) {
             "1", "2" -> decoder.json.decodeFromJsonElement(mappingV1[type], jsonObj)
-            "3", "4", "5", "6", "7", "8", "9" -> decoder.json.decodeFromJsonElement(mappingV3[type], jsonObj)
+            "3", "4", "5", "6", "7", "8", "9", "10", "11" ->
+                decoder.json.decodeFromJsonElement(mappingV3[type], jsonObj)
+
+            "12" -> decoder.json.decodeFromJsonElement(mappingV12[type], jsonObj)
 
             else -> throw SerializationException("room version $roomVersion not supported")
         }
@@ -151,6 +207,13 @@ class PersistentMessageDataUnitSerializer(
                     @Suppress("UNCHECKED_CAST")
                     encoder.json.encodeToJsonElement(
                         mappingV3[content].serializer as KSerializer<PersistentMessageDataUnitV3<*>>,
+                        value
+                    )
+
+                is PersistentMessageDataUnitV12 ->
+                    @Suppress("UNCHECKED_CAST")
+                    encoder.json.encodeToJsonElement(
+                        mappingV12[content].serializer as KSerializer<PersistentMessageDataUnitV12<*>>,
                         value
                     )
             }

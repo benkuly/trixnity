@@ -28,19 +28,19 @@ fun createMatrixEventJson(
 }
 
 fun createMatrixDataUnitJson(
-    getRoomVersion: GetRoomVersionFunction,
+    roomVersionStore: RoomVersionStore,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
     customModule: SerializersModule? = null,
 ): Json {
     val modules = createDataUnitSerializersModule(
         eventContentSerializerMappings,
-        getRoomVersion
+        roomVersionStore
     )
     return createMatrixJson(if (customModule != null) modules + customModule else modules)
 }
 
 fun createMatrixEventAndDataUnitJson(
-    getRoomVersion: GetRoomVersionFunction,
+    roomVersionStore: RoomVersionStore,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultDataUnitContentSerializerMappings,
     customModule: SerializersModule? = null,
 ): Json {
@@ -48,7 +48,7 @@ fun createMatrixEventAndDataUnitJson(
         .overwriteWith(
             createDataUnitSerializersModule(
                 eventContentSerializerMappings,
-                getRoomVersion
+                roomVersionStore
             )
         )
     return createMatrixJson(if (customModule != null) modules + customModule else modules)

@@ -27,7 +27,7 @@ import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
 class MatrixSignatureAuthTest : TrixnityBaseTest() {
-    private val json = createMatrixDataUnitJson({ "3" })
+    private val json = createMatrixDataUnitJson(TestRoomVersionStore("12"))
     private val mapping = createDefaultEventContentSerializerMappings()
 
     private fun ApplicationTestBuilder.testEndpoint(

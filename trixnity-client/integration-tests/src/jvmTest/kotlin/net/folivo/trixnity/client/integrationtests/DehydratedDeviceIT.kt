@@ -149,6 +149,7 @@ class DehydratedDeviceIT {
                 .map { deviceKeys -> deviceKeys?.firstOrNull { it.dehydrated == true } }
                 .filterNotNull().firstWithTimeout().deviceId
 
+            startedClient2.client.logout()
             startedClient2.client.closeSuspending()
 
             val startedClient3 =

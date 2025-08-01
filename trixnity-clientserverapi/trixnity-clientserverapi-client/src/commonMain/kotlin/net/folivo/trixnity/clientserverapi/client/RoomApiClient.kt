@@ -481,6 +481,7 @@ interface RoomApiClient {
     suspend fun upgradeRoom(
         roomId: RoomId,
         version: String,
+        additionalCreators: Set<UserId>? = null,
         asUserId: UserId? = null
     ): Result<RoomId>
 
@@ -936,7 +937,7 @@ class RoomApiClientImpl(
         asUserId: UserId?
     ): Result<Unit> =
         baseClient.request(ReportRoom(roomId, asUserId), ReportRoom.Request(reason))
-    
+
     override suspend fun reportEvent(
         roomId: RoomId,
         eventId: EventId,
@@ -949,9 +950,11 @@ class RoomApiClientImpl(
     override suspend fun upgradeRoom(
         roomId: RoomId,
         version: String,
+        additionalCreators: Set<UserId>?,
         asUserId: UserId?
     ): Result<RoomId> =
-        baseClient.request(UpgradeRoom(roomId, asUserId), UpgradeRoom.Request(version)).map { it.replacementRoom }
+        baseClient.request(UpgradeRoom(roomId, additionalCreators, asUserId), UpgradeRoom.Request(version))
+            .map { it.replacementRoom }
 
     override suspend fun getHierarchy(
         roomId: RoomId,

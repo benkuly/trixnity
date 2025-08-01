@@ -21,17 +21,16 @@ import net.folivo.trixnity.core.model.events.m.room.CreateEventContent.RoomType
  */
 @Serializable
 data class CreateEventContent(
-    @Deprecated("Clients should no longer depend on the creator property, instead clients can rely on sender instead to determine a room creator.")
-    @SerialName("creator")
-    val creator: UserId? = null,
     @SerialName("m.federate")
-    val federate: Boolean = true,
+    val federate: Boolean? = null,
     @SerialName("room_version")
-    val roomVersion: String = "1",
+    val roomVersion: String? = null,
     @SerialName("predecessor")
     val predecessor: PreviousRoom? = null,
     @SerialName("type")
-    val type: RoomType = RoomType.Room,
+    val type: RoomType? = null,
+    @SerialName("additional_creators")
+    val additionalCreators: Set<UserId>? = null,
     @SerialName("external_url")
     override val externalUrl: String? = null,
 ) : StateEventContent {
@@ -39,8 +38,9 @@ data class CreateEventContent(
     data class PreviousRoom(
         @SerialName("room_id")
         val roomId: RoomId,
+        @Deprecated("deprecated since room version 12")
         @SerialName("event_id")
-        val eventId: EventId
+        val eventId: EventId? = null
     )
 
     @Serializable(with = RoomTypeSerializer::class)

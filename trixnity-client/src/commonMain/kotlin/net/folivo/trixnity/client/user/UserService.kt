@@ -13,10 +13,7 @@ import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.RedactedEventContent
-import net.folivo.trixnity.core.model.events.RoomEventContent
+import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.BAN_DEFAULT
@@ -25,12 +22,39 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Comp
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.KICK_DEFAULT
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.REDACT_DEFAULT
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.STATE_DEFAULT
-import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.USERS_DEFAULT
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.UserService")
+
+sealed interface PowerLevel : Comparable<PowerLevel> {
+    object Creator : PowerLevel
+    data class User(val level: Long) : PowerLevel
+
+    override operator fun compareTo(other: PowerLevel): Int =
+        when (this) {
+            is Creator -> if (other is Creator) 0 else 1
+            is User -> when (other) {
+                is Creator -> -1
+                is User -> this.level.compareTo(other.level)
+            }
+        }
+
+    operator fun compareTo(other: Long): Int =
+        when (this) {
+            is Creator -> 1
+            is User -> this.level.compareTo(other)
+        }
+
+    companion object {
+        operator fun Long.compareTo(other: PowerLevel): Int =
+            when (other) {
+                is Creator -> -1
+                is User -> this.compareTo(other.level)
+            }
+    }
+}
 
 interface UserService {
     @Deprecated("without function, use getPresence() instead", level = DeprecationLevel.ERROR)
@@ -45,12 +69,12 @@ interface UserService {
 
     fun getReceiptsById(roomId: RoomId, userId: UserId): Flow<RoomUserReceipts?>
 
-    fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<Long>
+    fun getPowerLevel(roomId: RoomId, userId: UserId): Flow<PowerLevel>
     fun getPowerLevel(
         userId: UserId,
-        roomCreator: UserId,
+        createEvent: ClientEvent.StateBaseEvent<CreateEventContent>,
         powerLevelsEventContent: PowerLevelsEventContent?,
-    ): Long
+    ): PowerLevel
 
     fun canKickUser(roomId: RoomId, userId: UserId): Flow<Boolean>
     fun canBanUser(roomId: RoomId, userId: UserId): Flow<Boolean>
@@ -59,7 +83,7 @@ interface UserService {
     fun canInvite(roomId: RoomId): Flow<Boolean>
     fun canRedactEvent(roomId: RoomId, eventId: EventId): Flow<Boolean>
 
-    fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<Long?>
+    fun canSetPowerLevelToMax(roomId: RoomId, userId: UserId): Flow<PowerLevel.User?>
 
     fun canSendEvent(roomId: RoomId, eventClass: KClass<out RoomEventContent>): Flow<Boolean>
     fun canSendEvent(roomId: RoomId, eventContent: RoomEventContent): Flow<Boolean>
@@ -114,72 +138,87 @@ class UserServiceImpl(
     override fun getPowerLevel(
         roomId: RoomId,
         userId: UserId
-    ): Flow<Long> =
+    ): Flow<PowerLevel> =
         combine(
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull()
         ) { powerLevels, createEvent ->
-            getPowerLevel(userId, createEvent.sender, powerLevels)
+            getPowerLevel(userId, createEvent, powerLevels)
         }.distinctUntilChanged()
+
+    private val legacyRoomVersions = setOf(null, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11")
+    private fun ClientEvent.StateBaseEvent<CreateEventContent>.isCreator(userId: UserId) =
+        if (legacyRoomVersions.contains(content.roomVersion)) false
+        else (content.additionalCreators.orEmpty() + sender).contains(userId)
 
     override fun getPowerLevel(
         userId: UserId,
-        roomCreator: UserId,
+        createEvent: ClientEvent.StateBaseEvent<CreateEventContent>,
         powerLevelsEventContent: PowerLevelsEventContent?
-    ): Long {
-        return when (powerLevelsEventContent) {
-            null -> if (roomCreator == userId) 100 else 0
-            else -> powerLevelsEventContent.users[userId] ?: powerLevelsEventContent.usersDefault
+    ): PowerLevel {
+        return if (createEvent.isCreator(userId)) PowerLevel.Creator
+        else {
+            if (powerLevelsEventContent == null) {
+                if (createEvent.sender == userId) 100 else 0
+            } else {
+                powerLevelsEventContent.users[userId] ?: powerLevelsEventContent.usersDefault
+            }.let { PowerLevel.User(it) }
         }
     }
+
+    private fun canDoAction(
+        userId: UserId,
+        createEvent: ClientEvent.StateBaseEvent<CreateEventContent>,
+        powerLevelsEventContent: PowerLevelsEventContent?,
+        actionCheck: (ownPowerLevel: Long) -> Boolean
+    ): Boolean =
+        when (val otherPowerLevel = getPowerLevel(userId, createEvent, powerLevelsEventContent)) {
+            is PowerLevel.Creator -> false
+            is PowerLevel.User ->
+                when (val ownPowerLevel = getPowerLevel(ownUserId, createEvent, powerLevelsEventContent)) {
+                    is PowerLevel.Creator -> true
+                    is PowerLevel.User -> ownPowerLevel.level > otherPowerLevel.level && actionCheck(ownPowerLevel.level)
+                }
+        }
 
     override fun canKickUser(roomId: RoomId, userId: UserId): Flow<Boolean> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomUserStore.get(userId, roomId).map { it?.membership },
-            roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { ownMembership, otherMembership, powerLevels, createEvent ->
-            if (ownMembership == Membership.JOIN && otherMembership != Membership.LEAVE) {
-                val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
-                val otherPowerLevel = getPowerLevel(userId, createEvent.sender, powerLevels)
-                val kickLevel = powerLevels?.kick ?: KICK_DEFAULT
-
-                ownPowerLevel >= kickLevel && ownPowerLevel > otherPowerLevel
-            } else false
+            roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
+        ) { ownMembership, otherMembership, createEvent, powerLevelsEventContent ->
+            if (ownMembership != Membership.JOIN || otherMembership == Membership.LEAVE) return@combine false
+            canDoAction(userId, createEvent, powerLevelsEventContent) { ownPowerLevel ->
+                ownPowerLevel >= (powerLevelsEventContent?.kick ?: KICK_DEFAULT)
+            }
         }.distinctUntilChanged()
 
     override fun canBanUser(roomId: RoomId, userId: UserId): Flow<Boolean> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomUserStore.get(userId, roomId).map { it?.membership },
-            roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { ownMembership, otherMembership, powerLevels, createEvent ->
-            if (ownMembership == Membership.JOIN && otherMembership != Membership.BAN) {
-                val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
-                val otherPowerLevel = getPowerLevel(userId, createEvent.sender, powerLevels)
-                val banLevel = powerLevels?.ban ?: BAN_DEFAULT
-
-                ownPowerLevel >= banLevel && ownPowerLevel > otherPowerLevel
-            } else false
+            roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
+        ) { ownMembership, otherMembership, createEvent, powerLevelsEventContent ->
+            if (ownMembership != Membership.JOIN || otherMembership == Membership.BAN) return@combine false
+            canDoAction(userId, createEvent, powerLevelsEventContent) { ownPowerLevel ->
+                ownPowerLevel >= (powerLevelsEventContent?.ban ?: BAN_DEFAULT)
+            }
         }.distinctUntilChanged()
 
     override fun canUnbanUser(roomId: RoomId, userId: UserId): Flow<Boolean> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomUserStore.get(userId, roomId).map { it?.membership },
-            roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { ownMembership, otherMembership, powerLevels, createEvent ->
-            if (ownMembership == Membership.JOIN && otherMembership == Membership.BAN) {
-                val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
-                val otherPowerLevel = getPowerLevel(userId, createEvent.sender, powerLevels)
-                val banLevel = powerLevels?.ban ?: BAN_DEFAULT
-                val kickLevel = powerLevels?.kick ?: KICK_DEFAULT
-
-                ownPowerLevel >= banLevel && ownPowerLevel >= kickLevel && ownPowerLevel > otherPowerLevel
-            } else false
+            roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
+        ) { ownMembership, otherMembership, createEvent, powerLevelsEventContent ->
+            if (ownMembership != Membership.JOIN || otherMembership != Membership.BAN) return@combine false
+            canDoAction(userId, createEvent, powerLevelsEventContent) { ownPowerLevel ->
+                ownPowerLevel >= (powerLevelsEventContent?.ban ?: BAN_DEFAULT) &&
+                        ownPowerLevel >= (powerLevelsEventContent?.kick ?: KICK_DEFAULT)
+            }
         }.distinctUntilChanged()
 
     override fun canInviteUser(roomId: RoomId, userId: UserId): Flow<Boolean> =
@@ -188,13 +227,13 @@ class UserServiceImpl(
             roomUserStore.get(userId, roomId).map { it?.membership },
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { ownMembership, otherMembership, powerLevels, createEvent ->
-            if (ownMembership == Membership.JOIN && otherMembership != Membership.JOIN) {
-                val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
-                val inviteLevel = powerLevels?.invite ?: INVITE_DEFAULT
-
-                ownPowerLevel >= inviteLevel && otherMembership != Membership.BAN
-            } else false
+        ) { ownMembership, otherMembership, powerLevelsEventContent, createEvent ->
+            if (ownMembership != Membership.JOIN || otherMembership == Membership.INVITE || otherMembership == Membership.JOIN || otherMembership == Membership.BAN) return@combine false
+            val ownPowerLevel = getPowerLevel(ownUserId, createEvent, powerLevelsEventContent)
+            when (ownPowerLevel) {
+                is PowerLevel.Creator -> true
+                is PowerLevel.User -> ownPowerLevel.level >= (powerLevelsEventContent?.invite ?: INVITE_DEFAULT)
+            }
         }.distinctUntilChanged()
 
     override fun canInvite(roomId: RoomId): Flow<Boolean> =
@@ -202,13 +241,13 @@ class UserServiceImpl(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { membership, powerLevels, createEvent ->
-            if (membership == Membership.JOIN) {
-                val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
-                val inviteLevel = powerLevels?.invite ?: INVITE_DEFAULT
-
-                ownPowerLevel >= inviteLevel
-            } else false
+        ) { ownMembership, powerLevelsEventContent, createEvent ->
+            if (ownMembership != Membership.JOIN) return@combine false
+            val ownPowerLevel = getPowerLevel(ownUserId, createEvent, powerLevelsEventContent)
+            when (ownPowerLevel) {
+                is PowerLevel.Creator -> true
+                is PowerLevel.User -> ownPowerLevel.level >= (powerLevelsEventContent?.invite ?: INVITE_DEFAULT)
+            }
         }.distinctUntilChanged()
 
     override fun canRedactEvent(
@@ -218,20 +257,28 @@ class UserServiceImpl(
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
+            roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
             roomTimelineStore.get(eventId, roomId).filterNotNull(),
-        ) { membership, powerLevels, timelineEvent ->
-            if (membership == Membership.JOIN) {
-                val ownPowerLevel = powerLevels?.users?.get(ownUserId) ?: powerLevels?.usersDefault ?: USERS_DEFAULT
-                val sendRedactionEventPowerLevel =
-                    powerLevels?.events?.get<RedactionEventContent>() ?: powerLevels?.eventsDefault ?: EVENTS_DEFAULT
-                val redactPowerLevelNeeded = powerLevels?.redact ?: REDACT_DEFAULT
-                val isOwnMessage by lazy { timelineEvent.event.sender == ownUserId }
-                val allowRedactOwnMessages by lazy { ownPowerLevel >= sendRedactionEventPowerLevel }
-                val allowRedactOtherMessages by lazy { ownPowerLevel >= redactPowerLevelNeeded }
-                val content = timelineEvent.content?.getOrNull()
-                content is MessageEventContent && content !is RedactedEventContent &&
-                        (isOwnMessage && allowRedactOwnMessages || allowRedactOtherMessages)
-            } else false
+        ) { ownMembership, powerLevelsEventContent, createEvent, timelineEvent ->
+            if (ownMembership != Membership.JOIN) return@combine false
+            val ownPowerLevel = getPowerLevel(ownUserId, createEvent, powerLevelsEventContent)
+            when (ownPowerLevel) {
+                is PowerLevel.Creator -> true
+                is PowerLevel.User -> {
+                    val content = timelineEvent.content?.getOrNull()
+                    if (content !is MessageEventContent || content is RedactedEventContent) return@combine false
+
+                    if (timelineEvent.event.sender == ownUserId) {
+                        val sendRedactionEventPowerLevel =
+                            powerLevelsEventContent?.events?.get<RedactionEventContent>()
+                                ?: powerLevelsEventContent?.eventsDefault
+                                ?: EVENTS_DEFAULT
+                        ownPowerLevel.level >= sendRedactionEventPowerLevel
+                    } else {
+                        ownPowerLevel.level >= (powerLevelsEventContent?.redact ?: REDACT_DEFAULT)
+                    }
+                }
+            }
         }.distinctUntilChanged()
 
 
@@ -240,16 +287,25 @@ class UserServiceImpl(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { membership, powerLevels, createEvent ->
+        ) { membership, powerLevelsEventContent, createEvent ->
             if (membership == Membership.JOIN) {
-                val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
-                val sendEventPowerLevel = powerLevels?.events?.get(eventClass)
-                    ?: when {
-                        mappings.state.any { it.kClass == eventClass } -> powerLevels?.stateDefault ?: STATE_DEFAULT
-                        mappings.message.any { it.kClass == eventClass } -> powerLevels?.eventsDefault ?: EVENTS_DEFAULT
-                        else -> throw IllegalArgumentException("eventClass $eventClass does not match any event in mappings")
+                val ownPowerLevel = getPowerLevel(ownUserId, createEvent, powerLevelsEventContent)
+                when (ownPowerLevel) {
+                    is PowerLevel.Creator -> true
+                    is PowerLevel.User -> {
+                        val sendEventPowerLevel = powerLevelsEventContent?.events?.get(eventClass)
+                            ?: when {
+                                mappings.state.any { it.kClass == eventClass } ->
+                                    powerLevelsEventContent?.stateDefault ?: STATE_DEFAULT
+
+                                mappings.message.any { it.kClass == eventClass } ->
+                                    powerLevelsEventContent?.eventsDefault ?: EVENTS_DEFAULT
+
+                                else -> throw IllegalArgumentException("eventClass $eventClass does not match any event in mappings")
+                            }
+                        ownPowerLevel.level >= sendEventPowerLevel
                     }
-                ownPowerLevel >= sendEventPowerLevel
+                }
             } else false
         }.distinctUntilChanged()
 
@@ -264,24 +320,33 @@ class UserServiceImpl(
     override fun canSetPowerLevelToMax(
         roomId: RoomId,
         userId: UserId
-    ): Flow<Long?> =
+    ): Flow<PowerLevel.User?> =
         combine(
             roomStore.get(roomId).map { it?.membership }.filterNotNull(),
             roomUserStore.get(userId, roomId).map { it?.membership },
             roomStateStore.getContentByStateKey<PowerLevelsEventContent>(roomId),
             roomStateStore.getByStateKey<CreateEventContent>(roomId).filterNotNull(),
-        ) { ownMembership, otherMembership, powerLevels, createEvent ->
-            if (ownMembership == Membership.JOIN && otherMembership != null) {
-                val ownPowerLevel = getPowerLevel(ownUserId, createEvent.sender, powerLevels)
-                val otherPowerLevel = getPowerLevel(userId, createEvent.sender, powerLevels)
-                when {
-                    (powerLevels?.events?.get<PowerLevelsEventContent>() ?: powerLevels?.stateDefault
-                    ?: STATE_DEFAULT) > ownPowerLevel -> null
+        ) { ownMembership, otherMembership, powerLevelsEventContent, createEvent ->
+            if (ownMembership != Membership.JOIN || otherMembership == null) return@combine null
+            when (val otherPowerLevel = getPowerLevel(userId, createEvent, powerLevelsEventContent)) {
+                is PowerLevel.Creator -> null
+                is PowerLevel.User ->
+                    when (val ownPowerLevel = getPowerLevel(ownUserId, createEvent, powerLevelsEventContent)) {
+                        is PowerLevel.Creator -> PowerLevel.User(Long.MAX_VALUE)
+                        is PowerLevel.User -> {
+                            val sendPowerLevelEventPowerLevel =
+                                (powerLevelsEventContent?.events?.get<PowerLevelsEventContent>()
+                                    ?: powerLevelsEventContent?.stateDefault
+                                    ?: STATE_DEFAULT)
 
-                    otherPowerLevel >= ownPowerLevel && userId != ownUserId -> null
-                    else -> ownPowerLevel
-                }
-            } else null
+                            when {
+                                ownPowerLevel.level < sendPowerLevelEventPowerLevel -> null
+                                userId != ownUserId && ownPowerLevel.level <= otherPowerLevel.level -> null
+                                else -> PowerLevel.User(ownPowerLevel.level)
+                            }
+                        }
+                    }
+            }
         }.distinctUntilChanged()
 
     override fun <C : GlobalAccountDataEventContent> getAccountData(

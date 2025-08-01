@@ -1705,10 +1705,8 @@ class RoomsApiClientTest : TrixnityBaseTest() {
                               "state": [
                                 {
                                   "content": {
-                                    "creator": "@example:example.org",
                                     "m.federate": true,
                                     "predecessor": {
-                                      "event_id": "${'$'}something:example.org",
                                       "room_id": "!oldroom:example.org"
                                     },
                                     "room_version": "1"
@@ -1827,11 +1825,11 @@ class RoomsApiClientTest : TrixnityBaseTest() {
             state = listOf(
                 StateEvent(
                     content = CreateEventContent(
-                        creator = UserId("@example:example.org"), federate = true, roomVersion = "1",
+                        federate = true,
+                        roomVersion = "1",
                         predecessor = CreateEventContent.PreviousRoom(
-                            roomId = RoomId("!oldroom:example.org"), eventId = EventId("\$something:example.org")
+                            roomId = RoomId("!oldroom:example.org")
                         ),
-                        type = CreateEventContent.RoomType.Room
                     ),
                     id = EventId("$143273582443PhrSn:example.org"),
                     sender = UserId("@example:example.org"),

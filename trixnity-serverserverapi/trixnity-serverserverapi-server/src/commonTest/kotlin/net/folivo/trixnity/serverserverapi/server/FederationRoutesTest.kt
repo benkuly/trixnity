@@ -45,7 +45,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class FederationRoutesTest : TrixnityBaseTest() {
-    private val json = createMatrixEventAndDataUnitJson({ "3" })
+    private val json = createMatrixEventAndDataUnitJson(TestRoomVersionStore("12"))
     private val mapping = createDefaultEventContentSerializerMappings()
 
     val handlerMock = mock<FederationApiHandler>()
@@ -69,7 +69,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
     }
 
     private val pdu: SignedPersistentDataUnit<*> = Signed(
-        PersistentDataUnit.PersistentDataUnitV3.PersistentMessageDataUnitV3(
+        PersistentDataUnit.PersistentDataUnitV12.PersistentMessageDataUnitV12(
             authEvents = listOf(),
             content = RoomMessageEventContent.TextBased.Text("hi"),
             depth = 12u,
@@ -412,7 +412,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
         everySuspend { handlerMock.makeJoin(any()) }
             .returns(
                 MakeJoin.Response(
-                    eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                    eventTemplate = PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                         authEvents = listOf(),
                         content = MemberEventContent(
                             joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
@@ -475,7 +475,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
                 SendJoin.Response(
                     authChain = listOf(pdu),
                     event = Signed(
-                        PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                        PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                             authEvents = listOf(),
                             content = MemberEventContent(
                                 joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
@@ -578,7 +578,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
                 it.requestBody shouldBe Signed(
-                    PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                    PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                         authEvents = listOf(),
                         content = MemberEventContent(
                             joinAuthorisedViaUsersServer = UserId("@anyone:resident.example.org"),
@@ -612,7 +612,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
         everySuspend { handlerMock.makeKnock(any()) }
             .returns(
                 MakeKnock.Response(
-                    eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                    eventTemplate = PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                         authEvents = listOf(),
                         content = MemberEventContent(
                             membership = Membership.KNOCK
@@ -744,7 +744,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
                 it.requestBody shouldBe Signed(
-                    PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                    PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                         authEvents = listOf(),
                         content = MemberEventContent(
                             membership = Membership.KNOCK
@@ -778,7 +778,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
             .returns(
                 Invite.Response(
                     event = Signed(
-                        PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                        PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                             authEvents = listOf(),
                             content = MemberEventContent(
                                 membership = Membership.INVITE
@@ -886,7 +886,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
                 it.endpoint.eventId shouldBe EventId("$1event")
                 it.requestBody shouldBe Invite.Request(
                     event = Signed(
-                        PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                        PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                             authEvents = listOf(),
                             content = MemberEventContent(
                                 membership = Membership.INVITE
@@ -933,7 +933,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
         everySuspend { handlerMock.makeLeave(any()) }
             .returns(
                 MakeLeave.Response(
-                    eventTemplate = PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                    eventTemplate = PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                         authEvents = listOf(),
                         content = MemberEventContent(
                             membership = Membership.LEAVE
@@ -1028,7 +1028,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.endpoint.eventId shouldBe EventId("$1event")
                 it.requestBody shouldBe Signed(
-                    PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                    PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                         authEvents = listOf(),
                         content = MemberEventContent(
                             membership = Membership.LEAVE
@@ -1169,7 +1169,7 @@ class FederationRoutesTest : TrixnityBaseTest() {
             handlerMock.exchangeThirdPartyInvite(assert {
                 it.endpoint.roomId shouldBe RoomId("!room:server")
                 it.requestBody shouldBe Signed(
-                    PersistentDataUnit.PersistentDataUnitV3.PersistentStateDataUnitV3(
+                    PersistentDataUnit.PersistentDataUnitV12.PersistentStateDataUnitV12(
                         authEvents = listOf(),
                         content = MemberEventContent(
                             membership = Membership.INVITE,

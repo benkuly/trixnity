@@ -22,6 +22,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
+import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.JOIN
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
@@ -235,6 +236,14 @@ class MatrixClientTest : TrixnityBaseTest() {
                                                         roomId to Sync.Response.Rooms.JoinedRoom(
                                                             timeline = Sync.Response.Rooms.Timeline(
                                                                 events = listOf(
+                                                                    StateEvent(
+                                                                        CreateEventContent(),
+                                                                        sender = userId,
+                                                                        id = EventId("event1"),
+                                                                        roomId = roomId,
+                                                                        originTimestamp = 1L,
+                                                                        stateKey = "",
+                                                                    ),
                                                                     StateEvent(
                                                                         MemberEventContent(
                                                                             membership = JOIN,

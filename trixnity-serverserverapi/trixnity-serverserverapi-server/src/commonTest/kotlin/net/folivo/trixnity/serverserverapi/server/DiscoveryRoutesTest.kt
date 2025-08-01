@@ -19,13 +19,13 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixDataUnitJson
-import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.serverserverapi.model.discovery.*
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class DiscoveryRoutesTest : TrixnityBaseTest() {
-    private val json = createMatrixDataUnitJson({ "3" })
+    private val json = createMatrixDataUnitJson(TestRoomVersionStore("12"))
     private val mapping = createDefaultEventContentSerializerMappings()
 
     val handlerMock = mock<DiscoveryApiHandler>()

@@ -136,6 +136,44 @@ sealed interface PersistentDataUnit<C : EventContent> : Event<C> {
         ) : PersistentStateDataUnit<C>, PersistentDataUnitV3<C>
     }
 
+    sealed interface PersistentDataUnitV12<C : RoomEventContent> {
+        val authEvents: List<EventId>
+        val depth: ULong
+        val hashes: EventHash
+        val originTimestamp: Long
+        val prevEvents: List<EventId>
+        val roomId: RoomId?
+        val sender: UserId
+        val unsigned: UnsignedData?
+
+        @Serializable
+        data class PersistentMessageDataUnitV12<C : MessageEventContent>(
+            @SerialName("auth_events") override val authEvents: List<EventId>,
+            @SerialName("content") override val content: C,
+            @SerialName("depth") override val depth: ULong,
+            @SerialName("hashes") override val hashes: EventHash,
+            @SerialName("origin_server_ts") override val originTimestamp: Long,
+            @SerialName("prev_events") override val prevEvents: List<EventId>,
+            @SerialName("room_id") override val roomId: RoomId,
+            @SerialName("sender") override val sender: UserId,
+            @SerialName("unsigned") override val unsigned: UnsignedData? = null
+        ) : PersistentMessageDataUnit<C>, PersistentDataUnitV12<C>
+
+        @Serializable
+        data class PersistentStateDataUnitV12<C : StateEventContent>(
+            @SerialName("auth_events") override val authEvents: List<EventId>,
+            @SerialName("content") override val content: C,
+            @SerialName("depth") override val depth: ULong,
+            @SerialName("hashes") override val hashes: EventHash,
+            @SerialName("origin_server_ts") override val originTimestamp: Long,
+            @SerialName("prev_events") override val prevEvents: List<EventId>,
+            @SerialName("room_id") override val roomId: RoomId? = null,
+            @SerialName("sender") override val sender: UserId,
+            @SerialName("state_key") val stateKey: String,
+            @SerialName("unsigned") override val unsigned: UnsignedData? = null
+        ) : PersistentStateDataUnit<C>, PersistentDataUnitV12<C>
+    }
+
     @Serializable
     data class EventHash(
         @SerialName("sha256") val sha256: String
