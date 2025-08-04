@@ -129,26 +129,27 @@ data class Sync(
             }
         }
 
-        class RoomsKnockSerializer: RoomsMapSerializer<Rooms.KnockedRoom>(
+        private object RoomsKnockSerializer: RoomsMapSerializer<Rooms.KnockedRoom>(
             Rooms.KnockedRoom.serializer().descriptor,
             { ContextualSerializer(it, it.serializersModule.serializer()) },
         )
 
-        class RoomsJoinSerializer: RoomsMapSerializer<Rooms.JoinedRoom>(
+        private object RoomsJoinSerializer: RoomsMapSerializer<Rooms.JoinedRoom>(
             Rooms.JoinedRoom.serializer().descriptor,
             { ContextualSerializer(it, it.serializersModule.serializer()) },
         )
 
-        class RoomsInviteSerializer: RoomsMapSerializer<Rooms.InvitedRoom>(
+        private object RoomsInviteSerializer: RoomsMapSerializer<Rooms.InvitedRoom>(
             Rooms.InvitedRoom.serializer().descriptor,
             { ContextualSerializer(it, it.serializersModule.serializer()) },
         )
-        class RoomsLeaveSerializer: RoomsMapSerializer<Rooms.LeftRoom>(
+
+        private object RoomsLeaveSerializer: RoomsMapSerializer<Rooms.LeftRoom>(
             Rooms.LeftRoom.serializer().descriptor,
             { ContextualSerializer(it, it.serializersModule.serializer()) },
         )
 
-        class ContextualSerializer<T>(val json: Json, val serializer: KSerializer<T>): KSerializer<T> {
+        private class ContextualSerializer<T>(val json: Json, val serializer: KSerializer<T>): KSerializer<T> {
             override val descriptor: SerialDescriptor get() = serializer.descriptor
 
             override fun serialize(encoder: Encoder, value: T) {
@@ -307,7 +308,7 @@ data class Sync(
         }
 
 
-        fun buildSerializersModule(roomId: RoomId): SerializersModule {
+        private fun buildSerializersModule(roomId: RoomId): SerializersModule {
             val mappings = DefaultEventContentSerializerMappings
             val messageEventSerializer = WithRoomIdSerializer(roomId, MessageEventSerializer(mappings.message))
             val stateEventSerializer = WithRoomIdSerializer(roomId, StateEventSerializer(mappings.state))
@@ -328,7 +329,7 @@ data class Sync(
         }
     }
 
-    class WithRoomIdSerializer<T>(private val roomId: RoomId, serializer: KSerializer<T>)
+    private class WithRoomIdSerializer<T>(private val roomId: RoomId, serializer: KSerializer<T>)
         : JsonTransformingSerializer<T>(serializer) {
         override fun transformDeserialize(element: JsonElement): JsonElement {
             require(element is JsonObject)
