@@ -1,5 +1,6 @@
 package net.folivo.trixnity.clientserverapi.model.sync
 
+import io.ktor.http.ContentType.Application.Json
 import io.ktor.resources.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -114,25 +115,9 @@ data class Sync(
                                 index % 2 == 1 -> {
                                     requireNotNull(key)
                                     require(decoder is JsonDecoder)
-                                    val json = Json {
-                                        encodeDefaults = decoder.json.configuration.encodeDefaults
-                                        explicitNulls = decoder.json.configuration.explicitNulls
-                                        ignoreUnknownKeys = decoder.json.configuration.ignoreUnknownKeys
-                                        isLenient = decoder.json.configuration.isLenient
-                                        prettyPrint = decoder.json.configuration.prettyPrint
-                                        prettyPrintIndent = decoder.json.configuration.prettyPrintIndent
-                                        coerceInputValues = decoder.json.configuration.coerceInputValues
-                                        classDiscriminator = decoder.json.configuration.classDiscriminator
-                                        classDiscriminatorMode = decoder.json.configuration.classDiscriminatorMode
-                                        useAlternativeNames = decoder.json.configuration.useAlternativeNames
-                                        namingStrategy = decoder.json.configuration.namingStrategy
-                                        decodeEnumsCaseInsensitive = decoder.json.configuration.decodeEnumsCaseInsensitive
-                                        allowTrailingComma = decoder.json.configuration.allowTrailingComma
-                                        allowComments = decoder.json.configuration.allowComments
-                                        allowSpecialFloatingPointValues = decoder.json.configuration.allowSpecialFloatingPointValues
-                                        allowStructuredMapKeys = decoder.json.configuration.allowStructuredMapKeys
-                                        useArrayPolymorphism = decoder.json.configuration.useArrayPolymorphism
-                                        serializersModule = decoder.serializersModule.overwriteWith(buildSerializersModule(key))
+                                    val json = Json(decoder.json) {
+                                        serializersModule = decoder.serializersModule
+                                            .overwriteWith(buildSerializersModule(key))
                                     }
                                     put(key, decodeSerializableElement(descriptor, index, valueSerializer(json)))
                                 }
