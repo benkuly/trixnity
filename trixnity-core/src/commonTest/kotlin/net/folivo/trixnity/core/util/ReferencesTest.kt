@@ -19,6 +19,7 @@ class ReferencesTest : TrixnityBaseTest() {
     @Test
     fun shouldPassValidUserIdentifier() {
         TestHelper.userId("@a9._=-/+:example.com", expected = true)
+        TestHelper.userId("@a9._=-/+:localhost", expected = true)
     }
 
     @Test
