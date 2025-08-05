@@ -1,6 +1,5 @@
 package net.folivo.trixnity.clientserverapi.model.sync
 
-import io.ktor.http.ContentType.Application.Json
 import io.ktor.resources.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -8,7 +7,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.mapSerialDescriptor
 import kotlinx.serialization.encoding.CompositeDecoder.Companion.DECODE_DONE
@@ -85,9 +84,9 @@ data class Sync(
     ) {
         abstract class RoomsMapSerializer<T>(
             valueDescriptor: SerialDescriptor,
-            val valueSerializer: (Json) -> KSerializer<T>,
+            private val valueSerializer: (Json) -> KSerializer<T>,
         ) : KSerializer<Map<RoomId, T>> {
-            private val keySerializer = String.serializer()
+            private val keySerializer = RoomId.serializer()
 
             @OptIn(ExperimentalSerializationApi::class)
             override val descriptor: SerialDescriptor = mapSerialDescriptor(
@@ -98,7 +97,11 @@ data class Sync(
             override fun serialize(
                 encoder: Encoder,
                 value: Map<RoomId, T>,
-            ) = TODO()
+            ) {
+                require(encoder is JsonEncoder)
+                val mapSerializer = MapSerializer(keySerializer, valueSerializer(encoder.json))
+                encoder.encodeSerializableValue(mapSerializer, value)
+            }
 
             @OptIn(ExperimentalSerializationApi::class)
             override fun deserialize(decoder: Decoder): Map<RoomId, T> {
@@ -110,7 +113,7 @@ data class Sync(
                             when {
                                 index == DECODE_DONE -> break@loop
                                 index % 2 == 0 -> {
-                                    key = RoomId(decodeSerializableElement(descriptor, index, keySerializer))
+                                    key = decodeSerializableElement(descriptor, index, keySerializer)
                                 }
                                 index % 2 == 1 -> {
                                     requireNotNull(key)
