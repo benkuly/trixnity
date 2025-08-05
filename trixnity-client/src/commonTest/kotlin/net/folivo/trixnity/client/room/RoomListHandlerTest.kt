@@ -12,10 +12,12 @@ import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomDisplayName
+import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.LeftRoom
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -25,6 +27,8 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
@@ -44,6 +48,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     private val roomStore = getInMemoryRoomStore()
     private val roomStateStore = getInMemoryRoomStateStore()
+    private val roomUserStore = getInMemoryRoomUserStore()
     private val globalAccountDataStore = getInMemoryGlobalAccountDataStore()
     private val roomAccountDataStore = getInMemoryRoomAccountDataStore()
 
@@ -56,6 +61,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         api = api,
         roomStore = roomStore,
         roomStateStore = roomStateStore,
+        roomUserStore = roomUserStore,
         globalAccountDataStore = globalAccountDataStore,
         roomAccountDataStore = roomAccountDataStore,
         forgetRoomService = { roomId, _ -> forgetRooms.add(roomId) },
@@ -66,7 +72,93 @@ class RoomListHandlerTest : TrixnityBaseTest() {
     )
 
     @Test
-    fun `updateRoomList » unreadMessageCount » set unread message count`() = runTest {
+    fun `updateRoomList » markedUnread » mark as unread depending on receipt`() = runTest {
+        mapOf(
+            ReceiptType.Read to false,
+            ReceiptType.PrivateRead to false,
+            ReceiptType.FullyRead to true
+        ).forEach { (receiptType, result) ->
+            val createEvent = StateEvent(
+                CreateEventContent(),
+                EventId("event1"),
+                UserId("user1", "localhost"),
+                roomId,
+                0,
+                stateKey = ""
+            )
+            roomStore.update(roomId) { simpleRoom.copy(lastEventId = createEvent.id) }
+            roomStateStore.save(createEvent)
+            roomUserStore.updateReceipts(simpleUserInfo.userId, roomId) {
+                RoomUserReceipts(
+                    roomId, simpleUserInfo.userId, mapOf(
+                        receiptType to RoomUserReceipts.Receipt(
+                            createEvent.id,
+                            ReceiptEventContent.Receipt(1234)
+                        )
+                    )
+                )
+            }
+            cut.updateRoomList(
+                SyncEvents(
+                    Sync.Response(
+                        nextBatch = "",
+                        room = Sync.Response.Rooms(
+                            join = mapOf(
+                                roomId to JoinedRoom(
+                                    timeline = Sync.Response.Rooms.Timeline(
+                                        events = listOf(createEvent),
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    emptyList()
+                )
+            )
+            roomStore.get(roomId).first()?.isUnread shouldBe result
+        }
+    }
+
+    @Test
+    fun `updateRoomList » markedUnread » mark as read without timeline in sync`() = runTest {
+        val createEvent = StateEvent(
+            CreateEventContent(),
+            EventId("event1"),
+            UserId("user1", "localhost"),
+            roomId,
+            0,
+            stateKey = ""
+        )
+        roomStore.update(roomId) { simpleRoom.copy(lastEventId = createEvent.id, isUnread = true) }
+        roomStateStore.save(createEvent)
+        roomUserStore.updateReceipts(simpleUserInfo.userId, roomId) {
+            RoomUserReceipts(
+                roomId, simpleUserInfo.userId, mapOf(
+                    ReceiptType.Read to RoomUserReceipts.Receipt(
+                        createEvent.id,
+                        ReceiptEventContent.Receipt(1234)
+                    )
+                )
+            )
+        }
+        cut.updateRoomList(
+            SyncEvents(
+                Sync.Response(
+                    nextBatch = "",
+                    room = Sync.Response.Rooms(
+                        join = mapOf(
+                            roomId to JoinedRoom() // contains receipts
+                        )
+                    )
+                ),
+                emptyList()
+            )
+        )
+        roomStore.get(roomId).first()?.isUnread shouldBe false
+    }
+
+    @Test
+    fun `updateRoomList » markedUnread » not mark as unread without exact receipt`() = runTest {
         val createEvent = StateEvent(
             CreateEventContent(),
             EventId("event1"),
@@ -76,6 +168,17 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             stateKey = ""
         )
         roomStateStore.save(createEvent)
+        roomStore.update(roomId) { simpleRoom.copy(lastEventId = createEvent.id) }
+        roomUserStore.updateReceipts(simpleUserInfo.userId, roomId) {
+            RoomUserReceipts(
+                roomId, simpleUserInfo.userId, mapOf(
+                    ReceiptType.Read to RoomUserReceipts.Receipt(
+                        EventId("different"),
+                        ReceiptEventContent.Receipt(1234)
+                    )
+                )
+            )
+        }
         cut.updateRoomList(
             SyncEvents(
                 Sync.Response(
@@ -83,38 +186,17 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     room = Sync.Response.Rooms(
                         join = mapOf(
                             roomId to JoinedRoom(
-                                unreadNotifications = JoinedRoom.UnreadNotificationCounts(notificationCount = 24)
+                                timeline = Sync.Response.Rooms.Timeline(
+                                    events = listOf(createEvent),
+                                )
                             )
-                        ),
+                        )
                     )
                 ),
                 emptyList()
             )
         )
-        roomStore.get(roomId).first()?.unreadMessageCount shouldBe 24
-    }
-
-    @Test
-    fun `updateRoomList » markedUnread » not mark as unread when not set`() = runTest {
-        val createEvent = StateEvent(
-            CreateEventContent(),
-            EventId("event1"),
-            UserId("user1", "localhost"),
-            roomId,
-            0,
-            stateKey = ""
-        )
-        roomStateStore.save(createEvent)
-        cut.updateRoomList(
-            SyncEvents(
-                Sync.Response(
-                    nextBatch = "",
-                    room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom()))
-                ),
-                emptyList()
-            )
-        )
-        roomStore.get(roomId).first()?.markedUnread shouldBe false
+        roomStore.get(roomId).first()?.isUnread shouldBe true
     }
 
     @Test
@@ -138,12 +220,11 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 emptyList()
             )
         )
-        roomStore.get(roomId).first()?.markedUnread shouldBe true
-
+        roomStore.get(roomId).first()?.isUnread shouldBe true
     }
 
     @Test
-    fun `updateRoomList » lastRelevantEventId » setlastRelevantEventId `() = runTest {
+    fun `updateRoomList » lastRelevantEventId » setlastRelevantEventId`() = runTest {
         val createEvent = StateEvent(
             CreateEventContent(),
             EventId("event1"),
@@ -187,6 +268,54 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             )
         )
         roomStore.get(roomId).first()?.lastRelevantEventId shouldBe EventId("event2")
+    }
+
+    @Test
+    fun `updateRoomList » lastEventId » must not update `() = runTest {
+        val createEvent = StateEvent(
+            CreateEventContent(),
+            EventId("event1"),
+            UserId("user1", "localhost"),
+            roomId,
+            0,
+            stateKey = ""
+        )
+        roomStateStore.save(createEvent)
+        roomStore.update(roomId) { simpleRoom.copy(lastEventId = EventId("old")) }
+        cut.updateRoomList(
+            SyncEvents(
+                Sync.Response(
+                    room = Sync.Response.Rooms(
+                        join = mapOf(
+                            roomId to JoinedRoom(
+                                timeline = Sync.Response.Rooms.Timeline(
+                                    events = listOf(
+                                        createEvent,
+                                        MessageEvent(
+                                            RoomMessageEventContent.TextBased.Text("Hello!"),
+                                            EventId("event2"),
+                                            UserId("user1", "localhost"),
+                                            roomId,
+                                            5,
+                                        ),
+                                        StateEvent(
+                                            AvatarEventContent("mxc://localhost/123456"),
+                                            EventId("event3"),
+                                            UserId("user1", "localhost"),
+                                            roomId,
+                                            10,
+                                            stateKey = ""
+                                        ),
+                                    ), previousBatch = "abcdef"
+                                )
+                            )
+                        )
+                    ), nextBatch = "123456"
+                ),
+                emptyList()
+            )
+        )
+        roomStore.get(roomId).first()?.lastEventId shouldBe EventId("old")
     }
 
     @Test
@@ -681,7 +810,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 1,
             invitedMemberCount = 2,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             explicitName = "The room name",
             summary = roomSummary
         )
@@ -708,7 +837,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         )
         val roomBefore = simpleRoom.copy(name = RoomDisplayName(explicitName = "bla", summary = roomSummary))
         roomStore.update(roomId) { roomBefore }
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe null
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe null
     }
 
 
@@ -720,7 +849,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                        leave = mapOf(roomId to LeftRoom())
                     )
                 ),
                 emptyList()
@@ -742,7 +871,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                        leave = mapOf(roomId to LeftRoom())
                     )
                 ), emptyList()
             )
@@ -765,7 +894,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                            leave = mapOf(roomId to LeftRoom())
                         )
                     ),
                     allEvents = listOf()
@@ -804,7 +933,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                            leave = mapOf(roomId to LeftRoom())
                         )
                     ),
                     allEvents = listOf()
@@ -844,7 +973,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                         nextBatch = "",
                         room = Sync.Response.Rooms(
                             leave = mapOf(
-                                roomId to Sync.Response.Rooms.LeftRoom()
+                                roomId to LeftRoom()
                             )
                         )
                     ),
@@ -885,7 +1014,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                            leave = mapOf(roomId to LeftRoom())
                         )
                     ),
                     allEvents = listOf()
@@ -924,7 +1053,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        leave = mapOf(roomId to Sync.Response.Rooms.LeftRoom())
+                        leave = mapOf(roomId to LeftRoom())
                     )
                 ),
                 allEvents = listOf()
@@ -965,7 +1094,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                         nextBatch = "",
                         room = Sync.Response.Rooms(
                             leave = mapOf(
-                                roomId to Sync.Response.Rooms.LeftRoom()
+                                roomId to LeftRoom()
                             )
                         )
                     ),
@@ -1111,7 +1240,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 1,
             invitedMemberCount = 1,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             explicitName = "#somewhere:localhost",
             summary = roomSummary
         )
@@ -1126,7 +1255,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 1,
             invitedMemberCount = 1,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user1),
             summary = roomSummary
         )
@@ -1141,7 +1270,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 1,
             invitedMemberCount = 1,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user1, user2),
             summary = roomSummary
         )
@@ -1156,7 +1285,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 2,
             invitedMemberCount = 2,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(),
             otherUsersCount = 4,
             summary = roomSummary
@@ -1172,7 +1301,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 2,
             invitedMemberCount = 2,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             otherUsersCount = 4,
             heroes = listOf(user1),
             summary = roomSummary
@@ -1188,7 +1317,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 2,
             invitedMemberCount = 2,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user1, user2),
             otherUsersCount = 4,
             summary = roomSummary
@@ -1203,7 +1332,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 joinedMemberCount = 1,
                 invitedMemberCount = 0,
             )
-            cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+            cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
                 isEmpty = true,
                 summary = roomSummary
             )
@@ -1219,7 +1348,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 1,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user2),
             isEmpty = true,
             otherUsersCount = 0,
@@ -1236,7 +1365,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 1,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user2, user3),
             isEmpty = true,
             summary = roomSummary
@@ -1253,7 +1382,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 1,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user2),
             isEmpty = true,
             otherUsersCount = 0,
@@ -1270,7 +1399,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 1,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user2, user3),
             isEmpty = true,
             otherUsersCount = 0,
@@ -1289,7 +1418,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 0,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             isEmpty = true,
             summary = roomSummary
         )
@@ -1304,7 +1433,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 0,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user1),
             isEmpty = true,
             summary = roomSummary
@@ -1323,7 +1452,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 0,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user1, user2),
             isEmpty = true,
             summary = roomSummary
@@ -1339,7 +1468,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 0,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user1),
             isEmpty = true,
             otherUsersCount = 0,
@@ -1356,7 +1485,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             joinedMemberCount = 0,
             invitedMemberCount = 0,
         )
-        cut.calculateDisplayName(roomId, roomSummary = roomSummary) shouldBe RoomDisplayName(
+        cut.calculateDisplayName(roomId, summary = roomSummary) shouldBe RoomDisplayName(
             heroes = listOf(user1, user2),
             isEmpty = true,
             otherUsersCount = 0,

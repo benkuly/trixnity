@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.*
@@ -73,7 +74,8 @@ data class Sync(
                 @SerialName("timeline") val timeline: Timeline? = null,
                 @SerialName("ephemeral") val ephemeral: Ephemeral? = null,
                 @SerialName("account_data") val accountData: RoomAccountData? = null,
-                @SerialName("unread_notifications") val unreadNotifications: UnreadNotificationCounts? = null
+                @SerialName("unread_notifications") val unreadNotifications: UnreadNotificationCounts? = null,
+                @SerialName("unread_thread_notifications") val unreadThreadNotifications: Map<EventId, UnreadThreadNotificationCounts>? = null
             ) {
                 @Serializable
                 data class RoomSummary(
@@ -89,6 +91,12 @@ data class Sync(
 
                 @Serializable
                 data class UnreadNotificationCounts(
+                    @SerialName("highlight_count") val highlightCount: Long? = null,
+                    @SerialName("notification_count") val notificationCount: Long? = null
+                )
+
+                @Serializable
+                data class UnreadThreadNotificationCounts(
                     @SerialName("highlight_count") val highlightCount: Long? = null,
                     @SerialName("notification_count") val notificationCount: Long? = null
                 )

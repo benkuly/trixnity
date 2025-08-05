@@ -1,7 +1,9 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
@@ -17,13 +19,20 @@ data class Room(
     val lastEventId: EventId? = null, // this must only be changed by TimelineEventHandler!
     val lastRelevantEventId: EventId? = null,
     val lastRelevantEventTimestamp: Instant? = null,
-    val unreadMessageCount: Long = 0,
     val encrypted: Boolean = false,
     val membership: Membership = Membership.JOIN,
     val membersLoaded: Boolean = false,
     val nextRoomId: RoomId? = null,
-    val markedUnread: Boolean = false,
-)
+    @OptIn(ExperimentalSerializationApi::class)
+    @JsonNames("markedUnread")
+    val isUnread: Boolean = false,
+) {
+    @Deprecated("use isUnread instead", ReplaceWith("isUnread"))
+    val markedUnread: Boolean = isUnread
+
+    @Deprecated("always 0, use NotificationService instead")
+    val unreadMessageCount: Long = 0
+}
 
 val Room.previousRoomId: RoomId? get() = createEventContent?.predecessor?.roomId
 val Room.type: CreateEventContent.RoomType? get() = createEventContent?.type
