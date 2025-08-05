@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add missing unread_thread_notifications in sync
+- Add Room.isUnread with exact calculation depending on read markers
+
 ### Changed
 
 ### Deprecated

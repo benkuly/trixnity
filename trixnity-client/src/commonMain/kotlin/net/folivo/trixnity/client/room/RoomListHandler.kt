@@ -19,6 +19,8 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.roomIdOrNull
 import net.folivo.trixnity.core.model.events.stateKeyOrNull
@@ -35,6 +37,7 @@ class RoomListHandler(
     private val api: MatrixClientServerApiClient,
     private val roomStore: RoomStore,
     private val roomStateStore: RoomStateStore,
+    private val roomUserStore: RoomUserStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val roomAccountDataStore: RoomAccountDataStore,
     private val forgetRoomService: ForgetRoomService,
@@ -54,103 +57,42 @@ class RoomListHandler(
 
         val syncRooms = syncEvents.syncResponse.room
 
-        suspend fun createMergeRoom(
-            roomId: RoomId,
-            membership: Membership,
-            lastRelevantEvent: ClientEvent.RoomEvent<*>?,
-            unreadMessageCount: Long?,
-            markedUnread: Boolean?,
-            name: RoomDisplayName?,
-        ): suspend (Room?) -> Room {
-            val encrypted = roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first() != null
-            val nextRoomId =
-                roomStateStore.getByStateKey<TombstoneEventContent>(roomId).first()?.content?.replacementRoom
-            val lastRelevantEventTimestamp = lastRelevantEvent?.originTimestamp
-                ?.let { Instant.fromEpochMilliseconds(it) }
-            return { oldRoom ->
-                coroutineScope {
-                    val createEvent by lazy {
-                        async {
-                            checkNotNull(
-                                roomStateStore.getByStateKey<CreateEventContent>(roomId).first()
-                            ) { "m.room.create must be given" }
-                        }
-                    }
-                    (oldRoom ?: Room(
-                        roomId = roomId,
-                        createEventContent = createEvent.await().content
-                    )).copy(
-                        membership = membership,
-                        createEventContent = oldRoom?.createEventContent ?: createEvent.await().content,
-                        encrypted = encrypted || oldRoom?.encrypted == true,
-                        lastRelevantEventId = lastRelevantEvent?.id ?: oldRoom?.lastRelevantEventId,
-                        lastRelevantEventTimestamp = lastRelevantEventTimestamp ?: oldRoom?.lastRelevantEventTimestamp,
-                        unreadMessageCount = unreadMessageCount ?: oldRoom?.unreadMessageCount ?: 0,
-                        markedUnread = markedUnread ?: oldRoom?.markedUnread ?: false,
-                        nextRoomId = nextRoomId ?: oldRoom?.nextRoomId,
-                        name = name ?: oldRoom?.name,
-                    )
-                }
-            }
-        }
-
         syncRooms?.join?.entries?.forEachParallel { (roomId, roomInfo) ->
-            val unreadMessageCount = roomInfo.unreadNotifications?.notificationCount
             val lastRelevantEvent = roomInfo.timeline?.events?.lastOrNull { config.lastRelevantEventFilter(it) }
-            val name = calculateDisplayName(
-                roomId = roomId,
-                nameEventContent = roomStateStore.getByStateKey<NameEventContent>(roomId).first()?.content,
-                canonicalAliasEventContent = roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId)
-                    .first()?.content,
-                roomSummary = roomInfo.summary,
-            )
-            val mergeRoom = createMergeRoom(
+            roomInfo.ephemeral?.events?.mapNotNull { event -> event.content as? ReceiptEventContent }
+            val mergeRoom = mergeRoom(
                 roomId = roomId,
                 membership = Membership.JOIN,
                 lastRelevantEvent = lastRelevantEvent,
-                unreadMessageCount = unreadMessageCount,
-                markedUnread = roomAccountDataStore.get<MarkedUnreadEventContent>(roomId).first()?.content?.unread,
-                name = name,
+                summary = roomInfo.summary,
             )
             roomUpdates.add(roomId, mergeRoom)
         }
         syncRooms?.leave?.entries?.forEachParallel { (roomId, roomInfo) ->
             val lastRelevantEvent = roomInfo.timeline?.events?.lastOrNull { config.lastRelevantEventFilter(it) }
-            val mergeRoom = createMergeRoom(
+            val mergeRoom = mergeRoom(
                 roomId = roomId,
                 membership = Membership.LEAVE,
                 lastRelevantEvent = lastRelevantEvent,
-                unreadMessageCount = 0,
-                markedUnread = false,
-                name = null,
+                summary = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
         syncRooms?.knock?.entries?.forEachParallel { (roomId, _) ->
-            val mergeRoom = createMergeRoom(
+            val mergeRoom = mergeRoom(
                 roomId = roomId,
                 membership = Membership.KNOCK,
                 lastRelevantEvent = null,
-                unreadMessageCount = 0,
-                markedUnread = false,
-                name = null,
+                summary = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
         syncRooms?.invite?.entries?.forEachParallel { (roomId, _) ->
-            val mergeRoom = createMergeRoom(
+            val mergeRoom = mergeRoom(
                 roomId = roomId,
                 membership = Membership.INVITE,
                 lastRelevantEvent = null,
-                unreadMessageCount = 0,
-                markedUnread = false,
-                name = calculateDisplayName(
-                    roomId = roomId,
-                    nameEventContent = roomStateStore.getByStateKey<NameEventContent>(roomId).first()?.content,
-                    canonicalAliasEventContent = roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId)
-                        .first()?.content,
-                    roomSummary = null,
-                ),
+                summary = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -164,6 +106,65 @@ class RoomListHandler(
                         update(room)
                     }
                 }
+            }
+        }
+    }
+
+    private suspend fun mergeRoom(
+        roomId: RoomId,
+        membership: Membership,
+        lastRelevantEvent: ClientEvent.RoomEvent<*>?,
+        summary: Sync.Response.Rooms.JoinedRoom.RoomSummary?,
+    ): suspend (Room?) -> Room {
+        val markedAsUnread = roomAccountDataStore.get<MarkedUnreadEventContent>(roomId).first()?.content?.unread == true
+        val encrypted = roomStateStore.getByStateKey<EncryptionEventContent>(roomId).first() != null
+        val nextRoomId =
+            roomStateStore.getByStateKey<TombstoneEventContent>(roomId).first()?.content?.replacementRoom
+        val lastRelevantEventTimestamp = lastRelevantEvent?.originTimestamp
+            ?.let { Instant.fromEpochMilliseconds(it) }
+        return { oldRoom ->
+            coroutineScope {
+                val createEvent by lazy {
+                    async {
+                        checkNotNull(
+                            roomStateStore.getByStateKey<CreateEventContent>(roomId).first()
+                        ) { "m.room.create must be given" }
+                    }
+                }
+                val name by lazy {
+                    async {
+                        calculateDisplayName(
+                            roomId = roomId,
+                            nameEventContent = roomStateStore
+                                .getByStateKey<NameEventContent>(roomId).first()?.content,
+                            canonicalAliasEventContent = roomStateStore
+                                .getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content,
+                            summary = summary,
+                        )
+                    }
+                }
+                val lastEventId = oldRoom?.lastEventId
+                val isUnread =
+                    if (markedAsUnread) true
+                    else {
+                        val ownReceipts = roomUserStore.getReceipts(userInfo.userId, roomId).first()?.receipts
+                        val readReceipt = ownReceipts?.get(ReceiptType.Read)?.eventId
+                        val privateReadReceipt = ownReceipts?.get(ReceiptType.PrivateRead)?.eventId
+                        lastEventId != readReceipt && lastEventId != privateReadReceipt
+                    }
+                (oldRoom ?: Room(
+                    roomId = roomId,
+                    createEventContent = createEvent.await().content
+                )).copy(
+                    membership = membership,
+                    createEventContent = oldRoom?.createEventContent ?: createEvent.await().content,
+                    encrypted = encrypted || oldRoom?.encrypted == true,
+                    lastRelevantEventId = lastRelevantEvent?.id ?: oldRoom?.lastRelevantEventId,
+                    lastRelevantEventTimestamp = lastRelevantEventTimestamp ?: oldRoom?.lastRelevantEventTimestamp,
+                    isUnread = isUnread,
+                    nextRoomId = nextRoomId ?: oldRoom?.nextRoomId,
+                    name = if (summary != null) name.await() else oldRoom?.name ?: name.await(),
+                )
             }
         }
     }
@@ -272,18 +273,18 @@ class RoomListHandler(
         roomId: RoomId,
         nameEventContent: NameEventContent? = null,
         canonicalAliasEventContent: CanonicalAliasEventContent? = null,
-        roomSummary: Sync.Response.Rooms.JoinedRoom.RoomSummary? = null,
+        summary: Sync.Response.Rooms.JoinedRoom.RoomSummary? = null,
     ): RoomDisplayName? {
         val oldRoomSummary = roomStore.get(roomId).first()?.name?.summary
 
-        if (nameEventContent == null && canonicalAliasEventContent == null && roomSummary == oldRoomSummary) return null
+        if (nameEventContent == null && canonicalAliasEventContent == null && summary == oldRoomSummary) return null
 
         val mergedRoomSummary =
-            if (roomSummary == null && roomSummary == oldRoomSummary) null
+            if (summary == null && summary == oldRoomSummary) null
             else Sync.Response.Rooms.JoinedRoom.RoomSummary(
-                heroes = roomSummary?.heroes ?: oldRoomSummary?.heroes,
-                joinedMemberCount = roomSummary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,
-                invitedMemberCount = roomSummary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
+                heroes = summary?.heroes ?: oldRoomSummary?.heroes,
+                joinedMemberCount = summary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,
+                invitedMemberCount = summary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
             )
 
         val nameFromNameEvent = (nameEventContent
