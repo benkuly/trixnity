@@ -275,14 +275,14 @@ data class Sync(
             return JsonObject(buildMap {
                 putAll(event)
                 put("room_id", JsonPrimitive(roomId.full))
-                val unsigned = event["unsigned"]?.jsonObject
+                val unsigned = event["unsigned"] as? JsonObject
                 if (unsigned != null) {
-                    val aggregations = unsigned["m.relations"]?.jsonObject
+                    val aggregations = unsigned["m.relations"] as? JsonObject
                     val newAggregations =
                         if (aggregations != null) {
-                            val thread = aggregations["m.thread"]?.jsonObject
+                            val thread = aggregations["m.thread"] as? JsonObject
                             if (thread != null) {
-                                val latestEvent = thread["latest_event"]?.jsonObject
+                                val latestEvent = thread["latest_event"] as? JsonObject
                                 if (latestEvent != null) {
                                     JsonObject(buildMap {
                                         putAll(aggregations)
@@ -294,7 +294,7 @@ data class Sync(
                                 } else null
                             } else null
                         } else null
-                    val redactedBecause = unsigned["redacted_because"]?.jsonObject
+                    val redactedBecause = unsigned["redacted_because"] as? JsonObject
                     val newRedactedBecause =
                         if (redactedBecause != null) {
                             addRoomIdToEvent(redactedBecause, roomId)
