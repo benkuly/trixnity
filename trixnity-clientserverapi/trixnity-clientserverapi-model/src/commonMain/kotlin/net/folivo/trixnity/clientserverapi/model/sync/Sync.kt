@@ -110,12 +110,15 @@ data class Sync(
                         var key: RoomId? = null
                         loop@ while (true) {
                             val index = decodeElementIndex(descriptor)
+                            // We've got keys and values interleaved,
+                            // with keys in even positions and values in odd positions
+                            val isKey = index % 2 == 0
                             when {
                                 index == DECODE_DONE -> break@loop
-                                index % 2 == 0 -> {
+                                isKey -> {
                                     key = decodeSerializableElement(descriptor, index, keySerializer)
                                 }
-                                index % 2 == 1 -> {
+                                else -> {
                                     requireNotNull(key)
                                     require(decoder is JsonDecoder)
                                     val json = Json(decoder.json) {
@@ -124,7 +127,6 @@ data class Sync(
                                     }
                                     put(key, decodeSerializableElement(descriptor, index, valueSerializer(json)))
                                 }
-                                else -> throw SerializationException("Unexpected index $index")
                             }
                         }
                     }
