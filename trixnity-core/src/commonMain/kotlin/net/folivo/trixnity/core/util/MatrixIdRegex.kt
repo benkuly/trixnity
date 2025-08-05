@@ -2,7 +2,7 @@ package net.folivo.trixnity.core.util
 
 internal object MatrixIdRegex {
     // https://spec.matrix.org/v1.14/appendices/#server-name
-    private const val baseDnsRegex = """(?:[A-Za-z0-9.-]{1,255})"""
+    private const val baseDnsRegex = """(?:[\w.-]{1,230})"""
     private const val baseIPV4Regex = """\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"""
     private const val baseIPV6Regex = """\[[0-9a-fA-F:]+\]"""
     private const val basePortRegex = """:[0-9]{1,5}"""
