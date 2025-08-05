@@ -11,8 +11,10 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.io.Source
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.io.decodeFromSource
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.HttpMethod
@@ -111,9 +113,10 @@ open class MatrixApiClient(
         request.execute { response ->
             responseHandler(
                 when {
-                    responseSerializer != null -> json.decodeFromString(responseSerializer, response.bodyAsText())
+                    responseSerializer != null ->
+                        json.decodeFromSource(responseSerializer, response.body<Source>())
                     endpoint.responseContentType == ContentType.Application.Json ->
-                        json.decodeFromString(serializer(), response.bodyAsText())
+                        json.decodeFromSource(serializer(), response.body<Source>())
 
                     else -> response.body()
                 }
