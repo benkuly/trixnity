@@ -3,7 +3,6 @@ package net.folivo.trixnity.core.util
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.Mention
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -13,7 +12,7 @@ private val log = KotlinLogging.logger {}
 object MatrixLinks {
     private val matrixProtocol = URLProtocol("matrix", 0)
 
-    fun parse(href: String): Mention? {
+    fun parse(href: String): Reference? {
         val url = Url(href)
         if (url.protocol == matrixProtocol) {
             return parseMatrixProtocol(url.segments, url.parameters)
@@ -34,7 +33,7 @@ object MatrixLinks {
         return null
     }
 
-    private fun parseMatrixTo(path: List<String>, parameters: Parameters): Mention? {
+    private fun parseMatrixTo(path: List<String>, parameters: Parameters): Reference? {
         val parts = path.map { id ->
             when {
                 id.length > 255 -> {
@@ -54,11 +53,11 @@ object MatrixLinks {
         val first = parts.getOrNull(0)
         val second = parts.getOrNull(1)
         return when {
-            first is UserId -> Mention.User(first, parameters)
-            first is RoomAliasId -> Mention.RoomAlias(first, parameters)
-            first is EventId -> Mention.Event(null, first, parameters)
-            first is RoomId && second is EventId -> Mention.Event(first, second, parameters)
-            first is RoomId -> Mention.Room(first, parameters)
+            first is UserId -> Reference.User(first, parameters)
+            first is RoomAliasId -> Reference.RoomAlias(first, parameters)
+            first is EventId -> Reference.Event(null, first, parameters)
+            first is RoomId && second is EventId -> Reference.Event(first, second, parameters)
+            first is RoomId -> Reference.Room(first, parameters)
             else -> {
                 log.trace { "malformed matrix link: unknown format" }
                 null
@@ -66,7 +65,7 @@ object MatrixLinks {
         }
     }
 
-    private fun parseMatrixProtocol(path: List<String>, parameters: Parameters): Mention? {
+    private fun parseMatrixProtocol(path: List<String>, parameters: Parameters): Reference? {
         val parts = path.windowed(2, 2).map { (type, id) ->
             when {
                 id.length > 255 -> {
@@ -86,10 +85,10 @@ object MatrixLinks {
         val first = parts.getOrNull(0)
         val second = parts.getOrNull(1)
         return when {
-            first is UserId -> Mention.User(first, parameters)
-            first is RoomAliasId -> Mention.RoomAlias(first, parameters)
-            first is RoomId && second is EventId -> Mention.Event(first, second, parameters)
-            first is RoomId -> Mention.Room(first, parameters)
+            first is UserId -> Reference.User(first, parameters)
+            first is RoomAliasId -> Reference.RoomAlias(first, parameters)
+            first is RoomId && second is EventId -> Reference.Event(first, second, parameters)
+            first is RoomId -> Reference.Room(first, parameters)
             else -> {
                 log.trace { "malformed matrix link: unknown format" }
                 null

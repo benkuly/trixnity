@@ -1,17 +1,17 @@
 package net.folivo.trixnity.core
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import net.folivo.trixnity.core.model.Mention
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.util.MatrixIdRegex
 import net.folivo.trixnity.core.util.MatrixLinks
 import net.folivo.trixnity.core.util.Patterns
+import net.folivo.trixnity.core.util.Reference
 
 private val log = KotlinLogging.logger {}
 
 object MatrixRegex {
-    fun findMentions(message: String): Map<IntRange, Mention> {
+    fun findMentions(message: String): Map<IntRange, Reference> {
         val links = findLinkMentions(message)
         val users = findIdMentions(message)
         val linksRange = links.keys.sortedBy { it.first }
@@ -23,7 +23,7 @@ object MatrixRegex {
         return links.plus(uniqueUsers).toMap()
     }
 
-    fun findIdMentions(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Mention> {
+    fun findIdMentions(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Reference> {
         return MatrixIdRegex.autolinkId
             .findAll(content, startIndex = from)
             .filter { it.range.last < to }
@@ -32,7 +32,7 @@ object MatrixRegex {
             .toMap()
     }
 
-    fun findLinkMentions(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Mention> {
+    fun findLinkMentions(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Reference> {
         return Patterns.AUTOLINK_MATRIX_URI
             .findAll(content, startIndex = from)
             .filter { it.range.last < to }
@@ -58,14 +58,14 @@ object MatrixRegex {
             }.toMap()
     }
 
-    private fun parseMatrixId(id: String): Mention? {
+    private fun parseMatrixId(id: String): Reference? {
         return when {
             id.length > 255 -> {
                 log.trace { "malformed matrix id: id too long: ${id.length} (max length: 255)" }
                 null
             }
-            id.startsWith(UserId.sigilCharacter) -> Mention.User(UserId(id))
-            id.startsWith(RoomAliasId.sigilCharacter) -> Mention.RoomAlias(RoomAliasId(id))
+            id.startsWith(UserId.sigilCharacter) -> Reference.User(UserId(id))
+            id.startsWith(RoomAliasId.sigilCharacter) -> Reference.RoomAlias(RoomAliasId(id))
             else -> null
         }
     }

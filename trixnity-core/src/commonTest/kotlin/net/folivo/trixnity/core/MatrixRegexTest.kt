@@ -4,16 +4,12 @@ import io.kotest.matchers.shouldBe
 import io.ktor.http.*
 import net.folivo.trixnity.core.MatrixRegex.findMentions
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.Mention
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.util.Reference
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
-import kotlin.test.fail
+import kotlin.test.*
 
 
 class MatrixRegexTest : TrixnityBaseTest() {
@@ -28,7 +24,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         if (expected) {
             result.size shouldBe 1
-            (result.entries.first { text.substring(it.key) == id }.value as Mention.User).userId shouldBe UserId(
+            (result.entries.first { text.substring(it.key) == id }.value as Reference.User).userId shouldBe UserId(
                 localpart,
                 domain
             )
@@ -98,7 +94,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         if (expected) {
             result.size shouldBe 1
-            (result.entries.first { text.substring(it.key) == id }.value as Mention.RoomAlias).roomAliasId shouldBe RoomAliasId(
+            (result.entries.first { text.substring(it.key) == id }.value as Reference.RoomAlias).roomAliasId shouldBe RoomAliasId(
                 localpart,
                 domain
             )
@@ -159,7 +155,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
             if (expected) {
                 result.size shouldBe 1
-                (result.entries.first { text.substring(it.key) == uri }.value as Mention.User).userId shouldBe UserId(
+                (result.entries.first { text.substring(it.key) == uri }.value as Reference.User).userId shouldBe UserId(
                     localpart,
                     domain
                 )
@@ -178,7 +174,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
             if (expected) {
                 result.size shouldBe 1
-                (result.entries.first { text.substring(it.key) == uri }.value as Mention.Room).roomId shouldBe RoomId(id)
+                (result.entries.first { text.substring(it.key) == uri }.value as Reference.Room).roomId shouldBe RoomId(id)
             }
         }
 
@@ -192,7 +188,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
             if (expected) {
                 result.size shouldBe 1
-                (result.entries.first { text.substring(it.key) == uri }.value as Mention.RoomAlias).roomAliasId shouldBe RoomAliasId(
+                (result.entries.first { text.substring(it.key) == uri }.value as Reference.RoomAlias).roomAliasId shouldBe RoomAliasId(
                     localpart,
                     domain
                 )
@@ -208,7 +204,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
             if (expected) {
                 val value = result.values.singleOrNull()
                 assertNotNull(value)
-                assertIs<Mention.Event>(value)
+                assertIs<Reference.Event>(value)
                 assertEquals(roomId, value.roomId!!.full)
                 assertEquals(eventId, value.eventId.full)
             } else {
@@ -389,7 +385,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
             if (expected) {
                 result.size shouldBe 1
-                (result.entries.first { text.substring(it.key) == permalink }.value as Mention.User).userId shouldBe UserId(
+                (result.entries.first { text.substring(it.key) == permalink }.value as Reference.User).userId shouldBe UserId(
                     localpart,
                     domain
                 )
@@ -408,7 +404,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
             if (expected) {
                 result.size shouldBe 1
-                (result.entries.first { text.substring(it.key) == permalink }.value as Mention.Room).roomId shouldBe
+                (result.entries.first { text.substring(it.key) == permalink }.value as Reference.Room).roomId shouldBe
                         RoomId(roomId)
             } else {
                 result.size shouldBe 0
@@ -425,7 +421,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
             if (expected) {
                 result.size shouldBe 1
-                (result.entries.first { text.substring(it.key) == permalink }.value as Mention.RoomAlias).roomAliasId shouldBe RoomAliasId(
+                (result.entries.first { text.substring(it.key) == permalink }.value as Reference.RoomAlias).roomAliasId shouldBe RoomAliasId(
                     localpart,
                     domain
                 )
@@ -446,7 +442,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
                 result.size shouldBe 1
 
                 val mention = result.entries.first { text.substring(it.key) == permalink }.value
-                if (mention !is Mention.Event) {
+                if (mention !is Reference.Event) {
                     fail("Wrong Mention type")
                 } else {
                     mention.eventId shouldBe EventId(eventId)
@@ -610,8 +606,8 @@ class MatrixRegexTest : TrixnityBaseTest() {
         )
         assertEquals(
             expected = mapOf(
-                30..78 to Mention.User(UserId("@user:example.org"), parametersOf("action", "chat")),
-                86..110 to Mention.User(UserId("@user:example.org")),
+                30..78 to Reference.User(UserId("@user:example.org"), parametersOf("action", "chat")),
+                86..110 to Reference.User(UserId("@user:example.org")),
             ),
             actual = MatrixRegex.findLinkMentions(content)
         )
@@ -626,25 +622,25 @@ class MatrixRegexTest : TrixnityBaseTest() {
         )
         assertEquals(
             expected = mapOf(
-                6..22 to Mention.User(UserId("@user:example.org")),
-                50..66 to Mention.User(UserId("@user:example.org")),
+                6..22 to Reference.User(UserId("@user:example.org")),
+                50..66 to Reference.User(UserId("@user:example.org")),
             ),
             actual = MatrixRegex.findIdMentions(content)
         )
         // Combined
         assertEquals(
             expected = mapOf(
-                30..78 to Mention.User(UserId("@user:example.org"), parametersOf("action", "chat")),
-                86..110 to Mention.User(UserId("@user:example.org")),
-                6..22 to Mention.User(UserId("@user:example.org")),
+                30..78 to Reference.User(UserId("@user:example.org"), parametersOf("action", "chat")),
+                86..110 to Reference.User(UserId("@user:example.org")),
+                6..22 to Reference.User(UserId("@user:example.org")),
             ),
             actual = MatrixRegex.findMentions(content)
         )
         assertEquals(
             expected = mapOf(
-                9..44 to Mention.User(userId=UserId("@user:matrix.org")),
-                92..171 to Mention.Room(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
-                199..323 to Mention.Event(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), eventId=EventId("\$KoEcMwZKqGpCeuMjAmt9zvmWgO72f7hDFkvfBMS479A"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
+                9..44 to Reference.User(userId=UserId("@user:matrix.org")),
+                92..171 to Reference.Room(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
+                199..323 to Reference.Event(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), eventId=EventId("\$KoEcMwZKqGpCeuMjAmt9zvmWgO72f7hDFkvfBMS479A"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
             ),
             actual = MatrixRegex.findMentions(
                 "<a href=\"https://matrix.to/#/@user:matrix.org\">Some Username</a>: This is a user mention<br>" +

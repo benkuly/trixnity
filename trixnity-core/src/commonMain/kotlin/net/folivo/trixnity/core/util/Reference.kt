@@ -1,11 +1,16 @@
-package net.folivo.trixnity.core.model
+package net.folivo.trixnity.core.util
 
-import io.ktor.http.*
+import io.ktor.http.Parameters
+import io.ktor.http.parametersOf
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomAliasId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
 
 /**
  * Represents a mention. A mention can refer to various entities and potentially include actions associated with them.
  */
-sealed interface Mention {
+sealed interface Reference {
     /**
      * If exists, the parameters provided in the URI
      */
@@ -18,7 +23,7 @@ sealed interface Mention {
     data class User(
         val userId: UserId,
         override val parameters: Parameters? = parametersOf()
-    ) : Mention
+    ) : Reference
 
     /**
      * Represents a mention of a room.
@@ -26,7 +31,7 @@ sealed interface Mention {
     data class Room(
         val roomId: RoomId,
         override val parameters: Parameters? = parametersOf()
-    ) : Mention
+    ) : Reference
 
     /**
      * Represents a mention of a room alias
@@ -34,7 +39,7 @@ sealed interface Mention {
     data class RoomAlias(
         val roomAliasId: RoomAliasId,
         override val parameters: Parameters? = parametersOf()
-    ) : Mention
+    ) : Reference
 
     /**
      * Represents a mention of a generic event.
@@ -43,5 +48,5 @@ sealed interface Mention {
         val roomId: RoomId? = null,
         val eventId: EventId,
         override val parameters: Parameters? = parametersOf()
-    ) : Mention
+    ) : Reference
 }
