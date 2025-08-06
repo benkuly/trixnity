@@ -12,17 +12,11 @@ import net.folivo.trixnity.core.model.UserId
  */
 sealed interface Reference {
     /**
-     * If exists, the parameters provided in the URI
-     */
-    val parameters: Parameters?
-
-
-    /**
      * Represents a mention of a user.
      */
     data class User(
         val userId: UserId,
-        override val parameters: Parameters? = parametersOf()
+        val parameters: Parameters = parametersOf()
     ) : Reference
 
     /**
@@ -30,7 +24,7 @@ sealed interface Reference {
      */
     data class Room(
         val roomId: RoomId,
-        override val parameters: Parameters? = parametersOf()
+        val parameters: Parameters = parametersOf()
     ) : Reference
 
     /**
@@ -38,7 +32,7 @@ sealed interface Reference {
      */
     data class RoomAlias(
         val roomAliasId: RoomAliasId,
-        override val parameters: Parameters? = parametersOf()
+        val parameters: Parameters = parametersOf()
     ) : Reference
 
     /**
@@ -47,6 +41,10 @@ sealed interface Reference {
     data class Event(
         val roomId: RoomId? = null,
         val eventId: EventId,
-        override val parameters: Parameters? = parametersOf()
+        val parameters: Parameters = parametersOf()
+    ) : Reference
+
+    data class Link(
+        val url: String
     ) : Reference
 }

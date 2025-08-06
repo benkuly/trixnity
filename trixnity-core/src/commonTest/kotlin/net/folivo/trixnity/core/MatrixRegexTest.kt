@@ -525,7 +525,14 @@ class MatrixRegexTest : TrixnityBaseTest() {
         val mentions = findMentions(uri)
 
         mentions.values.forEach {
-            (it.parameters == params) shouldBe expected
+            val parameters = when (it) {
+                is Reference.Event -> it.parameters
+                is Reference.Link -> null
+                is Reference.Room -> it.parameters
+                is Reference.RoomAlias -> it.parameters
+                is Reference.User -> it.parameters
+            }
+            (parameters == params) shouldBe expected
         }
     }
 
