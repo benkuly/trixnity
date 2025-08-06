@@ -7,18 +7,24 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import net.folivo.trixnity.core.util.MatrixIdRegex
 
 @Serializable(with = RoomIdSerializer::class)
 data class RoomId(val full: String) {
 
+    @Deprecated("RoomId should be considered as opaque String")
+    constructor(localpart: String, domain: String) : this("${sigilCharacter}$localpart:$domain")
+
     companion object {
         const val sigilCharacter = '!'
-
-        fun isValid(id: String): Boolean = id.length <= 255 && id.matches(MatrixIdRegex.roomIdRegex)
     }
 
-    val isValid by lazy { isValid(full) }
+    @Deprecated("RoomId should be considered as opaque String")
+    val localpart: String
+        get() = full.trimStart(sigilCharacter).substringBefore(':')
+
+    @Deprecated("RoomId should be considered as opaque String")
+    val domain: String
+        get() = full.trimStart(sigilCharacter).substringAfter(':')
 
     override fun toString() = full
 }
