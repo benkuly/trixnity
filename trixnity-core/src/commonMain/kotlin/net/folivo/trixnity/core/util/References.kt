@@ -1,16 +1,12 @@
-package net.folivo.trixnity.core
+package net.folivo.trixnity.core.util
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.util.MatrixIdRegex
-import net.folivo.trixnity.core.util.MatrixLinks
-import net.folivo.trixnity.core.util.Patterns
-import net.folivo.trixnity.core.util.Reference
 
 private val log = KotlinLogging.logger {}
 
-object MatrixRegex {
+object References {
     fun findMentions(message: String): Map<IntRange, Reference> {
         val links = findLinkMentions(message)
         val users = findIdMentions(message)

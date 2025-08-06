@@ -2,7 +2,10 @@ package net.folivo.trixnity.core
 
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
-import net.folivo.trixnity.core.MatrixRegex.findMentions
+import net.folivo.trixnity.core.util.References.findMentions
+import net.folivo.trixnity.core.util.References.findIdMentions
+import net.folivo.trixnity.core.util.References.findLinkMentions
+import net.folivo.trixnity.core.util.References.findLinks
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -616,7 +619,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
                 30..78 to Reference.User(UserId("@user:example.org"), parametersOf("action", "chat")),
                 86..110 to Reference.User(UserId("@user:example.org")),
             ),
-            actual = MatrixRegex.findLinkMentions(content)
+            actual = findLinkMentions(content)
         )
         // Ids
         assertEquals(
@@ -632,7 +635,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
                 6..22 to Reference.User(UserId("@user:example.org")),
                 50..66 to Reference.User(UserId("@user:example.org")),
             ),
-            actual = MatrixRegex.findIdMentions(content)
+            actual = findIdMentions(content)
         )
         // Combined
         assertEquals(
@@ -641,7 +644,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
                 86..110 to Reference.User(UserId("@user:example.org")),
                 6..22 to Reference.User(UserId("@user:example.org")),
             ),
-            actual = MatrixRegex.findMentions(content)
+            actual = findMentions(content)
         )
         assertEquals(
             expected = mapOf(
@@ -649,7 +652,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
                 92..171 to Reference.Room(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
                 199..323 to Reference.Event(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), eventId=EventId("\$KoEcMwZKqGpCeuMjAmt9zvmWgO72f7hDFkvfBMS479A"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
             ),
-            actual = MatrixRegex.findMentions(
+            actual = findMentions(
                 "<a href=\"https://matrix.to/#/@user:matrix.org\">Some Username</a>: This is a user mention<br>" +
                         "https://matrix.to/#/!WvOltebgJfkgHzhfpW:matrix.org?via=matrix.org&via=imbitbu.de This is a room mention<br>" +
                         "https://matrix.to/#/!WvOltebgJfkgHzhfpW:matrix.org/\$KoEcMwZKqGpCeuMjAmt9zvmWgO72f7hDFkvfBMS479A?via=matrix.org&via=imbitbu.de This is an event mention"
@@ -663,7 +666,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
             expected = mapOf(
                 19..65 to "https://en.wikipedia.org/wiki/Matrix_(protocol)",
             ),
-            actual = MatrixRegex.findLinks(
+            actual = findLinks(
                 "I saw that online (https://en.wikipedia.org/wiki/Matrix_(protocol)), neat eh?"
             )
         )
