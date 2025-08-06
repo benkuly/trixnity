@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix OOM gradle dependencies tasks
 - Fix OOM during initial sync due to sync response parsing
 - Fix DNS regex
+- Fixed issues with Reference/Link parsing
 
 ### Security
 
