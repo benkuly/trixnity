@@ -74,7 +74,6 @@ sealed interface Reference {
             return MatrixIdRegex.autolinkId
                 .findAll(content, startIndex = from)
                 .filter { it.range.last < to }
-                .filter { it.range.last - it.range.first <= 255 }
                 .mapNotNull { Pair(it.range, parseMatrixId(it.value) ?: return@mapNotNull null) }
                 .toMap()
         }
