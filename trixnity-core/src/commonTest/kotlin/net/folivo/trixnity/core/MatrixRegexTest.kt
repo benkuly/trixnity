@@ -78,11 +78,6 @@ class MatrixRegexTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldFailUserLocalpartContainingUppsercase() {
-        userIdTest("@User:example.com", "User", "example.com", expected = false)
-    }
-
-    @Test
     fun shouldFailUserLocalpartContainingIllegalSymbole() {
         userIdTest("@user&:example.com", "user&", "example.com", expected = false)
     }

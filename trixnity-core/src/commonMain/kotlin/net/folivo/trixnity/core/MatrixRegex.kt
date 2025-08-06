@@ -4,16 +4,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import net.folivo.trixnity.core.model.Mention
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.util.MatrixIdRegex
 import net.folivo.trixnity.core.util.MatrixLinks
 import net.folivo.trixnity.core.util.Patterns
 
 private val log = KotlinLogging.logger {}
 
 object MatrixRegex {
-    // language=Regexp
-    private const val ID_PATTERN = """[@#][0-9a-z\-.=_/+]+:(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|\[[0-9a-fA-F:.]{2,45}\]|[0-9a-zA-Z\-.]{1,255})(?::[0-9]{1,5})?"""
-    private val idRegex = ID_PATTERN.toRegex()
-
     fun findMentions(message: String): Map<IntRange, Mention> {
         val links = findLinkMentions(message)
         val users = findIdMentions(message)
@@ -27,7 +24,7 @@ object MatrixRegex {
     }
 
     fun findIdMentions(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Mention> {
-        return idRegex
+        return MatrixIdRegex.autolinkId
             .findAll(content, startIndex = from)
             .filter { it.range.last < to }
             .filter { it.range.last - it.range.first <= 255 }
@@ -60,16 +57,6 @@ object MatrixRegex {
                 )
             }.toMap()
     }
-
-    fun isValidUserId(id: String): Boolean =
-        id.length <= 255
-                && id.startsWith(UserId.sigilCharacter)
-                && id.matches(idRegex)
-
-    fun isValidRoomAliasId(id: String): Boolean =
-        id.length <= 255
-                && id.startsWith(RoomAliasId.sigilCharacter)
-                && id.matches(idRegex)
 
     private fun parseMatrixId(id: String): Mention? {
         return when {
