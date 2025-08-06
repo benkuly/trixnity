@@ -1,25 +1,21 @@
-package net.folivo.trixnity.core
+package net.folivo.trixnity.core.util
 
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
-import net.folivo.trixnity.core.util.References.findMentions
-import net.folivo.trixnity.core.util.References.findIdMentions
-import net.folivo.trixnity.core.util.References.findLinkMentions
-import net.folivo.trixnity.core.util.References.findLinks
+import net.folivo.trixnity.core.util.Reference.Companion.findReferences
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.util.Reference
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.*
 
 
-class MatrixRegexTest : TrixnityBaseTest() {
+class FindReferencesTest : TrixnityBaseTest() {
     // User IDs
     private fun userIdTest(id: String, localpart: String, domain: String, expected: Boolean) {
         val text = "Hello $id :D"
-        val result = findMentions(text)
+        val result = findReferences(text).filter { it.value !is Reference.Link }
 
         result.keys.any {
             text.substring(it) == id
@@ -89,7 +85,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
     // Room Alias
     private fun roomAliasTest(id: String, localpart: String, domain: String, expected: Boolean) {
         val text = "omw to $id now"
-        val result = findMentions(text)
+        val result = findReferences(text).filter { it.value !is Reference.Link }
 
         result.keys.any {
             text.substring(it) == id
@@ -150,7 +146,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
     private object UriTest {
         fun user(uri: String, localpart: String, domain: String, expected: Boolean) {
             val text = "Hello $uri :D"
-            val result = findMentions(text)
+            val result = findReferences(text)
 
             result.keys.any {
                 text.substring(it) == uri
@@ -169,7 +165,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         fun roomId(uri: String, id: String, expected: Boolean) {
             val text = "omw to $uri now"
-            val result = findMentions(text)
+            val result = findReferences(text)
 
             result.keys.any {
                 text.substring(it) == uri
@@ -183,7 +179,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         fun roomAlias(uri: String, localpart: String, domain: String, expected: Boolean) {
             val text = "omw to $uri now"
-            val result = findMentions(text)
+            val result = findReferences(text)
 
             result.keys.any {
                 text.substring(it) == uri
@@ -202,7 +198,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         fun event(uri: String, roomId: String, eventId: String, expected: Boolean) {
             val text = "You can find it at $uri :)"
-            val result = findMentions(text)
+            val result = findReferences(text)
 
             if (expected) {
                 val value = result.values.singleOrNull()
@@ -380,7 +376,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
     object PermalinkTest {
         fun user(permalink: String, localpart: String, domain: String, expected: Boolean) {
             val text = "Hello $permalink :D"
-            val result = findMentions(text)
+            val result = findReferences(text)
 
             result.keys.any {
                 text.substring(it) == permalink
@@ -399,7 +395,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         fun roomId(permalink: String, roomId: String, expected: Boolean) {
             val text = "omw to $permalink now"
-            val result = findMentions(text)
+            val result = findReferences(text)
 
             result.keys.any {
                 text.substring(it) == permalink
@@ -416,7 +412,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         fun roomAlias(permalink: String, localpart: String, domain: String, expected: Boolean) {
             val text = "omw to $permalink now"
-            val result = findMentions(text)
+            val result = findReferences(text)
 
             result.keys.any {
                 text.substring(it) == permalink
@@ -435,7 +431,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
         fun event(permalink: String, roomId: String, eventId: String, expected: Boolean) {
             val text = "You can find it at $permalink :)"
-            val result = findMentions(text)
+            val result = findReferences(text)
 
             result.keys.any {
                 text.substring(it) == permalink
@@ -525,7 +521,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
 
     // Parameters
     fun parameterTest(uri: String, params: Parameters, expected: Boolean) {
-        val mentions = findMentions(uri)
+        val mentions = findReferences(uri)
 
         mentions.values.forEach {
             val parameters = when (it) {
@@ -614,13 +610,6 @@ class MatrixRegexTest : TrixnityBaseTest() {
             expected = "matrix:u/user:example.org",
             actual = content.substring(86..110),
         )
-        assertEquals(
-            expected = mapOf(
-                30..78 to Reference.User(UserId("@user:example.org"), parametersOf("action", "chat")),
-                86..110 to Reference.User(UserId("@user:example.org")),
-            ),
-            actual = findLinkMentions(content)
-        )
         // Ids
         assertEquals(
             expected = "@user:example.org",
@@ -630,21 +619,14 @@ class MatrixRegexTest : TrixnityBaseTest() {
             expected = "@user:example.org",
             actual = content.substring(50..66),
         )
-        assertEquals(
-            expected = mapOf(
-                6..22 to Reference.User(UserId("@user:example.org")),
-                50..66 to Reference.User(UserId("@user:example.org")),
-            ),
-            actual = findIdMentions(content)
-        )
-        // Combined
+        // References
         assertEquals(
             expected = mapOf(
                 30..78 to Reference.User(UserId("@user:example.org"), parametersOf("action", "chat")),
                 86..110 to Reference.User(UserId("@user:example.org")),
                 6..22 to Reference.User(UserId("@user:example.org")),
             ),
-            actual = findMentions(content)
+            actual = findReferences(content)
         )
         assertEquals(
             expected = mapOf(
@@ -652,7 +634,7 @@ class MatrixRegexTest : TrixnityBaseTest() {
                 92..171 to Reference.Room(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
                 199..323 to Reference.Event(roomId=RoomId("!WvOltebgJfkgHzhfpW:matrix.org"), eventId=EventId("\$KoEcMwZKqGpCeuMjAmt9zvmWgO72f7hDFkvfBMS479A"), parameters=parametersOf("via" to listOf("matrix.org", "imbitbu.de"))),
             ),
-            actual = findMentions(
+            actual = findReferences(
                 "<a href=\"https://matrix.to/#/@user:matrix.org\">Some Username</a>: This is a user mention<br>" +
                         "https://matrix.to/#/!WvOltebgJfkgHzhfpW:matrix.org?via=matrix.org&via=imbitbu.de This is a room mention<br>" +
                         "https://matrix.to/#/!WvOltebgJfkgHzhfpW:matrix.org/\$KoEcMwZKqGpCeuMjAmt9zvmWgO72f7hDFkvfBMS479A?via=matrix.org&via=imbitbu.de This is an event mention"
@@ -664,9 +646,9 @@ class MatrixRegexTest : TrixnityBaseTest() {
     fun `finds regular links`() {
         assertEquals(
             expected = mapOf(
-                19..65 to "https://en.wikipedia.org/wiki/Matrix_(protocol)",
+                19..65 to Reference.Link("https://en.wikipedia.org/wiki/Matrix_(protocol)"),
             ),
-            actual = findLinks(
+            actual = findReferences(
                 "I saw that online (https://en.wikipedia.org/wiki/Matrix_(protocol)), neat eh?"
             )
         )
