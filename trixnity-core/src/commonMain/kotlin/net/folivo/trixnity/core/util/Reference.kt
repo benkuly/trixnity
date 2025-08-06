@@ -59,7 +59,7 @@ sealed interface Reference {
             val candidates = findLinkReferences(message).plus(findIdReferences(message))
             return buildMap {
                 for ((candidateKey, candidateValue) in candidates) {
-                    val overlapKey = keys.find { it.intersect(candidateKey).isNotEmpty() }
+                    val overlapKey = keys.find { candidateKey.overlaps(it) }
                     if (overlapKey == null) {
                         put(candidateKey, candidateValue)
                     } else if (overlapKey.last - overlapKey.first < candidateKey.last - candidateKey.first) {
@@ -70,25 +70,20 @@ sealed interface Reference {
             }
         }
 
-        private fun findIdReferences(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Reference> {
-            return MatrixIdRegex.autolinkId
-                .findAll(content, startIndex = from)
-                .filter { it.range.last < to }
-                .mapNotNull { Pair(it.range, parseMatrixId(it.value) ?: return@mapNotNull null) }
-                .toMap()
+        private fun findIdReferences(content: String): Map<IntRange, Reference> {
+            return MatrixIdRegex.autolinkId.findAll(content).mapNotNull {
+                Pair(it.range, parseMatrixId(it.value) ?: return@mapNotNull null)
+            }.toMap()
         }
 
-        private fun findLinkReferences(content: String, from: Int = 0, to: Int = content.length): Map<IntRange, Reference> {
-            return Patterns.AUTOLINK_MATRIX_URI
-                .findAll(content, startIndex = from)
-                .filter { it.range.last < to }
-                .associate {
-                    val trimmedContent = it.value.trimLink()
-                    Pair(
-                        it.range.first.until(it.range.first + trimmedContent.length),
-                        parseLink(trimmedContent) ?: Link(trimmedContent)
-                    )
-                }
+        private fun findLinkReferences(content: String): Map<IntRange, Reference> {
+            return Patterns.AUTOLINK_MATRIX_URI.findAll(content).associate {
+                val trimmedContent = it.value.trimLink()
+                Pair(
+                    it.range.first.until(it.range.first + trimmedContent.length),
+                    parseLink(trimmedContent) ?: Link(trimmedContent)
+                )
+            }
         }
 
         private fun parseMatrixId(id: String): Reference? {
@@ -201,6 +196,10 @@ sealed interface Reference {
 
         private fun String.trimLink(): String =
             trimEnd(',', '.', '!', '?', ':').trimParens()
+
+        private fun IntRange.overlaps(other: IntRange): Boolean {
+            return this.first <= other.last && other.first <= this.last
+        }
 
         private val matrixProtocol = URLProtocol("matrix", 0)
     }
