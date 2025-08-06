@@ -69,6 +69,6 @@ internal object MatrixIdRegex {
      * it is NOT intended to match all valid ids.
      */
     // language=Regexp
-    private const val AUTOLINK_ID_PATTERN = "[@#](?:\\p{L}|\\p{N}|[\\-.=_/+])+:$DOMAIN_PATTERN"
+    private const val AUTOLINK_ID_PATTERN = "[@#][a-zA-Z0-9${Patterns.UCS_CHAR}\\-.=_/+]+:$DOMAIN_PATTERN"
     val autolinkId = AUTOLINK_ID_PATTERN.toRegex()
 }

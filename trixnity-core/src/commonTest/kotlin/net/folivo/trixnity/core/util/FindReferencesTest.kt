@@ -35,6 +35,24 @@ class FindReferencesTest : TrixnityBaseTest() {
     @Test
     fun shouldPassValidUserIdentifier() {
         userIdTest("@a9._=-/+:example.com", "a9._=-/+", "example.com", expected = true)
+        userIdTest("@äöüß:example.com", "äöüß", "example.com", expected = true)
+        // Character classes according to https://www.unicode.org/reports/tr18/#General_Category_Property
+        // Ll
+        userIdTest("@aâăǟǻɐΐαҩոᴀᴞℼ:example.com", "aâăǟǻɐΐαҩոᴀᴞℼ", "example.com", expected = true)
+        // Lu
+        userIdTest("@AÀĀƵǺǺΆАӐḀẠἈᾸℂℇΩKÅℬℭℲℳↃⱭꝄꝆꝌꝔ:example.com", "AÀĀƵǺǺΆАӐḀẠἈᾸℂℇΩKÅℬℭℲℳↃⱭꝄꝆꝌꝔ", "example.com", expected = true)
+        // Lt
+        userIdTest("@ǅᾈ:example.com", "ǅᾈ", "example.com", expected = true)
+        // Lm
+        userIdTest("@ʰͺՙॱៗᡃᱼᱻᴬᵃᵄᵅᶛᶴₐ々ゝꀕꙿꧏꧦꭞ:example.com", "ʰͺՙॱៗᡃᱼᱻᴬᵃᵄᵅᶛᶴₐ々ゝꀕꙿꧏꧦꭞ", "example.com", expected = true)
+        // Lo
+        userIdTest("@ªƻʔऄঀਅઅଅஃఅಀඅกກༀཀဪᆠቚᐂᚏᚼᛒខᠠᤁᬛᮮこんにちはꁊꓐꕥꕷꤕꦙꨘꪀꪵ:example.com", "ªƻʔऄঀਅઅଅஃఅಀඅกກༀཀဪᆠቚᐂᚏᚼᛒខᠠᤁᬛᮮこんにちはꁊꓐꕥꕷꤕꦙꨘꪀꪵ", "example.com", expected = true)
+        // Nd
+        userIdTest("@0०๐၀០᠐᮰᱐０:example.com", "0०๐၀០᠐᮰᱐０", "example.com", expected = true)
+        // Nl
+        userIdTest("@ᛮⅧↆꛯ:example.com", "ᛮⅧↆꛯ", "example.com", expected = true)
+        // No
+        userIdTest("@²¼൝༫፼⁰↉⑬⒀⒔⓭⓻❼➆➐㈦㉌㉓㊷꠵:example.com", "²¼൝༫፼⁰↉⑬⒀⒔⓭⓻❼➆➐㈦㉌㉓㊷꠵", "example.com", expected = true)
     }
 
     @Test
