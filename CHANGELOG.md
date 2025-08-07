@@ -9,9 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add missing unread_thread_notifications in sync
-- Add Room.isUnread with exact calculation depending on read markers
-
 ### Changed
 
 ### Deprecated
@@ -20,10 +17,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix OOM gradle dependencies tasks
+### Security
+
+## 4.21.0
+
+### Added
+
+- Add missing unread_thread_notifications in sync
+- Add Room.isUnread with exact calculation depending on read markers
+
+### Fixed
+
 - Fix OOM during initial sync due to sync response parsing
 - Fix DNS regex
 - Fixed issues with Reference/Link parsing
+
+## 4.20.0
+
+### Fixed
+
+- Fix OOM gradle dependencies tasks
 
 ### Security
 
