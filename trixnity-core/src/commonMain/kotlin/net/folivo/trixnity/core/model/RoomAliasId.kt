@@ -17,7 +17,7 @@ data class RoomAliasId(val full: String) {
     companion object {
         const val sigilCharacter = '#'
 
-        fun isValid(id: String): Boolean = id.length <= 255 && id.matches(MatrixIdRegex.roomAliasIdRegex)
+        fun isValid(id: String): Boolean = id.length <= 255 && id.matches(MatrixIdRegex.roomAlias)
     }
 
     val localpart: String

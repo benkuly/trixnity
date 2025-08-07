@@ -15,10 +15,12 @@ data class RoomId(val full: String) {
     companion object {
         const val sigilCharacter = '!'
 
-        fun isValid(id: String): Boolean = id.length <= 255 && id.matches(MatrixIdRegex.roomIdRegex)
+        fun isValid(id: String): Boolean = id.length <= 255 && id.matches(MatrixIdRegex.roomId)
+        fun isReasonable(id: String): Boolean = id.length <= 255 && id.matches(MatrixIdRegex.reasonableRoomId)
     }
 
     val isValid by lazy { isValid(full) }
+    val isReasonable by lazy { isReasonable(full) }
 
     override fun toString() = full
 }

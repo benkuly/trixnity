@@ -1,28 +1,74 @@
 package net.folivo.trixnity.core.util
 
 internal object MatrixIdRegex {
-    // https://spec.matrix.org/v1.14/appendices/#server-name
-    private const val baseDnsRegex = """(?:[\w.-]{1,230})"""
-    private const val baseIPV4Regex = """\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"""
-    private const val baseIPV6Regex = """\[[0-9a-fA-F:]+\]"""
-    private const val basePortRegex = """:[0-9]{1,5}"""
-    private const val servernameRegex =
-        """(?:(?:(?:$baseDnsRegex)|$baseIPV4Regex)|(?:$baseIPV6Regex))(?:$basePortRegex)?"""
+    /**
+     * @see [https://spec.matrix.org/unstable/appendices/#server-name]
+     */
+    // language=Regexp
+    private const val DOMAIN_PATTERN = """(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|\[[0-9a-fA-F:.]{2,45}\]|[0-9a-zA-Z\-.]{1,255})(?::[0-9]{1,5})?"""
 
-    // https://spec.matrix.org/v1.14/appendices/#opaque-identifiers
-    private val opaqueIdRegex = """(?:[0-9A-Za-z-._~]+)"""
+    /**
+     * @see [https://spec.matrix.org/v1.14/appendices/#opaque-identifiers]
+     */
+    // language=Regexp
+    private const val OPAQUE_ID_PATTERN = "[0-9A-Za-z-._~]+"
 
-    // https://spec.matrix.org/v1.14/appendices/#user-identifiers
-    private val userLocalpartRegex = """(?:[0-9a-z-=_/+.]+)"""
-    val userIdRegex by lazy { """@($userLocalpartRegex):($servernameRegex)""".toRegex() }
+    /**
+     * clients and servers MUST accept user IDs with localparts consisting of any legal non-surrogate Unicode
+     * code points except for : and NUL (U+0000), including other control characters and the empty string.
+     *
+     * @see [https://spec.matrix.org/unstable/appendices/#user-identifiers]
+     */
+    // language=Regexp
+    private const val USER_ID_PATTERN = "@[^:\uD800-\uDFFF]+:$DOMAIN_PATTERN"
+    val userId = USER_ID_PATTERN.toRegex()
 
-    // https://spec.matrix.org/v1.14/appendices/#room-ids
-    val roomIdRegex by lazy { """!($opaqueIdRegex)(?::($servernameRegex))?""".toRegex() }
+    // language=Regexp
+    private const val REASONABLE_USER_ID_PATTERN = "@[0-9a-z-=_/+.]+:$DOMAIN_PATTERN"
+    val reasonableUserId = REASONABLE_USER_ID_PATTERN.toRegex()
 
-    // https://spec.matrix.org/v1.11/appendices/#room-aliases
-    private val roomAliasLocalpartRegex = """(?:[^:\s/]+)"""
-    val roomAliasIdRegex by lazy { """#($roomAliasLocalpartRegex):($servernameRegex)""".toRegex() }
+    /**
+     * The localpart of a room alias may contain any valid non-surrogate Unicode codepoints except : and NUL.
+     *
+     * @see [https://spec.matrix.org/unstable/appendices/#room-aliases]
+     */
+    // language=Regexp
+    private const val ROOM_ALIAS_PATTERN = "#[^:\uD800-\uDFFF]+:$DOMAIN_PATTERN"
+    val roomAlias = ROOM_ALIAS_PATTERN.toRegex()
 
-    // https://spec.matrix.org/v1.11/appendices/#event-ids
-    val eventIdRegex by lazy { """\$($opaqueIdRegex(?::$servernameRegex)?)""".toRegex() }
+    /**
+     * The localpart of a room ID (opaque_id above) may contain any valid non-surrogate Unicode code points,
+     * including control characters, except : and NUL (U+0000)
+     *
+     * @see [https://spec.matrix.org/unstable/appendices/#room-ids]
+     */
+    // language=Regexp
+    private const val ROOM_ID_PATTERN = "!(?:$OPAQUE_ID_PATTERN|[^:\uD800-\uDFFF]+:$DOMAIN_PATTERN)"
+    val roomId = ROOM_ID_PATTERN.toRegex()
+
+    // language=Regexp
+    private const val REASONABLE_ROOM_ID_PATTERN = "!$OPAQUE_ID_PATTERN(?::$DOMAIN_PATTERN)?"
+    val reasonableRoomId = ROOM_ID_PATTERN.toRegex()
+
+    /**
+     * However, the precise format depends upon the room version specification: early room versions included
+     * a domain component, whereas more recent versions omit the domain and use a base64-encoded hash instead.
+     *
+     * @see [https://spec.matrix.org/unstable/appendices/#event-ids]
+     */
+    // language=Regexp
+    private const val EVENT_ID_PATTERN = "\\$(?:$OPAQUE_ID_PATTERN|[^:\uD800-\uDFFF]+:$DOMAIN_PATTERN)"
+    val eventId = EVENT_ID_PATTERN.toRegex()
+
+    // language=Regexp
+    private const val REASONABLE_EVENT_ID_PATTERN = "\\$$OPAQUE_ID_PATTERN(?::$DOMAIN_PATTERN)?"
+    val reasonableEventId = REASONABLE_EVENT_ID_PATTERN.toRegex()
+
+    /**
+     * This matches user ids and room aliases on best-effort basis,
+     * it is NOT intended to match all valid ids.
+     */
+    // language=Regexp
+    private const val AUTOLINK_ID_PATTERN = "[@#][a-zA-Z0-9${Patterns.UCS_CHAR}\\-.=_/+]+:$DOMAIN_PATTERN"
+    val autolinkId = AUTOLINK_ID_PATTERN.toRegex()
 }
