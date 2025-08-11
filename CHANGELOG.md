@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added support for blurhash (MSC2448)
-
 ### Changed
 
 ### Deprecated
@@ -19,9 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Always calculate room displayname
-
 ### Security
+
+## 4.21.1
+
+### Added
+
+- Added support for blurhash (MSC2448)
+
+### Fixed
+
+- Always calculate room displayname
 
 ## 4.21.0
 
