@@ -131,18 +131,15 @@ class RoomListHandler(
                         ) { "m.room.create must be given" }
                     }
                 }
-                val name by lazy {
-                    async {
-                        calculateDisplayName(
-                            roomId = roomId,
-                            nameEventContent = roomStateStore
-                                .getByStateKey<NameEventContent>(roomId).first()?.content,
-                            canonicalAliasEventContent = roomStateStore
-                                .getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content,
-                            summary = summary,
-                        )
-                    }
-                }
+                val name =
+                    calculateDisplayName(
+                        roomId = roomId,
+                        nameEventContent = roomStateStore
+                            .getByStateKey<NameEventContent>(roomId).first()?.content,
+                        canonicalAliasEventContent = roomStateStore
+                            .getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content,
+                        summary = summary,
+                    )
                 val lastEventId = oldRoom?.lastEventId
                 val isUnread =
                     if (markedAsUnread) true
@@ -163,7 +160,7 @@ class RoomListHandler(
                     lastRelevantEventTimestamp = lastRelevantEventTimestamp ?: oldRoom?.lastRelevantEventTimestamp,
                     isUnread = isUnread,
                     nextRoomId = nextRoomId ?: oldRoom?.nextRoomId,
-                    name = if (summary != null) name.await() else oldRoom?.name ?: name.await(),
+                    name = name,
                 )
             }
         }

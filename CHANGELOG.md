@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Always calculate room displayname
+
 ### Security
 
 ## 4.21.0
