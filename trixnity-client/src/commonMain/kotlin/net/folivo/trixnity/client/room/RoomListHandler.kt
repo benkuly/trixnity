@@ -122,6 +122,15 @@ class RoomListHandler(
             roomStateStore.getByStateKey<TombstoneEventContent>(roomId).first()?.content?.replacementRoom
         val lastRelevantEventTimestamp = lastRelevantEvent?.originTimestamp
             ?.let { Instant.fromEpochMilliseconds(it) }
+        val name =
+            calculateDisplayName(
+                roomId = roomId,
+                nameEventContent = roomStateStore
+                    .getByStateKey<NameEventContent>(roomId).first()?.content,
+                canonicalAliasEventContent = roomStateStore
+                    .getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content,
+                summary = summary,
+            )
         return { oldRoom ->
             coroutineScope {
                 val createEvent by lazy {
@@ -131,15 +140,6 @@ class RoomListHandler(
                         ) { "m.room.create must be given" }
                     }
                 }
-                val name =
-                    calculateDisplayName(
-                        roomId = roomId,
-                        nameEventContent = roomStateStore
-                            .getByStateKey<NameEventContent>(roomId).first()?.content,
-                        canonicalAliasEventContent = roomStateStore
-                            .getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content,
-                        summary = summary,
-                    )
                 val lastEventId = oldRoom?.lastEventId
                 val isUnread =
                     if (markedAsUnread) true
