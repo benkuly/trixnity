@@ -6,26 +6,25 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.*
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.notification.NotificationService.Notification
 import net.folivo.trixnity.client.room.RoomService
-import net.folivo.trixnity.client.store.*
+import net.folivo.trixnity.client.store.GlobalAccountDataStore
+import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.get
+import net.folivo.trixnity.client.store.isEncrypted
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.UserInfo
-import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
-import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.push.PushAction
-import net.folivo.trixnity.core.model.push.PushCondition
-import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.subscribeAsFlow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -54,15 +53,10 @@ class NotificationServiceImpl(
     private val userInfo: UserInfo,
     private val api: MatrixClientServerApiClient,
     private val room: RoomService,
-    private val roomStore: RoomStore,
-    private val roomStateStore: RoomStateStore,
-    private val roomUserStore: RoomUserStore,
     private val globalAccountDataStore: GlobalAccountDataStore,
-    private val json: Json,
+    private val evaluatePushRules: EvaluatePushRules,
     private val currentSyncState: CurrentSyncState,
 ) : NotificationService {
-
-    private val roomSizePattern = Regex("\\s*(==|<|>|<=|>=)\\s*([0-9]+)")
 
     override fun getNotifications(
         response: Sync.Response,
@@ -106,181 +100,6 @@ class NotificationServiceImpl(
             originalEvent is RoomEvent.StateEvent<*> && content is StateEventContent -> originalEvent
             else -> null
         }
-    }
-
-    @OptIn(ExperimentalSerializationApi::class)
-    private suspend fun evaluatePushRules(
-        event: ClientEvent<*>,
-        allRules: List<PushRule>,
-    ): Notification? {
-        log.trace { "evaluate push rules for event: ${event.idOrNull}" }
-        val eventJson = lazy {
-            try {
-                when (event) {
-                    is RoomEvent -> json.serializersModule.getContextual(RoomEvent::class)?.let {
-                        json.encodeToJsonElement(it, event)
-                    }?.jsonObject
-
-                    is StrippedStateEvent -> json.serializersModule.getContextual(StrippedStateEvent::class)?.let {
-                        json.encodeToJsonElement(it, event)
-                    }?.jsonObject
-
-                    else -> throw IllegalStateException("event did have unexpected type ${event::class}")
-                }
-            } catch (exception: Exception) {
-                log.warn(exception) { "could not serialize event" }
-                null
-            }
-        }
-        val rule = allRules
-            .filter { it.enabled }
-            .find { pushRule ->
-                when (pushRule) {
-                    is PushRule.Override -> pushRule.conditions.orEmpty()
-                        .all { matchPushCondition(event, eventJson, it) }
-
-                    is PushRule.Content -> bodyContainsPattern(event, pushRule.pattern)
-                    is PushRule.Room -> pushRule.roomId == event.roomIdOrNull
-                    is PushRule.Sender -> pushRule.userId == event.senderOrNull
-                    is PushRule.Underride -> pushRule.conditions.orEmpty()
-                        .all { matchPushCondition(event, eventJson, it) }
-                }
-            }
-        log.trace { "event ${event.idOrNull}, found matching rule: ${rule?.ruleId}, actions: ${rule?.actions}" }
-        return if (rule?.actions?.contains(PushAction.Notify) == true) {
-            log.debug { "notify for event ${event.idOrNull} (type: ${event::class}, content type: ${event.content::class}) (PushRule is $rule)" }
-            Notification(event, rule.actions)
-        } else null
-    }
-
-    private suspend fun matchPushCondition(
-        event: ClientEvent<*>,
-        eventJson: Lazy<JsonObject?>,
-        pushCondition: PushCondition
-    ): Boolean {
-        return when (pushCondition) {
-            is PushCondition.ContainsDisplayName -> {
-                val content = event.content
-                if (content is RoomMessageEventContent) {
-                    event.roomIdOrNull?.let { roomId ->
-                        roomUserStore.get(userInfo.userId, roomId).first()?.name?.let { username ->
-                            content.body.contains(username)
-                        } ?: false
-                    } ?: false
-                } else false
-            }
-
-            is PushCondition.RoomMemberCount -> {
-                event.roomIdOrNull?.let { roomId ->
-                    pushCondition.isCount.checkIsCount(
-                        roomStore.get(roomId).first()?.name?.summary?.joinedMemberCount ?: 0
-                    )
-                } ?: false
-            }
-
-            is PushCondition.SenderNotificationPermission -> {
-                event.roomIdOrNull?.let { roomId ->
-                    // at the moment, key can only be "room"
-                    val powerLevels =
-                        roomStateStore.getByStateKey<PowerLevelsEventContent>(roomId, "").first()?.content
-                    val requiredNotificationPowerLevel = powerLevels?.notifications?.room ?: 100
-                    val senderPowerLevel = powerLevels?.users?.get(event.senderOrNull) ?: powerLevels?.usersDefault ?: 0
-                    senderPowerLevel >= requiredNotificationPowerLevel
-                } ?: false
-            }
-
-            is PushCondition.EventMatch -> {
-                val propertyValue =
-                    (getEventProperty(eventJson, pushCondition.key) as? JsonPrimitive)?.contentOrNull
-                if (propertyValue == null) {
-                    log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
-                    false
-                } else {
-                    pushCondition.pattern.matrixGlobToRegExp().containsMatchIn(propertyValue)
-                }
-            }
-
-            is PushCondition.EventPropertyIs -> {
-                val propertyValue = getEventProperty(eventJson, pushCondition.key) as? JsonPrimitive
-                if (propertyValue == null) {
-                    log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
-                    false
-                } else {
-                    propertyValue == pushCondition.value
-                }
-            }
-
-            is PushCondition.EventPropertyContains -> {
-                val propertyValue = getEventProperty(eventJson, pushCondition.key) as? JsonArray
-                if (propertyValue == null) {
-                    log.debug { "cannot get the event's value for key '${pushCondition.key}' or value is 'null'" }
-                    false
-                } else {
-                    propertyValue.contains(pushCondition.value)
-                }
-            }
-
-            is PushCondition.Unknown -> false
-        }
-    }
-
-    private fun bodyContainsPattern(event: ClientEvent<*>, pattern: String): Boolean {
-        val content = event.content
-        return if (content is RoomMessageEventContent.TextBased.Text) {
-            pattern.matrixGlobToRegExp().containsMatchIn(content.body)
-        } else false
-    }
-
-    private val dotRegex = "(?<!\\\\)(?:\\\\\\\\)*[.]".toRegex()
-    private val removeEscapes = "\\\\(.)".toRegex()
-    internal fun getEventProperty(
-        initialEventJson: Lazy<JsonObject?>,
-        key: String
-    ): JsonElement? {
-        return try {
-            var targetProperty: JsonElement? = initialEventJson.value
-            key.split(dotRegex)
-                .map { it.replace(removeEscapes, "$1") }
-                .forEach { segment ->
-                    targetProperty = (targetProperty as? JsonObject)?.get(segment)
-                }
-            targetProperty
-        } catch (exc: Exception) {
-            log.warn(exc) { "could not find event property for key $key in event ${initialEventJson.value}" }
-            null
-        }
-    }
-
-    private fun String.checkIsCount(size: Long): Boolean {
-        this.toLongOrNull()?.let { count ->
-            return size == count
-        }
-        val result = roomSizePattern.find(this)
-        val bound = result?.groupValues?.getOrNull(2)?.toLongOrNull() ?: 0
-        val operator = result?.groupValues?.getOrNull(1)
-        log.debug { "room size ($size) $operator bound ($bound)" }
-        return when (operator) {
-            "==" -> size == bound
-            "<" -> size < bound
-            ">" -> size > bound
-            "<=" -> size <= bound
-            ">=" -> size >= bound
-            else -> false
-        }
-    }
-
-    private fun String.matrixGlobToRegExp(): Regex {
-        return buildString {
-            this@matrixGlobToRegExp.forEach { char ->
-                when (char) {
-                    '*' -> append(".*")
-                    '?' -> append(".")
-                    '.' -> append("""\.""")
-                    '\\' -> append("""\\""")
-                    else -> append(char)
-                }
-            }
-        }.toRegex()
     }
 
     private fun pushRulesFlow() = globalAccountDataStore.get<PushRulesEventContent>()
@@ -333,13 +152,12 @@ class NotificationServiceImpl(
             val allRules = pushRulesFlow().stateIn(this)
 
             clientEvents.map { event ->
-
                 evaluatePushRules(
                     event = event,
                     allRules = allRules.value
-                )
-            }.filterNotNull().collect {
-                emit(it)
+                )?.let { event to it }
+            }.filterNotNull().collect { (event, evaluatePushRulesResult) ->
+                emit(Notification(event, evaluatePushRulesResult.actions))
             }
 
             currentCoroutineContext().cancelChildren()
