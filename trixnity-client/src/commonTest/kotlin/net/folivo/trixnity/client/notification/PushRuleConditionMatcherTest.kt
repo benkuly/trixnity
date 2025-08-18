@@ -1,16 +1,32 @@
 package net.folivo.trixnity.client.notification
 
 import io.kotest.matchers.shouldBe
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import net.folivo.trixnity.client.getInMemoryRoomStateStore
+import net.folivo.trixnity.client.getInMemoryRoomStore
+import net.folivo.trixnity.client.getInMemoryRoomUserStore
+import net.folivo.trixnity.client.simpleRoom
+import net.folivo.trixnity.client.store.Room
+import net.folivo.trixnity.client.store.RoomDisplayName
+import net.folivo.trixnity.client.store.RoomUser
+import net.folivo.trixnity.client.user.CanDoActionImpl
+import net.folivo.trixnity.client.user.GetPowerLevelImpl
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.MessageEventContent
+import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.push.PushCondition
-import net.folivo.trixnity.core.model.push.PushRule
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -20,375 +36,232 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
 
     private val roomId = RoomId("!room:localhost")
     private val userId = UserId("user1", "localhost")
+    private val userInfo = UserInfo(userId, "device", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, ""))
 
-    private val someEvent = ClientEvent.RoomEvent.MessageEvent(
-        content = Text("hi!"),
-        id = EventId("event"),
-        roomId = roomId,
-        sender = userId,
-        originTimestamp = 1234,
-        unsigned = null,
-    )
-    private val someEventJson = lazy { JsonObject(emptyMap()) }
-
-    private val someStateEvent = ClientEvent.RoomEvent.StateEvent(
-        content = MemberEventContent(membership = Membership.JOIN),
-        id = EventId("bla"),
-        roomId = roomId,
-        sender = userId,
-        originTimestamp = 1234,
-        stateKey = userId.full,
-        unsigned = null,
-    )
-
-    private class TestPushRuleConditionMatcher : PushRuleConditionMatcher {
-        var doesMatch = mutableListOf<Boolean>()
-        override suspend fun match(
-            condition: PushCondition,
-            event: ClientEvent<*>,
-            eventJson: Lazy<JsonObject?>
-        ): Boolean = doesMatch.removeFirst()
+    private val json: Json = createMatrixEventJson()
+    private val roomStore = getInMemoryRoomStore { update(roomId) { Room(roomId) } }.apply {
+        scheduleSetup {
+            update(roomId) {
+                simpleRoom.copy(
+                    name = RoomDisplayName(
+                        summary = Sync.Response.Rooms.JoinedRoom.RoomSummary(
+                            joinedMemberCount = 1
+                        )
+                    )
+                )
+            }
+        }
+    }
+    private val roomStateStore = getInMemoryRoomStateStore().apply {
+        scheduleSetup {
+            save(
+                ClientEvent.RoomEvent.StateEvent(
+                    content = CreateEventContent(roomVersion = "12"),
+                    id = EventId("create"),
+                    roomId = roomId,
+                    sender = UserId("other", "server"),
+                    originTimestamp = 1234,
+                    stateKey = "",
+                    unsigned = null,
+                )
+            )
+        }
+    }
+    private val roomUserStore = getInMemoryRoomUserStore().apply {
+        scheduleSetup {
+            update(userId, roomId) {
+                RoomUser(
+                    roomId, userId, "Bob", ClientEvent.RoomEvent.StateEvent(
+                        content = MemberEventContent(
+                            displayName = "Bob",
+                            membership = Membership.JOIN
+                        ),
+                        id = EventId("bob_member"),
+                        roomId = roomId,
+                        sender = userId,
+                        originTimestamp = 1234,
+                        stateKey = userId.full,
+                        unsigned = null,
+                    )
+                )
+            }
+        }
     }
 
-    private val conditionMatcher = TestPushRuleConditionMatcher().apply {
-        scheduleSetup { doesMatch = mutableListOf() }
-    }
+    private val canDoAction = CanDoActionImpl(userInfo, GetPowerLevelImpl())
 
-    @Test
-    fun `match - Override - disabled - no match`() = runTest {
-        conditionMatcher.doesMatch.add(true)
-        PushRuleMatcherImpl.match(
-            PushRule.Override(
-                ruleId = "rule",
-                default = false,
-                enabled = false,
-                actions = setOf(),
-                conditions = setOf(PushCondition.ContainsDisplayName)
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
-        ) shouldBe false
-    }
+    private fun messageEvent(content: MessageEventContent): ClientEvent<*> =
+        ClientEvent.RoomEvent.MessageEvent(
+            content = content,
+            id = EventId("bla"),
+            roomId = roomId,
+            sender = userId,
+            originTimestamp = 1234,
+            unsigned = null,
+        )
 
-    @Test
-    fun `match - Override - null conditions - match`() = runTest {
-        conditionMatcher.doesMatch.add(true)
-        PushRuleMatcherImpl.match(
-            PushRule.Override(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = null
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
-        ) shouldBe true
-    }
+    private fun stateEvent(content: StateEventContent, stateKey: String = ""): ClientEvent<*> =
+        ClientEvent.RoomEvent.StateEvent(
+            content = content,
+            id = EventId("bla"),
+            roomId = roomId,
+            sender = userId,
+            originTimestamp = 1234,
+            stateKey = stateKey,
+            unsigned = null,
+        )
 
-    @Test
-    fun `match - Override - empty conditions - match`() = runTest {
-        conditionMatcher.doesMatch.add(true)
-        PushRuleMatcherImpl.match(
-            PushRule.Override(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = setOf()
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
-        ) shouldBe true
-    }
-
-    @Test
-    fun `match - Override - all false conditions - no match`() = runTest {
-        conditionMatcher.doesMatch.addAll(listOf(false, false))
-        PushRuleMatcherImpl.match(
-            PushRule.Override(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.RoomMemberCount("1"))
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
-        ) shouldBe false
-    }
-
-    @Test
-    fun `match - Override - one false condition - no match`() = runTest {
-        conditionMatcher.doesMatch.addAll(listOf(true, false))
-        PushRuleMatcherImpl.match(
-            PushRule.Override(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.RoomMemberCount("1"))
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
-        ) shouldBe false
-    }
-
-    @Test
-    fun `match - Override - all true condition - match`() = runTest {
-        conditionMatcher.doesMatch.addAll(listOf(true, true))
-        PushRuleMatcherImpl.match(
-            PushRule.Override(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.RoomMemberCount("1"))
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
-        ) shouldBe true
-    }
-
-    @Test
-    fun `match - Content - disabled - no match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Content(
-                ruleId = "rule",
-                default = false,
-                enabled = false,
-                actions = setOf(),
-                pattern = "*!",
-            ),
-            someEvent,
-        ) shouldBe false
-    }
-
-    @Test
-    fun `match - Content - no RoomMessageEventContent - no match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Content(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                pattern = "*!",
-            ),
-            someStateEvent,
-        ) shouldBe false
-    }
-
-    @Test
-    fun `match - Content - message - no match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Content(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                pattern = "dino",
-            ),
-            someEvent,
-        ) shouldBe false
-    }
-
-    @Test
-    fun `match - Content - message - match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Content(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                pattern = "*!",
-            ),
-            someEvent,
-        ) shouldBe true
-    }
-
-    @Test
-    fun `match - Room - disabled - no match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Room(
+    private suspend fun setUpNotificationPowerLevel(user: Long, levels: Map<String, Long>) =
+        roomStateStore.save(
+            ClientEvent.RoomEvent.StateEvent(
+                content = PowerLevelsEventContent(
+                    users = mapOf(userId to user),
+                    notifications = levels
+                ),
+                id = EventId("power_level"),
                 roomId = roomId,
-                default = false,
-                enabled = false,
-                actions = setOf(),
-            ),
-            someEvent,
+                sender = userId,
+                originTimestamp = 1234,
+                stateKey = "",
+                unsigned = null,
+            )
+        )
+
+    @Test
+    fun `match - ContainsDisplayName - no match`() = runTest {
+        val event = messageEvent(Text("Hello Tina!"))
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.ContainsDisplayName,
+            event,
+            userId,
+            roomUserStore,
         ) shouldBe false
     }
 
     @Test
-    fun `match - Room - no match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Room(
-                roomId = RoomId("!other"),
-                default = false,
-                enabled = true,
-                actions = setOf(),
-            ),
-            someEvent,
-        ) shouldBe false
-    }
-
-    @Test
-    fun `match - Room - match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Room(
-                roomId = roomId,
-                default = false,
-                enabled = true,
-                actions = setOf(),
-            ),
-            someEvent,
+    fun `match - ContainsDisplayName - match`() = runTest {
+        val event = messageEvent(Text("Hello Bob!"))
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.ContainsDisplayName,
+            event,
+            userId,
+            roomUserStore
         ) shouldBe true
     }
 
     @Test
-    fun `match - Sender - disabled - no match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Sender(
-                userId = userId,
-                default = false,
-                enabled = false,
-                actions = setOf(),
-            ),
-            someEvent,
+    fun `match - RoomMemberCount - no match`() = runTest {
+        val event = messageEvent(Text("Hello!"))
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.RoomMemberCount("2"),
+            event,
+            roomStore
         ) shouldBe false
     }
 
     @Test
-    fun `match - Sender - no match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Sender(
-                userId = UserId("@other:localhost"),
-                default = false,
-                enabled = true,
-                actions = setOf(),
-            ),
-            someEvent,
-        ) shouldBe false
-    }
-
-    @Test
-    fun `match - Sender - match`() = runTest {
-        PushRuleMatcherImpl.match(
-            PushRule.Sender(
-                userId = userId,
-                default = false,
-                enabled = true,
-                actions = setOf(),
-            ),
-            someEvent,
+    fun `match - RoomMemberCount - match`() = runTest {
+        val event = messageEvent(Text("Hello!"))
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.RoomMemberCount("1"),
+            event,
+            roomStore
         ) shouldBe true
     }
 
     @Test
-    fun `match - Underride - disabled - no match`() = runTest {
-        conditionMatcher.doesMatch.add(true)
-        PushRuleMatcherImpl.match(
-            PushRule.Underride(
-                ruleId = "rule",
-                default = false,
-                enabled = false,
-                actions = setOf(),
-                conditions = setOf(PushCondition.ContainsDisplayName)
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
+    fun `match - SenderNotificationPermission - no match`() = runTest {
+        setUpNotificationPowerLevel(50, mapOf("dino" to 51L))
+        val event = messageEvent(Text("Hello!"))
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.SenderNotificationPermission("dino"),
+            event,
+            roomStateStore,
+            canDoAction,
         ) shouldBe false
     }
 
     @Test
-    fun `match - Underride - null conditions - match`() = runTest {
-        conditionMatcher.doesMatch.add(true)
-        PushRuleMatcherImpl.match(
-            PushRule.Underride(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = null
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
+    fun `match - SenderNotificationPermission - match`() = runTest {
+        setUpNotificationPowerLevel(50, mapOf("dino" to 50L))
+        val event = messageEvent(Text("Hello!"))
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.SenderNotificationPermission("dino"),
+            event,
+            roomStateStore,
+            canDoAction
         ) shouldBe true
     }
 
     @Test
-    fun `match - Underride - empty conditions - match`() = runTest {
-        conditionMatcher.doesMatch.add(true)
-        PushRuleMatcherImpl.match(
-            PushRule.Underride(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = setOf()
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
-        ) shouldBe true
-    }
-
-    @Test
-    fun `match - Underride - all false conditions - no match`() = runTest {
-        conditionMatcher.doesMatch.addAll(listOf(false, false))
-        PushRuleMatcherImpl.match(
-            PushRule.Underride(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.RoomMemberCount("1"))
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
+    fun `match - EventMatch - no match`() = runTest {
+        val event = messageEvent(Text("Hello!"))
+        val eventJson = lazy { notificationEventToJson(event, json) }
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.EventMatch("content.body", "dino"),
+            eventJson
         ) shouldBe false
     }
 
     @Test
-    fun `match - Underride - one false condition - no match`() = runTest {
-        conditionMatcher.doesMatch.addAll(listOf(true, false))
-        PushRuleMatcherImpl.match(
-            PushRule.Underride(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.RoomMemberCount("1"))
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
+    fun `match - EventMatch - match`() = runTest {
+        val event = messageEvent(Text("Hello!"))
+        val eventJson = lazy { notificationEventToJson(event, json) }
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.EventMatch("content.body", "*!"),
+            eventJson
+        ) shouldBe true
+    }
+
+    @Test
+    fun `match - EventPropertyIs - no match`() = runTest {
+        val event = messageEvent(Text("Hello!"))
+        val eventJson = lazy { notificationEventToJson(event, json) }
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.EventPropertyIs("type", JsonPrimitive("m.room.mess")),
+            eventJson
         ) shouldBe false
     }
 
     @Test
-    fun `match - Underride - all true condition - match`() = runTest {
-        conditionMatcher.doesMatch.addAll(listOf(true, true))
-        PushRuleMatcherImpl.match(
-            PushRule.Underride(
-                ruleId = "rule",
-                default = false,
-                enabled = true,
-                actions = setOf(),
-                conditions = setOf(PushCondition.ContainsDisplayName, PushCondition.RoomMemberCount("1"))
-            ),
-            someEvent,
-            someEventJson,
-            conditionMatcher,
+    fun `match - EventPropertyIs - match`() = runTest {
+        val event = messageEvent(Text("Hello!"))
+        val eventJson = lazy { notificationEventToJson(event, json) }
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.EventPropertyIs("type", JsonPrimitive("m.room.message")),
+            eventJson
         ) shouldBe true
+    }
+
+    @Test
+    fun `match - EventPropertyContains - no match`() = runTest {
+        val event = stateEvent(CanonicalAliasEventContent(aliases = setOf(RoomAliasId("#unicorn"))))
+        val eventJson = lazy { notificationEventToJson(event, json) }
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.EventPropertyContains("content.alt_aliases", JsonPrimitive("#dino")),
+            eventJson
+        ) shouldBe false
+    }
+
+    @Test
+    fun `match - EventPropertyContains - match`() = runTest {
+        val event = stateEvent(CanonicalAliasEventContent(aliases = setOf(RoomAliasId("#dino"))))
+        val eventJson = lazy { notificationEventToJson(event, json) }
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.EventPropertyContains("content.alt_aliases", JsonPrimitive("#dino")),
+            eventJson
+        ) shouldBe true
+    }
+
+    @Test
+    fun `match - Unknown - no match`() = runTest {
+        val event = messageEvent(Text("Hello!"))
+        val eventJson = lazy { notificationEventToJson(event, json) }
+        PushRuleConditionMatcherImpl(roomStore, roomStateStore, roomUserStore, canDoAction, userInfo)
+            .match(
+                PushCondition.Unknown(JsonObject(mapOf())),
+                event,
+                eventJson
+            ) shouldBe false
     }
 }
