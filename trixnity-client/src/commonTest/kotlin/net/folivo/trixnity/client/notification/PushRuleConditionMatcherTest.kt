@@ -294,7 +294,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     fun `match - Underride - disabled - no match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
-            PushRule.Override(
+            PushRule.Underride(
                 ruleId = "rule",
                 default = false,
                 enabled = false,
@@ -311,7 +311,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     fun `match - Underride - null conditions - match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
-            PushRule.Override(
+            PushRule.Underride(
                 ruleId = "rule",
                 default = false,
                 enabled = true,
@@ -328,7 +328,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     fun `match - Underride - empty conditions - match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
-            PushRule.Override(
+            PushRule.Underride(
                 ruleId = "rule",
                 default = false,
                 enabled = true,
@@ -345,7 +345,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     fun `match - Underride - all false conditions - no match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(false, false))
         PushRuleMatcherImpl.match(
-            PushRule.Override(
+            PushRule.Underride(
                 ruleId = "rule",
                 default = false,
                 enabled = true,
@@ -362,7 +362,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     fun `match - Underride - one false condition - no match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(true, false))
         PushRuleMatcherImpl.match(
-            PushRule.Override(
+            PushRule.Underride(
                 ruleId = "rule",
                 default = false,
                 enabled = true,
@@ -379,7 +379,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     fun `match - Underride - all true condition - match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(true, true))
         PushRuleMatcherImpl.match(
-            PushRule.Override(
+            PushRule.Underride(
                 ruleId = "rule",
                 default = false,
                 enabled = true,
