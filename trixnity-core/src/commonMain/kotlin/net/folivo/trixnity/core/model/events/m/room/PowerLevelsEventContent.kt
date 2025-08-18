@@ -33,7 +33,7 @@ data class PowerLevelsEventContent(
     @SerialName("users_default")
     val usersDefault: Long = USERS_DEFAULT,
     @SerialName("notifications")
-    val notifications: Notifications? = null,
+    val notifications: Map<String, Long>? = null,
     @SerialName("external_url")
     override val externalUrl: String? = null,
 ) : StateEventContent {
@@ -46,12 +46,6 @@ data class PowerLevelsEventContent(
         const val REDACT_DEFAULT = 50L
         const val USERS_DEFAULT = 0L
     }
-
-    @Serializable
-    data class Notifications(
-        @SerialName("room")
-        val room: Long = 50
-    )
 }
 
 operator fun Map<EventType, Long>.get(kClass: KClass<out EventContent>): Long? =

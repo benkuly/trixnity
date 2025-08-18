@@ -102,143 +102,6 @@ fun createTrixnityDefaultModuleFactories(): List<ModuleFactory> = listOf(
 )
 
 /**
- * Use this module, if you want to create a bot with basic functionality. You don't have access to some data usually provided
- * by Trixnity (for example [RoomUser] or [TimelineEvent]).
- *
- * Instead, you need to manually listen to the sync events via [SyncApiClient] (can be received via [MatrixClient.api]).
- * You can encrypt and decrypt events by iterating through all [RoomEventEncryptionService] (can be received via [MatrixClient.roomEventEncryptionServices])
- * and use the first non-null result. For sending events asynchronously you can still use the outbox.
- *
- */
-@Deprecated("replace with createTrixnityBotModuleFactories")
-fun createTrixnityBotModules(): List<Module> = listOf(
-    createClockModule(),
-    createServerModule(),
-    createDefaultEventContentSerializerMappingsModule(),
-    createDefaultOutboxMessageMediaUploaderMappingsModule(),
-    createDefaultMatrixJsonModule(),
-    createStoreModule(),
-    createKeyModule(),
-    createCryptoModule(),
-    createMediaModule(),
-    module {
-        singleOf(::RoomListHandler) {
-            bind<EventHandler>()
-            named<RoomListHandler>()
-        }
-        singleOf(::RoomStateEventHandler) {
-            bind<EventHandler>()
-            named<RoomStateEventHandler>()
-        }
-        singleOf(::RoomAccountDataEventHandler) {
-            bind<EventHandler>()
-            named<RoomAccountDataEventHandler>()
-        }
-        singleOf(::GlobalAccountDataEventHandler) {
-            bind<EventHandler>()
-            named<GlobalAccountDataEventHandler>()
-        }
-        singleOf(::DirectRoomEventHandler) {
-            bind<EventHandler>()
-            named<DirectRoomEventHandler>()
-        }
-        singleOf(::RoomUpgradeHandler) {
-            bind<EventHandler>()
-            named<RoomUpgradeHandler>()
-        }
-        singleOf(::ForgetRoomServiceImpl) {
-            bind<ForgetRoomService>()
-        }
-        single<LoadMembersService> {
-            LoadMembersServiceImpl(
-                roomStore = get(),
-                lazyMemberEventHandlers = getAll(),
-                currentSyncState = get(),
-                api = get(),
-                scope = get(),
-            )
-        }
-        single<RoomEventEncryptionService>(named<MegolmRoomEventEncryptionService>()) {
-            MegolmRoomEventEncryptionService(
-                roomStore = get(),
-                loadMembersService = get(),
-                roomStateStore = get(),
-                olmCryptoStore = get(),
-                keyBackupService = get(named<KeyBackupService>()),
-                outgoingRoomKeyRequestEventHandler = get(named<OutgoingRoomKeyRequestEventHandler>()),
-                olmEncryptionService = get(),
-            )
-        }
-        singleOf(::UnencryptedRoomEventEncryptionService) {
-            bind<RoomEventEncryptionService>()
-            named<UnencryptedRoomEventEncryptionService>()
-        }
-        single<EventHandler>(named<OutboxMessageEventHandler>()) {
-            OutboxMessageEventHandler(
-                config = get(),
-                api = get(),
-                roomStore = get(),
-                roomEventEncryptionServices = getAll(),
-                userService = get(),
-                mediaService = get(),
-                roomOutboxMessageStore = get(),
-                outboxMessageMediaUploaderMappings = get(),
-                currentSyncState = get(),
-                userInfo = get(),
-                tm = get(),
-                clock = get(),
-            )
-        }
-        single<RoomService> {
-            RoomServiceImpl(
-                api = get(),
-                roomStore = get(),
-                roomStateStore = get(),
-                roomAccountDataStore = get(),
-                roomTimelineStore = get(),
-                roomOutboxMessageStore = get(),
-                roomEventEncryptionServices = getAll(),
-                forgetRoomService = get(),
-                mediaService = get(),
-                userInfo = get(),
-                timelineEventHandler = object : TimelineEventHandler {
-                    override suspend fun unsafeFillTimelineGaps(
-                        startEventId: EventId,
-                        roomId: RoomId,
-                        limit: Long
-                    ): Result<Unit> {
-                        throw IllegalStateException("TimelineEvents are not supported in bot mode")
-                    }
-                },
-                typingEventHandler = object : TypingEventHandler {
-                    override val usersTyping: StateFlow<Map<RoomId, TypingEventContent>> = MutableStateFlow(mapOf())
-                },
-                clock = get(),
-                currentSyncState = get(),
-                scope = get(),
-                config = get(),
-            )
-        }
-        single<UserService> {
-            UserServiceImpl(
-                roomStore = get(),
-                roomUserStore = get(),
-                roomStateStore = get(),
-                roomTimelineStore = get(),
-                globalAccountDataStore = get(),
-                userPresenceStore = get(),
-                loadMembersService = get(),
-                userInfo = get(),
-                mappings = get(),
-                currentSyncState = get(),
-                clock = get(),
-                config = get(),
-            )
-        }
-    }
-)
-
-/**
  * Use this, if you want to create a bot with basic functionality. You don't have access to some data usually provided
  * by Trixnity (for example [RoomUser] or [TimelineEvent]).
  *
@@ -356,6 +219,8 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                     config = get(),
                 )
             }
+            singleOf(::GetPowerLevelImpl) { bind<GetPowerLevel>() }
+            singleOf(::CanDoActionImpl) { bind<CanDoAction>() }
             single<UserService> {
                 UserServiceImpl(
                     roomStore = get(),
@@ -368,6 +233,8 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
                     userInfo = get(),
                     mappings = get(),
                     currentSyncState = get(),
+                    canDoAction = get(),
+                    getPowerLevelDelegate = get(),
                     clock = get(),
                     config = get(),
                 )

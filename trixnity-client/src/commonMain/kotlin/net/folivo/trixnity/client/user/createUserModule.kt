@@ -7,6 +7,8 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 fun createUserModule() = module {
+    singleOf(::GetPowerLevelImpl) { bind<GetPowerLevel>() }
+    singleOf(::CanDoActionImpl) { bind<CanDoAction>() }
     singleOf(::UserMemberEventHandler) {
         bind<EventHandler>()
         bind<LazyMemberEventHandler>()
@@ -45,6 +47,8 @@ fun createUserModule() = module {
             userInfo = get(),
             mappings = get(),
             currentSyncState = get(),
+            canDoAction = get(),
+            getPowerLevelDelegate = get(),
             clock = get(),
             config = get(),
         )

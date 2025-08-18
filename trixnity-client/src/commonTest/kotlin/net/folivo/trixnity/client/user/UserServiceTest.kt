@@ -2,7 +2,10 @@ package net.folivo.trixnity.client.user
 
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
@@ -98,6 +101,10 @@ class UserServiceTest : TrixnityBaseTest() {
         }
     }
 
+    private val userInfo = UserInfo(
+        me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(null, ""),
+        Key.Curve25519Key(null, "")
+    )
     private val cut = UserServiceImpl(
         roomStore = roomStore,
         roomUserStore = roomUserStore,
@@ -106,11 +113,10 @@ class UserServiceTest : TrixnityBaseTest() {
         globalAccountDataStore = globalAccountDataStore,
         userPresenceStore = userPresenceStore,
         loadMembersService = { _, _ -> },
-        userInfo = UserInfo(
-            me, "IAmADeviceId", signingPublicKey = Key.Ed25519Key(null, ""),
-            Key.Curve25519Key(null, "")
-        ),
+        userInfo = userInfo,
         currentSyncState = CurrentSyncState(currentSyncState),
+        canDoAction = CanDoActionImpl(userInfo, GetPowerLevelImpl()),
+        getPowerLevelDelegate = GetPowerLevelImpl(),
         clock = clock,
         mappings = DefaultEventContentSerializerMappings,
         config = MatrixClientConfiguration(),
@@ -175,68 +181,6 @@ class UserServiceTest : TrixnityBaseTest() {
         myLevel = 61L,
         banLevel = 62L,
     )
-
-    @Test
-    fun `getPowerLevel - is creator`() =
-        runTest {
-            roomStateStore.save(createEvent(me, roomVersion = "12"))
-            val powerLevelsEvent = powerLevelsEvent(
-                PowerLevelsEventContent( // should be ignored
-                    users = mapOf(
-                        me to 60L,
-                        alice to 50
-                    )
-                )
-            )
-            roomStateStore.save(powerLevelsEvent)
-            cut.getPowerLevel(roomId, me).first() shouldBe PowerLevel.Creator
-        }
-
-    @Test
-    fun `getPowerLevel - is additional creator`() =
-        runTest {
-            roomStateStore.save(createEvent(me, roomVersion = "12", additionalCreators = setOf(alice)))
-            val powerLevelsEvent = powerLevelsEvent(
-                PowerLevelsEventContent( // should be ignored
-                    users = mapOf(
-                        me to 60L,
-                        alice to 50
-                    )
-                )
-            )
-            roomStateStore.save(powerLevelsEvent)
-            cut.getPowerLevel(roomId, alice).first() shouldBe PowerLevel.Creator
-        }
-
-    @Test
-    fun `getPowerLevel - the room contains a power_level event - return the value in the user_id list when I am in the user_id list`() =
-        runTest {
-            roomStateStore.save(createEvent(me))
-            val powerLevelsEvent = powerLevelsEvent(
-                PowerLevelsEventContent(
-                    users = mapOf(
-                        me to 60L,
-                        alice to 50
-                    )
-                )
-            )
-            roomStateStore.save(powerLevelsEvent)
-            cut.getPowerLevel(roomId, me).firstPowerLevel() shouldBe 60L
-        }
-
-    @Test
-    fun `getPowerLevel - the room contains a power_level event - return the usersDefault value when I am not in the user_id list`() =
-        runTest {
-            roomStateStore.save(createEvent(me))
-            val powerLevelsEvent = powerLevelsEvent(
-                PowerLevelsEventContent(
-                    users = mapOf(alice to 50),
-                    usersDefault = 40
-                )
-            )
-            roomStateStore.save(powerLevelsEvent)
-            cut.getPowerLevel(roomId, me).firstPowerLevel() shouldBe 40
-        }
 
     @Test
     fun `canKickUser - return false when not member of room`() = runTest {
@@ -1507,7 +1451,4 @@ class UserServiceTest : TrixnityBaseTest() {
         1234,
         stateKey = ""
     )
-
-    private suspend fun Flow<PowerLevel>.firstPowerLevel() =
-        filterIsInstance<PowerLevel.User>().map { it.level }.first()
 }
