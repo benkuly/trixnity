@@ -46,17 +46,30 @@ class HasSizeMatchTest {
     }
 
     @Test
-    fun `hasSizeMatch - missing value`() {
+    fun `hasSizeMatch - accept reasonable high value`() {
+        val maxLong = Long.MAX_VALUE.toString()
+        maxLong shouldBe "9223372036854775807"
+        hasSizeMatch("<=$maxLong", 1) shouldBe true
+        hasSizeMatch("<=9223372036854775808", 1) shouldBe false
+    }
+
+    @Test
+    fun `hasSizeMatch - ignore missing value`() {
         hasSizeMatch(">=", 1) shouldBe false
         hasSizeMatch(">=", 0) shouldBe false
     }
 
     @Test
-    fun `hasSizeMatch - invalid value`() {
-        hasSizeMatch(">=ABC", 1) shouldBe false
-        hasSizeMatch(">=ABC", 0) shouldBe false
-        hasSizeMatch(">=12345678901234567890", 1) shouldBe false
-        hasSizeMatch(">=12345678901234567890", 0) shouldBe false
+    fun `hasSizeMatch - ignore invalid value`() {
+        hasSizeMatch("<=ABC", 1) shouldBe false
+        hasSizeMatch("<=ABC", 0) shouldBe false
+        hasSizeMatch("<=12345678901234567890", 1) shouldBe false
+        hasSizeMatch("<=12345678901234567890", 0) shouldBe false
+    }
+
+    @Test
+    fun `hasSizeMatch - ignore negative value`() {
+        hasSizeMatch(">=-24", 1) shouldBe false
     }
 
     @Test

@@ -10,6 +10,7 @@ internal fun hasSizeMatch(value: String, size: Long): Boolean {
     }
     val result = roomSizePattern.find(value)
     val bound = result?.groupValues?.getOrNull(2)?.toLongOrNull() ?: return false
+    if (bound < 0) return false
     val operator = result.groupValues.getOrNull(1) ?: return false
     log.trace { "room size ($size) $operator bound ($bound)" }
     return when (operator) {
