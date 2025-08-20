@@ -42,5 +42,7 @@ sealed interface VerificationStartEventContent : VerificationStep {
         override val nextMethod: VerificationMethod? = null
         override val mentions: Mentions? = null
         override val externalUrl: String? = null
+
+        override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo as? RelatesTo.Reference)
     }
 }

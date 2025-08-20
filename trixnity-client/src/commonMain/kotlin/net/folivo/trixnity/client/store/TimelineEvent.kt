@@ -7,16 +7,14 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.RedactedEventContent
-import net.folivo.trixnity.core.model.events.RoomEventContent
-import net.folivo.trixnity.core.model.events.UnknownEventContent
+import net.folivo.trixnity.core.model.events.*
+import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMapping
 import net.folivo.trixnity.core.serialization.events.RedactedEventContentSerializer
 import net.folivo.trixnity.core.serialization.events.UnknownEventContentSerializer
 
 data class TimelineEvent(
-    val event: ClientEvent.RoomEvent<*>,
+    val event: RoomEvent<*>,
     /**
      * - event is not encrypted -> original content
      * - event is encrypted
@@ -24,7 +22,7 @@ data class TimelineEvent(
      *     - successfully decrypted -> Result.Success
      *     - failure in decryption -> Result.Failure (contains TimelineEventContentError)
      *
-     *  The content may be replaced by another event.
+     *  The content may be replaced by another events content.
      */
     val content: Result<RoomEventContent>? = if (event.isEncrypted) null else Result.success(event.content),
 
@@ -88,6 +86,46 @@ data class TimelineEvent(
 
         data object NoContent : TimelineEventContentError, RuntimeException("no content found to replace TimelineEvent")
     }
+
+    /**
+     * This merges [event] and [content] into one property.
+     */
+    val mergedEvent: Result<RoomEvent<*>>? by lazy {
+        content?.fold(
+            onSuccess = { finalContent ->
+                val originalEvent = event
+                when {
+                    originalEvent is RoomEvent.MessageEvent<*> && finalContent is MessageEventContent ->
+                        Result.success(
+                            RoomEvent.MessageEvent(
+                                content = finalContent,
+                                id = originalEvent.id,
+                                sender = originalEvent.sender,
+                                roomId = originalEvent.roomId,
+                                originTimestamp = originalEvent.originTimestamp,
+                                unsigned = originalEvent.unsigned,
+                            )
+                        )
+
+                    originalEvent is RoomEvent.StateEvent<*> && finalContent is StateEventContent ->
+                        Result.success(
+                            RoomEvent.StateEvent(
+                                content = finalContent,
+                                id = originalEvent.id,
+                                sender = originalEvent.sender,
+                                roomId = originalEvent.roomId,
+                                originTimestamp = originalEvent.originTimestamp,
+                                unsigned = originalEvent.unsigned,
+                                stateKey = originalEvent.stateKey,
+                            )
+                        )
+
+                    else -> null
+                }
+            },
+            onFailure = { Result.failure(it) }
+        )
+    }
 }
 
 
@@ -105,8 +143,8 @@ class TimelineEventSerializer(
     override fun deserialize(decoder: Decoder): TimelineEvent {
         require(decoder is JsonDecoder)
         val jsonObject = decoder.decodeJsonElement().jsonObject
-        val event: ClientEvent.RoomEvent<*> = checkNotNull(jsonObject["event"]).jsonObject.let {
-            val serializer = decoder.json.serializersModule.getContextual(ClientEvent.RoomEvent::class)
+        val event: RoomEvent<*> = checkNotNull(jsonObject["event"]).jsonObject.let {
+            val serializer = decoder.json.serializersModule.getContextual(RoomEvent::class)
             checkNotNull(serializer)
             decoder.json.decodeFromJsonElement(serializer, it)
         }
@@ -147,7 +185,7 @@ class TimelineEventSerializer(
     override fun serialize(encoder: Encoder, value: TimelineEvent) {
         require(encoder is JsonEncoder)
         val event: JsonElement = value.event.let {
-            val serializer = encoder.json.serializersModule.getContextual(ClientEvent.RoomEvent::class)
+            val serializer = encoder.json.serializersModule.getContextual(RoomEvent::class)
             checkNotNull(serializer)
             encoder.json.encodeToJsonElement(serializer, it)
         }

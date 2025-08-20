@@ -267,7 +267,8 @@ class RoomServiceImpl(
                                                     if (relatesTo is RelatesTo.Replace) relatesTo.newContent
                                                     else null
                                                 } else null
-                                                newContent ?: throw TimelineEventContentError.NoContent
+                                                newContent?.copyWith(event.content.relatesTo)
+                                                    ?: throw TimelineEventContentError.NoContent
                                             } ?: timelineEvent.content
                                     timelineEvent.copy(content = newContent)
                                 }

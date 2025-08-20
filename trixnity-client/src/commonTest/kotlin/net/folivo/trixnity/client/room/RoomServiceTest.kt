@@ -306,6 +306,43 @@ class RoomServiceTest : TrixnityBaseTest() {
         }
 
     @Test
+    fun `getTimelineEvent » content has been replaced » keep original relation`() =
+        runTest {
+            val timelineEventWithRelation =
+                TimelineEvent(
+                    event = MessageEvent(
+                        encryptedEventContent.copy(relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("\$replyTo")))),
+                        EventId("\$event1"),
+                        UserId("sender", "server"),
+                        room,
+                        1,
+                        UnsignedRoomEventData.UnsignedMessageEventData(
+                            relations = mapOf(
+                                RelationType.Replace to ServerAggregation.Replace(
+                                    replaceTimelineEvent.eventId,
+                                    replaceTimelineEvent.event.sender,
+                                    replaceTimelineEvent.event.originTimestamp
+                                )
+                            )
+                        )
+                    ),
+                    content = Result.success(RoomMessageEventContent.TextBased.Text("hi")),
+                    previousEventId = null,
+                    nextEventId = null,
+                    gap = null
+                )
+            roomTimelineStore.addAll(listOf(timelineEventWithRelation, replaceTimelineEvent))
+            cut.getTimelineEvent(room, eventId).first() shouldBe timelineEventWithRelation.copy(
+                content = Result.success(
+                    RoomMessageEventContent.TextBased.Text(
+                        "edited hi",
+                        relatesTo = RelatesTo.Reply(RelatesTo.ReplyTo(EventId("\$replyTo")))
+                    )
+                )
+            )
+        }
+
+    @Test
     fun `getTimelineEvent » content has been replaced » not replace content when disabled`() = runTest {
         roomTimelineStore.addAll(listOf(timelineEvent, replaceTimelineEvent))
         cut.getTimelineEvent(room, eventId) { allowReplaceContent = false }.first() shouldBe timelineEvent.copy(

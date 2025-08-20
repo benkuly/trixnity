@@ -22,4 +22,6 @@ data class RedactionEventContent(
     @SerialName("m.relates_to")
     override val relatesTo: RelatesTo? = null
     override val mentions: Mentions? = null
+
+    override fun copyWith(relatesTo: RelatesTo?) = this
 }

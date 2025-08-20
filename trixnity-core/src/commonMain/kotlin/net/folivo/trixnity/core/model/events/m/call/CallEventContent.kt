@@ -53,6 +53,8 @@ sealed interface CallEventContent : MessageEventContent {
             @SerialName("sdp") val sdp: String,
             @SerialName("type") val type: OfferType,
         )
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 
     /**
@@ -78,6 +80,8 @@ sealed interface CallEventContent : MessageEventContent {
             @SerialName("sdpMLineIndex") val sdpMLineIndex: Long? = null,
             @SerialName("sdpMid") val sdpMid: String? = null,
         )
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 
     /**
@@ -112,6 +116,8 @@ sealed interface CallEventContent : MessageEventContent {
             @SerialName("sdp") val sdp: String,
             @SerialName("type") val type: AnswerType,
         )
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 
     /**
@@ -135,21 +141,28 @@ sealed interface CallEventContent : MessageEventContent {
         enum class Reason {
             @SerialName("ice_failed")
             ICE_FAILED,
+
             @SerialName("invite_timeout")
             INVITE_TIMEOUT,
 
             // Added in v1.7:
             @SerialName("ice_timeout")
             ICE_TIMEOUT,
+
             @SerialName("user_hangup")
             USER_HANGUP,
+
             @SerialName("user_media_failed")
             USER_MEDIA_FAILED,
+
             @SerialName("user_busy")
             USER_BUSY,
+
             @SerialName("unknown_error")
             UNKNOWN_ERROR,
         }
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 
     // Added in v1.7:
@@ -182,6 +195,7 @@ sealed interface CallEventContent : MessageEventContent {
         enum class DescriptionType {
             @SerialName("offer")
             OFFER,
+
             @SerialName("answer")
             ANSWER
         }
@@ -191,6 +205,8 @@ sealed interface CallEventContent : MessageEventContent {
             @SerialName("sdp") val sdp: String,
             @SerialName("type") val type: DescriptionType,
         )
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 
     /**
@@ -210,6 +226,8 @@ sealed interface CallEventContent : MessageEventContent {
         override val relatesTo: RelatesTo? = null
         override val mentions: Mentions? = null
         override val externalUrl: String? = null
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 
     /**
@@ -230,6 +248,8 @@ sealed interface CallEventContent : MessageEventContent {
         override val relatesTo: RelatesTo? = null
         override val mentions: Mentions? = null
         override val externalUrl: String? = null
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 
     // Added in V1.11:
@@ -252,6 +272,8 @@ sealed interface CallEventContent : MessageEventContent {
         override val relatesTo: RelatesTo? = null
         override val mentions: Mentions? = null
         override val externalUrl: String? = null
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 }
 

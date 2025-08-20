@@ -19,4 +19,6 @@ data class SasKeyEventContent(
 ) : VerificationStep {
     override val mentions: Mentions? = null
     override val externalUrl: String? = null
+
+    override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo as? RelatesTo.Reference)
 }

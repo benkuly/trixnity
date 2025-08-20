@@ -17,4 +17,6 @@ data class VerificationDoneEventContent(
 ) : VerificationStep {
     override val externalUrl: String? = null
     override val mentions: Mentions? = null
+
+    override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo as? RelatesTo.Reference)
 }

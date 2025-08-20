@@ -9,4 +9,6 @@ data class RedactedEventContent(val eventType: String) :
     override val relatesTo: RelatesTo? = null
     override val mentions: Mentions? = null
     override val externalUrl: String? = null
+
+    override fun copyWith(relatesTo: RelatesTo?) = this
 }
