@@ -12,4 +12,6 @@ data class ReactionEventContent(
 ) : MessageEventContent {
     @Transient
     override val mentions: Mentions? = null
+
+    override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo as? RelatesTo.Annotation)
 }

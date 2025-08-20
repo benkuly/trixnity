@@ -25,6 +25,12 @@ sealed interface RoomEventContent : EventContent {
 interface MessageEventContent : RoomEventContent {
     val relatesTo: RelatesTo?
     val mentions: Mentions?
+
+    /**
+     * This should return the same instance, but with the [relatesTo] property set to the given value.
+     * It is used for event content replacing.
+     */
+    fun copyWith(relatesTo: RelatesTo?): MessageEventContent
 }
 
 /**
@@ -56,6 +62,8 @@ data object EmptyEventContent :
     override val relatesTo: RelatesTo? = null
     override val mentions: Mentions? = null
     override val externalUrl: String? = null
+
+    override fun copyWith(relatesTo: RelatesTo?) = this
 }
 
 data class UnknownEventContent(
@@ -74,4 +82,6 @@ data class UnknownEventContent(
     override val relatesTo: RelatesTo? = null
     override val mentions: Mentions? = null
     override val externalUrl: String? = null
+
+    override fun copyWith(relatesTo: RelatesTo?) = this
 }

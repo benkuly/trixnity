@@ -72,6 +72,7 @@ sealed interface ClientEvent<C : EventContent> : Event<C> {
         val stateKey: String
     }
 
+    // TODO there a different types of StrippedStateEvent, therefore this could be split up
     @Serializable
     data class StrippedStateEvent<C : StateEventContent>(
         @SerialName("content") override val content: C,

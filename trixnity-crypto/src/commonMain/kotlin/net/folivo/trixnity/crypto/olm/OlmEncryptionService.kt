@@ -683,7 +683,12 @@ class OlmEncryptionServiceImpl(
             originalJsonObject["content"]?.jsonObject?.let { content ->
                 put("content", JsonObject(buildMap {
                     putAll(content)
-                    put("m.relates_to", json.encodeToJsonElement(relatesTo))
+                    put("m.relates_to", JsonObject(buildMap {
+                        content["m.relates_to"]?.jsonObject?.let { putAll(it) }
+                        putAll(json.encodeToJsonElement(relatesTo).jsonObject)
+                    }
+                    )
+                    )
                 }
                 ))
             }

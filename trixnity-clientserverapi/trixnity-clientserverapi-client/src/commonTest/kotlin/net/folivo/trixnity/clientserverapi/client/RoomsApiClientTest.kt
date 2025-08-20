@@ -638,6 +638,8 @@ class RoomsApiClientTest : TrixnityBaseTest() {
             override val relatesTo = RelatesTo.Reference(EventId("$1event"))
             override val mentions: Mentions? = null
             override val externalUrl: String? = null
+
+            override fun copyWith(relatesTo: RelatesTo?) = this
         }
 
         try {

@@ -323,6 +323,8 @@ class TimelineEventIT {
         override val relatesTo: RelatesTo? = null
         override val mentions: Mentions? = null
         override val externalUrl: String? = null
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 
     @Test

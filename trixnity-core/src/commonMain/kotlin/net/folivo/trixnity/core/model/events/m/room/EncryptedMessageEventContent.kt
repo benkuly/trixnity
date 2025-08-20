@@ -47,6 +47,8 @@ sealed interface EncryptedMessageEventContent : MessageEventContent {
     ) : EncryptedMessageEventContent {
         @SerialName("algorithm")
         override val algorithm: Megolm = Megolm
+
+        override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
     }
 
     data class Unknown(
@@ -56,6 +58,8 @@ sealed interface EncryptedMessageEventContent : MessageEventContent {
         override val relatesTo: RelatesTo? = null
         override val mentions: Mentions? = null
         override val externalUrl: String? = null
+
+        override fun copyWith(relatesTo: RelatesTo?) = this
     }
 }
 

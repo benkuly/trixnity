@@ -123,6 +123,8 @@ data class VerificationCancelEventContent(
 
         data class Unknown(override val value: String) : Code
     }
+
+    override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo as? RelatesTo.Reference)
 }
 
 object CodeSerializer : KSerializer<VerificationCancelEventContent.Code> {

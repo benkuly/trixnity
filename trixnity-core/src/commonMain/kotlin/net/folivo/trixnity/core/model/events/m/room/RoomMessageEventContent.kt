@@ -49,6 +49,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             companion object {
                 const val TYPE = "m.notice"
             }
+
+            override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
         }
 
         /**
@@ -69,6 +71,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             companion object {
                 const val TYPE = "m.text"
             }
+
+            override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
         }
 
         /**
@@ -89,6 +93,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             companion object {
                 const val TYPE = "m.emote"
             }
+
+            override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
         }
     }
 
@@ -120,6 +126,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             companion object {
                 const val TYPE = "m.image"
             }
+
+            override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
         }
 
         /**
@@ -144,6 +152,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             companion object {
                 const val TYPE = "m.file"
             }
+
+            override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
         }
 
         /**
@@ -168,6 +178,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             companion object {
                 const val TYPE = "m.audio"
             }
+
+            override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
         }
 
         /**
@@ -192,6 +204,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
             companion object {
                 const val TYPE = "m.video"
             }
+
+            override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
         }
     }
 
@@ -215,6 +229,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         companion object {
             const val TYPE = "m.location"
         }
+
+        override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
     }
 
     @Serializable
@@ -235,6 +251,8 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         companion object {
             const val TYPE = "m.key.verification.request"
         }
+
+        override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
     }
 
     data class Unknown(
@@ -246,7 +264,9 @@ sealed interface RoomMessageEventContent : MessageEventContent {
         override val relatesTo: RelatesTo? = null,
         override val mentions: Mentions? = null,
         override val externalUrl: String? = null,
-    ) : RoomMessageEventContent
+    ) : RoomMessageEventContent {
+        override fun copyWith(relatesTo: RelatesTo?) = copy(relatesTo = relatesTo)
+    }
 }
 
 object RoomMessageEventContentSerializer : KSerializer<RoomMessageEventContent> {

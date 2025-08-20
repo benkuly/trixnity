@@ -9,9 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Introduce TimelineEvent::mergedEvent
+
 ### Changed
 
 - Internal: refactor out subcomponents
+- Replace relation in TimelineEvent::content to match the specified value (needed a breaking change in
+  MessageEventContent)
 
 ### Deprecated
 
