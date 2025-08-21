@@ -1,12 +1,7 @@
 package net.folivo.trixnity.clientserverapi.model.sync
 
 import io.ktor.resources.*
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
+import kotlinx.serialization.*
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.mapSerialDescriptor
@@ -14,43 +9,22 @@ import kotlinx.serialization.encoding.CompositeDecoder.Companion.DECODE_DONE
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.JsonTransformingSerializer
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.overwriteWith
-import kotlinx.serialization.serializer
 import net.folivo.trixnity.core.HttpMethod
 import net.folivo.trixnity.core.HttpMethodType.GET
 import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.ClientEvent.EphemeralEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomAccountDataEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
+import net.folivo.trixnity.core.model.events.ClientEvent.*
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.ToDeviceEvent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.EphemeralEventSerializer
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.MessageEventSerializer
-import net.folivo.trixnity.core.serialization.events.RoomAccountDataEventSerializer
-import net.folivo.trixnity.core.serialization.events.RoomEventSerializer
-import net.folivo.trixnity.core.serialization.events.StateBaseEventSerializer
-import net.folivo.trixnity.core.serialization.events.StateEventSerializer
-import net.folivo.trixnity.core.serialization.events.StrippedStateEventSerializer
+import net.folivo.trixnity.core.serialization.events.*
 
 /**
  * @see <a href="https://spec.matrix.org/v1.10/client-server-api/#get_matrixclientv3sync">matrix spec</a>
@@ -119,6 +93,7 @@ data class Sync(
                                 isKey -> {
                                     key = decodeSerializableElement(descriptor, index, keySerializer)
                                 }
+
                                 else -> {
                                     requireNotNull(key)
                                     require(decoder is JsonDecoder)
@@ -135,27 +110,27 @@ data class Sync(
             }
         }
 
-        private object RoomsKnockSerializer: RoomsMapSerializer<Rooms.KnockedRoom>(
+        private object RoomsKnockSerializer : RoomsMapSerializer<Rooms.KnockedRoom>(
             Rooms.KnockedRoom.serializer().descriptor,
             { ContextualSerializer(it, it.serializersModule.serializer()) },
         )
 
-        private object RoomsJoinSerializer: RoomsMapSerializer<Rooms.JoinedRoom>(
+        private object RoomsJoinSerializer : RoomsMapSerializer<Rooms.JoinedRoom>(
             Rooms.JoinedRoom.serializer().descriptor,
             { ContextualSerializer(it, it.serializersModule.serializer()) },
         )
 
-        private object RoomsInviteSerializer: RoomsMapSerializer<Rooms.InvitedRoom>(
+        private object RoomsInviteSerializer : RoomsMapSerializer<Rooms.InvitedRoom>(
             Rooms.InvitedRoom.serializer().descriptor,
             { ContextualSerializer(it, it.serializersModule.serializer()) },
         )
 
-        private object RoomsLeaveSerializer: RoomsMapSerializer<Rooms.LeftRoom>(
+        private object RoomsLeaveSerializer : RoomsMapSerializer<Rooms.LeftRoom>(
             Rooms.LeftRoom.serializer().descriptor,
             { ContextualSerializer(it, it.serializersModule.serializer()) },
         )
 
-        private class ContextualSerializer<T>(val json: Json, val serializer: KSerializer<T>): KSerializer<T> {
+        private class ContextualSerializer<T>(val json: Json, val serializer: KSerializer<T>) : KSerializer<T> {
             override val descriptor: SerialDescriptor get() = serializer.descriptor
 
             override fun serialize(encoder: Encoder, value: T) {
@@ -178,10 +153,10 @@ data class Sync(
         ) {
             @Serializable
             data class KnockedRoom(
-                @SerialName("knock_state") val knockState: InviteState? = null
+                @SerialName("knock_state") val knockState: KnockState? = null
             ) {
                 @Serializable
-                data class InviteState(
+                data class KnockState(
                     @SerialName("events") val events: List<@Contextual StrippedStateEvent<*>>? = null
                 )
             }
@@ -325,11 +300,17 @@ data class Sync(
             val mappings = DefaultEventContentSerializerMappings
             val messageEventSerializer = WithRoomIdSerializer(roomId, MessageEventSerializer(mappings.message))
             val stateEventSerializer = WithRoomIdSerializer(roomId, StateEventSerializer(mappings.state))
-            val roomEventSerializer = WithRoomIdSerializer(roomId, RoomEventSerializer(messageEventSerializer, stateEventSerializer))
-            val strippedStateEventSerializer = WithRoomIdSerializer(roomId, StrippedStateEventSerializer(mappings.state))
-            val stateBaseEventSerializer = WithRoomIdSerializer(roomId, StateBaseEventSerializer(stateEventSerializer, strippedStateEventSerializer))
+            val roomEventSerializer =
+                WithRoomIdSerializer(roomId, RoomEventSerializer(messageEventSerializer, stateEventSerializer))
+            val strippedStateEventSerializer =
+                WithRoomIdSerializer(roomId, StrippedStateEventSerializer(mappings.state))
+            val stateBaseEventSerializer = WithRoomIdSerializer(
+                roomId,
+                StateBaseEventSerializer(stateEventSerializer, strippedStateEventSerializer)
+            )
             val ephemeralEventSerializer = WithRoomIdSerializer(roomId, EphemeralEventSerializer(mappings.ephemeral))
-            val roomAccountDataEventSerializer = WithRoomIdSerializer(roomId, RoomAccountDataEventSerializer(mappings.roomAccountData))
+            val roomAccountDataEventSerializer =
+                WithRoomIdSerializer(roomId, RoomAccountDataEventSerializer(mappings.roomAccountData))
             return SerializersModule {
                 contextual(roomEventSerializer)
                 contextual(messageEventSerializer)
@@ -342,8 +323,8 @@ data class Sync(
         }
     }
 
-    private class WithRoomIdSerializer<T>(private val roomId: RoomId, serializer: KSerializer<T>)
-        : JsonTransformingSerializer<T>(serializer) {
+    private class WithRoomIdSerializer<T>(private val roomId: RoomId, serializer: KSerializer<T>) :
+        JsonTransformingSerializer<T>(serializer) {
         override fun transformDeserialize(element: JsonElement): JsonElement {
             require(element is JsonObject)
             return addRoomIdToEvent(element, roomId)
