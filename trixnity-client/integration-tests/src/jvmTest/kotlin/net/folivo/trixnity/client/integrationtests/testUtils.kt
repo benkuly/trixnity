@@ -30,7 +30,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 const val synapseVersion =
-    "v1.130.0" // TODO you should update this from time to time. https://github.com/element-hq/synapse/releases
+    "v1.133.0" // TODO you should update this from time to time. https://github.com/element-hq/synapse/releases
 
 fun synapseDocker() =
     GenericContainer<Nothing>(DockerImageName.parse("docker.io/matrixdotorg/synapse:$synapseVersion"))

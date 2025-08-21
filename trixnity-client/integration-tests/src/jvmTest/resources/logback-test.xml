@@ -10,10 +10,8 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="net.folivo.trixnity.client.integrationtests" level="TRACE"/>
-    <logger name="net.folivo.trixnity" level="DEBUG"/>
-    <logger name="net.folivo.trixnity.client.verification" level="TRACE"/>
-    <logger name="net.folivo.trixnity.clientserverapi.client.ClassicMatrixAuthProvider" level="TRACE"/>
+    <logger name="net.folivo.trixnity" level="TRACE"/>
+    <logger name="net.folivo.trixnity.client.store.cache" level="DEBUG"/>
     <logger name="org.testcontainers" level="INFO"/>
     <logger name="com.github.dockerjava" level="WARN"/>
 </configuration>

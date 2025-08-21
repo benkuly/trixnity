@@ -51,10 +51,8 @@ class LogoutIT {
                 .shouldBeInstanceOf<UIA.Success<Unit>>()
 
             withClue("check client2 is logged out and sync is stopped") {
-                withTimeout(30_000) {
-                    startedClient2.client.syncState.firstWithTimeout { it == SyncState.STOPPED }
-                    startedClient2.client.loginState.firstWithTimeout { it == LoginState.LOGGED_OUT }
-                }
+                startedClient2.client.syncState.firstWithTimeout { it == SyncState.STOPPED }
+                startedClient2.client.loginState.firstWithTimeout { it == LoginState.LOGGED_OUT }
             }
 
             startedClient1.client.closeSuspending()

@@ -19,7 +19,6 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
-import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.roomIdOrNull
@@ -59,7 +58,6 @@ class RoomListHandler(
 
         syncRooms?.join?.entries?.forEachParallel { (roomId, roomInfo) ->
             val lastRelevantEvent = roomInfo.timeline?.events?.lastOrNull { config.lastRelevantEventFilter(it) }
-            roomInfo.ephemeral?.events?.mapNotNull { event -> event.content as? ReceiptEventContent }
             val mergeRoom = mergeRoom(
                 roomId = roomId,
                 membership = Membership.JOIN,
