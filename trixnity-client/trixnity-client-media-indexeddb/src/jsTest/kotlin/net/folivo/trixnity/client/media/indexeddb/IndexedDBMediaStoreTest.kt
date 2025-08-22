@@ -15,9 +15,9 @@ import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.MEDIA_OBJECT_STORE_NAME
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.TMP_MEDIA_OBJECT_STORE_NAME
 import net.folivo.trixnity.utils.nextString
-import net.folivo.trixnity.utils.toByteArray
 import net.folivo.trixnity.utils.toByteArrayFlow
 import web.blob.Blob
+import web.blob.arrayBuffer
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds

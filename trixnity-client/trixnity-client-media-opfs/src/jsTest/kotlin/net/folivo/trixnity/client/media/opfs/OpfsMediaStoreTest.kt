@@ -13,11 +13,11 @@ import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.utils.toByteArrayFlow
-import web.fs.FileSystemDirectoryHandle
-import web.fs.FileSystemGetDirectoryOptions
-import web.fs.FileSystemGetFileOptions
-import web.fs.FileSystemRemoveOptions
+import web.blob.arrayBuffer
+import web.fs.*
 import web.navigator.navigator
+import web.storage.getDirectory
+import web.streams.close
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 
