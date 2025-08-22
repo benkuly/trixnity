@@ -18,6 +18,7 @@ import web.events.EventType
 import web.events.addEventHandler
 import web.http.BodyInit
 import web.http.Response
+import web.http.blob
 import web.streams.TransformStream
 import web.window.window
 import kotlin.random.Random

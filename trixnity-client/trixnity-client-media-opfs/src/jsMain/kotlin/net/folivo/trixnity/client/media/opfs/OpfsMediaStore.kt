@@ -16,11 +16,9 @@ import org.koin.dsl.module
 import web.events.EventType
 import web.events.addEventHandler
 import web.file.File
-import web.fs.FileSystemDirectoryHandle
-import web.fs.FileSystemGetDirectoryOptions
-import web.fs.FileSystemGetFileOptions
-import web.fs.FileSystemRemoveOptions
+import web.fs.*
 import web.streams.WritableStream
+import web.streams.close
 import web.window.window
 import kotlin.random.Random
 import kotlin.time.Clock
