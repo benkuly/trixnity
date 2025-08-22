@@ -12,6 +12,7 @@ kotlin {
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
         }
         commonMain {
             dependencies {

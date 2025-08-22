@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.FullDeleteByRoomIdRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
@@ -10,6 +9,7 @@ import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepository
 import net.folivo.trixnity.client.store.repository.RoomOutboxMessageRepositoryKey
 import net.folivo.trixnity.core.model.RoomId
+import kotlin.time.Clock
 
 class RoomOutboxMessageStore(
     roomOutboxMessageRepository: RoomOutboxMessageRepository,

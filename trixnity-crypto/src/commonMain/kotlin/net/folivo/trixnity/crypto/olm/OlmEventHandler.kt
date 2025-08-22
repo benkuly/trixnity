@@ -5,7 +5,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.model.UserId
@@ -24,6 +23,7 @@ import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.olm.freeAfter
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.crypto.olm.OlmEventHandler")

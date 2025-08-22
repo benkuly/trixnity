@@ -7,7 +7,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.ClientOlmStore
@@ -49,6 +48,7 @@ import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(MSC3814::class)

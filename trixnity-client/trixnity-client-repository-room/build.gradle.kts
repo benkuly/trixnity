@@ -11,13 +11,13 @@ kotlin {
     jvmToolchain()
     addJvmTarget()
     // does not use addNativeTargets() because some ar not supported yet
-    iosArm64()
-    iosSimulatorArm64()
-    iosX64()
+    addNativeAppleTargets()
+    linuxX64()
 
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
         }
 
         commonMain {

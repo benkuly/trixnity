@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.*
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.repository.OlmForgetFallbackKeyAfterRepository
+import kotlin.time.Instant
 
 @Entity(tableName = "OlmForgetFallbackKeyAfter")
 data class RoomOlmForgetFallbackKeyAfter(

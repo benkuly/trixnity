@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.CrossSigned
@@ -36,6 +35,7 @@ import net.folivo.trixnity.olm.OlmAccount
 import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.DehydratedDeviceService")

@@ -15,8 +15,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant.Companion.fromEpochMilliseconds
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
 import net.folivo.trixnity.core.UserInfo
@@ -54,8 +52,10 @@ import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant.Companion.fromEpochMilliseconds
 
 class OlmEncryptionServiceTest : TrixnityBaseTest() {
 

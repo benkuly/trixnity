@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.store.repository
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -17,6 +16,7 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
+import kotlin.time.Instant
 
 abstract class InMemoryMinimalRepository<K, V> : MinimalRepository<K, V> {
     val content = MutableStateFlow<Map<K, V>>(mapOf())

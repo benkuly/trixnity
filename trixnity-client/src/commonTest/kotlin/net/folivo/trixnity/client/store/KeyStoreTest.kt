@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.eventually
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
@@ -23,6 +22,7 @@ import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 class KeyStoreTest : TrixnityBaseTest() {
 

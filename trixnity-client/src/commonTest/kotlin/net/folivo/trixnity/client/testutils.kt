@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
@@ -34,8 +32,10 @@ import net.folivo.trixnity.test.utils.testClock
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
 import kotlin.reflect.KClass
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 fun String.trimToFlatJson() =
     this.trimIndent().lines().filter { it.isNotEmpty() }.joinToString("") { it.replace(": ", ":").trim() }

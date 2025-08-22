@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.currentTime
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
@@ -37,6 +36,7 @@ import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActiveUserVerificationTest : TrixnityBaseTest() {

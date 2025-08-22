@@ -6,7 +6,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.selects.select
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenNotNull
@@ -27,6 +26,7 @@ import net.folivo.trixnity.clientserverapi.model.media.FileTransferProgress
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.OutboxMessageEventHandler")

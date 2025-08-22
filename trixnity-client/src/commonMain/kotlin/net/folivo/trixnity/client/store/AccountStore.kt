@@ -2,11 +2,11 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.AccountRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import kotlin.time.Clock
 import kotlin.time.Duration
 
 class AccountStore(

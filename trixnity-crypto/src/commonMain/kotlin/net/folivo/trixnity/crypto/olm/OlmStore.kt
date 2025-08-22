@@ -1,7 +1,6 @@
 package net.folivo.trixnity.crypto.olm
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.room.HistoryVisibilityEventContent
@@ -10,6 +9,7 @@ import net.folivo.trixnity.core.model.keys.DeviceKeys
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.key.DeviceTrustLevel
+import kotlin.time.Instant
 
 interface OlmStore {
     suspend fun getDeviceKeys(userId: UserId): Map<String, DeviceKeys>?

@@ -1,8 +1,8 @@
 package net.folivo.trixnity.client.store
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.events.m.Presence
+import kotlin.time.Instant
 
 @Serializable
 data class UserPresence(

@@ -5,11 +5,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.toByteArray
 import org.koin.dsl.module
+import kotlin.time.Clock
 
 @Deprecated("switch to createInMemoryMediaStoreModule", ReplaceWith("createInMemoryMediaStoreModule()"))
 class InMemoryMediaStore(

@@ -13,8 +13,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.currentTime
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.*
 import net.folivo.trixnity.client.store.*
@@ -68,8 +66,10 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VerificationServiceTest : TrixnityBaseTest() {

@@ -1,7 +1,5 @@
 package net.folivo.trixnity.client.verification
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
@@ -10,7 +8,9 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStar
 import net.folivo.trixnity.core.serialization.canonicalJsonString
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 fun isVerificationRequestActive(timestamp: Long, clock: Clock): Boolean {
     val duration = clock.now() - Instant.fromEpochMilliseconds(timestamp)

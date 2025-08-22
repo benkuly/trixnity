@@ -1,10 +1,9 @@
 package net.folivo.trixnity.client.user
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.datetime.Clock
+import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.client.store.UserPresence
 import net.folivo.trixnity.client.store.UserPresenceStore
-import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.events.ClientEvent
@@ -12,6 +11,7 @@ import net.folivo.trixnity.core.model.events.m.PresenceEventContent
 import net.folivo.trixnity.core.model.events.senderOrNull
 import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 class UserPresenceEventHandler(

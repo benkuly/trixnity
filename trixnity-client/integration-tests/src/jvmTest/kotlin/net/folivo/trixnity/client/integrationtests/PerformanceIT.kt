@@ -14,8 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.createTrixnityBotModuleFactories
@@ -43,10 +41,12 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.integrationtests.PerformanceIT")

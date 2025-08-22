@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.datetime.Instant
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,6 +12,7 @@ import net.folivo.trixnity.core.ErrorResponseSerializer
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.MessageEventContent
+import kotlin.time.Instant
 
 @Serializable
 data class RoomOutboxMessage<T : MessageEventContent>(

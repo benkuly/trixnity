@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.room.RoomService
@@ -24,6 +23,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
+import kotlin.time.Clock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveUserVerification")
 

@@ -6,7 +6,6 @@ import js.iterable.iterator
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.media.CachedMediaStore
 import net.folivo.trixnity.client.media.MediaStore
@@ -24,6 +23,7 @@ import web.fs.FileSystemRemoveOptions
 import web.streams.WritableStream
 import web.window.window
 import kotlin.random.Random
+import kotlin.time.Clock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.media.opfs.OpfsMediaStore")
 

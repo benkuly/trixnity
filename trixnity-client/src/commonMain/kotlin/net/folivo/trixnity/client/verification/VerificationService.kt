@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.key.KeySecretService
 import net.folivo.trixnity.client.key.KeyService
@@ -43,6 +42,7 @@ import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
 import net.folivo.trixnity.utils.nextString
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.VerificationService")

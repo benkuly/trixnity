@@ -1,12 +1,12 @@
 package net.folivo.trixnity.client.store.repository.room
 
 import androidx.room.TypeConverter
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
+import kotlin.time.Instant
 
 internal object EventIdConverter {
     @TypeConverter

@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.verification
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.key.KeyTrustService
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
@@ -16,6 +15,7 @@ import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveDeviceVerification")

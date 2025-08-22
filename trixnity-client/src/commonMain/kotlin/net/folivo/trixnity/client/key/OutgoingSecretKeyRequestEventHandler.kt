@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retryLoop
@@ -33,6 +32,7 @@ import net.folivo.trixnity.olm.OlmPkSigning
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.nextString
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.OutgoingSecretKeyRequestEventHandler")

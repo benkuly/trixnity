@@ -2,10 +2,10 @@ package net.folivo.trixnity.client.store.repository.indexeddb
 
 import com.juul.indexeddb.Database
 import com.juul.indexeddb.VersionChangeTransaction
-import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.client.store.repository.OlmForgetFallbackKeyAfterRepository
+import kotlin.time.Instant
 
 internal class IndexedDBOlmForgetFallbackKeyAfterRepository(
     json: Json,

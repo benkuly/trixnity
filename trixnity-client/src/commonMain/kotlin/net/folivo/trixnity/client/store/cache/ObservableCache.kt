@@ -3,13 +3,13 @@ package net.folivo.trixnity.client.store.cache
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.utils.concurrentMutableMap
 import kotlin.jvm.JvmInline
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.cache.ObservableCache")
 

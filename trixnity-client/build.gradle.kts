@@ -13,6 +13,7 @@ kotlin {
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
         }
         commonMain {
             dependencies {
@@ -20,7 +21,6 @@ kotlin {
                 api(projects.trixnityCrypto)
 
                 api(libs.koin.core)
-                api(libs.kotlinx.datetime)
 
                 implementation(libs.oshai.logging)
             }

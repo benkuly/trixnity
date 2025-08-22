@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.*
@@ -24,6 +23,7 @@ import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Comp
 import net.folivo.trixnity.core.model.events.m.room.PowerLevelsEventContent.Companion.STATE_DEFAULT
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.reflect.KClass
+import kotlin.time.Clock
 import kotlin.time.Duration
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.user.UserService")

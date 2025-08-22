@@ -14,6 +14,7 @@ kotlin {
     sourceSets {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
         }
         commonMain {
             dependencies {
@@ -22,7 +23,6 @@ kotlin {
                 api(projects.trixnityOlm)
                 api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
-                implementation(libs.kotlinx.datetime)
                 implementation(libs.oshai.logging)
             }
         }

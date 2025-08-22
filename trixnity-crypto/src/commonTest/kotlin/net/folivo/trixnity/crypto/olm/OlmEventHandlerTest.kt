@@ -13,7 +13,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -37,6 +36,7 @@ import net.folivo.trixnity.crypto.mocks.SignServiceMock
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 class OlmEventHandlerTest : TrixnityBaseTest() {

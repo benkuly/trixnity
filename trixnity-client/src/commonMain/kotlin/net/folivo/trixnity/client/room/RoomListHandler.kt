@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
 import net.folivo.trixnity.client.store.*
@@ -29,6 +28,7 @@ import net.folivo.trixnity.utils.ConcurrentMap
 import net.folivo.trixnity.utils.concurrentMutableList
 import net.folivo.trixnity.utils.concurrentMutableMap
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.RoomListHandler")
 

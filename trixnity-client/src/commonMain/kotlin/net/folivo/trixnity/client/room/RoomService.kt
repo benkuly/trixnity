@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.room
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.media.MediaService
@@ -34,6 +33,7 @@ import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.utils.KeyedMutex
 import net.folivo.trixnity.utils.nextString
 import kotlin.reflect.KClass
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.ZERO

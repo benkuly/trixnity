@@ -3,9 +3,9 @@
 trixnity = "4.22.0"
 
 ### build ###
-kotlin = "2.1.21" # https://github.com/JetBrains/kotlin/releases
-ksp = "2.1.21-2.0.2" # https://github.com/google/ksp/releases
-kotlinWrappers = "2025.6.9" # https://github.com/JetBrains/kotlin-wrappers/releases
+kotlin = "2.2.10" # https://github.com/JetBrains/kotlin/releases
+ksp = "2.2.10-2.0.2" # https://github.com/google/ksp/releases
+kotlinWrappers = "2025.8.17" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "2.0.0" # https://github.com/Kotlin/dokka/releases
 androidGradlePlugin = "8.9.3" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
@@ -13,8 +13,7 @@ kotlinxKover = "0.9.1" # https://github.com/Kotlin/kotlinx-kover/releases
 
 ### kotlinx ###
 kotlinxCoroutines = "1.10.2" # https://github.com/Kotlin/kotlinx.coroutines/releases
-kotlinxSerialization = "1.8.1" # https://github.com/Kotlin/kotlinx.serialization/releases
-kotlinxDatetime = "0.6.2" # https://github.com/Kotlin/kotlinx-datetime/releases
+kotlinxSerialization = "1.9.0" # https://github.com/Kotlin/kotlinx.serialization/releases
 
 ### native bindings ###
 olm = "3.2.15" # https://gitlab.matrix.org/matrix-org/olm/-/releases
@@ -23,29 +22,29 @@ trixnityOpensslBinaries = "1.0.5" # https://gitlab.com/trixnity/trixnity-openssl
 jna = "5.17.0" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
-ktor = "3.1.3" # https://github.com/ktorio/ktor/releases
+ktor = "3.2.3" # https://github.com/ktorio/ktor/releases
 koin = "4.1.0" # https://github.com/InsertKoinIO/koin/tags
-okio = "3.13.0" # https://square.github.io/okio/changelog/
+okio = "3.16.0" # https://square.github.io/okio/changelog/
 
 ### databases ###
 exposed = "0.61.0" # https://github.com/JetBrains/Exposed/releases
-hikari = "6.3.2" # https://github.com/brettwooldridge/HikariCP/tags
+hikari = "7.0.2" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.3.232" # https://github.com/h2database/h2database/releases
 postgres = "42.7.7" # https://github.com/pgjdbc/pgjdbc/releases
-juulLabsIndexeddb = "0.9.1" # https://github.com/JuulLabs/indexeddb/releases
+juulLabsIndexeddb = "0.10.0" # https://github.com/JuulLabs/indexeddb/releases
 androidxRoom = "2.7.2" # https://developer.android.com/jetpack/androidx/releases/room
 androidxSqlite = "2.5.2" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
 ### logging ###
-oshaiKotlinLogging = "7.0.7" # https://github.com/oshai/kotlin-logging/releases
+oshaiKotlinLogging = "7.0.13" # https://github.com/oshai/kotlin-logging/releases
 slf4j = "2.0.17" # https://github.com/qos-ch/slf4j/releases
 logback = "1.5.18" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
-kotest = "6.0.0.M2" # https://github.com/kotest/kotest/releases
-mokkery = "2.8.0" # https://github.com/lupuuss/Mokkery/releases
+kotest = "6.0.0" # https://github.com/kotest/kotest/releases
+mokkery = "2.9.0" # https://github.com/lupuuss/Mokkery/releases
 testContainers = "1.21.3" # https://github.com/testcontainers/testcontainers-java/releases
-androidxTestRunner = "1.6.2" # https://developer.android.com/jetpack/androidx/releases/test
+androidxTestRunner = "1.7.0" # https://developer.android.com/jetpack/androidx/releases/test
 openjdkJol = "0.17" # https://github.com/openjdk/jol/tags
 robolectric = "4.15.1" # https://github.com/robolectric/robolectric/releases
 
@@ -68,7 +67,6 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 ### native bindings ###
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }

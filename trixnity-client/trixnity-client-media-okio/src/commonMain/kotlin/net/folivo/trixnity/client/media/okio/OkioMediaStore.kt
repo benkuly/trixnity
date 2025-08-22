@@ -5,7 +5,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.media.CachedMediaStore
 import net.folivo.trixnity.client.media.MediaStore
@@ -17,6 +16,7 @@ import okio.Path
 import org.koin.dsl.module
 import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
+import kotlin.time.Clock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.media.okio.OkioMediaStore")
 

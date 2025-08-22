@@ -13,7 +13,6 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
@@ -60,6 +59,7 @@ import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds

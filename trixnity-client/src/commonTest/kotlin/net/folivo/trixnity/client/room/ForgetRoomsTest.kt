@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.room
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.core.model.EventId
@@ -20,6 +19,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
+import kotlin.time.Clock
 
 class ForgetRoomsTest : TrixnityBaseTest() {
 

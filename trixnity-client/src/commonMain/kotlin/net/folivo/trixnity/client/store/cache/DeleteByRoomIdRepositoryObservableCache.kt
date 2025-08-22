@@ -4,12 +4,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.repository.DeleteByRoomIdFullRepository
 import net.folivo.trixnity.client.store.repository.DeleteByRoomIdMapRepository
 import net.folivo.trixnity.client.store.repository.DeleteByRoomIdMinimalRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.RoomId
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 

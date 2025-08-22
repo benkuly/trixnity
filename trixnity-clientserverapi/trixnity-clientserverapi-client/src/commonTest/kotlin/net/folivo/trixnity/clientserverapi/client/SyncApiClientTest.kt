@@ -1147,7 +1147,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 ),
                 invite = mapOf(
                     RoomId("!room3:Server") to Response.Rooms.InvitedRoom(
-                        Response.Rooms.InvitedRoom.InviteState(
+                        Response.Rooms.StrippedState(
                             listOf(
                                 ClientEvent.StrippedStateEvent(
                                     MemberEventContent(membership = Membership.INVITE),

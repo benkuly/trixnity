@@ -4,8 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MinimalRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
@@ -16,7 +14,9 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
+import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 class OlmCryptoStore(
     olmAccountRepository: OlmAccountRepository,

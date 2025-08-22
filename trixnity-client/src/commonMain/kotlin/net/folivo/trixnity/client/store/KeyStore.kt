@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
@@ -15,6 +14,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.SecretType
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Clock
 import kotlin.time.Duration
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.store.KeyStore")

@@ -2,9 +2,9 @@ package net.folivo.trixnity.client.store.cache
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.repository.MinimalRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 

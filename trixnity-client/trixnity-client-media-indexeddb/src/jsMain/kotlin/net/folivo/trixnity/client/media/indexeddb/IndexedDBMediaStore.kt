@@ -7,7 +7,6 @@ import js.buffer.ArrayBuffer
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.media.CachedMediaStore
 import net.folivo.trixnity.client.media.MediaStore
@@ -22,6 +21,7 @@ import web.http.Response
 import web.streams.TransformStream
 import web.window.window
 import kotlin.random.Random
+import kotlin.time.Clock
 
 @Deprecated("switch to createIndexedDBMediaStoreModule", ReplaceWith("createIndexedDBMediaStoreModule(databaseName)"))
 class IndexedDBMediaStore(

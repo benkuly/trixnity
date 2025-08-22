@@ -3,9 +3,9 @@ package net.folivo.trixnity.client.store.cache
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.store.repository.MapRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 

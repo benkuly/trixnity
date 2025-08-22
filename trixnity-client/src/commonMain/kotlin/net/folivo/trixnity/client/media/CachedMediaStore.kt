@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.CacheValue
 import net.folivo.trixnity.client.store.cache.ConcurrentObservableMap
@@ -16,6 +15,7 @@ import net.folivo.trixnity.client.store.cache.RemoverJobExecutingIndex
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.KeyedMutex
 import net.folivo.trixnity.utils.toByteArray
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
 

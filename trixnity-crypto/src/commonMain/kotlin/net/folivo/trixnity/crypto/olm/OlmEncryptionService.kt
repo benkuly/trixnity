@@ -2,10 +2,6 @@ package net.folivo.trixnity.crypto.olm
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.DateTimeUnit.Companion.MILLISECOND
-import kotlinx.datetime.plus
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -42,6 +38,9 @@ import net.folivo.trixnity.olm.OlmMessage.OlmMessageType.ORDINARY
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.crypto.olm.OlmEncryptionService")
@@ -474,7 +473,7 @@ class OlmEncryptionServiceImpl(
             ?.takeLast(3)
             ?.map {
                 check(it.createdAt <= now)
-                it.createdAt.plus(1, DateTimeUnit.HOUR) >= now
+                (it.createdAt + 1.hours) >= now
             }
             ?.all { it } == true
     }
@@ -560,8 +559,7 @@ class OlmEncryptionServiceImpl(
 
             val (encryptionResult, pickledSession) = if (
                 storedSession == null
-                || rotationPeriodMs != null && (storedSession
-                    .createdAt.plus(rotationPeriodMs, MILLISECOND) <= clock.now())
+                || rotationPeriodMs != null && ((storedSession.createdAt + rotationPeriodMs.milliseconds) <= clock.now())
                 || rotationPeriodMsgs != null && (storedSession.encryptedMessageCount >= rotationPeriodMsgs)
             ) {
                 log.debug { "encrypt megolm event with new session" }

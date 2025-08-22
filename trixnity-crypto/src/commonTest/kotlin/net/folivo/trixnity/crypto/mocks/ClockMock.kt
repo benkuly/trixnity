@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.mocks
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 class ClockMock : Clock {
     var nowValue: Instant = Instant.fromEpochMilliseconds(24242424)

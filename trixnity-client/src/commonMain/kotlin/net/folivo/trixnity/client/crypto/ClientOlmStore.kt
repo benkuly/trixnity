@@ -2,7 +2,6 @@ package net.folivo.trixnity.client.crypto
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.key.getDeviceKey
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.user.LoadMembersService
@@ -19,6 +18,7 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmMessageIndex
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
 import net.folivo.trixnity.crypto.olm.StoredOutboundMegolmSession
+import kotlin.time.Instant
 
 class ClientOlmStore(
     private val accountStore: AccountStore,

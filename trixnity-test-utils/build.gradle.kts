@@ -16,6 +16,9 @@ kotlin {
     addNativeAppleTargets()
 
     sourceSets {
+        all {
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
+        }
         val commonMain by getting
         val directMain by creating {
             dependsOn(commonMain)
@@ -45,7 +48,6 @@ kotlin {
         commonMain.dependencies {
             implementation(kotlin("test"))
             api(libs.kotlinx.coroutines.test)
-            api(libs.kotlinx.datetime)
             api(libs.oshai.logging)
         }
 

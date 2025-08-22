@@ -4,7 +4,6 @@ import io.kotest.matchers.collections.shouldContainExactly
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.flattenValues
@@ -20,6 +19,7 @@ import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 class RoomOutboxMessageStoreTest : TrixnityBaseTest() {

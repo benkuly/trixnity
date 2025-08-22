@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store
 
 import io.kotest.matchers.shouldBe
-import kotlinx.datetime.Instant
 import net.folivo.trixnity.client.trimToFlatJson
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.model.RoomId
@@ -10,6 +9,7 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
+import kotlin.time.Instant
 
 class RoomOutboxMessageSerializationTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()

@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.key
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Clock
 import net.folivo.trixnity.client.CurrentSyncState
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.utils.retry
@@ -24,6 +23,7 @@ import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.olm.OlmInboundGroupSession
 import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.nextString
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.OutgoingRoomKeyRequestEventHandler")
