@@ -1,6 +1,6 @@
 [versions]
 
-trixnity = "4.22.0"
+trixnity = "4.22.1"
 
 ### build ###
 kotlin = "2.2.10" # https://github.com/JetBrains/kotlin/releases

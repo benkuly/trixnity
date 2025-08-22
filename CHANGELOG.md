@@ -9,14 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Introduce TimelineEvent::mergedEvent
-
 ### Changed
-
-- Internal: refactor out subcomponents
-- Replace relation in TimelineEvent::content to match the specified value (needed a breaking change in
-  MessageEventContent)
-- Less database read operations on room list updates
 
 ### Deprecated
 
@@ -25,6 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## 4.22.0
+
+### Added
+
+- Introduce TimelineEvent::mergedEvent
+
+### Changed
+
+- Internal: refactor out subcomponents
+- Replace relation in TimelineEvent::content to match the specified value (needed a breaking change in
+  MessageEventContent)
+- Less database read operations on room list updates
 
 ## 4.21.1
 
