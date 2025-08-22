@@ -12,7 +12,6 @@ import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomDisplayName
-import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
@@ -48,7 +47,6 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     private val roomStore = getInMemoryRoomStore()
     private val roomStateStore = getInMemoryRoomStateStore()
-    private val roomUserStore = getInMemoryRoomUserStore()
     private val globalAccountDataStore = getInMemoryGlobalAccountDataStore()
     private val roomAccountDataStore = getInMemoryRoomAccountDataStore()
 
@@ -61,7 +59,6 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         api = api,
         roomStore = roomStore,
         roomStateStore = roomStateStore,
-        roomUserStore = roomUserStore,
         globalAccountDataStore = globalAccountDataStore,
         roomAccountDataStore = roomAccountDataStore,
         forgetRoomService = { roomId, _ -> forgetRooms.add(roomId) },
@@ -71,6 +68,15 @@ class RoomListHandlerTest : TrixnityBaseTest() {
         config = config,
     )
 
+    private val createEvent = StateEvent(
+        CreateEventContent(),
+        EventId("event1"),
+        UserId("user1", "localhost"),
+        roomId,
+        0,
+        stateKey = ""
+    )
+
     @Test
     fun `updateRoomList » markedUnread » mark as unread depending on receipt`() = runTest {
         mapOf(
@@ -78,26 +84,8 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             ReceiptType.PrivateRead to false,
             ReceiptType.FullyRead to true
         ).forEach { (receiptType, result) ->
-            val createEvent = StateEvent(
-                CreateEventContent(),
-                EventId("event1"),
-                UserId("user1", "localhost"),
-                roomId,
-                0,
-                stateKey = ""
-            )
             roomStore.update(roomId) { simpleRoom.copy(lastEventId = createEvent.id) }
             roomStateStore.save(createEvent)
-            roomUserStore.updateReceipts(simpleUserInfo.userId, roomId) {
-                RoomUserReceipts(
-                    roomId, simpleUserInfo.userId, mapOf(
-                        receiptType to RoomUserReceipts.Receipt(
-                            createEvent.id,
-                            ReceiptEventContent.Receipt(1234)
-                        )
-                    )
-                )
-            }
             cut.updateRoomList(
                 SyncEvents(
                     Sync.Response(
@@ -107,6 +95,21 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                                 roomId to JoinedRoom(
                                     timeline = Sync.Response.Rooms.Timeline(
                                         events = listOf(createEvent),
+                                    ),
+                                    ephemeral = JoinedRoom.Ephemeral(
+                                        events = listOf(
+                                            ClientEvent.EphemeralEvent(
+                                                ReceiptEventContent(
+                                                    mapOf(
+                                                        createEvent.id to mapOf(
+                                                            receiptType to mapOf(
+                                                                simpleUserInfo.userId to ReceiptEventContent.Receipt(24)
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
                                     )
                                 )
                             )
@@ -121,24 +124,11 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » markedUnread » mark as read without timeline in sync`() = runTest {
-        val createEvent = StateEvent(
-            CreateEventContent(),
-            EventId("event1"),
-            UserId("user1", "localhost"),
-            roomId,
-            0,
-            stateKey = ""
-        )
-        roomStore.update(roomId) { simpleRoom.copy(lastEventId = createEvent.id, isUnread = true) }
-        roomStateStore.save(createEvent)
-        roomUserStore.updateReceipts(simpleUserInfo.userId, roomId) {
-            RoomUserReceipts(
-                roomId, simpleUserInfo.userId, mapOf(
-                    ReceiptType.Read to RoomUserReceipts.Receipt(
-                        createEvent.id,
-                        ReceiptEventContent.Receipt(1234)
-                    )
-                )
+        roomStore.update(roomId) {
+            simpleRoom.copy(
+                lastEventId = createEvent.id,
+                isUnread = true,
+                createEventContent = createEvent.content
             )
         }
         cut.updateRoomList(
@@ -147,8 +137,24 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     nextBatch = "",
                     room = Sync.Response.Rooms(
                         join = mapOf(
-                            roomId to JoinedRoom() // contains receipts
-                        )
+                            roomId to JoinedRoom(
+                                ephemeral = JoinedRoom.Ephemeral(
+                                    events = listOf(
+                                        ClientEvent.EphemeralEvent(
+                                            ReceiptEventContent(
+                                                mapOf(
+                                                    createEvent.id to mapOf(
+                                                        ReceiptType.Read to mapOf(
+                                                            simpleUserInfo.userId to ReceiptEventContent.Receipt(24)
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
                     )
                 ),
                 emptyList()
@@ -159,26 +165,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » markedUnread » not mark as unread without exact receipt`() = runTest {
-        val createEvent = StateEvent(
-            CreateEventContent(),
-            EventId("event1"),
-            UserId("user1", "localhost"),
-            roomId,
-            0,
-            stateKey = ""
-        )
-        roomStateStore.save(createEvent)
         roomStore.update(roomId) { simpleRoom.copy(lastEventId = createEvent.id) }
-        roomUserStore.updateReceipts(simpleUserInfo.userId, roomId) {
-            RoomUserReceipts(
-                roomId, simpleUserInfo.userId, mapOf(
-                    ReceiptType.Read to RoomUserReceipts.Receipt(
-                        EventId("different"),
-                        ReceiptEventContent.Receipt(1234)
-                    )
-                )
-            )
-        }
         cut.updateRoomList(
             SyncEvents(
                 Sync.Response(
@@ -188,6 +175,21 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                             roomId to JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(createEvent),
+                                ),
+                                ephemeral = JoinedRoom.Ephemeral(
+                                    events = listOf(
+                                        ClientEvent.EphemeralEvent(
+                                            ReceiptEventContent(
+                                                mapOf(
+                                                    EventId("different") to mapOf(
+                                                        ReceiptType.Read to mapOf(
+                                                            simpleUserInfo.userId to ReceiptEventContent.Receipt(24)
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
                                 )
                             )
                         )
@@ -201,15 +203,6 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » markedUnread » mark as unread when set`() = runTest {
-        val createEvent = StateEvent(
-            CreateEventContent(),
-            EventId("event1"),
-            UserId("user1", "localhost"),
-            roomId,
-            0,
-            stateKey = ""
-        )
-        roomStateStore.save(createEvent)
         roomAccountDataStore.save(ClientEvent.RoomAccountDataEvent(MarkedUnreadEventContent(true), roomId))
         cut.updateRoomList(
             SyncEvents(
@@ -225,15 +218,6 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » lastRelevantEventId » setlastRelevantEventId`() = runTest {
-        val createEvent = StateEvent(
-            CreateEventContent(),
-            EventId("event1"),
-            UserId("user1", "localhost"),
-            roomId,
-            0,
-            stateKey = ""
-        )
-        roomStateStore.save(createEvent)
         cut.updateRoomList(
             SyncEvents(
                 Sync.Response(
@@ -272,15 +256,6 @@ class RoomListHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `updateRoomList » lastEventId » must not update `() = runTest {
-        val createEvent = StateEvent(
-            CreateEventContent(),
-            EventId("event1"),
-            UserId("user1", "localhost"),
-            roomId,
-            0,
-            stateKey = ""
-        )
-        roomStateStore.save(createEvent)
         roomStore.update(roomId) { simpleRoom.copy(lastEventId = EventId("old")) }
         cut.updateRoomList(
             SyncEvents(

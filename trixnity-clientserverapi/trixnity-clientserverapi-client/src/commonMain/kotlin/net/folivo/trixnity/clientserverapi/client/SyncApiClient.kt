@@ -326,10 +326,10 @@ class SyncApiClientImpl(
                         joinedRoom.accountData?.events?.forEach { add(it) }
                     }
                     response.room?.invite?.forEach { (_, invitedRoom) ->
-                        invitedRoom.inviteState?.events?.forEach { add(it) }
+                        invitedRoom.strippedState?.events?.forEach { add(it) }
                     }
                     response.room?.knock?.forEach { (_, invitedRoom) ->
-                        invitedRoom.knockState?.events?.forEach { add(it) }
+                        invitedRoom.strippedState?.events?.forEach { add(it) }
                     }
                     response.room?.leave?.forEach { (_, leftRoom) ->
                         leftRoom.state?.events?.forEach { add(it) }

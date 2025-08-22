@@ -121,7 +121,7 @@ class NotificationServiceImpl(
     ): Flow<StrippedStateEvent<*>> =
         response.room?.invite?.values
             ?.flatMap { inviteRoom ->
-                inviteRoom.inviteState?.events.orEmpty()
+                inviteRoom.strippedState?.events.orEmpty()
             }
             ?.asFlow()
             ?: emptyFlow()

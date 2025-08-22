@@ -153,13 +153,8 @@ data class Sync(
         ) {
             @Serializable
             data class KnockedRoom(
-                @SerialName("knock_state") val knockState: KnockState? = null
-            ) {
-                @Serializable
-                data class KnockState(
-                    @SerialName("events") val events: List<@Contextual StrippedStateEvent<*>>? = null
-                )
-            }
+                @SerialName("knock_state") val strippedState: StrippedState? = null
+            )
 
             @Serializable
             data class JoinedRoom(
@@ -198,13 +193,8 @@ data class Sync(
 
             @Serializable
             data class InvitedRoom(
-                @SerialName("invite_state") val inviteState: InviteState? = null
-            ) {
-                @Serializable
-                data class InviteState(
-                    @SerialName("events") val events: List<@Contextual StrippedStateEvent<*>>? = null
-                )
-            }
+                @SerialName("invite_state") val strippedState: StrippedState? = null
+            )
 
             @Serializable
             data class LeftRoom(
@@ -216,6 +206,11 @@ data class Sync(
             @Serializable
             data class State(
                 @SerialName("events") val events: List<@Contextual StateEvent<*>>? = null
+            )
+
+            @Serializable
+            data class StrippedState(
+                @SerialName("events") val events: List<@Contextual StrippedStateEvent<*>>? = null
             )
 
             @Serializable
