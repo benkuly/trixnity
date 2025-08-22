@@ -150,7 +150,6 @@ suspend fun MatrixClient.Companion.login(
                 type = loginType,
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName,
-                refreshToken = true,
             ).map { login ->
                 LoginInfo(
                     userId = login.userId,
@@ -189,7 +188,6 @@ suspend fun MatrixClient.Companion.login(
                 type = loginType,
                 deviceId = deviceId,
                 initialDeviceDisplayName = initialDeviceDisplayName,
-                refreshToken = true,
             ).map { login ->
                 LoginInfo(
                     userId = login.userId,
@@ -650,7 +648,6 @@ suspend fun MatrixClient.Companion.fromStore(
                     token = token,
                     type = loginType,
                     deviceId = deviceId,
-                    refreshToken = true
                 ).getOrThrow().accessToken
                     .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
             }
