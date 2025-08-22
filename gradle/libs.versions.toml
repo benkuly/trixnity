@@ -7,7 +7,7 @@ kotlin = "2.2.10" # https://github.com/JetBrains/kotlin/releases
 ksp = "2.2.10-2.0.2" # https://github.com/google/ksp/releases
 kotlinWrappers = "2025.8.17" # https://github.com/JetBrains/kotlin-wrappers/releases
 dokka = "2.0.0" # https://github.com/Kotlin/dokka/releases
-androidGradlePlugin = "8.9.3" # https://developer.android.com/reference/tools/gradle-api
+androidGradlePlugin = "8.10.1" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
 kotlinxKover = "0.9.1" # https://github.com/Kotlin/kotlinx-kover/releases
 
