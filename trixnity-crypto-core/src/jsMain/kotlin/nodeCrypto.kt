@@ -1,10 +1,11 @@
 @file:JsModule("crypto")
 @file:JsNonModule
 
+import js.typedarrays.Int8Array
 import js.typedarrays.Uint8Array
 
 
-external fun randomFillSync(buffer: Uint8Array<*>): Uint8Array<*>
+external fun randomFillSync(buffer: Int8Array<*>): Uint8Array<*>
 
 external fun pbkdf2(
     password: String,
