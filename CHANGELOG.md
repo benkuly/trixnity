@@ -11,17 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Readded Room::unreadMessageCount until NotificationService is updated
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Fixed Room::isUnread calculation
-
 ### Security
+
+## 4.22.1
+
+### Changed
+
+- Readded Room::unreadMessageCount until NotificationService is updated
+
+### Fixed
+
+- Fixed Room::isUnread and Room::name calculation
 
 ## 4.22.0
 
