@@ -164,6 +164,48 @@ class RoomListHandlerTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun `updateRoomList » markedUnread » keep mark as unread without update`() = runTest {
+        roomStore.update(roomId) {
+            simpleRoom.copy(
+                lastEventId = createEvent.id,
+                isUnread = true,
+                createEventContent = createEvent.content
+            )
+        }
+        cut.updateRoomList(
+            SyncEvents(
+                Sync.Response(
+                    nextBatch = "",
+                    room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom())),
+                ),
+                emptyList()
+            )
+        )
+        roomStore.get(roomId).first()?.isUnread shouldBe true
+    }
+
+    @Test
+    fun `updateRoomList » markedUnread » keep mark as read without update`() = runTest {
+        roomStore.update(roomId) {
+            simpleRoom.copy(
+                lastEventId = createEvent.id,
+                isUnread = false,
+                createEventContent = createEvent.content
+            )
+        }
+        cut.updateRoomList(
+            SyncEvents(
+                Sync.Response(
+                    nextBatch = "",
+                    room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom())),
+                ),
+                emptyList()
+            )
+        )
+        roomStore.get(roomId).first()?.isUnread shouldBe false
+    }
+
+    @Test
     fun `updateRoomList » markedUnread » not mark as unread without exact receipt`() = runTest {
         roomStore.update(roomId) { simpleRoom.copy(lastEventId = createEvent.id) }
         cut.updateRoomList(
@@ -291,6 +333,27 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             )
         )
         roomStore.get(roomId).first()?.lastEventId shouldBe EventId("old")
+    }
+
+    @Test
+    fun `updateRoomList » name » keep when no change`() = runTest {
+        roomStore.update(roomId) {
+            simpleRoom.copy(
+                lastEventId = createEvent.id,
+                name = RoomDisplayName("NAME", summary = null),
+                createEventContent = createEvent.content
+            )
+        }
+        cut.updateRoomList(
+            SyncEvents(
+                Sync.Response(
+                    nextBatch = "",
+                    room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom())),
+                ),
+                emptyList()
+            )
+        )
+        roomStore.get(roomId).first()?.name shouldNotBe null
     }
 
     @Test
