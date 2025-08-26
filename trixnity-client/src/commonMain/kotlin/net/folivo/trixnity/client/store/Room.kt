@@ -26,12 +26,10 @@ data class Room(
     @OptIn(ExperimentalSerializationApi::class)
     @JsonNames("markedUnread")
     val isUnread: Boolean = false,
+    val unreadMessageCount: Long = 0,
 ) {
     @Deprecated("use isUnread instead", ReplaceWith("isUnread"))
     val markedUnread: Boolean = isUnread
-
-    @Deprecated("always 0, use NotificationService instead")
-    val unreadMessageCount: Long = 0
 }
 
 val Room.previousRoomId: RoomId? get() = createEventContent?.predecessor?.roomId

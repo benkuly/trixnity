@@ -71,7 +71,8 @@ class RoomListHandler(
                     ?.events?.filterValues {
                         it[ReceiptType.Read]?.get(userInfo.userId) != null
                                 || it[ReceiptType.PrivateRead]?.get(userInfo.userId) != null
-                    }?.keys?.toSet() ?: emptySet(),
+                    }?.keys?.toSet(),
+                unreadMessageCount = roomInfo.unreadNotifications?.notificationCount,
             )
             roomUpdates.add(roomId, mergeRoom)
         }
@@ -87,7 +88,8 @@ class RoomListHandler(
                 tombstoneEventContent = roomInfo.findInTimelineOrState(),
                 nameEventContent = roomInfo.findInTimelineOrState(),
                 canonicalAliasEventContent = roomInfo.findInTimelineOrState(),
-                readReceipts = emptySet(),
+                readReceipts = null,
+                unreadMessageCount = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -103,7 +105,8 @@ class RoomListHandler(
                 tombstoneEventContent = roomInfo.findInState(),
                 nameEventContent = roomInfo.findInState(),
                 canonicalAliasEventContent = roomInfo.findInState(),
-                readReceipts = emptySet(),
+                readReceipts = null,
+                unreadMessageCount = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -119,7 +122,8 @@ class RoomListHandler(
                 tombstoneEventContent = roomInfo.findInState(),
                 nameEventContent = roomInfo.findInState(),
                 canonicalAliasEventContent = roomInfo.findInState(),
-                readReceipts = emptySet(),
+                readReceipts = null,
+                unreadMessageCount = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -148,7 +152,8 @@ class RoomListHandler(
         tombstoneEventContent: TombstoneEventContent?,
         nameEventContent: NameEventContent?,
         canonicalAliasEventContent: CanonicalAliasEventContent?,
-        readReceipts: Set<EventId>,
+        readReceipts: Set<EventId>?,
+        unreadMessageCount: Long?,
     ): (Room?) -> Room {
         val markedAsUnread =
             (markedUnreadEventContent ?: roomAccountDataStore.get<MarkedUnreadEventContent>(roomId).first()?.content)
@@ -169,9 +174,11 @@ class RoomListHandler(
                 encrypted = encryptionEventContent != null || oldRoom?.encrypted == true,
                 lastRelevantEventId = lastRelevantEvent?.id ?: oldRoom?.lastRelevantEventId,
                 lastRelevantEventTimestamp = lastRelevantEventTimestamp ?: oldRoom?.lastRelevantEventTimestamp,
-                isUnread = markedAsUnread || !readReceipts.contains(oldRoom?.lastEventId),
+                isUnread = markedAsUnread ||
+                        (readReceipts?.contains(oldRoom?.lastEventId)?.not() ?: oldRoom?.isUnread) == true,
                 nextRoomId = tombstoneEventContent?.replacementRoom ?: oldRoom?.nextRoomId,
-                name = name,
+                name = name ?: oldRoom?.name,
+                unreadMessageCount = unreadMessageCount ?: oldRoom?.unreadMessageCount ?: 0,
             )
         }
     }
@@ -282,16 +289,16 @@ class RoomListHandler(
         canonicalAliasEventContent: CanonicalAliasEventContent? = null,
         summary: Sync.Response.Rooms.JoinedRoom.RoomSummary? = null,
     ): RoomDisplayName? {
-        val oldRoomSummary = roomStore.get(roomId).first()?.name?.summary
+        val oldSummary = roomStore.get(roomId).first()?.name?.summary
 
-        if (nameEventContent == null && canonicalAliasEventContent == null && summary == oldRoomSummary) return null
+        if (nameEventContent == null && canonicalAliasEventContent == null && summary == oldSummary) return null
 
         val mergedRoomSummary =
-            if (summary == null && summary == oldRoomSummary) null
+            if (summary == null && oldSummary == null) null
             else Sync.Response.Rooms.JoinedRoom.RoomSummary(
-                heroes = summary?.heroes ?: oldRoomSummary?.heroes,
-                joinedMemberCount = summary?.joinedMemberCount ?: oldRoomSummary?.joinedMemberCount,
-                invitedMemberCount = summary?.invitedMemberCount ?: oldRoomSummary?.invitedMemberCount,
+                heroes = summary?.heroes ?: oldSummary?.heroes,
+                joinedMemberCount = summary?.joinedMemberCount ?: oldSummary?.joinedMemberCount,
+                invitedMemberCount = summary?.invitedMemberCount ?: oldSummary?.invitedMemberCount,
             )
 
         val nameFromNameEvent = (nameEventContent
@@ -299,7 +306,7 @@ class RoomListHandler(
         val nameFromAliasEvent = (canonicalAliasEventContent
             ?: roomStateStore.getByStateKey<CanonicalAliasEventContent>(roomId).first()?.content)?.alias?.full
 
-        val roomName = when {
+        return when {
             nameFromNameEvent.isNullOrEmpty().not() ->
                 RoomDisplayName(explicitName = nameFromNameEvent, summary = mergedRoomSummary)
 
@@ -351,7 +358,6 @@ class RoomListHandler(
                 )
             }
         }
-        return roomName
     }
 
     internal suspend fun deleteLeftRooms(syncEvents: SyncEvents) {
