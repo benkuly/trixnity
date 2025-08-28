@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed custom events not correctly (de)serialized in Sync.Response
+
 ### Security
 
 ## 4.22.1

@@ -18,6 +18,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponseSerializer
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -32,6 +34,7 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.subscribeContent
 import net.folivo.trixnity.core.subscribeEachEvent
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -46,6 +49,7 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(ExperimentalCoroutinesApi::class)
 class SyncApiClientTest : TrixnityBaseTest() {
     private val json = createMatrixEventJson()
+    private val syncResponseSerializer = SyncResponseSerializer(json, DefaultEventContentSerializerMappings)
 
     private val serverResponse1 = Response(
         nextBatch = "nextBatch1",
@@ -53,7 +57,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
         deviceLists = Response.DeviceLists(emptySet(), emptySet()),
         oneTimeKeysCount = emptyMap(),
         presence = Response.Presence(emptyList()),
-        room = Response.Rooms(emptyMap(), emptyMap(), emptyMap()),
+        room = Response.Rooms(roomMapOf(), roomMapOf(), roomMapOf()),
         toDevice = Response.ToDevice(emptyList())
     )
     private val serverResponse2 = Response(
@@ -62,7 +66,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
         deviceLists = Response.DeviceLists(emptySet(), emptySet()),
         oneTimeKeysCount = emptyMap(),
         presence = Response.Presence(emptyList()),
-        room = Response.Rooms(emptyMap(), emptyMap(), emptyMap()),
+        room = Response.Rooms(roomMapOf(), roomMapOf(), roomMapOf()),
         toDevice = Response.ToDevice(emptyList())
     )
 
@@ -348,7 +352,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                                 delay(100.milliseconds)
                             }
                             respond(
-                                json.encodeToString(serverResponse1),
+                                json.encodeToString(syncResponseSerializer, serverResponse1),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -357,7 +361,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                         else -> {
                             delay(5_000)
                             respond(
-                                json.encodeToString(serverResponse1),
+                                json.encodeToString(syncResponseSerializer, serverResponse1),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -410,7 +414,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                                 delay(100.milliseconds)
                             }
                             respond(
-                                json.encodeToString(serverResponse1),
+                                json.encodeToString(syncResponseSerializer, serverResponse1),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -427,7 +431,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                                 delay(30.seconds)
                             }
                             respond(
-                                json.encodeToString(serverResponse2),
+                                json.encodeToString(syncResponseSerializer, serverResponse2),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -436,7 +440,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                         else -> {
                             delay(5_000)
                             respond(
-                                json.encodeToString(serverResponse2),
+                                json.encodeToString(syncResponseSerializer, serverResponse2),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -484,7 +488,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        json.encodeToString(serverResponse1),
+                        json.encodeToString(syncResponseSerializer, serverResponse1),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -567,7 +571,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                             complete.await()
 
                             respond(
-                                json.encodeToString(serverResponse1),
+                                json.encodeToString(syncResponseSerializer, serverResponse1),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -632,7 +636,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                             )
                             assertEquals(HttpMethod.Get, request.method)
                             respond(
-                                json.encodeToString(serverResponse1),
+                                json.encodeToString(syncResponseSerializer, serverResponse1),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -650,7 +654,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                             complete.await()
 
                             respond(
-                                json.encodeToString(serverResponse2),
+                                json.encodeToString(syncResponseSerializer, serverResponse2),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -708,7 +712,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        json.encodeToString(serverResponse1),
+                        json.encodeToString(syncResponseSerializer, serverResponse1),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -719,7 +723,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 }
                 addHandler {
                     respond(
-                        json.encodeToString(serverResponse2),
+                        json.encodeToString(syncResponseSerializer, serverResponse2),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -768,7 +772,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        json.encodeToString(serverResponse1),
+                        json.encodeToString(syncResponseSerializer, serverResponse1),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -780,7 +784,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        json.encodeToString(serverResponse2),
+                        json.encodeToString(syncResponseSerializer, serverResponse2),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -788,7 +792,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 addHandler {
                     delay(50)
                     respond(
-                        json.encodeToString(serverResponse2),
+                        json.encodeToString(syncResponseSerializer, serverResponse2),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -833,7 +837,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        json.encodeToString(serverResponse1),
+                        json.encodeToString(syncResponseSerializer, serverResponse1),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -894,7 +898,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                             requestCount.value++
                             delay(100)
                             respond(
-                                json.encodeToString(serverResponse1),
+                                json.encodeToString(syncResponseSerializer, serverResponse1),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -928,7 +932,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        json.encodeToString(serverResponse1),
+                        json.encodeToString(syncResponseSerializer, serverResponse1),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -954,7 +958,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        json.encodeToString(serverResponse2),
+                        json.encodeToString(syncResponseSerializer, serverResponse2),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -962,7 +966,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                 addHandler { request ->
                     respond(
-                        json.encodeToString(serverResponse2),
+                        json.encodeToString(syncResponseSerializer, serverResponse2),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -1005,7 +1009,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                             assertEquals(HttpMethod.Get, request.method)
                             requestCount.value++
                             respond(
-                                json.encodeToString(serverResponse1),
+                                json.encodeToString(syncResponseSerializer, serverResponse1),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -1013,7 +1017,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
 
                         else -> {
                             respond(
-                                json.encodeToString(serverResponse2),
+                                json.encodeToString(syncResponseSerializer, serverResponse2),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
@@ -1075,7 +1079,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                 )
             ),
             room = Response.Rooms(
-                join = mapOf(
+                join = roomMapOf(
                     RoomId("!room1:Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
@@ -1118,7 +1122,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                         )
                     )
                 ),
-                leave = mapOf(
+                leave = roomMapOf(
                     RoomId("!room2:Server") to Response.Rooms.LeftRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
@@ -1145,7 +1149,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                         )
                     )
                 ),
-                invite = mapOf(
+                invite = roomMapOf(
                     RoomId("!room3:Server") to Response.Rooms.InvitedRoom(
                         Response.Rooms.StrippedState(
                             listOf(
@@ -1178,7 +1182,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
-                        json.encodeToString(inChannel.receive()),
+                        json.encodeToString(syncResponseSerializer, inChannel.receive()),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -1233,7 +1237,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             oneTimeKeysCount = emptyMap(),
             presence = Response.Presence(emptyList()),
             room = Response.Rooms(
-                join = mapOf(
+                join = roomMapOf(
                     RoomId("!room:Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
@@ -1259,7 +1263,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
-                        json.encodeToString(inChannel.receive()),
+                        json.encodeToString(syncResponseSerializer, inChannel.receive()),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -1291,7 +1295,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             oneTimeKeysCount = emptyMap(),
             presence = Response.Presence(emptyList()),
             room = Response.Rooms(
-                join = mapOf(
+                join = roomMapOf(
                     RoomId("!room:Server") to Response.Rooms.JoinedRoom(
                         timeline = Response.Rooms.Timeline(
                             listOf(
@@ -1316,7 +1320,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler {
                     respond(
-                        json.encodeToString(response),
+                        json.encodeToString(syncResponseSerializer, response),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -1372,7 +1376,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     )
                     assertEquals(HttpMethod.Get, request.method)
                     respond(
-                        json.encodeToString(serverResponse1),
+                        json.encodeToString(syncResponseSerializer, serverResponse1),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -1409,7 +1413,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     assertEquals(HttpMethod.Get, request.method)
                     requestCount.value++
                     respond(
-                        json.encodeToString(serverResponse1),
+                        json.encodeToString(syncResponseSerializer, serverResponse1),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -1422,7 +1426,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                     assertEquals(HttpMethod.Get, request.method)
                     requestCount.value++
                     respond(
-                        json.encodeToString(serverResponse2),
+                        json.encodeToString(syncResponseSerializer, serverResponse2),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -1495,7 +1499,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
                         "/_matrix/client/v3/sync?set_presence=offline&since=some&timeout=0" -> {
                             secondEndpoint.complete(Unit)
                             return@addHandler respond(
-                                json.encodeToString(serverResponse1),
+                                json.encodeToString(syncResponseSerializer, serverResponse1),
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )

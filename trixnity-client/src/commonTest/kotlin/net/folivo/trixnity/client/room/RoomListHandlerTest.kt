@@ -17,6 +17,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.LeftRoom
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -91,7 +92,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            join = mapOf(
+                            join = roomMapOf(
                                 roomId to JoinedRoom(
                                     timeline = Sync.Response.Rooms.Timeline(
                                         events = listOf(createEvent),
@@ -136,7 +137,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             roomId to JoinedRoom(
                                 ephemeral = JoinedRoom.Ephemeral(
                                     events = listOf(
@@ -176,7 +177,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             SyncEvents(
                 Sync.Response(
                     nextBatch = "",
-                    room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom())),
+                    room = Sync.Response.Rooms(join = roomMapOf(roomId to JoinedRoom())),
                 ),
                 emptyList()
             )
@@ -197,7 +198,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             SyncEvents(
                 Sync.Response(
                     nextBatch = "",
-                    room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom())),
+                    room = Sync.Response.Rooms(join = roomMapOf(roomId to JoinedRoom())),
                 ),
                 emptyList()
             )
@@ -213,7 +214,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             roomId to JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(createEvent),
@@ -250,7 +251,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             SyncEvents(
                 Sync.Response(
                     nextBatch = "",
-                    room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom()))
+                    room = Sync.Response.Rooms(join = roomMapOf(roomId to JoinedRoom()))
                 ),
                 emptyList()
             )
@@ -264,7 +265,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             SyncEvents(
                 Sync.Response(
                     room = Sync.Response.Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             roomId to JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(
@@ -303,7 +304,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             SyncEvents(
                 Sync.Response(
                     room = Sync.Response.Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             roomId to JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(
@@ -348,7 +349,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
             SyncEvents(
                 Sync.Response(
                     nextBatch = "",
-                    room = Sync.Response.Rooms(join = mapOf(roomId to JoinedRoom())),
+                    room = Sync.Response.Rooms(join = roomMapOf(roomId to JoinedRoom())),
                 ),
                 emptyList()
             )
@@ -887,7 +888,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        leave = mapOf(roomId to LeftRoom())
+                        leave = roomMapOf(roomId to LeftRoom())
                     )
                 ),
                 emptyList()
@@ -909,7 +910,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        leave = mapOf(roomId to LeftRoom())
+                        leave = roomMapOf(roomId to LeftRoom())
                     )
                 ), emptyList()
             )
@@ -932,7 +933,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            leave = mapOf(roomId to LeftRoom())
+                            leave = roomMapOf(roomId to LeftRoom())
                         )
                     ),
                     allEvents = listOf()
@@ -971,7 +972,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            leave = mapOf(roomId to LeftRoom())
+                            leave = roomMapOf(roomId to LeftRoom())
                         )
                     ),
                     allEvents = listOf()
@@ -1010,7 +1011,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            leave = mapOf(
+                            leave = roomMapOf(
                                 roomId to LeftRoom()
                             )
                         )
@@ -1052,7 +1053,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            leave = mapOf(roomId to LeftRoom())
+                            leave = roomMapOf(roomId to LeftRoom())
                         )
                     ),
                     allEvents = listOf()
@@ -1091,7 +1092,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        leave = mapOf(roomId to LeftRoom())
+                        leave = roomMapOf(roomId to LeftRoom())
                     )
                 ),
                 allEvents = listOf()
@@ -1131,7 +1132,7 @@ class RoomListHandlerTest : TrixnityBaseTest() {
                     Sync.Response(
                         nextBatch = "",
                         room = Sync.Response.Rooms(
-                            leave = mapOf(
+                            leave = roomMapOf(
                                 roomId to LeftRoom()
                             )
                         )

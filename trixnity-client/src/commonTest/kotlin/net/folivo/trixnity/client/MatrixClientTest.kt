@@ -16,6 +16,8 @@ import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.Logout
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
+import net.folivo.trixnity.clientserverapi.model.sync.SyncResponseSerializer
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -43,8 +45,10 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class MatrixClientTest : TrixnityBaseTest() {
 
+
     private val json = createMatrixEventJson()
     private val mappings = createDefaultEventContentSerializerMappings()
+    private val syncResponseSerializer = SyncResponseSerializer(json, mappings)
 
     private val serverResponse = Sync.Response(
         nextBatch = "nextBatch",
@@ -56,7 +60,7 @@ class MatrixClientTest : TrixnityBaseTest() {
         deviceLists = Sync.Response.DeviceLists(emptySet(), emptySet()),
         oneTimeKeysCount = emptyMap(),
         presence = Sync.Response.Presence(emptyList()),
-        room = Sync.Response.Rooms(emptyMap(), emptyMap(), emptyMap()),
+        room = Sync.Response.Rooms(roomMapOf(), roomMapOf(), roomMapOf()),
         toDevice = Sync.Response.ToDevice(emptyList())
     )
     private val userId = UserId("user", "localhost")
@@ -230,9 +234,10 @@ class MatrixClientTest : TrixnityBaseTest() {
                                     val roomId = RoomId("!room1:localhost")
                                     respond(
                                         json.encodeToString(
+                                            syncResponseSerializer,
                                             serverResponse.copy(
                                                 room = Sync.Response.Rooms(
-                                                    join = mapOf(
+                                                    join = roomMapOf(
                                                         roomId to Sync.Response.Rooms.JoinedRoom(
                                                             timeline = Sync.Response.Rooms.Timeline(
                                                                 events = listOf(
@@ -487,7 +492,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                             path.startsWith("/_matrix/client/v3/sync?filter=backgroundFilter&set_presence=offline") -> {
                                 assertEquals(HttpMethod.Get, request.method)
                                 respond(
-                                    json.encodeToString(serverResponse),
+                                    json.encodeToString(syncResponseSerializer, serverResponse),
                                     HttpStatusCode.OK,
                                     headersOf(
                                         HttpHeaders.ContentType,
