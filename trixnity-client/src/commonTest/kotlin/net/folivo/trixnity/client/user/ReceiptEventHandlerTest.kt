@@ -7,6 +7,8 @@ import net.folivo.trixnity.client.getInMemoryRoomUserStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.RoomUserReceipts
+import net.folivo.trixnity.clientserverapi.client.SyncEvents
+import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -159,5 +161,45 @@ class ReceiptEventHandlerTest : TrixnityBaseTest() {
             roomUserStore.getReceipts(alice, room).first()?.receipts?.get(ReceiptType.Read) shouldBe
                     RoomUserReceipts.Receipt(eventId, Receipt(3L))
         }
+
+    @Test
+    fun deleteReadReceiptsOnNonJoin() = runTest {
+        val roomId1 = RoomId("!room1")
+        val roomId2 = RoomId("!room2")
+        val roomId3 = RoomId("!room3")
+        val roomId4 = RoomId("!room4")
+        fun roomUserReceipt(roomId: RoomId) = roomUserReceipts(
+            roomId, alice, receipts = mapOf(
+                ReceiptType.Read to RoomUserReceipts.Receipt(
+                    EventId("existingEvent"),
+                    Receipt(0)
+                )
+            )
+        )
+        roomUserStore.updateReceipts(alice, roomId1) { roomUserReceipt(roomId1) }
+        roomUserStore.updateReceipts(alice, roomId2) { roomUserReceipt(roomId2) }
+        roomUserStore.updateReceipts(alice, roomId3) { roomUserReceipt(roomId3) }
+        roomUserStore.updateReceipts(alice, roomId4) { roomUserReceipt(roomId4) }
+
+        cut.deleteReadReceiptsOnNonJoin(
+            SyncEvents(
+                Sync.Response(
+                    "",
+                    Sync.Response.Rooms(
+                        join = mapOf(roomId1 to Sync.Response.Rooms.JoinedRoom()),
+                        knock = mapOf(roomId2 to Sync.Response.Rooms.KnockedRoom()),
+                        invite = mapOf(roomId3 to Sync.Response.Rooms.InvitedRoom()),
+                        leave = mapOf(roomId4 to Sync.Response.Rooms.LeftRoom())
+                    )
+                ), listOf()
+            )
+        )
+
+        roomUserStore.getReceipts(alice, roomId1).first() shouldBe roomUserReceipt(roomId1)
+        roomUserStore.getReceipts(alice, roomId2).first() shouldBe null
+        roomUserStore.getReceipts(alice, roomId3).first() shouldBe null
+        roomUserStore.getReceipts(alice, roomId4).first() shouldBe null
+
+    }
 
 }
