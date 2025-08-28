@@ -17,6 +17,7 @@ import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -645,7 +646,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             room to Sync.Response.Rooms.JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(listOf(textEvent(24)))
                             )
@@ -666,7 +667,7 @@ class TimelineEventHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     nextBatch = "",
                     room = Sync.Response.Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             room to Sync.Response.Rooms.JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     listOf(

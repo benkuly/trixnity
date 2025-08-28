@@ -18,6 +18,7 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.Ephemeral
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.JoinedRoom.RoomSummary
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -114,7 +115,7 @@ class SyncRoutesTest : TrixnityBaseTest() {
                         )
                     ),
                     room = Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             RoomId("!726s6s6q:example.com") to JoinedRoom(
                                 summary = RoomSummary(
                                     heroes = listOf(UserId("@alice:example.com"), UserId("@bob:example.com")),
@@ -198,7 +199,7 @@ class SyncRoutesTest : TrixnityBaseTest() {
                                 )
                             )
                         ),
-                        invite = mapOf(
+                        invite = roomMapOf(
                             RoomId("!696r7674:example.com") to InvitedRoom(
                                 strippedState = StrippedState(
                                     listOf(
