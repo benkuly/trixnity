@@ -20,6 +20,7 @@ import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.BACKWARDS
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents.Direction.FORWARDS
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -527,7 +528,7 @@ class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
             matrixJsonEndpoint(Sync(timeout = 0, since = "token1")) {
                 Sync.Response(
                     nextBatch = "nextBatch1", room = Sync.Response.Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             room to Sync.Response.Rooms.JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(event1)
@@ -540,7 +541,7 @@ class RoomServiceTimelineUtilsTest : TrixnityBaseTest() {
             matrixJsonEndpoint(Sync(timeout = 0, since = "nextBatch1")) {
                 Sync.Response(
                     nextBatch = "nextBatch2", room = Sync.Response.Rooms(
-                        join = mapOf(
+                        join = roomMapOf(
                             RoomId("!other:server") to Sync.Response.Rooms.JoinedRoom(
                                 timeline = Sync.Response.Rooms.Timeline(
                                     events = listOf(event10)

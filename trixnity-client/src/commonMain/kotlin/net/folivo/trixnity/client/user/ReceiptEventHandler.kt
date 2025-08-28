@@ -65,13 +65,13 @@ class ReceiptEventHandler(
     }
 
     internal suspend fun deleteReadReceiptsOnNonJoin(syncEvents: SyncEvents) {
-        syncEvents.syncResponse.room?.leave?.keys?.forEach { roomId ->
+        syncEvents.syncResponse.room?.invite?.keys?.forEach { roomId ->
             roomUserStore.deleteReceiptsByRoomId(roomId)
         }
         syncEvents.syncResponse.room?.knock?.keys?.forEach { roomId ->
             roomUserStore.deleteReceiptsByRoomId(roomId)
         }
-        syncEvents.syncResponse.room?.invite?.keys?.forEach { roomId ->
+        syncEvents.syncResponse.room?.leave?.keys?.forEach { roomId ->
             roomUserStore.deleteReceiptsByRoomId(roomId)
         }
     }

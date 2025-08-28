@@ -9,6 +9,7 @@ import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -186,10 +187,10 @@ class ReceiptEventHandlerTest : TrixnityBaseTest() {
                 Sync.Response(
                     "",
                     Sync.Response.Rooms(
-                        join = mapOf(roomId1 to Sync.Response.Rooms.JoinedRoom()),
-                        knock = mapOf(roomId2 to Sync.Response.Rooms.KnockedRoom()),
-                        invite = mapOf(roomId3 to Sync.Response.Rooms.InvitedRoom()),
-                        leave = mapOf(roomId4 to Sync.Response.Rooms.LeftRoom())
+                        join = roomMapOf(roomId1 to Sync.Response.Rooms.JoinedRoom()),
+                        knock = roomMapOf(roomId2 to Sync.Response.Rooms.KnockedRoom()),
+                        invite = roomMapOf(roomId3 to Sync.Response.Rooms.InvitedRoom()),
+                        leave = roomMapOf(roomId4 to Sync.Response.Rooms.LeftRoom())
                     )
                 ), listOf()
             )
