@@ -24,7 +24,7 @@ private class FullRepositoryObservableCacheIndex<K>(
     }
 
     override suspend fun onRemove(key: K, stale: Boolean) {
-        fullyLoadedFromRepository.value = stale
+        fullyLoadedFromRepository.update { it && stale }
         allKeys.remove(key)
     }
 
