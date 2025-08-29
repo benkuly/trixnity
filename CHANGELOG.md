@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed that FullRepositoryObservableCacheIndex may forget fully loaded state
+
 ### Security
 
 ## 4.22.2

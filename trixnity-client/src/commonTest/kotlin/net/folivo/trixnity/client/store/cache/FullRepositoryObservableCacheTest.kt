@@ -45,4 +45,15 @@ class FullRepositoryObservableCacheTest : TrixnityBaseTest() {
         cut.update("key1") { null }
         all.first { it == setOf("key2") }
     }
+
+    @Test
+    fun `readAll » don't forget fully loaded state`() = runTest {
+        repository.save("key1", Entry("key1", "old1"))
+        repository.save("key2", Entry("key2", "old2"))
+        cut.readAll().first().keys shouldBe setOf("key1", "key2")
+        cut.set("key3", Entry("key3", "old3"))
+        cut.update("key1") { null }
+        cut.invalidate()
+        cut.readAll().first().keys shouldBe setOf("key2", "key3")
+    }
 }
