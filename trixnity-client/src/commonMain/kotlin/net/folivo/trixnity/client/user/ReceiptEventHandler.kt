@@ -6,6 +6,8 @@ import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.RoomUserStore
 import net.folivo.trixnity.client.store.TransactionManager
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.SyncEvents
+import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
@@ -24,7 +26,10 @@ class ReceiptEventHandler(
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribeContentList(subscriber = ::setReadReceipts).unsubscribeOnCompletion(scope)
+        api.sync.subscribeContentList(Priority.STORE_EVENTS, subscriber = ::setReadReceipts)
+            .unsubscribeOnCompletion(scope)
+        api.sync.subscribe(Priority.STORE_EVENTS, subscriber = ::deleteReadReceiptsOnNonJoin)
+            .unsubscribeOnCompletion(scope)
     }
 
     internal suspend fun setReadReceipts(receiptEvents: List<ClientEvent<ReceiptEventContent>>) {
@@ -57,5 +62,17 @@ class ReceiptEventHandler(
                     }
                 }
             }
+    }
+
+    internal suspend fun deleteReadReceiptsOnNonJoin(syncEvents: SyncEvents) {
+        syncEvents.syncResponse.room?.invite?.keys?.forEach { roomId ->
+            roomUserStore.deleteReceiptsByRoomId(roomId)
+        }
+        syncEvents.syncResponse.room?.knock?.keys?.forEach { roomId ->
+            roomUserStore.deleteReceiptsByRoomId(roomId)
+        }
+        syncEvents.syncResponse.room?.leave?.keys?.forEach { roomId ->
+            roomUserStore.deleteReceiptsByRoomId(roomId)
+        }
     }
 }

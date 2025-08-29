@@ -233,6 +233,32 @@ class SyncRoutesTest : TrixnityBaseTest() {
                 {
                   "next_batch":"s72595_4483_1934",
                   "rooms":{
+                    "invite":{
+                      "!696r7674:example.com":{
+                        "invite_state":{
+                          "events":[
+                            {
+                              "content":{
+                                "name":"My Room Name"
+                              },
+                              "room_id":"!696r7674:example.com",
+                              "sender":"@alice:example.com",
+                              "state_key":"",
+                              "type":"m.room.name"
+                            },
+                            {
+                              "content":{
+                                "membership":"invite"
+                              },
+                              "room_id":"!696r7674:example.com",
+                              "sender":"@alice:example.com",
+                              "state_key":"@bob:example.com",
+                              "type":"m.room.member"
+                            }
+                          ]
+                        }
+                      }
+                    },
                     "join":{
                       "!726s6s6q:example.com":{
                         "summary":{
@@ -323,32 +349,6 @@ class SyncRoutesTest : TrixnityBaseTest() {
                               },
                               "room_id":"!726s6s6q:example.com",
                               "type":"org.example.custom.config"
-                            }
-                          ]
-                        }
-                      }
-                    },
-                    "invite":{
-                      "!696r7674:example.com":{
-                        "invite_state":{
-                          "events":[
-                            {
-                              "content":{
-                                "name":"My Room Name"
-                              },
-                              "room_id":"!696r7674:example.com",
-                              "sender":"@alice:example.com",
-                              "state_key":"",
-                              "type":"m.room.name"
-                            },
-                            {
-                              "content":{
-                                "membership":"invite"
-                              },
-                              "room_id":"!696r7674:example.com",
-                              "sender":"@alice:example.com",
-                              "state_key":"@bob:example.com",
-                              "type":"m.room.member"
                             }
                           ]
                         }

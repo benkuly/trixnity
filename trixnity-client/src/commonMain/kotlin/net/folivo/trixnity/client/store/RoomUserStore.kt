@@ -51,6 +51,10 @@ class RoomUserStore(
         roomUserReceiptsCache.deleteByRoomId(roomId)
     }
 
+    suspend fun deleteReceiptsByRoomId(roomId: RoomId) {
+        roomUserReceiptsCache.deleteByRoomId(roomId)
+    }
+
     fun getAll(roomId: RoomId): Flow<Map<UserId, Flow<RoomUser?>>> =
         roomUserCache.readByFirstKey(roomId)
 

@@ -62,9 +62,9 @@ data class Sync(
 
         @Serializable
         data class Rooms(
-            @SerialName("knock") val knock: @Contextual RoomMap<KnockedRoom>? = null,
-            @SerialName("join") val join: @Contextual RoomMap<JoinedRoom>? = null,
             @SerialName("invite") val invite: @Contextual RoomMap<InvitedRoom>? = null,
+            @SerialName("join") val join: @Contextual RoomMap<JoinedRoom>? = null,
+            @SerialName("knock") val knock: @Contextual RoomMap<KnockedRoom>? = null,
             @SerialName("leave") val leave: @Contextual RoomMap<LeftRoom>? = null
         ) {
             @JvmInline
