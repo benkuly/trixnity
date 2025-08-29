@@ -28,13 +28,14 @@ class RoomServiceMock : RoomService {
         throw NotImplementedError()
     }
 
-    lateinit var returnGetTimelineEvent: Flow<TimelineEvent>
+    var returnGetTimelineEventList: MutableList<Flow<TimelineEvent?>>? = null
+    var returnGetTimelineEvent: Flow<TimelineEvent?> = flowOf(null)
     override fun getTimelineEvent(
         roomId: RoomId,
         eventId: EventId,
         config: GetTimelineEventConfig.() -> Unit
     ): Flow<TimelineEvent?> {
-        return returnGetTimelineEvent
+        return returnGetTimelineEventList?.removeFirst() ?: returnGetTimelineEvent
     }
 
     override fun getPreviousTimelineEvent(

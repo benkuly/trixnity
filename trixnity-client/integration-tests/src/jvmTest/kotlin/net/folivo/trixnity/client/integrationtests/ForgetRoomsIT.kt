@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -90,7 +89,7 @@ class ForgetRoomsIT {
                     ),
             ).getOrThrow()
 
-            withClue("Client1 creates a room and writes messages") {
+            withCluePrintln("Client1 creates a room and writes messages") {
                 client1.room.getById(room).firstWithTimeout { it?.encrypted == true }
                 client1.room.sendMessage(room) { text("Hello!") }
                 client1.room.waitForOutboxSent()
@@ -101,16 +100,16 @@ class ForgetRoomsIT {
                 // client1.room.sendMessage(room) { text("Come on!") }
             }
 
-            withClue("client2 sees invitation") {
+            withCluePrintln("client2 sees invitation") {
                 client2.room.getById(room).firstWithTimeout { it?.membership == INVITE }
             }
 
-            withClue("client1 kicks client2") {
+            withCluePrintln("client1 kicks client2") {
                 delay(300.milliseconds)
                 client1.api.room.kickUser(room, client2.userId, "does not respond").getOrThrow()
             }
 
-            withClue("client2 does not see the room after kicking") {
+            withCluePrintln("client2 does not see the room after kicking") {
                 client2.room.getById(room).firstWithTimeout { it == null }
             }
         }

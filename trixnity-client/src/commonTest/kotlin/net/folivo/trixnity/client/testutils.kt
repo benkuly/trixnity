@@ -286,6 +286,22 @@ fun TrixnityBaseTest.getInMemoryRoomOutboxMessageStore(setup: suspend RoomOutbox
         }
     }
 
+fun TrixnityBaseTest.getInMemoryNotificationStore(setup: suspend NotificationStore.() -> Unit = {}) =
+    NotificationStore(
+        InMemoryNotificationRepository(),
+        InMemoryNotificationStateRepository(),
+        NoOpRepositoryTransactionManager,
+        MatrixClientConfiguration(),
+        ObservableCacheStatisticCollector(),
+        testScope.backgroundScope,
+        testScope.testClock,
+    ).apply {
+        scheduleSetup {
+            init(backgroundScope)
+            setup()
+        }
+    }
+
 fun TestScope.clearOutdatedKeys(keyStoreBuilder: () -> KeyStore) {
     val keyStore = keyStoreBuilder()
     backgroundScope.launch {

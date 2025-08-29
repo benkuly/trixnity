@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -80,7 +79,7 @@ class DehydratedDeviceIT {
             ).getOrThrow()
 
             val bootstrap = startedClient2.client.key.bootstrapCrossSigning()
-            withClue("bootstrap client2") {
+            withCluePrintln("bootstrap client2") {
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
@@ -105,7 +104,7 @@ class DehydratedDeviceIT {
                 startClient("client3", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
                     experimentalFeatures.enableMSC3814 = true
                 }
-            withClue("self verify client3") {
+            withCluePrintln("self verify client3") {
                 val client3VerificationMethods =
                     startedClient3.client.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
@@ -120,7 +119,7 @@ class DehydratedDeviceIT {
             foundContent.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>().body shouldBe "some encrypted message"
             startedClient3.client.syncOnce().getOrThrow()
 
-            withClue("send message from client3") {
+            withCluePrintln("send message from client3") {
                 startedClient3.client.room.sendMessage(roomId) { text("hi") }
                 startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().flatMapLatest { it }
                     .firstWithTimeout {
@@ -141,7 +140,7 @@ class DehydratedDeviceIT {
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
 
-            withClue("bootstrap client2") {
+            withCluePrintln("bootstrap client2") {
                 startedClient2.client.key.bootstrapCrossSigning().result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
@@ -157,7 +156,7 @@ class DehydratedDeviceIT {
                     experimentalFeatures.enableMSC3814 = true
                 }
             val bootstrap = startedClient3.client.key.bootstrapCrossSigning()
-            withClue("bootstrap client3") {
+            withCluePrintln("bootstrap client3") {
                 val step1 = bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Step<Unit>>()
                 step1.authenticate(
@@ -191,7 +190,7 @@ class DehydratedDeviceIT {
                 startClient("client4", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
                     experimentalFeatures.enableMSC3814 = true
                 }
-            withClue("self verify client4") {
+            withCluePrintln("self verify client4") {
                 val client4VerificationMethods =
                     startedClient4.client.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
@@ -200,7 +199,7 @@ class DehydratedDeviceIT {
                     .first()
                     .verify(bootstrap.recoveryKey).getOrThrow()
             }
-            withClue("decrypt content in client4") {
+            withCluePrintln("decrypt content in client4") {
                 val foundContent = startedClient4.client.room.getTimelineEvent(roomId, eventId)
                     .map { it?.content?.getOrNull() }.filterNotNull()
                     .firstWithTimeout()
@@ -208,7 +207,7 @@ class DehydratedDeviceIT {
                 startedClient4.client.syncOnce()
             }
 
-            withClue("send message from client4") {
+            withCluePrintln("send message from client4") {
                 startedClient4.client.room.sendMessage(roomId) { text("hi") }
                 startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().flatMapLatest { it }
                     .firstWithTimeout {

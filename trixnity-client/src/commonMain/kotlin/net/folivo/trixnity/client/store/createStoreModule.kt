@@ -43,6 +43,7 @@ fun createStoreModule() = module {
     singleOf(::RoomTimelineStore)
     singleOf(::RoomUserStore)
     singleOf(::UserPresenceStore)
+    singleOf(::NotificationStore)
 
     single {
         RootStore(
@@ -61,6 +62,7 @@ fun createStoreModule() = module {
                 getOrNull<RoomTimelineStore>(),
                 getOrNull<RoomUserStore>(),
                 getOrNull<UserPresenceStore>(),
+                getOrNull<NotificationStore>(),
             )
         )
     }

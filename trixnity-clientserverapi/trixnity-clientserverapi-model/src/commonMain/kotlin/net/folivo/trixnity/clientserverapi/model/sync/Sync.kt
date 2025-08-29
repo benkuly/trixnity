@@ -20,6 +20,7 @@ import net.folivo.trixnity.core.MatrixEndpoint
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ClientEvent.*
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.m.Presence
@@ -174,6 +175,29 @@ data class Sync(
 
 typealias OneTimeKeysCount = Map<KeyAlgorithm, Int>
 typealias UnusedFallbackKeyTypes = Set<KeyAlgorithm>
+
+fun Sync.Response.allEvents(): List<ClientEvent<*>> = buildList {
+    toDevice?.events?.forEach { add(it) }
+    accountData?.events?.forEach { add(it) }
+    presence?.events?.forEach { add(it) }
+    room?.join?.forEach { (_, joinedRoom) ->
+        joinedRoom.state?.events?.forEach { add(it) }
+        joinedRoom.timeline?.events?.forEach { add(it) }
+        joinedRoom.ephemeral?.events?.forEach { add(it) }
+        joinedRoom.accountData?.events?.forEach { add(it) }
+    }
+    room?.invite?.forEach { (_, invitedRoom) ->
+        invitedRoom.strippedState?.events?.forEach { add(it) }
+    }
+    room?.knock?.forEach { (_, invitedRoom) ->
+        invitedRoom.strippedState?.events?.forEach { add(it) }
+    }
+    room?.leave?.forEach { (_, leftRoom) ->
+        leftRoom.state?.events?.forEach { add(it) }
+        leftRoom.timeline?.events?.forEach { add(it) }
+        leftRoom.accountData?.events?.forEach { add(it) }
+    }
+}
 
 class SyncResponseSerializer(
     json: Json,

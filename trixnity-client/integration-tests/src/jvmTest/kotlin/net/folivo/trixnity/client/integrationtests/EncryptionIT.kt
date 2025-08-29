@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.assertions.nondeterministic.eventually
-import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -89,7 +88,7 @@ class EncryptionIT {
     @Test
     fun shouldEncryptOnJoin(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            withClue("ensure, that both already know each others devices") {
+            withCluePrintln("ensure, that both already know each others devices") {
                 val initialRoomId = client1.api.room.createRoom(
                     invite = setOf(client2.userId),
                     initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
@@ -103,7 +102,7 @@ class EncryptionIT {
             val roomId = client1.api.room.createRoom(
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
-            withClue("prepare room") {
+            withCluePrintln("prepare room") {
                 client1.room.getById(roomId).firstWithTimeout { it?.encrypted == true }
                 client1.room.sendMessage(roomId) { text("Keep secret!") }
                 client1.room.waitForOutboxSent()
@@ -120,7 +119,7 @@ class EncryptionIT {
                     .take(1)
             }
 
-            withClue("join room") {
+            withCluePrintln("join room") {
                 client2.api.room.joinRoom(roomId).getOrThrow()
                 client1.user.getById(roomId, client2.userId).firstWithTimeout { it?.membership == JOIN }
             }
@@ -198,7 +197,7 @@ class EncryptionIT {
                     ).getOrThrow()
                 }
                 checkNotNull(clientFromStore)
-                withClue("send messages") {
+                withCluePrintln("send messages") {
                     coroutineScope {
                         launch {
                             repeat(messageCount) { i ->
@@ -235,7 +234,7 @@ class EncryptionIT {
                 clientFromStore.startSync()
                 clientFromLogin.startSync()
 
-                withClue("decrypt messages from store") {
+                withCluePrintln("decrypt messages from store") {
                     val lastEventId =
                         clientFromStore.room.getById(roomId).firstWithTimeout()?.lastEventId.shouldNotBeNull()
                     val receivedMessages = clientFromStore.room.getTimelineEvents(roomId, lastEventId)
@@ -243,7 +242,7 @@ class EncryptionIT {
                         .toList()
                     receivedMessages shouldHaveSize messageCount
                     receivedMessages.reversed().forEachIndexed { i, messageFlow ->
-                        val message = messageFlow.firstWithContent()
+                        val message = messageFlow.firstWithContent().shouldNotBeNull()
                         message.event.content.shouldBeInstanceOf<EncryptedMessageEventContent>()
                         message.content?.getOrThrow()
                             .shouldNotBeNull()
@@ -251,7 +250,7 @@ class EncryptionIT {
                             .body shouldBe "message ($iteration - $i)"
                     }
                 }
-                withClue("decrypt messages from login") {
+                withCluePrintln("decrypt messages from login") {
                     val lastEventId =
                         clientFromLogin.room.getById(roomId).firstWithTimeout()?.lastEventId.shouldNotBeNull()
                     val receivedMessages = clientFromLogin.room.getTimelineEvents(roomId, lastEventId)
@@ -259,7 +258,7 @@ class EncryptionIT {
                         .toList()
                     receivedMessages shouldHaveSize messageCount
                     receivedMessages.reversed().forEachIndexed { i, messageFlow ->
-                        val message = messageFlow.firstWithContent()
+                        val message = messageFlow.firstWithContent().shouldNotBeNull()
                         message.event.content.shouldBeInstanceOf<EncryptedMessageEventContent>()
                         message.content?.getOrThrow()
                             .shouldNotBeNull()

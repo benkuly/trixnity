@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
@@ -38,7 +37,7 @@ class LogoutIT {
             val startedClient2 =
                 startClient("client2", "user1", getBaseUrl(), createExposedRepositoriesModule(newDatabase()))
 
-            withClue("check client2 is logged in and sync is running") {
+            withCluePrintln("check client2 is logged in and sync is running") {
                 withTimeout(30_000) {
                     startedClient2.client.syncState.firstWithTimeout { it == SyncState.RUNNING }
                     startedClient2.client.loginState.firstWithTimeout { it == LOGGED_IN }
@@ -50,7 +49,7 @@ class LogoutIT {
                 .authenticate(Password(User("user1"), startedClient1.password)).getOrThrow()
                 .shouldBeInstanceOf<UIA.Success<Unit>>()
 
-            withClue("check client2 is logged out and sync is stopped") {
+            withCluePrintln("check client2 is logged out and sync is stopped") {
                 startedClient2.client.syncState.firstWithTimeout { it == SyncState.STOPPED }
                 startedClient2.client.loginState.firstWithTimeout { it == LoginState.LOGGED_OUT }
             }

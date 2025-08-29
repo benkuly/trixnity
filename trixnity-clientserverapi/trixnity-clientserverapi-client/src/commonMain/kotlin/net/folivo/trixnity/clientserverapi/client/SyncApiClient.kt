@@ -11,6 +11,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.clientserverapi.client.SyncState.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
+import net.folivo.trixnity.clientserverapi.model.sync.allEvents
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.ClientEventEmitterImpl
 import net.folivo.trixnity.core.model.UserId
@@ -45,7 +46,7 @@ interface SyncBatchTokenStore {
 
 class SyncEvents(
     val syncResponse: Sync.Response,
-    allEvents: List<ClientEvent<*>>,
+    allEvents: List<ClientEvent<*>> = syncResponse.allEvents(),
     internal val epoch: Long? = null
 ) : List<ClientEvent<*>> by allEvents
 
@@ -315,28 +316,6 @@ class SyncApiClientImpl(
             SyncEvents(
                 epoch = epoch,
                 syncResponse = response,
-                allEvents = buildList {
-                    response.toDevice?.events?.forEach { add(it) }
-                    response.accountData?.events?.forEach { add(it) }
-                    response.presence?.events?.forEach { add(it) }
-                    response.room?.join?.forEach { (_, joinedRoom) ->
-                        joinedRoom.state?.events?.forEach { add(it) }
-                        joinedRoom.timeline?.events?.forEach { add(it) }
-                        joinedRoom.ephemeral?.events?.forEach { add(it) }
-                        joinedRoom.accountData?.events?.forEach { add(it) }
-                    }
-                    response.room?.invite?.forEach { (_, invitedRoom) ->
-                        invitedRoom.strippedState?.events?.forEach { add(it) }
-                    }
-                    response.room?.knock?.forEach { (_, invitedRoom) ->
-                        invitedRoom.strippedState?.events?.forEach { add(it) }
-                    }
-                    response.room?.leave?.forEach { (_, leftRoom) ->
-                        leftRoom.state?.events?.forEach { add(it) }
-                        leftRoom.timeline?.events?.forEach { add(it) }
-                        leftRoom.accountData?.events?.forEach { add(it) }
-                    }
-                }
             )
         emit(syncEvents)
     }

@@ -2,21 +2,22 @@ package net.folivo.trixnity.client.notification
 
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import kotlin.test.Test
 
-class HasGlobMatchTest {
+class HasGlobMatchTest : TrixnityBaseTest() {
     @Test
-    fun `hasGlobMatch - no match`() {
+    fun `no match`() {
         hasGlobMatch("dino", "unicorn") shouldBe false
     }
 
     @Test
-    fun `hasGlobMatch - match substring`() {
+    fun `match substring`() {
         hasGlobMatch("dino", "ino") shouldBe true
     }
 
     @Test
-    fun `hasGlobMatch - match glob`() {
+    fun `match glob`() {
         hasGlobMatch("do", "d*o") shouldBe true
         hasGlobMatch("dino", "d*o") shouldBe true
         hasGlobMatch("dino", "di?o") shouldBe true
@@ -24,14 +25,14 @@ class HasGlobMatchTest {
     }
 
     @Test
-    fun `hasGlobMatch - no match glob`() {
+    fun `no match glob`() {
         hasGlobMatch("din", "d*o") shouldBe false
         hasGlobMatch("ditto", "di?o") shouldBe false
         hasGlobMatch("dio", "di?o") shouldBe false
     }
 
     @Test
-    fun `hasGlobMatch - ignore other regex commands`() {
+    fun `ignore other regex commands`() {
         val dangerousChars = listOf(
             ".", "\\", "+", "(", ")", "[", "]", "{", "}", "^", "$", "|"
         )

@@ -1,167 +1,207 @@
 package net.folivo.trixnity.client.notification
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.client.CurrentSyncState
-import net.folivo.trixnity.client.notification.NotificationService.Notification
+import net.folivo.trixnity.client.MatrixClientStarted
+import net.folivo.trixnity.client.flatten
+import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.room.RoomService
-import net.folivo.trixnity.client.store.GlobalAccountDataStore
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.get
-import net.folivo.trixnity.client.store.isEncrypted
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.sync.Sync
-import net.folivo.trixnity.core.ClientEventEmitter.Priority
-import net.folivo.trixnity.core.UserInfo
-import net.folivo.trixnity.core.model.events.ClientEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
-import net.folivo.trixnity.core.model.events.ClientEvent.StrippedStateEvent
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
-import net.folivo.trixnity.core.model.push.PushAction
-import net.folivo.trixnity.core.subscribeAsFlow
+import net.folivo.trixnity.clientserverapi.client.startOnce
+import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.notification.NotificationService")
 
+
+/**
+ * Access and manage user-visible notifications.
+ */
 interface NotificationService {
-    data class Notification(
-        val event: ClientEvent<*>,
-        val actions: Set<PushAction>,
-    )
 
-    fun getNotifications(
-        decryptionTimeout: Duration = 5.seconds,
-        syncResponseBufferSize: Int = 4
-    ): Flow<Notification>
+    /**
+     * Get all notifications.
+     */
+    fun getAll(): Flow<List<Flow<Notification?>>>
 
-    fun getNotifications(
-        response: Sync.Response,
-        decryptionTimeout: Duration = 5.seconds,
-    ): Flow<Notification>
+    /**
+     * Notification by id, or null if not available.
+     */
+    fun getById(id: String): Flow<Notification?>
+
+    /**
+     * Total notification count across all rooms.
+     */
+    fun getNotificationCount(): Flow<Int>
+
+    /**
+     * Notification count for the given room.
+     */
+    fun getNotificationCount(roomId: RoomId): Flow<Int>
+
+    /**
+     * Mark the notification as dismissed.
+     */
+    suspend fun dismiss(id: String)
+
+    /**
+     * Dismiss all notifications.
+     */
+    suspend fun dismissAll()
+
+    /**
+     * Handle a push for a room/event.
+     *
+     * @return true if no further sync is needed, otherwise false.
+     */
+    suspend fun onPush(roomId: RoomId, eventId: EventId?): Boolean
+
+    /**
+     * Process possibly pending push notifications if needed.
+     * This may suspend for a long time (e.g., when the network is not available)
+     */
+    suspend fun processPush()
 }
 
 class NotificationServiceImpl(
-    private val userInfo: UserInfo,
+    private val roomService: RoomService,
+    private val roomStateStore: RoomStateStore,
+    private val accountStore: AccountStore,
+    private val notificationStore: NotificationStore,
     private val api: MatrixClientServerApiClient,
-    private val room: RoomService,
-    private val globalAccountDataStore: GlobalAccountDataStore,
-    private val evaluatePushRules: EvaluatePushRules,
-    private val currentSyncState: CurrentSyncState,
-) : NotificationService {
-
-    override fun getNotifications(
-        response: Sync.Response,
-        decryptionTimeout: Duration,
-    ): Flow<Notification> = evaluateDefaultPushRules(
-        extractClientEvents(response, decryptionTimeout)
-    )
+    private val matrixClientStarted: MatrixClientStarted,
+    private val eventContentSerializerMappings: EventContentSerializerMappings,
+    coroutineScope: CoroutineScope,
+) : NotificationService, EventHandler {
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun getNotifications(
-        decryptionTimeout: Duration,
-        syncResponseBufferSize: Int,
-    ): Flow<Notification> = channelFlow {
-        currentSyncState.first { it == SyncState.STARTED || it == SyncState.RUNNING }
+    override fun getAll(): Flow<List<Flow<Notification?>>> =
+        notificationStore.getAll().flatMapLatest { notifications ->
+            if (notifications.isEmpty()) flowOf(emptyList())
+            else {
+                val innerFlowsWithSortKey = notifications.values.map { entry -> entry.map { entry to it?.sortKey } }
+                combine(innerFlowsWithSortKey) { innerFlowsWithCreatedAtArray ->
+                    innerFlowsWithCreatedAtArray
+                        .mapNotNull { entry -> entry.second?.let { entry.first to entry.second } }
+                        .sortedBy { it.second }
+                        .map { it.first.toNotification() }
+                }
+            }
+        }.distinctUntilChanged()
 
-        val clientEvents = api.sync.subscribeAsFlow(Priority.AFTER_DEFAULT)
-            .buffer(syncResponseBufferSize)
-            .flatMapConcat { extractClientEvents(it.syncResponse, decryptionTimeout) }
+    override fun getById(id: String): Flow<Notification?> = notificationStore.getById(id).toNotification()
 
-        evaluateDefaultPushRules(clientEvents).collect {
-            send(it)
-        }
-    }.buffer(0)
+    private val processedNotifications =
+        notificationStore.getAll().flattenValues()
+            .shareIn(
+                coroutineScope,
+                SharingStarted.WhileSubscribed(stopTimeout = 5.seconds, replayExpiration = 5.seconds),
+                replay = 1
+            )
 
-    private fun extractDecryptedEvent(timelineEvent: TimelineEvent): RoomEvent<*>? {
-        val originalEvent = timelineEvent.event
-        val content = timelineEvent.content?.getOrNull()
-        return when {
-            timelineEvent.isEncrypted.not() -> originalEvent
-            content == null -> null
-            originalEvent is RoomEvent.MessageEvent<*> && content is MessageEventContent ->
-                RoomEvent.MessageEvent(
-                    content = content,
-                    id = originalEvent.id,
-                    sender = originalEvent.sender,
-                    roomId = originalEvent.roomId,
-                    originTimestamp = originalEvent.originTimestamp,
-                    unsigned = originalEvent.unsigned
-                )
+    override fun getNotificationCount(): Flow<Int> =
+        processedNotifications.map { notifications -> notifications.size }
 
-            originalEvent is RoomEvent.StateEvent<*> && content is StateEventContent -> originalEvent
-            else -> null
+    override fun getNotificationCount(roomId: RoomId): Flow<Int> =
+        processedNotifications.map { notifications -> notifications.count { it.roomId == roomId } }
+
+    override suspend fun dismiss(id: String) {
+        notificationStore.update(id) { notification ->
+            when (notification) {
+                is StoredNotification.Message -> notification.copy(dismissed = true)
+                is StoredNotification.State -> notification.copy(dismissed = true)
+                null -> null
+            }
         }
     }
 
-    private fun pushRulesFlow() = globalAccountDataStore.get<PushRulesEventContent>()
-        .map { event ->
-            event?.content?.global?.let { globalRuleSet ->
-                log.trace { "global rule set: $globalRuleSet" }
-                (
-                        globalRuleSet.override.orEmpty() +
-                                globalRuleSet.content.orEmpty() +
-                                globalRuleSet.room.orEmpty() +
-                                globalRuleSet.sender.orEmpty() +
-                                globalRuleSet.underride.orEmpty()
+    override suspend fun dismissAll() = notificationStore.getAll().flatten().first().forEach { dismiss(it.key) }
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun Flow<StoredNotification?>.toNotification(): Flow<Notification?> = flatMapLatest { notification ->
+        when (notification) {
+            is StoredNotification.Message -> {
+                roomService.getTimelineEvent(notification.roomId, notification.eventId)
+                    .map { timelineEvent ->
+                        if (timelineEvent == null) null
+                        else Notification.Message(
+                            id = notification.id,
+                            actions = notification.actions,
+                            dismissed = notification.dismissed,
+                            timelineEvent = timelineEvent,
                         )
-            } ?: emptyList()
-        }
-
-    private fun extractInviteEventsFromSyncResponse(
-        response: Sync.Response,
-    ): Flow<StrippedStateEvent<*>> =
-        response.room?.invite?.values
-            ?.flatMap { inviteRoom ->
-                inviteRoom.strippedState?.events.orEmpty()
-            }
-            ?.asFlow()
-            ?: emptyFlow()
-
-    private fun extractTimelineEventsFromSyncResponse(
-        response: Sync.Response,
-        decryptionTimeout: Duration,
-    ): Flow<RoomEvent<*>> =
-        room.getTimelineEvents(response, decryptionTimeout)
-            .map { extractDecryptedEvent(it) }
-            .filterNotNull()
-            .filter {
-                it.sender != userInfo.userId
+                    }
             }
 
-    private fun extractClientEvents(
-        response: Sync.Response,
-        decryptionTimeout: Duration,
-    ): Flow<ClientEvent<*>> = merge(
-        extractInviteEventsFromSyncResponse(response),
-        extractTimelineEventsFromSyncResponse(response, decryptionTimeout)
-    )
-
-    private fun evaluateDefaultPushRules(
-        clientEvents: Flow<ClientEvent<*>>
-    ): Flow<Notification> = flow {
-        coroutineScope {
-            val allRules = pushRulesFlow().stateIn(this)
-
-            clientEvents.map { event ->
-                evaluatePushRules(
-                    event = event,
-                    allRules = allRules.value
-                )?.let { event to it }
-            }.filterNotNull().collect { (event, evaluatePushRulesResult) ->
-                emit(Notification(event, evaluatePushRulesResult.actions))
+            is StoredNotification.State -> {
+                val eventContentClass =
+                    eventContentSerializerMappings.state.find { it.type == notification.type }?.kClass
+                if (eventContentClass == null) {
+                    log.warn { "could not resolve type for notification ${notification.id}" }
+                    flowOf(null)
+                } else {
+                    roomStateStore.getByStateKey(
+                        roomId = notification.roomId,
+                        eventContentClass = eventContentClass,
+                        stateKey = notification.stateKey
+                    ).map { stateEvent ->
+                        if (stateEvent == null) null
+                        else Notification.State(
+                            id = notification.id,
+                            actions = notification.actions,
+                            dismissed = notification.dismissed,
+                            stateEvent = stateEvent,
+                        )
+                    }
+                }
             }
 
-            currentCoroutineContext().cancelChildren()
+            null -> flowOf(null)
         }
     }
 
+    override suspend fun onPush(roomId: RoomId, eventId: EventId?): Boolean {
+        if (eventId != null) {
+            val foundNotificationInStore =
+                notificationStore.getAll().first().map { it.value.first() }.any {
+                    it is StoredNotification.Message && it.roomId == roomId && it.eventId == eventId ||
+                            it is StoredNotification.State && it.roomId == roomId && it.eventId == eventId
+                }
+            if (foundNotificationInStore) return true
+
+            val foundInTimeline = roomService.getTimelineEvent(roomId, eventId).first() != null
+            if (foundInTimeline) return true
+        }
+
+        notificationStore.updateState(roomId) {
+            when (it) {
+                is StoredNotificationState.Push -> it
+                is StoredNotificationState.Remove -> it
+                is StoredNotificationState.SyncWithTimeline -> it.copy(hasPush = true)
+                is StoredNotificationState.SyncWithoutTimeline -> it.copy(hasPush = true)
+                null -> StoredNotificationState.Push(roomId)
+            }
+        }
+        return false
+    }
+
+    override suspend fun processPush() {
+        matrixClientStarted.first { it }
+        val hasPush = notificationStore.getAllState().first().any { it.value.first()?.hasPush == true }
+        if (!hasPush) return
+        api.sync.startOnce(
+            filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
+            timeout = Duration.ZERO,
+        ).getOrThrow()
+        notificationStore.getAllState().flatten().first { it.any { it.value?.hasPush == false } }
+    }
 }

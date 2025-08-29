@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -113,19 +112,19 @@ class CrossSigningIT {
     @Test
     fun testCrossSigning(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            withClue("wait for client1 self verification to be NoCrossSigningEnabled") {
+            withCluePrintln("wait for client1 self verification to be NoCrossSigningEnabled") {
                 client1.verification.getSelfVerificationMethods()
                     .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
                     .firstWithTimeout()
             }
 
-            val bootstrap = withClue("bootstrap client1") {
+            val bootstrap = withCluePrintln("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
                 }
             }
-            withClue("user1 invites user3, so user3 gets user1s keys") {
+            withCluePrintln("user1 invites user3, so user3 gets user1s keys") {
                 val roomId = client1.api.room.createRoom(
                     invite = setOf(client3.userId),
                     initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
@@ -135,18 +134,18 @@ class CrossSigningIT {
                 client3.room.getById(roomId).firstWithTimeout { it?.membership == JOIN }
             }
 
-            withClue("wait for client1 self verification to be AlreadyCrossSigned") {
+            withCluePrintln("wait for client1 self verification to be AlreadyCrossSigned") {
                 client1.verification.getSelfVerificationMethods()
                     .filterIsInstance<SelfVerificationMethods.AlreadyCrossSigned>()
                     .firstWithTimeout()
             }
 
-            withClue("bootstrap client3") {
+            withCluePrintln("bootstrap client3") {
                 client3.key.bootstrapCrossSigning().result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
 
-            withClue("observe trust level with client1 before self verification") {
+            withCluePrintln("observe trust level with client1 before self verification") {
                 client1.key.apply {
                     getTrustLevel(client1.userId).firstWithTimeout { it == NotAllDevicesCrossSigned(true) }
                     getTrustLevel(
@@ -161,7 +160,7 @@ class CrossSigningIT {
                     ).firstWithTimeout { it == DeviceTrustLevel.CrossSigned(false) }
                 }
             }
-            withClue("observe trust level with client2 before self verification") {
+            withCluePrintln("observe trust level with client2 before self verification") {
                 client2.key.apply {
                     getTrustLevel(client1.userId).firstWithTimeout { it == NotAllDevicesCrossSigned(false) }
                     getTrustLevel(
@@ -176,7 +175,7 @@ class CrossSigningIT {
                     ).firstWithTimeout { it == DeviceTrustLevel.CrossSigned(false) }
                 }
             }
-            withClue("observe trust level with client3 before self verification") {
+            withCluePrintln("observe trust level with client3 before self verification") {
                 client3.key.apply {
                     getTrustLevel(client1.userId).firstWithTimeout { it == NotAllDevicesCrossSigned(false) }
                     getTrustLevel(
@@ -192,7 +191,7 @@ class CrossSigningIT {
                 }
             }
 
-            withClue("self verification of client2") {
+            withCluePrintln("self verification of client2") {
                 val client2VerificationMethods =
                     client2.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
@@ -205,7 +204,7 @@ class CrossSigningIT {
                     .firstWithTimeout { it == SelfVerificationMethods.AlreadyCrossSigned }
             }
 
-            withClue("observe trust level with client1 after self verification") {
+            withCluePrintln("observe trust level with client1 after self verification") {
                 client1.key.apply {
                     getTrustLevel(
                         client1.userId,
@@ -218,7 +217,7 @@ class CrossSigningIT {
                     getTrustLevel(client1.userId).firstWithTimeout { it == CrossSigned(true) }
                 }
             }
-            withClue("observe trust level with client2 after self verification") {
+            withCluePrintln("observe trust level with client2 after self verification") {
                 client2.key.apply {
                     getTrustLevel(
                         client1.userId,
@@ -231,7 +230,7 @@ class CrossSigningIT {
                     getTrustLevel(client1.userId).firstWithTimeout { it == CrossSigned(true) }
                 }
             }
-            withClue("observe trust level with client3 after self verification") {
+            withCluePrintln("observe trust level with client3 after self verification") {
                 client3.key.apply {
                     getTrustLevel(
                         client1.userId,
@@ -244,7 +243,7 @@ class CrossSigningIT {
                     getTrustLevel(client1.userId).firstWithTimeout { it == CrossSigned(false) }
                 }
             }
-            withClue("verification between user1 and user3") {
+            withCluePrintln("verification between user1 and user3") {
                 client2.verification.createDeviceVerificationRequest(client3.userId, setOf(client3.deviceId))
                 val client2Verification = client2.verification.activeDeviceVerification.firstWithTimeout { it != null }
                 val client3Verification = client3.verification.activeDeviceVerification.firstWithTimeout { it != null }
@@ -297,13 +296,13 @@ class CrossSigningIT {
                     .firstWithTimeout { it == DeviceTrustLevel.CrossSigned(true) }
             }
 
-            withClue("observe trust level with client1 after user verification") {
+            withCluePrintln("observe trust level with client1 after user verification") {
                 client1.key.checkEverythingVerified()
             }
-            withClue("observe trust level with client2 after user verification") {
+            withCluePrintln("observe trust level with client2 after user verification") {
                 client2.key.checkEverythingVerified()
             }
-            withClue("observe trust level with client3 after user verification") {
+            withCluePrintln("observe trust level with client3 after user verification") {
                 client3.key.checkEverythingVerified()
             }
         }
@@ -312,23 +311,23 @@ class CrossSigningIT {
     @Test
     fun shouldAllowResetCrossSigning(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            withClue("wait for client1 self verification to be NoCrossSigningEnabled") {
+            withCluePrintln("wait for client1 self verification to be NoCrossSigningEnabled") {
                 client1.verification.getSelfVerificationMethods()
                     .filterIsInstance<SelfVerificationMethods.NoCrossSigningEnabled>()
                     .firstWithTimeout()
             }
 
-            withClue("bootstrap client1") {
+            withCluePrintln("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
                 }
             }
-            val defaultSecret1 = withClue("get account data DefaultSecretKeyEventContent") {
+            val defaultSecret1 = withCluePrintln("get account data DefaultSecretKeyEventContent") {
                 client2.user.getAccountData<DefaultSecretKeyEventContent>().filterNotNull().firstWithTimeout()
             }
 
-            val bootstrap2 = withClue("reset cross signing by bootstrap client1 again") {
+            val bootstrap2 = withCluePrintln("reset cross signing by bootstrap client1 again") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Step<Unit>>()
@@ -338,10 +337,10 @@ class CrossSigningIT {
                 }
             }
 
-            withClue("get account data DefaultSecretKeyEventContent and check it's not the same") {
+            withCluePrintln("get account data DefaultSecretKeyEventContent and check it's not the same") {
                 client2.user.getAccountData<DefaultSecretKeyEventContent>().firstWithTimeout { it != defaultSecret1 }
             }
-            withClue("self verification of client2") {
+            withCluePrintln("self verification of client2") {
                 val client2VerificationMethods =
                     client2.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
@@ -351,7 +350,7 @@ class CrossSigningIT {
                 client2VerificationMethods.filterIsInstance<AesHmacSha2RecoveryKey>().first()
                     .verify(bootstrap2.recoveryKey).getOrThrow()
 
-                withClue("wait for client2 self verification to be AlreadyCrossSigned") {
+                withCluePrintln("wait for client2 self verification to be AlreadyCrossSigned") {
                     client2.verification.getSelfVerificationMethods()
                         .firstWithTimeout { it == SelfVerificationMethods.AlreadyCrossSigned }
                 }

@@ -31,6 +31,7 @@ class ForgetRoomsTest : TrixnityBaseTest() {
     private val roomAccountDataStore = getInMemoryRoomAccountDataStore()
     private val roomTimelineStore = getInMemoryRoomTimelineStore()
     private val roomOutboxMessageStore = getInMemoryRoomOutboxMessageStore()
+    private val notificationStore = getInMemoryNotificationStore()
 
     private val cut = ForgetRoomServiceImpl(
         roomStore = roomStore,
@@ -39,6 +40,7 @@ class ForgetRoomsTest : TrixnityBaseTest() {
         roomAccountDataStore = roomAccountDataStore,
         roomTimelineStore = roomTimelineStore,
         roomOutboxMessageStore = roomOutboxMessageStore,
+        notificationStore = notificationStore
     )
 
     @Test
@@ -102,6 +104,9 @@ class ForgetRoomsTest : TrixnityBaseTest() {
                 Clock.System.now()
             )
         }
+        notificationStore.update("notif") {
+            StoredNotification.Message(room, EventId("notif"), "s", setOf())
+        }
 
         roomStore.getAll().first { it.size == 1 }
 
@@ -127,6 +132,7 @@ class ForgetRoomsTest : TrixnityBaseTest() {
         roomUserStore.get(UserId("2"), room).first() shouldBe null
 
         roomOutboxMessageStore.get(room, "t1").first() shouldBe null
+        notificationStore.getById("notif").first() shouldBe null
     }
 
     @Test
