@@ -72,7 +72,6 @@ class RoomListHandler(
                         it[ReceiptType.Read]?.get(userInfo.userId) != null
                                 || it[ReceiptType.PrivateRead]?.get(userInfo.userId) != null
                     }?.keys?.toSet(),
-                unreadMessageCount = roomInfo.unreadNotifications?.notificationCount,
             )
             roomUpdates.add(roomId, mergeRoom)
         }
@@ -89,7 +88,6 @@ class RoomListHandler(
                 nameEventContent = roomInfo.findInTimelineOrState(),
                 canonicalAliasEventContent = roomInfo.findInTimelineOrState(),
                 readReceipts = null,
-                unreadMessageCount = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -106,7 +104,6 @@ class RoomListHandler(
                 nameEventContent = roomInfo.findInState(),
                 canonicalAliasEventContent = roomInfo.findInState(),
                 readReceipts = null,
-                unreadMessageCount = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -123,7 +120,6 @@ class RoomListHandler(
                 nameEventContent = roomInfo.findInState(),
                 canonicalAliasEventContent = roomInfo.findInState(),
                 readReceipts = null,
-                unreadMessageCount = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -153,7 +149,6 @@ class RoomListHandler(
         nameEventContent: NameEventContent?,
         canonicalAliasEventContent: CanonicalAliasEventContent?,
         readReceipts: Set<EventId>?,
-        unreadMessageCount: Long?,
     ): (Room?) -> Room {
         val markedAsUnread =
             (markedUnreadEventContent ?: roomAccountDataStore.get<MarkedUnreadEventContent>(roomId).first()?.content)
@@ -178,7 +173,6 @@ class RoomListHandler(
                         (readReceipts?.contains(oldRoom?.lastEventId)?.not() ?: oldRoom?.isUnread) == true,
                 nextRoomId = tombstoneEventContent?.replacementRoom ?: oldRoom?.nextRoomId,
                 name = name ?: oldRoom?.name,
-                unreadMessageCount = unreadMessageCount ?: oldRoom?.unreadMessageCount ?: 0,
             )
         }
     }

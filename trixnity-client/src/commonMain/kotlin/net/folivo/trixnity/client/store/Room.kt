@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.store
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonNames
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -26,8 +27,11 @@ data class Room(
     @OptIn(ExperimentalSerializationApi::class)
     @JsonNames("markedUnread")
     val isUnread: Boolean = false,
-    val unreadMessageCount: Long = 0,
 ) {
+    @Deprecated("will always return 0, use NotificationService instead")
+    @Transient
+    val unreadMessageCount: Long = 0
+
     @Deprecated("use isUnread instead", ReplaceWith("isUnread"))
     val markedUnread: Boolean = isUnread
 }
