@@ -8,9 +8,12 @@ import net.folivo.trixnity.core.model.events.idOrNull
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushRule
 
-private val log = KotlinLogging.logger("net.folivo.trixnity.client.notification.evaluatePushRules")
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.notification.EvaluatePushRules")
 
 fun interface EvaluatePushRules {
+    /**
+     * Calculate [PushAction]s for the given [ClientEvent] and [PushRule]s.
+     */
     suspend operator fun invoke(
         event: ClientEvent<*>,
         allRules: List<PushRule>,

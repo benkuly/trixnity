@@ -97,7 +97,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         pushRuleChange: Boolean = true,
         pushRuleOverride: (List<PushRule.Override>) -> List<PushRule.Override> = { it },
     ) {
-        notifications.forEach { notification -> notificationStore.set(notification) }
+        notifications.forEach { notification -> notificationStore.save(notification) }
         notificationStates.forEach { notificationState -> notificationStore.updateState(notificationState.roomId) { notificationState } }
         receipts.forEach { (roomId, receiptEventId) ->
             roomUserStore.updateReceipts(userId, roomId) {

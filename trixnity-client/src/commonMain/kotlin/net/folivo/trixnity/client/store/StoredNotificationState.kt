@@ -7,6 +7,9 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 
+/**
+ * Allows to save the state of notification processing.
+ */
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("type")
@@ -14,6 +17,9 @@ sealed interface StoredNotificationState {
     val roomId: RoomId
     val hasPush: Boolean
 
+    /**
+     * There was push notification from external sources.
+     */
     @Serializable
     @SerialName("push")
     data class Push(
@@ -22,6 +28,9 @@ sealed interface StoredNotificationState {
         override val hasPush: Boolean = true
     }
 
+    /**
+     * The room has been received in a sync with various information including a timeline.
+     */
     @Serializable
     @SerialName("sync_with_timeline")
     data class SyncWithTimeline(
@@ -33,6 +42,9 @@ sealed interface StoredNotificationState {
         val expectedMaxNotificationCount: Long?,
     ) : StoredNotificationState
 
+    /**
+     * The room has been received in a sync without a timeline.
+     */
     @Serializable
     @SerialName("sync_without_timeline")
     data class SyncWithoutTimeline(
@@ -40,6 +52,9 @@ sealed interface StoredNotificationState {
         override val hasPush: Boolean,
     ) : StoredNotificationState
 
+    /**
+     * Notifications and this state are scheduled to be removed.
+     */
     @Serializable
     @SerialName("remove")
     data class Remove(

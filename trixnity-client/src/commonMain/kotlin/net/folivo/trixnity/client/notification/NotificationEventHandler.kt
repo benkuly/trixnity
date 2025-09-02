@@ -13,6 +13,8 @@ import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.push.PushRule
@@ -178,52 +180,7 @@ class NotificationEventHandler(
         currentPushRules: List<PushRule>,
     ) {
         val roomId = notificationState.roomId
-        val notificationUpdates = when (notificationState) {
-            is StoredNotificationState.Push -> null
-            is StoredNotificationState.Remove -> null
-            is StoredNotificationState.SyncWithTimeline -> run {
-                val lastEventId = notificationState.lastEventId
-
-                val lastProcessedEventId = notificationState.lastProcessedEventId
-                if (lastProcessedEventId == lastEventId) return@run null
-
-                val hasStoredNotifications =
-                    notificationStore.getAll().first().values.mapNotNull { it.first() }.any { it.roomId == roomId }
-                val expectedMaxNotificationCount =
-                    (notificationState.expectedMaxNotificationCount?.toInt() ?: 0)
-                        .takeIf { !hasStoredNotifications || lastProcessedEventId == null }
-
-                if (expectedMaxNotificationCount == 0) return@run null
-
-                log.debug { "process timeline events for notifications in $roomId" }
-                roomService.getTimelineEvents(roomId, lastEventId) {
-                    decryptionTimeout = 2.seconds
-                    allowReplaceContent = false
-                }.take(expectedMaxNotificationCount?.coerceAtLeast(0) ?: Int.MAX_VALUE)
-                    .takeWhile {
-                        val currentEventId = it.first().eventId
-                        lastProcessedEventId != currentEventId &&
-                                !notificationState.readReceipts.contains(currentEventId)
-                    }.chunked(100).flatMapConcat { chunk ->
-                        coroutineScope {
-                            chunk.map { async { it.firstWithContent() } }.awaitAll().asFlow()
-                        }
-                    }.mapNotNull { it?.mergedEvent?.getOrNull() }
-            }
-
-            is StoredNotificationState.SyncWithoutTimeline -> {
-                log.debug { "process state events for notifications in $roomId" }
-                eventContentSerializerMappings.state.asFlow()
-                    .flatMapConcat { roomStateStore.get(roomId, it.kClass).first().values.asFlow() }
-                    .mapNotNull { it.first() }
-
-            }
-        }?.let {
-            eventsToNotificationUpdates(
-                eventFlow = it,
-                pushRules = currentPushRules
-            )
-        }?.toList()
+        val notificationUpdates = getNotificationUpdates(notificationState, roomId, currentPushRules)
 
         if (notificationState is StoredNotificationState.Remove) {
             log.debug { "remove all notifications for $roomId" }
@@ -248,7 +205,7 @@ class NotificationEventHandler(
                         when (val change = update.change) {
                             is NotificationUpdate.Change.New -> {
                                 log.trace { "new notification ${update.id} $update" }
-                                notificationStore.set(
+                                notificationStore.save(
                                     update.id,
                                     when (update) {
                                         is NotificationUpdate.Message -> StoredNotification.Message(
@@ -320,5 +277,65 @@ class NotificationEventHandler(
                 null -> null
             }
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun getNotificationUpdates(
+        notificationState: StoredNotificationState,
+        roomId: RoomId,
+        currentPushRules: List<PushRule>
+    ): List<NotificationUpdate>? {
+        val events = when (notificationState) {
+            is StoredNotificationState.Push -> null
+            is StoredNotificationState.Remove -> null
+            is StoredNotificationState.SyncWithTimeline -> getRelevantEventsFromTimeline(notificationState, roomId)
+            is StoredNotificationState.SyncWithoutTimeline -> getAllEventsFromFromState(roomId)
+        } ?: return null
+        return eventsToNotificationUpdates(
+            eventFlow = events,
+            pushRules = currentPushRules
+        ).toList()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun getRelevantEventsFromTimeline(
+        notificationState: StoredNotificationState.SyncWithTimeline,
+        roomId: RoomId
+    ): Flow<ClientEvent.RoomEvent<*>>? {
+        val lastEventId = notificationState.lastEventId
+
+        val lastProcessedEventId = notificationState.lastProcessedEventId
+        if (lastProcessedEventId == lastEventId) return null
+
+        val hasStoredNotifications =
+            notificationStore.getAll().first().values.mapNotNull { it.first() }.any { it.roomId == roomId }
+        val expectedMaxNotificationCount =
+            (notificationState.expectedMaxNotificationCount?.toInt() ?: 0)
+                .takeIf { !hasStoredNotifications || lastProcessedEventId == null }
+
+        if (expectedMaxNotificationCount == 0) return null
+
+        log.debug { "process timeline events for notifications in $roomId" }
+        return roomService.getTimelineEvents(roomId, lastEventId) {
+            decryptionTimeout = 2.seconds
+            allowReplaceContent = false
+        }.take(expectedMaxNotificationCount?.coerceAtLeast(0) ?: Int.MAX_VALUE)
+            .takeWhile {
+                val currentEventId = it.first().eventId
+                lastProcessedEventId != currentEventId &&
+                        !notificationState.readReceipts.contains(currentEventId)
+            }.chunked(100).flatMapConcat { chunk ->
+                coroutineScope {
+                    chunk.map { async { it.firstWithContent() } }.awaitAll().asFlow()
+                }
+            }.mapNotNull { it?.mergedEvent?.getOrNull() }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun getAllEventsFromFromState(roomId: RoomId): Flow<ClientEvent.StateBaseEvent<out StateEventContent>> {
+        log.debug { "process state events for notifications in $roomId" }
+        return eventContentSerializerMappings.state.asFlow()
+            .flatMapConcat { roomStateStore.get(roomId, it.kClass).first().values.asFlow() }
+            .mapNotNull { it.first() }
     }
 }

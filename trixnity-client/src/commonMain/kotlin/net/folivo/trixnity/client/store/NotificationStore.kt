@@ -50,7 +50,7 @@ class NotificationStore(
     fun getAll(): Flow<Map<String, Flow<StoredNotification?>>> = notificationCache.readAll()
     fun getById(id: String): Flow<StoredNotification?> = notificationCache.get(id)
 
-    suspend fun set(
+    suspend fun save(
         value: StoredNotification
     ) = notificationCache.set(value.id, value)
 
@@ -59,7 +59,7 @@ class NotificationStore(
         updater: suspend (oldNotification: StoredNotification?) -> StoredNotification?
     ) = notificationCache.update(id, updater = updater)
 
-    suspend fun set(
+    suspend fun save(
         id: String,
         value: StoredNotification?
     ) = notificationCache.set(id, value)

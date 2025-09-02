@@ -10,6 +10,11 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.push.PushAction
 import okio.ByteString.Companion.toByteString
 
+/**
+ * A locally stored notification. It can either be a [Message] or a [State].
+ *
+ * It has a unique [id]. For [Message] it is calculated from [Message.roomId] and [Message.eventId], for [State] from [State.roomId], [State.type] and [State.stateKey].
+ */
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("type")

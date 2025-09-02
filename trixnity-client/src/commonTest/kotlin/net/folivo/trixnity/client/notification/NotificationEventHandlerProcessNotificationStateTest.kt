@@ -116,7 +116,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
             someTimelineEvent(0),
         ),
     ) {
-        notifications.forEach { notificationStore.set(it) }
+        notifications.forEach { notificationStore.save(it) }
         notificationStore.updateState(roomId1) { notificationState }
         roomService.returnGetTimelineEvents = timeline.map { flowOf(it) }.asFlow()
         cut.processNotificationState(notificationState, listOf())

@@ -19,6 +19,9 @@ import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Represents an update operation for a notification. This [Change] can be [Change.New], [Change.Update] or [Change.Remove].
+ */
 sealed interface NotificationUpdate {
     val id: String
     val roomId: RoomId
@@ -52,7 +55,7 @@ sealed interface NotificationUpdate {
 
 interface EventsToNotificationUpdates {
     /**
-     * It is expected to call this in reversed timeline order.
+     * It is expected to call this in reversed (new to old) timeline order.
      */
     suspend operator fun invoke(
         eventFlow: Flow<ClientEvent<*>>,
@@ -76,14 +79,14 @@ class EventsToNotificationUpdatesImpl(
             val roomId = event.roomIdOrNull ?: return@collect
 
             val updates = when (event) {
-                is ClientEvent.StateBaseEvent -> handleStateEvents(
+                is ClientEvent.StateBaseEvent -> handleStateEvent(
                     event = event,
                     roomId = roomId,
                     processedNotifications = processedNotifications,
                     pushRules = pushRules,
                 )
 
-                is RoomEvent.MessageEvent -> handleMessageEvents(
+                is RoomEvent.MessageEvent -> handleMessageEvent(
                     roomId = roomId,
                     event = event,
                     processedNotifications = processedNotifications,
@@ -97,7 +100,7 @@ class EventsToNotificationUpdatesImpl(
         }
     }
 
-    private suspend fun handleStateEvents(
+    private suspend fun handleStateEvent(
         event: ClientEvent.StateBaseEvent<*>,
         roomId: RoomId,
         processedNotifications: MutableSet<String>,
@@ -121,7 +124,7 @@ class EventsToNotificationUpdatesImpl(
         )
     }
 
-    private suspend fun handleMessageEvents(
+    private suspend fun handleMessageEvent(
         roomId: RoomId,
         event: RoomEvent.MessageEvent<*>,
         processedNotifications: MutableSet<String>,

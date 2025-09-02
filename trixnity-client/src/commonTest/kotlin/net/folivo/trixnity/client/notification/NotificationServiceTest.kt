@@ -129,9 +129,9 @@ class NotificationServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `getAll - return sorted notifications`() = runTest {
-        notificationStore.set(notification2)
-        notificationStore.set(notification1)
-        notificationStore.set(notification3)
+        notificationStore.save(notification2)
+        notificationStore.save(notification1)
+        notificationStore.save(notification3)
         roomService.returnGetTimelineEventList = mutableListOf(
             flowOf(someTimelineEvent(1)),
             flowOf(someTimelineEvent(2)),
@@ -161,7 +161,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `getById - return message notifications`() = runTest {
-        notificationStore.set(notification1)
+        notificationStore.save(notification1)
         roomService.returnGetTimelineEventList = mutableListOf(
             flowOf(someTimelineEvent(1)),
         )
@@ -176,7 +176,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `getById - return state notifications`() = runTest {
-        notificationStore.set(notification3)
+        notificationStore.save(notification3)
         roomStateStore.save(someStateEvent(3))
 
         cut().getById(notification3.id).first() shouldBe
@@ -190,7 +190,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `getById - message not found - return null notification`() = runTest {
-        notificationStore.set(notification1)
+        notificationStore.save(notification1)
         roomService.returnGetTimelineEventList = mutableListOf(
             flowOf(null),
         )
@@ -199,23 +199,23 @@ class NotificationServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `getById - state not found - return null notification`() = runTest {
-        notificationStore.set(notification3)
+        notificationStore.save(notification3)
         cut().getById(notification1.id).first() shouldBe null
     }
 
     @Test
     fun `getNotificationCount - for all rooms`() = runTest {
-        notificationStore.set(notification2)
-        notificationStore.set(notification1.copy(roomId = roomId2))
-        notificationStore.set(notification3)
+        notificationStore.save(notification2)
+        notificationStore.save(notification1.copy(roomId = roomId2))
+        notificationStore.save(notification3)
 
         cut().getNotificationCount().first() shouldBe 3
     }
 
     @Test
     fun dismiss() = runTest {
-        notificationStore.set(notification1)
-        notificationStore.set(notification2)
+        notificationStore.save(notification1)
+        notificationStore.save(notification2)
 
         cut().dismiss(notification1.id)
         notificationStore.getById(notification1.id).first()?.dismissed shouldBe true
@@ -223,8 +223,8 @@ class NotificationServiceTest : TrixnityBaseTest() {
 
     @Test
     fun dismissAll() = runTest {
-        notificationStore.set(notification1)
-        notificationStore.set(notification2)
+        notificationStore.save(notification1)
+        notificationStore.save(notification2)
 
         cut().dismissAll()
         notificationStore.getById(notification1.id).first()?.dismissed shouldBe true
@@ -294,7 +294,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
     @Test
     fun `onPush - found notification`() = runTest {
         roomService.returnGetTimelineEvent = flowOf(null)
-        notificationStore.set(notification1)
+        notificationStore.save(notification1)
         cut().onPush(roomId1, eventId(1)) shouldBe true
     }
 

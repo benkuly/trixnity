@@ -24,6 +24,9 @@ import net.folivo.trixnity.core.model.push.PushCondition
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.notification.PushRuleConditionMatcher")
 
 interface PushRuleConditionMatcher {
+    /**
+     * Calculate if a [PushCondition] matches for the given event.
+     */
     suspend fun match(condition: PushCondition, event: ClientEvent<*>, eventJson: Lazy<JsonObject?>): Boolean
 }
 

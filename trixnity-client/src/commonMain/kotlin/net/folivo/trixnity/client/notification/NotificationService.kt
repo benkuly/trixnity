@@ -14,6 +14,8 @@ import net.folivo.trixnity.clientserverapi.client.startOnce
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.ClientEvent
+import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -21,6 +23,46 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.notification.NotificationService")
 
+/**
+ * A notification can be of type [Message] or [State].
+ */
+sealed interface Notification {
+    /**
+     * Unique identifier, that can be used for various operations in [NotificationService].
+     */
+    val id: String
+
+    /**
+     * Can be used to sort the notification.
+     */
+    val sortKey: String
+
+    /**
+     * The [PushAction] that should be performed, when the notification is created on the device.
+     */
+    val actions: Set<PushAction>
+
+    /**
+     * Indicates, that a user has dismissed a notification on the device.
+     */
+    val dismissed: Boolean
+
+    data class Message(
+        override val id: String,
+        override val sortKey: String,
+        override val actions: Set<PushAction>,
+        override val dismissed: Boolean,
+        val timelineEvent: TimelineEvent,
+    ) : Notification
+
+    data class State(
+        override val id: String,
+        override val sortKey: String,
+        override val actions: Set<PushAction>,
+        override val dismissed: Boolean,
+        val stateEvent: ClientEvent.StateBaseEvent<*>,
+    ) : Notification
+}
 
 /**
  * Access and manage user-visible notifications.
@@ -135,6 +177,7 @@ class NotificationServiceImpl(
                         if (timelineEvent == null) null
                         else Notification.Message(
                             id = notification.id,
+                            sortKey = notification.sortKey,
                             actions = notification.actions,
                             dismissed = notification.dismissed,
                             timelineEvent = timelineEvent,
@@ -157,6 +200,7 @@ class NotificationServiceImpl(
                         if (stateEvent == null) null
                         else Notification.State(
                             id = notification.id,
+                            sortKey = notification.sortKey,
                             actions = notification.actions,
                             dismissed = notification.dismissed,
                             stateEvent = stateEvent,
