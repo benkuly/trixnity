@@ -45,10 +45,10 @@ import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(MSC3814::class)
@@ -77,8 +77,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
 
     private val userInfo = UserInfo(
         alice,
-        aliceDevice,
-        Key.Ed25519Key(aliceDevice, "ed25519Key"),
+        aliceDevice, Ed25519Key(aliceDevice, "ed25519Key"),
         Curve25519Key(aliceDevice, "curve25519Key")
     )
 
@@ -87,7 +86,6 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     @OptIn(ExperimentalSerializationApi::class)
     private val decryptedOlmEventSerializer =
         requireNotNull(json.serializersModule.getContextual(DecryptedOlmEvent::class))
-    private val clock = Clock.System
     private val matrixClientConfiguration = MatrixClientConfiguration()
 
     private val cut = DehydratedDeviceService(
@@ -98,7 +96,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         olmStore = olmStore,
         keyService = KeyServiceMock(),
         signService = signServiceMock,
-        clock = clock,
+        clock = testScope.testClock,
         config = matrixClientConfiguration,
     )
 
@@ -107,7 +105,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         val dehydratedDeviceKey = SecureRandom.nextBytes(32)
         var setDehydratedDevice: SetDehydratedDevice.Request? = null
 
-        val (selfSigningPublicKey, selfSigningPrivateKey) = freeAfter(OlmPkSigning.create()) {
+        val (_, selfSigningPrivateKey) = freeAfter(OlmPkSigning.create()) {
             it.publicKey to it.privateKey
         }
 

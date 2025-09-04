@@ -66,7 +66,6 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
 import kotlin.test.assertNotNull
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -444,8 +443,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                         MemberEventContent(membership = Membership.JOIN),
                         id = EventId("0"),
                         sender = bobUserId,
-                        roomId = roomId,
-                        Clock.System.now().toEpochMilliseconds(),
+                        roomId = roomId, originTimestamp = testClock.now().toEpochMilliseconds(),
                         stateKey = bobUserId.full
                     )
                 )
@@ -483,8 +481,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                             MemberEventContent(membership = Membership.LEAVE),
                             id = EventId("0"),
                             sender = bobUserId,
-                            roomId = abandonedRoom,
-                            Clock.System.now().toEpochMilliseconds(),
+                            roomId = abandonedRoom, originTimestamp = testClock.now().toEpochMilliseconds(),
                             stateKey = bobUserId.full
                         )
                     )
@@ -498,8 +495,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                             MemberEventContent(membership = Membership.JOIN),
                             id = EventId("0"),
                             sender = bobUserId,
-                            roomId = roomId,
-                            Clock.System.now().toEpochMilliseconds(),
+                            roomId = roomId, originTimestamp = testClock.now().toEpochMilliseconds(),
                             stateKey = bobUserId.full
                         )
                     )
@@ -515,7 +511,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                             roomId = roomId,
                             content = message,
                             eventId = EventId("bla"),
-                            createdAt = Clock.System.now(),
+                            createdAt = testClock.now(),
                         )
                     )
                 )
@@ -536,8 +532,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                             MemberEventContent(membership = Membership.JOIN),
                             id = EventId("0"),
                             sender = bobUserId,
-                            roomId = roomId,
-                            Clock.System.now().toEpochMilliseconds(),
+                            roomId = roomId, originTimestamp = testClock.now().toEpochMilliseconds(),
                             stateKey = bobUserId.full
                         )
                     )

@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.KeyBackupServiceMock
@@ -59,7 +60,6 @@ import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import kotlin.test.Test
 import kotlin.test.assertNotNull
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -87,7 +87,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
         keyStore,
         globalAccountDataStore,
         CurrentSyncState(currentSyncState),
-        testScope.testClock
+        testScope.testClock,
     )
 
     private val encryptedEvent = ToDeviceEvent(
@@ -538,7 +538,9 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                     KeyRequestAction.REQUEST,
                     aliceDevice,
                     "requestId1"
-                ), setOf("DEVICE_2"), Clock.System.now()
+                ),
+                setOf("DEVICE_2"),
+                testClock.now(),
             )
         )
         keyStore.getAllSecretKeyRequestsFlow().first { it.size == 1 }
@@ -606,7 +608,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
 
     private var sendToDeviceEvents: Map<UserId, Map<String, ToDeviceEventContent>>? = null
 
-    private suspend fun handleChangedSecretsSetup() {
+    private suspend fun TestScope.handleChangedSecretsSetup() {
         apiConfig.endpoints {
             matrixJsonEndpoint(
                 SendToDevice("m.secret.request", "*"),
@@ -621,7 +623,9 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                     KeyRequestAction.REQUEST,
                     aliceDevice,
                     "requestId1"
-                ), setOf("DEVICE_2"), Clock.System.now()
+                ),
+                setOf("DEVICE_2"),
+                testClock.now(),
             )
         )
         keyStore.getAllSecretKeyRequestsFlow().first { it.size == 1 }
@@ -693,7 +697,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
         }
     }
 
-    private suspend fun setRequest(secretType: SecretType, receiverDeviceIds: Set<String>) {
+    private suspend fun TestScope.setRequest(secretType: SecretType, receiverDeviceIds: Set<String>) {
         keyStore.addSecretKeyRequest(
             StoredSecretKeyRequest(
                 SecretKeyRequestEventContent(
@@ -701,7 +705,9 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                     KeyRequestAction.REQUEST,
                     "OWN_ALICE_DEVICE",
                     "requestId"
-                ), receiverDeviceIds, Clock.System.now()
+                ),
+                receiverDeviceIds,
+                testClock.now(),
             )
         )
         keyStore.getAllSecretKeyRequestsFlow().first { it.size == 1 }
