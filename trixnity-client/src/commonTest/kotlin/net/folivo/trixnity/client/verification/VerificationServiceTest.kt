@@ -56,9 +56,11 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.CryptoDriverException
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
-import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
@@ -72,6 +74,8 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VerificationServiceTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
     init {
         testScope.testScheduler.advanceTimeBy(10.days)
@@ -116,6 +120,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
         keySecretService = keySecretServiceMock,
         currentSyncState = CurrentSyncState(currentSyncState),
         clock = testScope.testClock,
+        driver = driver,
     ).apply {
         startInCoroutineScope(testScope.backgroundScope)
     }
@@ -386,7 +391,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
             }
         }
         olmEncryptionServiceMock.returnEncryptOlm =
-            Result.failure(OlmEncryptionService.EncryptOlmError.OlmLibraryError(OlmLibraryException("dino")))
+            Result.failure(OlmEncryptionService.EncryptOlmError.OlmLibraryError(CryptoDriverException(Exception("dino"))))
         val createdVerification = cut.createDeviceVerificationRequest(bobUserId, setOf(bobDeviceId)).getOrThrow()
         val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
         createdVerification shouldBe activeDeviceVerification

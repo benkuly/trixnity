@@ -42,8 +42,12 @@ import net.folivo.trixnity.core.model.keys.RoomKeyBackupAuthData.RoomKeyBackupV1
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType.M_MEGOLM_BACKUP_V1
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.keys.Curve25519SecretKey
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.pkencryption.PkDecryption
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.getValue
 import net.folivo.trixnity.test.utils.runTest
@@ -56,6 +60,8 @@ import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.seconds
 
 class KeyBackupServiceTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
     private val ownUserId = UserId("alice", "server")
     private val ownDeviceId = "DEV"
@@ -71,14 +77,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
 
     private val olmSignMock = SignServiceMock()
 
-    private val _validKeyBackup =
-        suspendLazy { freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey } }
-    private val validKeyBackupPrivateKey by _validKeyBackup.map { it.first }
-    private val validKeyBackupPublicKey by _validKeyBackup.map { it.second }
-
-    private val _keyBackup = suspendLazy { freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey } }
-    private val keyBackupPrivateKey by _keyBackup.map { it.first }
-    private val keyBackupPublicKey by _keyBackup.map { it.second }
+    private val validKeyBackup = driver.key.curve25519SecretKey()
+    private val keyBackup = driver.key.curve25519SecretKey()
 
     private val currentSyncState = MutableStateFlow(SyncState.STOPPED)
 
@@ -91,14 +91,15 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         olmSignMock,
         CurrentSyncState(currentSyncState),
         testScope.backgroundScope,
+        driver,
     ).apply {
         startInCoroutineScope(testScope.backgroundScope)
     }
 
-    private val keyVersion by suspendLazy {
+    private val keyVersion = run {
         GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
-                publicKey = Curve25519KeyValue(validKeyBackupPublicKey),
+                publicKey = KeyValue.of(validKeyBackup.publicKey),
                 signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
             ),
             count = 1,
@@ -113,6 +114,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         currentSyncState.value = RUNNING
         var call = 0
         apiConfig.endpoints {
+            matrixJsonEndpoint(SetRoomKeyBackupVersionByVersion(version = "1")) {}
             matrixJsonEndpoint(GetRoomKeyBackupVersion()) {
                 call++
                 when (call) {
@@ -130,7 +132,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
                     GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
-                    validKeyBackupPrivateKey
+                    validKeyBackup.base64
                 )
             )
         }
@@ -141,7 +143,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
                     GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf("" to JsonPrimitive("something")))),
-                    validKeyBackupPrivateKey
+                    validKeyBackup.base64
                 )
             )
         }
@@ -165,7 +167,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
                         GlobalAccountDataEvent(
                             MegolmBackupV1EventContent(mapOf())
-                        ), validKeyBackupPrivateKey
+                        ),
+                        validKeyBackup.base64
                     )
                 )
             }
@@ -188,7 +191,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     setRoomKeyBackupVersionCalled = true
                     it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                     it.version shouldBe "1"
-                    it.authData.publicKey shouldBe Curve25519KeyValue(validKeyBackupPublicKey)
+                    it.authData.publicKey shouldBe KeyValue.of(validKeyBackup.publicKey)
                     it.authData.signatures shouldBe mapOf(
                         ownUserId to keysOf(
                             Ed25519Key("DEV", "s24"),
@@ -204,7 +207,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
                         GlobalAccountDataEvent(
                             MegolmBackupV1EventContent(mapOf())
-                        ), validKeyBackupPrivateKey
+                        ),
+                        validKeyBackup.base64
                     )
                 )
             }
@@ -227,7 +231,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     setRoomKeyBackupVersionCalled = true
                     it.shouldBeInstanceOf<SetRoomKeyBackupVersionRequest.V1>()
                     it.version shouldBe "1"
-                    it.authData.publicKey shouldBe Curve25519KeyValue(validKeyBackupPublicKey)
+                    it.authData.publicKey shouldBe KeyValue.of(validKeyBackup.publicKey)
                     it.authData.signatures shouldBe mapOf(
                         ownUserId to keysOf(
                             Ed25519Key("MSK", "s2")
@@ -242,7 +246,8 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                     M_MEGOLM_BACKUP_V1 to StoredSecret(
                         GlobalAccountDataEvent(
                             MegolmBackupV1EventContent(mapOf())
-                        ), validKeyBackupPrivateKey
+                        ),
+                        validKeyBackup.base64
                     )
                 )
             }
@@ -283,30 +288,31 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         }
     }
 
-    private val encryptedRoomKeyBackupV1SessionData by suspendLazy {
-        val sessionKey = freeAfter(OlmOutboundGroupSession.create()) { os ->
-            os.encrypt("bla")
-            freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.export(1) }
-        }
-        freeAfter(OlmPkEncryption.create(keyBackupPublicKey)) {
-            val e = it.encrypt(
-                json.encodeToString(
-                    RoomKeyBackupV1SessionData(
-                        senderKey, listOf(), Keys(Ed25519Key(null, "edKey")), ExportedSessionKeyValue(sessionKey)
-                    )
+    private val encryptedRoomKeyBackupV1SessionData = run {
+        val outboundSession = driver.megolm.groupSession()
+        outboundSession.encrypt("bla")
+        val inboundSession = driver.megolm.inboundGroupSession(
+            sessionKey = outboundSession.sessionKey,
+        )
+        val data =
+            json.encodeToString(
+                RoomKeyBackupV1SessionData(
+                    senderKey,
+                    listOf(),
+                    Keys(Ed25519Key(null, "edKey")),
+                    ExportedSessionKeyValue.of(checkNotNull(inboundSession.exportAt(1)))
                 )
             )
-            RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData(
-                ciphertext = e.cipherText,
-                mac = e.mac,
-                ephemeral = Curve25519KeyValue(e.ephemeralKey)
-            )
-        }
+
+        val pkEncryption = driver.pk.encryption(keyBackup.publicKey.base64)
+        val encryptedData = pkEncryption.encrypt(data)
+
+        RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.of(encryptedData)
     }
 
     private suspend fun megolmSessionOnServerSetup() {
         currentSyncState.value = RUNNING
-        setVersion(keyBackupPrivateKey, keyBackupPublicKey, version)
+        setVersion(keyBackup, version)
     }
 
     private suspend fun megolmSessionOnServerWithoutErrorSetup() {
@@ -451,8 +457,9 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `bootstrapRoomKeyBackup » upload new room key version and add secret to account data`() = runTest {
-        val (masterSigningPrivateKey, masterSigningPublicKey) =
-            freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey }
+        val (masterSigningPrivateKey, masterSigningPublicKey) = driver.key.ed25519SecretKey().use {
+            it.base64 to it.publicKey
+        }
         var setRoomKeyBackupVersionCalled = false
         var setGlobalAccountDataCalled = false
         apiConfig.endpoints {
@@ -462,7 +469,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 it.authData.publicKey.value shouldNot beEmpty()
                 it.authData.signatures[ownUserId]?.keys shouldBe setOf(
                     Ed25519Key(ownDeviceId, "s1"),
-                    Ed25519Key(masterSigningPublicKey, "s2")
+                    Key.of(masterSigningPublicKey)
                 )
                 it.version shouldBe null
                 SetRoomKeyBackupVersion.Response("1")
@@ -486,7 +493,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 ownUserId to keysOf(Ed25519Key(ownDeviceId, "s1"))
             ),
             mapOf(
-                ownUserId to keysOf(Ed25519Key(masterSigningPublicKey, "s2"))
+                ownUserId to keysOf(Key.of(masterSigningPublicKey))
             )
         )
 
@@ -494,7 +501,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             Random.nextBytes(32),
             "defaultKeyId",
             masterSigningPrivateKey,
-            masterSigningPublicKey
+            masterSigningPublicKey.base64,
         ).getOrThrow()
 
         setRoomKeyBackupVersionCalled shouldBe true
@@ -506,16 +513,15 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
     private val room2 = RoomId("!room2:server")
     private val sessionId1 = "session1"
     private val sessionId2 = "session2"
-    private val pickle1 by suspendLazy {
-        freeAfter(OlmOutboundGroupSession.create()) { os ->
-            freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.pickle(null) }
-        }
+
+    private fun createPickle(): String {
+        val outbound = driver.megolm.groupSession()
+        val inbound = driver.megolm.inboundGroupSession(sessionKey = outbound.sessionKey)
+        return inbound.pickle()
     }
-    private val pickle2 by suspendLazy {
-        freeAfter(OlmOutboundGroupSession.create()) { os ->
-            freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.pickle(null) }
-        }
-    }
+
+    private val pickle1 = createPickle()
+    private val pickle2 = createPickle()
     private val session1 by suspendLazy {
         StoredInboundMegolmSession(
             senderKey = Curve25519KeyValue("curve1"),
@@ -587,8 +593,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 SetRoomKeyBackupVersion.Response("2")
             }
         }
-        val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
-        setVersion(keyBackupPrivateKey, keyBackupPublicKey, "1")
+        setVersion(driver.key.curve25519SecretKey(), "1")
 
         continually(1.seconds) {
             setRoomKeyBackupVersionCalled shouldBe false
@@ -618,7 +623,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 SetRoomKeysResponse(2, "etag")
             }
         }
-        setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1")
+        setVersion(validKeyBackup, "1")
 
         eventually(10.seconds) {
             olmCryptoStore.notBackedUpInboundMegolmSessions.value.shouldBeEmpty()
@@ -651,11 +656,11 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
                 SetRoomKeysResponse(2, "etag")
             }
         }
-        setVersion(validKeyBackupPrivateKey, validKeyBackupPublicKey, "1") {
+        setVersion(validKeyBackup, "1") {
             if (setRoomKeyBackupDataCalled1.value)
                 GetRoomKeysBackupVersionResponse.V1(
                     authData = RoomKeyBackupV1AuthData(
-                        publicKey = Curve25519KeyValue(validKeyBackupPublicKey),
+                        publicKey = KeyValue.of(validKeyBackup.publicKey),
                         signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
                     ),
                     count = 1,
@@ -693,7 +698,9 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
         deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
         cut.keyBackupCanBeTrusted(
             roomKeyVersion(),
-            freeAfter(OlmPkDecryption.create(null)) { it.privateKey },
+            driver.pk.decryption()
+                .use(PkDecryption::secretKey)
+                .use(Curve25519SecretKey::base64)
         ) shouldBe false
     }
 
@@ -715,33 +722,33 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
     fun `return true when there is a device key is valid+verified`() = runTest {
         deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(true))
         masterKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
-        cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
+        cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackup.base64) shouldBe true
     }
 
     @Test
     fun `return true when there is a device key is crossSigned+verified`() = runTest {
         deviceKeyTrustLevel(KeySignatureTrustLevel.CrossSigned(true))
         masterKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
-        cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
+        cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackup.base64) shouldBe true
     }
 
     @Test
     fun `return true when there is a master key we crossSigned+verified`() = runTest {
         deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
         masterKeyTrustLevel(KeySignatureTrustLevel.CrossSigned(true))
-        cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
+        cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackup.base64) shouldBe true
     }
 
     @Test
     fun `return true when there is a master key we notFullyCrossSigned+verified`() = runTest {
         deviceKeyTrustLevel(KeySignatureTrustLevel.Valid(false))
         masterKeyTrustLevel(KeySignatureTrustLevel.NotAllDeviceKeysCrossSigned(true))
-        cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackupPrivateKey) shouldBe true
+        cut.keyBackupCanBeTrusted(roomKeyVersion(), validKeyBackup.base64) shouldBe true
     }
 
     private fun roomKeyVersion() = GetRoomKeysBackupVersionResponse.V1(
         authData = RoomKeyBackupV1AuthData(
-            publicKey = Curve25519KeyValue(validKeyBackupPublicKey),
+            publicKey = KeyValue.of(validKeyBackup.publicKey),
             signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEVICE", "s1"), Ed25519Key("MSK", "s2")))
         ),
         count = 1,
@@ -779,15 +786,14 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
     }
 
     private suspend fun setVersion(
-        keyBackupPrivateKey: String,
-        keyBackupPublicKey: String,
+        keyBackupPrivateKey: Curve25519SecretKey,
         version: String,
         modifyVersion: suspend ((GetRoomKeysBackupVersionResponse.V1) -> GetRoomKeysBackupVersionResponse.V1) = { it }
     ) {
         olmSignMock.returnSignatures = listOf(mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"))))
         val defaultVersion = GetRoomKeysBackupVersionResponse.V1(
             authData = RoomKeyBackupV1AuthData(
-                publicKey = Curve25519KeyValue(keyBackupPublicKey),
+                publicKey = KeyValue.of(keyBackupPrivateKey.publicKey),
                 signatures = mapOf(ownUserId to keysOf(Ed25519Key("DEV", "s1"), Ed25519Key("MSK", "s2")))
             ),
             count = 1,
@@ -803,7 +809,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
             mapOf(
                 M_MEGOLM_BACKUP_V1 to StoredSecret(
                     GlobalAccountDataEvent(MegolmBackupV1EventContent(mapOf())),
-                    keyBackupPrivateKey
+                    keyBackupPrivateKey.base64
                 )
             )
         }

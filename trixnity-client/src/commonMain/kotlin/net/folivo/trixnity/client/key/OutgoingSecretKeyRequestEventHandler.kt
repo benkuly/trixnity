@@ -24,12 +24,12 @@ import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.AesHmacSha2EncryptedData
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.keys.Ed25519PublicKey
+import net.folivo.trixnity.crypto.driver.keys.Ed25519SecretKey
 import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.nextString
 import kotlin.time.Clock
@@ -46,6 +46,7 @@ class OutgoingSecretKeyRequestEventHandler(
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val currentSyncState: CurrentSyncState,
     private val clock: Clock,
+    private val driver: CryptoDriver,
 ) : EventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
@@ -141,10 +142,14 @@ class OutgoingSecretKeyRequestEventHandler(
             }
 
             val secretType = request.content.name?.let { SecretType.ofId(it) }
+
+            @OptIn(MSC3814::class)
             val publicKeyMatches = when (secretType) {
                 SecretType.M_CROSS_SIGNING_USER_SIGNING, SecretType.M_CROSS_SIGNING_SELF_SIGNING -> {
                     val generatedPublicKey = try {
-                        freeAfter(OlmPkSigning.create(content.secret)) { it.publicKey }
+                        driver.key.ed25519SecretKey(content.secret)
+                            .use(Ed25519SecretKey::publicKey)
+                            .use(Ed25519PublicKey::base64)
                     } catch (error: Exception) {
                         log.warn(error) { "could not generate public key from received secret" }
                         return
@@ -163,7 +168,7 @@ class OutgoingSecretKeyRequestEventHandler(
                         .getOrElse { false }
                 }
 
-                @OptIn(MSC3814::class) SecretType.M_DEHYDRATED_DEVICE -> @OptIn(MSC3814::class) {
+                SecretType.M_DEHYDRATED_DEVICE -> {
                     try {
                         val deviceData = api.device.getDehydratedDevice()
                             .onFailure {
@@ -182,7 +187,7 @@ class OutgoingSecretKeyRequestEventHandler(
                                     ),
                                     content.secret.decodeUnpaddedBase64Bytes(), deviceData.algorithm
                                 ).decodeToString()
-                                freeAfter(OlmAccount.unpickle(null, olmPickle)) {}
+                                driver.olm.account.fromPickle(olmPickle).close()
                                 true
                             }
 

@@ -22,11 +22,10 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import net.folivo.trixnity.olm.OlmInboundGroupSession
-import net.folivo.trixnity.olm.OlmOutboundGroupSession
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
@@ -34,6 +33,8 @@ import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
 
 class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
     private val room = RoomId("!room:server")
     private val senderKey = Key.Curve25519Key("sender", "sender")
@@ -61,6 +62,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
         accountStore,
         keyStore,
         olmStore,
+        driver,
     ).apply {
         startInCoroutineScope(testScope.backgroundScope)
     }
@@ -211,21 +213,22 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
             )
         )
         olmStore.updateInboundMegolmSession(sessionId, room) {
-            freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
-                freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
-                    StoredInboundMegolmSession(
-                        senderKey = senderKey.value,
-                        senderSigningKey = senderSigningKey.value,
-                        sessionId = sessionId,
-                        roomId = room,
-                        firstKnownIndex = inboundSession.firstKnownIndex,
-                        hasBeenBackedUp = true,
-                        isTrusted = true,
-                        forwardingCurve25519KeyChain = listOf(),
-                        pickled = inboundSession.pickle(null)
-                    )
-                }
-            }
+            val outboundSession = driver.megolm.groupSession()
+            val inboundSession = driver.megolm.inboundGroupSession(
+                sessionKey = outboundSession.sessionKey
+            )
+
+            StoredInboundMegolmSession(
+                senderKey = senderKey.value,
+                senderSigningKey = senderSigningKey.value,
+                sessionId = sessionId,
+                roomId = room,
+                firstKnownIndex = inboundSession.firstKnownIndex.toLong(),
+                hasBeenBackedUp = true,
+                isTrusted = true,
+                forwardingCurve25519KeyChain = listOf(),
+                pickled = inboundSession.pickle(),
+            )
         }
     }
 
@@ -244,21 +247,22 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
             )
         )
         olmStore.updateInboundMegolmSession(sessionId, room) {
-            freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
-                freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
-                    StoredInboundMegolmSession(
-                        senderKey = senderKey.value,
-                        senderSigningKey = senderSigningKey.value,
-                        sessionId = sessionId,
-                        roomId = room,
-                        firstKnownIndex = inboundSession.firstKnownIndex,
-                        hasBeenBackedUp = true,
-                        isTrusted = true,
-                        forwardingCurve25519KeyChain = listOf(),
-                        pickled = inboundSession.pickle(null)
-                    )
-                }
-            }
+            val outboundSession = driver.megolm.groupSession()
+            val inboundSession = driver.megolm.inboundGroupSession(
+                sessionKey = outboundSession.sessionKey
+            )
+
+            StoredInboundMegolmSession(
+                senderKey = senderKey.value,
+                senderSigningKey = senderSigningKey.value,
+                sessionId = sessionId,
+                roomId = room,
+                firstKnownIndex = inboundSession.firstKnownIndex.toLong(),
+                hasBeenBackedUp = true,
+                isTrusted = true,
+                forwardingCurve25519KeyChain = listOf(),
+                pickled = inboundSession.pickle(),
+            )
         }
     }
 

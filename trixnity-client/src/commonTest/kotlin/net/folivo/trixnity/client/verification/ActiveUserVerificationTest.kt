@@ -32,6 +32,8 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
@@ -41,6 +43,8 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActiveUserVerificationTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val aliceDevice = "AAAAAA"
@@ -264,6 +268,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
             clock = testClock,
+            driver = driver,
         )
         cut.startLifecycle(this)
         cut.state.first { it == AcceptedByOtherDevice } shouldBe AcceptedByOtherDevice
@@ -304,6 +309,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
             clock = testClock,
+            driver = driver,
         )
         cut.startLifecycle(this)
         cut.state.first { it == Undefined } shouldBe Undefined
@@ -327,5 +333,6 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
             clock = testClock,
+            driver = driver,
         )
 }

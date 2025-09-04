@@ -39,6 +39,8 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.crypto.SecretType.*
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -48,6 +50,9 @@ import kotlin.test.Test
 
 @OptIn(MSC3814::class)
 class KeyServiceTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
+
     private val alice = UserId("alice", "server")
     private val aliceDevice = "ALICEDEVICE"
 
@@ -74,6 +79,7 @@ class KeyServiceTest : TrixnityBaseTest() {
         keyTrustService = keyTrustServiceMock,
         api = api,
         matrixClientConfiguration = MatrixClientConfiguration().apply { experimentalFeatures.enableMSC3814 = true },
+        driver = driver,
     )
 
     private var secretKeyEventContentCalled = false

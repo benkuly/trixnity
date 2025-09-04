@@ -8,7 +8,6 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flatMap
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.store.*
-import net.folivo.trixnity.client.store.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.UIA
 import net.folivo.trixnity.clientserverapi.client.injectOnSuccessIntoUIA
@@ -30,19 +29,20 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.CrossSigningKeys
 import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.*
 import net.folivo.trixnity.core.model.keys.DeviceKeys
+import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.key.*
 import net.folivo.trixnity.crypto.key.DeviceTrustLevel
 import net.folivo.trixnity.crypto.key.UserTrustLevel
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.sign
-import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import kotlin.random.Random
 
@@ -120,6 +120,7 @@ class KeyServiceImpl(
     private val keyTrustService: KeyTrustService,
     private val api: MatrixClientServerApiClient,
     private val matrixClientConfiguration: MatrixClientConfiguration,
+    private val driver: CryptoDriver,
 ) : KeyService {
 
     private val _bootstrapRunning = MutableStateFlow(false)
@@ -141,43 +142,44 @@ class KeyServiceImpl(
             result = api.user.setAccountData(secretKeyEventContent, userInfo.userId, keyId)
                 .flatMap { api.user.setAccountData(DefaultSecretKeyEventContent(keyId), userInfo.userId) }
                 .flatMap {
-                    val (masterSigningPrivateKey, masterSigningPublicKey) =
-                        freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
+                    val (masterSigningPrivateKey, masterSigningPublicKey) = driver.key.ed25519SecretKey().use {
+                        it.base64 to it.publicKey.use(Key::of)
+                    }
                     val masterSigningKey = signService.sign(
                         CrossSigningKeys(
                             userId = userInfo.userId,
-                            usage = setOf(MasterKey),
-                            keys = keysOf(Ed25519Key(masterSigningPublicKey, masterSigningPublicKey))
+                            usage = setOf(MasterKey), keys = keysOf(masterSigningPublicKey)
                         ),
                         signWith = SignWith.KeyPair(
                             privateKey = masterSigningPrivateKey,
-                            publicKey = masterSigningPublicKey
+                            publicKey = masterSigningPublicKey.value.value,
                         )
                     )
-                    val (selfSigningPrivateKey, selfSigningPublicKey) =
-                        freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
+                    val (selfSigningPrivateKey, selfSigningPublicKey) = driver.key.ed25519SecretKey().use {
+                        it.base64 to it.publicKey.use(Key::of)
+                    }
                     val selfSigningKey = signService.sign(
                         CrossSigningKeys(
                             userId = userInfo.userId,
-                            usage = setOf(SelfSigningKey),
-                            keys = keysOf(Ed25519Key(selfSigningPublicKey, selfSigningPublicKey))
+                            usage = setOf(SelfSigningKey), keys = keysOf(selfSigningPublicKey)
                         ),
                         signWith = SignWith.KeyPair(
                             privateKey = masterSigningPrivateKey,
-                            publicKey = masterSigningPublicKey
+                            publicKey = masterSigningPublicKey.value.value,
                         )
                     )
-                    val (userSigningPrivateKey, userSigningPublicKey) =
-                        freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
+                    val (userSigningPrivateKey, userSigningPublicKey) = driver.key.ed25519SecretKey().use {
+                        it.base64 to it.publicKey.use(Key::of)
+                    }
                     val userSigningKey = signService.sign(
                         CrossSigningKeys(
                             userId = userInfo.userId,
                             usage = setOf(UserSigningKey),
-                            keys = keysOf(Ed25519Key(userSigningPublicKey, userSigningPublicKey))
+                            keys = keysOf(userSigningPublicKey),
                         ),
                         signWith = SignWith.KeyPair(
                             privateKey = masterSigningPrivateKey,
-                            publicKey = masterSigningPublicKey
+                            publicKey = masterSigningPublicKey.value.value,
                         )
                     )
 
@@ -264,7 +266,7 @@ class KeyServiceImpl(
                                 recoveryKey,
                                 keyId,
                                 masterSigningPrivateKey,
-                                masterSigningPublicKey
+                                masterSigningPublicKey.value.value,
                             )
                         }
                         .flatMap {
@@ -287,7 +289,7 @@ class KeyServiceImpl(
                         keyStore.updateOutdatedKeys { oldOutdatedKeys -> oldOutdatedKeys + userInfo.userId } // ensure, we have updated keys
                         keyStore.getDeviceKey(userInfo.userId, userInfo.deviceId)
                             .mapNotNull { it?.trustLevel }
-                            .first { it is CrossSigned && it.verified }
+                            .first { it is KeySignatureTrustLevel.CrossSigned && it.verified }
                         _bootstrapRunning.value = false
                         log.debug { "finished bootstrapping" }
                     }

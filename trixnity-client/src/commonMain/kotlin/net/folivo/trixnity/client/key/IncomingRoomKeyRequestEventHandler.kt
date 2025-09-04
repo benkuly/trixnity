@@ -17,11 +17,12 @@ import net.folivo.trixnity.core.model.events.m.ForwardedRoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.megolm.InboundGroupSession
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
-import net.folivo.trixnity.olm.OlmInboundGroupSession
-import net.folivo.trixnity.olm.freeAfter
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.key.IncomingRoomKeyRequestEventHandler")
 
@@ -33,6 +34,7 @@ class IncomingRoomKeyRequestEventHandler(
     private val accountStore: AccountStore,
     private val keyStore: KeyStore,
     private val olmStore: OlmCryptoStore,
+    private val driver: CryptoDriver,
 ) : EventHandler {
     private val ownUserId = userInfo.userId
 
@@ -74,18 +76,17 @@ class IncomingRoomKeyRequestEventHandler(
                     olmStore.getInboundMegolmSession(requestBody.sessionId, requestBody.roomId).first()
                 if (foundInboundMegolmSession != null) {
                     log.info { "send incoming room key request answer (${request.requestId}) to device $requestingDeviceId" }
+                    val account = checkNotNull(accountStore.getAccount()) { "No account found" }
+                    val session = driver.megolm.inboundGroupSession.fromPickle(
+                        foundInboundMegolmSession.pickled, driver.key.pickleKey(account.olmPickleKey)
+                    ).use(InboundGroupSession::exportAtFirstKnownIndex)
                     val encryptedAnswer =
                         olmEncryptionService.encryptOlm(
                             ForwardedRoomKeyEventContent(
                                 roomId = foundInboundMegolmSession.roomId,
                                 senderKey = foundInboundMegolmSession.senderKey,
                                 sessionId = foundInboundMegolmSession.sessionId,
-                                sessionKey = ExportedSessionKeyValue(freeAfter(
-                                    OlmInboundGroupSession.unpickle(
-                                        accountStore.getAccount()?.olmPickleKey,
-                                        foundInboundMegolmSession.pickled
-                                    )
-                                ) { it.export(it.firstKnownIndex) }),
+                                sessionKey = ExportedSessionKeyValue.of(session),
                                 senderClaimedKey = foundInboundMegolmSession.senderSigningKey,
                                 forwardingKeyChain = foundInboundMegolmSession.forwardingCurve25519KeyChain,
                                 algorithm = EncryptionAlgorithm.Megolm,
