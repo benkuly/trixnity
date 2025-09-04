@@ -74,7 +74,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
             val (firstKnownIndex, pickledSession) =
                 try {
                     freeAfter(OlmInboundGroupSession.import(content.sessionKey)) {
-                        it.firstKnownIndex to it.pickle(checkNotNull(accountStore.getAccount()?.olmPickleKey))
+                        it.firstKnownIndex to it.pickle(accountStore.getAccount()?.olmPickleKey)
                     }
                 } catch (exception: Exception) {
                     log.warn(exception) { "could not import olm inbound session" }

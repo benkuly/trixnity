@@ -60,7 +60,7 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
     private val ownDeviceId = "DEV"
 
     private val accountStore =
-        getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "", syncBatchToken = "batch") } }
+        getInMemoryAccountStore { updateAccount { it?.copy(syncBatchToken = "batch") } }
     private val olmCryptoStore = getInMemoryOlmStore()
     private val keyStore = getInMemoryKeyStore()
 
@@ -507,12 +507,12 @@ class KeyBackupServiceTest : TrixnityBaseTest() {
     private val sessionId2 = "session2"
     private val pickle1 by suspendLazy {
         freeAfter(OlmOutboundGroupSession.create()) { os ->
-            freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.pickle("") }
+            freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.pickle(null) }
         }
     }
     private val pickle2 by suspendLazy {
         freeAfter(OlmOutboundGroupSession.create()) { os ->
-            freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.pickle("") }
+            freeAfter(OlmInboundGroupSession.create(os.sessionKey)) { it.pickle(null) }
         }
     }
     private val session1 by suspendLazy {

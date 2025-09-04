@@ -33,9 +33,9 @@ actual class OlmSession private constructor() : WantsToBeFree {
             }
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmSession {
+        actual fun unpickle(key: String?, pickle: String): OlmSession {
             return OlmSession().apply {
-                rethrow { ptr.unpickle(key, pickle) }
+                rethrow { ptr.unpickle(key ?: "", pickle) }
             }
         }
     }
@@ -46,7 +46,7 @@ actual class OlmSession private constructor() : WantsToBeFree {
 
     actual override fun free() = ptr.free()
 
-    actual fun pickle(key: String): String = rethrow { ptr.pickle(key) }
+    actual fun pickle(key: String?): String = rethrow { ptr.pickle(key ?: "") }
 
     actual fun matchesInboundSession(oneTimeKeyMessage: String): Boolean =
         rethrow { ptr.matches_inbound(oneTimeKeyMessage) }

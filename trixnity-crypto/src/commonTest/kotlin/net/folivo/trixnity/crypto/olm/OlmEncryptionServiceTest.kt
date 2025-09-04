@@ -136,7 +136,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             )
         )
         olmStoreMock.roomMembers[room] = setOf(alice, bob)
-        olmStoreMock.olmAccount.value = aliceAccount.pickle("")
+        olmStoreMock.olmAccount.value = aliceAccount.pickle(null)
         clockMock = ClockMock()
 
         mockSignService.returnVerify = VerifyResult.Valid
@@ -182,7 +182,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
         return oneTimeKeys.curve25519.values.first()
             .also {
                 markKeysAsPublished()
-                if (store) olmStoreMock.olmAccount.value = this.pickle("")
+                if (store) olmStoreMock.olmAccount.value = this.pickle(null)
             }
     }
 
@@ -301,7 +301,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     aliceSession.sessionId,
                     Clock.System.now(),
                     Clock.System.now(),
-                    aliceSession.pickle("")
+                    aliceSession.pickle(null)
                 )
             }
 
@@ -355,7 +355,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
         // we check, that the one time key cannot be used twice
         shouldThrow<OlmLibraryException> {
             OlmSession.createInboundFrom(
-                OlmAccount.unpickle("", olmStoreMock.olmAccount.value.shouldNotBeNull()),
+                OlmAccount.unpickle(null, olmStoreMock.olmAccount.value.shouldNotBeNull()),
                 bobCurveKey.value.value,
                 encryptedMessage.cipherText
             )
@@ -424,7 +424,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                             pseudoSessionId.toString(),
                             clockMock.now(),
                             clockMock.now(),
-                            aliceSession.pickle("")
+                            aliceSession.pickle(null)
                         )
                     }
                 }
@@ -499,7 +499,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
-                aliceSession.pickle("")
+                aliceSession.pickle(null)
             )
             olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
@@ -538,7 +538,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
-                aliceSession.pickle("")
+                aliceSession.pickle(null)
             )
             olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
@@ -575,21 +575,21 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 aliceSession1.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
-                aliceSession1.pickle("")
+                aliceSession1.pickle(null)
             )
             val storedOlmSession2 = StoredOlmSession(
                 bobCurveKey.value,
                 aliceSession2.sessionId,
                 fromEpochMilliseconds(24),
                 Clock.System.now(),
-                aliceSession2.pickle("")
+                aliceSession2.pickle(null)
             )
             val storedOlmSession3 = StoredOlmSession(
                 bobCurveKey.value,
                 aliceSession3.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
-                aliceSession3.pickle("")
+                aliceSession3.pickle(null)
             )
             olmStoreMock.olmSessions[bobCurveKey.value] = setOf(
                 storedOlmSession2,
@@ -633,7 +633,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
-                aliceSession.pickle("")
+                aliceSession.pickle(null)
             )
             olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
@@ -687,7 +687,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
-                aliceSession.pickle("")
+                aliceSession.pickle(null)
             )
             olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
@@ -740,7 +740,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 aliceSession.sessionId,
                 Clock.System.now(),
                 Clock.System.now(),
-                aliceSession.pickle("")
+                aliceSession.pickle(null)
             )
             olmStoreMock.olmSessions[bobCurveKey.value] = setOf(storedOlmSession)
 
@@ -794,7 +794,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
         }
 
         val sessionId =
-            freeAfter(OlmOutboundGroupSession.unpickle("", storedOutboundSession.pickled)) { outboundSession ->
+            freeAfter(OlmOutboundGroupSession.unpickle(null, storedOutboundSession.pickled)) { outboundSession ->
                 assertSoftly(result) {
                     this.senderKey shouldBe aliceCurveKey.value
                     this.deviceId shouldBe aliceDeviceId
@@ -834,7 +834,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             room shouldBe room
         }
 
-        freeAfter(OlmInboundGroupSession.unpickle("", storedInboundSession.pickled)) { inboundSession ->
+        freeAfter(OlmInboundGroupSession.unpickle(null, storedInboundSession.pickled)) { inboundSession ->
             json.decodeFromString(
                 decryptedMegolmEventSerializer, inboundSession.decrypt(result.ciphertext).message
             ) shouldBe decryptedMegolmEvent
@@ -894,7 +894,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     roomId = room,
                     encryptedMessageCount = 23,
                     newDevices = mapOf(bob to setOf(bobDeviceId)),
-                    pickled = outboundSession.pickle("")
+                    pickled = outboundSession.pickle(null)
                 )
             freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
                 olmStoreMock.inboundMegolmSession[outboundSession.sessionId to room] = StoredInboundMegolmSession(
@@ -906,7 +906,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     hasBeenBackedUp = false,
                     isTrusted = true,
                     forwardingCurve25519KeyChain = listOf(),
-                    pickled = inboundSession.pickle("")
+                    pickled = inboundSession.pickle(null)
                 )
             }
         }
@@ -953,7 +953,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     hasBeenBackedUp = false,
                     isTrusted = true,
                     forwardingCurve25519KeyChain = listOf(),
-                    pickled = inboundSession.pickle("")
+                    pickled = inboundSession.pickle(null)
                 )
             }
             val ciphertext =
@@ -996,7 +996,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     hasBeenBackedUp = false,
                     isTrusted = true,
                     forwardingCurve25519KeyChain = listOf(),
-                    pickled = inboundSession.pickle("")
+                    pickled = inboundSession.pickle(null)
                 )
             }
             cut.decryptMegolm(
@@ -1052,7 +1052,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     hasBeenBackedUp = false,
                     isTrusted = true,
                     forwardingCurve25519KeyChain = listOf(),
-                    pickled = inboundSession.pickle("")
+                    pickled = inboundSession.pickle(null)
                 )
             }
             val ciphertext = outboundSession.encrypt(
@@ -1091,7 +1091,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                     hasBeenBackedUp = false,
                     isTrusted = true,
                     forwardingCurve25519KeyChain = listOf(),
-                    pickled = inboundSession.pickle("")
+                    pickled = inboundSession.pickle(null)
                 )
             }
             val ciphertext =

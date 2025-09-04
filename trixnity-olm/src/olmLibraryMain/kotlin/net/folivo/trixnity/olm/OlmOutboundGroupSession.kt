@@ -33,11 +33,11 @@ actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
                 }
             }
 
-        actual fun unpickle(key: String, pickle: String): OlmOutboundGroupSession =
+        actual fun unpickle(key: String?, pickle: String): OlmOutboundGroupSession =
             OlmOutboundGroupSession().apply {
                 try {
                     val result =
-                        unpickle_outbound_group_session(ptr, key.encodeToByteArray(), pickle.encodeToByteArray())
+                        unpickle_outbound_group_session(ptr, key?.encodeToByteArray() ?: ByteArray(0), pickle.encodeToByteArray())
                     checkError(ptr, result, ::outbound_group_session_last_error)
                 } catch (e: Exception) {
                     free()
@@ -68,10 +68,10 @@ actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
         ptr.free()
     }
 
-    actual fun pickle(key: String): String =
+    actual fun pickle(key: String?): String =
         pickle(
             ptr,
-            key,
+            key ?: "",
             ::pickle_outbound_group_session_length,
             ::pickle_outbound_group_session,
             ::outbound_group_session_last_error

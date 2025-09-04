@@ -190,7 +190,7 @@ class KeyBackupServiceImpl(
                     val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
                     val (firstKnownIndex, pickledSession) =
                         freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
-                            it.firstKnownIndex to it.pickle(checkNotNull(accountStore.getAccount()?.olmPickleKey))
+                            it.firstKnownIndex to it.pickle(accountStore.getAccount()?.olmPickleKey)
                         }
                     val senderSigningKey =
                         data.senderClaimedKeys.filterIsInstance<Key.Ed25519Key>().firstOrNull()
@@ -257,7 +257,7 @@ class KeyBackupServiceImpl(
                                                 freeAfter(OlmPkEncryption.create(version.authData.publicKey.value)) { pke ->
                                                     val sessionKey = freeAfter(
                                                         OlmInboundGroupSession.unpickle(
-                                                            checkNotNull(accountStore.getAccount()?.olmPickleKey),
+                                                            accountStore.getAccount()?.olmPickleKey,
                                                             session.pickled
                                                         )
                                                     ) { it.export(it.firstKnownIndex) }

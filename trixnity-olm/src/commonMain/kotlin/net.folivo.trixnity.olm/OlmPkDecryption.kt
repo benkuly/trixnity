@@ -5,14 +5,14 @@ expect class OlmPkDecryption : WantsToBeFree {
 
     companion object {
         fun create(privateKey: String? = null): OlmPkDecryption
-        fun unpickle(key: String, pickle: String): OlmPkDecryption
+        fun unpickle(key: String?, pickle: String): OlmPkDecryption
     }
 
     val publicKey: String
     val privateKey: String
 
     override fun free()
-    fun pickle(key: String): String
+    fun pickle(key: String?): String
 
     fun decrypt(message: OlmPkMessage): String
 }

@@ -107,7 +107,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
                 decryptedMessage shouldBe "Hello bob , this is alice!"
                 OlmInfos(
-                    olmAccount = bobAccount.pickle(""),
+                    olmAccount = bobAccount.pickle(null),
                     fallbackKey = bobFallbackKey,
                 )
             }
@@ -122,7 +122,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         olmStoreMock.olmAccount.first { it != olmInfos.olmAccount }
 
         freeAfter(
-            OlmAccount.unpickle("", checkNotNull(olmStoreMock.olmAccount.value)),
+            OlmAccount.unpickle(null, checkNotNull(olmStoreMock.olmAccount.value)),
             OlmAccount.create()
         ) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519

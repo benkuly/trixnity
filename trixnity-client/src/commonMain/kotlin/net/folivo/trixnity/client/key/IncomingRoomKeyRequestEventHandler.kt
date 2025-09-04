@@ -82,7 +82,7 @@ class IncomingRoomKeyRequestEventHandler(
                                 sessionId = foundInboundMegolmSession.sessionId,
                                 sessionKey = freeAfter(
                                     OlmInboundGroupSession.unpickle(
-                                        checkNotNull(accountStore.getAccount()?.olmPickleKey),
+                                        accountStore.getAccount()?.olmPickleKey,
                                         foundInboundMegolmSession.pickled
                                     )
                                 ) { it.export(it.firstKnownIndex) },

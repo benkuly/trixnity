@@ -522,11 +522,10 @@ suspend fun MatrixClient.Companion.loginWith(
     val di = koinApplication.koin
 
     val accountStore = di.get<AccountStore>()
-    val olmPickleKey = ""
 
     accountStore.updateAccount {
         Account(
-            olmPickleKey = olmPickleKey,
+            olmPickleKey = null,
             baseUrl = baseUrl.toString(),
             accessToken = loginInfo.accessToken,
             refreshToken = loginInfo.refreshToken,
@@ -545,7 +544,7 @@ suspend fun MatrixClient.Companion.loginWith(
         baseUrl = baseUrl,
         userId = loginInfo.userId,
         deviceId = loginInfo.deviceId,
-        olmPickleKey = olmPickleKey,
+        olmPickleKey = null,
         json = di.get(),
         eventContentSerializerMappings = di.get(),
         accountStore = accountStore,
@@ -627,7 +626,7 @@ suspend fun MatrixClient.Companion.fromStore(
     val olmPickleKey = account?.olmPickleKey
     val olmAccount = olmCryptoStore.getOlmAccount()
 
-    if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
+    if (userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
         koinApplication.createMatrixClient(
             baseUrl = baseUrl,
             userId = userId,
@@ -686,7 +685,7 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
     baseUrl: Url,
     userId: UserId,
     deviceId: String,
-    olmPickleKey: String,
+    olmPickleKey: String?,
     json: Json,
     eventContentSerializerMappings: EventContentSerializerMappings,
     accountStore: AccountStore,

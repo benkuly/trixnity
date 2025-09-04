@@ -10,9 +10,9 @@ actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
                 .apply { rethrow { ptr.create() } }
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmOutboundGroupSession {
+        actual fun unpickle(key: String?, pickle: String): OlmOutboundGroupSession {
             return OlmOutboundGroupSession()
-                .apply { rethrow { ptr.unpickle(key, pickle) } }
+                .apply { rethrow { ptr.unpickle(key ?: "", pickle) } }
         }
     }
 
@@ -22,7 +22,7 @@ actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
 
     actual override fun free() = ptr.free()
 
-    actual fun pickle(key: String): String = rethrow { ptr.pickle(key) }
+    actual fun pickle(key: String?): String = rethrow { ptr.pickle(key ?: "") }
 
     actual fun encrypt(plainText: String): String = rethrow { ptr.encrypt(plainText) }
 

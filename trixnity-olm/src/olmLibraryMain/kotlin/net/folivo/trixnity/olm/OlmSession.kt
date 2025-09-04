@@ -67,9 +67,9 @@ actual class OlmSession private constructor() : WantsToBeFree {
             }
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmSession = OlmSession().apply {
+        actual fun unpickle(key: String?, pickle: String): OlmSession = OlmSession().apply {
             checkResult {
-                unpickle_session(ptr, key.encodeToByteArray(), pickle.encodeToByteArray())
+                unpickle_session(ptr, key?.encodeToByteArray() ?: ByteArray(0), pickle.encodeToByteArray())
             }
         }
     }
@@ -96,9 +96,9 @@ actual class OlmSession private constructor() : WantsToBeFree {
         ptr.free()
     }
 
-    actual fun pickle(key: String): String = pickle(
+    actual fun pickle(key: String?): String = pickle(
         ptr,
-        key,
+        key ?: "",
         ::pickle_session_length,
         ::pickle_session,
         ::session_last_error

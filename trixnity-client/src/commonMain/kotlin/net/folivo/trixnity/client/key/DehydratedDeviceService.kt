@@ -173,7 +173,7 @@ class DehydratedDeviceService(
                     return
                 }
                 val rehydratedUserInfo = try {
-                    freeAfter(OlmAccount.unpickle("", olmAccountPickle)) { olmAccount ->
+                    freeAfter(OlmAccount.unpickle(null, olmAccountPickle)) { olmAccount ->
                         val deviceId = olmAccount.identityKeys.curve25519
                         UserInfo(
                             userInfo.userId,
@@ -286,8 +286,8 @@ class DehydratedDeviceService(
                     userInfo = dehydratedUserInfo,
                     json = json,
                     store = object : SignServiceStore {
-                        override suspend fun getOlmAccount(): String = olmAccount.pickle("")
-                        override suspend fun getOlmPickleKey(): String = ""
+                        override suspend fun getOlmAccount(): String = olmAccount.pickle(null)
+                        override suspend fun getOlmPickleKey(): String? = null
                     }
                 )
                 olmAccount.generateOneTimeKeys(olmAccount.maxNumberOfOneTimeKeys)
@@ -328,7 +328,7 @@ class DehydratedDeviceService(
                         deviceId = deviceId,
                         deviceData = with(
                             encryptAesHmacSha2(
-                                content = olmAccount.pickle("").encodeToByteArray(),
+                                content = olmAccount.pickle(null).encodeToByteArray(),
                                 key = dehydratedDeviceKey,
                                 name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
                             )

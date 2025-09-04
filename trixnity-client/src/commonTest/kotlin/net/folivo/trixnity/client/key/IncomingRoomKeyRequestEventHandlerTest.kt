@@ -44,7 +44,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
     private val aliceDevice = "ALICEDEVICE"
     private val bobDevice = "BOBDEVICE"
 
-    private val accountStore = getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "") } }
+    private val accountStore = getInMemoryAccountStore()
     private val keyStore = getInMemoryKeyStore()
     private val olmStore = getInMemoryOlmStore()
 
@@ -222,7 +222,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         hasBeenBackedUp = true,
                         isTrusted = true,
                         forwardingCurve25519KeyChain = listOf(),
-                        pickled = inboundSession.pickle("")
+                        pickled = inboundSession.pickle(null)
                     )
                 }
             }
@@ -255,7 +255,7 @@ class IncomingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
                         hasBeenBackedUp = true,
                         isTrusted = true,
                         forwardingCurve25519KeyChain = listOf(),
-                        pickled = inboundSession.pickle("")
+                        pickled = inboundSession.pickle(null)
                     )
                 }
             }

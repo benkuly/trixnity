@@ -55,7 +55,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
     private val senderSigningKey = Key.Ed25519Key(null, "senderSigning")
     private val forwardingSenderKey = Key.Curve25519Key(null, "forwardingSenderKey")
 
-    private val accountStore = getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "") } }
+    private val accountStore = getInMemoryAccountStore()
     private val olmCryptoStore = getInMemoryOlmStore()
     private val keyStore = getInMemoryKeyStore()
 
@@ -393,7 +393,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
 
     private suspend fun sessionKey() = sessionKeys(0).first()
     private suspend fun pickleToInbound(sessionKey: String) =
-        freeAfter(OlmInboundGroupSession.import(sessionKey)) { it.pickle("") }
+        freeAfter(OlmInboundGroupSession.import(sessionKey)) { it.pickle(null) }
 
     private suspend fun TestScope.setRequest(receiverDeviceIds: Set<String>) {
         keyStore.addRoomKeyRequest(

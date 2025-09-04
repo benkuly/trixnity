@@ -42,10 +42,10 @@ actual class OlmAccount private constructor() : WantsToBeFree {
                 }
             }
 
-        actual fun unpickle(key: String, pickle: String): OlmAccount =
+        actual fun unpickle(key: String?, pickle: String): OlmAccount =
             OlmAccount().apply {
                 try {
-                    val result = unpickle_account(ptr, key.encodeToByteArray(), pickle.encodeToByteArray())
+                    val result = unpickle_account(ptr, key?.encodeToByteArray() ?: ByteArray(0), pickle.encodeToByteArray())
                     checkError(ptr, result, ::account_last_error)
                 } catch (e: Exception) {
                     free()
@@ -86,8 +86,8 @@ actual class OlmAccount private constructor() : WantsToBeFree {
         ptr.free()
     }
 
-    actual fun pickle(key: String): String =
-        pickle(ptr, key, ::pickle_account_length, ::pickle_account, ::account_last_error)
+    actual fun pickle(key: String?): String =
+        pickle(ptr, key ?: "", ::pickle_account_length, ::pickle_account, ::account_last_error)
 
     actual fun sign(message: String): String {
         val signature = ByteArray(account_signature_length(ptr).toInt())

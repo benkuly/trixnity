@@ -65,7 +65,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     private val keyStore = getInMemoryKeyStore()
     private val olmCryptoStore = getInMemoryOlmStore()
     private val olmStore = ClientOlmStore(
-        accountStore = getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "") } },
+        accountStore = getInMemoryAccountStore(),
         olmCryptoStore = olmCryptoStore,
         keyStore = keyStore,
         roomStateStore = getInMemoryRoomStateStore(),
@@ -151,7 +151,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         val deviceData =
             setDehydratedDevice?.deviceData.shouldBeInstanceOf<DehydratedDeviceData.DehydrationV2Compatibility>()
         val dehydratedDeviceAccount = OlmAccount.unpickle(
-            "", decryptAesHmacSha2(
+            null, decryptAesHmacSha2(
                 content = with(deviceData) {
                     AesHmacSha2EncryptedData(
                         iv = iv,
@@ -183,7 +183,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         val bobAccount = OlmAccount.create()
 
         val encryptedData = encryptAesHmacSha2(
-            content = dehydratedDeviceAccount.pickle("").encodeToByteArray(),
+            content = dehydratedDeviceAccount.pickle(null).encodeToByteArray(),
             key = dehydratedDeviceKey,
             name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
         )
@@ -326,7 +326,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         val bobAccount = OlmAccount.create()
 
         val encryptedData = encryptAesHmacSha2(
-            content = dehydratedDeviceAccount.pickle("").encodeToByteArray(),
+            content = dehydratedDeviceAccount.pickle(null).encodeToByteArray(),
             key = dehydratedDeviceKey,
             name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
         )

@@ -11,9 +11,9 @@ actual class OlmAccount private constructor() : WantsToBeFree {
                 .apply { rethrow { ptr.create() } }
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmAccount {
+        actual fun unpickle(key: String?, pickle: String): OlmAccount {
             return OlmAccount().apply {
-                rethrow { ptr.unpickle(key, pickle) }
+                rethrow { ptr.unpickle(key ?: "", pickle) }
             }
         }
     }
@@ -25,7 +25,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
 
     actual override fun free() = ptr.free()
 
-    actual fun pickle(key: String): String = rethrow { ptr.pickle(key) }
+    actual fun pickle(key: String?): String = rethrow { ptr.pickle(key ?: "") }
 
     actual fun sign(message: String): String = rethrow { ptr.sign(message) }
 

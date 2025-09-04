@@ -43,10 +43,10 @@ actual class OlmPkDecryption private constructor(
             return OlmPkDecryption(ptr, publicKey.decodeToString())
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmPkDecryption {
+        actual fun unpickle(key: String?, pickle: String): OlmPkDecryption {
             val ptr = pk_decryption()
             val publicKey = ByteArray(pk_key_length().toInt())
-            val result = unpickle_pk_decryption(ptr, key.encodeToByteArray(), pickle.encodeToByteArray(), publicKey)
+            val result = unpickle_pk_decryption(ptr, key?.encodeToByteArray() ?: ByteArray(0), pickle.encodeToByteArray(), publicKey)
             checkError(ptr, result, ::pk_decryption_last_error)
             return OlmPkDecryption(ptr, publicKey.decodeToString())
         }
@@ -64,9 +64,9 @@ actual class OlmPkDecryption private constructor(
         ptr.free()
     }
 
-    actual fun pickle(key: String): String = pickle(
+    actual fun pickle(key: String?): String = pickle(
         ptr,
-        key,
+        key ?: "",
         ::pickle_pk_decryption_length,
         ::pickle_pk_decryption,
         ::pk_decryption_last_error

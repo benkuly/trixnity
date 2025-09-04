@@ -97,7 +97,7 @@ abstract class RepositoryTestSuite(
         val cut = di.get<AccountRepository>()
         cut.save(
             key.toLong(), Account(
-                olmPickleKey = "",
+                olmPickleKey = null,
                 baseUrl = "",
                 userId = UserId("userId"),
                 deviceId = "",
@@ -318,7 +318,7 @@ abstract class RepositoryTestSuite(
     fun `AccountRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<AccountRepository>()
         val account = Account(
-            olmPickleKey = "",
+            olmPickleKey = null,
             baseUrl = "http://host",
             userId = UserId("alice", "server"),
             deviceId = "aliceDevice",

@@ -15,9 +15,9 @@ actual class OlmInboundGroupSession private constructor() : WantsToBeFree {
                 .apply { rethrow { ptr.import_session(sessionKey) } }
         }
 
-        actual fun unpickle(key: String, pickle: String): OlmInboundGroupSession {
+        actual fun unpickle(key: String?, pickle: String): OlmInboundGroupSession {
             return OlmInboundGroupSession()
-                .apply { rethrow { ptr.unpickle(key, pickle) } }
+                .apply { rethrow { ptr.unpickle(key ?: "", pickle) } }
         }
     }
 
@@ -28,7 +28,7 @@ actual class OlmInboundGroupSession private constructor() : WantsToBeFree {
 
     actual fun export(messageIndex: Long): String = rethrow { ptr.export_session(messageIndex.toInt()) }
 
-    actual fun pickle(key: String): String = rethrow { ptr.pickle(key) }
+    actual fun pickle(key: String?): String = rethrow { ptr.pickle(key ?: "") }
 
     actual fun decrypt(encryptedText: String): OlmInboundGroupMessage {
         val message = rethrow { ptr.decrypt(encryptedText) }

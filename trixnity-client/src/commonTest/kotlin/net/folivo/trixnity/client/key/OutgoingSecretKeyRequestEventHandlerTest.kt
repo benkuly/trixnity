@@ -751,7 +751,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                     deviceData =
                         with(
                             encryptAesHmacSha2(
-                                (pickle ?: freeAfter(OlmAccount.create()) { it.pickle("") }).encodeToByteArray(),
+                                (pickle ?: freeAfter(OlmAccount.create()) { it.pickle(null) }).encodeToByteArray(),
                                 key.decodeUnpaddedBase64Bytes(),
                                 DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
                             )

@@ -70,9 +70,9 @@ class OlmOutboundGroupSessionTest : TrixnityBaseTest() {
     @Test
     fun unpickleWIthEmptyKey() = runTest {
         val pickle = freeAfter(OlmOutboundGroupSession.create()) { session ->
-            session.pickle("") to session.sessionId
+            session.pickle(null) to session.sessionId
         }
-        freeAfter(OlmOutboundGroupSession.unpickle("", pickle.first)) { session ->
+        freeAfter(OlmOutboundGroupSession.unpickle(null, pickle.first)) { session ->
             session.sessionId shouldBe pickle.second
         }
     }
