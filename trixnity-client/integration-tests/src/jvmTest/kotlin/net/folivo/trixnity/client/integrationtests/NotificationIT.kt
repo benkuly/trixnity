@@ -1,17 +1,17 @@
 package net.folivo.trixnity.client.integrationtests
 
 import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.notification
 import net.folivo.trixnity.client.notification.Notification
+import net.folivo.trixnity.client.notification.NotificationService
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.mentions
 import net.folivo.trixnity.client.room.message.replace
@@ -23,6 +23,7 @@ import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.clientserverapi.model.push.SetPushRule
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -276,5 +277,36 @@ class NotificationIT {
             }
         }
         return notificationMessages
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun testPushNotificationForNormalMessageLegacy(): Unit = runBlocking(Dispatchers.Default) {
+        withTimeout(30_000) {
+            val notifications = startedClient2.client.notification.getNotifications()
+                .scan(listOf<NotificationService.Notification>()) { old, new -> old + new }
+                .stateIn(scope)
+
+            val room = startedClient1.client.api.room.createRoom(
+                invite = setOf(startedClient2.client.userId),
+                initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
+            ).getOrThrow()
+
+            withCluePrintln("first notification") {
+                notifications.firstWithTimeout { it.size == 1 }.getOrNull(0).shouldNotBeNull()
+                    .event.shouldBeInstanceOf<ClientEvent.StateBaseEvent<*>>()
+                    .content.shouldBeInstanceOf<MemberEventContent>().displayName shouldBe "user2"
+            }
+
+            startedClient2.client.room.getById(room).firstWithTimeout { it?.membership == INVITE }
+            startedClient2.client.api.room.joinRoom(room).getOrThrow()
+
+            startedClient1.client.room.sendMessage(room) { text("Hello ${startedClient2.client.userId.full}!") }
+            withCluePrintln("second notification") {
+                notifications.firstWithTimeout { it.size == 3 }.getOrNull(2).shouldNotBeNull()
+                    .event.content.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
+                    .body shouldStartWith "Hello"
+            }
+        }
     }
 }

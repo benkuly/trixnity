@@ -61,8 +61,8 @@ data class MatrixClientConfiguration(
     var userPresenceActivityThreshold: Duration = 5.minutes,
 
     /**
-     * Enables storing notification updates locally to allow using them to update external notifications.
-     * To prevent unnecessary stored data, it should not be enabled when not needed.
+     * Enables storing a queue of notification updates locally to allow using them to update external notifications.
+     * To prevent unnecessary stored data, it should not be enabled when not needed and is disabled by default.
      */
     var enableExternalNotifications: Boolean = false,
 

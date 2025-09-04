@@ -19,6 +19,7 @@ sealed interface StoredNotificationUpdate {
     val sortKey: String
     val roomId: RoomId
 
+    @Serializable
     @SerialName("new")
     data class New(
         override val id: String,
@@ -29,6 +30,7 @@ sealed interface StoredNotificationUpdate {
         override val roomId = content.roomId
     }
 
+    @Serializable
     @SerialName("update")
     data class Update(
         override val id: String,
@@ -38,7 +40,8 @@ sealed interface StoredNotificationUpdate {
     ) : StoredNotificationUpdate {
         override val roomId = content.roomId
     }
-
+    
+    @Serializable
     @SerialName("remove")
     data class Remove(
         override val id: String,

@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -23,6 +24,7 @@ import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.push.PushAction
+import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
@@ -85,6 +87,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
         }
     }
     private val notificationStore = getInMemoryNotificationStore { deleteAll() }
+    private val globalAccountDataStore = getInMemoryGlobalAccountDataStore()
     private val matrixClientStarted = MatrixClientStarted()
     private val apiConfig = PortableMockEngineConfig()
     private val config = MatrixClientConfiguration().apply {
@@ -99,9 +102,19 @@ class NotificationServiceTest : TrixnityBaseTest() {
         accountStore = accountStore,
         roomService = roomService,
         notificationStore = notificationStore,
+        globalAccountDataStore = globalAccountDataStore,
         eventContentSerializerMappings = DefaultEventContentSerializerMappings,
         matrixClientStarted = matrixClientStarted,
         config = config,
+        eventsToNotificationUpdates = object : EventsToNotificationUpdates {
+            override suspend fun invoke(
+                roomId: RoomId,
+                eventFlow: Flow<ClientEvent<*>>,
+                pushRules: List<PushRule>,
+                existingNotifications: Map<String, String>,
+                removeStale: Boolean
+            ): List<StoredNotificationUpdate> = listOf()
+        },
         coroutineScope = backgroundScope,
     )
 
