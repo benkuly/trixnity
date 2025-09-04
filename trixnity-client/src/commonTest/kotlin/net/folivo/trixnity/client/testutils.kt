@@ -289,6 +289,7 @@ fun TrixnityBaseTest.getInMemoryRoomOutboxMessageStore(setup: suspend RoomOutbox
 fun TrixnityBaseTest.getInMemoryNotificationStore(setup: suspend NotificationStore.() -> Unit = {}) =
     NotificationStore(
         InMemoryNotificationRepository(),
+        InMemoryNotificationUpdateRepository(),
         InMemoryNotificationStateRepository(),
         NoOpRepositoryTransactionManager,
         MatrixClientConfiguration(),

@@ -174,6 +174,13 @@ class InMemoryNotificationRepository : NotificationRepository, InMemoryFullRepos
     }
 }
 
+class InMemoryNotificationUpdateRepository : NotificationUpdateRepository,
+    InMemoryFullRepository<String, StoredNotificationUpdate>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterValues { it.roomId != roomId } }
+    }
+}
+
 class InMemoryNotificationStateRepository : NotificationStateRepository,
     InMemoryFullRepository<RoomId, StoredNotificationState>()
 

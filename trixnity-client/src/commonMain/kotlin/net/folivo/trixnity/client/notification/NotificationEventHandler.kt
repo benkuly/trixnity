@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.notification
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.room.RoomService
 import net.folivo.trixnity.client.room.firstWithContent
@@ -21,7 +22,6 @@ import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.toList
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.unsubscribeOnCompletion
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.notification.NotificationEventHandler")
@@ -38,7 +38,7 @@ class NotificationEventHandler(
     private val eventsToNotificationUpdates: EventsToNotificationUpdates,
     private val transactionManager: TransactionManager,
     private val eventContentSerializerMappings: EventContentSerializerMappings,
-    private val clock: Clock,
+    private val config: MatrixClientConfiguration,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -72,12 +72,13 @@ class NotificationEventHandler(
             if (hasNewPushRules) {
                 log.debug { "schedule remove all notifications and state because push rules disabled" }
                 transactionManager.writeTransaction {
-                    allState.forEach { state ->
-                        notificationStore.updateState(state.roomId) {
-                            StoredNotificationState.Remove(state.roomId)
+                    val removeRooms = allState.map { it.roomId } + // FIXME test
+                            notificationStore.getAll().first().values.mapNotNull { it.first() }.map { it.roomId }
+                    removeRooms.forEach { roomId ->
+                        notificationStore.updateState(roomId) {
+                            StoredNotificationState.Remove(roomId)
                         }
                     }
-                    notificationStore.deleteAllNotifications()
                 }
             }
             log.trace { "skip because push rules disabled" }
@@ -128,12 +129,12 @@ class NotificationEventHandler(
             log.debug { "schedule remove all notifications and state for completely read rooms $completelyReadRooms" }
         if (unreadRooms.isNotEmpty())
             log.debug { "schedule notification processing for unread rooms $unreadRooms" }
+
         transactionManager.writeTransaction {
             removeRooms.forEach { roomId ->
                 notificationStore.updateState(roomId) {
                     StoredNotificationState.Remove(roomId)
                 }
-                notificationStore.deleteByRoomId(roomId)
             }
             unreadRooms.forEach { unreadRoom ->
                 val roomId = unreadRoom.roomId
@@ -180,85 +181,79 @@ class NotificationEventHandler(
         currentPushRules: List<PushRule>,
     ) {
         val roomId = notificationState.roomId
-        val notificationUpdates = getNotificationUpdates(notificationState, roomId, currentPushRules)
-
-        if (notificationState is StoredNotificationState.Remove) {
+        if (notificationState is StoredNotificationState.Push) return
+        if (notificationState is StoredNotificationState.Remove && config.enableExternalNotifications.not()) {
             log.debug { "remove all notifications for $roomId" }
             notificationStore.deleteByRoomId(roomId)
-        } else {
-            val sortKeyPrefix by lazy { "$roomId-${clock.now()}" }
-            var index = UInt.MAX_VALUE
-            fun sortKey() = "$sortKeyPrefix-${(index--).toHexString()}"
+            return
+        }
+        val notificationUpdates =
+            getNotificationUpdates(
+                notificationState = notificationState,
+                roomId = roomId,
+                currentPushRules = currentPushRules,
+            )
 
-            val staleNotifications =
-                if (notificationState is StoredNotificationState.SyncWithTimeline && notificationState.lastProcessedEventId == null ||
-                    notificationState is StoredNotificationState.SyncWithoutTimeline
-                ) {
-                    notificationStore.getAll().first().values.mapNotNull { it.first() }
-                        .filter { it.roomId == roomId }.map { it.id } -
-                            notificationUpdates.orEmpty().map { it.id }.toSet()
-                } else null
+        if (!notificationUpdates.isNullOrEmpty()) {
+            log.trace { "apply notification updates for $roomId" }
+            transactionManager.writeTransaction {
+                if (config.enableExternalNotifications) {
+                    notificationStore.saveAllUpdates(notificationUpdates)
+                }
+                notificationUpdates.forEach { update ->
+                    when (update) {
+                        is StoredNotificationUpdate.New -> {
+                            log.trace { "new notification in $roomId ${update.id} $update" }
+                            notificationStore.save(
+                                update.id,
+                                when (val content = update.content) {
+                                    is StoredNotificationUpdate.Content.Message -> StoredNotification.Message(
+                                        roomId = roomId,
+                                        eventId = content.eventId,
+                                        sortKey = update.sortKey,
+                                        actions = update.actions,
+                                    )
 
-            if (!notificationUpdates.isNullOrEmpty() || !staleNotifications.isNullOrEmpty()) {
-                transactionManager.writeTransaction {
-                    notificationUpdates?.forEach { update ->
-                        when (val change = update.change) {
-                            is NotificationUpdate.Change.New -> {
-                                log.trace { "new notification ${update.id} $update" }
-                                notificationStore.save(
-                                    update.id,
-                                    when (update) {
-                                        is NotificationUpdate.Message -> StoredNotification.Message(
-                                            roomId = roomId,
-                                            eventId = update.eventId,
-                                            sortKey = sortKey(),
-                                            actions = change.actions,
-                                        )
-
-                                        is NotificationUpdate.State -> StoredNotification.State(
-                                            roomId = roomId,
-                                            eventId = update.eventId,
-                                            type = update.type,
-                                            stateKey = update.stateKey,
-                                            sortKey = sortKey(),
-                                            actions = change.actions,
-                                        )
-                                    }
-                                )
-                            }
-
-                            is NotificationUpdate.Change.Update -> {
-                                log.trace { "updated notification ${update.id} $update" }
-                                notificationStore.update(update.id) {
-                                    when (update) {
-                                        is NotificationUpdate.Message -> StoredNotification.Message(
-                                            roomId = roomId,
-                                            eventId = update.eventId,
-                                            sortKey = it?.sortKey ?: sortKey(),
-                                            actions = change.actions,
-                                        )
-
-                                        is NotificationUpdate.State -> StoredNotification.State(
-                                            roomId = roomId,
-                                            eventId = update.eventId,
-                                            type = update.type,
-                                            stateKey = update.stateKey,
-                                            sortKey = it?.sortKey ?: sortKey(),
-                                            actions = change.actions,
-                                        )
-                                    }
+                                    is StoredNotificationUpdate.Content.State -> StoredNotification.State(
+                                        roomId = roomId,
+                                        eventId = content.eventId,
+                                        type = content.type,
+                                        stateKey = content.stateKey,
+                                        sortKey = update.sortKey,
+                                        actions = update.actions,
+                                    )
                                 }
-                            }
-
-                            is NotificationUpdate.Change.Remove -> {
-                                log.trace { "removed notification ${update.id} $update" }
-                                notificationStore.delete(update.id)
-                            }
+                            )
                         }
-                    }
-                    staleNotifications?.forEach { id ->
-                        log.trace { "removed stale notification $id" }
-                        notificationStore.delete(id)
+
+                        is StoredNotificationUpdate.Update -> {
+                            log.trace { "updated notification in $roomId ${update.id} $update" }
+                            notificationStore.save(
+                                update.id,
+                                when (val content = update.content) {
+                                    is StoredNotificationUpdate.Content.Message -> StoredNotification.Message(
+                                        roomId = roomId,
+                                        eventId = content.eventId,
+                                        sortKey = update.sortKey,
+                                        actions = update.actions,
+                                    )
+
+                                    is StoredNotificationUpdate.Content.State -> StoredNotification.State(
+                                        roomId = roomId,
+                                        eventId = content.eventId,
+                                        type = content.type,
+                                        stateKey = content.stateKey,
+                                        sortKey = update.sortKey,
+                                        actions = update.actions,
+                                    )
+                                }
+                            )
+                        }
+
+                        is StoredNotificationUpdate.Remove -> {
+                            log.trace { "removed notification in $roomId ${update.id} $update" }
+                            notificationStore.delete(update.id)
+                        }
                     }
                 }
             }
@@ -283,29 +278,49 @@ class NotificationEventHandler(
     private suspend fun getNotificationUpdates(
         notificationState: StoredNotificationState,
         roomId: RoomId,
-        currentPushRules: List<PushRule>
-    ): List<NotificationUpdate>? {
-        val events = when (notificationState) {
+        currentPushRules: List<PushRule>,
+    ): List<StoredNotificationUpdate>? {
+        suspend fun existingNotifications() =
+            notificationStore.getAll().first()
+                .values.mapNotNull { it.first() }
+                .filter { it.roomId == roomId }
+                .associate { it.id to it.sortKey }
+
+        return when (notificationState) {
             is StoredNotificationState.Push -> null
-            is StoredNotificationState.Remove -> null
-            is StoredNotificationState.SyncWithTimeline -> getRelevantEventsFromTimeline(notificationState, roomId)
-            is StoredNotificationState.SyncWithoutTimeline -> getAllEventsFromFromState(roomId)
-        } ?: return null
-        return eventsToNotificationUpdates(
-            eventFlow = events,
-            pushRules = currentPushRules
-        ).toList()
+            is StoredNotificationState.Remove ->
+                existingNotifications().map { StoredNotificationUpdate.Remove(it.key, roomId) }
+
+            is StoredNotificationState.SyncWithTimeline -> {
+                eventsToNotificationUpdates(
+                    roomId = roomId,
+                    eventFlow = getRelevantEventsFromTimeline(notificationState, roomId),
+                    pushRules = currentPushRules,
+                    existingNotifications = existingNotifications(),
+                    removeStale = notificationState.lastProcessedEventId == null,
+                )
+            }
+
+            is StoredNotificationState.SyncWithoutTimeline ->
+                eventsToNotificationUpdates(
+                    roomId = roomId,
+                    eventFlow = getAllEventsFromFromState(roomId),
+                    pushRules = currentPushRules,
+                    existingNotifications = existingNotifications(),
+                    removeStale = true,
+                )
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun getRelevantEventsFromTimeline(
         notificationState: StoredNotificationState.SyncWithTimeline,
         roomId: RoomId
-    ): Flow<ClientEvent.RoomEvent<*>>? {
+    ): Flow<ClientEvent.RoomEvent<*>> {
         val lastEventId = notificationState.lastEventId
 
         val lastProcessedEventId = notificationState.lastProcessedEventId
-        if (lastProcessedEventId == lastEventId) return null
+        if (lastProcessedEventId == lastEventId) return emptyFlow()
 
         val hasStoredNotifications =
             notificationStore.getAll().first().values.mapNotNull { it.first() }.any { it.roomId == roomId }
@@ -313,7 +328,7 @@ class NotificationEventHandler(
             (notificationState.expectedMaxNotificationCount?.toInt() ?: 0)
                 .takeIf { !hasStoredNotifications || lastProcessedEventId == null }
 
-        if (expectedMaxNotificationCount == 0) return null
+        if (expectedMaxNotificationCount == 0) return emptyFlow()
 
         log.debug { "process timeline events for notifications in $roomId" }
         return roomService.getTimelineEvents(roomId, lastEventId) {

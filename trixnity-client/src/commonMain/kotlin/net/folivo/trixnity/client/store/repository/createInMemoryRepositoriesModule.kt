@@ -34,5 +34,6 @@ fun createInMemoryRepositoriesModule() = module {
     singleOf<RoomAccountDataRepository>(::InMemoryRoomAccountDataRepository)
     singleOf<UserPresenceRepository>(::InMemoryUserPresenceRepository)
     singleOf<NotificationRepository>(::InMemoryNotificationRepository)
+    singleOf<NotificationUpdateRepository>(::InMemoryNotificationUpdateRepository)
     singleOf<NotificationStateRepository>(::InMemoryNotificationStateRepository)
 }

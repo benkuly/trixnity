@@ -105,7 +105,7 @@ class ForgetRoomsTest : TrixnityBaseTest() {
             )
         }
         notificationStore.update("notif") {
-            StoredNotification.Message(room, EventId("notif"), "s", setOf())
+            StoredNotification.Message("s", room, EventId("notif"), setOf())
         }
 
         roomStore.getAll().first { it.size == 1 }

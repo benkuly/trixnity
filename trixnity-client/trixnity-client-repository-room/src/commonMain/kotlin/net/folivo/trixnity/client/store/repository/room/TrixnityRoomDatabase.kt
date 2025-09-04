@@ -33,6 +33,7 @@ import androidx.room.*
         RoomTimelineEvent::class,
         RoomNotification::class,
         RoomNotificationState::class,
+        RoomNotificationUpdate::class,
     ],
     version = 5, // tick this value when any entity classes change
     autoMigrations = [
@@ -81,6 +82,7 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun userPresence(): UserPresenceDao
     abstract fun notification(): NotificationDao
     abstract fun notificationState(): NotificationStateDao
+    abstract fun notificationUpdate(): NotificationUpdateDao
 }
 
 // The Room compiler generates the `actual` implementations.

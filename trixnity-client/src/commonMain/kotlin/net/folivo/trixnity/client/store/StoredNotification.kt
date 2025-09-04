@@ -29,9 +29,9 @@ sealed interface StoredNotification {
     @Serializable
     @SerialName("message")
     data class Message(
+        override val sortKey: String,
         override val roomId: RoomId,
         override val eventId: EventId,
-        override val sortKey: String,
         override val actions: Set<PushAction>,
         override val dismissed: Boolean = false,
     ) : StoredNotification {
@@ -46,12 +46,12 @@ sealed interface StoredNotification {
     @Serializable
     @SerialName("state")
     data class State(
+        override val sortKey: String,
         override val roomId: RoomId,
         override val eventId: EventId?,
         @SerialName("eventContentType")
         val type: String,
         val stateKey: String,
-        override val sortKey: String,
         override val actions: Set<PushAction>,
         override val dismissed: Boolean = false,
     ) : StoredNotification {

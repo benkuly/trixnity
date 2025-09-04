@@ -11,6 +11,7 @@ import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.RoomUserReceipts
 import net.folivo.trixnity.client.store.StoredNotification
 import net.folivo.trixnity.client.store.StoredNotificationState
+import net.folivo.trixnity.client.store.StoredNotificationUpdate
 import net.folivo.trixnity.clientserverapi.client.SyncEvents
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap
@@ -35,8 +36,8 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
     private val userId = UserId("user1", "localhost")
     private val roomId1 = RoomId("!room1:localhost")
     private val roomId2 = RoomId("!room2:localhost")
-    private val notification1 = StoredNotification.Message(roomId1, EventId("1"), "s", setOf())
-    private val notification2 = StoredNotification.Message(roomId2, EventId("2"), "s", setOf())
+    private val notification1 = StoredNotification.Message("s", roomId1, EventId("1"), setOf())
+    private val notification2 = StoredNotification.Message("s", roomId2, EventId("2"), setOf())
 
     private val roomService = RoomServiceMock().apply {
         scheduleSetup {
@@ -50,15 +51,18 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
     private val notificationStore = getInMemoryNotificationStore { deleteAll() }
 
     private class EventsToNotificationUpdatesMock() : EventsToNotificationUpdates {
-        var notificationUpdates = flowOf<NotificationUpdate>()
+        var notificationUpdates = listOf<StoredNotificationUpdate>()
         override suspend fun invoke(
+            roomId: RoomId,
             eventFlow: Flow<ClientEvent<*>>,
-            pushRules: List<PushRule>
-        ): Flow<NotificationUpdate> = notificationUpdates
+            pushRules: List<PushRule>,
+            existingNotifications: Map<String, String>,
+            removeStale: Boolean
+        ): List<StoredNotificationUpdate> = notificationUpdates
     }
 
     private val eventsToNotificationUpdates = EventsToNotificationUpdatesMock().apply {
-        scheduleSetup { notificationUpdates = flowOf() }
+        scheduleSetup { notificationUpdates = listOf() }
     }
 
     private val cut = NotificationEventHandler(
@@ -73,7 +77,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         eventsToNotificationUpdates = eventsToNotificationUpdates,
         transactionManager = TransactionManagerMock(),
         eventContentSerializerMappings = DefaultEventContentSerializerMappings,
-        clock = ClockMock(),
+        config = MatrixClientConfiguration()
     )
 
     private fun pushRulesEvent(updateOverride: (List<PushRule.Override>) -> List<PushRule.Override> = { it }) =
@@ -139,7 +143,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `push rules disabled changed - remove notifications and schedule remove for all existing state`() =
+    fun `push rules disabled changed - schedule remove `() =
         runTest {
             processSyncWith(
                 updatedRooms = setOf(),
@@ -148,7 +152,10 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                 }
             )
 
-            notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf()
+            notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
+                notification1,
+                notification2
+            )
             notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
                 StoredNotificationState.Remove(roomId1),
                 StoredNotificationState.Remove(roomId2),
@@ -176,7 +183,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         }
 
     @Test
-    fun `push rules disabled for room changed - remove notifications and schedule remove for existing state`() =
+    fun `push rules disabled for room changed - schedule remove`() =
         runTest {
             processSyncWith(
                 updatedRooms = setOf(roomId1),
@@ -189,6 +196,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                 }
             )
             notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
+                notification1,
                 notification2
             )
             notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
@@ -238,11 +246,12 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `room is read - remove notifications and schedule remove for existing state`() = runTest {
+    fun `room is read - schedule remove`() = runTest {
         roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, lastEventId = EventId("e1")) }
         processSyncWith(updatedRooms = setOf(roomId1))
 
         notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
+            notification1,
             notification2
         )
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(

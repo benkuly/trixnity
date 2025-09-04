@@ -49,6 +49,7 @@ suspend fun createExposedRepositoriesModule(
             ExposedUserPresence,
             ExposedNotification,
             ExposedNotificationState,
+            ExposedNotificationUpdate,
         )
         SchemaUtils.createMissingTablesAndColumns(*allTables)
     }
@@ -85,5 +86,6 @@ suspend fun createExposedRepositoriesModule(
         singleOf(::ExposedUserPresenceRepository) { bind<UserPresenceRepository>() }
         singleOf(::ExposedNotificationRepository) { bind<NotificationRepository>() }
         singleOf(::ExposedNotificationStateRepository) { bind<NotificationStateRepository>() }
+        singleOf(::ExposedNotificationUpdateRepository) { bind<NotificationUpdateRepository>() }
     }
 }

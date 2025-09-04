@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.notification
 
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.runTest
@@ -9,6 +10,8 @@ import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.mocks.TransactionManagerMock
 import net.folivo.trixnity.client.store.StoredNotification
 import net.folivo.trixnity.client.store.StoredNotificationState
+import net.folivo.trixnity.client.store.StoredNotificationUpdate
+import net.folivo.trixnity.client.store.StoredNotificationUpdate.Content
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
@@ -32,8 +35,8 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     private val userId = UserId("user1", "localhost")
     private val roomId1 = RoomId("!room1:localhost")
     private val roomId2 = RoomId("!room2:localhost")
-    private val notification1 = StoredNotification.Message(roomId1, EventId("1"), "s", setOf())
-    private val notification2 = StoredNotification.Message(roomId2, EventId("2"), "s", setOf())
+    private val notification1 = StoredNotification.Message("s", roomId1, EventId("1"), setOf())
+    private val notification2 = StoredNotification.Message("s", roomId2, EventId("2"), setOf())
 
     private val roomService = RoomServiceMock().apply {
         scheduleSetup {
@@ -45,16 +48,26 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     private val roomUserStore = getInMemoryRoomUserStore { deleteAll() }
     private val globalAccountDataStore = getInMemoryGlobalAccountDataStore { deleteAll() }
     private val notificationStore = getInMemoryNotificationStore { deleteAll() }
+    private val config = MatrixClientConfiguration().apply {
+        scheduleSetup {
+            enableExternalNotifications = false
+        }
+    }
 
     private class EventsToNotificationUpdatesMock() : EventsToNotificationUpdates {
-        var notificationUpdates = listOf<NotificationUpdate>()
+        var notificationUpdates = listOf<StoredNotificationUpdate>()
         var events: List<EventId> = listOf()
+        var removeStale: Boolean = false
         override suspend fun invoke(
+            roomId: RoomId,
             eventFlow: Flow<ClientEvent<*>>,
-            pushRules: List<PushRule>
-        ): Flow<NotificationUpdate> {
-            events = eventFlow.toList().mapNotNull { it.idOrNull }
-            return notificationUpdates.asFlow()
+            pushRules: List<PushRule>,
+            existingNotifications: Map<String, String>,
+            removeStale: Boolean
+        ): List<StoredNotificationUpdate> {
+            this.events = eventFlow.toList().mapNotNull { it.idOrNull }
+            this.removeStale = removeStale
+            return notificationUpdates
         }
     }
 
@@ -62,6 +75,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         scheduleSetup {
             notificationUpdates = listOf()
             events = listOf()
+            removeStale = false
         }
     }
 
@@ -77,7 +91,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         eventsToNotificationUpdates = eventsToNotificationUpdates,
         transactionManager = TransactionManagerMock(),
         eventContentSerializerMappings = DefaultEventContentSerializerMappings,
-        clock = ClockMock(),
+        config = config
     )
 
     private fun eventId(index: Int) = EventId($$"$e$$index")
@@ -146,6 +160,19 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         notificationStore.getAll().first().values.map { it.first() } shouldBe listOf(
             notification2
         )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf()
+    }
+
+    @Test
+    fun `Remove - enableExternalNotifications - remove notifications and state`() = runTest {
+        config.enableExternalNotifications = true
+        processNotificationStateWith(
+            notificationState = StoredNotificationState.Remove(roomId1)
+        )
+
+        notificationStore.getAll().first().values.map { it.first() } shouldBe listOf(
+            notification2
+        )
         notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf()
     }
 
@@ -176,6 +203,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 expectedMaxNotificationCount = 24,
             )
         )
+        eventsToNotificationUpdates.removeStale shouldBe false
     }
 
     @Test
@@ -237,7 +265,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     }
 
     @Test
-    fun `SyncWithTimeline - last processed event was reset - remove existing notifications`() = runTest {
+    fun `SyncWithTimeline - last processed event was reset - ask for removing existing notifications`() = runTest {
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
@@ -249,19 +277,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
             ),
         )
 
-        notificationStore.getAll().first().values.map { it.first() } shouldBe listOf(
-            notification2
-        )
-        notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf(
-            StoredNotificationState.SyncWithTimeline(
-                roomId = roomId1,
-                hasPush = false,
-                readReceipts = setOf(),
-                lastEventId = eventId(24),
-                lastProcessedEventId = eventId(24),
-                expectedMaxNotificationCount = 2,
-            )
-        )
+        eventsToNotificationUpdates.removeStale shouldBe true
     }
 
     @Test
@@ -378,56 +394,40 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     }
 
     @Test
-    fun `SyncWithTimeline - save all notification updates`() = runTest {
+    fun `SyncWithTimeline - save all notifications`() = runTest {
         eventsToNotificationUpdates.notificationUpdates = listOf(
-            NotificationUpdate.Message(
-                roomId = roomId1,
-                eventId = eventId(10),
-                change = NotificationUpdate.Change.New(setOf(PushAction.Notify))
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId1, eventId(10)),
+                sortKey = "new-10",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId1, eventId(10)),
             ),
-            NotificationUpdate.State(
-                roomId = roomId1,
-                eventId = eventId(9),
-                type = "m.room.member",
-                stateKey = userId.full + "-9",
-                change = NotificationUpdate.Change.New(setOf(PushAction.Notify))
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-9"),
+                sortKey = "new-9",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId1, eventId(9), "m.room.member", userId.full + "-9"),
             ),
-            NotificationUpdate.Message(
-                roomId = roomId1,
-                eventId = eventId(8),
-                change = NotificationUpdate.Change.Update(setOf(PushAction.Notify))
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.Message.id(roomId1, eventId(8)),
+                sortKey = "new-8",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId1, eventId(8)),
             ),
-            NotificationUpdate.State(
-                roomId = roomId1,
-                eventId = eventId(7),
-                type = "m.room.member",
-                stateKey = userId.full + "-7",
-                change = NotificationUpdate.Change.Update(setOf(PushAction.Notify))
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-7"),
+                sortKey = "new-7",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId1, eventId(7), "m.room.member", userId.full + "-7"),
             ),
-            NotificationUpdate.Message(
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.Message.id(roomId1, eventId(6)),
                 roomId = roomId1,
-                eventId = eventId(6),
-                change = NotificationUpdate.Change.Update(setOf(PushAction.Notify))
             ),
-            NotificationUpdate.State(
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-5"),
                 roomId = roomId1,
-                eventId = eventId(5),
-                type = "m.room.member",
-                stateKey = userId.full + "-5",
-                change = NotificationUpdate.Change.Update(setOf(PushAction.Notify))
             ),
-            NotificationUpdate.Message(
-                roomId = roomId1,
-                eventId = eventId(4),
-                change = NotificationUpdate.Change.Remove
-            ),
-            NotificationUpdate.State(
-                roomId = roomId1,
-                eventId = eventId(3),
-                type = "m.room.member",
-                stateKey = userId.full + "-3",
-                change = NotificationUpdate.Change.Remove
-            )
         )
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
@@ -455,30 +455,16 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 ),
                 StoredNotification.Message(
                     roomId = roomId1,
-                    eventId = eventId(4),
-                    sortKey = "old-4",
+                    eventId = eventId(6),
+                    sortKey = "old-6",
                     actions = setOf(PushAction.SetHighlightTweak()),
                 ),
                 StoredNotification.State(
                     roomId = roomId1,
-                    eventId = eventId(3),
+                    eventId = eventId(5),
                     type = "m.room.member",
-                    stateKey = userId.full + "-3",
-                    sortKey = "old-3",
-                    actions = setOf(PushAction.SetHighlightTweak()),
-                ),
-                StoredNotification.Message(
-                    roomId = roomId1,
-                    eventId = eventId(2),
-                    sortKey = "old-2",
-                    actions = setOf(PushAction.SetHighlightTweak()),
-                ),
-                StoredNotification.State(
-                    roomId = roomId1,
-                    eventId = eventId(1),
-                    type = "m.room.member",
-                    stateKey = userId.full + "-1",
-                    sortKey = "old-1",
+                    stateKey = userId.full + "-5",
+                    sortKey = "old-5",
                     actions = setOf(PushAction.SetHighlightTweak()),
                 ),
             )
@@ -488,7 +474,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
             StoredNotification.Message(
                 roomId = roomId1,
                 eventId = eventId(10),
-                sortKey = "!room1:localhost-1970-01-01T06:44:02.424Z-ffffffff",
+                sortKey = "new-10",
                 actions = setOf(PushAction.Notify),
             ),
             StoredNotification.State(
@@ -496,13 +482,13 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 eventId = eventId(9),
                 type = "m.room.member",
                 stateKey = userId.full + "-9",
-                sortKey = "!room1:localhost-1970-01-01T06:44:02.424Z-fffffffe",
+                sortKey = "new-9",
                 actions = setOf(PushAction.Notify),
             ),
             StoredNotification.Message(
                 roomId = roomId1,
                 eventId = eventId(8),
-                sortKey = "old-8",
+                sortKey = "new-8",
                 actions = setOf(PushAction.Notify),
             ),
             StoredNotification.State(
@@ -510,24 +496,93 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 eventId = eventId(7),
                 type = "m.room.member",
                 stateKey = userId.full + "-7",
-                sortKey = "old-7",
-                actions = setOf(PushAction.Notify),
-            ),
-            StoredNotification.Message(
-                roomId = roomId1,
-                eventId = eventId(6),
-                sortKey = "!room1:localhost-1970-01-01T06:44:02.424Z-fffffffd",
-                actions = setOf(PushAction.Notify),
-            ),
-            StoredNotification.State(
-                roomId = roomId1,
-                eventId = eventId(5),
-                type = "m.room.member",
-                stateKey = userId.full + "-5",
-                sortKey = "!room1:localhost-1970-01-01T06:44:02.424Z-fffffffc",
+                sortKey = "new-7",
                 actions = setOf(PushAction.Notify),
             ),
         )
+        notificationStore.getAllUpdates().first().shouldBeEmpty()
+    }
+
+    @Test
+    fun `SyncWithTimeline - enableExternalNotifications - save all notification updates`() = runTest {
+        config.enableExternalNotifications = true
+        eventsToNotificationUpdates.notificationUpdates = listOf(
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId1, eventId(10)),
+                sortKey = "new-10",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId1, eventId(10)),
+            ),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-9"),
+                sortKey = "new-9",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId1, eventId(9), "m.room.member", userId.full + "-9"),
+            ),
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.Message.id(roomId1, eventId(8)),
+                sortKey = "new-8",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId1, eventId(8)),
+            ),
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-7"),
+                sortKey = "new-7",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId1, eventId(7), "m.room.member", userId.full + "-7"),
+            ),
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.Message.id(roomId1, eventId(6)),
+                roomId = roomId1,
+            ),
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-5"),
+                roomId = roomId1,
+            ),
+        )
+        processNotificationStateWith(
+            notificationState = StoredNotificationState.SyncWithTimeline(
+                roomId = roomId1,
+                hasPush = true,
+                readReceipts = setOf(),
+                lastEventId = eventId(10),
+                lastProcessedEventId = null,
+                expectedMaxNotificationCount = 10,
+            ),
+            notifications = listOf(
+                StoredNotification.Message(
+                    roomId = roomId1,
+                    eventId = eventId(8),
+                    sortKey = "old-8",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
+                StoredNotification.State(
+                    roomId = roomId1,
+                    eventId = eventId(7),
+                    type = "m.room.member",
+                    stateKey = userId.full + "-7",
+                    sortKey = "old-7",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
+                StoredNotification.Message(
+                    roomId = roomId1,
+                    eventId = eventId(6),
+                    sortKey = "old-6",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
+                StoredNotification.State(
+                    roomId = roomId1,
+                    eventId = eventId(5),
+                    type = "m.room.member",
+                    stateKey = userId.full + "-5",
+                    sortKey = "old-5",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
+            )
+        )
+
+        notificationStore.getAllUpdates().first().values.map { it.first() } shouldContainExactlyInAnyOrder
+                eventsToNotificationUpdates.notificationUpdates
     }
 
     @Test
@@ -540,6 +595,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         )
 
         notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf()
+        eventsToNotificationUpdates.removeStale shouldBe true
     }
 
     @Test
@@ -562,34 +618,38 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     @Test
     fun `SyncWithoutTimeline - save all notifications`() = runTest {
         eventsToNotificationUpdates.notificationUpdates = listOf(
-            NotificationUpdate.State(
-                roomId = roomId1,
-                eventId = eventId(9),
-                type = "m.room.member",
-                stateKey = userId.full + "-9",
-                change = NotificationUpdate.Change.New(setOf(PushAction.Notify))
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId1, eventId(10)),
+                sortKey = "new-10",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId1, eventId(10)),
             ),
-            NotificationUpdate.State(
-                roomId = roomId1,
-                eventId = eventId(7),
-                type = "m.room.member",
-                stateKey = userId.full + "-7",
-                change = NotificationUpdate.Change.Update(setOf(PushAction.Notify))
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-9"),
+                sortKey = "new-9",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId1, eventId(9), "m.room.member", userId.full + "-9"),
             ),
-            NotificationUpdate.State(
-                roomId = roomId1,
-                eventId = eventId(5),
-                type = "m.room.member",
-                stateKey = userId.full + "-5",
-                change = NotificationUpdate.Change.Update(setOf(PushAction.Notify))
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.Message.id(roomId1, eventId(8)),
+                sortKey = "new-8",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId1, eventId(8)),
             ),
-            NotificationUpdate.State(
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-7"),
+                sortKey = "new-7",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId1, eventId(7), "m.room.member", userId.full + "-7"),
+            ),
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.Message.id(roomId1, eventId(6)),
                 roomId = roomId1,
-                eventId = eventId(3),
-                type = "m.room.member",
-                stateKey = userId.full + "-3",
-                change = NotificationUpdate.Change.Remove
-            )
+            ),
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-5"),
+                roomId = roomId1,
+            ),
         )
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithoutTimeline(
@@ -597,6 +657,12 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 hasPush = true,
             ),
             notifications = listOf(
+                StoredNotification.Message(
+                    roomId = roomId1,
+                    eventId = eventId(8),
+                    sortKey = "old-8",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
                 StoredNotification.State(
                     roomId = roomId1,
                     eventId = eventId(7),
@@ -605,32 +671,42 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                     sortKey = "old-7",
                     actions = setOf(PushAction.SetHighlightTweak()),
                 ),
-                StoredNotification.State(
+                StoredNotification.Message(
                     roomId = roomId1,
-                    eventId = eventId(3),
-                    type = "m.room.member",
-                    stateKey = userId.full + "-3",
-                    sortKey = "old-3",
+                    eventId = eventId(6),
+                    sortKey = "old-6",
                     actions = setOf(PushAction.SetHighlightTweak()),
                 ),
                 StoredNotification.State(
                     roomId = roomId1,
-                    eventId = eventId(1),
+                    eventId = eventId(5),
                     type = "m.room.member",
-                    stateKey = userId.full + "-1",
-                    sortKey = "old-1",
+                    stateKey = userId.full + "-5",
+                    sortKey = "old-5",
                     actions = setOf(PushAction.SetHighlightTweak()),
                 ),
             )
         )
 
         notificationStore.getAll().first().values.map { it.first() } shouldContainExactlyInAnyOrder listOf(
+            StoredNotification.Message(
+                roomId = roomId1,
+                eventId = eventId(10),
+                sortKey = "new-10",
+                actions = setOf(PushAction.Notify),
+            ),
             StoredNotification.State(
                 roomId = roomId1,
                 eventId = eventId(9),
                 type = "m.room.member",
                 stateKey = userId.full + "-9",
-                sortKey = "!room1:localhost-1970-01-01T06:44:02.424Z-ffffffff",
+                sortKey = "new-9",
+                actions = setOf(PushAction.Notify),
+            ),
+            StoredNotification.Message(
+                roomId = roomId1,
+                eventId = eventId(8),
+                sortKey = "new-8",
                 actions = setOf(PushAction.Notify),
             ),
             StoredNotification.State(
@@ -638,17 +714,88 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 eventId = eventId(7),
                 type = "m.room.member",
                 stateKey = userId.full + "-7",
-                sortKey = "old-7",
-                actions = setOf(PushAction.Notify),
-            ),
-            StoredNotification.State(
-                roomId = roomId1,
-                eventId = eventId(5),
-                type = "m.room.member",
-                stateKey = userId.full + "-5",
-                sortKey = "!room1:localhost-1970-01-01T06:44:02.424Z-fffffffe",
+                sortKey = "new-7",
                 actions = setOf(PushAction.Notify),
             ),
         )
+        notificationStore.getAllUpdates().first().shouldBeEmpty()
+    }
+
+    @Test
+    fun `SyncWithoutTimeline - enableExternalNotifications - save all notification updates`() = runTest {
+        config.enableExternalNotifications = true
+        eventsToNotificationUpdates.notificationUpdates = listOf(
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId1, eventId(10)),
+                sortKey = "new-10",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId1, eventId(10)),
+            ),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-9"),
+                sortKey = "new-9",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId1, eventId(9), "m.room.member", userId.full + "-9"),
+            ),
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.Message.id(roomId1, eventId(8)),
+                sortKey = "new-8",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId1, eventId(8)),
+            ),
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-7"),
+                sortKey = "new-7",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId1, eventId(7), "m.room.member", userId.full + "-7"),
+            ),
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.Message.id(roomId1, eventId(6)),
+                roomId = roomId1,
+            ),
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.State.id(roomId1, "m.room.member", userId.full + "-5"),
+                roomId = roomId1,
+            ),
+        )
+        processNotificationStateWith(
+            notificationState = StoredNotificationState.SyncWithoutTimeline(
+                roomId = roomId1,
+                hasPush = true,
+            ),
+            notifications = listOf(
+                StoredNotification.Message(
+                    roomId = roomId1,
+                    eventId = eventId(8),
+                    sortKey = "old-8",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
+                StoredNotification.State(
+                    roomId = roomId1,
+                    eventId = eventId(7),
+                    type = "m.room.member",
+                    stateKey = userId.full + "-7",
+                    sortKey = "old-7",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
+                StoredNotification.Message(
+                    roomId = roomId1,
+                    eventId = eventId(6),
+                    sortKey = "old-6",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
+                StoredNotification.State(
+                    roomId = roomId1,
+                    eventId = eventId(5),
+                    type = "m.room.member",
+                    stateKey = userId.full + "-5",
+                    sortKey = "old-5",
+                    actions = setOf(PushAction.SetHighlightTweak()),
+                ),
+            )
+        )
+
+        notificationStore.getAllUpdates().first().values.map { it.first() } shouldContainExactlyInAnyOrder
+                eventsToNotificationUpdates.notificationUpdates
     }
 }

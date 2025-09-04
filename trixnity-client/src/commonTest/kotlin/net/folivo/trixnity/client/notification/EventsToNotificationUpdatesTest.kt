@@ -2,10 +2,12 @@ package net.folivo.trixnity.client.notification
 
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.client.ClockMock
 import net.folivo.trixnity.client.mocks.RoomServiceMock
-import net.folivo.trixnity.client.notification.NotificationUpdate.Change
+import net.folivo.trixnity.client.store.StoredNotification
+import net.folivo.trixnity.client.store.StoredNotificationUpdate
+import net.folivo.trixnity.client.store.StoredNotificationUpdate.Content
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
@@ -38,6 +40,8 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         }
     }
 
+    private val clock = ClockMock()
+
     private class MockEvaluatePushRules() : EvaluatePushRules {
         val result: MutableList<Set<PushAction>?> = mutableListOf()
         override suspend fun invoke(event: ClientEvent<*>, allRules: List<PushRule>): Set<PushAction>? =
@@ -52,8 +56,15 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         roomService = roomServiceMock,
         evaluatePushRules = evaluatePushRules,
         eventContentSerializerMappings = DefaultEventContentSerializerMappings,
-        userInfo = UserInfo(ownUserId, "device", Key.Ed25519Key(null, ""), Key.Curve25519Key(null, ""))
-    )
+        userInfo = UserInfo(
+            ownUserId,
+            "device",
+            Key.Ed25519Key(null, "!room-1970-01-01T06:44:02.424Z-ffffffff"),
+            Key.Curve25519Key(null, "!room-1970-01-01T06:44:02.424Z-ffffffff")
+        ),
+        clock = clock,
+
+        )
 
     private val someMessageEvent = ClientEvent.RoomEvent.MessageEvent<MessageEventContent>(
         content = Text("hi!"),
@@ -83,26 +94,94 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
     )
 
     @Test
-    fun `process all updates`() = runTest {
+    fun `process all updates and sort via key`() = runTest {
+        evaluatePushRules.result.addAll(
+            listOf(
+                setOf(PushAction.Notify),
+                setOf(PushAction.Notify),
+                setOf(PushAction.Notify)
+            )
+        )
+        cut.invoke(
+            roomId = roomId,
+            eventFlow = flowOf(
+                someStateEvent,
+                someMessageEvent,
+                someMessageEvent2,
+            ),
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
+        ).toList() shouldBe listOf(
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId, "m.room.member", userId.full),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId, someStateEvent.id, "m.room.member", userId.full),
+            ),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-fffffffe",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent.id),
+            ),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId, someMessageEvent2.id),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-fffffffd",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent2.id),
+            ),
+        )
+    }
+
+    @Test
+    fun `remove stale notifications`() = runTest {
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify), setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someStateEvent,
-                someMessageEvent
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(
+                StoredNotification.Message.id(roomId, someMessageEvent.id) to "s1",
+                StoredNotification.State.id(roomId, "m.room.member", userId.full) to "s2",
+            ),
+            removeStale = true,
         ).toList() shouldBe listOf(
-            NotificationUpdate.State(
-                roomId = roomId,
-                eventId = someStateEvent.id,
-                type = "m.room.member",
-                stateKey = userId.full,
-                change = Change.New(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.State.id(roomId, "m.room.member", userId.full),
+                sortKey = "s2",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId, someStateEvent.id, "m.room.member", userId.full),
             ),
-            NotificationUpdate.Message(
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
                 roomId = roomId,
-                eventId = someMessageEvent.id,
-                change = Change.New(setOf(PushAction.Notify)),
+            ),
+        )
+    }
+
+    @Test
+    fun `do not remove stale notifications`() = runTest {
+        evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify), setOf(PushAction.Notify)))
+        cut.invoke(
+            roomId = roomId,
+            eventFlow = flowOf(
+                someStateEvent,
+            ),
+            pushRules = listOf(),
+            existingNotifications = mapOf(
+                StoredNotification.Message.id(roomId, someMessageEvent.id) to "s1",
+                StoredNotification.State.id(roomId, "m.room.member", userId.full) to "s2",
+            ),
+            removeStale = false,
+        ).toList() shouldBe listOf(
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.State.id(roomId, "m.room.member", userId.full),
+                sortKey = "s2",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId, someStateEvent.id, "m.room.member", userId.full),
             ),
         )
     }
@@ -111,56 +190,76 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
     fun `state event - already processed - ignore`() = runTest {
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify), setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someStateEvent,
                 someStateEvent.copy(id = EventId("\$event3"))
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.State(
-                roomId = roomId,
-                eventId = someStateEvent.id,
-                type = "m.room.member",
-                stateKey = userId.full,
-                change = Change.New(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId, "m.room.member", userId.full),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId, someStateEvent.id, "m.room.member", userId.full),
             ),
         )
     }
 
     @Test
-    fun `state event - no match - remove notification`() = runTest {
+    fun `state event - no match - notification exists - remove`() = runTest {
         evaluatePushRules.result.addAll(listOf(null))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someStateEvent,
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(
+                StoredNotification.State.id(roomId, "m.room.member", userId.full) to "s"
+            ),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.State(
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.State.id(roomId, "m.room.member", userId.full),
                 roomId = roomId,
-                eventId = someStateEvent.id,
-                type = "m.room.member",
-                stateKey = userId.full,
-                change = Change.Remove,
             ),
         )
+    }
+
+    @Test
+    fun `state event - no match - notification does not exist - do nothing`() = runTest {
+        evaluatePushRules.result.addAll(listOf(null))
+        cut.invoke(
+            roomId = roomId,
+            eventFlow = flowOf(
+                someStateEvent,
+            ),
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
+        ).toList() shouldBe listOf()
     }
 
     @Test
     fun `state event - match - new notification`() = runTest {
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someStateEvent,
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.State(
-                roomId = roomId,
-                eventId = someStateEvent.id,
-                type = "m.room.member",
-                stateKey = userId.full,
-                change = Change.New(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId, "m.room.member", userId.full),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId, someStateEvent.id, "m.room.member", userId.full),
             ),
         )
     }
@@ -169,17 +268,21 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
     fun `message event - already processed - ignore`() = runTest {
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify), setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent,
                 someMessageEvent
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.Message(
-                roomId = roomId,
-                eventId = someMessageEvent.id,
-                change = Change.New(setOf(PushAction.Notify)),
-            )
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent.id),
+            ),
         )
     }
 
@@ -187,10 +290,13 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
     fun `message event - no match - ignore`() = runTest {
         evaluatePushRules.result.addAll(listOf(null))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent,
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf()
     }
 
@@ -198,16 +304,20 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
     fun `message event - match - new notification`() = runTest {
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent,
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.Message(
-                roomId = roomId,
-                eventId = someMessageEvent.id,
-                change = Change.New(setOf(PushAction.Notify)),
-            )
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent.id),
+            ),
         )
     }
 
@@ -216,18 +326,20 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         roomServiceMock.returnGetTimelineEvent = flowOf(TimelineEvent(someStateEvent))
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify), null))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someStateEvent,
                 someMessageEvent.copy(content = RedactionEventContent(redacts = someStateEvent.id)),
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.State(
-                roomId = roomId,
-                eventId = someStateEvent.id,
-                type = "m.room.member",
-                stateKey = userId.full,
-                change = Change.New(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId, "m.room.member", userId.full),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId, someStateEvent.id, "m.room.member", userId.full),
             ),
         )
     }
@@ -237,10 +349,13 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         roomServiceMock.returnGetTimelineEvent = flowOf(TimelineEvent(someStateEvent))
         evaluatePushRules.result.addAll(listOf(null, setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent.copy(content = RedactionEventContent(redacts = someStateEvent.id)),
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf()
     }
 
@@ -251,22 +366,25 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
             mapOf(RoomServiceMock.GetStateKey(roomId, someStateEvent.content::class, userId.full) to someStateEvent)
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify), setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent.copy(content = RedactionEventContent(redacts = someStateEvent.id)),
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.Message(
-                roomId = roomId,
-                eventId = someMessageEvent.id,
-                change = Change.New(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent.id),
             ),
-            NotificationUpdate.State(
-                roomId = roomId,
-                eventId = someStateEvent.id,
-                type = "m.room.member",
-                stateKey = userId.full,
-                change = Change.New(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.State.id(roomId, "m.room.member", userId.full),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-fffffffe",
+                actions = setOf(PushAction.Notify),
+                content = Content.State(roomId, someStateEvent.id, "m.room.member", userId.full),
             ),
         )
     }
@@ -276,20 +394,23 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         roomServiceMock.returnGetTimelineEvent = flowOf(TimelineEvent(someMessageEvent2))
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent.copy(content = RedactionEventContent(redacts = someMessageEvent2.id)),
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.Message(
-                roomId = roomId,
-                eventId = someMessageEvent.id,
-                change = Change.New(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent.id),
             ),
-            NotificationUpdate.Message(
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.Message.id(roomId, someMessageEvent2.id),
                 roomId = roomId,
-                eventId = someMessageEvent2.id,
-                change = Change.Remove,
             ),
         )
     }
@@ -299,7 +420,8 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         roomServiceMock.returnGetTimelineEvent = flowOf(TimelineEvent(someMessageEvent))
         evaluatePushRules.result.addAll(listOf(null, setOf(PushAction.Notify), null))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent2.copy(
                     content = Text(
                         body = "hi 3!",
@@ -313,12 +435,17 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
                     )
                 ),
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(
+                StoredNotification.Message.id(roomId, someMessageEvent.id) to "s"
+            ),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.Message(
-                roomId = roomId,
-                eventId = someMessageEvent.id,
-                change = Change.Update(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
+                sortKey = "s",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent.id),
             ),
         )
     }
@@ -328,7 +455,8 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         roomServiceMock.returnGetTimelineEvent = flowOf(null)
         evaluatePushRules.result.addAll(listOf(null))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent2.copy(
                     content = Text(
                         body = "hi 3!",
@@ -336,7 +464,9 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
                     )
                 ),
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(),
+            removeStale = false,
         ).toList() shouldBe listOf()
     }
 
@@ -345,7 +475,8 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         roomServiceMock.returnGetTimelineEvent = flowOf(TimelineEvent(someMessageEvent))
         evaluatePushRules.result.addAll(listOf(null, setOf(PushAction.Notify)))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent2.copy(
                     content = Text(
                         body = "hi 3!",
@@ -353,12 +484,17 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
                     )
                 )
             ),
-            listOf()
+            pushRules = listOf(),
+            existingNotifications = mapOf(
+                StoredNotification.Message.id(roomId, someMessageEvent.id) to "s"
+            ),
+            removeStale = false,
         ).toList() shouldBe listOf(
-            NotificationUpdate.Message(
-                roomId = roomId,
-                eventId = someMessageEvent.id,
-                change = Change.Update(setOf(PushAction.Notify)),
+            StoredNotificationUpdate.Update(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
+                sortKey = "s",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent.id),
             ),
         )
     }
@@ -368,7 +504,8 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
         roomServiceMock.returnGetTimelineEvent = flowOf(TimelineEvent(someMessageEvent))
         evaluatePushRules.result.addAll(listOf(setOf(PushAction.Notify), null))
         cut.invoke(
-            flowOf(
+            roomId = roomId,
+            eventFlow = flowOf(
                 someMessageEvent2.copy(
                     content = Text(
                         body = "hi 3!",
@@ -376,17 +513,21 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
                     )
                 )
             ),
-            listOf()
-        ).toList() shouldBe listOf(
-            NotificationUpdate.Message(
-                roomId = roomId,
-                eventId = someMessageEvent2.id,
-                change = Change.New(setOf(PushAction.Notify)),
+            pushRules = listOf(),
+            existingNotifications = mapOf(
+                StoredNotification.Message.id(roomId, someMessageEvent.id) to "s"
             ),
-            NotificationUpdate.Message(
+            removeStale = false,
+        ).toList() shouldBe listOf(
+            StoredNotificationUpdate.New(
+                id = StoredNotification.Message.id(roomId, someMessageEvent2.id),
+                sortKey = "!room-1970-01-01T06:44:02.424Z-ffffffff",
+                actions = setOf(PushAction.Notify),
+                content = Content.Message(roomId, someMessageEvent2.id),
+            ),
+            StoredNotificationUpdate.Remove(
+                id = StoredNotification.Message.id(roomId, someMessageEvent.id),
                 roomId = roomId,
-                eventId = someMessageEvent.id,
-                change = Change.Remove,
             ),
         )
     }

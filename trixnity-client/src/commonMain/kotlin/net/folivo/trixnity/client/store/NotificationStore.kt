@@ -9,13 +9,15 @@ import net.folivo.trixnity.client.store.cache.FullRepositoryObservableCache
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.NotificationRepository
 import net.folivo.trixnity.client.store.repository.NotificationStateRepository
+import net.folivo.trixnity.client.store.repository.NotificationUpdateRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.core.model.RoomId
 import kotlin.time.Clock
 
 class NotificationStore(
     private val notificationRepository: NotificationRepository,
-    notificationStateRepository: NotificationStateRepository,
+    private val notificationUpdateRepository: NotificationUpdateRepository,
+    private val notificationStateRepository: NotificationStateRepository,
     private val tm: RepositoryTransactionManager,
     config: MatrixClientConfiguration,
     statisticCollector: ObservableCacheStatisticCollector,
@@ -28,7 +30,16 @@ class NotificationStore(
             tm,
             storeScope,
             clock,
-            config.cacheExpireDurations.room,
+            config.cacheExpireDurations.notification,
+        ) { it.id }.also(statisticCollector::addCache)
+
+    private val notificationUpdateCache =
+        FullRepositoryObservableCache(
+            notificationUpdateRepository,
+            tm,
+            storeScope,
+            clock,
+            config.cacheExpireDurations.notification,
         ) { it.id }.also(statisticCollector::addCache)
 
     private val notificationStateCache =
@@ -37,32 +48,53 @@ class NotificationStore(
             tm,
             storeScope,
             clock,
-            config.cacheExpireDurations.room,
+            config.cacheExpireDurations.notification,
         ) { it.roomId }.also(statisticCollector::addCache)
 
     override suspend fun clearCache() = deleteAll()
 
     override suspend fun deleteAll() {
         notificationCache.deleteAll()
+        notificationUpdateCache.deleteAll()
         notificationStateCache.deleteAll()
     }
 
     fun getAll(): Flow<Map<String, Flow<StoredNotification?>>> = notificationCache.readAll()
+    fun getAllUpdates(): Flow<Map<String, Flow<StoredNotificationUpdate?>>> =
+        notificationUpdateCache.readAll()
+
+    fun getAllState() = notificationStateCache.readAll()
+
+
     fun getById(id: String): Flow<StoredNotification?> = notificationCache.get(id)
 
     suspend fun save(
         value: StoredNotification
     ) = notificationCache.set(value.id, value)
 
+    suspend fun save(
+        id: String,
+        value: StoredNotification?
+    ) = notificationCache.set(id, value)
+
+    suspend fun saveAllUpdates(values: List<StoredNotificationUpdate>) {
+        values.forEach { notificationUpdateCache.set(it.id, it) }
+    }
+
     suspend fun update(
         id: String,
         updater: suspend (oldNotification: StoredNotification?) -> StoredNotification?
     ) = notificationCache.update(id, updater = updater)
 
-    suspend fun save(
+    suspend fun updateState(
+        roomId: RoomId,
+        updater: suspend (oldNotificationState: StoredNotificationState?) -> StoredNotificationState?
+    ) = notificationStateCache.update(roomId, updater = updater)
+
+    suspend fun updateUpdate(
         id: String,
-        value: StoredNotification?
-    ) = notificationCache.set(id, value)
+        updater: suspend (oldNotificationUpdate: StoredNotificationUpdate?) -> StoredNotificationUpdate?
+    ) = notificationUpdateCache.update(id, updater = updater)
 
     suspend fun delete(id: String) = notificationCache.set(id, null)
     suspend fun deleteByRoomId(roomId: RoomId) {
@@ -72,14 +104,12 @@ class NotificationStore(
         notificationCache.readAll().flattenNotNull().first().forEach { (key, value) ->
             if (value.roomId == roomId) notificationCache.set(key, null, persistEnabled = false)
         }
+        tm.writeTransaction {
+            notificationUpdateRepository.deleteByRoomId(roomId)
+        }
+        notificationUpdateCache.readAll().flattenNotNull().first().forEach { (key, value) ->
+            if (value.roomId == roomId) notificationUpdateCache.set(key, null, persistEnabled = false)
+        }
+        notificationStateCache.set(roomId, null)
     }
-
-    suspend fun deleteAllNotifications() = notificationCache.deleteAll()
-
-    suspend fun updateState(
-        roomId: RoomId,
-        updater: suspend (oldNotificationState: StoredNotificationState?) -> StoredNotificationState?
-    ) = notificationStateCache.update(roomId, updater = updater)
-
-    fun getAllState() = notificationStateCache.readAll()
 }

@@ -1,18 +1,18 @@
 package net.folivo.trixnity.client.notification
 
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.mocks.RoomServiceMock
-import net.folivo.trixnity.client.store.Account
-import net.folivo.trixnity.client.store.StoredNotification
-import net.folivo.trixnity.client.store.StoredNotificationState
-import net.folivo.trixnity.client.store.TimelineEvent
+import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -87,6 +87,11 @@ class NotificationServiceTest : TrixnityBaseTest() {
     private val notificationStore = getInMemoryNotificationStore { deleteAll() }
     private val matrixClientStarted = MatrixClientStarted()
     private val apiConfig = PortableMockEngineConfig()
+    private val config = MatrixClientConfiguration().apply {
+        scheduleSetup {
+            enableExternalNotifications = false
+        }
+    }
 
     private fun TestScope.cut() = NotificationServiceImpl(
         api = mockMatrixClientServerApiClient(apiConfig),
@@ -96,7 +101,8 @@ class NotificationServiceTest : TrixnityBaseTest() {
         notificationStore = notificationStore,
         eventContentSerializerMappings = DefaultEventContentSerializerMappings,
         matrixClientStarted = matrixClientStarted,
-        coroutineScope = backgroundScope
+        config = config,
+        coroutineScope = backgroundScope,
     )
 
     private fun eventId(index: Int) = EventId($$"$e$$index")
@@ -140,18 +146,21 @@ class NotificationServiceTest : TrixnityBaseTest() {
         cut().getAll().first().map { it.first() } shouldBe listOf(
             Notification.Message(
                 id = notification1.id,
+                sortKey = "s1",
                 actions = setOf(PushAction.Notify),
                 dismissed = false,
                 timelineEvent = someTimelineEvent(1)
             ),
             Notification.Message(
                 id = notification2.id,
+                sortKey = "s2",
                 actions = setOf(PushAction.Notify),
                 dismissed = false,
                 timelineEvent = someTimelineEvent(2)
             ),
             Notification.State(
                 id = notification3.id,
+                sortKey = "s3",
                 actions = setOf(PushAction.Notify),
                 dismissed = false,
                 stateEvent = someStateEvent(3)
@@ -168,6 +177,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
         cut().getById(notification1.id).first() shouldBe
                 Notification.Message(
                     id = notification1.id,
+                    sortKey = "s1",
                     actions = setOf(PushAction.Notify),
                     dismissed = false,
                     timelineEvent = someTimelineEvent(1)
@@ -182,6 +192,7 @@ class NotificationServiceTest : TrixnityBaseTest() {
         cut().getById(notification3.id).first() shouldBe
                 Notification.State(
                     id = notification3.id,
+                    sortKey = "s3",
                     actions = setOf(PushAction.Notify),
                     dismissed = false,
                     stateEvent = someStateEvent(3)
@@ -204,12 +215,12 @@ class NotificationServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `getNotificationCount - for all rooms`() = runTest {
+    fun `getCount - for all rooms`() = runTest {
         notificationStore.save(notification2)
         notificationStore.save(notification1.copy(roomId = roomId2))
         notificationStore.save(notification3)
 
-        cut().getNotificationCount().first() shouldBe 3
+        cut().getCount().first() shouldBe 3
     }
 
     @Test
@@ -229,6 +240,87 @@ class NotificationServiceTest : TrixnityBaseTest() {
         cut().dismissAll()
         notificationStore.getById(notification1.id).first()?.dismissed shouldBe true
         notificationStore.getById(notification2.id).first()?.dismissed shouldBe true
+    }
+
+    @Test
+    fun `getAllUpdates - remove queue`() = runTest {
+        roomService.returnGetTimelineEventList = mutableListOf(
+            flowOf(someTimelineEvent(1)),
+            flowOf(someTimelineEvent(2)),
+        )
+        roomStateStore.save(someStateEvent(3))
+
+        notificationStore.saveAllUpdates(
+            listOf(
+                StoredNotificationUpdate.New(
+                    id = notification1.id,
+                    sortKey = notification1.sortKey,
+                    actions = setOf(PushAction.Notify),
+                    content = StoredNotificationUpdate.Content.Message(notification1.roomId, notification1.eventId)
+                ),
+                StoredNotificationUpdate.Update(
+                    id = notification2.id,
+                    sortKey = notification2.sortKey,
+                    actions = setOf(PushAction.Notify),
+                    content = StoredNotificationUpdate.Content.Message(notification2.roomId, notification2.eventId)
+                ),
+            )
+        )
+        cut().onPush(roomId1, null) shouldBe false
+        val resultChannel = Channel<NotificationUpdate>(0)
+        backgroundScope.launch {
+            cut().getAllUpdates().collect { resultChannel.send(it) }
+        }
+        val result1 = resultChannel.receive()
+        result1 shouldBe NotificationUpdate.New(
+            id = notification1.id,
+            sortKey = notification1.sortKey,
+            actions = setOf(PushAction.Notify),
+            content = NotificationUpdate.Content.Message(
+                someTimelineEvent(1)
+            )
+        )
+        val result2 = resultChannel.receive()
+        notificationStore.getAllUpdates().first().values.mapNotNull { it.first()?.id } shouldNotContain notification1.id
+        result2 shouldBe NotificationUpdate.Update(
+            id = notification2.id,
+            sortKey = notification2.sortKey,
+            actions = setOf(PushAction.Notify),
+            content = NotificationUpdate.Content.Message(
+                someTimelineEvent(2)
+            )
+        )
+        val result3 = async { resultChannel.receive() }
+        delay(10.milliseconds) // schedule async
+        notificationStore.getAllUpdates().first().values.mapNotNull { it.first() }.shouldBeEmpty()
+
+        notificationStore.saveAllUpdates(
+            listOf(
+                StoredNotificationUpdate.New(
+                    id = notification3.id,
+                    sortKey = notification3.sortKey,
+                    actions = setOf(PushAction.Notify),
+                    content = StoredNotificationUpdate.Content.State(
+                        notification3.roomId,
+                        notification3.eventId,
+                        notification3.type,
+                        notification3.stateKey,
+                    )
+                ),
+            )
+        )
+
+        result3.await() shouldBe NotificationUpdate.New(
+            id = notification3.id,
+            sortKey = notification3.sortKey,
+            actions = setOf(PushAction.Notify),
+            content = NotificationUpdate.Content.State(
+                someStateEvent(3)
+            )
+        )
+        backgroundScope.launch { resultChannel.receive() }
+        delay(10.milliseconds) // schedule launch
+        notificationStore.getAllUpdates().first().values.mapNotNull { it.first() }.shouldBeEmpty()
     }
 
     @Test
@@ -344,6 +436,36 @@ class NotificationServiceTest : TrixnityBaseTest() {
         }
         delay(100.milliseconds)
         result.isActive shouldBe false
+        result.await()
+    }
+
+    @Test
+    fun `processPush - start sync and wait for updates processed`() = runTest {
+        config.enableExternalNotifications = true
+        matrixClientStarted.delegate.value = true
+        notificationStore.updateState(roomId1) {
+            StoredNotificationState.SyncWithoutTimeline(roomId1, true)
+        }
+        notificationStore.updateUpdate("bla") { StoredNotificationUpdate.Remove("bla", roomId1) }
+        val cut = cut()
+        apiConfig.endpoints {
+            matrixJsonEndpoint(Sync(filter = "background_filter_id", timeout = 0)) {
+                Sync.Response(nextBatch = "nextBatch")
+            }
+        }
+        val result = async { cut.processPush() }
+        delay(100.milliseconds)
+        result.isActive shouldBe true
+        notificationStore.updateState(roomId1) {
+            StoredNotificationState.SyncWithoutTimeline(roomId1, false)
+        }
+        delay(100.milliseconds)
+        result.isActive shouldBe true
+
+        notificationStore.updateUpdate("bla") { null }
+        delay(100.milliseconds)
+        result.isActive shouldBe false
+
         result.await()
     }
 }
