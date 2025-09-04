@@ -5,6 +5,10 @@ include("trixnity-core")
 include("trixnity-crypto-core")
 include("trixnity-crypto")
 include("trixnity-olm")
+include(
+    "trixnity-crypto-driver",
+    "trixnity-crypto-driver:driver-test",
+)
 include("trixnity-api-client")
 include("trixnity-api-server")
 include(
