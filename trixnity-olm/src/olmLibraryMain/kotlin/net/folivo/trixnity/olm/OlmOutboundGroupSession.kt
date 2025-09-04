@@ -20,7 +20,7 @@ actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
     internal actual val ptr: OlmOutboundGroupSessionPointer = outbound_group_session()
 
     actual companion object {
-        actual suspend fun create(): OlmOutboundGroupSession =
+        actual fun create(): OlmOutboundGroupSession =
             OlmOutboundGroupSession().apply {
                 try {
                     val result = withRandom(init_outbound_group_session_random_length(ptr)) { random ->
@@ -33,7 +33,7 @@ actual class OlmOutboundGroupSession private constructor() : WantsToBeFree {
                 }
             }
 
-        actual suspend fun unpickle(key: String, pickle: String): OlmOutboundGroupSession =
+        actual fun unpickle(key: String, pickle: String): OlmOutboundGroupSession =
             OlmOutboundGroupSession().apply {
                 try {
                     val result =

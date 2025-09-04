@@ -3,11 +3,10 @@ package net.folivo.trixnity.olm
 import js.typedarrays.toUint8Array
 
 actual class OlmUtility private constructor() : WantsToBeFree {
-    internal actual val ptr: OlmUtilityPointer = rethrow { js("new Olm.Utility()") }.unsafeCast<OlmUtilityPointer>()
+    internal actual val ptr: OlmUtilityPointer = rethrow { Utility() }.unsafeCast<OlmUtilityPointer>()
 
     actual companion object {
-        actual suspend fun create(): OlmUtility {
-            initOlm()
+        actual fun create(): OlmUtility {
             return OlmUtility()
         }
     }

@@ -4,7 +4,7 @@ expect class OlmUtility : WantsToBeFree {
     internal val ptr: OlmUtilityPointer
 
     companion object {
-        suspend fun create(): OlmUtility
+        fun create(): OlmUtility
     }
 
     override fun free()

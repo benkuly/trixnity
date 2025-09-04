@@ -1,43 +1,39 @@
 package net.folivo.trixnity.olm
 
 actual class OlmSession private constructor() : WantsToBeFree {
-    internal actual val ptr: OlmSessionPointer = rethrow { js("new Olm.Session()") }.unsafeCast<OlmSessionPointer>()
+    internal actual val ptr: OlmSessionPointer = rethrow { Session() }.unsafeCast<OlmSessionPointer>()
 
     actual companion object {
-        actual suspend fun createOutbound(
+        actual fun createOutbound(
             account: OlmAccount,
             theirIdentityKey: String,
             theirOneTimeKey: String
         ): OlmSession {
-            initOlm()
             return OlmSession().apply {
                 rethrow { ptr.create_outbound(account.ptr, theirIdentityKey, theirOneTimeKey) }
             }
         }
 
-        actual suspend fun createInbound(
+        actual fun createInbound(
             account: OlmAccount,
             oneTimeKeyMessage: String
         ): OlmSession {
-            initOlm()
             return OlmSession().apply {
                 rethrow { ptr.create_inbound(account.ptr, oneTimeKeyMessage) }
             }
         }
 
-        actual suspend fun createInboundFrom(
+        actual fun createInboundFrom(
             account: OlmAccount,
             identityKey: String,
             oneTimeKeyMessage: String
         ): OlmSession {
-            initOlm()
             return OlmSession().apply {
                 rethrow { ptr.create_inbound_from(account.ptr, identityKey, oneTimeKeyMessage) }
             }
         }
 
-        actual suspend fun unpickle(key: String, pickle: String): OlmSession {
-            initOlm()
+        actual fun unpickle(key: String, pickle: String): OlmSession {
             return OlmSession().apply {
                 rethrow { ptr.unpickle(key, pickle) }
             }

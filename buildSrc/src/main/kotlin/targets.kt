@@ -53,6 +53,7 @@ fun KotlinMultiplatformExtension.addJsTarget(
                     enabled = testEnabled
                 }
             }
+        useEsModules()
         binaries.executable()
     }
 

@@ -30,7 +30,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
     internal actual val ptr: OlmAccountPointer = account()
 
     actual companion object {
-        actual suspend fun create(): OlmAccount =
+        actual fun create(): OlmAccount =
             OlmAccount().apply {
                 try {
                     val randomSize = create_account_random_length(ptr)
@@ -42,7 +42,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
                 }
             }
 
-        actual suspend fun unpickle(key: String, pickle: String): OlmAccount =
+        actual fun unpickle(key: String, pickle: String): OlmAccount =
             OlmAccount().apply {
                 try {
                     val result = unpickle_account(ptr, key.encodeToByteArray(), pickle.encodeToByteArray())
