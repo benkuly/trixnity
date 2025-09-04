@@ -252,7 +252,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         val eventContent = RoomKeyEventContent(
             roomId,
             outboundSession.sessionId,
-            outboundSession.sessionKey,
+            SessionKeyValue(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(
@@ -293,7 +293,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         val eventContent = RoomKeyEventContent(
             roomId,
             outboundSession.sessionId,
-            outboundSession.sessionKey,
+            SessionKeyValue(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(
@@ -350,7 +350,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         val eventContent = RoomKeyEventContent(
             roomId,
             outboundSession.sessionId,
-            outboundSession.sessionKey,
+            SessionKeyValue(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(

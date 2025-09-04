@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.core.MacValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -163,7 +164,7 @@ sealed interface ActiveSasVerificationState {
                         log.trace { "create key mac from input $it and info ${baseInfo + it.fullId}" }
                         it.copy(value = KeyValue.Ed25519KeyValue(calculateMac(it.value.value, baseInfo + it.fullId)))
                     }
-                send(SasMacEventContent(keys, Keys(macs.toSet()), relatesTo, transactionId))
+                send(SasMacEventContent(MacValue(keys), Keys(macs.toSet()), relatesTo, transactionId))
             } else send(
                 VerificationCancelEventContent(
                     InternalError,

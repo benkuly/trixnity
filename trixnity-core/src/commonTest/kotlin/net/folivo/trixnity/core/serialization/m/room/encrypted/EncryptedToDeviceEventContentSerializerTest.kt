@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.serialization.m.room.encrypted
 
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import net.folivo.trixnity.core.OlmMessageValue
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo
@@ -25,7 +26,7 @@ class EncryptedToDeviceEventContentSerializerTest : TrixnityBaseTest() {
             OlmEncryptedToDeviceEventContent(
                 senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 ciphertext = mapOf(
-                    "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
+                    "<device_curve25519_key>" to CiphertextInfo(OlmMessageValue("<encrypted_payload_base_64>"), INITIAL_PRE_KEY)
                 ),
             )
         )
@@ -63,7 +64,7 @@ class EncryptedToDeviceEventContentSerializerTest : TrixnityBaseTest() {
             OlmEncryptedToDeviceEventContent(
                 senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 ciphertext = mapOf(
-                    "<device_curve25519_key>" to CiphertextInfo("<encrypted_payload_base_64>", INITIAL_PRE_KEY)
+                    "<device_curve25519_key>" to CiphertextInfo(OlmMessageValue("<encrypted_payload_base_64>"), INITIAL_PRE_KEY)
                 ),
             ), result
         )

@@ -20,6 +20,7 @@ import net.folivo.trixnity.client.store.TimelineEvent.TimelineEventContentError
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.client.SyncState.RUNNING
+import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.MessageEvent
@@ -80,7 +81,7 @@ class RoomServiceTest : TrixnityBaseTest() {
     private val session = "SESSION"
     private val senderKey = Key.Curve25519Key(null, "senderKey")
     private val encryptedEventContent = MegolmEncryptedMessageEventContent(
-        "ciphertext", senderKey.value, "SENDER", session
+        MegolmMessageValue("ciphertext"), senderKey.value, "SENDER", session
     )
     private val encryptedTimelineEvent = TimelineEvent(
         event = MessageEvent(

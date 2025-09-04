@@ -5,6 +5,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.verification.ActiveVerificationState.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent
+import net.folivo.trixnity.core.model.keys.KeyValue
 import net.folivo.trixnity.core.serialization.canonicalJsonString
 import net.folivo.trixnity.olm.OlmUtility
 import net.folivo.trixnity.olm.freeAfter

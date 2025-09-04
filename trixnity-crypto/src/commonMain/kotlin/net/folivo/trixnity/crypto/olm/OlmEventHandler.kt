@@ -165,7 +165,7 @@ class OlmEventHandler(
             }
             try {
                 val (firstKnownIndex, pickledSession) =
-                    freeAfter(OlmInboundGroupSession.create(content.sessionKey)) {
+                    freeAfter(OlmInboundGroupSession.create(content.sessionKey.value)) {
                         it.firstKnownIndex to it.pickle(store.getOlmPickleKey())
                     }
                 store.updateInboundMegolmSession(content.sessionId, content.roomId) {

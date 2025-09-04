@@ -16,6 +16,7 @@ import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Undefined
+import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -128,7 +129,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             TimelineEvent(
                 event = MessageEvent(
                     MegolmEncryptedMessageEventContent(
-                        "cipher",
+                        MegolmMessageValue("cipher"),
                         Curve25519KeyValue(""),
                         bobDevice,
                         "session"
@@ -143,7 +144,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             MutableStateFlow( // ignore event, that is no VerificationStep
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(RoomMessageEventContent.TextBased.Text("hi")),
@@ -153,7 +154,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             MutableStateFlow( // ignore own event
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), alice, roomId, 1234
                     ),
                     content = Result.success(VerificationCancelEventContent(MismatchedSas, "", relatesTo, null)),
@@ -163,7 +164,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             MutableStateFlow( // ignore event with other relates to
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(
@@ -184,7 +185,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
         delay(500)
         cancelFlow.value = TimelineEvent(
             event = MessageEvent(
-                MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
+                MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), Curve25519KeyValue(""), bobDevice, "session"),
                 EventId("$2"), bob, roomId, 1234
             ),
             content = Result.success(cancelEvent),

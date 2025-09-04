@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.model.events.m
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -16,7 +17,7 @@ data class RoomKeyEventContent(
     @SerialName("session_id")
     val sessionId: String,
     @SerialName("session_key")
-    val sessionKey: String,
+    val sessionKey: SessionKeyValue,
     @SerialName("algorithm")
     val algorithm: EncryptionAlgorithm
 ) : ToDeviceEventContent

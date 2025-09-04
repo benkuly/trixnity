@@ -16,6 +16,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
+import net.folivo.trixnity.core.MegolmMessageValue
+import net.folivo.trixnity.core.OlmMessageValue
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -85,7 +88,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
     private val decryptedOlmEventContent = RoomKeyEventContent(
         RoomId("!room:server"),
         "sessionId",
-        "sessionKey",
+        SessionKeyValue("sessionKey"),
         EncryptionAlgorithm.Megolm,
     )
 
@@ -179,14 +182,14 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             OlmSession.createInboundFrom(
                 account = bobAccount,
                 identityKey = aliceCurveKey.value.value,
-                oneTimeKeyMessage = encryptedCipherText.body
+                oneTimeKeyMessage = encryptedCipherText.body.value
             )
         ) { bobSession ->
             json.decodeFromString(
                 decryptedOlmEventSerializer,
                 bobSession.decrypt(
                     OlmMessage(
-                        encryptedCipherText.body,
+                        encryptedCipherText.body.value,
                         OlmMessageType.INITIAL_PRE_KEY
                     )
                 )
@@ -283,7 +286,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 decryptedOlmEventSerializer,
                 bobSession.decrypt(
                     OlmMessage(
-                        encryptedCipherText.body,
+                        encryptedCipherText.body.value,
                         OlmMessageType.INITIAL_PRE_KEY
                     )
                 )
@@ -308,7 +311,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             ClientEvent.ToDeviceEvent(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
-                        aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                        aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue(encryptedMessage.cipherText), INITIAL_PRE_KEY)
                     ),
                     senderKey = bobCurveKey.value
                 ), bob
@@ -353,7 +356,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             ClientEvent.ToDeviceEvent(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
-                        aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                        aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue(encryptedMessage.cipherText), INITIAL_PRE_KEY)
                     ),
                     senderKey = bobCurveKey.value
                 ), bob
@@ -397,7 +400,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue(encryptedMessage.cipherText), INITIAL_PRE_KEY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -421,7 +424,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             ClientEvent.ToDeviceEvent(
                 OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
-                        aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                        aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue(encryptedMessage.cipherText), ORDINARY)
                     ),
                     senderKey = bobCurveKey.value
                 ), bob
@@ -433,10 +436,10 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             sendToDeviceEvents.first()[bob]?.get(bobDeviceId)?.shouldBeInstanceOf<OlmEncryptedToDeviceEventContent>()
         val ciphertext = encryptedEventContent?.ciphertext?.get(bobCurveKey.value.value)?.body
         assertNotNull(ciphertext)
-        freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
+        freeAfter(OlmSession.createInbound(bobAccount, ciphertext.value)) { session ->
             json.decodeFromString(
                 decryptedOlmEventSerializer,
-                session.decrypt(OlmMessage(ciphertext, OlmMessageType.INITIAL_PRE_KEY))
+                session.decrypt(OlmMessage(ciphertext.value, OlmMessageType.INITIAL_PRE_KEY))
             ).content shouldBe DummyEventContent
         }
     }
@@ -468,7 +471,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, INITIAL_PRE_KEY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue(encryptedMessage.cipherText), INITIAL_PRE_KEY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -506,7 +509,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue(encryptedMessage.cipherText), ORDINARY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -556,7 +559,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue(encryptedMessage.cipherText), ORDINARY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -595,7 +598,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo("junk", ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue("junk"), ORDINARY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -607,7 +610,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo("junk", ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue("junk"), ORDINARY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -647,7 +650,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo("junk", ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue("junk"), ORDINARY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -661,7 +664,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo("junk", ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue("junk"), ORDINARY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -698,7 +701,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                 ClientEvent.ToDeviceEvent(
                     OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
-                            aliceCurveKey.value.value to CiphertextInfo(encryptedMessage.cipherText, ORDINARY)
+                            aliceCurveKey.value.value to CiphertextInfo(OlmMessageValue(encryptedMessage.cipherText), ORDINARY)
                         ),
                         senderKey = bobCurveKey.value
                     ), bob
@@ -758,17 +761,17 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
                         ?.shouldBeInstanceOf<OlmEncryptedToDeviceEventContent>()
                         ?.ciphertext?.get(bobCurveKey.value.value)?.body
                 assertNotNull(ciphertext)
-                freeAfter(OlmSession.createInbound(bobAccount, ciphertext)) { session ->
+                freeAfter(OlmSession.createInbound(bobAccount, ciphertext.value)) { session ->
                     assertSoftly(
                         json.decodeFromString(
                             decryptedOlmEventSerializer,
-                            session.decrypt(OlmMessage(ciphertext, OlmMessageType.INITIAL_PRE_KEY))
+                            session.decrypt(OlmMessage(ciphertext.value, OlmMessageType.INITIAL_PRE_KEY))
                         ).content
                     ) {
                         require(this is RoomKeyEventContent)
                         room shouldBe room
                         sessionId shouldBe outboundSession.sessionId
-                        freeAfter(OlmInboundGroupSession.create(sessionKey)) { receivedInboundSession ->
+                        freeAfter(OlmInboundGroupSession.create(sessionKey.value)) { receivedInboundSession ->
                             receivedInboundSession.sessionId shouldBe outboundSession.sessionId
                             receivedInboundSession.firstKnownIndex shouldBe outboundSession.messageIndex - 1
                         }
@@ -786,7 +789,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
 
         freeAfter(OlmInboundGroupSession.unpickle(null, storedInboundSession.pickled)) { inboundSession ->
             json.decodeFromString(
-                decryptedMegolmEventSerializer, inboundSession.decrypt(result.ciphertext).message
+                decryptedMegolmEventSerializer, inboundSession.decrypt(result.ciphertext.value).message
             ) shouldBe decryptedMegolmEvent
         }
     }
@@ -910,7 +913,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             cut.decryptMegolm(
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
-                        ciphertext,
+                        MegolmMessageValue(ciphertext),
                         bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId,
@@ -951,7 +954,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             cut.decryptMegolm(
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
-                        ciphertext,
+                        MegolmMessageValue(ciphertext),
                         bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId,
@@ -974,7 +977,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             cut.decryptMegolm(
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
-                        ciphertext,
+                        MegolmMessageValue(ciphertext),
                         bobCurveKey.value,
                         bobDeviceId,
                         session.sessionId
@@ -1013,7 +1016,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             cut.decryptMegolm(
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
-                        ciphertext,
+                        MegolmMessageValue(ciphertext),
                         bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId
@@ -1052,7 +1055,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             cut.decryptMegolm(
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
-                        ciphertext,
+                        MegolmMessageValue(ciphertext),
                         bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId
@@ -1070,7 +1073,7 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
             cut.decryptMegolm(
                 MessageEvent(
                     MegolmEncryptedMessageEventContent(
-                        ciphertext,
+                        MegolmMessageValue(ciphertext),
                         bobCurveKey.value,
                         bobDeviceId,
                         outboundSession.sessionId

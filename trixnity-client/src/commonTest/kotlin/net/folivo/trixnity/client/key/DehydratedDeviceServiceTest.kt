@@ -23,6 +23,8 @@ import net.folivo.trixnity.clientserverapi.model.devices.SetDehydratedDevice
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.OlmMessageValue
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -196,7 +198,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             RoomKeyEventContent(
                 roomId = roomId,
                 sessionId = outboundSession.sessionId,
-                sessionKey = outboundSession.sessionKey,
+                sessionKey = SessionKeyValue(outboundSession.sessionKey),
                 algorithm = EncryptionAlgorithm.Megolm,
             )
         }
@@ -228,7 +230,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             OlmEncryptedToDeviceEventContent(
                 ciphertext = mapOf(
                     dehydratedDeviceAccount.identityKeys.curve25519 to CiphertextInfo(
-                        encryptedMessage.cipherText,
+                        OlmMessageValue(encryptedMessage.cipherText),
                         INITIAL_PRE_KEY
                     )
                 ),
@@ -339,7 +341,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             RoomKeyEventContent(
                 roomId = roomId,
                 sessionId = outboundSession.sessionId,
-                sessionKey = outboundSession.sessionKey,
+                sessionKey = SessionKeyValue(outboundSession.sessionKey),
                 algorithm = EncryptionAlgorithm.Megolm,
             )
         }
@@ -371,7 +373,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             OlmEncryptedToDeviceEventContent(
                 ciphertext = mapOf(
                     dehydratedDeviceAccount.identityKeys.curve25519 to CiphertextInfo(
-                        encryptedMessage.cipherText,
+                        OlmMessageValue(encryptedMessage.cipherText),
                         INITIAL_PRE_KEY
                     )
                 ),

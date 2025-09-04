@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.model.events.m
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.folivo.trixnity.core.ExportedSessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
@@ -20,7 +21,7 @@ data class ForwardedRoomKeyEventContent(
     @SerialName("session_id")
     val sessionId: String,
     @SerialName("session_key")
-    val sessionKey: String,
+    val sessionKey: ExportedSessionKeyValue,
     @SerialName("sender_claimed_ed25519_key")
     val senderClaimedKey: Ed25519KeyValue,
     @SerialName("forwarding_curve25519_key_chain")

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Make trixnity-olm API non suspend
 - Make trixnity-olm API accept null pickle keys
+- Add StringWrapper's for more type safety
 
 ### Deprecated
 

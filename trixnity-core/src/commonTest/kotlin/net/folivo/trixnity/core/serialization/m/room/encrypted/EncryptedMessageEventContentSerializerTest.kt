@@ -2,6 +2,7 @@ package net.folivo.trixnity.core.serialization.m.room.encrypted
 
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.EncryptedMessageEventContent
@@ -26,7 +27,7 @@ class EncryptedMessageEventContentSerializerTest : TrixnityBaseTest() {
                 senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
-                ciphertext = "<encrypted_payload_base_64>",
+                ciphertext = MegolmMessageValue("<encrypted_payload_base_64>"),
                 relatesTo = RelatesTo.Reference(EventId("$1234"))
             )
         )
@@ -67,7 +68,7 @@ class EncryptedMessageEventContentSerializerTest : TrixnityBaseTest() {
                 senderKey = Curve25519KeyValue("<sender_curve25519_key>"),
                 deviceId = "<sender_device_id>",
                 sessionId = "<outbound_group_session_id>",
-                ciphertext = "<encrypted_payload_base_64>",
+                ciphertext = MegolmMessageValue("<encrypted_payload_base_64>"),
                 relatesTo = RelatesTo.Reference(EventId("$1234"))
             ), result
         )

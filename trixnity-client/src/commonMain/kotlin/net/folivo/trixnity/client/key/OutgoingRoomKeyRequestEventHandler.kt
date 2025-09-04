@@ -73,7 +73,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
 
             val (firstKnownIndex, pickledSession) =
                 try {
-                    freeAfter(OlmInboundGroupSession.import(content.sessionKey)) {
+                    freeAfter(OlmInboundGroupSession.import(content.sessionKey.value)) {
                         it.firstKnownIndex to it.pickle(accountStore.getAccount()?.olmPickleKey)
                     }
                 } catch (exception: Exception) {
