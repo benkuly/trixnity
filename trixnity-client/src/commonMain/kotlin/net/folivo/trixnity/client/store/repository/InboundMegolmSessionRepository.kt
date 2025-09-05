@@ -4,7 +4,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 
 interface InboundMegolmSessionRepository :
-    MinimalRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession> {
+    FullRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession> {
     override fun serializeKey(key: InboundMegolmSessionRepositoryKey): String =
         key.roomId.full + key.sessionId
 

@@ -33,4 +33,5 @@ fun createInMemoryRepositoriesModule() = module {
     singleOf<GlobalAccountDataRepository>(::InMemoryGlobalAccountDataRepository)
     singleOf<RoomAccountDataRepository>(::InMemoryRoomAccountDataRepository)
     singleOf<UserPresenceRepository>(::InMemoryUserPresenceRepository)
+    singleOf<MigrationRepository>(::InMemoryMigrationRepository)
 }

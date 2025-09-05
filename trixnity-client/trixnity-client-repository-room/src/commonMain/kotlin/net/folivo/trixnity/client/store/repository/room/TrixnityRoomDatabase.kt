@@ -31,10 +31,12 @@ import androidx.room.*
         RoomSecrets::class,
         RoomTimelineEventRelation::class,
         RoomTimelineEvent::class,
+        RoomMigration::class,
     ],
-    version = 4, // tick this value when any entity classes change
+    version = 5, // tick this value when any entity classes change
     autoMigrations = [
-        AutoMigration(from = 3, to = 4)
+        AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5),
     ],
     exportSchema = true,
 )
@@ -76,6 +78,7 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun timelineEventRelation(): TimelineEventRelationDao
     abstract fun timelineEvent(): TimelineEventDao
     abstract fun userPresence(): UserPresenceDao
+    abstract fun migration(): MigrationDao
 }
 
 // The Room compiler generates the `actual` implementations.

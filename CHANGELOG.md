@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add Migration interface to run migrations registered in DI
+
 ### Changed
 
 - Make trixnity-olm API non suspend

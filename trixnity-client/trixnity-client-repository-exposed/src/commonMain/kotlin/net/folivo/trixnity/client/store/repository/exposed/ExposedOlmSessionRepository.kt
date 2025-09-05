@@ -19,6 +19,10 @@ internal class ExposedOlmSessionRepository(private val json: Json) : OlmSessionR
             ?.let { json.decodeFromString(it[ExposedOlmSession.value]) }
     }
 
+    override suspend fun getAll(): List<Set<StoredOlmSession>> = withExposedRead {
+        ExposedOlmSession.selectAll().map { json.decodeFromString(it[ExposedOlmSession.value]) }
+    }
+
     override suspend fun save(key: Curve25519KeyValue, value: Set<StoredOlmSession>): Unit = withExposedWrite {
         ExposedOlmSession.upsert {
             it[senderKey] = key.value

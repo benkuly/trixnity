@@ -675,6 +675,10 @@ private suspend fun initMatrixClientKoinApplication(
         @Suppress("DEPRECATION")
         modules(config.modules ?: config.modulesFactory?.invoke() ?: config.modulesFactories.map { it.invoke() })
     }
+
+    koinApplication.koin.getAll<RepositoryMigration>()
+        .forEach { it.run() }
+
     val di = koinApplication.koin
     val rootStore = di.get<RootStore>()
     rootStore.init(di.get())
