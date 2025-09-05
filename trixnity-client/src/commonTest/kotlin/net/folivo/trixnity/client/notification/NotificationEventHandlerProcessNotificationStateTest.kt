@@ -41,6 +41,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     private val roomService = RoomServiceMock().apply {
         scheduleSetup {
             returnGetTimelineEvents = flowOf()
+            getTimelineEventConfig = null
         }
     }
     private val roomStore = getInMemoryRoomStore { deleteAll() }
@@ -295,9 +296,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 notifications = listOf(),
             )
 
-            eventsToNotificationUpdates.events shouldBe listOf(
-                eventId(3), eventId(2)
-            )
+            roomService.getTimelineEventConfig?.maxSize shouldBe 2
         }
 
     @Test
@@ -314,9 +313,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
                 ),
             )
 
-            eventsToNotificationUpdates.events shouldBe listOf(
-                eventId(3), eventId(2)
-            )
+            roomService.getTimelineEventConfig?.maxSize shouldBe 2
         }
 
     @Test

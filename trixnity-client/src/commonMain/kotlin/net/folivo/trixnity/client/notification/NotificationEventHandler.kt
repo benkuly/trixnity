@@ -259,16 +259,28 @@ class NotificationEventHandler(
             }
         }
 
+        if (notificationState is StoredNotificationState.SyncWithTimeline) {
+            log.trace { "processed notification updates for $roomId until ${notificationState.lastEventId}" }
+        }
         notificationStore.updateState(roomId) {
             when (it) {
                 is StoredNotificationState.Push -> it
-                is StoredNotificationState.SyncWithTimeline -> it.copy(
-                    lastProcessedEventId = it.lastEventId,
-                    hasPush = false,
-                )
+                is StoredNotificationState.SyncWithTimeline ->
+                    if (notificationState is StoredNotificationState.SyncWithTimeline)
+                        it.copy(
+                            lastProcessedEventId = notificationState.lastEventId,
+                            hasPush = false,
+                        )
+                    else it
 
-                is StoredNotificationState.SyncWithoutTimeline -> null
-                is StoredNotificationState.Remove -> null
+                is StoredNotificationState.SyncWithoutTimeline ->
+                    if (notificationState is StoredNotificationState.SyncWithoutTimeline) null
+                    else it
+
+                is StoredNotificationState.Remove ->
+                    if (notificationState is StoredNotificationState.Remove) null
+                    else it
+
                 null -> null
             }
         }
@@ -325,25 +337,25 @@ class NotificationEventHandler(
         val hasStoredNotifications =
             notificationStore.getAll().first().values.mapNotNull { it.first() }.any { it.roomId == roomId }
         val expectedMaxNotificationCount =
-            (notificationState.expectedMaxNotificationCount?.toInt() ?: 0)
+            (notificationState.expectedMaxNotificationCount ?: 0L)
                 .takeIf { !hasStoredNotifications || lastProcessedEventId == null }
 
-        if (expectedMaxNotificationCount == 0) return emptyFlow()
+        if (expectedMaxNotificationCount == 0L) return emptyFlow()
 
         log.debug { "process timeline events for notifications in $roomId" }
         return roomService.getTimelineEvents(roomId, lastEventId) {
+            maxSize = expectedMaxNotificationCount?.coerceAtLeast(0L)
             decryptionTimeout = 2.seconds
             allowReplaceContent = false
-        }.take(expectedMaxNotificationCount?.coerceAtLeast(0) ?: Int.MAX_VALUE)
-            .takeWhile {
-                val currentEventId = it.first().eventId
-                lastProcessedEventId != currentEventId &&
-                        !notificationState.readReceipts.contains(currentEventId)
-            }.chunked(100).flatMapConcat { chunk ->
-                coroutineScope {
-                    chunk.map { async { it.firstWithContent() } }.awaitAll().asFlow()
-                }
-            }.mapNotNull { it?.mergedEvent?.getOrNull() }
+        }.takeWhile {
+            val currentEventId = it.first().eventId
+            lastProcessedEventId != currentEventId &&
+                    !notificationState.readReceipts.contains(currentEventId)
+        }.chunked(100).flatMapConcat { chunk ->
+            coroutineScope {
+                chunk.map { async { it.firstWithContent() } }.awaitAll().asFlow()
+            }
+        }.mapNotNull { it?.mergedEvent?.getOrNull() }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

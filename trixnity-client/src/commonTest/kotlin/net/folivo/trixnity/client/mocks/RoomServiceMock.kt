@@ -60,13 +60,17 @@ class RoomServiceMock : RoomService {
     }
 
     var returnGetTimelineEvents: Flow<Flow<TimelineEvent>> = flowOf()
+    var getTimelineEventConfig: GetTimelineEventsConfig? = null
 
     override fun getTimelineEvents(
         roomId: RoomId,
         startFrom: EventId,
         direction: GetEvents.Direction,
         config: GetTimelineEventsConfig.() -> Unit
-    ): Flow<Flow<TimelineEvent>> = returnGetTimelineEvents
+    ): Flow<Flow<TimelineEvent>> {
+        getTimelineEventConfig = GetTimelineEventsConfig().apply(config)
+        return returnGetTimelineEvents
+    }
 
     override fun getLastTimelineEvents(
         roomId: RoomId,
