@@ -1,5 +1,6 @@
 package net.folivo.trixnity.client.integrationtests
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -41,6 +42,8 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+
+private val log = KotlinLogging.logger("net.folivo.trixnity.client.integrationtests.NotificationIT")
 
 @Testcontainers
 class NotificationIT {
@@ -271,6 +274,7 @@ class NotificationIT {
                 }
             }
         }
+        log.debug { "sent messages $notificationMessages" }
 
         withCluePrintln("receive notifications") {
             checkNotifications { it.size == 2 }.also {

@@ -32,7 +32,11 @@ class EvaluatePushRulesImpl(
         log.trace { "evaluate push rules for event: ${event.idOrNull}" }
         val eventJson = lazy { notificationEventToJson(event, json) }
         val rule = allRules.find { matcher.match(it, event, eventJson) }
-        log.trace { "found matching rule ${rule?.ruleId} for event ${event.idOrNull} with actions: ${rule?.actions}" }
+        if (rule != null) {
+            log.trace { "found matching rule ${rule.ruleId} for event ${event.idOrNull} with actions: ${rule.actions}" }
+        } else {
+            log.trace { "no rule found for event ${event.idOrNull}" }
+        }
         if (rule?.actions?.contains(PushAction.Notify) != true) return null
         log.debug { "notify for event ${event.idOrNull} (content=${event.content::class}, rule=$rule)" }
         return rule.actions

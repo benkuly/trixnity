@@ -228,8 +228,12 @@ class EventsToNotificationUpdatesImpl(
                     withTimeoutOrNull(5.seconds) {
                         roomService.getTimelineEvent(roomId, relatesTo.eventId) {
                             decryptionTimeout = 5.seconds
-                        }
-                    }?.firstWithContent()?.mergedEvent?.getOrNull() ?: return@run null
+                        }.firstWithContent()
+                    }?.mergedEvent?.getOrNull()
+                if (replacedTimelineEvent == null) {
+                    log.warn { "could not find replacement event for calculating notification update" }
+                    return@run null
+                }
                 notificationUpdate(
                     id = replacedId,
                     roomId = roomId,
