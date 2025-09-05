@@ -15,7 +15,7 @@ import net.folivo.trixnity.core.model.RoomId
 @JsonClassDiscriminator("type")
 sealed interface StoredNotificationState {
     val roomId: RoomId
-    val hasPush: Boolean
+    val isPending: Boolean
 
     /**
      * There was push notification from external sources.
@@ -25,7 +25,7 @@ sealed interface StoredNotificationState {
     data class Push(
         override val roomId: RoomId,
     ) : StoredNotificationState {
-        override val hasPush: Boolean = true
+        override val isPending: Boolean = true
     }
 
     /**
@@ -35,12 +35,14 @@ sealed interface StoredNotificationState {
     @SerialName("sync_with_timeline")
     data class SyncWithTimeline(
         override val roomId: RoomId,
-        override val hasPush: Boolean,
+        val hasPush: Boolean,
         val readReceipts: Set<EventId>,
         val lastEventId: EventId,
         val lastProcessedEventId: EventId?,
         val expectedMaxNotificationCount: Long?,
-    ) : StoredNotificationState
+    ) : StoredNotificationState {
+        override val isPending: Boolean = lastEventId != lastProcessedEventId || hasPush
+    }
 
     /**
      * The room has been received in a sync without a timeline.
@@ -49,8 +51,9 @@ sealed interface StoredNotificationState {
     @SerialName("sync_without_timeline")
     data class SyncWithoutTimeline(
         override val roomId: RoomId,
-        override val hasPush: Boolean,
-    ) : StoredNotificationState
+    ) : StoredNotificationState {
+        override val isPending: Boolean = true
+    }
 
     /**
      * Notifications and this state are scheduled to be removed.
@@ -60,6 +63,6 @@ sealed interface StoredNotificationState {
     data class Remove(
         override val roomId: RoomId,
     ) : StoredNotificationState {
-        override val hasPush: Boolean = false
+        override val isPending: Boolean = true
     }
 }

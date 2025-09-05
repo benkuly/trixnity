@@ -7,7 +7,10 @@ import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.stateIn
 import net.folivo.trixnity.client.flatten
 import net.folivo.trixnity.client.notification
 import net.folivo.trixnity.client.notification.Notification
@@ -76,6 +79,12 @@ class NotificationIT {
         withTimeout(30_000) {
             val notifications = startedClient2.client.notification.getAll().flatten().stateIn(scope)
 
+            suspend fun checkNotifications(check: (List<Notification>) -> Boolean): List<Notification> {
+                startedClient2.client.syncOnce()
+                startedClient2.client.notification.processPending()
+                return notifications.firstWithTimeout { check(it) }
+            }
+
             val rooms = withCluePrintln("create rooms") {
                 val unencryptedRoom = startedClient1.client.api.room.createRoom().getOrThrow()
                 val encryptedRoom = startedClient1.client.api.room.createRoom(
@@ -143,7 +152,7 @@ class NotificationIT {
             }
 
             withCluePrintln("state notifications") {
-                notifications.firstWithTimeout { it.size == 2 }.forEach { notification ->
+                checkNotifications { it.size == 2 }.forEach { notification ->
                     val stateEvent = notification.shouldBeInstanceOf<Notification.State>().stateEvent
                     stateEvent.roomId shouldBeIn rooms.take(2)
                     stateEvent.content.shouldBeInstanceOf<MemberEventContent>().displayName shouldBe "user2"
@@ -158,7 +167,7 @@ class NotificationIT {
             }
 
             withCluePrintln("no state notifications") {
-                notifications.firstWithTimeout { it.isEmpty() }
+                checkNotifications { it.isEmpty() }
             }
 
             val helloMessage = "Hello!"
@@ -168,12 +177,12 @@ class NotificationIT {
                     startedClient2.client.room.sendMessage(room) { text("Hi!") }
                 }
                 startedClient2.client.room.waitForOutboxSent()
-                startedClient2.client.syncOnce()
-                notifications.firstWithTimeout { it.isEmpty() }
+
+                checkNotifications { it.isEmpty() }
             }
 
             withCluePrintln("send message and redact notification") {
-                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, notifications)
+                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, ::checkNotifications)
 
                 withCluePrintln("send redact") {
                     rooms.forEachIndexed { index, room ->
@@ -182,12 +191,12 @@ class NotificationIT {
                 }
 
                 withCluePrintln("receive redacted notifications") {
-                    notifications.firstWithTimeout { it.isEmpty() }
+                    checkNotifications { it.isEmpty() }
                 }
             }
 
             withCluePrintln("send message and replace without notification") {
-                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, notifications)
+                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, ::checkNotifications)
 
                 withCluePrintln("send replace") {
                     rooms.forEachIndexed { index, room ->
@@ -198,16 +207,16 @@ class NotificationIT {
                         }
                     }
                     startedClient1.client.room.waitForOutboxSent()
-                    startedClient2.client.syncOnce()
                 }
 
                 withCluePrintln("receive removed notifications") {
-                    notifications.firstWithTimeout { it.isEmpty() }
+                    startedClient2.client.notification.processPending()
+                    checkNotifications { it.isEmpty() }
                 }
             }
 
             val notificationMessages = withCluePrintln("send message and replace notification") {
-                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, notifications)
+                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, ::checkNotifications)
 
                 withCluePrintln("send replace") {
                     rooms.forEachIndexed { index, room ->
@@ -218,11 +227,10 @@ class NotificationIT {
                         }
                     }
                     startedClient1.client.room.waitForOutboxSent()
-                    startedClient2.client.syncOnce()
                 }
 
                 withCluePrintln("receive replaced notifications") {
-                    notifications.firstWithTimeout {
+                    checkNotifications {
                         it.size == 2 && it.any {
                             val content = (it as? Notification.Message)?.timelineEvent?.content?.getOrNull()
                             (content as? RoomMessageEventContent.TextBased.Text)?.body == "$helloMessage!!"
@@ -240,7 +248,7 @@ class NotificationIT {
                 }
 
                 withCluePrintln("receive redacted notifications") {
-                    notifications.firstWithTimeout { it.isEmpty() }
+                    checkNotifications { it.isEmpty() }
                 }
             }
         }
@@ -249,7 +257,7 @@ class NotificationIT {
     private suspend inline fun sendMessageAndReceiveNotifications(
         rooms: List<RoomId>,
         helloMessage: String,
-        notifications: StateFlow<List<Notification>>
+        checkNotifications: suspend (check: (List<Notification>) -> Boolean) -> List<Notification>
     ): List<EventId> {
         val notificationMessages = withCluePrintln("send messages") {
             rooms.map { room ->
@@ -263,10 +271,9 @@ class NotificationIT {
                 }
             }
         }
-        startedClient2.client.syncOnce()
 
         withCluePrintln("receive notifications") {
-            notifications.firstWithTimeout { it.size == 2 }.also {
+            checkNotifications { it.size == 2 }.also {
                 it.forEach { notification ->
                     val messageNotification = notification.shouldBeInstanceOf<Notification.Message>().timelineEvent
                     messageNotification.eventId shouldBeIn notificationMessages.take(2)

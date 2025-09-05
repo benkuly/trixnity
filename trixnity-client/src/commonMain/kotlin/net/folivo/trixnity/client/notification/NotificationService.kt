@@ -104,12 +104,12 @@ interface NotificationService {
     suspend fun onPush(roomId: RoomId, eventId: EventId?): Boolean
 
     /**
-     * Process possibly pending push notifications if needed.
-     * This may suspend for a long time (e.g., when the network is not available).
+     * Process possibly pending notifications from sync or push if needed.
+     * This may suspend for a long time (e.g., when the network is not available but a sync is needed).
      *
      * When [MatrixClientConfiguration.enableExternalNotifications] is enabled, this waits until [getAllUpdates] has collected all updates.
      */
-    suspend fun processPush()
+    suspend fun processPending()
 }
 
 class NotificationServiceImpl(
@@ -134,7 +134,7 @@ class NotificationServiceImpl(
     ): Flow<NotificationService.Notification> =
         api.sync.subscribeAsFlow()
             .flatMapConcat { syncEvents -> getNotifications(syncEvents.syncResponse, decryptionTimeout) }
-    
+
     @Deprecated("use the new notification system instead")
     override fun getNotifications(
         response: Sync.Response,
@@ -277,25 +277,28 @@ class NotificationServiceImpl(
 
         notificationStore.updateState(roomId) {
             when (it) {
-                is StoredNotificationState.Push -> it
-                is StoredNotificationState.Remove -> it
+                is StoredNotificationState.Push,
+                is StoredNotificationState.Remove,
+                is StoredNotificationState.SyncWithoutTimeline -> it
+
                 is StoredNotificationState.SyncWithTimeline -> it.copy(hasPush = true)
-                is StoredNotificationState.SyncWithoutTimeline -> it.copy(hasPush = true)
                 null -> StoredNotificationState.Push(roomId)
             }
         }
         return false
     }
 
-    override suspend fun processPush() {
+    override suspend fun processPending() {
         matrixClientStarted.first { it }
-        val hasPush = notificationStore.getAllState().first().any { it.value.first()?.hasPush == true }
-        if (!hasPush) return
+        val hasPending = notificationStore.getAllState().first().values.any { it.first()?.isPending == true }
+        if (!hasPending) return
+
         api.sync.startOnce(
             filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
             timeout = Duration.ZERO,
         ).getOrThrow()
-        notificationStore.getAllState().flatten().first { it.any { it.value?.hasPush == false } }
+        notificationStore.getAllState().flattenValues().first { states -> states.none { it.isPending } }
+
         if (config.enableExternalNotifications) {
             notificationStore.getAllUpdates().flattenValues().first { it.isEmpty() }
         }

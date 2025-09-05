@@ -153,7 +153,7 @@ class NotificationEventHandler(
                                 ?: (oldState as? StoredNotificationState.SyncWithTimeline)?.expectedMaxNotificationCount,
                         )
                     } else {
-                        StoredNotificationState.SyncWithoutTimeline(roomId = roomId, hasPush = false)
+                        StoredNotificationState.SyncWithoutTimeline(roomId = roomId)
                     }
                 }
             }

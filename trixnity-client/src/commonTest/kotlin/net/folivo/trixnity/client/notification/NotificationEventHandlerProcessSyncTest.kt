@@ -240,7 +240,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             notification2
         )
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-            StoredNotificationState.SyncWithoutTimeline(roomId1, false),
+            StoredNotificationState.SyncWithoutTimeline(roomId1),
             StoredNotificationState.Push(roomId2),
         )
     }
@@ -398,10 +398,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             notification2
         )
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-            StoredNotificationState.SyncWithoutTimeline(
-                roomId = roomId1,
-                hasPush = false,
-            )
+            StoredNotificationState.SyncWithoutTimeline(roomId = roomId1)
         )
     }
 }

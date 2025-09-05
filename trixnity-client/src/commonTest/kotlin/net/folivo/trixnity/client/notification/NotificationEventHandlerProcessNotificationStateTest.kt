@@ -588,10 +588,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
     @Test
     fun `SyncWithoutTimeline - remove state`() = runTest {
         processNotificationStateWith(
-            notificationState = StoredNotificationState.SyncWithoutTimeline(
-                roomId = roomId1,
-                hasPush = true,
-            ),
+            notificationState = StoredNotificationState.SyncWithoutTimeline(roomId = roomId1),
         )
 
         notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf()
@@ -603,10 +600,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         roomStateStore.save(someStateEvent(3))
         roomStateStore.save(someStateEvent(2))
         processNotificationStateWith(
-            notificationState = StoredNotificationState.SyncWithoutTimeline(
-                roomId = roomId1,
-                hasPush = true,
-            ),
+            notificationState = StoredNotificationState.SyncWithoutTimeline(roomId = roomId1),
         )
 
         eventsToNotificationUpdates.events shouldBe listOf(
@@ -652,10 +646,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
             ),
         )
         processNotificationStateWith(
-            notificationState = StoredNotificationState.SyncWithoutTimeline(
-                roomId = roomId1,
-                hasPush = true,
-            ),
+            notificationState = StoredNotificationState.SyncWithoutTimeline(roomId = roomId1),
             notifications = listOf(
                 StoredNotification.Message(
                     roomId = roomId1,
@@ -759,10 +750,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
             ),
         )
         processNotificationStateWith(
-            notificationState = StoredNotificationState.SyncWithoutTimeline(
-                roomId = roomId1,
-                hasPush = true,
-            ),
+            notificationState = StoredNotificationState.SyncWithoutTimeline(roomId = roomId1),
             notifications = listOf(
                 StoredNotification.Message(
                     roomId = roomId1,
