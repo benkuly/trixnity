@@ -1,44 +1,51 @@
 package net.folivo.trixnity.crypto.core
 
 import kotlinx.cinterop.*
-import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.utils.ByteArrayFlow
-import net.folivo.trixnity.utils.encodeUnpaddedBase64
-import platform.CoreCrypto.CC_SHA256_CTX
-import platform.CoreCrypto.CC_SHA256_DIGEST_LENGTH
-import platform.CoreCrypto.CC_SHA256_Final
-import platform.CoreCrypto.CC_SHA256_Init
-import platform.CoreCrypto.CC_SHA256_Update
+import platform.CoreCrypto.*
 
-@OptIn(ExperimentalUnsignedTypes::class)
-actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
-    val hash = MutableStateFlow<String?>(null)
-    return Sha256ByteFlow(
-        flow {
-            memScoped {
-                val context = alloc<CC_SHA256_CTX>()
-                val digestSize = CC_SHA256_DIGEST_LENGTH
-                val digest = ByteArray(digestSize)
+private class AppleSha256 : Hasher {
 
-                CC_SHA256_Init(context.ptr)
-                emitAll(
-                    filter { it.isNotEmpty() }.onEach { input ->
-                        input.asUByteArray().usePinned { pinnedInput ->
-                            CC_SHA256_Update(
-                                context.ptr,
-                                pinnedInput.addressOf(0),
-                                input.size.convert()
-                            )
-                        }
-                    }.onCompletion {
-                        digest.asUByteArray().usePinned { pinnedDigest ->
-                            CC_SHA256_Final(pinnedDigest.addressOf(0), context.ptr)
-                        }
-                        hash.value = digest.encodeUnpaddedBase64()
-                    }
-                )
-            }
-        },
-        hash
-    )
+    private val context = nativeHeap.alloc<CC_SHA256_CTX>()
+    private var closed = false
+    private var ready = false
+
+    override fun update(input: ByteArray) {
+        check(!closed) { "SHA-256 is closed" }
+        if (input.isEmpty()) return
+        ensureReady()
+
+        input.usePinned {
+            CC_SHA256_Update(context.ptr, it.addressOf(0), input.size.convert())
+        }
+    }
+
+    override fun digest(): ByteArray {
+        check(!closed) { "SHA-256 is closed" }
+        ensureReady()
+
+        val digest = ByteArray(CC_SHA256_DIGEST_LENGTH)
+        digest.asUByteArray().usePinned {
+            CC_SHA256_Final(it.addressOf(0), context.ptr)
+        }
+        ready = false
+
+        return digest
+    }
+
+    override fun close() {
+        if (closed) return
+        closed = true
+
+        nativeHeap.free(context)
+    }
+
+    private fun ensureReady() {
+        if (ready) return
+
+        CC_SHA256_Init(context.ptr)
+        ready = true
+    }
+
 }
+
+actual fun Sha256(): Hasher = AppleSha256()
