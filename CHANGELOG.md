@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Delete read receipts on non-join
 - Use kotlin Unpadded Base64 instead of ktor
+- Don't close DI, because garbage collector can handle it
 
 ### Deprecated
 
