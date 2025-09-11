@@ -9,13 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added inceptionYear based on LICENSE file and developer name tag for developers in POM to allow Gradle plugins 
+- Added inceptionYear based on LICENSE file and developer name tag for developers in POM to allow Gradle plugins
   like gradle-license-plugin or aboutLibraries to automatically fetch the correct Copyright information.
 
 ### Changed
 
 - Delete read receipts on non-join
 - Use kotlin Unpadded Base64 instead of ktor
+- Don't close DI, because garbage collector can handle it
 
 ### Deprecated
 
