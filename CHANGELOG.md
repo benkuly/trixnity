@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.22.3
+
+### Added
+
 - Added inceptionYear based on LICENSE file and developer name tag for developers in POM to allow Gradle plugins
   like gradle-license-plugin or aboutLibraries to automatically fetch the correct Copyright information.
 - Add support for non suspend sha256 hashing
@@ -19,16 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use kotlin Unpadded Base64 instead of ktor
 - Don't close DI, because garbage collector can handle it
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Fixed that FullRepositoryObservableCacheIndex may forget fully loaded state
 - One more updateOutdatedKeys in bootstrap to be sure, that keys are present
-
-### Security
 
 ## 4.22.2
 
