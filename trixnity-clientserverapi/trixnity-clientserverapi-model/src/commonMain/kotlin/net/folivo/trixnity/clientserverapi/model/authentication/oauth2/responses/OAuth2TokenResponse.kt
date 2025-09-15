@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-private class ScopeListSerializer : KSerializer<List<String>> {
+object ScopeListSerializer : KSerializer<List<String>> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ScopeList", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: List<String>) = encoder.encodeString(value.joinToString(" "))
     override fun deserialize(decoder: Decoder): List<String> =

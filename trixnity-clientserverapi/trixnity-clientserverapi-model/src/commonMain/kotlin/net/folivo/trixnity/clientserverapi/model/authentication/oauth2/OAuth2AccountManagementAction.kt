@@ -11,7 +11,7 @@ import kotlinx.serialization.encoding.Encoder
 import net.folivo.trixnity.core.MSC4191
 
 @OptIn(MSC4191::class)
-private class OAuth2AccountManagementActionSerializer : KSerializer<OAuth2AccountManagementAction> {
+object OAuth2AccountManagementActionSerializer : KSerializer<OAuth2AccountManagementAction> {
     @OptIn(InternalSerializationApi::class)
     override val descriptor: SerialDescriptor = buildSerialDescriptor("OAuth2AccountManagementAction", SerialKind.ENUM)
 

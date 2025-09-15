@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-private class TokenEndpointAuthMethodSerializer : KSerializer<TokenEndpointAuthMethod> {
+object TokenEndpointAuthMethodSerializer : KSerializer<TokenEndpointAuthMethod> {
     @OptIn(InternalSerializationApi::class)
     override val descriptor: SerialDescriptor = buildSerialDescriptor("TokenEndpointAuthMethod", SerialKind.ENUM)
 

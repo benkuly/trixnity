@@ -27,7 +27,7 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.forEach
 
-private class OAuth2ClientMetadataSerializer : KSerializer<OAuth2ClientMetadata> {
+object OAuth2ClientMetadataSerializer : KSerializer<OAuth2ClientMetadata> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("OAuth2ClientMetadata") {
         element<ApplicationType>("application_type")
         element<Url>("client_uri")

@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-private class PromptValueSerializer : KSerializer<PromptValue> {
+object PromptValueSerializer : KSerializer<PromptValue> {
     @OptIn(InternalSerializationApi::class)
     override val descriptor: SerialDescriptor = buildSerialDescriptor("PromptValue", SerialKind.ENUM)
 

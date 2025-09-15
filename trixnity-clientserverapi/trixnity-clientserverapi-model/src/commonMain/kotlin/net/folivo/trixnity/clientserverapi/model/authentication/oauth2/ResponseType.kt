@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-private class ResponseTypeSerializer : KSerializer<ResponseType> {
+object ResponseTypeSerializer : KSerializer<ResponseType> {
     @OptIn(InternalSerializationApi::class)
     override val descriptor: SerialDescriptor = buildSerialDescriptor("ResponseType", SerialKind.ENUM)
 

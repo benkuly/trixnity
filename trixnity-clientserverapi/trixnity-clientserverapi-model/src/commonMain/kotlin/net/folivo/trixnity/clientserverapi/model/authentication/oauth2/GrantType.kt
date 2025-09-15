@@ -9,7 +9,7 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-private class GrantTypeSerializer : KSerializer<GrantType> {
+object GrantTypeSerializer : KSerializer<GrantType> {
     @OptIn(InternalSerializationApi::class)
     override val descriptor: SerialDescriptor = buildSerialDescriptor("GrantType", SerialKind.ENUM)
 
