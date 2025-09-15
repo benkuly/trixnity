@@ -3,6 +3,8 @@ package net.folivo.trixnity.client.notification
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.MatrixClientStarted
 import net.folivo.trixnity.client.flatten
@@ -288,19 +290,22 @@ class NotificationServiceImpl(
         return false
     }
 
+    private val processPendingMutex = Mutex()
     override suspend fun processPending() {
-        matrixClientStarted.first { it }
-        val hasPending = notificationStore.getAllState().first().values.any { it.first()?.isPending == true }
-        if (!hasPending) return
+        processPendingMutex.withLock {
+            matrixClientStarted.first { it }
+            val hasPending = notificationStore.getAllState().first().values.any { it.first()?.isPending == true }
+            if (!hasPending) return
 
-        api.sync.startOnce(
-            filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
-            timeout = Duration.ZERO,
-        ).getOrThrow()
-        notificationStore.getAllState().flattenValues().first { states -> states.none { it.isPending } }
+            api.sync.startOnce(
+                filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
+                timeout = Duration.ZERO,
+            ).getOrThrow()
+            notificationStore.getAllState().flattenValues().first { states -> states.none { it.isPending } }
 
-        if (config.enableExternalNotifications) {
-            notificationStore.getAllUpdates().flattenValues().first { it.isEmpty() }
+            if (config.enableExternalNotifications) {
+                notificationStore.getAllUpdates().flattenValues().first { it.isEmpty() }
+            }
         }
     }
 
