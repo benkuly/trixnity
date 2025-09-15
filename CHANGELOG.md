@@ -11,6 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for the OAuth2-based authentication API since Matrix v1.15 
 - Support for account management deep-linking (MSC4191)
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## 4.22.3
+
+### Added
+
 - Added inceptionYear based on LICENSE file and developer name tag for developers in POM to allow Gradle plugins
   like gradle-license-plugin or aboutLibraries to automatically fetch the correct Copyright information.
 - Add support for non suspend sha256 hashing
@@ -19,17 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Delete read receipts on non-join
 - Use kotlin Unpadded Base64 instead of ktor
-
-### Deprecated
-
-### Removed
+- Don't close DI, because garbage collector can handle it
 
 ### Fixed
 
 - Fixed that FullRepositoryObservableCacheIndex may forget fully loaded state
 - One more updateOutdatedKeys in bootstrap to be sure, that keys are present
-
-### Security
 
 ## 4.22.2
 

@@ -980,7 +980,6 @@ class MatrixClientImpl internal constructor(
     override fun close() {
         started.value = false
         api.close()
-        di.close()
         coroutineScope.cancel("stopped MatrixClient")
     }
 
