@@ -742,18 +742,18 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
 
 private class AccountStoreBearerAccessTokenStore(
     private val accountStore: AccountStore
-) : ClassicMatrixAuthProvider.BearerTokensStore {
-    override suspend fun getBearerTokens(): ClassicMatrixAuthProvider.BearerTokens? {
+) : BearerTokensStore {
+    override suspend fun getBearerTokens(): BearerTokens? {
         val currentAccount = accountStore.getAccount()
         return if (currentAccount?.accessToken != null)
-            ClassicMatrixAuthProvider.BearerTokens(
+            BearerTokens(
                 accessToken = currentAccount.accessToken,
                 refreshToken = currentAccount.refreshToken
             )
         else null
     }
 
-    override suspend fun setBearerTokens(bearerTokens: ClassicMatrixAuthProvider.BearerTokens) {
+    override suspend fun setBearerTokens(bearerTokens: BearerTokens) {
         accountStore.updateAccount {
             it?.copy(accessToken = bearerTokens.accessToken, refreshToken = bearerTokens.refreshToken)
         }

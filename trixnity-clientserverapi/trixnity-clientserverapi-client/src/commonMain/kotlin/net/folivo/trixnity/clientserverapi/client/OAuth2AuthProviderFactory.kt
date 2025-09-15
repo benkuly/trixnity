@@ -1,37 +1,54 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.call.*
-import io.ktor.client.plugins.auth.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.http.auth.*
+import io.ktor.client.call.body
+import io.ktor.client.plugins.auth.AuthCircuitBreaker
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.auth.AuthScheme
+import io.ktor.http.auth.HttpAuthHeader
+import io.ktor.http.contentType
+import io.ktor.http.formUrlEncode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import net.folivo.trixnity.clientserverapi.model.authentication.Refresh
 import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.decodeErrorResponse
-import okio.ByteString.Companion.toByteString
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
 
-private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.ClassicMatrixAuthProvider")
+private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.OAuth2MatrixAuthProvider")
 
-fun MatrixAuthProvider.Companion.classic(
+private fun List<Pair<String, Any?>>.formUrlEncode() =
+    filter { (_, value) -> value != null }.map { it.first to it.second.toString() }.formUrlEncode()
+
+fun MatrixAuthProvider.Companion.oauth2(
     bearerTokensStore: BearerTokensStore,
-    onLogout: suspend (LogoutInfo) -> Unit = {},
-) = ClassicMatrixAuthProvider(bearerTokensStore, onLogout)
+    providerMetadata: OAuth2ProviderMetadata,
+    clientId: String,
+    onLogout: suspend (LogoutInfo) -> Unit = {}
+) = OAuth2AuthProvider(bearerTokensStore, onLogout, providerMetadata, clientId)
 
-fun MatrixAuthProvider.Companion.classicInMemory(
+fun MatrixAuthProvider.Companion.oauth2InMemory(
     accessToken: String? = null,
     refreshToken: String? = null,
+    providerMetadata: OAuth2ProviderMetadata,
+    clientId: String,
     onLogout: suspend (LogoutInfo) -> Unit = {},
-) = classic(
+) = oauth2(
     bearerTokensStore = BearerTokensStore.InMemory(
         accessToken?.let {
             BearerTokens(
@@ -40,14 +57,19 @@ fun MatrixAuthProvider.Companion.classicInMemory(
             )
         },
     ),
-    onLogout = onLogout,
+    providerMetadata = providerMetadata,
+    clientId = clientId,
+    onLogout = onLogout
 )
 
-class ClassicMatrixAuthProvider(
+class OAuth2AuthProvider(
     private val bearerTokensStore: BearerTokensStore,
     private val onLogout: suspend (LogoutInfo) -> Unit,
+    private val providerMetadata: OAuth2ProviderMetadata,
+    private val clientId: String
 ) : MatrixAuthProvider {
     private val isRefreshingToken = MutableStateFlow(false)
+    private val refreshTokenMutex = Mutex()
 
     override fun isApplicable(auth: HttpAuthHeader): Boolean =
         if (auth.authScheme != AuthScheme.Bearer) {
@@ -69,6 +91,7 @@ class ClassicMatrixAuthProvider(
             if (it) log.trace { "addRequestHeaders: wait for refreshing to finish" }
             it.not()
         }
+
         val token = bearerTokensStore.getBearerTokens() ?: run {
             log.warn { "no bearer tokens found even after waiting for refresh" }
             return
@@ -83,7 +106,6 @@ class ClassicMatrixAuthProvider(
         }
     }
 
-    private val refreshTokenMutex = Mutex()
     override suspend fun refreshToken(response: HttpResponse): Boolean {
         val oldTokens = bearerTokensStore.getBearerTokens() ?: return false
         refreshTokenMutex.withLock {
@@ -91,6 +113,7 @@ class ClassicMatrixAuthProvider(
                 val newOldTokens = bearerTokensStore.getBearerTokens()
                 if (oldTokens != newOldTokens) return true
 
+                // Call onLogout when refresh token is not available
                 val refreshToken = oldTokens.refreshToken
                 if (refreshToken == null) {
                     if (response.status == HttpStatusCode.Unauthorized) {
@@ -112,37 +135,30 @@ class ClassicMatrixAuthProvider(
                     }
                     return false
                 }
+
+                // Refresh token
                 isRefreshingToken.value = true
                 log.trace { "start refresh tokens oldTokens=$oldTokens, newOldTokens=$newOldTokens" }
-                val refreshResponse =
-                    try {
-                        response.call.client.post("/_matrix/client/v3/refresh") {
-                            attributes.put(AuthCircuitBreaker, Unit)
-                            contentType(ContentType.Application.Json)
-                            accept(ContentType.Application.Json)
-                            setBody(Refresh.Request(refreshToken))
-                        }.body<Refresh.Response>()
-                    } catch (matrixServerException: MatrixServerException) {
-                        if (matrixServerException.statusCode == HttpStatusCode.Unauthorized)
-                            when (val errorResponse = matrixServerException.errorResponse) {
-                                is ErrorResponse.UnknownToken -> {
-                                    log.info { "could not refresh token, therefore call onLogout (unknown token)" }
-                                    onLogout(LogoutInfo(errorResponse.softLogout, false))
-                                }
 
-                                is ErrorResponse.UserLocked -> {
-                                    log.info { "could not refresh token, therefore call onLogout (user locked)" }
-                                    onLogout(LogoutInfo(errorResponse.softLogout, true))
-                                }
+                val refreshResponse = response.call.client.post(providerMetadata.tokenEndpoint) {
+                    attributes.put(AuthCircuitBreaker, Unit)
+                    contentType(ContentType.Application.FormUrlEncoded)
+                    setBody(
+                        listOf(
+                            "grant_type" to GrantType.RefreshToken,
+                            "refresh_token" to refreshToken,
+                            "client_id" to clientId
+                        ).formUrlEncode()
+                    )
+                }
 
-                                else -> {}
-                            }
-                        throw matrixServerException
-                    }
-                val newTokens = BearerTokens(
-                    accessToken = refreshResponse.accessToken,
-                    refreshToken = refreshResponse.refreshToken ?: refreshToken,
-                )
+                if (refreshResponse.status != HttpStatusCode.OK) {
+                    val errorResponse = refreshResponse.body<OAuth2ErrorResponse>()
+                    // TODO: Throw exception
+                }
+
+                val response = refreshResponse.body<OAuth2TokenResponse>()
+                val newTokens = BearerTokens(response.accessToken, response.refreshToken ?: refreshToken)
                 bearerTokensStore.setBearerTokens(newTokens)
                 log.debug { "finish refresh tokens oldTokens=$oldTokens, newTokens=$newTokens" }
                 return true

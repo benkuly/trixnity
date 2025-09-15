@@ -1,8 +1,23 @@
 package net.folivo.trixnity.clientserverapi.client
 
+import io.ktor.client.call.body
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
 import io.ktor.http.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
+import net.folivo.trixnity.core.AuthRequired
 
 interface AuthenticationApiClient {
     /**
@@ -75,6 +90,25 @@ interface AuthenticationApiClient {
      * @see [GetLoginTypes]
      */
     suspend fun getLoginTypes(): Result<Set<LoginType>>
+
+    /**
+     * @see [OAuth2ProviderMetadata]
+     */
+    suspend fun getOAuth2ProviderMetadata(): Result<OAuth2ProviderMetadata>
+
+    /**
+     * @return The id of the registered client
+     *
+     * @see [OAuth2ProviderMetadata]
+     */
+    suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientMetadata>
+
+    suspend fun getOAuth2Token(
+        code: String,
+        redirectUrl: Url,
+        clientId: String,
+        codeVerifier: String
+    ): Result<OAuth2TokenResponse>
 
     /**
      * @see [Login]
@@ -196,8 +230,14 @@ interface AuthenticationApiClient {
 }
 
 class AuthenticationApiClientImpl(
-    private val baseClient: MatrixClientServerApiBaseClient
+    private val baseClient: MatrixClientServerApiBaseClient,
+    coroutineScope: CoroutineScope
 ) : AuthenticationApiClient {
+    private val oauth2ProviderMetadata by lazy {
+        coroutineScope.async {
+            baseClient.request(GetOAuth2ProviderMetadata)
+        }
+    }
 
     override suspend fun whoAmI(asUserId: UserId?): Result<WhoAmI.Response> =
         baseClient.request(WhoAmI(asUserId))
@@ -264,6 +304,49 @@ class AuthenticationApiClientImpl(
 
     override suspend fun getLoginTypes(): Result<Set<LoginType>> =
         baseClient.request(GetLoginTypes).mapCatching { it.flows }
+
+    override suspend fun getOAuth2ProviderMetadata(): Result<OAuth2ProviderMetadata> =
+        oauth2ProviderMetadata.await()
+
+    private suspend inline fun <reified O> oauth2Request(
+        urlFactory: (OAuth2ProviderMetadata) -> Url,
+        block: HttpRequestBuilder.() -> Unit = {}
+    ): Result<O> =
+        oauth2ProviderMetadata.await().fold(
+            onSuccess = { providerMetadata ->
+                val response = baseClient.baseClient.post(urlFactory(providerMetadata)) {
+                    attributes.put(AuthRequired.attributeKey, AuthRequired.NO)
+                    block()
+                }
+
+                if (!response.status.isSuccess()) {
+                    TODO("Throw error")
+                }
+
+                Result.success(response.body<O>())
+            },
+            onFailure = {
+                Result.failure(it)
+            }
+        )
+
+    override suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientMetadata> =
+        oauth2Request({ providerMetadata -> providerMetadata.registrationEndpoint }) {
+            header("Content-Type", ContentType.Application.Json.toString())
+            setBody(metadata)
+        }
+
+    override suspend fun getOAuth2Token(
+        code: String,
+        redirectUrl: Url,
+        clientId: String,
+        codeVerifier: String
+    ): Result<OAuth2TokenResponse> = oauth2Request({ providerMetadata -> providerMetadata.tokenEndpoint }) {
+        parameter("code", code)
+        parameter("redirect_uri", redirectUrl)
+        parameter("client_id", clientId)
+        parameter("code_verifier", codeVerifier)
+    }
 
     @Deprecated("use login with separated password and token")
     override suspend fun login(

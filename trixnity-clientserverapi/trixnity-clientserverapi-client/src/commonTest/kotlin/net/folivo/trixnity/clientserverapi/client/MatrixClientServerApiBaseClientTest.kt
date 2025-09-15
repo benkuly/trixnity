@@ -152,7 +152,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldNotRetryWithTokenOnNever() = runTest {
-        val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
+        val testTokenStore = BearerTokensStore.InMemory()
 
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
@@ -171,7 +171,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             eventContentSerializerMappings = mappings,
         )
 
-        testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
+        testTokenStore.bearerTokens = BearerTokens("access", null)
 
         cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
             .exceptionOrNull() shouldBe
@@ -183,7 +183,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldRetryWithToken() = runTest {
-        val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
+        val testTokenStore = BearerTokensStore.InMemory()
 
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
@@ -209,7 +209,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             eventContentSerializerMappings = mappings,
         )
 
-        testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
+        testTokenStore.bearerTokens = BearerTokens("access", null)
 
         cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true))
             .getOrThrow() shouldBe PostPath.Response("ok")
@@ -217,7 +217,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldHaveOptionalAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
-        val testTokenStore = ClassicMatrixAuthProvider.BearerTokensStore.InMemory()
+        val testTokenStore = BearerTokensStore.InMemory()
 
         val cut = MatrixClientServerApiBaseClient(
             baseUrl = Url("https://matrix.host"),
@@ -247,7 +247,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
                 PostPath.Response("ok")
 
-        testTokenStore.bearerTokens = ClassicMatrixAuthProvider.BearerTokens("access", null)
+        testTokenStore.bearerTokens = BearerTokens("access", null)
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
                 PostPath.Response("ok")
