@@ -488,7 +488,6 @@ class RoomServiceImpl(
                                     } else {
                                         log.trace { "getTimelineEvents: continue with predecessor ($predecessor) of $currentEventId" }
                                         getTimelineEvent(
-                                            // FIXME
                                             eventId = predecessor.eventId,
                                             roomId = predecessor.roomId,
                                             config = { apply(cfg) },

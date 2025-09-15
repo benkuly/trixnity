@@ -92,8 +92,8 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
     private suspend fun processSyncWith(
         notifications: List<StoredNotification> = listOf(notification1, notification2),
         notificationStates: List<StoredNotificationState> = listOf(
-            StoredNotificationState.Push(roomId1),
-            StoredNotificationState.Push(roomId2)
+            StoredNotificationState.SyncWithoutTimeline(roomId1),
+            StoredNotificationState.SyncWithoutTimeline(roomId2)
         ),
         updatedRooms: Set<RoomId> = setOf(roomId1, roomId2),
         receipts: Map<RoomId, EventId> = mapOf(roomId1 to EventId("e1"), roomId2 to EventId("e1")),
@@ -177,8 +177,8 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                 notification2
             )
             notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-                StoredNotificationState.Push(roomId1),
-                StoredNotificationState.Push(roomId2),
+                StoredNotificationState.SyncWithoutTimeline(roomId1),
+                StoredNotificationState.SyncWithoutTimeline(roomId2),
             )
         }
 
@@ -201,7 +201,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             )
             notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
                 StoredNotificationState.Remove(roomId1),
-                StoredNotificationState.Push(roomId2),
+                StoredNotificationState.SyncWithoutTimeline(roomId2),
             )
         }
 
@@ -225,8 +225,8 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                 notification2
             )
             notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-                StoredNotificationState.Push(roomId1),
-                StoredNotificationState.Push(roomId2),
+                StoredNotificationState.SyncWithoutTimeline(roomId1),
+                StoredNotificationState.SyncWithoutTimeline(roomId2),
             )
         }
 
@@ -241,7 +241,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         )
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithoutTimeline(roomId1),
-            StoredNotificationState.Push(roomId2),
+            StoredNotificationState.SyncWithoutTimeline(roomId2),
         )
     }
 
@@ -256,7 +256,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         )
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
             StoredNotificationState.Remove(roomId1),
-            StoredNotificationState.Push(roomId2),
+            StoredNotificationState.SyncWithoutTimeline(roomId2),
         )
     }
 
@@ -400,5 +400,22 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithoutTimeline(roomId = roomId1)
         )
+    }
+
+    @Test
+    fun `push - remove`() = runTest {
+        roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, lastEventId = null) }
+        processSyncWith(
+            updatedRooms = setOf(),
+            notificationStates = listOf(
+                StoredNotificationState.Push(roomId1)
+            ),
+        )
+
+        notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
+            notification1,
+            notification2
+        )
+        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf()
     }
 }

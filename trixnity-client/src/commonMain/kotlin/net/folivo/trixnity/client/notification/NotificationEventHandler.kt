@@ -72,7 +72,7 @@ class NotificationEventHandler(
             if (hasNewPushRules) {
                 log.debug { "schedule remove all notifications and state because push rules disabled" }
                 transactionManager.writeTransaction {
-                    val removeRooms = allState.map { it.roomId } + // FIXME test
+                    val removeRooms = allState.map { it.roomId } +
                             notificationStore.getAll().first().values.mapNotNull { it.first() }.map { it.roomId }
                     removeRooms.forEach { roomId ->
                         notificationStore.updateState(roomId) {
@@ -116,9 +116,12 @@ class NotificationEventHandler(
             }
 
         val pushRulesDisabledByRoom = pushRulesCache.pushRulesDisabledByRoom.takeIf { hasNewPushRules }.orEmpty()
-        val removeRooms = completelyReadRooms + pushRulesDisabledByRoom
+        val removeRooms = (completelyReadRooms + pushRulesDisabledByRoom)
+        val oldPushStates =
+            allState.filter { it is StoredNotificationState.Push }
+                .map { it.roomId } - removeRooms.toSet() - unreadRooms.map { it.roomId }.toSet()
 
-        if (removeRooms.isEmpty() && unreadRooms.isEmpty()) {
+        if (removeRooms.isEmpty() && unreadRooms.isEmpty() && oldPushStates.isEmpty()) {
             log.trace { "skip because no changes" }
             return
         }
@@ -129,6 +132,8 @@ class NotificationEventHandler(
             log.debug { "schedule remove all notifications and state for completely read rooms $completelyReadRooms" }
         if (unreadRooms.isNotEmpty())
             log.debug { "schedule notification processing for unread rooms $unreadRooms" }
+        if (oldPushStates.isNotEmpty())
+            log.debug { "remove old push state: $oldPushStates" }
 
         transactionManager.writeTransaction {
             removeRooms.forEach { roomId ->
@@ -156,6 +161,9 @@ class NotificationEventHandler(
                         StoredNotificationState.SyncWithoutTimeline(roomId = roomId)
                     }
                 }
+            }
+            oldPushStates.forEach { oldPushState ->
+                notificationStore.updateState(oldPushState) { null }
             }
         }
     }
