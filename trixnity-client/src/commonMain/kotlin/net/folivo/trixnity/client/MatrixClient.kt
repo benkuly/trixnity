@@ -795,7 +795,7 @@ class MatrixClientImpl internal constructor(
     override val identityKey: Key.Curve25519Key = userInfo.identityPublicKey
     override val signingKey: Key.Ed25519Key = userInfo.signingPublicKey
 
-    val started: MatrixClientStarted = di.get()
+    private val started: MatrixClientStarted = di.get()
 
     override val displayName: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.displayName }
         .stateIn(coroutineScope, Eagerly, null)
