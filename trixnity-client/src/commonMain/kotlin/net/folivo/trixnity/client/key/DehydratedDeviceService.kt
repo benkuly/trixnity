@@ -9,6 +9,7 @@ import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.CrossSigned
 import net.folivo.trixnity.client.store.KeyStore
 import net.folivo.trixnity.client.store.StoredSecret
+import net.folivo.trixnity.client.store.isVerified
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
 import net.folivo.trixnity.clientserverapi.model.keys.ClaimKeys
@@ -48,6 +49,7 @@ class DehydratedDeviceService(
     private val userInfo: UserInfo,
     private val json: Json,
     private val olmStore: OlmStore,
+    private val keyService: KeyService,
     private val signService: SignService,
     private val clock: Clock,
     private val config: MatrixClientConfiguration,
@@ -56,28 +58,82 @@ class DehydratedDeviceService(
     override fun startInCoroutineScope(scope: CoroutineScope) {
         if (config.experimentalFeatures.enableMSC3814) {
             scope.launch {
-                rehydrateDeviceOnSetup()
+                handleChanges()
             }
         }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    internal suspend fun rehydrateDeviceOnSetup() {
+    private suspend fun handleChanges() { // TODO unit test
         keyStore.getSecretsFlow()
             .map { it[SecretType.M_DEHYDRATED_DEVICE] }
             .distinctUntilChanged()
-            .scan(Pair<StoredSecret?, StoredSecret?>(null, null)) { acc, value -> value to acc.first }
-            .collect { (newKey, _) ->
-                if (newKey == null) return@collect
-                val dehydratedDeviceKey = newKey.decryptedPrivateKey.decodeBase64()?.toByteArray()
-
-                if (dehydratedDeviceKey == null) {
+            .scan(listOf<StoredSecret?>()) { acc, new ->
+                if (acc.isEmpty()) listOf(new)
+                else listOf(new) + acc[0]
+            }.filter { it.isNotEmpty() }
+            .collect { encodedDehydratedDeviceSecrets ->
+                val currentEncodedDehydratedDeviceSecret = encodedDehydratedDeviceSecrets[0]
+                if (currentEncodedDehydratedDeviceSecret == null) {
+                    log.warn { "skip device dehydration, because dehydrated device private key not present" }
+                    return@collect
+                }
+                val dehydratedDeviceSecret =
+                    currentEncodedDehydratedDeviceSecret.decryptedPrivateKey.decodeBase64()?.toByteArray()
+                if (dehydratedDeviceSecret == null) {
                     log.warn { "skip device dehydration, because dehydrated device private key could not be decoded" }
                     return@collect
                 }
+                val dehydratedTrustLevel =
+                    combine(
+                        keyStore.getDeviceKeys(userInfo.userId)
+                            .filterNotNull()
+                            .map { deviceKeys ->
+                                deviceKeys[userInfo.deviceId]?.trustLevel to
+                                        deviceKeys.values.find { it.value.signed.dehydrated == true }?.trustLevel
+                            }
+                            .distinctUntilChanged(),
+                        keyService.bootstrapRunning,
+                    ) { trustLevels, bootstrapRunning ->
+                        Pair(trustLevels, bootstrapRunning)
+                    }.transform { (trustLevels, bootstrapRunning) ->
+                        if (bootstrapRunning) {
+                            log.debug { "skip device dehydration, because bootstrap still running" }
+                            return@transform
+                        }
+                        val ownTrustLevel = trustLevels.first
+                        if (ownTrustLevel !is CrossSigned || ownTrustLevel.isVerified.not()) {
+                            log.debug { "skip device dehydration, because own device key not signed (yet)" }
+                            return@transform
+                        }
+                        emit(trustLevels.second)
+                    }.first()
 
-                tryRehydrateDevice(dehydratedDeviceKey)
-                tryDehydrateDevice(dehydratedDeviceKey)
+                when {
+                    dehydratedTrustLevel == null -> {
+                        log.debug { "create new dehydrate device because missing" }
+                        tryDehydrateDevice(dehydratedDeviceSecret)
+                    }
+
+                    dehydratedTrustLevel !is CrossSigned || dehydratedTrustLevel.isVerified.not() -> {
+                        log.debug { "create new dehydrate device because current one is untrusted" }
+                        tryDehydrateDevice(dehydratedDeviceSecret)
+                    }
+
+                    encodedDehydratedDeviceSecrets.size == 2 -> {
+                        val previousEncodedDehydratedDeviceSecret = encodedDehydratedDeviceSecrets[1]
+                        if (previousEncodedDehydratedDeviceSecret == null) {
+                            log.debug { "rehydrate device because verification or bootstrap finished" }
+                            tryRehydrateDevice(dehydratedDeviceSecret)
+                        }
+                        log.debug { "dehydrate device because secret has changed locally" }
+                        tryDehydrateDevice(dehydratedDeviceSecret)
+                    }
+
+                    else -> {
+                        log.debug { "skip device dehydration, because no action needed" }
+                    }
+                }
             }
     }
 

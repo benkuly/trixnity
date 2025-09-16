@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.ClientOlmStore
+import net.folivo.trixnity.client.mocks.KeyServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
@@ -95,6 +96,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         userInfo = userInfo,
         json = json,
         olmStore = olmStore,
+        keyService = KeyServiceMock(),
         signService = signServiceMock,
         clock = clock,
         config = matrixClientConfiguration,
