@@ -2,10 +2,12 @@ package net.folivo.trixnity.core.util
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.Parameters
+import io.ktor.http.URLParserException
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
 import io.ktor.http.parametersOf
 import io.ktor.http.parseQueryString
+import io.ktor.http.parseUrl
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -98,8 +100,14 @@ sealed interface Reference {
             }
         }
 
+        private fun parseUri(href: String): Url? = try {
+            Url(href)
+        } catch (_: URLParserException) {
+            null
+        }
+
         fun parseLink(href: String): Reference? {
-            val url = Url(href)
+            val url = parseUri(href) ?: return null
             if (url.protocol == matrixProtocol) {
                 return parseMatrixProtocolLink(url.segments, url.parameters)
             }
