@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Retry rehydrate or dehydrate device on network issues
+- Dehydrate device on second bootstrap
+- Dehydrate device when missing or untrusted
+
 ### Deprecated
 
 ### Removed
