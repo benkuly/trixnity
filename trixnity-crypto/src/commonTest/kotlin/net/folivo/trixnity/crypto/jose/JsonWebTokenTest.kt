@@ -58,7 +58,7 @@ class JsonWebTokenTest {
         )
         assertEquals(TokenAlgorithm.RS256, jsonWebToken.header.algorithm, "Token algorithm should be 'RS256'")
         assertNotEquals(null, jsonWebToken.signature, "Signature should be present")
-        assertTrue(jsonWebToken.verifySignature(rsaPublicKey.toX509PublicKey()), "Signature should be valid")
+        assertTrue(jsonWebToken.verifySignature(rsaPublicKey), "Signature should be valid")
     }
 
 }

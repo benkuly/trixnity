@@ -34,8 +34,9 @@ import platform.Security.kSecAttrKeyTypeRSA
 import platform.Security.kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA256
 import platform.posix.memcpy
 
-actual suspend fun signSha256WithRSA(key: ByteArray, data: ByteArray): ByteArray = memScoped {
-    val key = key.usePinned { pinned ->
+actual suspend fun signSha256WithRSA(key: String, data: ByteArray): ByteArray = memScoped {
+    val rawKey = key.encodeToByteArray()
+    val key = rawKey.usePinned { pinned ->
         val cfData = CFDataCreate(kCFAllocatorDefault, pinned.addressOf(0).reinterpret(), key.size.convert())
             ?: error("Unable to create data object for key")
         val dictionary = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, null, null)
@@ -68,8 +69,9 @@ actual suspend fun signSha256WithRSA(key: ByteArray, data: ByteArray): ByteArray
     return buffer
 }
 
-actual suspend fun verifySha256WithRSA(key: ByteArray, payload: ByteArray, signature: ByteArray): Boolean {
-    val key = key.usePinned { pinned ->
+actual suspend fun verifySha256WithRSA(key: String, payload: ByteArray, signature: ByteArray): Boolean {
+    val rawKey = key.encodeToByteArray()
+    val key = rawKey.usePinned { pinned ->
         val cfData = CFDataCreate(kCFAllocatorDefault, pinned.addressOf(0).reinterpret(), key.size.convert())
             ?: error("Unable to create data object for key")
         val dictionary = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, null, null)

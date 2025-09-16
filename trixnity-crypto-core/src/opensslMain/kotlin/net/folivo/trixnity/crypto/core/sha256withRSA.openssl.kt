@@ -22,21 +22,22 @@ import org.openssl.PEM_read_bio_PUBKEY
 import org.openssl.PEM_read_bio_PrivateKey
 import platform.posix.size_tVar
 
-actual suspend fun signSha256WithRSA(key: ByteArray, data: ByteArray): ByteArray = memScoped {
-    val bio = BIO_new_mem_buf(key.refTo(0), key.size) ?: error("Unable to create I/O object for key")
+actual suspend fun signSha256WithRSA(key: String, data: ByteArray): ByteArray = memScoped {
+    val rawKey = key.encodeToByteArray()
+    val bio = BIO_new_mem_buf(rawKey.refTo(0), rawKey.size) ?: error("Unable to create I/O object for key")
     val pkey = PEM_read_bio_PrivateKey(bio, null, null, null) ?: error("Unable to create private key")
     BIO_free(bio)
 
     // Initialize signer
     val digestContext = EVP_MD_CTX_new() ?: error("Unable to initialize signer")
-    if (EVP_DigestSignInit(digestContext, null, EVP_sha256(), null, pkey) != 0) {
+    if (EVP_DigestSignInit(digestContext, null, EVP_sha256(), null, pkey) != 1) {
         EVP_MD_CTX_free(digestContext)
         EVP_PKEY_free(pkey)
         error("Unable to initializer signer (SHA256 with RSA)")
     }
 
     // Insert payload into signer
-    if (EVP_DigestSignUpdate(digestContext, data.refTo(0), data.size.convert()) != 0) {
+    if (EVP_DigestSignUpdate(digestContext, data.refTo(0), data.size.convert()) != 1) {
         EVP_MD_CTX_free(digestContext)
         EVP_PKEY_free(pkey)
         error("Unable to sign data")
@@ -55,21 +56,22 @@ actual suspend fun signSha256WithRSA(key: ByteArray, data: ByteArray): ByteArray
     return signature.toByteArray()
 }
 
-actual suspend fun verifySha256WithRSA(key: ByteArray, payload: ByteArray, signature: ByteArray): Boolean {
-    val bio = BIO_new_mem_buf(key.refTo(0), key.size) ?: error("Unable to create I/O object for key")
+actual suspend fun verifySha256WithRSA(key: String, payload: ByteArray, signature: ByteArray): Boolean {
+    val rawKey = key.encodeToByteArray()
+    val bio = BIO_new_mem_buf(rawKey.refTo(0), rawKey.size) ?: error("Unable to create I/O object for key")
     val pkey = PEM_read_bio_PUBKEY(bio, null, null, null) ?: error("Unable to create private key")
     BIO_free(bio)
 
     // Initialize verifier
     val digestContext = EVP_MD_CTX_new() ?: error("Unable to initialize signer")
-    if (EVP_DigestVerifyInit(digestContext, null, EVP_sha256(), null, pkey) != 0) {
+    if (EVP_DigestVerifyInit(digestContext, null, EVP_sha256(), null, pkey) != 1) {
         EVP_MD_CTX_free(digestContext)
         EVP_PKEY_free(pkey)
-        error("Unable to initializer signer (SHA256 with RSA)")
+        error("Unable to initialize signer")
     }
 
     // Insert payload into verifier
-    if (EVP_DigestVerifyUpdate(digestContext, payload.refTo(0), payload.size.convert()) != 0) {
+    if (EVP_DigestVerifyUpdate(digestContext, payload.refTo(0), payload.size.convert()) != 1) {
         EVP_MD_CTX_free(digestContext)
         EVP_PKEY_free(pkey)
         error("Unable to sign data")

@@ -38,7 +38,7 @@ object JsonWebTokenSerializer : KSerializer<JsonWebToken> {
 @Serializable(with = JsonWebTokenSerializer::class)
 data class JsonWebToken(val header: TokenHeader, val payload: JsonObject, val signature: ByteArray?) {
 
-    suspend fun verifySignature(publicKey: ByteArray): Boolean =
+    suspend fun verifySignature(publicKey: String): Boolean =
         header.algorithm.verify(publicKey, "${headerString()}.${payloadString()}".encodeToByteArray(), signature)
 
     private fun headerString(): String = base64.encode(json.encodeToString(header).encodeToByteArray())
