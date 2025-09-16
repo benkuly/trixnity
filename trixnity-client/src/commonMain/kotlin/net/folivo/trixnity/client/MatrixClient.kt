@@ -484,6 +484,12 @@ suspend fun MatrixClient.Companion.loginWith(
     mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     coroutineContext: CoroutineContext = Dispatchers.Default,
+    authProvider: (LoginInfo) -> MatrixAuthProvider = {
+        MatrixAuthProvider.classicInMemory(
+            accessToken = it.accessToken,
+            refreshToken = it.refreshToken
+        )
+    },
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
@@ -499,10 +505,7 @@ suspend fun MatrixClient.Companion.loginWith(
 
     val (displayName, avatarUrl) = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
-        authProvider = MatrixAuthProvider.classicInMemory(
-            accessToken = loginInfo.accessToken,
-            refreshToken = loginInfo.refreshToken
-        ),
+        authProvider = authProvider(loginInfo),
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
         coroutineContext = finalCoroutineContext,
