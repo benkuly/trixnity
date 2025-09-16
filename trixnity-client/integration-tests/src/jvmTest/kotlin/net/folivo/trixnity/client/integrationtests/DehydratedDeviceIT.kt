@@ -6,10 +6,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import net.folivo.trixnity.client.key
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
@@ -19,8 +16,8 @@ import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.SelfVerificationMethod
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
 import net.folivo.trixnity.clientserverapi.client.UIA
-import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
+import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType.User
+import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest.Password
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
@@ -79,16 +76,27 @@ class DehydratedDeviceIT {
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
 
-            val bootstrap = startedClient2.client.key.bootstrapCrossSigning()
-            withClue("bootstrap client2") {
+            val firstDehydratedDeviceId = withClue("bootstrap client2 first time") {
+                val bootstrap = startedClient2.client.key.bootstrapCrossSigning()
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
+                startedClient2.client.key.getDeviceKeys(startedClient2.client.userId).map { deviceKeys ->
+                    deviceKeys?.find { it.dehydrated == true }
+                }.filterNotNull().first().deviceId
+            }
+            val recoveryKey = withClue("bootstrap client2 second time") {
+                val bootstrap = startedClient2.client.key.bootstrapCrossSigning()
+                bootstrap.result.getOrThrow()
+                    .shouldBeInstanceOf<UIA.Step<Unit>>()
+                    .authenticate(Password(User("user2"), startedClient1.password)).getOrThrow()
+                    .shouldBeInstanceOf<UIA.Success<Unit>>()
+                startedClient2.client.key.getDeviceKeys(startedClient2.client.userId).map { deviceKeys ->
+                    deviceKeys?.find { it.dehydrated == true }
+                }.filterNotNull().first { it.deviceId != firstDehydratedDeviceId }
+                bootstrap.recoveryKey
             }
             startedClient2.client.room.getById(roomId).filterNotNull().firstWithTimeout()
             startedClient2.client.api.room.joinRoom(roomId)
-            startedClient2.client.key.getDeviceKeys(startedClient2.client.userId).firstWithTimeout { deviceKeys ->
-                deviceKeys?.any { it.dehydrated == true } == true
-            }
             startedClient2.client.logout()
             startedClient2.client.closeSuspending()
 
@@ -112,7 +120,7 @@ class DehydratedDeviceIT {
                         .firstWithTimeout().methods
                 client3VerificationMethods.filterIsInstance<SelfVerificationMethod.AesHmacSha2RecoveryKey>()
                     .first()
-                    .verify(bootstrap.recoveryKey).getOrThrow()
+                    .verify(recoveryKey).getOrThrow()
             }
             val foundContent = startedClient3.client.room.getTimelineEvent(roomId, eventId)
                 .map { it?.content?.getOrNull() }.filterNotNull()
@@ -160,12 +168,7 @@ class DehydratedDeviceIT {
             withClue("bootstrap client3") {
                 val step1 = bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Step<Unit>>()
-                step1.authenticate(
-                    AuthenticationRequest.Password(
-                        IdentifierType.User("user2"),
-                        startedClient3.password
-                    )
-                )
+                step1.authenticate(Password(User("user2"), startedClient3.password))
                     .getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
