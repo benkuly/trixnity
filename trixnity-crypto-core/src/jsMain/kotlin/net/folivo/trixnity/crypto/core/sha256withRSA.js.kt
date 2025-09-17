@@ -3,9 +3,7 @@ package net.folivo.trixnity.crypto.core
 import js.typedarrays.Uint8Array
 import js.typedarrays.asInt8Array
 import js.typedarrays.toByteArray
-import js.typedarrays.toInt8Array
 import js.typedarrays.toUint8Array
-import web.crypto.Algorithm
 import web.crypto.CryptoKey
 import web.crypto.KeyFormat
 import web.crypto.KeyUsage
@@ -17,42 +15,41 @@ import web.crypto.pkcs8
 import web.crypto.sign
 import web.crypto.spki
 import web.crypto.verify
+import kotlin.io.encoding.Base64
 
-private suspend fun importPrivateKey(
+private suspend fun importKey(
     subtleCrypto: SubtleCrypto,
     params: RsaHashedImportParams,
-    pkcs8: String
-): CryptoKey = subtleCrypto.importKey(
-    format = KeyFormat.pkcs8,
-    keyData = pkcs8.encodeToByteArray().toInt8Array(),
-    algorithm = params,
-    extractable = true,
-    keyUsages = arrayOf(KeyUsage.sign)
-)
+    data: String,
+    format: KeyFormat,
+    keyUsages: Array<KeyUsage>
+): CryptoKey {
+    fun String.toX509PublicKey(): ByteArray = Base64.decode(
+        replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+            .replace("\\s".toRegex(), "")
+    )
 
-private suspend fun importPublicKey(
-    subtleCrypto: SubtleCrypto,
-    params: RsaHashedImportParams,
-    spki: String
-): CryptoKey = subtleCrypto.importKey(
-    format = KeyFormat.spki,
-    keyData = spki.encodeToByteArray().toInt8Array(),
-    algorithm = params,
-    extractable = true,
-    keyUsages = arrayOf(KeyUsage.verify)
-)
+    return subtleCrypto.importKey(
+        format = format,
+        keyData = data.toX509PublicKey().toUint8Array(),
+        algorithm = params,
+        extractable = true,
+        keyUsages = keyUsages
+    )
+}
 
 actual suspend fun signSha256WithRSA(key: String, data: ByteArray): ByteArray {
     val subtleCrypto = crypto.subtle
     val params = RsaHashedImportParams(name = "RSASSA-PKCS1-v1_5", hash = "SHA-256")
-    val privateKey = importPrivateKey(subtleCrypto, params, key)
+    val privateKey = importKey(subtleCrypto, params, key, KeyFormat.pkcs8, arrayOf(KeyUsage.sign))
     return Uint8Array(subtleCrypto.sign(algorithm = params, key = privateKey, data = data.asInt8Array())).toByteArray()
 }
 
 actual suspend fun verifySha256WithRSA(key: String, payload: ByteArray, signature: ByteArray): Boolean {
     val subtleCrypto = crypto.subtle
     val params = RsaHashedImportParams(name = "RSASSA-PKCS1-v1_5", hash = "SHA-256")
-    val publicKey = importPublicKey(subtleCrypto, params, key)
+    val publicKey = importKey(subtleCrypto, params, key, KeyFormat.spki, arrayOf(KeyUsage.verify))
     return subtleCrypto.verify(
         algorithm = params,
         key = publicKey,
