@@ -1,6 +1,7 @@
 package net.folivo.trixnity.client.notification
 
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.client.ClockMock
@@ -452,7 +453,7 @@ class EventsToNotificationUpdatesTest : TrixnityBaseTest() {
 
     @Test
     fun `message event - replace message - no event found - ignore`() = runTest {
-        roomServiceMock.returnGetTimelineEvent = flowOf(null)
+        roomServiceMock.returnGetTimelineEvent = MutableStateFlow(null)
         evaluatePushRules.result.addAll(listOf(null))
         cut.invoke(
             roomId = roomId,
