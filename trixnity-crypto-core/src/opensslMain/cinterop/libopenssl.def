@@ -3,8 +3,7 @@ headers = openssl/evp.h \
           openssl/err.h \
           openssl/encoder.h \
           openssl/decoder.h \
-          openssl/ec.h \
-          openssl/pem.h
+          openssl/ec.h
 noStringConversion = OSSL_PARAM_construct_double \
                      OSSL_PARAM_construct_int \
                      OSSL_PARAM_construct_int32 \

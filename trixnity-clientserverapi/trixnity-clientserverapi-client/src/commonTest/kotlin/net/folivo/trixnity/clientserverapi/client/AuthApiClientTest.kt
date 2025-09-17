@@ -21,6 +21,7 @@ import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.TokenEndp
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.ApplicationType
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.LocalizedField
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientRegistrationResponse
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
@@ -116,14 +117,24 @@ class AuthApiClientTest : TrixnityBaseTest() {
 
         val clientMetadata = OAuth2ClientMetadata(
             applicationType = ApplicationType.WEB,
-            clientUri = Url("https://client.example.com"),
-            redirectUris = listOf(Url("https://localhost:8080/redirect")),
+            clientUri = "https://client.example.com",
+            redirectUris = listOf("https://localhost:8080/redirect"),
             grantTypes = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode),
             responseTypes = listOf(ResponseType.Code),
             tokenEndpointAuthMethod = TokenEndpointAuthMethod.None,
             clientName = LocalizedField.defaultOnly("Trixnity")
         )
-        val clientMetadataResponse = clientMetadata.copy(clientId = "Test")
+
+        val sampleResponse = OAuth2ClientRegistrationResponse(
+            applicationType = ApplicationType.WEB,
+            clientUri = "https://client.example.com",
+            redirectUris = listOf("https://localhost:8080/redirect"),
+            grantTypes = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode),
+            responseTypes = listOf(ResponseType.Code),
+            tokenEndpointAuthMethod = TokenEndpointAuthMethod.None,
+            clientName = LocalizedField.defaultOnly("Trixnity"),
+            clientId = "Test"
+        )
 
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
@@ -145,7 +156,7 @@ class AuthApiClientTest : TrixnityBaseTest() {
                     assertEquals(HttpMethod.Post, request.method)
 
                     respond(
-                        Json.encodeToString(clientMetadataResponse),
+                        Json.encodeToString(sampleResponse),
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )
@@ -153,8 +164,7 @@ class AuthApiClientTest : TrixnityBaseTest() {
             }
         )
 
-        matrixRestClient.authentication.registerOAuth2Client(clientMetadata)
-            .getOrThrow() shouldBe clientMetadataResponse
+        matrixRestClient.authentication.registerOAuth2Client(clientMetadata).getOrThrow() shouldBe sampleResponse
     }
 
     @Test

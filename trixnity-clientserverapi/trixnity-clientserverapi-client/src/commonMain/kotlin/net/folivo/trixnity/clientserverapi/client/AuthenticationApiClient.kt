@@ -5,17 +5,15 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
-import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientRegistrationResponse
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
 import net.folivo.trixnity.core.AuthRequired
 
@@ -101,7 +99,7 @@ interface AuthenticationApiClient {
      *
      * @see [OAuth2ProviderMetadata]
      */
-    suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientMetadata>
+    suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientRegistrationResponse>
 
     suspend fun getOAuth2Token(
         code: String,
@@ -235,7 +233,7 @@ class AuthenticationApiClientImpl(
 ) : AuthenticationApiClient {
     private val oauth2ProviderMetadata by lazy {
         coroutineScope.async {
-            baseClient.request(GetOAuth2ProviderMetadata)
+            baseClient.request(GetOAuth2ProviderMetadata) // TODO: Request unstable endpoint and v1
         }
     }
 
@@ -330,7 +328,7 @@ class AuthenticationApiClientImpl(
             }
         )
 
-    override suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientMetadata> =
+    override suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientRegistrationResponse> =
         oauth2Request({ providerMetadata -> providerMetadata.registrationEndpoint }) {
             header("Content-Type", ContentType.Application.Json.toString())
             setBody(metadata)

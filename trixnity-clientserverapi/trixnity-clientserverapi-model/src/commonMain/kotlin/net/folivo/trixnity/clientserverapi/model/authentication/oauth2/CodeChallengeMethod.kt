@@ -14,8 +14,8 @@ object CodeChallengeMethodSerializer : KSerializer<CodeChallengeMethod> {
     override val descriptor: SerialDescriptor = buildSerialDescriptor("CodeChallengeMethod", SerialKind.ENUM)
 
     override fun deserialize(decoder: Decoder): CodeChallengeMethod =
-        when (val value = decoder.decodeString().lowercase()) {
-            "s256" -> CodeChallengeMethod.S256
+        when (val value = decoder.decodeString()) {
+            "S256" -> CodeChallengeMethod.S256
             else -> CodeChallengeMethod.Unknown(value)
         }
 
@@ -26,7 +26,7 @@ object CodeChallengeMethodSerializer : KSerializer<CodeChallengeMethod> {
 @Serializable(with = CodeChallengeMethodSerializer::class)
 sealed interface CodeChallengeMethod {
     object S256 : CodeChallengeMethod {
-        override fun toString(): String = "s256"
+        override fun toString(): String = "S256"
     }
 
     data class Unknown(private val value: String) : CodeChallengeMethod {
