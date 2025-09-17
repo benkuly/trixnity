@@ -14,6 +14,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.EventHandler
@@ -71,11 +72,17 @@ interface MatrixClient : AutoCloseable {
         LOCKED,
     }
 
+    /**
+     * If providerMetadata AND client ID is not null, this Login info is being handled as a login with the OAuth 2.0
+     * login API which is available since Matrix v1.15. For compatibility, these fields is set null by default.
+     */
     data class LoginInfo(
         val userId: UserId,
         val deviceId: String,
         val accessToken: String,
         val refreshToken: String?,
+        val providerMetadata: OAuth2ProviderMetadata? = null,
+        val oauth2ClientId: String? = null
     )
 
     data class SoftLoginInfo(
@@ -484,12 +491,6 @@ suspend fun MatrixClient.Companion.loginWith(
     mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     coroutineContext: CoroutineContext = Dispatchers.Default,
-    authProvider: (LoginInfo) -> MatrixAuthProvider = {
-        MatrixAuthProvider.classicInMemory(
-            accessToken = it.accessToken,
-            refreshToken = it.refreshToken
-        )
-    },
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
@@ -505,7 +506,15 @@ suspend fun MatrixClient.Companion.loginWith(
 
     val (displayName, avatarUrl) = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
-        authProvider = authProvider(loginInfo),
+        authProvider = when (loginInfo.providerMetadata != null && loginInfo.oauth2ClientId != null) {
+            false -> MatrixAuthProvider.classicInMemory(loginInfo.accessToken, loginInfo.refreshToken)
+            true -> MatrixAuthProvider.oauth2InMemory(
+                loginInfo.accessToken,
+                loginInfo.refreshToken,
+                loginInfo.providerMetadata,
+                loginInfo.oauth2ClientId
+            )
+        },
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
         coroutineContext = finalCoroutineContext,

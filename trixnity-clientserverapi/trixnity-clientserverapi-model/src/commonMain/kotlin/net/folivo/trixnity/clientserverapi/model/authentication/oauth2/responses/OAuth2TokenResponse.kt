@@ -25,3 +25,10 @@ data class OAuth2TokenResponse(
     @SerialName("refresh_token") val refreshToken: String? = null,
     @Serializable(with = ScopeListSerializer::class) val scope: List<String>? = null,
 )
+
+fun OAuth2TokenResponse.getDeviceId(): String? = scope?.filter {
+    it.startsWith("urn:matrix:org.matrix.msc2967.client:device:") || it.startsWith("urn:matrix:client:device/")
+}?.map {
+    val split = it.split(":")
+    split[split.size - 1]
+}?.firstOrNull()

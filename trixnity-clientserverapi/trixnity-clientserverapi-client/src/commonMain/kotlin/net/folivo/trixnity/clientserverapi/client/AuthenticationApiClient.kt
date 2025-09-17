@@ -2,6 +2,7 @@ package net.folivo.trixnity.clientserverapi.client
 
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.accept
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -10,6 +11,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import net.folivo.trixnity.clientserverapi.model.authentication.*
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
@@ -103,7 +105,7 @@ interface AuthenticationApiClient {
 
     suspend fun getOAuth2Token(
         code: String,
-        redirectUrl: Url,
+        redirectUrl: String,
         clientId: String,
         codeVerifier: String
     ): Result<OAuth2TokenResponse>
@@ -304,7 +306,7 @@ class AuthenticationApiClientImpl(
         baseClient.request(GetLoginTypes).mapCatching { it.flows }
 
     override suspend fun getOAuth2ProviderMetadata(): Result<OAuth2ProviderMetadata> =
-        oauth2ProviderMetadata.await()
+        oauth2ProviderMetadata.await() // TODO: Add timeout
 
     private suspend inline fun <reified O> oauth2Request(
         urlFactory: (OAuth2ProviderMetadata) -> Url,
@@ -336,14 +338,22 @@ class AuthenticationApiClientImpl(
 
     override suspend fun getOAuth2Token(
         code: String,
-        redirectUrl: Url,
+        redirectUrl: String,
         clientId: String,
         codeVerifier: String
     ): Result<OAuth2TokenResponse> = oauth2Request({ providerMetadata -> providerMetadata.tokenEndpoint }) {
-        parameter("code", code)
-        parameter("redirect_uri", redirectUrl)
-        parameter("client_id", clientId)
-        parameter("code_verifier", codeVerifier)
+        contentType(ContentType.Application.FormUrlEncoded)
+        accept(ContentType.Application.Json)
+
+        setBody(
+            Parameters.build {
+                append("grant_type", GrantType.AuthorizationCode.toString())
+                append("code", code)
+                append("redirect_uri", redirectUrl)
+                append("client_id", clientId)
+                append("code_verifier", codeVerifier)
+            }.formUrlEncode()
+        )
     }
 
     @Deprecated("use login with separated password and token")
