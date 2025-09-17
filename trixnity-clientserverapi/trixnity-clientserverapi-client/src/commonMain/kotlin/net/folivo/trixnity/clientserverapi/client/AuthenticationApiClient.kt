@@ -4,18 +4,19 @@ import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.header
-import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import net.folivo.trixnity.api.client.disableMatrixErrorHandling
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientRegistrationResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorException
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
 import net.folivo.trixnity.core.AuthRequired
 
@@ -316,11 +317,12 @@ class AuthenticationApiClientImpl(
             onSuccess = { providerMetadata ->
                 val response = baseClient.baseClient.post(urlFactory(providerMetadata)) {
                     attributes.put(AuthRequired.attributeKey, AuthRequired.NO)
+                    attributes.put(disableMatrixErrorHandling, true)
                     block()
                 }
 
                 if (!response.status.isSuccess()) {
-                    TODO("Throw error")
+                    return@fold Result.failure(response.body<OAuth2ErrorException>())
                 }
 
                 Result.success(response.body<O>())

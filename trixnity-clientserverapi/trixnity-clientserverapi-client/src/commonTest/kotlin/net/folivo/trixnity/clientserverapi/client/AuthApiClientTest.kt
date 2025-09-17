@@ -1,12 +1,11 @@
 package net.folivo.trixnity.clientserverapi.client
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.*
-import io.ktor.client.request.request
 import io.ktor.http.*
 import io.ktor.http.ContentType.*
-import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.clientserverapi.model.authentication.*
@@ -22,14 +21,15 @@ import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.Ap
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.LocalizedField
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientRegistrationResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorException
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorType
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
-import okio.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.fail
 
 class AuthApiClientTest : TrixnityBaseTest() {
 
@@ -101,7 +101,7 @@ class AuthApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldRegisterOAuth2Client() = runTest {
+    fun `OAuth 2 - should correctly register client with metadata`() = runTest {
         val exampleProviderMetadata = OAuth2ProviderMetadata(
             issuer = Url("https://auth.matrix.host"),
             authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
@@ -168,7 +168,113 @@ class AuthApiClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldGetOAuth2ProviderMetadata() = runTest {
+    fun `OAuth 2 - should request access and refresh token`() = runTest {
+        val exampleProviderMetadata = OAuth2ProviderMetadata(
+            issuer = Url("https://auth.matrix.host"),
+            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
+            responseTypesSupported = listOf(ResponseType.Code),
+            responseModesSupported = listOf(ResponseMode.Query),
+            promptValuesSupported = listOf(PromptValue.Consent),
+            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+        )
+
+        val tokenResponse = OAuth2TokenResponse(
+            accessToken = "ABC",
+            tokenType = "Bearer",
+            expiresIn = 1000,
+            refreshToken = "ABCD",
+            scope = listOf("A", "B")
+        )
+
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            coroutineContext = backgroundScope.coroutineContext,
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v1/auth_metadata", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+
+                    respond(
+                        Json.encodeToString(exampleProviderMetadata),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+
+                addHandler { request ->
+                    assertEquals("/_oauth2/token", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+
+                    respond(
+                        Json.encodeToString(tokenResponse),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        )
+
+        matrixRestClient.authentication.getOAuth2Token("A", "http://127.0.0.1", "test", "test")
+            .getOrThrow() shouldBe tokenResponse
+    }
+
+    @Test
+    fun `OAuth 2 - should correctly serialize OAuth2 error type`() = runTest {
+        val exampleProviderMetadata = OAuth2ProviderMetadata(
+            issuer = Url("https://auth.matrix.host"),
+            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
+            responseTypesSupported = listOf(ResponseType.Code),
+            responseModesSupported = listOf(ResponseMode.Query),
+            promptValuesSupported = listOf(PromptValue.Consent),
+            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+        )
+
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            coroutineContext = backgroundScope.coroutineContext,
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals("/_matrix/client/v1/auth_metadata", request.url.fullPath)
+                    assertEquals(HttpMethod.Get, request.method)
+
+                    respond(
+                        Json.encodeToString(exampleProviderMetadata),
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+
+                addHandler { request ->
+                    assertEquals("/_oauth2/token", request.url.fullPath)
+                    assertEquals(HttpMethod.Post, request.method)
+
+                    respond(
+                        Json.encodeToString(
+                            OAuth2ErrorException(
+                                error = OAuth2ErrorType.ServerError,
+                                description = "This is a server error"
+                            )
+                        ),
+                        HttpStatusCode.InternalServerError,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            }
+        )
+
+        matrixRestClient.authentication.getOAuth2Token("", "", "", "").exceptionOrNull() shouldNotBe null
+    }
+
+    @Test
+    fun `OAuth 2 - should successfully serialize OAuth2 provider metadata`() = runTest {
         val exampleProviderMetadata = OAuth2ProviderMetadata(
             issuer = Url("https://auth.matrix.host"),
             authorizationEndpoint = Url("https://auth.matrix.host/authorize"),

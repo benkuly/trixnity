@@ -18,10 +18,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.CodeChallengeMethod
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.PromptValue
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseMode
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationType
 import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
@@ -254,7 +261,97 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun itShouldRefreshToken() = runTest {
+    fun `OAuth 2 - should refresh token`() = runTest {
+        val exampleProviderMetadata = OAuth2ProviderMetadata(
+            issuer = Url("https://auth.matrix.host"),
+            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
+            responseTypesSupported = listOf(ResponseType.Code),
+            responseModesSupported = listOf(ResponseMode.Query),
+            promptValuesSupported = listOf(PromptValue.Consent),
+            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+        )
+
+        var refreshCalled = false
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.oauth2InMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh_token",
+                providerMetadata = exampleProviderMetadata,
+                clientId = "this_is_a_client_id",
+                onLogout = { onLogout = it }
+            ),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v1/auth_metadata" -> respond(
+                            Json.encodeToString(exampleProviderMetadata),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+                        "/_oauth2/token" -> {
+                            refreshCalled = true
+                            respond(
+                                """
+                                    {
+                                        "access_token": "access",
+                                        "token_type": "Bearer",
+                                        "expires_in_ms": 60000,
+                                        "refresh_token": "refresh2"
+                                    }
+                                """,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            httpClientConfig = {
+                install(SaveBodyPlugin) {
+                    disabled = true
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe PostPath.Response("ok")
+        refreshCalled shouldBe true
+        onLogout shouldBe null
+    }
+
+    @Test
+    fun `Lagacy - should refresh token`() = runTest {
         var refreshCalled = false
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
@@ -327,7 +424,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun itShouldRefreshTokenAndLogout() = runTest {
+    fun `Lagacy - should refresh token and logout`() = runTest {
         var refreshCalled = false
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
@@ -401,7 +498,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun itShouldRefreshTokenAndNotLogout() = runTest {
+    fun `Lagacy - should refresh token and not logout`() = runTest {
         var refreshCalled = false
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
@@ -465,7 +562,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun itShouldRefreshTokenWithOldRefreshToken() = runTest {
+    fun `Lagacy - should refresh token with old refresh token`() = runTest {
         var refreshCalled = 0
         var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
@@ -577,7 +674,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun itShouldRefreshTokenWithParallelRequests() = runTest {
+    fun `Legacy - should refresh token with parallel requests`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
         var onLogout: LogoutInfo? = null
@@ -665,7 +762,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun itShouldRefreshTokenWithParallelRequestsAndRethrowExceptions() = runTest {
+    fun `Legacy - should refresh token with parallel requests and rethrow exceptions`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
         var onLogout: LogoutInfo? = null
@@ -743,7 +840,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun itShouldRefreshTokenWithParallelRequestsAndHandleRequestAbort() = runTest {
+    fun `Legacy - should refresh token with parallel requests and handle request abort`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
         var onLogout: LogoutInfo? = null

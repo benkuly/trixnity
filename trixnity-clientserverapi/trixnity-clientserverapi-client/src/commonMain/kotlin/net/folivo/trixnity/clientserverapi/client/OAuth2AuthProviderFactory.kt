@@ -27,7 +27,7 @@ import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.decodeErrorResponse
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorException
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.OAuth2MatrixAuthProvider")
@@ -153,8 +153,7 @@ class OAuth2AuthProvider(
                 }
 
                 if (refreshResponse.status != HttpStatusCode.OK) {
-                    val errorResponse = refreshResponse.body<OAuth2ErrorResponse>()
-                    // TODO: Throw exception
+                    throw refreshResponse.body<OAuth2ErrorException>()
                 }
 
                 val response = refreshResponse.body<OAuth2TokenResponse>()
