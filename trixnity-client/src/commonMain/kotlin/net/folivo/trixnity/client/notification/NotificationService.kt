@@ -218,7 +218,7 @@ class NotificationServiceImpl(
 
     override fun getById(id: String): Flow<Notification2?> = notificationStore.getById(id).toNotification()
 
-    private val processedNotifications =
+    private val allNotifications =
         notificationStore.getAll().flattenValues()
             .shareIn(
                 coroutineScope,
@@ -227,10 +227,10 @@ class NotificationServiceImpl(
             )
 
     override fun getCount(): Flow<Int> =
-        processedNotifications.map { notifications -> notifications.size }
+        allNotifications.map { notifications -> notifications.size }
 
     override fun getCount(roomId: RoomId): Flow<Int> =
-        processedNotifications.map { notifications -> notifications.count { it.roomId == roomId } }
+        allNotifications.map { notifications -> notifications.count { it.roomId == roomId } }
 
     override suspend fun dismiss(id: String) {
         notificationStore.update(id) { notification ->
