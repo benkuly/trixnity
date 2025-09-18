@@ -38,7 +38,7 @@ class EvaluatePushRulesImpl(
             log.trace { "no rule found for event ${event.idOrNull}" }
         }
         if (rule?.actions?.contains(PushAction.Notify) != true) return null
-        log.debug { "notify for event ${event.idOrNull} (content=${event.content::class}, rule=$rule)" }
+        log.debug { "notify for event ${event.idOrNull} (content=${event.content::class.simpleName}, rule=$rule)" }
         return rule.actions
     }
 }
