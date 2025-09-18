@@ -7,8 +7,10 @@ import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -183,8 +185,12 @@ class KeyServiceTest : TrixnityBaseTest() {
     @Test
     fun `bootstrapCrossSigning » successfull » bootstrap`() = runTest {
         backgroundScope.launch {
-            keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
-            keyStore.updateOutdatedKeys { setOf() }
+            while (currentCoroutineContext().isActive) {
+                keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
+                keyStore.updateOutdatedKeys { setOf() }
+            }
+        }
+        backgroundScope.launch {
             keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
             keyStore.updateDeviceKeys(alice) {
                 mapOf(
@@ -229,8 +235,12 @@ class KeyServiceTest : TrixnityBaseTest() {
     @Test
     fun `bootstrapCrossSigning » successfull » bootstrap from passphrase`() = runTest {
         backgroundScope.launch {
-            keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
-            keyStore.updateOutdatedKeys { setOf() }
+            while (currentCoroutineContext().isActive) {
+                keyStore.getOutdatedKeysFlow().first { it.contains(alice) }
+                keyStore.updateOutdatedKeys { setOf() }
+            }
+        }
+        backgroundScope.launch {
             keyTrustServiceMock.trustAndSignKeysCalled.filterNotNull().first()
             keyStore.updateDeviceKeys(alice) {
                 mapOf(

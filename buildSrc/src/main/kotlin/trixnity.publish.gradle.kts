@@ -35,7 +35,7 @@ publishing {
                 name.set(project.name)
                 description.set("Multiplatform Kotlin SDK for matrix-protocol")
                 url.set("https://gitlab.com/trixnity/trixnity")
-                inceptionYear.set("2022")
+                inceptionYear.set("2021")
                 licenses {
                     license {
                         name.set("Apache License 2.0")

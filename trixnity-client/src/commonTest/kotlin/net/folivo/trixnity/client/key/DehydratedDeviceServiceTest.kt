@@ -62,7 +62,6 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     private val aliceDevice = "ALICEDEVICE"
 
     private val signServiceMock = SignServiceMock()
-    private val keyServiceMock = KeyServiceMock()
     private val keyStore = getInMemoryKeyStore()
     private val olmCryptoStore = getInMemoryOlmStore()
     private val olmStore = ClientOlmStore(
@@ -97,6 +96,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         userInfo = userInfo,
         json = json,
         olmStore = olmStore,
+        keyService = KeyServiceMock(),
         signService = signServiceMock,
         clock = clock,
         config = matrixClientConfiguration,

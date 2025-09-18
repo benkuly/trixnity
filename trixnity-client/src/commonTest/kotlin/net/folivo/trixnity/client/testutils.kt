@@ -13,8 +13,10 @@ import net.folivo.trixnity.client.mocks.RepositoryTransactionManagerMock
 import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.client.store.cache.ObservableCacheStatisticCollector
 import net.folivo.trixnity.client.store.repository.*
+import net.folivo.trixnity.clientserverapi.client.MatrixAuthProvider
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncBatchTokenStore
+import net.folivo.trixnity.clientserverapi.client.classicInMemory
 import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
 import net.folivo.trixnity.clientserverapi.model.server.GetVersions
 import net.folivo.trixnity.core.UserInfo
@@ -57,6 +59,7 @@ fun TrixnityBaseTest.mockMatrixClientServerApiClient(
             contentMappings,
             portableConfig = config
         ),
+        authProvider = MatrixAuthProvider.classicInMemory("accessToken"),
         syncBatchTokenStore = syncBatchTokenStore,
         coroutineContext = testScope.backgroundScope.coroutineContext,
     )

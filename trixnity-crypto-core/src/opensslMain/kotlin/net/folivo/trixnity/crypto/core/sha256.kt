@@ -4,40 +4,56 @@ import checkError
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
-import kotlinx.coroutines.flow.*
-import net.folivo.trixnity.utils.ByteArrayFlow
-import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import org.openssl.*
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
-@OptIn(ExperimentalUnsignedTypes::class)
-actual fun ByteArrayFlow.sha256(): Sha256ByteFlow {
-    val hash = MutableStateFlow<String?>(null)
-    return Sha256ByteFlow(
-        flow {
-            val md = EVP_MD_fetch(null, "SHA256", null)
-            val context = checkError(EVP_MD_CTX_new())
-            try {
-                val digestSize = EVP_MD_get_size(md)
-                val digest = ByteArray(digestSize)
+@OptIn(ExperimentalAtomicApi::class)
+private class OpenSslSha256 : Hasher {
 
-                checkError(EVP_DigestInit(context, md))
-                emitAll(
-                    filter { it.isNotEmpty() }.onEach { input ->
-                        input.asUByteArray().usePinned { pinnedInput ->
-                            checkError(EVP_DigestUpdate(context, pinnedInput.addressOf(0), input.size.convert()))
-                        }
-                    }.onCompletion {
-                        digest.asUByteArray().usePinned { pinnedDigest ->
-                            checkError(EVP_DigestFinal(context, pinnedDigest.addressOf(0), null))
-                        }
-                        hash.value = digest.encodeUnpaddedBase64()
-                    }
-                )
-            } finally {
-                EVP_MD_CTX_free(context)
-                EVP_MD_free(md)
-            }
-        },
-        hash
-    )
+    private var closed = false
+    private var ready = false
+
+    private val md = checkError(EVP_MD_fetch(null, "SHA256", null))
+    private val mdSize = EVP_MD_get_size(md)
+    private val context = checkError(EVP_MD_CTX_new())
+
+    override fun update(input: ByteArray) {
+        check(!closed) { "SHA-256 is closed" }
+        if (input.isEmpty()) return
+        ensureReady()
+
+        input.usePinned {
+            checkError(EVP_DigestUpdate(context, it.addressOf(0), input.size.convert()))
+        }
+    }
+
+    override fun digest(): ByteArray {
+        check(!closed) { "SHA-256 is closed" }
+        ensureReady()
+
+        val digest = ByteArray(mdSize)
+        digest.asUByteArray().usePinned {
+            checkError(EVP_DigestFinal_ex(context, it.addressOf(0), null))
+        }
+        ready = false
+
+        return digest
+    }
+
+    private fun ensureReady() {
+        if (ready) return
+
+        checkError(EVP_DigestInit_ex2(context, md, null))
+        ready = true
+    }
+
+    override fun close() {
+        if (closed) return
+        closed = true
+
+        EVP_MD_CTX_free(context)
+        EVP_MD_free(md)
+    }
 }
+
+actual fun Sha256(): Hasher = OpenSslSha256()

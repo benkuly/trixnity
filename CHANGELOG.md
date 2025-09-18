@@ -9,11 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Completely new NotificationService
-
 ### Changed
 
-- Delete read receipts on non-join
+- Completely new NotificationService
 
 ### Deprecated
 
@@ -21,9 +19,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed that FullRepositoryObservableCacheIndex may forget fully loaded state
-
 ### Security
+
+## 4.22.4
+
+### Changed
+
+- Retry rehydrate or dehydrate device on network issues
+- Dehydrate device on second bootstrap
+- Dehydrate device when missing or untrusted
+
+### Fixed
+
+- Fix crash when parsing plain IP to reference
+
+## 4.22.3
+
+### Added
+
+- Added inceptionYear based on LICENSE file and developer name tag for developers in POM to allow Gradle plugins
+  like gradle-license-plugin or aboutLibraries to automatically fetch the correct Copyright information.
+- Add support for non suspend sha256 hashing
+
+### Changed
+
+- Delete read receipts on non-join
+- Use kotlin Unpadded Base64 instead of ktor
+- Don't close DI, because garbage collector can handle it
+
+### Fixed
+
+- Fixed that FullRepositoryObservableCacheIndex may forget fully loaded state
+- One more updateOutdatedKeys in bootstrap to be sure, that keys are present
 
 ## 4.22.2
 
