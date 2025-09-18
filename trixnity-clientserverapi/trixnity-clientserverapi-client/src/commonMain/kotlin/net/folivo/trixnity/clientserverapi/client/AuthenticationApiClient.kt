@@ -1,5 +1,6 @@
 package net.folivo.trixnity.clientserverapi.client
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
@@ -8,17 +9,29 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import net.folivo.trixnity.api.client.disableMatrixErrorHandling
 import net.folivo.trixnity.clientserverapi.model.authentication.*
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.CodeChallengeMethod
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseMode
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseType
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientRegistrationResponse
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorException
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
 import net.folivo.trixnity.core.AuthRequired
+import net.folivo.trixnity.crypto.core.CodeChallenge
+import net.folivo.trixnity.crypto.core.CodeVerifier
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+private val log = KotlinLogging.logger { }
 
 interface AuthenticationApiClient {
     /**
@@ -95,7 +108,7 @@ interface AuthenticationApiClient {
     /**
      * @see [OAuth2ProviderMetadata]
      */
-    suspend fun getOAuth2ProviderMetadata(): Result<OAuth2ProviderMetadata>
+    suspend fun getOAuth2ProviderMetadata(timeout: Duration = 15.seconds): Result<OAuth2ProviderMetadata>
 
     /**
      * @return The id of the registered client
@@ -104,11 +117,14 @@ interface AuthenticationApiClient {
      */
     suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientRegistrationResponse>
 
+    /**
+     * @see [OAuth2TokenResponse]
+     */
     suspend fun getOAuth2Token(
         code: String,
         redirectUrl: String,
         clientId: String,
-        codeVerifier: String
+        codeVerifier: CodeVerifier
     ): Result<OAuth2TokenResponse>
 
     /**
@@ -236,7 +252,18 @@ class AuthenticationApiClientImpl(
 ) : AuthenticationApiClient {
     private val oauth2ProviderMetadata by lazy {
         coroutineScope.async {
-            baseClient.request(GetOAuth2ProviderMetadata) // TODO: Request unstable endpoint and v1
+            log.trace { "Try to request OAuth 2.0 provider metadata from v1 endpoint" }
+            baseClient.request(GetOAuth2ProviderMetadataV1).fold(
+                onSuccess = { Result.success(it) },
+                onFailure = {
+                    // We should request the MSC endpoint as a fallback because the update of some homeservers unrolling
+                    // the v1 endpoint was delivered a few days ago. To prevent issues with servers providing the
+                    // unstable endpoint with the same content, we should also request it if v1 fails. This can be
+                    // removed in the future.
+                    log.trace { "Failed to request v1 OAuth 2.0 provider metadata, request unstable endpoint" }
+                    baseClient.request(GetOAuth2ProviderMetadataUnstable)
+                }
+            )
         }
     }
 
@@ -306,8 +333,15 @@ class AuthenticationApiClientImpl(
     override suspend fun getLoginTypes(): Result<Set<LoginType>> =
         baseClient.request(GetLoginTypes).mapCatching { it.flows }
 
-    override suspend fun getOAuth2ProviderMetadata(): Result<OAuth2ProviderMetadata> =
-        oauth2ProviderMetadata.await() // TODO: Add timeout
+    override suspend fun getOAuth2ProviderMetadata(timeout: Duration): Result<OAuth2ProviderMetadata> =
+        try {
+            withTimeout(timeout) {
+                oauth2ProviderMetadata.await()
+            }
+        } catch (ex: TimeoutCancellationException) {
+            log.trace(ex) { "Request for retrieving OAuth 2.0 metadata timed out!" }
+            Result.failure(ex)
+        }
 
     private suspend inline fun <reified O> oauth2Request(
         urlFactory: (OAuth2ProviderMetadata) -> Url,
@@ -342,7 +376,7 @@ class AuthenticationApiClientImpl(
         code: String,
         redirectUrl: String,
         clientId: String,
-        codeVerifier: String
+        codeVerifier: CodeVerifier
     ): Result<OAuth2TokenResponse> = oauth2Request({ providerMetadata -> providerMetadata.tokenEndpoint }) {
         contentType(ContentType.Application.FormUrlEncoded)
         accept(ContentType.Application.Json)
@@ -353,7 +387,7 @@ class AuthenticationApiClientImpl(
                 append("code", code)
                 append("redirect_uri", redirectUrl)
                 append("client_id", clientId)
-                append("code_verifier", codeVerifier)
+                append("code_verifier", codeVerifier.toString())
             }.formUrlEncode()
         )
     }

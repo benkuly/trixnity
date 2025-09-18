@@ -16,4 +16,13 @@ import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2Pro
 @Auth(AuthRequired.NO)
 @HttpMethod(HttpMethodType.GET)
 @Resource("/_matrix/client/v1/auth_metadata")
-object GetOAuth2ProviderMetadata : MatrixEndpoint<Unit, OAuth2ProviderMetadata>
+object GetOAuth2ProviderMetadataV1 : MatrixEndpoint<Unit, OAuth2ProviderMetadata>
+
+/**
+ * @see <a href="https://github.com/sandhose/matrix-spec-proposals/blob/706f0bb59a9ade3fc32e379388cfca52003986e7/proposals/2965-auth-metadata.md>MSC2965</a>
+ */
+@Serializable
+@Auth(AuthRequired.NO)
+@HttpMethod(HttpMethodType.GET)
+@Resource("/_matrix/client/unstable/org.matrix.msc2965/auth_metadata")
+object GetOAuth2ProviderMetadataUnstable : MatrixEndpoint<Unit, OAuth2ProviderMetadata>
