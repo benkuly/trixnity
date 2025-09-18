@@ -17,6 +17,7 @@ import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.StateEventContent
 import net.folivo.trixnity.core.model.events.m.PushRulesEventContent
+import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
 import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.model.push.toList
@@ -85,10 +86,22 @@ class NotificationEventHandler(
             return
         }
         val allUpdatedRooms = syncEvents.syncResponse.room?.run {
-            join?.keys.orEmpty() +
-                    invite?.keys.orEmpty() +
-                    knock?.keys.orEmpty() +
-                    leave?.keys.orEmpty()
+            join?.filterValues {
+                it.timeline?.events.isNullOrEmpty().not()
+                        || it.state?.events.isNullOrEmpty().not()
+                        || it.ephemeral?.events?.any {
+                    val content = it.content
+                    content is ReceiptEventContent && content.events.any {
+                        it.value.values.any { it.keys.contains(userInfo.userId) }
+                    }
+                } == true
+            }?.keys.orEmpty() +
+                    invite?.filterValues { it.strippedState?.events.isNullOrEmpty().not() }?.keys.orEmpty() +
+                    knock?.filterValues { it.strippedState?.events.isNullOrEmpty().not() }?.keys.orEmpty() +
+                    leave?.filterValues {
+                        it.timeline?.events.isNullOrEmpty().not()
+                                || it.state?.events.isNullOrEmpty().not()
+                    }?.keys.orEmpty()
         }.orEmpty().filterNot { roomId -> pushRulesCache.pushRulesDisabledByRoom.contains(roomId) }
             .toSet()
 
