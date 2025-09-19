@@ -86,7 +86,7 @@ class MatrixClientServerApiClientImpl(
         CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
     override val appservice: AppserviceApiClient = AppserviceApiClientImpl(baseClient)
-    override val authentication = AuthenticationApiClientImpl(baseClient, coroutineScope)
+    override val authentication = AuthenticationApiClientImpl(baseClient, authProvider, coroutineScope)
     override val discovery = DiscoveryApiClientImpl(baseClient)
     override val server = ServerApiClientImpl(baseClient)
     override val user = UserApiClientImpl(baseClient, eventContentSerializerMappings)

@@ -6,12 +6,16 @@ import okio.ByteString.Companion.toByteString
 @Serializable
 data class BearerTokens(
     val accessToken: String,
-    val refreshToken: String?,
+    val refreshToken: String? = null,
+    val oauth2Login: Boolean = false,
+    val oauth2ClientId: String? = null
 ) {
     override fun toString(): String =
         "BearerTokens(" +
                 "accessToken=${accessToken.passwordHash()}, " +
-                "refreshToken=${refreshToken?.passwordHash()?.let { "hash:$it" }}" +
+                "refreshToken=${refreshToken?.passwordHash()?.let { "hash:$it" }}, " +
+                "oauth2Login=$oauth2Login, " +
+                "oauth2ClientId=$oauth2ClientId" +
                 ")"
 
     private fun String.passwordHash() = "[hash:" + encodeToByteArray().toByteString().sha256().hex().take(6) + "]"

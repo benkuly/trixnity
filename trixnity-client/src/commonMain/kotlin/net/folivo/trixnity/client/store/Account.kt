@@ -17,4 +17,6 @@ data class Account(
     val displayName: String?,
     val avatarUrl: String?,
     val isLocked: Boolean = false,
+    val oauth2ClientId: String? = null,
+    val oauth2Login: Boolean = false
 )

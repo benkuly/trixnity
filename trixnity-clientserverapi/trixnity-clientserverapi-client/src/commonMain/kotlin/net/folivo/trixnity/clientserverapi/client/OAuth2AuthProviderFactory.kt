@@ -27,6 +27,7 @@ import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.decodeErrorResponse
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.TokenTypeHint
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorException
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
 
@@ -65,7 +66,7 @@ fun MatrixAuthProvider.Companion.oauth2InMemory(
 class OAuth2AuthProvider(
     private val bearerTokensStore: BearerTokensStore,
     private val onLogout: suspend (LogoutInfo) -> Unit,
-    private val providerMetadata: OAuth2ProviderMetadata,
+    internal val providerMetadata: OAuth2ProviderMetadata,
     private val clientId: String
 ) : MatrixAuthProvider {
     private val isRefreshingToken = MutableStateFlow(false)
@@ -73,7 +74,7 @@ class OAuth2AuthProvider(
 
     override fun isApplicable(auth: HttpAuthHeader): Boolean =
         if (auth.authScheme != AuthScheme.Bearer) {
-            log.error { "Bearer Auth Provider is not applicable for $auth" }
+            log.error { "OAuth 2.0 Provider is not applicable for scheme '${auth.authScheme}'" }
             false
         } else true
 
@@ -105,6 +106,16 @@ class OAuth2AuthProvider(
             append(HttpHeaders.Authorization, tokenValue)
         }
     }
+
+    override suspend fun logout(authApiClient: AuthenticationApiClient): Result<Unit> =
+        bearerTokensStore.getBearerTokens()?.let {
+            log.debug { "Using OAuth2 for authentication, logging out by revoking OAuth2 token" }
+            authApiClient.revokeOAuth2Token(
+                it.refreshToken ?: it.accessToken,
+                if (it.refreshToken != null) TokenTypeHint.RefreshToken else TokenTypeHint.AccessToken,
+                clientId
+            )
+        } ?: Result.failure(IllegalStateException("No tokens stored"))
 
     override suspend fun refreshToken(response: HttpResponse): Boolean {
         val oldTokens = bearerTokensStore.getBearerTokens() ?: return false

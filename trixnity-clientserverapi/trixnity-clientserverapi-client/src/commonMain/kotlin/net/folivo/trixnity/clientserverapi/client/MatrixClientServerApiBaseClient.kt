@@ -34,6 +34,13 @@ data class LogoutInfo(
 )
 
 interface MatrixAuthProvider : AuthProvider {
+    /**
+     * Invoke authentication provider specific behaviour when logging out.
+     *
+     * @return The result if the logout is implemented, null if no logout was implemented by the authentication provider
+     */
+    suspend fun logout(authApiClient: AuthenticationApiClient): Result<Unit>? = null
+
     companion object
 }
 

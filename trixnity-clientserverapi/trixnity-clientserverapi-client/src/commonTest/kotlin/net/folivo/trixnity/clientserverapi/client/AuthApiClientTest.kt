@@ -25,6 +25,7 @@ import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorType
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.crypto.core.CodeVerifier
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
@@ -218,7 +219,7 @@ class AuthApiClientTest : TrixnityBaseTest() {
             }
         )
 
-        matrixRestClient.authentication.getOAuth2Token("A", "http://127.0.0.1", "test", "test")
+        matrixRestClient.authentication.getOAuth2Token("A", "http://127.0.0.1", "test", CodeVerifier.random())
             .getOrThrow() shouldBe tokenResponse
     }
 
@@ -270,7 +271,8 @@ class AuthApiClientTest : TrixnityBaseTest() {
             }
         )
 
-        matrixRestClient.authentication.getOAuth2Token("", "", "", "").exceptionOrNull() shouldNotBe null
+        matrixRestClient.authentication.getOAuth2Token("", "", "", CodeVerifier.random())
+            .exceptionOrNull() shouldNotBe null
     }
 
     @Test

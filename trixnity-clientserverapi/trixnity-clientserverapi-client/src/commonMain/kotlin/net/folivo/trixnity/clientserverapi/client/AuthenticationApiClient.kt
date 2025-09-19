@@ -21,6 +21,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseMode
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseType
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.TokenTypeHint
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientRegistrationResponse
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorException
@@ -117,6 +118,12 @@ interface AuthenticationApiClient {
      */
     suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientRegistrationResponse>
 
+    suspend fun revokeOAuth2Token(
+        token: String,
+        tokenTypeHint: TokenTypeHint? = null,
+        clientId: String? = null
+    ): Result<Unit>
+
     /**
      * @see [OAuth2TokenResponse]
      */
@@ -126,6 +133,8 @@ interface AuthenticationApiClient {
         clientId: String,
         codeVerifier: CodeVerifier
     ): Result<OAuth2TokenResponse>
+
+    fun isOAuth2User(): Boolean
 
     /**
      * @see [Login]
@@ -248,10 +257,18 @@ interface AuthenticationApiClient {
 
 class AuthenticationApiClientImpl(
     private val baseClient: MatrixClientServerApiBaseClient,
+    private val authProvider: MatrixAuthProvider,
     coroutineScope: CoroutineScope
 ) : AuthenticationApiClient {
     private val oauth2ProviderMetadata by lazy {
         coroutineScope.async {
+            // We can use the OAuth2 provider metadata from the authentication provider when it's set to OAuth 2.0. This
+            // is not the case when discovering the server or explicitly creating a client for downloading the provider
+            // metadata. It's also working as a micro-optimization for reducing the API calls to the homeserver.
+            if (authProvider is OAuth2AuthProvider) {
+                return@async Result.success(authProvider.providerMetadata)
+            }
+
             log.trace { "Try to request OAuth 2.0 provider metadata from v1 endpoint" }
             baseClient.request(GetOAuth2ProviderMetadataV1).fold(
                 onSuccess = { Result.success(it) },
@@ -372,6 +389,22 @@ class AuthenticationApiClientImpl(
             setBody(metadata)
         }
 
+    override suspend fun revokeOAuth2Token(
+        token: String,
+        tokenTypeHint: TokenTypeHint?,
+        clientId: String?
+    ): Result<Unit> = oauth2Request({ providerMetadata -> providerMetadata.revocationEndpoint }) {
+        contentType(ContentType.Application.FormUrlEncoded)
+
+        setBody(
+            Parameters.build {
+                append("token", token)
+                tokenTypeHint?.let { append("token_type_hint", it.value) }
+                clientId?.let { append("client_id", it) }
+            }.formUrlEncode()
+        )
+    }
+
     override suspend fun getOAuth2Token(
         code: String,
         redirectUrl: String,
@@ -391,6 +424,8 @@ class AuthenticationApiClientImpl(
             }.formUrlEncode()
         )
     }
+
+    override fun isOAuth2User(): Boolean = authProvider is OAuth2AuthProvider
 
     @Deprecated("use login with separated password and token")
     override suspend fun login(
@@ -433,7 +468,7 @@ class AuthenticationApiClientImpl(
         )
 
     override suspend fun logout(asUserId: UserId?): Result<Unit> =
-        baseClient.request(Logout(asUserId))
+        authProvider.logout(this) ?: baseClient.request(Logout(asUserId))
 
     override suspend fun logoutAll(asUserId: UserId?): Result<Unit> =
         baseClient.request(LogoutAll(asUserId))
