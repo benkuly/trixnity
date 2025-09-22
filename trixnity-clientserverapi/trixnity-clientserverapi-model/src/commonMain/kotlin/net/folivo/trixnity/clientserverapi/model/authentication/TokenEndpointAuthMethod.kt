@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.model.authentication.oauth2
+package net.folivo.trixnity.clientserverapi.model.authentication
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -14,21 +14,21 @@ object TokenEndpointAuthMethodSerializer : KSerializer<TokenEndpointAuthMethod> 
     override val descriptor: SerialDescriptor = buildSerialDescriptor("TokenEndpointAuthMethod", SerialKind.ENUM)
 
     override fun deserialize(decoder: Decoder): TokenEndpointAuthMethod = when(val value = decoder.decodeString().lowercase()) {
-        "none" -> TokenEndpointAuthMethod.None
+        TokenEndpointAuthMethod.None.value -> TokenEndpointAuthMethod.None
         else -> TokenEndpointAuthMethod.Unknown(value)
     }
 
-    override fun serialize(encoder: Encoder, value: TokenEndpointAuthMethod) = encoder.encodeString(value.toString())
+    override fun serialize(encoder: Encoder, value: TokenEndpointAuthMethod) = encoder.encodeString(value.value)
 }
 
 
 @Serializable(with = TokenEndpointAuthMethodSerializer::class)
 sealed interface TokenEndpointAuthMethod {
+    val value: String
+
     object None : TokenEndpointAuthMethod {
-        override fun toString(): String = "none"
+        override val value: String = "none"
     }
 
-    data class Unknown(private val value: String) : TokenEndpointAuthMethod {
-        override fun toString(): String = value
-    }
+    data class Unknown(override val value: String) : TokenEndpointAuthMethod
 }

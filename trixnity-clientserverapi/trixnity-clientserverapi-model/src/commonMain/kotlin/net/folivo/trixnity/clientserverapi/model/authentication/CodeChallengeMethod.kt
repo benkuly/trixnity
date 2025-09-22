@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.model.authentication.oauth2
+package net.folivo.trixnity.clientserverapi.model.authentication
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -15,21 +15,16 @@ object CodeChallengeMethodSerializer : KSerializer<CodeChallengeMethod> {
 
     override fun deserialize(decoder: Decoder): CodeChallengeMethod =
         when (val value = decoder.decodeString()) {
-            "S256" -> CodeChallengeMethod.S256
+            CodeChallengeMethod.S256.value -> CodeChallengeMethod.S256
             else -> CodeChallengeMethod.Unknown(value)
         }
 
-    override fun serialize(encoder: Encoder, value: CodeChallengeMethod) = encoder.encodeString(value.toString())
+    override fun serialize(encoder: Encoder, value: CodeChallengeMethod) = encoder.encodeString(value.value)
 }
 
 
 @Serializable(with = CodeChallengeMethodSerializer::class)
-sealed interface CodeChallengeMethod {
-    object S256 : CodeChallengeMethod {
-        override fun toString(): String = "S256"
-    }
-
-    data class Unknown(private val value: String) : CodeChallengeMethod {
-        override fun toString(): String = value
-    }
+sealed class CodeChallengeMethod(val value: String) {
+    object S256 : CodeChallengeMethod("S256")
+    class Unknown(value: String) : CodeChallengeMethod(value)
 }

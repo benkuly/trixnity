@@ -14,7 +14,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ServerMetadata
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.EventHandler
@@ -81,7 +81,7 @@ interface MatrixClient : AutoCloseable {
         val deviceId: String,
         val accessToken: String,
         val refreshToken: String?,
-        val providerMetadata: OAuth2ProviderMetadata? = null,
+        val providerMetadata: OAuth2ServerMetadata? = null,
         val oauth2ClientId: String? = null
     )
 
@@ -472,7 +472,6 @@ suspend fun MatrixClient.Companion.loginWith(
     mediaStoreFactory: suspend (LoginInfo) -> MediaStore,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     coroutineContext: CoroutineContext = Dispatchers.Default,
-    providerMetadata: OAuth2ProviderMetadata? = null,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWith(
     baseUrl = baseUrl,
@@ -483,7 +482,6 @@ suspend fun MatrixClient.Companion.loginWith(
     },
     getLoginInfo = getLoginInfo,
     coroutineContext = coroutineContext,
-    providerMetadata = providerMetadata,
     configuration = configuration,
 )
 
@@ -493,7 +491,6 @@ suspend fun MatrixClient.Companion.loginWith(
     mediaStoreModuleFactory: suspend (LoginInfo) -> Module,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     coroutineContext: CoroutineContext = Dispatchers.Default,
-    providerMetadata: OAuth2ProviderMetadata? = null,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
@@ -571,7 +568,7 @@ suspend fun MatrixClient.Companion.loginWith(
         accountStore = accountStore,
         olmCryptoStore = di.get(),
         coroutineContext = finalCoroutineContext,
-        providerMetadata = providerMetadata,
+        providerMetadata = loginInfo.providerMetadata,
         config = config
     ) { matrixClient ->
         val keyStore = di.get<KeyStore>()
@@ -594,7 +591,6 @@ suspend fun MatrixClient.Companion.loginWith(
     mediaStoreModule: Module,
     getLoginInfo: suspend (MatrixClientServerApiClient) -> Result<LoginInfo>,
     coroutineContext: CoroutineContext = Dispatchers.Default,
-    providerMetadata: OAuth2ProviderMetadata? = null,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient> = loginWith(
     baseUrl = baseUrl,
@@ -602,7 +598,6 @@ suspend fun MatrixClient.Companion.loginWith(
     mediaStoreModuleFactory = { mediaStoreModule },
     getLoginInfo = getLoginInfo,
     configuration = configuration,
-    providerMetadata = providerMetadata,
     coroutineContext = coroutineContext,
 )
 
@@ -613,12 +608,10 @@ suspend fun MatrixClient.Companion.fromStore(
     mediaStore: MediaStore,
     onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
     coroutineContext: CoroutineContext = Dispatchers.Default,
-    providerMetadata: OAuth2ProviderMetadata? = null,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient?> =
     fromStore(
         repositoriesModule = repositoriesModule,
-        providerMetadata = providerMetadata,
         mediaStoreModule = module { single<MediaStore> { mediaStore } },
         onSoftLogin = onSoftLogin,
         coroutineContext = coroutineContext,
@@ -630,7 +623,7 @@ suspend fun MatrixClient.Companion.fromStore(
     mediaStoreModule: Module,
     onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
     coroutineContext: CoroutineContext = Dispatchers.Default,
-    providerMetadata: OAuth2ProviderMetadata? = null,
+    providerMetadata: OAuth2ServerMetadata? = null,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient?> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
@@ -720,7 +713,7 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
     olmCryptoStore: OlmCryptoStore,
     config: MatrixClientConfiguration,
     coroutineContext: CoroutineContext,
-    providerMetadata: OAuth2ProviderMetadata? = null,
+    providerMetadata: OAuth2ServerMetadata? = null,
     doFinally: suspend (MatrixClient) -> T,
 ): T {
     val api = config.matrixClientServerApiClientFactory.create(
@@ -732,7 +725,7 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
             if (bearerTokens?.oauth2Login ?: false) {
                 val providerMetadata = providerMetadata
                     ?: config.matrixClientServerApiClientFactory.create(baseUrl).use {
-                        it.authentication.getOAuth2ProviderMetadata()
+                        it.authentication.getOAuth2ServerMetadata()
                     }.getOrThrow()
 
                 MatrixAuthProvider.oauth2(

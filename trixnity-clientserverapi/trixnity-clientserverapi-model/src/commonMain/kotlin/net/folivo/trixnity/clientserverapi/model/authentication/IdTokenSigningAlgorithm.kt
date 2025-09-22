@@ -15,21 +15,21 @@ object IdTokenSigningAlgorithmSerializer : KSerializer<IdTokenSigningAlgorithm> 
 
     override fun deserialize(decoder: Decoder): IdTokenSigningAlgorithm =
         when (val value = decoder.decodeString()) {
-            "RS256" -> IdTokenSigningAlgorithm.RS256
+            IdTokenSigningAlgorithm.RS256.value -> IdTokenSigningAlgorithm.RS256
             else -> IdTokenSigningAlgorithm.Unknown(value)
         }
 
-    override fun serialize(encoder: Encoder, value: IdTokenSigningAlgorithm) = encoder.encodeString(value.toString())
+    override fun serialize(encoder: Encoder, value: IdTokenSigningAlgorithm) = encoder.encodeString(value.value)
 }
 
 
 @Serializable(with = IdTokenSigningAlgorithmSerializer::class)
 sealed interface IdTokenSigningAlgorithm {
+    val value: String
+
     object RS256 : IdTokenSigningAlgorithm {
-        override fun toString(): String = "RS256"
+        override val value: String = "RS256"
     }
 
-    data class Unknown(private val value: String) : IdTokenSigningAlgorithm {
-        override fun toString(): String = value
-    }
+    data class Unknown(override val value: String) : IdTokenSigningAlgorithm
 }

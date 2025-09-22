@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.model.authentication.oauth2
+package net.folivo.trixnity.clientserverapi.model.authentication
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -14,15 +14,23 @@ object TokenTypeHintSerializer : KSerializer<TokenTypeHint> {
     override val descriptor: SerialDescriptor = buildSerialDescriptor("TokenTypeHint", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: TokenTypeHint) = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): TokenTypeHint = when (val value = decoder.decodeString().lowercase()) {
-        "refresh_token" -> TokenTypeHint.RefreshToken
-        "access_token" -> TokenTypeHint.AccessToken
-        else -> TokenTypeHint.Other(value)
+        TokenTypeHint.RefreshToken.value -> TokenTypeHint.RefreshToken
+        TokenTypeHint.AccessToken.value -> TokenTypeHint.AccessToken
+        else -> TokenTypeHint.Unknown(value)
     }
 }
 
 @Serializable(with = TokenTypeHintSerializer::class)
-sealed class TokenTypeHint(val value: String) {
-    object RefreshToken : TokenTypeHint("refresh_token")
-    object AccessToken : TokenTypeHint("access_token")
-    class Other(value: String) : TokenTypeHint(value)
+sealed interface TokenTypeHint {
+    val value: String
+
+    object RefreshToken : TokenTypeHint {
+        override val value: String = "refresh_token"
+    }
+
+    object AccessToken : TokenTypeHint {
+        override val value: String = "access_token"
+    }
+
+    data class Unknown(override val value: String) : TokenTypeHint
 }

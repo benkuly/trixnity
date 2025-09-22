@@ -11,8 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for the OAuth2-based authentication API since Matrix v1.15 
 - Support for account management deep-linking (MSC4191)
-- Minimalistic interface for parsing and verifying Json Web Tokens
-- Signature algorithm `SHA256withRSA` in crypto
 
 ### Changed
 

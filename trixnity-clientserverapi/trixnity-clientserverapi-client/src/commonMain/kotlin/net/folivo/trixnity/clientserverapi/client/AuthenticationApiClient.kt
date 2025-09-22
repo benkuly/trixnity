@@ -12,23 +12,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.withTimeoutOrNull
 import net.folivo.trixnity.api.client.disableMatrixErrorHandling
 import net.folivo.trixnity.clientserverapi.model.authentication.*
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.CodeChallengeMethod
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
+import net.folivo.trixnity.clientserverapi.model.authentication.GrantType
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseMode
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseType
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.TokenTypeHint
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientMetadata
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client.OAuth2ClientRegistrationResponse
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorException
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ServerMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.TokenTypeHint
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ClientMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ClientRegistrationResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ErrorException
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2TokenResponse
 import net.folivo.trixnity.core.AuthRequired
-import net.folivo.trixnity.crypto.core.CodeChallenge
-import net.folivo.trixnity.crypto.core.CodeVerifier
+import net.folivo.trixnity.core.MSC2965
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -107,14 +102,14 @@ interface AuthenticationApiClient {
     suspend fun getLoginTypes(): Result<Set<LoginType>>
 
     /**
-     * @see [OAuth2ProviderMetadata]
+     * @see [OAuth2ServerMetadata]
      */
-    suspend fun getOAuth2ProviderMetadata(timeout: Duration = 15.seconds): Result<OAuth2ProviderMetadata>
+    suspend fun getOAuth2ServerMetadata(timeout: Duration = 15.seconds): Result<OAuth2ServerMetadata>
 
     /**
      * @return The id of the registered client
      *
-     * @see [OAuth2ProviderMetadata]
+     * @see [OAuth2ServerMetadata]
      */
     suspend fun registerOAuth2Client(metadata: OAuth2ClientMetadata): Result<OAuth2ClientRegistrationResponse>
 
@@ -260,25 +255,26 @@ class AuthenticationApiClientImpl(
     private val authProvider: MatrixAuthProvider,
     coroutineScope: CoroutineScope
 ) : AuthenticationApiClient {
-    private val oauth2ProviderMetadata by lazy {
+    private val oauth2ServerMetadata by lazy {
         coroutineScope.async {
-            // We can use the OAuth2 provider metadata from the authentication provider when it's set to OAuth 2.0. This
-            // is not the case when discovering the server or explicitly creating a client for downloading the provider
+            // We can use the OAuth2 server metadata from the authentication provider when it's set to OAuth 2.0. This
+            // is not the case when discovering the server or explicitly creating a client for downloading the server's
             // metadata. It's also working as a micro-optimization for reducing the API calls to the homeserver.
             if (authProvider is OAuth2AuthProvider) {
-                return@async Result.success(authProvider.providerMetadata)
+                return@async Result.success(authProvider.serverMetadata)
             }
 
             log.trace { "Try to request OAuth 2.0 provider metadata from v1 endpoint" }
-            baseClient.request(GetOAuth2ProviderMetadataV1).fold(
+            baseClient.request(GetOAuth2ServerMetadata).fold(
                 onSuccess = { Result.success(it) },
                 onFailure = {
                     // We should request the MSC endpoint as a fallback because the update of some homeservers unrolling
                     // the v1 endpoint was delivered a few days ago. To prevent issues with servers providing the
                     // unstable endpoint with the same content, we should also request it if v1 fails. This can be
                     // removed in the future.
-                    log.trace { "Failed to request v1 OAuth 2.0 provider metadata, request unstable endpoint" }
-                    baseClient.request(GetOAuth2ProviderMetadataUnstable)
+                    log.trace { "Failed to request v1 OAuth 2.0 provider metadata, request MSC2965 endpoint" }
+                    @OptIn(MSC2965::class)
+                    baseClient.request(GetOAuth2ServerMetadataUnstable)
                 }
             )
         }
@@ -350,10 +346,10 @@ class AuthenticationApiClientImpl(
     override suspend fun getLoginTypes(): Result<Set<LoginType>> =
         baseClient.request(GetLoginTypes).mapCatching { it.flows }
 
-    override suspend fun getOAuth2ProviderMetadata(timeout: Duration): Result<OAuth2ProviderMetadata> =
+    override suspend fun getOAuth2ServerMetadata(timeout: Duration): Result<OAuth2ServerMetadata> =
         try {
             withTimeout(timeout) {
-                oauth2ProviderMetadata.await()
+                oauth2ServerMetadata.await()
             }
         } catch (ex: TimeoutCancellationException) {
             log.trace(ex) { "Request for retrieving OAuth 2.0 metadata timed out!" }
@@ -361,10 +357,10 @@ class AuthenticationApiClientImpl(
         }
 
     private suspend inline fun <reified O> oauth2Request(
-        urlFactory: (OAuth2ProviderMetadata) -> Url,
+        urlFactory: (OAuth2ServerMetadata) -> Url,
         block: HttpRequestBuilder.() -> Unit = {}
     ): Result<O> =
-        oauth2ProviderMetadata.await().fold(
+        oauth2ServerMetadata.await().fold(
             onSuccess = { providerMetadata ->
                 val response = baseClient.baseClient.post(urlFactory(providerMetadata)) {
                     attributes.put(AuthRequired.attributeKey, AuthRequired.NO)

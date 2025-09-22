@@ -23,12 +23,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.CodeChallengeMethod
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.PromptValue
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseMode
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseType
+import net.folivo.trixnity.clientserverapi.model.authentication.CodeChallengeMethod
+import net.folivo.trixnity.clientserverapi.model.authentication.GrantType
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ErrorException
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ServerMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.ResponseType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationType
 import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
@@ -261,8 +260,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
+    @OptIn(MSC4191::class)
     fun `OAuth 2 - should refresh token`() = runTest {
-        val exampleProviderMetadata = OAuth2ProviderMetadata(
+        val exampleServerMetadata = OAuth2ServerMetadata(
             issuer = Url("https://auth.matrix.host"),
             authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
             registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
@@ -270,8 +270,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
             codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
             responseTypesSupported = listOf(ResponseType.Code),
-            responseModesSupported = listOf(ResponseMode.Query),
-            promptValuesSupported = listOf(PromptValue.Consent),
+            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
+            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
             grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
         )
 
@@ -282,7 +282,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             authProvider = MatrixAuthProvider.oauth2InMemory(
                 accessToken = "access_old",
                 refreshToken = "refresh_token",
-                providerMetadata = exampleProviderMetadata,
+                serverMetadata = exampleServerMetadata,
                 clientId = "this_is_a_client_id",
                 onLogout = { onLogout = it }
             ),
@@ -290,10 +290,11 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                 addHandler { request ->
                     when (request.url.fullPath) {
                         "/_matrix/client/v1/auth_metadata" -> respond(
-                            Json.encodeToString(exampleProviderMetadata),
+                            Json.encodeToString(exampleServerMetadata),
                             HttpStatusCode.OK,
                             headersOf(HttpHeaders.ContentType, Application.Json.toString())
                         )
+
                         "/_oauth2/token" -> {
                             refreshCalled = true
                             respond(
@@ -309,6 +310,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
                         }
+
                         "/path/1?requestParam=2" -> {
                             val authHeader = request.headers[HttpHeaders.Authorization]
                             if (authHeader == "Bearer access_old") {
@@ -332,6 +334,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                                 )
                             }
                         }
+
                         else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
                     }
                 }
@@ -424,6 +427,90 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
+    @OptIn(MSC4191::class)
+    fun `OAuth 2 - should refresh token and logout`() = runTest {
+        val exampleServerMetadata = OAuth2ServerMetadata(
+            issuer = Url("https://auth.matrix.host"),
+            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
+            responseTypesSupported = listOf(ResponseType.Code),
+            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
+            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
+            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+        )
+
+        var refreshCalled = false
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.oauth2InMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+                serverMetadata = exampleServerMetadata,
+                clientId = "this_is_a_client_id",
+                onLogout = { onLogout = it },
+            ),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v1/auth_metadata" -> respond(
+                            Json.encodeToString(exampleServerMetadata),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+
+                        "/_oauth2/token" -> {
+                            refreshCalled = true
+                            respond(
+                                "{\"error\": \"invalid_grant\"}",
+                                HttpStatusCode.Unauthorized,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        shouldThrow<OAuth2ErrorException> {
+            cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
+        }.error.shouldBeInstanceOf<OAuth2ErrorException.OAuth2ErrorType.InvalidGrant>()
+        refreshCalled shouldBe true
+        onLogout shouldBe LogoutInfo(isSoft = true, isLocked = false)
+    }
+
+    @Test
     fun `Lagacy - should refresh token and logout`() = runTest {
         var refreshCalled = false
         var onLogout: LogoutInfo? = null
@@ -498,6 +585,87 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
+    @OptIn(MSC4191::class)
+    fun `OAuth 2 - should refresh token and not logout`() = runTest {
+        val exampleServerMetadata = OAuth2ServerMetadata(
+            issuer = Url("https://auth.matrix.host"),
+            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
+            responseTypesSupported = listOf(ResponseType.Code),
+            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
+            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
+            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+        )
+
+        var refreshCalled = false
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.oauth2InMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+                serverMetadata = exampleServerMetadata,
+                clientId = "this_is_a_client_id",
+                onLogout = { onLogout = it },
+            ),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v1/auth_metadata" -> respond(
+                            Json.encodeToString(exampleServerMetadata),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+
+                        "/_oauth2/token" -> {
+                            refreshCalled = true
+                            respond(
+                                """
+                                    {
+                                        "access_token": "access",
+                                        "token_type": "Bearer",
+                                        "expires_in_ms": 60000,
+                                        "refresh_token": "refresh2"
+                                    }
+                                """,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            respond(
+                                """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                HttpStatusCode.Unauthorized,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        shouldThrow<MatrixServerException> {
+            cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
+        }.errorResponse.shouldBeInstanceOf<ErrorResponse.UnknownToken>()
+        refreshCalled shouldBe true
+        onLogout shouldBe null
+    }
+
+    @Test
     fun `Lagacy - should refresh token and not logout`() = runTest {
         var refreshCalled = false
         var onLogout: LogoutInfo? = null
@@ -558,6 +726,171 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
         }.errorResponse.shouldBeInstanceOf<ErrorResponse.UnknownToken>()
         refreshCalled shouldBe true
+        onLogout shouldBe null
+    }
+
+    @Test
+    @OptIn(MSC4191::class)
+    fun `OAuth 2 - should refresh token with old refresh token`() = runTest {
+        val exampleServerMetadata = OAuth2ServerMetadata(
+            issuer = Url("https://auth.matrix.host"),
+            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
+            responseTypesSupported = listOf(ResponseType.Code),
+            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
+            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
+            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+        )
+
+        var refreshCalled = 0
+        var onLogout: LogoutInfo? = null
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.oauth2InMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+                serverMetadata = exampleServerMetadata,
+                clientId = "this_is_a_client_id",
+                onLogout = { onLogout = it },
+            ),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v1/auth_metadata" -> respond(
+                            Json.encodeToString(exampleServerMetadata),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+
+                        "/_oauth2/token" -> {
+                            refreshCalled++
+                            when (refreshCalled) {
+                                1 -> respond(
+                                    """
+                                    {
+                                        "access_token": "access1",
+                                        "token_type": "Bearer",
+                                        "expires_in_ms": 60000,
+                                        "refresh_token": "refresh2"
+                                    }
+                                """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+
+                                else -> respond(
+                                    """
+                                    {
+                                        "access_token": "access2",
+                                        "token_type": "Bearer",
+                                        "expires_in_ms": 60000,
+                                        "refresh_token": "refresh3"
+                                    }
+                                """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        "/_matrix/client/v3/refresh" -> {
+                            request.body.toByteArray().decodeToString() shouldBe """{"refresh_token":"refresh"}"""
+                            refreshCalled++
+                            when (refreshCalled) {
+                                1 -> respond(
+                                    """
+                                    {
+                                        "access_token": "access1",
+                                        "expires_in_ms": 60000
+                                    }
+                                """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+
+                                else -> respond(
+                                    """
+                                    {
+                                        "access_token": "access2",
+                                        "expires_in_ms": 60000
+                                    }
+                                """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access1"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        "/path/2?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access1") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access2"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            httpClientConfig = {
+                install(SaveBodyPlugin) {
+                    disabled = true
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+        refreshCalled shouldBe 1
+        cut.request(PostPath("2", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                PostPath.Response("ok")
+        refreshCalled shouldBe 2
         onLogout shouldBe null
     }
 
@@ -762,6 +1095,101 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
+    @OptIn(MSC4191::class)
+    fun `OAuth 2 - should refresh token with parallel requests and rethrow exceptions`() = runTest {
+        val exampleServerMetadata = OAuth2ServerMetadata(
+            issuer = Url("https://auth.matrix.host"),
+            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
+            responseTypesSupported = listOf(ResponseType.Code),
+            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
+            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
+            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+        )
+
+        val refreshCalled = MutableStateFlow(false)
+        val continueRefresh = MutableStateFlow(false)
+        var onLogout: LogoutInfo? = null
+        var refreshCount = 0
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider =  MatrixAuthProvider.oauth2InMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+                serverMetadata = exampleServerMetadata,
+                clientId = "this_is_a_client_id",
+                onLogout = { onLogout = it },
+            ),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v1/auth_metadata" -> respond(
+                            Json.encodeToString(exampleServerMetadata),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+
+                        "/_oauth2/token" -> {
+                            refreshCalled.value = true
+                            continueRefresh.first { it }
+                            refreshCount++
+                            respond(
+                                """
+                                    {
+                                        "error": "server_error"
+                                    }
+                                """,
+                                HttpStatusCode.InternalServerError,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else fail("should never be called")
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        coroutineScope {
+            repeat(20) {
+                launch {
+                    cut.request(PostPath("1", "2"), PostPath.Request(true))
+                        .exceptionOrNull().shouldBeInstanceOf<OAuth2ErrorException>()
+                }
+            }
+            refreshCalled.first { it }
+            delay(1.seconds)
+            continueRefresh.value = true
+        }
+
+        refreshCalled.value shouldBe true
+        refreshCount shouldBe 20
+        onLogout shouldBe null
+    }
+
+    @Test
     fun `Legacy - should refresh token with parallel requests and rethrow exceptions`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
@@ -836,6 +1264,131 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
         refreshCalled.value shouldBe true
         refreshCount shouldBe 20
+        onLogout shouldBe null
+    }
+
+    @Test
+    @OptIn(MSC4191::class)
+    fun `OAuth 2 - should refresh token with parallel requests and handle request abort`() = runTest {
+        val exampleServerMetadata = OAuth2ServerMetadata(
+            issuer = Url("https://auth.matrix.host"),
+            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
+            responseTypesSupported = listOf(ResponseType.Code),
+            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
+            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
+            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+        )
+
+        val refreshCalled = MutableStateFlow(false)
+        val continueRefresh = MutableStateFlow(false)
+        var onLogout: LogoutInfo? = null
+        var refreshCount = 0
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = Url("https://matrix.host"),
+            authProvider = MatrixAuthProvider.oauth2InMemory(
+                accessToken = "access_old",
+                refreshToken = "refresh",
+                serverMetadata = exampleServerMetadata,
+                clientId = "this_is_a_client_id",
+                onLogout = { onLogout = it },
+            ),
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
+                        "/_matrix/client/v1/auth_metadata" -> respond(
+                            Json.encodeToString(exampleServerMetadata),
+                            HttpStatusCode.OK,
+                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                        )
+
+                        "/_oauth2/token" -> {
+                            refreshCalled.value = true
+                            refreshCount += 1
+                            continueRefresh.first { it }
+                            if (refreshCount == 1) {
+                                delay(Duration.INFINITE)
+                                fail("should never be called")
+                            } else {
+                                respond(
+                                    """
+                                    {
+                                        "access_token": "access",
+                                        "token_type": "Bearer",
+                                        "expires_in_ms": 60000,
+                                        "refresh_token": "refresh2"
+                                    }
+                                """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        "/path/1?requestParam=2" -> {
+                            val authHeader = request.headers[HttpHeaders.Authorization]
+                            if (authHeader == "Bearer access_old") {
+                                respond(
+                                    """
+                                        {
+                                          "errcode": "M_UNKNOWN_TOKEN",
+                                          "error": "Soft logged out (access token expired)",
+                                          "soft_logout": true
+                                        }
+                                    """.trimIndent(),
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            } else {
+                                authHeader shouldBe "Bearer access"
+                                respond(
+                                    """{"status":"ok"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+                        }
+
+                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                    }
+                }
+            },
+            httpClientConfig = {
+                install(SaveBodyPlugin) {
+                    disabled = true
+                }
+            },
+            json = json,
+            eventContentSerializerMappings = mappings,
+        )
+
+        coroutineScope {
+            val firstCall = launch {
+                cut.request(PostPath("1", "2"), PostPath.Request(true))
+            }
+            repeat(20) {
+                launch {
+                    shouldNotThrowAny {
+                        cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
+                                PostPath.Response("ok")
+                    }
+                }
+            }
+            refreshCalled.first { it }
+            refreshCalled.value = false
+            delay(1.seconds)
+            firstCall.cancel()
+            continueRefresh.value = true
+            refreshCalled.first { it }
+            delay(1.seconds)
+            continueRefresh.value = true
+        }
+
+        refreshCalled.value shouldBe true
+        refreshCount shouldBe 2
         onLogout shouldBe null
     }
 

@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.model.authentication.oauth2.client
+package net.folivo.trixnity.clientserverapi.model.authentication
 
 import io.ktor.http.Url
 import kotlinx.serialization.KSerializer
@@ -17,31 +17,27 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import net.folivo.trixnity.clientserverapi.model.authentication.IdTokenSigningAlgorithm
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.CodeChallengeMethod
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseType
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.TokenEndpointAuthMethod
 import kotlin.collections.component1
 import kotlin.collections.component2
+import kotlin.collections.forEach
 
-object OAuth2ClientRegistrationResponseSerializer : KSerializer<OAuth2ClientRegistrationResponse> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("OAuth2ClientRegistrationResponse") {
-        element<String>("client_id")
-        element<ApplicationType>("application_type", isOptional = true)
-        element<Url>("client_uri", isOptional = true)
-        element<List<Url>>("redirect_uris", isOptional = true)
-        element<List<GrantType>>("grant_types", isOptional = true)
-        element<List<ResponseType>>("response_types", isOptional = true)
-        element<TokenEndpointAuthMethod>("token_endpoint_auth_method", isOptional = true)
+object OAuth2ClientMetadataSerializer : KSerializer<OAuth2ClientMetadata> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("OAuth2ClientMetadata") {
+        element<ApplicationType>("application_type")
+        element<Url>("client_uri")
+        element<List<Url>>("redirect_uris")
+        element<List<GrantType>>("grant_types")
+        element<List<ResponseType>>("response_types")
+        element<TokenEndpointAuthMethod>("token_endpoint_auth_method")
         element<LocalizedField<String>?>("client_name", isOptional = true)
         element<LocalizedField<Url>?>("policy_uri", isOptional = true)
         element<LocalizedField<Url>?>("logo_uri", isOptional = true)
         element<LocalizedField<Url>?>("tos_uri", isOptional = true)
+        element<String?>("client_id", isOptional = true)
         element<CodeChallengeMethod?>("id_token_signed_response_alg", isOptional = true)
     }
 
-    override fun serialize(encoder: Encoder, value: OAuth2ClientRegistrationResponse) {
+    override fun serialize(encoder: Encoder, value: OAuth2ClientMetadata) {
         require(encoder is JsonEncoder) { "This serializer works only with JSON" }
         val json = encoder.json
 
@@ -53,7 +49,6 @@ object OAuth2ClientRegistrationResponseSerializer : KSerializer<OAuth2ClientRegi
             put("response_types", json.encodeToJsonElement(value.responseTypes))
             put("token_endpoint_auth_method", json.encodeToJsonElement(value.tokenEndpointAuthMethod))
             put("id_token_signed_response_alg", json.encodeToJsonElement(value.idTokenSigningAlgorithm))
-            put("client_id", json.encodeToJsonElement(value.clientId))
 
             value.clientName?.forEach { language, value ->
                 put(if (language == null) "client_name" else "client_name#$language", json.encodeToJsonElement(value))
@@ -73,7 +68,7 @@ object OAuth2ClientRegistrationResponseSerializer : KSerializer<OAuth2ClientRegi
         })
     }
 
-    override fun deserialize(decoder: Decoder): OAuth2ClientRegistrationResponse {
+    override fun deserialize(decoder: Decoder): OAuth2ClientMetadata {
         require(decoder is JsonDecoder) { "This serializer works only with JSON" }
         val jsonObject = decoder.decodeJsonElement().jsonObject
         val json = decoder.json
@@ -99,27 +94,34 @@ object OAuth2ClientRegistrationResponseSerializer : KSerializer<OAuth2ClientRegi
             )
         }
 
-
-        return OAuth2ClientRegistrationResponse(
-            applicationType = jsonObject["application_type"]
-                ?.let { json.decodeFromJsonElement(ApplicationType.serializer(), it) },
-            clientUri = jsonObject["client_uri"]
-                ?.let { json.decodeFromJsonElement(String.serializer(), it) },
-            redirectUris = jsonObject["redirect_uris"]
-                ?.let { json.decodeFromJsonElement(ListSerializer(String.serializer()), it) },
-            grantTypes = jsonObject["grant_types"]
-                ?.let { json.decodeFromJsonElement(ListSerializer(GrantType.serializer()), it) },
-            responseTypes = jsonObject["response_types"]
-                ?.let { json.decodeFromJsonElement(ListSerializer(ResponseType.serializer()), it) },
-            tokenEndpointAuthMethod = jsonObject["token_endpoint_auth_method"]
-                ?.let { json.decodeFromJsonElement(TokenEndpointAuthMethod.serializer(), it) },
+        return OAuth2ClientMetadata(
+            applicationType = json.decodeFromJsonElement(
+                ApplicationType.serializer(),
+                jsonObject.getValue("application_type")
+            ),
+            clientUri = json.decodeFromJsonElement(String.serializer(), jsonObject.getValue("client_uri")),
+            redirectUris = json.decodeFromJsonElement(
+                ListSerializer(String.serializer()),
+                jsonObject.getValue("redirect_uris")
+            ),
+            grantTypes = json.decodeFromJsonElement(
+                ListSerializer(GrantType.serializer()),
+                jsonObject.getValue("grant_types")
+            ),
+            responseTypes = json.decodeFromJsonElement(
+                ListSerializer(ResponseType.serializer()),
+                jsonObject.getValue("response_types")
+            ),
+            tokenEndpointAuthMethod = json.decodeFromJsonElement(
+                TokenEndpointAuthMethod.serializer(),
+                jsonObject.getValue("token_endpoint_auth_method")
+            ),
             clientName = extractLocalizedField("client_name", String.serializer()),
             policyUri = extractLocalizedField("policy_uri", String.serializer()),
             logoUri = extractLocalizedField("logo_uri", String.serializer()),
             tosUri = extractLocalizedField("tos_uri", String.serializer()),
-            clientId = requireNotNull(jsonObject["client_id"]).jsonPrimitive.content,
-            idTokenSigningAlgorithm = jsonObject["id_token_signed_response_alg"]?.let {
-                if (!it.jsonPrimitive.isString) {
+            idTokenSigningAlgorithm = jsonObject["id_token_signed_response_alg"].let {
+                if (!(it?.jsonPrimitive?.isString ?: false)) {
                     return@let null
                 }
 
@@ -129,15 +131,15 @@ object OAuth2ClientRegistrationResponseSerializer : KSerializer<OAuth2ClientRegi
     }
 }
 
-@Serializable(with = OAuth2ClientRegistrationResponseSerializer::class)
-data class OAuth2ClientRegistrationResponse(
-    @SerialName("client_id") val clientId: String,
-    @SerialName("application_type") val applicationType: ApplicationType? = null,
-    @SerialName("client_uri") val clientUri: String? = null,
-    @SerialName("redirect_uris") val redirectUris: List<String>? = null,
-    @SerialName("grant_types") val grantTypes: List<GrantType>? = null,
-    @SerialName("response_types") val responseTypes: List<ResponseType>? = null,
-    @SerialName("token_endpoint_auth_method") val tokenEndpointAuthMethod: TokenEndpointAuthMethod? = null,
+
+@Serializable(with = OAuth2ClientMetadataSerializer::class)
+data class OAuth2ClientMetadata(
+    @SerialName("application_type") val applicationType: ApplicationType,
+    @SerialName("client_uri") val clientUri: String,
+    @SerialName("redirect_uris") val redirectUris: List<String>,
+    @SerialName("grant_types") val grantTypes: List<GrantType>,
+    @SerialName("response_types") val responseTypes: List<ResponseType>,
+    @SerialName("token_endpoint_auth_method") val tokenEndpointAuthMethod: TokenEndpointAuthMethod,
     @SerialName("client_name") val clientName: LocalizedField<String>? = null,
     @SerialName("policy_uri") val policyUri: LocalizedField<String>? = null,
     @SerialName("logo_uri") val logoUri: LocalizedField<String>? = null,

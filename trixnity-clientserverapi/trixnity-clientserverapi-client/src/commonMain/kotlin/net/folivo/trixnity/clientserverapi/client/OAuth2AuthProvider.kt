@@ -21,15 +21,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import net.folivo.trixnity.api.client.disableMatrixErrorHandling
 import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.decodeErrorResponse
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.GrantType
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.OAuth2ProviderMetadata
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.TokenTypeHint
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2ErrorException
-import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses.OAuth2TokenResponse
+import net.folivo.trixnity.clientserverapi.model.authentication.GrantType
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ServerMetadata
+import net.folivo.trixnity.clientserverapi.model.authentication.TokenTypeHint
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ErrorException
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2TokenResponse
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.OAuth2MatrixAuthProvider")
 
@@ -38,15 +39,15 @@ private fun List<Pair<String, Any?>>.formUrlEncode() =
 
 fun MatrixAuthProvider.Companion.oauth2(
     bearerTokensStore: BearerTokensStore,
-    providerMetadata: OAuth2ProviderMetadata,
+    serverMetadata: OAuth2ServerMetadata,
     clientId: String,
     onLogout: suspend (LogoutInfo) -> Unit = {}
-) = OAuth2AuthProvider(bearerTokensStore, onLogout, providerMetadata, clientId)
+) = OAuth2AuthProvider(bearerTokensStore, onLogout, serverMetadata, clientId)
 
 fun MatrixAuthProvider.Companion.oauth2InMemory(
     accessToken: String? = null,
     refreshToken: String? = null,
-    providerMetadata: OAuth2ProviderMetadata,
+    serverMetadata: OAuth2ServerMetadata,
     clientId: String,
     onLogout: suspend (LogoutInfo) -> Unit = {},
 ) = oauth2(
@@ -58,7 +59,7 @@ fun MatrixAuthProvider.Companion.oauth2InMemory(
             )
         },
     ),
-    providerMetadata = providerMetadata,
+    serverMetadata = serverMetadata,
     clientId = clientId,
     onLogout = onLogout
 )
@@ -66,7 +67,7 @@ fun MatrixAuthProvider.Companion.oauth2InMemory(
 class OAuth2AuthProvider(
     private val bearerTokensStore: BearerTokensStore,
     private val onLogout: suspend (LogoutInfo) -> Unit,
-    internal val providerMetadata: OAuth2ProviderMetadata,
+    internal val serverMetadata: OAuth2ServerMetadata,
     private val clientId: String
 ) : MatrixAuthProvider {
     private val isRefreshingToken = MutableStateFlow(false)
@@ -150,9 +151,9 @@ class OAuth2AuthProvider(
                 // Refresh token
                 isRefreshingToken.value = true
                 log.trace { "start refresh tokens oldTokens=$oldTokens, newOldTokens=$newOldTokens" }
-
-                val refreshResponse = response.call.client.post(providerMetadata.tokenEndpoint) {
+                val refreshResponse = response.call.client.post(serverMetadata.tokenEndpoint) {
                     attributes.put(AuthCircuitBreaker, Unit)
+                    attributes.put(disableMatrixErrorHandling, true)
                     contentType(ContentType.Application.FormUrlEncoded)
                     setBody(
                         listOf(
@@ -164,7 +165,16 @@ class OAuth2AuthProvider(
                 }
 
                 if (refreshResponse.status != HttpStatusCode.OK) {
-                    throw refreshResponse.body<OAuth2ErrorException>()
+                    val errorResponse = refreshResponse.body<OAuth2ErrorException>()
+                    when (errorResponse.error) {
+                        OAuth2ErrorException.OAuth2ErrorType.InvalidGrant -> {
+                            log.info { "could not refresh token, therefore call onLogout (unknown token)" }
+                            onLogout(LogoutInfo(isSoft = true, isLocked = false))
+                        }
+
+                        else -> {}
+                    }
+                    throw errorResponse
                 }
 
                 val response = refreshResponse.body<OAuth2TokenResponse>()

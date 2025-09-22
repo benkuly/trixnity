@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.model.authentication.oauth2
+package net.folivo.trixnity.clientserverapi.model.authentication
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -14,26 +14,26 @@ object GrantTypeSerializer : KSerializer<GrantType> {
     override val descriptor: SerialDescriptor = buildSerialDescriptor("GrantType", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): GrantType = when (val value = decoder.decodeString().lowercase()) {
-        "authorization_code" -> GrantType.AuthorizationCode
-        "refresh_token" -> GrantType.RefreshToken
+        GrantType.AuthorizationCode.value -> GrantType.AuthorizationCode
+        GrantType.RefreshToken.value -> GrantType.RefreshToken
         else -> GrantType.Unknown(value)
     }
 
-    override fun serialize(encoder: Encoder, value: GrantType) = encoder.encodeString(value.toString())
+    override fun serialize(encoder: Encoder, value: GrantType) = encoder.encodeString(value.value)
 }
 
 
 @Serializable(with = GrantTypeSerializer::class)
 sealed interface GrantType {
+    val value: String
+
     object AuthorizationCode : GrantType {
-        override fun toString(): String = "authorization_code"
+        override val value: String = "authorization_code"
     }
 
     object RefreshToken : GrantType {
-        override fun toString(): String = "refresh_token"
+        override val value: String = "refresh_token"
     }
 
-    data class Unknown(private val value: String) : GrantType {
-        override fun toString(): String = value
-    }
+    data class Unknown(override val value: String) : GrantType
 }

@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.model.authentication.oauth2.responses
+package net.folivo.trixnity.clientserverapi.model.authentication
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -16,7 +16,6 @@ object ScopeListSerializer : KSerializer<List<String>> {
         decoder.decodeString().split(" ").filter { it.isNotBlank() }
 }
 
-
 @Serializable
 data class OAuth2TokenResponse(
     @SerialName("access_token") val accessToken: String,
@@ -25,10 +24,3 @@ data class OAuth2TokenResponse(
     @SerialName("refresh_token") val refreshToken: String? = null,
     @Serializable(with = ScopeListSerializer::class) val scope: List<String>? = null,
 )
-
-fun OAuth2TokenResponse.getDeviceId(): String? = scope?.filter {
-    it.startsWith("urn:matrix:org.matrix.msc2967.client:device:") || it.startsWith("urn:matrix:client:device/")
-}?.map {
-    val split = it.split(":")
-    split[split.size - 1]
-}?.firstOrNull()

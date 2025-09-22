@@ -1,6 +1,8 @@
-package net.folivo.trixnity.crypto.core
+package net.folivo.trixnity.clientserverapi.client
 
 import kotlinx.serialization.Serializable
+import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.core.Sha256
 import net.folivo.trixnity.utils.nextString
 import kotlin.io.encoding.Base64
 import kotlin.jvm.JvmInline

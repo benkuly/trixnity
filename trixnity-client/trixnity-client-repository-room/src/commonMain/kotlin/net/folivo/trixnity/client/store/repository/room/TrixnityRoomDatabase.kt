@@ -32,9 +32,10 @@ import androidx.room.*
         RoomTimelineEventRelation::class,
         RoomTimelineEvent::class,
     ],
-    version = 4, // tick this value when any entity classes change
+    version = 5, // tick this value when any entity classes change
     autoMigrations = [
-        AutoMigration(from = 3, to = 4)
+        AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5)
     ],
     exportSchema = true,
 )

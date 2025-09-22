@@ -1,4 +1,4 @@
-package net.folivo.trixnity.clientserverapi.model.authentication.oauth2
+package net.folivo.trixnity.clientserverapi.model.authentication
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -14,21 +14,21 @@ object ResponseTypeSerializer : KSerializer<ResponseType> {
     override val descriptor: SerialDescriptor = buildSerialDescriptor("ResponseType", PrimitiveKind.STRING)
 
     override fun deserialize(decoder: Decoder): ResponseType = when (val value = decoder.decodeString().lowercase()) {
-        "code" -> ResponseType.Code
+        ResponseType.Code.value -> ResponseType.Code
         else -> ResponseType.Unknown(value)
     }
 
-    override fun serialize(encoder: Encoder, value: ResponseType) = encoder.encodeString(value.toString())
+    override fun serialize(encoder: Encoder, value: ResponseType) = encoder.encodeString(value.value)
 }
 
 
 @Serializable(with = ResponseTypeSerializer::class)
 sealed interface ResponseType {
+    val value: String
+
     object Code : ResponseType {
-        override fun toString(): String = "code"
+        override val value: String = "code"
     }
 
-    data class Unknown(private val value: String) : ResponseType {
-        override fun toString(): String = value
-    }
+    data class Unknown(override val value: String) : ResponseType
 }
