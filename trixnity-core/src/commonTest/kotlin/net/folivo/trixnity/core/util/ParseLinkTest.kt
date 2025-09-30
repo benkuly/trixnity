@@ -13,6 +13,7 @@ class ParseLinkTest {
     @Test
     fun `fails on invalid links`() {
         assertNull(Reference.parseLink("invalid-link"))
+        assertNull(Reference.parseLink("192.168.2.24:9090"))
         assertNull(Reference.parseLink("https://example.com"))
         assertNull(Reference.parseLink("https://matrix.to/#/disclaimer/"))
         assertNull(Reference.parseLink("https://matrix.to/robots.txt"))

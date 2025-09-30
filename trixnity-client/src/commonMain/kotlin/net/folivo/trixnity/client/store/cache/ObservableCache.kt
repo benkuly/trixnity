@@ -191,7 +191,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                 val cacheEntry =
                     values.getOrPut(key) {
                         log.trace { "$name (set): no cache hit for key $key" }
-                        MutableStateFlow(CacheValue.Value(value))
+                        MutableStateFlow(CacheValue.Init())
                     }
                 cacheEntry.set(key, value, cacheTransaction, persist)?.also { (oldValue, newValue) ->
                     possiblyRemoveFromCache(oldValue, newValue, key)
@@ -210,9 +210,10 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
         while (true) {
             val oldRawValue = value
             val oldValue = oldRawValue.valueOrNull()
-            // prefer cache value (when not going to be nulled)
-            if (forceCacheOnly.not() && newValue != null && persist == null && oldRawValue is CacheValue.Value)
+            if (forceCacheOnly.not() && newValue != null && persist == null && oldRawValue is CacheValue.Value) {
+                log.trace { "$name (set): skip cache set for key $key because it is already cached" }
                 return null
+            }
             val newRawValue = CacheValue.Value(newValue)
             if (compareAndSet(oldRawValue, newRawValue)) {
                 cacheTransaction.onRollbackActions.write {
@@ -224,7 +225,11 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                         }
                     }
                 }
-                if (forceCacheOnly.not() && persist != null && (oldValue != newValue)) persist(newValue)
+                if (forceCacheOnly.not() && persist != null && (oldValue != newValue)) {
+                    persist(newValue)
+                } else {
+                    log.trace { "$name (set): skip cache persist for key $key because there was no change" }
+                }
                 return ValueUpdate(oldValue, newValue)
             }
         }
