@@ -41,6 +41,7 @@ include(
     "trixnity-client:trixnity-client-repository-exposed",
     "trixnity-client:trixnity-client-repository-indexeddb",
     "trixnity-client:trixnity-client-repository-room",
+    "trixnity-client:trixnity-client-repository-migration-libvodozemac"
 )
 include("trixnity-applicationservice")
 include("trixnity-test-utils")
