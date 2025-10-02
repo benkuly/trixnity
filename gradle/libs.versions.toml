@@ -20,6 +20,13 @@ trixnityOlmBinaries = "2.0.4" # https://gitlab.com/trixnity/trixnity-olm-binarie
 trixnityOpensslBinaries = "1.0.5" # https://gitlab.com/trixnity/trixnity-openssl-binaries/-/releases
 jna = "5.17.0" # https://github.com/java-native-access/jna/tags
 
+### vodozemac - checksums come from the registry, web has to be sha1 for yarn ###
+vodozemac-tag = "v0.1.0" # https://gitlab.com/trixnity/trixnity-vodozemac-binaries/-/packages/
+vodozemac-jvmJni = "de149b3e1e584ea6d61c919cfb7f4a9f24df2f1355471e3dbdcbff2b593ed516"
+vodozemac-androidJni = "15a53b42429e57d39ee3a5d5d50f576e5bf857a227ad27bda47ace68c52f40bc"
+vodozemac-native = "ad21da80284a968dec64d29a298e768eb2777b1cbf6a41ead35fe14674fec74e"
+vodozemac-webNpm = "2d5ea6a09aa87ec8416a804ac7ccb4377631083a"
+
 ### libraries ###
 ktor = "3.2.3" # https://github.com/ktorio/ktor/releases
 koin = "4.1.0" # https://github.com/InsertKoinIO/koin/tags

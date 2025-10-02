@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Migration interface to run migrations registered in DI
 - Add new module trixnity-crypto-driver to allow for multiple crypto implementations (libolm, vodozemac, ...)
 - Add new module trixnity-crypto-driver-libolm for a driver based on libolm
+- Add trixnity-vodozemac implementation
 
 ### Changed
 
