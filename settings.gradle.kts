@@ -13,6 +13,7 @@ include(
     "trixnity-crypto-driver",
     "trixnity-crypto-driver:driver-test",
     "trixnity-crypto-driver:trixnity-crypto-driver-libolm",
+    "trixnity-crypto-driver:trixnity-crypto-driver-libvodozemac",
 )
 include("trixnity-api-client")
 include("trixnity-api-server")
