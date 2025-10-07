@@ -34,6 +34,13 @@ data class LogoutInfo(
 )
 
 interface MatrixAuthProvider : AuthProvider {
+    /**
+     * Invoke authentication provider specific behaviour when logging out.
+     *
+     * @return The result if the logout is implemented, null if no logout was implemented by the authentication provider
+     */
+    suspend fun logout(authApiClient: AuthenticationApiClient): Result<Unit>? = null
+
     companion object
 }
 
@@ -55,7 +62,7 @@ private class UIAInterception(val body: JsonObject, val errorResponse: ErrorResp
 
 class MatrixClientServerApiBaseClient(
     val baseUrl: Url? = null,
-    authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+    private val authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientEngine: HttpClientEngine? = null,
@@ -145,6 +152,10 @@ class MatrixClientServerApiBaseClient(
         responseSerializer: KSerializer<RESPONSE>,
         jsonRequest: suspend (body: JsonObject) -> JsonObject
     ): Result<UIA<RESPONSE>> = kotlin.runCatching {
+        if (authProvider is OAuth2AuthProvider) {
+            throw IllegalStateException("Unable to perform UIA request when OAuth 2.0 is used as auth provider")
+        }
+
         val jsonBody = json.encodeToJsonElement(requestSerializer, requestBody)
         require(jsonBody is JsonObject)
         try {
