@@ -47,6 +47,7 @@ suspend fun createExposedRepositoriesModule(
             ExposedRoomUserReceipts,
             ExposedMediaCacheMapping,
             ExposedUserPresence,
+            ExposedMigration,
         )
         SchemaUtils.createMissingTablesAndColumns(*allTables)
     }
@@ -81,5 +82,6 @@ suspend fun createExposedRepositoriesModule(
         singleOf(::ExposedGlobalAccountDataRepository) { bind<GlobalAccountDataRepository>() }
         singleOf(::ExposedRoomAccountDataRepository) { bind<RoomAccountDataRepository>() }
         singleOf(::ExposedUserPresenceRepository) { bind<UserPresenceRepository>() }
+        singleOf(::ExposedMigrationRepository) { bind<MigrationRepository>() }
     }
 }

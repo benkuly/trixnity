@@ -31,6 +31,10 @@ internal class ExposedInboundMegolmSessionRepository(private val json: Json) : I
         }.firstOrNull()?.mapToStoredInboundMegolmSession()
     }
 
+    override suspend fun getAll(): List<StoredInboundMegolmSession> = withExposedRead {
+        ExposedInboundMegolmSession.selectAll().map { it.mapToStoredInboundMegolmSession() }
+    }
+
     override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> = withExposedRead {
         ExposedInboundMegolmSession.selectAll().where { ExposedInboundMegolmSession.hasBeenBackedUp.eq(false) }
             .map { it.mapToStoredInboundMegolmSession() }

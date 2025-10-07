@@ -54,6 +54,7 @@ suspend fun createIndexedDBRepositoriesModule(
         singleOf(::IndexedDBTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }
         singleOf(::IndexedDBTimelineEventRepository) { bind<TimelineEventRepository>() }
         singleOf(::IndexedDBUserPresenceRepository) { bind<UserPresenceRepository>() }
+        singleOf(::IndexedDBMigrationRepository) { bind<MigrationRepository>() }
     }
 }
 
@@ -85,10 +86,11 @@ internal val allStoreNames = arrayOf(
     IndexedDBTimelineEventRelationRepository.objectStoreName,
     IndexedDBTimelineEventRepository.objectStoreName,
     IndexedDBUserPresenceRepository.objectStoreName,
+    IndexedDBMigrationRepository.objectStoreName,
 )
 
 internal suspend fun createDatabase(databaseName: String) =
-    openDatabase(databaseName, 7) { database, oldVersion, _ ->
+    openDatabase(databaseName, 8) { database, oldVersion, _ ->
         IndexedDBAccountRepository.apply { migrate(database, oldVersion) }
         IndexedServerDataRepository.apply { migrate(database, oldVersion) }
         IndexedDBCrossSigningKeysRepository.apply { migrate(database, oldVersion) }
@@ -116,4 +118,5 @@ internal suspend fun createDatabase(databaseName: String) =
         IndexedDBTimelineEventRelationRepository.apply { migrate(database, oldVersion) }
         IndexedDBTimelineEventRepository.apply { migrate(database, oldVersion) }
         IndexedDBUserPresenceRepository.apply { migrate(database, oldVersion) }
+        IndexedDBMigrationRepository.apply { migrate(database, oldVersion) }
     }
