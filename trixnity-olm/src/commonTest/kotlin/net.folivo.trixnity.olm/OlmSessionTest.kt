@@ -193,7 +193,7 @@ class OlmSessionTest : TrixnityBaseTest() {
             bobAccount.generateOneTimeKeys(1)
             val bobOneTimeKey = bobAccount.oneTimeKeys.curve25519.values.first()
             freeAfter(OlmSession.createOutbound(aliceAccount, bobIdentityKey, bobOneTimeKey)) { aliceSession ->
-                aliceSession.pickle("") shouldNot beBlank()
+                aliceSession.pickle(null) shouldNot beBlank()
             }
         }
     }
@@ -226,9 +226,9 @@ class OlmSessionTest : TrixnityBaseTest() {
             val pickle =
                 freeAfter(OlmSession.createOutbound(aliceAccount, bobIdentityKey, bobOneTimeKey)) { aliceSession ->
                     sessionId = aliceSession.sessionId
-                    aliceSession.pickle("")
+                    aliceSession.pickle(null)
                 }
-            freeAfter(OlmSession.unpickle("", pickle)) { aliceSession ->
+            freeAfter(OlmSession.unpickle(null, pickle)) { aliceSession ->
                 aliceSession.sessionId shouldBe sessionId
             }
         }

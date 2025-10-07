@@ -16,12 +16,14 @@ import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionRe
 import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.ExportedSessionKeyValue
 import net.folivo.trixnity.core.MatrixServerException
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
 import net.folivo.trixnity.crypto.SecretType
@@ -182,15 +184,15 @@ class KeyBackupServiceImpl(
                                 OlmPkMessage(
                                     cipherText = ciphertext,
                                     mac = mac,
-                                    ephemeralKey = ephemeral
+                                    ephemeralKey = ephemeral.value,
                                 )
                             }
                         )
                     }
                     val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
                     val (firstKnownIndex, pickledSession) =
-                        freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
-                            it.firstKnownIndex to it.pickle(checkNotNull(accountStore.getAccount()?.olmPickleKey))
+                        freeAfter(OlmInboundGroupSession.import(data.sessionKey.value)) {
+                            it.firstKnownIndex to it.pickle(accountStore.getAccount()?.olmPickleKey)
                         }
                     val senderSigningKey =
                         data.senderClaimedKeys.filterIsInstance<Key.Ed25519Key>().firstOrNull()
@@ -257,7 +259,7 @@ class KeyBackupServiceImpl(
                                                 freeAfter(OlmPkEncryption.create(version.authData.publicKey.value)) { pke ->
                                                     val sessionKey = freeAfter(
                                                         OlmInboundGroupSession.unpickle(
-                                                            checkNotNull(accountStore.getAccount()?.olmPickleKey),
+                                                            accountStore.getAccount()?.olmPickleKey,
                                                             session.pickled
                                                         )
                                                     ) { it.export(it.firstKnownIndex) }
@@ -267,14 +269,14 @@ class KeyBackupServiceImpl(
                                                                 session.senderKey,
                                                                 session.forwardingCurve25519KeyChain,
                                                                 Keys(Key.Ed25519Key(null, session.senderSigningKey)),
-                                                                sessionKey
+                                                                ExportedSessionKeyValue(sessionKey)
                                                             )
                                                         )
                                                     ).run {
                                                         EncryptedRoomKeyBackupV1SessionData(
                                                             ciphertext = cipherText,
                                                             mac = mac,
-                                                            ephemeral = ephemeralKey
+                                                            ephemeral = Curve25519KeyValue(ephemeralKey)
                                                         )
                                                     }
                                                 }
@@ -315,7 +317,7 @@ class KeyBackupServiceImpl(
         return api.key.setRoomKeysVersion(
             SetRoomKeyBackupVersionRequest.V1(
                 authData = with(
-                    RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(KeyValue.Curve25519KeyValue(keyBackupPublicKey))
+                    RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(Curve25519KeyValue(keyBackupPublicKey))
                 ) {
                     val ownDeviceSignature = signService.signatures(this)[ownUserId]
                         ?.firstOrNull()

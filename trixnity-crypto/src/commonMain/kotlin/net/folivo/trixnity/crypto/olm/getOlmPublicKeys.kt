@@ -9,7 +9,7 @@ data class OlmPublicKeys(
     val identityKey: Key.Curve25519Key,
 )
 
-suspend fun getOlmPublicKeys(olmPickleKey: String, pickledOlmAccount: String, deviceId: String) =
+suspend fun getOlmPublicKeys(olmPickleKey: String?, pickledOlmAccount: String, deviceId: String) =
     freeAfter(OlmAccount.unpickle(olmPickleKey, pickledOlmAccount)) {
         OlmPublicKeys(
             signingKey = Key.Ed25519Key(deviceId, it.identityKeys.ed25519),

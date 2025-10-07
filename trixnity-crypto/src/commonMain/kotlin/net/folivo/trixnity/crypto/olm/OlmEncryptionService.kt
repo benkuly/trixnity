@@ -9,6 +9,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import net.folivo.trixnity.core.MSC3814
+import net.folivo.trixnity.core.MegolmMessageValue
+import net.folivo.trixnity.core.OlmMessageValue
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -229,7 +232,7 @@ class OlmEncryptionServiceImpl(
                 return OlmEncryptedToDeviceEventContent(
                     ciphertext = mapOf(
                         identityKey.value.value to OlmEncryptedToDeviceEventContent.CiphertextInfo(
-                            encryptedContent.cipherText,
+                            OlmMessageValue(encryptedContent.cipherText),
                             OlmMessageType.of(encryptedContent.type.value)
                         )
                     ),
@@ -395,9 +398,9 @@ class OlmEncryptionServiceImpl(
                         )
                     ) { olmSession ->
                         if (ciphertext.type == OlmMessageType.INITIAL_PRE_KEY) {
-                            if (olmSession.matchesInboundSession(ciphertext.body)) {
+                            if (olmSession.matchesInboundSession(ciphertext.body.value)) {
                                 log.debug { "try decrypt initial olm event with matching session ${storedSession.sessionId} (userId=$userId, deviceId=$deviceId)" }
-                                olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
+                                olmSession.decrypt(OlmMessage(ciphertext.body.value, INITIAL_PRE_KEY))
                             } else {
                                 log.debug { "initial olm event did not match session ${storedSession.sessionId} (userId=$userId, deviceId=$deviceId)" }
                                 null
@@ -405,7 +408,7 @@ class OlmEncryptionServiceImpl(
                         } else {
                             try {
                                 log.debug { "try decrypt ordinary olm event with matching session ${storedSession.sessionId} (userId=$userId, deviceId=$deviceId)" }
-                                olmSession.decrypt(OlmMessage(ciphertext.body, ORDINARY))
+                                olmSession.decrypt(OlmMessage(ciphertext.body.value, ORDINARY))
                             } catch (error: Throwable) {
                                 log.debug { "could not decrypt olm event with existing session ${storedSession.sessionId} (userId=$userId, deviceId=$deviceId). Reason: ${error.message}" }
                                 null
@@ -434,11 +437,11 @@ class OlmEncryptionServiceImpl(
                             OlmSession.createInboundFrom(
                                 olmAccount,
                                 senderIdentityKey.value,
-                                ciphertext.body
+                                ciphertext.body.value
                             )
                         ) { _, olmSession ->
                             log.debug { "decrypt olm event with new session (userId=$userId, deviceId=$deviceId)" }
-                            val decrypted = olmSession.decrypt(OlmMessage(ciphertext.body, INITIAL_PRE_KEY))
+                            val decrypted = olmSession.decrypt(OlmMessage(ciphertext.body.value, INITIAL_PRE_KEY))
                             olmAccount.removeOneTimeKeys(olmSession)
                             decryptionResult = decryptWithOlmSession(decrypted)
                             newStoredOlmSession = StoredOlmSession(
@@ -519,7 +522,7 @@ class OlmEncryptionServiceImpl(
                     val roomKeyEventContent = RoomKeyEventContent(
                         roomId = roomId,
                         sessionId = session.sessionId,
-                        sessionKey = session.sessionKey,
+                        sessionKey = SessionKeyValue(session.sessionKey),
                         algorithm = Megolm
                     )
 
@@ -549,7 +552,7 @@ class OlmEncryptionServiceImpl(
                 val encryptedContent = session.encrypt(json.encodeToString(serializer, event))
 
                 return MegolmEncryptedMessageEventContent(
-                    ciphertext = encryptedContent,
+                    ciphertext = MegolmMessageValue(encryptedContent),
                     senderKey = ownCurve25519Key.value,
                     deviceId = ownDeviceId,
                     sessionId = session.sessionId,
@@ -636,7 +639,7 @@ class OlmEncryptionServiceImpl(
 
         val decryptionResult = try {
             freeAfter(OlmInboundGroupSession.unpickle(store.getOlmPickleKey(), storedSession.pickled)) { session ->
-                session.decrypt(encryptedContent.ciphertext)
+                session.decrypt(encryptedContent.ciphertext.value)
             }
         } catch (e: OlmLibraryException) {
             if (e.message?.contains("UNKNOWN_MESSAGE_INDEX") == true)

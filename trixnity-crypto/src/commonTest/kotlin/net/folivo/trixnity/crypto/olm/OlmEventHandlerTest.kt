@@ -12,7 +12,6 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -35,8 +34,9 @@ import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
 import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
 import kotlin.test.Test
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 class OlmEventHandlerTest : TrixnityBaseTest() {
@@ -72,7 +72,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
             SignServiceMock().apply { signCurve25519Key = Key.SignedCurve25519Key(null, "", signatures = mapOf()) },
             olmEventHandlerRequestHandlerMock,
             olmStoreMock,
-            Clock.System,
+            testScope.testClock,
         )
     }
 
@@ -107,13 +107,13 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
                 decryptedMessage shouldBe "Hello bob , this is alice!"
                 OlmInfos(
-                    olmAccount = bobAccount.pickle(""),
+                    olmAccount = bobAccount.pickle(null),
                     fallbackKey = bobFallbackKey,
                 )
             }
         olmStoreMock.olmAccount.value = olmInfos.olmAccount
 
-        olmStoreMock.forgetFallbackKeyAfter.value = Clock.System.now() - 1.seconds
+        olmStoreMock.forgetFallbackKeyAfter.value = testClock.now() - 1.seconds
 
         cut.forgetOldFallbackKey()
 
@@ -122,7 +122,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         olmStoreMock.olmAccount.first { it != olmInfos.olmAccount }
 
         freeAfter(
-            OlmAccount.unpickle("", checkNotNull(olmStoreMock.olmAccount.value)),
+            OlmAccount.unpickle(null, checkNotNull(olmStoreMock.olmAccount.value)),
             OlmAccount.create()
         ) { bobAccount, aliceAccount ->
             val bobIdentityKey = bobAccount.identityKeys.curve25519
@@ -252,7 +252,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         val eventContent = RoomKeyEventContent(
             roomId,
             outboundSession.sessionId,
-            outboundSession.sessionKey,
+            SessionKeyValue(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(
@@ -293,7 +293,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         val eventContent = RoomKeyEventContent(
             roomId,
             outboundSession.sessionId,
-            outboundSession.sessionKey,
+            SessionKeyValue(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(
@@ -350,7 +350,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
         val eventContent = RoomKeyEventContent(
             roomId,
             outboundSession.sessionId,
-            outboundSession.sessionKey,
+            SessionKeyValue(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(

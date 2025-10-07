@@ -5,8 +5,7 @@
     "CONFLICTING_OVERLOADS"
 )
 @file:JsQualifier("Olm")
-@file:JsModule("@matrix-org/olm")
-@file:JsNonModule
+@file:JsModule("trixnity-olm-wrapper")
 
 package net.folivo.trixnity.olm
 

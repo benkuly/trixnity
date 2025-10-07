@@ -17,6 +17,8 @@ import net.folivo.trixnity.core.model.events.m.key.verification.SasMessageAuthen
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.*
 import net.folivo.trixnity.olm.OlmSAS
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveSasVerificationMethod")
@@ -56,7 +58,7 @@ class ActiveSasVerificationMethod private constructor(
     val state = _state.asStateFlow()
 
     private var theirCommitment: String? = null
-    private var theirPublicKey: String? = null
+    private var theirPublicKey: Curve25519KeyValue? = null
     private var theirMac: SasMacEventContent? = null
     private var ourMac: SasMacEventContent? = null
     private var messageAuthenticationCode: SasMessageAuthenticationCode? = null
@@ -219,7 +221,7 @@ class ActiveSasVerificationMethod private constructor(
 
                 else -> {
                     theirCommitment = stepContent.commitment
-                    sendVerificationStep(SasKeyEventContent(olmSas.publicKey, relatesTo, transactionId))
+                    sendVerificationStep(SasKeyEventContent(Curve25519KeyValue(olmSas.publicKey), relatesTo, transactionId))
                 }
             }
         }
@@ -235,7 +237,7 @@ class ActiveSasVerificationMethod private constructor(
                 _state.value = WaitForKeys(isOurOwn)
                 if (currentState.isOurOwn != isOurOwn) {
                     if (!isOurOwn) {
-                        sendVerificationStep(SasKeyEventContent(olmSas.publicKey, relatesTo, transactionId))
+                        sendVerificationStep(SasKeyEventContent(Curve25519KeyValue(olmSas.publicKey), relatesTo, transactionId))
                     }
                 } else cancelUnexpectedMessage(currentState)
             }
@@ -243,9 +245,11 @@ class ActiveSasVerificationMethod private constructor(
             is WaitForKeys -> {
                 if (currentState.isOurOwn != isOurOwn) {
                     fun createComparison() {
-                        olmSas.setTheirPublicKey(
-                            theirPublicKey ?: throw IllegalArgumentException("their public key should never be null")
-                        )
+                        val theirPublicKey = requireNotNull(theirPublicKey) {
+                            "their public key should never be null"
+                        }.value
+
+                        olmSas.setTheirPublicKey(theirPublicKey)
                         val ownInfo = "${ownUserId.full}|${ownDeviceId}|${olmSas.publicKey}|"
                         val theirInfo = "${theirUserId.full}|${theirDeviceId}|${theirPublicKey}|"
                         val sasInfo = "MATRIX_KEY_VERIFICATION_SAS|" +
@@ -285,7 +289,7 @@ class ActiveSasVerificationMethod private constructor(
                     }
                     if (!isOurOwn) {
                         if (theirCommitment != null
-                            && createSasCommitment(stepContent.key, startEventContent, json) == theirCommitment
+                            && createSasCommitment(stepContent.key.value, startEventContent, json) == theirCommitment
                         ) {
                             theirPublicKey = stepContent.key
                             createComparison()
@@ -357,7 +361,7 @@ class ActiveSasVerificationMethod private constructor(
         val info = baseInfo + "KEY_IDS"
         log.trace { "create keys mac from input $input and info $info" }
         val keys = calculateMac(input, info)
-        if (keys == theirMac.keys) {
+        if (keys == theirMac.keys.value) {
             val allKeysOfDevice = keyStore.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
             val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullId) }
             val containsMismatchedMac = keysToMac.asSequence()

@@ -12,6 +12,7 @@ import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.users.*
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -253,7 +254,7 @@ class UsersRoutesTest : TrixnityBaseTest() {
                             "TLLBEANAAG" to RoomKeyEventContent(
                                 roomId = RoomId("!Cuyf34gef24t:localhost"),
                                 sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
-                                sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
+                                sessionKey = SessionKeyValue("AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."),
                                 algorithm = EncryptionAlgorithm.Megolm
                             )
                         )

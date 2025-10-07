@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.getInMemoryKeyStore
 import net.folivo.trixnity.client.mocks.KeyTrustServiceMock
 import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.core.MacValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.key.verification.SasMacEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationDoneEventContent
@@ -39,7 +40,7 @@ class ActiveVerificationOrderTest : TrixnityBaseTest() {
 
     @Test
     fun `events are handled in order`() = runTest {
-        val macEvent = SasMacEventContent("k", Keys(), cut.relatesTo, cut.transactionId)
+        val macEvent = SasMacEventContent(MacValue("k"), Keys(), cut.relatesTo, cut.transactionId)
         cut.sendAndHandleVerificationStep(macEvent)
         assertEquals(
             expected =  listOf(macEvent, VerificationDoneEventContent(cut.relatesTo, cut.transactionId)),
@@ -49,7 +50,7 @@ class ActiveVerificationOrderTest : TrixnityBaseTest() {
 
     @Test
     fun `events are sent in order`() = runTest {
-        val macEvent = SasMacEventContent("k", Keys(), cut.relatesTo, cut.transactionId)
+        val macEvent = SasMacEventContent(MacValue("k"), Keys(), cut.relatesTo, cut.transactionId)
         cut.sendAndHandleVerificationStep(macEvent)
         assertEquals(
             expected =  listOf(macEvent, VerificationDoneEventContent(cut.relatesTo, cut.transactionId)),
@@ -59,7 +60,7 @@ class ActiveVerificationOrderTest : TrixnityBaseTest() {
 
     @Test
     fun `events are sent and handled in the same order`() = runTest {
-        val macEvent = SasMacEventContent("k", Keys(), cut.relatesTo, cut.transactionId)
+        val macEvent = SasMacEventContent(MacValue("k"), Keys(), cut.relatesTo, cut.transactionId)
         cut.sendAndHandleVerificationStep(macEvent)
         assertEquals(handledEvents, sentEvents)
     }

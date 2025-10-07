@@ -80,12 +80,12 @@ class IncomingRoomKeyRequestEventHandler(
                                 roomId = foundInboundMegolmSession.roomId,
                                 senderKey = foundInboundMegolmSession.senderKey,
                                 sessionId = foundInboundMegolmSession.sessionId,
-                                sessionKey = freeAfter(
+                                sessionKey = ExportedSessionKeyValue(freeAfter(
                                     OlmInboundGroupSession.unpickle(
-                                        checkNotNull(accountStore.getAccount()?.olmPickleKey),
+                                        accountStore.getAccount()?.olmPickleKey,
                                         foundInboundMegolmSession.pickled
                                     )
-                                ) { it.export(it.firstKnownIndex) },
+                                ) { it.export(it.firstKnownIndex) }),
                                 senderClaimedKey = foundInboundMegolmSession.senderSigningKey,
                                 forwardingKeyChain = foundInboundMegolmSession.forwardingCurve25519KeyChain,
                                 algorithm = EncryptionAlgorithm.Megolm,

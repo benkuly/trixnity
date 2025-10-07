@@ -182,7 +182,7 @@ class OutgoingSecretKeyRequestEventHandler(
                                     ),
                                     content.secret.decodeUnpaddedBase64Bytes(), deviceData.algorithm
                                 ).decodeToString()
-                                freeAfter(OlmAccount.unpickle("", olmPickle)) {}
+                                freeAfter(OlmAccount.unpickle(null, olmPickle)) {}
                                 true
                             }
 

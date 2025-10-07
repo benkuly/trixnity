@@ -69,7 +69,7 @@ class MatrixClientTest : TrixnityBaseTest() {
     fun `MatrixClientImpl displayName » get the display name and avatar URL from the profile API when initially logging in`() =
         runTest {
             val olmAccountRepository = InMemoryOlmAccountRepository().apply {
-                save(1, freeAfter(OlmAccount.create()) { it.pickle("") })
+                save(1, freeAfter(OlmAccount.create()) { it.pickle(null) })
             }
             val repositoriesModule = createInMemoryRepositoriesModule().apply {
                 includes(
@@ -194,7 +194,7 @@ class MatrixClientTest : TrixnityBaseTest() {
             val accountRepository = InMemoryAccountRepository().apply {
                 save(
                     1, Account(
-                        olmPickleKey = "",
+                        olmPickleKey = null,
                         accessToken = "abcdef",
                         refreshToken = "ghijk",
                         userId = userId,
@@ -209,7 +209,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                 )
             }
             val olmAccountRepository = InMemoryOlmAccountRepository().apply {
-                save(1, freeAfter(OlmAccount.create()) { it.pickle("") })
+                save(1, freeAfter(OlmAccount.create()) { it.pickle(null) })
             }
             val repositoriesModule = createInMemoryRepositoriesModule().apply {
                 includes(
@@ -455,7 +455,7 @@ class MatrixClientTest : TrixnityBaseTest() {
 
     private suspend fun TestScope.loginStateSetup(): MatrixClient {
         val account = Account(
-            olmPickleKey = "",
+            olmPickleKey = null,
             accessToken = "abcdef",
             refreshToken = "ghijk",
             userId = userId,
@@ -471,7 +471,7 @@ class MatrixClientTest : TrixnityBaseTest() {
             save(1, account)
         }
         val olmAccountRepository = InMemoryOlmAccountRepository().apply {
-            save(1, freeAfter(OlmAccount.create()) { it.pickle("") })
+            save(1, freeAfter(OlmAccount.create()) { it.pickle(null) })
         }
         val repositoriesModule = createInMemoryRepositoriesModule().apply {
             includes(
@@ -574,7 +574,7 @@ class MatrixClientTest : TrixnityBaseTest() {
         val accountRepository = InMemoryAccountRepository().apply {
             save(
                 1, Account(
-                    olmPickleKey = "",
+                    olmPickleKey = null,
                     accessToken = "abcdef",
                     refreshToken = "ghijk",
                     userId = userId,
@@ -589,7 +589,7 @@ class MatrixClientTest : TrixnityBaseTest() {
             )
         }
         val olmAccountRepository = InMemoryOlmAccountRepository().apply {
-            save(1, freeAfter(OlmAccount.create()) { it.pickle("") })
+            save(1, freeAfter(OlmAccount.create()) { it.pickle(null) })
         }
         return createInMemoryRepositoriesModule().apply {
             includes(

@@ -48,17 +48,17 @@ class SignServiceTest : TrixnityBaseTest() {
 
     private suspend fun setup() {
         aliceSigningAccount = OlmAccount.create()
-        val aliceOlmKeys = getOlmPublicKeys("", aliceSigningAccount.pickle(""), aliceDevice)
+        val aliceOlmKeys = getOlmPublicKeys(null, aliceSigningAccount.pickle(null), aliceDevice)
         aliceSigningAccountSignService = SignServiceImpl(
             UserInfo(alice, aliceDevice, aliceOlmKeys.signingKey, aliceOlmKeys.identityKey),
             json,
             object : SignServiceStore {
-                override suspend fun getOlmAccount(): String = aliceSigningAccount.pickle("")
-                override suspend fun getOlmPickleKey(): String = ""
+                override suspend fun getOlmAccount(): String = aliceSigningAccount.pickle(null)
+                override suspend fun getOlmPickleKey(): String? = null
             },
         )
-        val olmAccount = freeAfter(OlmAccount.create()) { it.pickle("") }
-        val olmKeys = getOlmPublicKeys("", olmAccount, aliceDevice)
+        val olmAccount = freeAfter(OlmAccount.create()) { it.pickle(null) }
+        val olmKeys = getOlmPublicKeys(null, olmAccount, aliceDevice)
         cut = SignServiceImpl(
             UserInfo(ownUserId, "ABCDEF", olmKeys.signingKey, olmKeys.identityKey),
             json,

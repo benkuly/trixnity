@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import net.folivo.trixnity.client.trimToFlatJson
+import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -36,7 +37,7 @@ class TimelineEventSerializerTest : TrixnityBaseTest() {
     private fun timelineEvent(content: Result<RoomEventContent>?) =
         TimelineEvent(
             event = ClientEvent.RoomEvent.MessageEvent(
-                MegolmEncryptedMessageEventContent(ciphertext = "cipher", sessionId = "sessionId"),
+                MegolmEncryptedMessageEventContent(ciphertext = MegolmMessageValue("cipher"), sessionId = "sessionId"),
                 EventId("$1event"),
                 UserId("sender", "server"),
                 RoomId("!room:server"),

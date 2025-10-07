@@ -52,6 +52,12 @@ MatrixClientServerApiClientImpl().use {
 }
 ```
 
+### Browser Tests
+
+If you are running Kotlin Browser tests using Karma, you will most likely run into the following [bug](https://github.com/karma-runner/karma/issues/3804).
+
+To work around this issue, take a look at this [config](https://gitlab.com/trixnity/trixnity/-/blob/main/karma.config.d/karma-esm.js).
+
 ## Examples
 
 If you want to see Trixnity in action, take a look into

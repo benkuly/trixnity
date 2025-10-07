@@ -19,6 +19,8 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredRoomKeyRequest
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
+import net.folivo.trixnity.core.ExportedSessionKeyValue
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -55,7 +57,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
     private val senderSigningKey = Key.Ed25519Key(null, "senderSigning")
     private val forwardingSenderKey = Key.Curve25519Key(null, "forwardingSenderKey")
 
-    private val accountStore = getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "") } }
+    private val accountStore = getInMemoryAccountStore()
     private val olmCryptoStore = getInMemoryOlmStore()
     private val keyStore = getInMemoryKeyStore()
 
@@ -201,7 +203,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent,
                 DecryptedOlmEvent(
-                    forwardedRoomKeyEvent().copy(sessionKey = "dino"),
+                    forwardedRoomKeyEvent().copy(sessionKey = ExportedSessionKeyValue("dino")),
                     alice, keysOf(aliceDevice2Key), alice, keysOf()
                 ),
             )
@@ -376,24 +378,24 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
         }
     }
 
-    private suspend fun sessionKeys(withIndexes: Int): List<String> =
+    private suspend fun sessionKeys(withIndexes: Int): List<ExportedSessionKeyValue> =
         freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
             buildList {
                 freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
-                    add(inboundSession.export(0))
+                    add(ExportedSessionKeyValue(inboundSession.export(0)))
                     for (i in 1..withIndexes) {
                         inboundSession.decrypt(
                             outboundSession.encrypt("bla")
                         )
-                        add(inboundSession.export(i.toLong()))
+                        add(ExportedSessionKeyValue(inboundSession.export(i.toLong())))
                     }
                 }
             }
         }
 
     private suspend fun sessionKey() = sessionKeys(0).first()
-    private suspend fun pickleToInbound(sessionKey: String) =
-        freeAfter(OlmInboundGroupSession.import(sessionKey)) { it.pickle("") }
+    private suspend fun pickleToInbound(sessionKey: ExportedSessionKeyValue) =
+        freeAfter(OlmInboundGroupSession.import(sessionKey.value)) { it.pickle(null) }
 
     private suspend fun TestScope.setRequest(receiverDeviceIds: Set<String>) {
         keyStore.addRoomKeyRequest(

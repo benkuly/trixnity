@@ -161,7 +161,7 @@ class ActiveSasVerificationStateTest : TrixnityBaseTest() {
             cut.match()
             val result = step
             result.shouldBeInstanceOf<SasMacEventContent>()
-            result.keys.shouldNotBeBlank()
+            result.keys.value.shouldNotBeBlank()
             result.mac shouldHaveSize 3
         }
     }

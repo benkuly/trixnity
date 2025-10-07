@@ -10,6 +10,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
+import net.folivo.trixnity.core.OlmMessageValue
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.Unknown
@@ -38,7 +39,7 @@ sealed interface EncryptedToDeviceEventContent : ToDeviceEventContent {
         @Serializable
         data class CiphertextInfo(
             @SerialName("body")
-            val body: String,
+            val body: OlmMessageValue,
             @SerialName("type")
             val type: OlmMessageType
         ) {

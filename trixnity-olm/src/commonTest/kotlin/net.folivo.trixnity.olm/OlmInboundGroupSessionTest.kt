@@ -119,7 +119,7 @@ class OlmInboundGroupSessionTest : TrixnityBaseTest() {
     @Test
     fun pickleWithEmptyKey() = runTest {
         freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
-            session.pickle("") shouldNot beBlank()
+            session.pickle(null) shouldNot beBlank()
         }
     }
 
@@ -136,9 +136,9 @@ class OlmInboundGroupSessionTest : TrixnityBaseTest() {
     @Test
     fun unpickleWithEmptyKey() = runTest {
         val pickle = freeAfter(OlmInboundGroupSession.create(sessionKey)) { session ->
-            session.pickle("") to session.sessionId
+            session.pickle(null) to session.sessionId
         }
-        freeAfter(OlmInboundGroupSession.unpickle("", pickle.first)) { session ->
+        freeAfter(OlmInboundGroupSession.unpickle(null, pickle.first)) { session ->
             session.sessionId shouldBe pickle.second
         }
     }

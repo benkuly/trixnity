@@ -43,7 +43,7 @@ class OlmPkDecryptionTest : TrixnityBaseTest() {
     @Test
     fun pickleWithEmptyKey() = runTest {
         freeAfter(OlmPkDecryption.create()) { pkDecryption ->
-            pkDecryption.pickle("") shouldNot beBlank()
+            pkDecryption.pickle(null) shouldNot beBlank()
         }
     }
 
@@ -60,9 +60,9 @@ class OlmPkDecryptionTest : TrixnityBaseTest() {
     @Test
     fun unpickleWithEmptyKey() = runTest {
         val pickle = freeAfter(OlmPkDecryption.create("W69V7atpH+HldmtexIZSEg51sNITai/Yut3pOw1pON4")) { pkDecryption ->
-            pkDecryption.pickle("")
+            pkDecryption.pickle(null)
         }
-        freeAfter(OlmPkDecryption.unpickle("", pickle)) { pkDecryption ->
+        freeAfter(OlmPkDecryption.unpickle(null, pickle)) { pkDecryption ->
             pkDecryption.privateKey shouldBe "W69V7atpH+HldmtexIZSEg51sNITai/Yut3pOw1pON4"
         }
     }
