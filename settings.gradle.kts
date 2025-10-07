@@ -6,6 +6,10 @@ include("trixnity-crypto-core")
 include("trixnity-crypto")
 include("trixnity-olm")
 include(
+    "trixnity-vodozemac",
+    "trixnity-vodozemac:trixnity-vodozemac-binaries"
+)
+include(
     "trixnity-crypto-driver",
     "trixnity-crypto-driver:driver-test",
     "trixnity-crypto-driver:trixnity-crypto-driver-libolm",
