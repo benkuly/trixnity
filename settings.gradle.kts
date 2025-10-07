@@ -8,6 +8,7 @@ include("trixnity-olm")
 include(
     "trixnity-crypto-driver",
     "trixnity-crypto-driver:driver-test",
+    "trixnity-crypto-driver:trixnity-crypto-driver-libolm",
 )
 include("trixnity-api-client")
 include("trixnity-api-server")
