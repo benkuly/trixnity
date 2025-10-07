@@ -11,10 +11,10 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue.SignedCurve25519KeyValue.SignedCurve25519KeyValueSignable
 import net.folivo.trixnity.core.serialization.canonicalJsonString
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.OlmUtility
-import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.keys.Ed25519Signature
+import net.folivo.trixnity.crypto.driver.useAll
+import net.folivo.trixnity.crypto.invoke
 
 interface SignService {
     suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId>
@@ -52,6 +52,7 @@ class SignServiceImpl(
     private val userInfo: UserInfo,
     private val json: Json,
     private val store: SignServiceStore,
+    private val driver: CryptoDriver,
 ) : SignService {
 
     override suspend fun getSelfSignedDeviceKeys(): Signed<DeviceKeys, UserId> = sign(
@@ -68,17 +69,15 @@ class SignServiceImpl(
         val stringToSign = canonicalFilteredJson(jsonObject)
         return when (signWith) {
             SignWith.DeviceKey -> {
-                freeAfter(
-                    OlmAccount.unpickle(
-                        store.getOlmPickleKey(),
-                        store.getOlmAccount()
-                    )
-                ) { olmAccount ->
+                driver.olm.account.fromPickle(
+                    store.getOlmAccount(), driver.key.pickleKey(store.getOlmPickleKey())
+                ).use { olmAccount ->
                     mapOf(
                         userInfo.userId to keysOf(
                             Ed25519Key(
-                                id = userInfo.deviceId,
-                                value = KeyValue.Ed25519KeyValue(olmAccount.sign(stringToSign))
+                                id = userInfo.deviceId, value = KeyValue.Ed25519KeyValue(
+                                    olmAccount.sign(stringToSign).use(Ed25519Signature::base64)
+                                )
                             )
                         )
                     )
@@ -90,11 +89,11 @@ class SignServiceImpl(
                     userInfo.userId to keysOf(
                         Ed25519Key(
                             id = signWith.publicKey,
-                            value = KeyValue.Ed25519KeyValue(
-                                freeAfter(OlmPkSigning.create(signWith.privateKey)) {
-                                    it.sign(stringToSign)
-                                }
-                            )
+                            value = KeyValue.Ed25519KeyValue(driver.key.ed25519SecretKey(signWith.privateKey).use {
+                                it.sign(
+                                    stringToSign
+                                )
+                            }.use { it.base64 })
                         )
                     )
                 )
@@ -152,12 +151,10 @@ class SignServiceImpl(
                                 "got ${signedObject.signatures?.get(userId)?.map { it.id }} instead"
                     )
                 try {
-                    freeAfter(OlmUtility.create()) { olmUtility ->
-                        olmUtility.verifyEd25519(
-                            key = signingKey.value.value,
-                            message = signedString,
-                            signature = signatureKey.value.value
-                        )
+                    useAll(
+                        { driver.key.ed25519PublicKey(signingKey) },
+                        { driver.key.ed25519Signature(signatureKey) }) { key, signature ->
+                        key.verify(signedString, signature)
                     }
                     VerifyResult.Valid
                 } catch (exception: Exception) {

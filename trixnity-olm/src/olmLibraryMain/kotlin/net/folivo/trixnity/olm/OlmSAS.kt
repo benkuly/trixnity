@@ -17,7 +17,7 @@ actual class OlmSAS private constructor() : WantsToBeFree {
     internal actual val ptr: OlmSASPointer = sas()
 
     actual companion object {
-        actual suspend fun create(): OlmSAS = OlmSAS().apply {
+        actual fun create(): OlmSAS = OlmSAS().apply {
             try {
                 val result = withRandom(create_sas_random_length(ptr)) { random ->
                     create_sas(ptr, random)

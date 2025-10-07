@@ -25,7 +25,7 @@ actual class OlmSession private constructor() : WantsToBeFree {
     internal actual val ptr: OlmSessionPointer = session()
 
     actual companion object {
-        actual suspend fun createOutbound(
+        actual fun createOutbound(
             account: OlmAccount,
             theirIdentityKey: String,
             theirOneTimeKey: String
@@ -43,7 +43,7 @@ actual class OlmSession private constructor() : WantsToBeFree {
             }
         }
 
-        actual suspend fun createInbound(
+        actual fun createInbound(
             account: OlmAccount,
             oneTimeKeyMessage: String
         ): OlmSession = OlmSession().apply {
@@ -52,7 +52,7 @@ actual class OlmSession private constructor() : WantsToBeFree {
             }
         }
 
-        actual suspend fun createInboundFrom(
+        actual fun createInboundFrom(
             account: OlmAccount,
             identityKey: String,
             oneTimeKeyMessage: String
@@ -67,9 +67,9 @@ actual class OlmSession private constructor() : WantsToBeFree {
             }
         }
 
-        actual suspend fun unpickle(key: String, pickle: String): OlmSession = OlmSession().apply {
+        actual fun unpickle(key: String?, pickle: String): OlmSession = OlmSession().apply {
             checkResult {
-                unpickle_session(ptr, key.encodeToByteArray(), pickle.encodeToByteArray())
+                unpickle_session(ptr, key?.encodeToByteArray() ?: ByteArray(0), pickle.encodeToByteArray())
             }
         }
     }
@@ -96,9 +96,9 @@ actual class OlmSession private constructor() : WantsToBeFree {
         ptr.free()
     }
 
-    actual fun pickle(key: String): String = pickle(
+    actual fun pickle(key: String?): String = pickle(
         ptr,
-        key,
+        key ?: "",
         ::pickle_session_length,
         ::pickle_session,
         ::session_last_error

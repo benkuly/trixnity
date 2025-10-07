@@ -92,10 +92,10 @@
   resolved "https://registry.yarnpkg.com/@leichtgewicht/ip-codec/-/ip-codec-2.0.4.tgz#b2ac626d6cb9c8718ab459166d4bb405b8ffa78b"
   integrity sha512-Hcv+nVC0kZnQ3tD9GVu5xSMR4VVYOteQIr/hwFPVEvPdlXqgGEuRjiheChHgdM+JyqdgNcmzZOX/tnl0JOiI7A==
 
-"@matrix-org/olm@3.2.15":
+"@matrix-org/olm@^3.2.15":
   version "3.2.15"
-  resolved "https://gitlab.matrix.org/api/v4/projects/27/packages/npm/@matrix-org/olm/-/@matrix-org/olm-3.2.15.tgz#77b4df2cd3db4709f52f3d4eb09a1b3d6b989bbb"
-  integrity sha1-d7TfLNPbRwn1Lz1OsJobPWuYm7s=
+  resolved "https://registry.yarnpkg.com/@matrix-org/olm/-/olm-3.2.15.tgz#55f3c1b70a21bbee3f9195cecd6846b1083451ec"
+  integrity sha512-S7lOrndAK9/8qOtaTq/WhttJC/o4GAzdfK0MUPpo8ApzsJEC0QjtwrkC3KBXdFP1cD1MXi/mlKR7aaoVMKgs6Q==
 
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
@@ -2683,6 +2683,12 @@ toidentifier@1.0.1:
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.1.tgz#3be34321a88a820ed1bd80dfaa33e479fbb8dd35"
   integrity sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==
 
+"trixnity-olm-wrapper@https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v2.0.4/trixnity-olm-wrapper.tgz":
+  version "0.0.1"
+  resolved "https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v2.0.4/trixnity-olm-wrapper.tgz#f7c0aa87d22688bbb6c802d699fd60e2cdd151be"
+  dependencies:
+    "@matrix-org/olm" "^3.2.15"
+
 type-is@~1.6.18:
   version "1.6.18"
   resolved "https://registry.yarnpkg.com/type-is/-/type-is-1.6.18.tgz#4e552cd05df09467dcbc4ef739de89f2cf37c131"
@@ -2740,6 +2746,10 @@ vary@^1, vary@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
+
+"vodozemac@https://gitlab.com/api/v4/projects/trixnity%2Ftrixnity-vodozemac-binaries/packages/generic/libvodozemac/v0.1.0/libvodozemac-web-npm.tar.gz#2d5ea6a09aa87ec8416a804ac7ccb4377631083a":
+  version "1.0.0"
+  resolved "https://gitlab.com/api/v4/projects/trixnity%2Ftrixnity-vodozemac-binaries/packages/generic/libvodozemac/v0.1.0/libvodozemac-web-npm.tar.gz#2d5ea6a09aa87ec8416a804ac7ccb4377631083a"
 
 void-elements@^2.0.0:
   version "2.0.1"

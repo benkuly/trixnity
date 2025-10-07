@@ -28,9 +28,11 @@ import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventConten
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.CryptoDriverException
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService.EncryptOlmError
-import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
@@ -41,7 +43,9 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ActiveDeviceVerificationTest : TrixnityBaseTest() {
+class ActiveDeviceVerificationTest() : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val aliceDevice = "AAAAAA"
@@ -109,6 +113,7 @@ class ActiveDeviceVerificationTest : TrixnityBaseTest() {
             keyTrust = KeyTrustServiceMock(),
             keyStore = keyStore,
             clock = testClock,
+            driver = driver,
         )
         cut.startLifecycle(this)
         cut.cancel()
@@ -185,7 +190,7 @@ class ActiveDeviceVerificationTest : TrixnityBaseTest() {
             }
         }
         olmEncryptionServiceMock.returnEncryptOlm =
-            Result.failure(EncryptOlmError.OlmLibraryError(OlmLibraryException(message = "hu")))
+            Result.failure(EncryptOlmError.OlmLibraryError(CryptoDriverException(Exception("hu"))))
         val cut = createCut()
         cut.startLifecycle(this)
         cut.cancel()
@@ -256,7 +261,7 @@ class ActiveDeviceVerificationTest : TrixnityBaseTest() {
             }
         }
         olmEncryptionServiceMock.returnEncryptOlm =
-            Result.failure(EncryptOlmError.OlmLibraryError(OlmLibraryException(message = "hu")))
+            Result.failure(EncryptOlmError.OlmLibraryError(CryptoDriverException(Exception("hu"))))
         val cut = ActiveDeviceVerificationImpl(
             request = VerificationRequestToDeviceEventContent(
                 aliceDevice,
@@ -277,6 +282,7 @@ class ActiveDeviceVerificationTest : TrixnityBaseTest() {
             keyTrust = KeyTrustServiceMock(),
             keyStore = keyStore,
             clock = testClock,
+            driver = driver,
         )
         cut.startLifecycle(this)
         api.sync.startOnce().getOrThrow()
@@ -320,5 +326,6 @@ class ActiveDeviceVerificationTest : TrixnityBaseTest() {
             keyTrust = KeyTrustServiceMock(),
             keyStore = keyStore,
             clock = testClock,
+            driver = driver,
         )
 }

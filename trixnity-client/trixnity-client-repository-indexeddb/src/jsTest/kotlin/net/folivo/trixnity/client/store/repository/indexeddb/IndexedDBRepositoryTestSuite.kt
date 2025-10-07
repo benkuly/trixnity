@@ -47,6 +47,7 @@ class IndexedDBRepositoryTestSuite : RepositoryTestSuite(
             singleOf(::IndexedDBTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }
             singleOf(::IndexedDBTimelineEventRepository) { bind<TimelineEventRepository>() }
             singleOf(::IndexedDBUserPresenceRepository) { bind<UserPresenceRepository>() }
+            singleOf(::IndexedDBMigrationRepository) { bind<MigrationRepository>() }
         }
     }
 )

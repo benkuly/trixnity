@@ -30,14 +30,14 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.createAesHmacSha2MacFromKey
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.key.encryptSecret
 import net.folivo.trixnity.crypto.sign.VerifyResult
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.getValue
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.suspendLazy
-import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
@@ -45,6 +45,9 @@ import kotlin.random.Random
 import kotlin.test.Test
 
 class KeyTrustServiceTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
+
     private val alice = UserId("alice", "server")
     private val aliceDevice = "ALICE_DEVICE"
     private val bob = UserId("bob", "server")
@@ -63,8 +66,11 @@ class KeyTrustServiceTest : TrixnityBaseTest() {
 
     private val cut = KeyTrustServiceImpl(
         UserInfo(alice, aliceDevice, Ed25519Key(null, ""), Key.Curve25519Key(null, "")),
-        keyStore, globalAccountDataStore,
-        signServiceMock, api
+        keyStore,
+        globalAccountDataStore,
+        signServiceMock,
+        api,
+        driver
     )
 
     private val recoveryKey = Random.nextBytes(32)
@@ -77,9 +83,9 @@ class KeyTrustServiceTest : TrixnityBaseTest() {
     }
     private val keyId = "keyId"
 
-    private val _masterSigningKeys = suspendLazy { freeAfter(OlmPkSigning.create(null)) { it.privateKey to it.publicKey } }
-    private val masterSigningPrivateKey by _masterSigningKeys.map { it.first }
-    private val masterSigningPublicKey by _masterSigningKeys.map { it.second }
+    private val _masterSigningKeys = driver.key.ed25519SecretKey()
+    private val masterSigningPrivateKey = _masterSigningKeys.base64
+    private val masterSigningPublicKey = _masterSigningKeys.publicKey.base64
 
     private val encryptedMasterSigningKey by suspendLazy {
         MasterKeyEventContent(

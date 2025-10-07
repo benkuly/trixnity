@@ -786,7 +786,7 @@ class KeysRoutesTest : TrixnityBaseTest() {
                                     isVerified = true,
                                     sessionData = RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData(
                                         ciphertext = "base64+ciphertext+of+JSON+data",
-                                        ephemeral = "base64+ephemeral+key",
+                                        ephemeral = Curve25519KeyValue("base64+ephemeral+key"),
                                         mac = "base64+mac+of+ciphertext"
                                     )
                                 )
@@ -840,7 +840,7 @@ class KeysRoutesTest : TrixnityBaseTest() {
                             isVerified = true,
                             sessionData = RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData(
                                 ciphertext = "base64+ciphertext+of+JSON+data",
-                                ephemeral = "base64+ephemeral+key",
+                                ephemeral = Curve25519KeyValue("base64+ephemeral+key"),
                                 mac = "base64+mac+of+ciphertext"
                             )
                         )
@@ -888,7 +888,7 @@ class KeysRoutesTest : TrixnityBaseTest() {
                     isVerified = true,
                     sessionData = RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData(
                         ciphertext = "base64+ciphertext+of+JSON+data",
-                        ephemeral = "base64+ephemeral+key",
+                        ephemeral = Curve25519KeyValue("base64+ephemeral+key"),
                         mac = "base64+mac+of+ciphertext"
                     )
                 )
@@ -976,7 +976,7 @@ class KeysRoutesTest : TrixnityBaseTest() {
                                     isVerified = true,
                                     sessionData = RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData(
                                         ciphertext = "base64+ciphertext+of+JSON+data",
-                                        ephemeral = "base64+ephemeral+key",
+                                        ephemeral = Curve25519KeyValue("base64+ephemeral+key"),
                                         mac = "base64+mac+of+ciphertext"
                                     )
                                 )
@@ -1037,7 +1037,7 @@ class KeysRoutesTest : TrixnityBaseTest() {
                             isVerified = true,
                             sessionData = RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData(
                                 ciphertext = "base64+ciphertext+of+JSON+data",
-                                ephemeral = "base64+ephemeral+key",
+                                ephemeral = Curve25519KeyValue("base64+ephemeral+key"),
                                 mac = "base64+mac+of+ciphertext"
                             )
                         )
@@ -1092,7 +1092,7 @@ class KeysRoutesTest : TrixnityBaseTest() {
                     isVerified = true,
                     sessionData = RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData(
                         ciphertext = "base64+ciphertext+of+JSON+data",
-                        ephemeral = "base64+ephemeral+key",
+                        ephemeral = Curve25519KeyValue("base64+ephemeral+key"),
                         mac = "base64+mac+of+ciphertext"
                     )
                 )

@@ -9,6 +9,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
+import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
@@ -29,7 +30,7 @@ sealed interface EncryptedMessageEventContent : MessageEventContent {
     @Serializable
     data class MegolmEncryptedMessageEventContent(
         @SerialName("ciphertext")
-        val ciphertext: String,
+        val ciphertext: MegolmMessageValue,
         @Deprecated("see MSC3700")
         @SerialName("sender_key")
         val senderKey: Curve25519KeyValue? = null,

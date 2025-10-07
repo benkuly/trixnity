@@ -14,10 +14,7 @@ import net.folivo.trixnity.client.utils.retryLoop
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
 import net.folivo.trixnity.clientserverapi.model.keys.SetRoomKeyBackupVersionRequest
-import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.EventHandler
-import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.ClientEvent.GlobalAccountDataEvent
 import net.folivo.trixnity.core.model.events.m.MegolmBackupV1EventContent
@@ -25,12 +22,18 @@ import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData
 import net.folivo.trixnity.core.model.keys.RoomKeyBackupSessionData.EncryptedRoomKeyBackupV1SessionData.RoomKeyBackupV1SessionData
 import net.folivo.trixnity.crypto.SecretType
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
+import net.folivo.trixnity.crypto.driver.keys.Curve25519SecretKey
+import net.folivo.trixnity.crypto.driver.megolm.InboundGroupSession
+import net.folivo.trixnity.crypto.driver.useAll
+import net.folivo.trixnity.crypto.invoke
 import net.folivo.trixnity.crypto.key.encryptSecret
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignWith
 import net.folivo.trixnity.crypto.sign.signatures
-import net.folivo.trixnity.olm.*
 import net.folivo.trixnity.utils.retry
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
@@ -68,6 +71,7 @@ class KeyBackupServiceImpl(
     private val signService: SignService,
     private val currentSyncState: CurrentSyncState,
     private val scope: CoroutineScope,
+    private val driver: CryptoDriver,
 ) : KeyBackupService, EventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
@@ -140,7 +144,7 @@ class KeyBackupServiceImpl(
                     null
                 }
             } else {
-                log.warn { "unsupported key backup version" }
+                log.warn { "unsupported key backup version: $currentVersion" }
                 null
             }
         }
@@ -175,23 +179,22 @@ class KeyBackupServiceImpl(
                     log.debug { "try to find key backup for roomId=$roomId, sessionId=$sessionId, version=$version" }
                     val encryptedSessionData = api.key.getRoomKeys(version, roomId, sessionId).getOrThrow().sessionData
                     require(encryptedSessionData is EncryptedRoomKeyBackupV1SessionData)
-                    val privateKey = keyStore.getSecrets()[SecretType.M_MEGOLM_BACKUP_V1]?.decryptedPrivateKey
-                    val decryptedJson = freeAfter(OlmPkDecryption.create(privateKey)) {
-                        it.decrypt(
-                            with(encryptedSessionData) {
-                                OlmPkMessage(
-                                    cipherText = ciphertext,
-                                    mac = mac,
-                                    ephemeralKey = ephemeral
-                                )
-                            }
+                    val storedSecret = checkNotNull(keyStore.getSecrets()[SecretType.M_MEGOLM_BACKUP_V1])
+
+                    val decryptedJson = useAll(
+                        { driver.pk.decryption(storedSecret.decryptedPrivateKey) },
+                        { driver.pk.message(encryptedSessionData) },
+                    ) { decryption, encryptedMessage -> decryption.decrypt(encryptedMessage) }
+
+                    val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
+                    val account = checkNotNull(accountStore.getAccount())
+                    val (firstKnownIndex, pickledSession) = useAll(
+                        { driver.megolm.exportedSessionKey(data.sessionKey) },
+                        { driver.megolm.inboundGroupSession.import(it) }) { _, inboundGroupSession ->
+                        inboundGroupSession.firstKnownIndex to inboundGroupSession.pickle(
+                            driver.key.pickleKey(account.olmPickleKey)
                         )
                     }
-                    val data = api.json.decodeFromString<RoomKeyBackupV1SessionData>(decryptedJson)
-                    val (firstKnownIndex, pickledSession) =
-                        freeAfter(OlmInboundGroupSession.import(data.sessionKey)) {
-                            it.firstKnownIndex to it.pickle(checkNotNull(accountStore.getAccount()?.olmPickleKey))
-                        }
                     val senderSigningKey =
                         data.senderClaimedKeys.filterIsInstance<Key.Ed25519Key>().firstOrNull()
                             ?: throw IllegalArgumentException("sender claimed key should not be empty")
@@ -201,7 +204,7 @@ class KeyBackupServiceImpl(
                             senderKey = data.senderKey,
                             sessionId = sessionId,
                             roomId = roomId,
-                            firstKnownIndex = firstKnownIndex,
+                            firstKnownIndex = firstKnownIndex.toLong(),
                             isTrusted = false, // because it comes from backup
                             hasBeenBackedUp = true, // because it comes from backup
                             senderSigningKey = senderSigningKey.value,
@@ -221,7 +224,8 @@ class KeyBackupServiceImpl(
         privateKey: String,
     ): Boolean {
         val generatedPublicKey = try {
-            freeAfter(OlmPkDecryption.create(privateKey)) { it.publicKey }
+            driver.key.curve25519SecretKey(privateKey).use(Curve25519SecretKey::publicKey)
+                .use(Curve25519PublicKey::base64)
         } catch (error: Exception) {
             log.warn(error) { "could not generate public key from private backup key" }
             return false
@@ -253,36 +257,32 @@ class KeyBackupServiceImpl(
                                 notBackedUpInboundMegolmSessions.values.groupBy { it.roomId }
                                     .mapValues { roomEntries ->
                                         RoomKeyBackup(roomEntries.value.associate { session ->
-                                            val encryptedRoomKeyBackupV1SessionData =
-                                                freeAfter(OlmPkEncryption.create(version.authData.publicKey.value)) { pke ->
-                                                    val sessionKey = freeAfter(
-                                                        OlmInboundGroupSession.unpickle(
-                                                            checkNotNull(accountStore.getAccount()?.olmPickleKey),
-                                                            session.pickled
-                                                        )
-                                                    ) { it.export(it.firstKnownIndex) }
-                                                    pke.encrypt(
-                                                        api.json.encodeToString(
-                                                            RoomKeyBackupV1SessionData(
-                                                                session.senderKey,
-                                                                session.forwardingCurve25519KeyChain,
-                                                                Keys(Key.Ed25519Key(null, session.senderSigningKey)),
-                                                                sessionKey
-                                                            )
-                                                        )
-                                                    ).run {
-                                                        EncryptedRoomKeyBackupV1SessionData(
-                                                            ciphertext = cipherText,
-                                                            mac = mac,
-                                                            ephemeral = ephemeralKey
-                                                        )
-                                                    }
-                                                }
+                                            val account = checkNotNull(accountStore.getAccount())
+                                            val sessionKey = driver.megolm.inboundGroupSession.fromPickle(
+                                                session.pickled,
+                                                driver.key.pickleKey(account.olmPickleKey)
+                                            ).use(InboundGroupSession::exportAtFirstKnownIndex)
+
+                                            val sessionData = api.json.encodeToString(
+                                                RoomKeyBackupV1SessionData(
+                                                    session.senderKey,
+                                                    session.forwardingCurve25519KeyChain,
+                                                    Keys(Key.Ed25519Key(null, session.senderSigningKey)),
+                                                    ExportedSessionKeyValue.of(sessionKey),
+                                                )
+                                            )
+
+                                            val encryptedSessionData =
+                                                driver.pk.encryption(version.authData.publicKey.value)
+                                                    .use { it.encrypt(sessionData) }
+
                                             session.sessionId to RoomKeyBackupData(
                                                 firstMessageIndex = session.firstKnownIndex,
                                                 forwardedCount = session.forwardingCurve25519KeyChain.size,
                                                 isVerified = session.isTrusted,
-                                                sessionData = encryptedRoomKeyBackupV1SessionData
+                                                sessionData = EncryptedRoomKeyBackupV1SessionData.of(
+                                                    encryptedSessionData
+                                                )
                                             )
                                         })
                                     }
@@ -311,18 +311,19 @@ class KeyBackupServiceImpl(
         masterSigningPrivateKey: String,
         masterSigningPublicKey: String,
     ): Result<Unit> {
-        val (keyBackupPrivateKey, keyBackupPublicKey) = freeAfter(OlmPkDecryption.create(null)) { it.privateKey to it.publicKey }
+        val (keyBackupPrivateKey, keyBackupPublicKey) = driver.key.curve25519SecretKey().use {
+            it.base64 to it.publicKey.use(KeyValue::of)
+        }
         return api.key.setRoomKeysVersion(
             SetRoomKeyBackupVersionRequest.V1(
                 authData = with(
-                    RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(KeyValue.Curve25519KeyValue(keyBackupPublicKey))
+                    RoomKeyBackupAuthData.RoomKeyBackupV1AuthData(keyBackupPublicKey)
                 ) {
                     val ownDeviceSignature = signService.signatures(this)[ownUserId]
                         ?.firstOrNull()
                     val ownUsersSignature =
                         signService.signatures(
-                            this,
-                            SignWith.KeyPair(masterSigningPrivateKey, masterSigningPublicKey)
+                            this, SignWith.KeyPair(masterSigningPrivateKey, masterSigningPublicKey)
                         )[ownUserId]
                             ?.firstOrNull()
                     requireNotNull(ownUsersSignature)

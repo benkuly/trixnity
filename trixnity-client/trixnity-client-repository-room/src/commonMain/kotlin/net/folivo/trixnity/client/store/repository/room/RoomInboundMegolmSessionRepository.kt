@@ -30,6 +30,9 @@ interface InboundMegolmSessionDao {
     @Query("SELECT * FROM InboundMegolmSession WHERE sessionId = :sessionId AND roomId = :roomId LIMIT 1")
     suspend fun get(sessionId: String, roomId: RoomId): RoomInboundMegolmSession?
 
+    @Query("SELECT * FROM InboundMegolmSession")
+    suspend fun getAll(): List<RoomInboundMegolmSession>
+
     @Query("SELECT * FROM InboundMegolmSession WHERE hasBeenBackedUp = 0")
     suspend fun getNotBackedUp(): List<RoomInboundMegolmSession>
 
@@ -52,6 +55,10 @@ internal class RoomInboundMegolmSessionRepository(
     override suspend fun get(key: InboundMegolmSessionRepositoryKey): StoredInboundMegolmSession? = withRoomRead {
         dao.get(key.sessionId, key.roomId)
             ?.toModel()
+    }
+
+    override suspend fun getAll(): List<StoredInboundMegolmSession> = withRoomRead {
+        dao.getAll().map { it.toModel() }
     }
 
     override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> = withRoomRead {

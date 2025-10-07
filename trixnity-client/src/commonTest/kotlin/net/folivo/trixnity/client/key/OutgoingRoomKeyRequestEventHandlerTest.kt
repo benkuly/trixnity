@@ -19,6 +19,7 @@ import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.store.StoredRoomKeyRequest
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.users.SendToDevice
+import net.folivo.trixnity.core.ExportedSessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -30,11 +31,13 @@ import net.folivo.trixnity.core.model.events.m.KeyRequestAction
 import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.*
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.megolm.InboundGroupSession
+import net.folivo.trixnity.crypto.invoke
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import net.folivo.trixnity.olm.OlmInboundGroupSession
-import net.folivo.trixnity.olm.OlmOutboundGroupSession
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
@@ -45,7 +48,11 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+
 class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
+
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
     private val aliceDevice = "ALICEDEVICE"
@@ -55,7 +62,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
     private val senderSigningKey = Key.Ed25519Key(null, "senderSigning")
     private val forwardingSenderKey = Key.Curve25519Key(null, "forwardingSenderKey")
 
-    private val accountStore = getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "") } }
+    private val accountStore = getInMemoryAccountStore()
     private val olmCryptoStore = getInMemoryOlmStore()
     private val keyStore = getInMemoryKeyStore()
 
@@ -71,6 +78,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
         olmCryptoStore,
         CurrentSyncState(MutableStateFlow(SyncState.RUNNING)),
         testScope.testClock,
+        driver,
     )
 
     private val encryptedEvent = ToDeviceEvent(
@@ -201,7 +209,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
             DecryptedOlmEventContainer(
                 encryptedEvent,
                 DecryptedOlmEvent(
-                    forwardedRoomKeyEvent().copy(sessionKey = "dino"),
+                    forwardedRoomKeyEvent().copy(sessionKey = ExportedSessionKeyValue("dino")),
                     alice, keysOf(aliceDevice2Key), alice, keysOf()
                 ),
             )
@@ -376,24 +384,26 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
         }
     }
 
-    private suspend fun sessionKeys(withIndexes: Int): List<String> =
-        freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
-            buildList {
-                freeAfter(OlmInboundGroupSession.create(outboundSession.sessionKey)) { inboundSession ->
-                    add(inboundSession.export(0))
-                    for (i in 1..withIndexes) {
-                        inboundSession.decrypt(
-                            outboundSession.encrypt("bla")
-                        )
-                        add(inboundSession.export(i.toLong()))
-                    }
-                }
+    private fun sessionKeys(withIndexes: Int): List<ExportedSessionKeyValue> {
+        val outboundSession = driver.megolm.groupSession()
+        val inboundSession = driver.megolm.inboundGroupSession(sessionKey = outboundSession.sessionKey)
+
+        return buildList {
+            add(ExportedSessionKeyValue.of(checkNotNull(inboundSession.exportAt(0))))
+
+            for (i in 1..withIndexes) {
+                inboundSession.decrypt(
+                    outboundSession.encrypt("bla")
+                )
+                add(ExportedSessionKeyValue.of(checkNotNull(inboundSession.exportAt(i))))
             }
         }
+    }
 
-    private suspend fun sessionKey() = sessionKeys(0).first()
-    private suspend fun pickleToInbound(sessionKey: String) =
-        freeAfter(OlmInboundGroupSession.import(sessionKey)) { it.pickle("") }
+    private fun sessionKey() = sessionKeys(0).first()
+    private fun pickleToInbound(sessionKey: ExportedSessionKeyValue) =
+        driver.megolm.inboundGroupSession.import(sessionKey = driver.megolm.exportedSessionKey(sessionKey))
+            .use(InboundGroupSession::pickle)
 
     private suspend fun TestScope.setRequest(receiverDeviceIds: Set<String>) {
         keyStore.addRoomKeyRequest(
@@ -424,7 +434,7 @@ class OutgoingRoomKeyRequestEventHandlerTest : TrixnityBaseTest() {
         }
     }
 
-    private suspend fun forwardedRoomKeyEvent() =
+    private fun forwardedRoomKeyEvent() =
         ForwardedRoomKeyEventContent(
             roomId = room,
             senderKey = senderKey.value,

@@ -26,7 +26,7 @@ class ClientOlmStoreTest : TrixnityBaseTest() {
     private val keyStore = getInMemoryKeyStore()
 
     private val cut = ClientOlmStore(
-        accountStore = getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "") } },
+        accountStore = getInMemoryAccountStore(),
         olmCryptoStore = getInMemoryOlmStore(),
         keyStore = keyStore,
         roomStateStore = getInMemoryRoomStateStore(),

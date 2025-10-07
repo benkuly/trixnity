@@ -2,8 +2,8 @@ package net.folivo.trixnity.core.model.events.m.key.verification
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.events.m.Mentions
-import net.folivo.trixnity.core.model.events.m.RelatesTo
+import net.folivo.trixnity.core.MacValue
+import net.folivo.trixnity.core.model.events.m.*
 import net.folivo.trixnity.core.model.keys.Keys
 
 /**
@@ -12,7 +12,7 @@ import net.folivo.trixnity.core.model.keys.Keys
 @Serializable
 data class SasMacEventContent(
     @SerialName("keys")
-    val keys: String,
+    val keys: MacValue,
     @SerialName("mac")
     val mac: Keys, // actually these are no keys, but they are serialized the same, so we recycle the Keys stuff.
     @SerialName("m.relates_to")

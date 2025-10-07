@@ -2,25 +2,22 @@ package net.folivo.trixnity.olm
 
 actual class OlmInboundGroupSession private constructor() : WantsToBeFree {
     internal actual val ptr: OlmInboundGroupSessionPointer =
-        rethrow { js("new Olm.InboundGroupSession()") }.unsafeCast<OlmInboundGroupSessionPointer>()
+        rethrow { InboundGroupSession() }.unsafeCast<OlmInboundGroupSessionPointer>()
 
     actual companion object {
-        actual suspend fun create(sessionKey: String): OlmInboundGroupSession {
-            initOlm()
+        actual fun create(sessionKey: String): OlmInboundGroupSession {
             return OlmInboundGroupSession()
                 .apply { rethrow { ptr.create(sessionKey) } }
         }
 
-        actual suspend fun import(sessionKey: String): OlmInboundGroupSession {
-            initOlm()
+        actual fun import(sessionKey: String): OlmInboundGroupSession {
             return OlmInboundGroupSession()
                 .apply { rethrow { ptr.import_session(sessionKey) } }
         }
 
-        actual suspend fun unpickle(key: String, pickle: String): OlmInboundGroupSession {
-            initOlm()
+        actual fun unpickle(key: String?, pickle: String): OlmInboundGroupSession {
             return OlmInboundGroupSession()
-                .apply { rethrow { ptr.unpickle(key, pickle) } }
+                .apply { rethrow { ptr.unpickle(key ?: "", pickle) } }
         }
     }
 
@@ -31,7 +28,7 @@ actual class OlmInboundGroupSession private constructor() : WantsToBeFree {
 
     actual fun export(messageIndex: Long): String = rethrow { ptr.export_session(messageIndex.toInt()) }
 
-    actual fun pickle(key: String): String = rethrow { ptr.pickle(key) }
+    actual fun pickle(key: String?): String = rethrow { ptr.pickle(key ?: "") }
 
     actual fun decrypt(encryptedText: String): OlmInboundGroupMessage {
         val message = rethrow { ptr.decrypt(encryptedText) }

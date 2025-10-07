@@ -17,6 +17,9 @@ interface OlmSessionDao {
     @Query("SELECT * FROM OlmSession WHERE senderKey = :senderKey LIMIT 1")
     suspend fun get(senderKey: String): RoomOlmSession?
 
+    @Query("SELECT * FROM OlmSession")
+    suspend fun getAll(): List<RoomOlmSession>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: RoomOlmSession)
 
@@ -36,6 +39,10 @@ internal class RoomOlmSessionRepository(
     override suspend fun get(key: Curve25519KeyValue): Set<StoredOlmSession>? = withRoomRead {
         dao.get(key.value)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
+
+    override suspend fun getAll(): List<Set<StoredOlmSession>> = withRoomRead {
+        dao.getAll().map { entity -> json.decodeFromString(entity.value) }
     }
 
     override suspend fun save(key: Curve25519KeyValue, value: Set<StoredOlmSession>) = withRoomWrite {

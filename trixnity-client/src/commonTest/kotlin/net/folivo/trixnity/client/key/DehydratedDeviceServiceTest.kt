@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.crypto.ClientOlmStore
+import net.folivo.trixnity.client.mocks.KeyServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
@@ -22,6 +23,8 @@ import net.folivo.trixnity.clientserverapi.model.devices.SetDehydratedDevice
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.OlmMessageValue
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.UserInfo
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -31,27 +34,31 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyEventContent
 import net.folivo.trixnity.core.model.events.m.crosssigning.SelfSigningKeyEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent
 import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo
-import net.folivo.trixnity.core.model.events.m.room.EncryptedToDeviceEventContent.OlmEncryptedToDeviceEventContent.CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.Key.*
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.AesHmacSha2EncryptedData
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
 import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
-import net.folivo.trixnity.olm.*
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.olm.Message
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(MSC3814::class)
 class DehydratedDeviceServiceTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
+
     override val packageLogLevels: Map<String, Level>
         get() = super.packageLogLevels + mapOf("net.folivo.trixnity.client.store.cache" to Level.INFO)
 
@@ -64,7 +71,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     private val keyStore = getInMemoryKeyStore()
     private val olmCryptoStore = getInMemoryOlmStore()
     private val olmStore = ClientOlmStore(
-        accountStore = getInMemoryAccountStore { updateAccount { it?.copy(olmPickleKey = "") } },
+        accountStore = getInMemoryAccountStore(),
         olmCryptoStore = olmCryptoStore,
         keyStore = keyStore,
         roomStateStore = getInMemoryRoomStateStore(),
@@ -76,8 +83,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
 
     private val userInfo = UserInfo(
         alice,
-        aliceDevice,
-        Key.Ed25519Key(aliceDevice, "ed25519Key"),
+        aliceDevice, Ed25519Key(aliceDevice, "ed25519Key"),
         Curve25519Key(aliceDevice, "curve25519Key")
     )
 
@@ -86,7 +92,6 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
     @OptIn(ExperimentalSerializationApi::class)
     private val decryptedOlmEventSerializer =
         requireNotNull(json.serializersModule.getContextual(DecryptedOlmEvent::class))
-    private val clock = Clock.System
     private val matrixClientConfiguration = MatrixClientConfiguration()
 
     private val cut = DehydratedDeviceService(
@@ -95,9 +100,11 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         userInfo = userInfo,
         json = json,
         olmStore = olmStore,
+        keyService = KeyServiceMock(),
         signService = signServiceMock,
-        clock = clock,
+        clock = testScope.testClock,
         config = matrixClientConfiguration,
+        driver = driver,
     )
 
     @Test
@@ -105,8 +112,8 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         val dehydratedDeviceKey = SecureRandom.nextBytes(32)
         var setDehydratedDevice: SetDehydratedDevice.Request? = null
 
-        val (selfSigningPublicKey, selfSigningPrivateKey) = freeAfter(OlmPkSigning.create()) {
-            it.publicKey to it.privateKey
+        val (_, selfSigningPrivateKey) = driver.key.ed25519SecretKey().use {
+            it.publicKey to it.base64
         }
 
         apiConfig.endpoints {
@@ -148,8 +155,8 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
 
         val deviceData =
             setDehydratedDevice?.deviceData.shouldBeInstanceOf<DehydratedDeviceData.DehydrationV2Compatibility>()
-        val dehydratedDeviceAccount = OlmAccount.unpickle(
-            "", decryptAesHmacSha2(
+        val dehydratedDeviceAccount = driver.olm.account.fromPickle(
+            decryptAesHmacSha2(
                 content = with(deviceData) {
                     AesHmacSha2EncryptedData(
                         iv = iv,
@@ -159,10 +166,10 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
                 },
                 key = dehydratedDeviceKey,
                 name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
-            ).decodeToString()
+            ).decodeToString(),
         )
 
-        setDehydratedDevice.deviceId shouldBe dehydratedDeviceAccount.identityKeys.curve25519
+        setDehydratedDevice.deviceId shouldBe dehydratedDeviceAccount.curve25519Key.base64
         setDehydratedDevice.deviceKeys.shouldNotBeNull()
         setDehydratedDevice.oneTimeKeys.shouldNotBeNull()
         setDehydratedDevice.fallbackKeys.shouldNotBeNull()
@@ -175,13 +182,13 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         var getDehydratedDeviceCalled = false
         var getDehydratedDeviceEventsCalled = false
 
-        val dehydratedDeviceAccount = OlmAccount.create()
+        val dehydratedDeviceAccount = driver.olm.account()
         dehydratedDeviceAccount.generateOneTimeKeys(dehydratedDeviceAccount.maxNumberOfOneTimeKeys)
 
-        val bobAccount = OlmAccount.create()
+        val bobAccount = driver.olm.account()
 
         val encryptedData = encryptAesHmacSha2(
-            content = dehydratedDeviceAccount.pickle("").encodeToByteArray(),
+            content = dehydratedDeviceAccount.pickle().encodeToByteArray(),
             key = dehydratedDeviceKey,
             name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
         )
@@ -192,47 +199,37 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             mac = encryptedData.mac
         )
 
-        val megolmSession = freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
-            RoomKeyEventContent(
-                roomId = roomId,
-                sessionId = outboundSession.sessionId,
-                sessionKey = outboundSession.sessionKey,
-                algorithm = EncryptionAlgorithm.Megolm,
-            )
-        }
-        val encryptedMessage = freeAfter(
-            OlmSession.createOutbound(
-                bobAccount,
-                dehydratedDeviceAccount.identityKeys.curve25519,
-                dehydratedDeviceAccount.oneTimeKeys.curve25519.values.first()
-            )
-        ) { olmSession ->
-            olmSession.encrypt(
-                json.encodeToString(
-                    decryptedOlmEventSerializer,
-                    DecryptedOlmEvent(
-                        content = megolmSession,
-                        sender = bob,
-                        senderKeys = keysOf(
-                            Ed25519Key(null, bobAccount.identityKeys.ed25519)
-                        ),
-                        recipient = alice,
-                        recipientKeys = keysOf(
-                            Ed25519Key(null, dehydratedDeviceAccount.identityKeys.ed25519)
-                        ),
-                    )
+        val outboundSession = driver.megolm.groupSession()
+        val megolmSession = RoomKeyEventContent(
+            roomId = roomId,
+            sessionId = outboundSession.sessionId,
+            sessionKey = SessionKeyValue.of(outboundSession.sessionKey),
+            algorithm = EncryptionAlgorithm.Megolm,
+        )
+        val olmSession = bobAccount.createOutboundSession(
+            identityKey = dehydratedDeviceAccount.curve25519Key,
+            oneTimeKey = dehydratedDeviceAccount.oneTimeKeys.values.first(),
+        )
+        val encryptedMessage = olmSession.encrypt(
+            json.encodeToString(
+                decryptedOlmEventSerializer, DecryptedOlmEvent(
+                    content = megolmSession,
+                    sender = bob,
+                    senderKeys = keysOf(
+                        Key.of(null, bobAccount.ed25519Key)
+                    ),
+                    recipient = alice,
+                    recipientKeys = keysOf(
+                        Key.of(null, dehydratedDeviceAccount.ed25519Key)
+                    ),
                 )
             )
-        }
+        ) as Message.PreKey
         val encryptedMegolmSession =
             OlmEncryptedToDeviceEventContent(
                 ciphertext = mapOf(
-                    dehydratedDeviceAccount.identityKeys.curve25519 to CiphertextInfo(
-                        encryptedMessage.cipherText,
-                        INITIAL_PRE_KEY
-                    )
-                ),
-                senderKey = KeyValue.Curve25519KeyValue(bobAccount.identityKeys.curve25519)
+                    dehydratedDeviceAccount.curve25519Key.base64 to CiphertextInfo.of(encryptedMessage)
+                ), senderKey = KeyValue.of(bobAccount.curve25519Key)
             )
 
         keyStore.updateDeviceKeys(bob) {
@@ -242,8 +239,8 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
                         DeviceKeys(
                             bob, "BOB_DEVICE", setOf(),
                             keysOf(
-                                Ed25519Key("BOB_DEVICE", bobAccount.identityKeys.ed25519),
-                                Curve25519Key("BOB_DEVICE", bobAccount.identityKeys.curve25519),
+                                Key.of("BOB_DEVICE", bobAccount.ed25519Key),
+                                Key.of("BOB_DEVICE", bobAccount.curve25519Key),
                             )
                         ), mapOf()
                     ),
@@ -287,7 +284,7 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             megolmSession.roomId
         ).shouldNotBeNull()
 
-        olmStore.updateOlmSessions(KeyValue.Curve25519KeyValue(bobAccount.identityKeys.curve25519)) {
+        olmStore.updateOlmSessions(KeyValue.of(bobAccount.curve25519Key)) {
             it shouldBe null
         }
     }
@@ -318,13 +315,13 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         var getDehydratedDeviceCalled = false
         var getDehydratedDeviceEventsCalled = false
 
-        val dehydratedDeviceAccount = OlmAccount.create()
+        val dehydratedDeviceAccount = driver.olm.account()
         dehydratedDeviceAccount.generateOneTimeKeys(dehydratedDeviceAccount.maxNumberOfOneTimeKeys)
 
-        val bobAccount = OlmAccount.create()
+        val bobAccount = driver.olm.account()
 
         val encryptedData = encryptAesHmacSha2(
-            content = dehydratedDeviceAccount.pickle("").encodeToByteArray(),
+            content = dehydratedDeviceAccount.pickle().encodeToByteArray(),
             key = dehydratedDeviceKey,
             name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
         )
@@ -335,21 +332,17 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
             mac = encryptedData.mac
         )
 
-        val megolmSession = freeAfter(OlmOutboundGroupSession.create()) { outboundSession ->
+        val megolmSession = driver.megolm.groupSession().use { outboundSession ->
             RoomKeyEventContent(
                 roomId = roomId,
                 sessionId = outboundSession.sessionId,
-                sessionKey = outboundSession.sessionKey,
+                sessionKey = SessionKeyValue.of(outboundSession.sessionKey),
                 algorithm = EncryptionAlgorithm.Megolm,
             )
         }
-        val encryptedMessage = freeAfter(
-            OlmSession.createOutbound(
-                bobAccount,
-                dehydratedDeviceAccount.identityKeys.curve25519,
-                dehydratedDeviceAccount.oneTimeKeys.curve25519.values.first()
-            )
-        ) { olmSession ->
+        val encryptedMessage = bobAccount.createOutboundSession(
+            dehydratedDeviceAccount.curve25519Key, dehydratedDeviceAccount.oneTimeKeys.values.first()
+        ).use { olmSession ->
             olmSession.encrypt(
                 json.encodeToString(
                     decryptedOlmEventSerializer,
@@ -357,11 +350,11 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
                         content = megolmSession,
                         sender = bob,
                         senderKeys = keysOf(
-                            Ed25519Key(null, bobAccount.identityKeys.ed25519)
+                            Key.of(null, bobAccount.ed25519Key)
                         ),
                         recipient = alice,
                         recipientKeys = keysOf(
-                            Ed25519Key(null, dehydratedDeviceAccount.identityKeys.ed25519)
+                            Key.of(null, dehydratedDeviceAccount.ed25519Key)
                         ),
                     )
                 )
@@ -370,12 +363,8 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
         val encryptedMegolmSession =
             OlmEncryptedToDeviceEventContent(
                 ciphertext = mapOf(
-                    dehydratedDeviceAccount.identityKeys.curve25519 to CiphertextInfo(
-                        encryptedMessage.cipherText,
-                        INITIAL_PRE_KEY
-                    )
-                ),
-                senderKey = KeyValue.Curve25519KeyValue(bobAccount.identityKeys.curve25519)
+                    dehydratedDeviceAccount.curve25519Key.base64 to CiphertextInfo.of(encryptedMessage)
+                ), senderKey = KeyValue.of(bobAccount.curve25519Key)
             )
 
         keyStore.updateDeviceKeys(bob) {
@@ -385,8 +374,8 @@ class DehydratedDeviceServiceTest : TrixnityBaseTest() {
                         DeviceKeys(
                             bob, "BOB_DEVICE", setOf(),
                             keysOf(
-                                Ed25519Key("BOB_DEVICE", bobAccount.identityKeys.ed25519),
-                                Curve25519Key("BOB_DEVICE", bobAccount.identityKeys.curve25519),
+                                Key.of("BOB_DEVICE", bobAccount.ed25519Key),
+                                Key.of("BOB_DEVICE", bobAccount.curve25519Key),
                             )
                         ), mapOf()
                     ),

@@ -27,7 +27,7 @@ class AccountStoreTest : TrixnityBaseTest() {
     fun `init » load values from database`() = runTest {
         repository.save(
             1, Account(
-                olmPickleKey = "",
+                olmPickleKey = null,
                 baseUrl = "http://localhost",
                 userId = UserId("user", "server"),
                 deviceId = "device",
@@ -44,7 +44,7 @@ class AccountStoreTest : TrixnityBaseTest() {
         cut.init(this)
 
         cut.getAccount().shouldNotBeNull().run {
-            olmPickleKey shouldBe ""
+            olmPickleKey shouldBe null
             baseUrl shouldBe "http://localhost"
             userId shouldBe UserId("user", "server")
             deviceId shouldBe "device"

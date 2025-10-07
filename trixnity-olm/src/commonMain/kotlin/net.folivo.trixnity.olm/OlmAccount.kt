@@ -4,8 +4,8 @@ expect class OlmAccount : WantsToBeFree {
     internal val ptr: OlmAccountPointer
 
     companion object {
-        suspend fun create(): OlmAccount
-        suspend fun unpickle(key: String, pickle: String): OlmAccount
+        fun create(): OlmAccount
+        fun unpickle(key: String?, pickle: String): OlmAccount
     }
 
     val identityKeys: OlmIdentityKeys
@@ -14,7 +14,7 @@ expect class OlmAccount : WantsToBeFree {
     val maxNumberOfOneTimeKeys: Long
 
     override fun free()
-    fun pickle(key: String): String
+    fun pickle(key: String?): String
 
     fun sign(message: String): String
     fun markKeysAsPublished()

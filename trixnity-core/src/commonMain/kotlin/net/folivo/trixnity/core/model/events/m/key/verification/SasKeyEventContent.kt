@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.RelatesTo
+import net.folivo.trixnity.core.model.keys.KeyValue
 
 /**
  * @see <a href="https://spec.matrix.org/unstable/client-server-api/#mkeyverificationkey">matrix spec</a>
@@ -11,7 +12,7 @@ import net.folivo.trixnity.core.model.events.m.RelatesTo
 @Serializable
 data class SasKeyEventContent(
     @SerialName("key")
-    val key: String,
+    val key: KeyValue.Curve25519KeyValue,
     @SerialName("m.relates_to")
     override val relatesTo: RelatesTo.Reference?,
     @SerialName("transaction_id")

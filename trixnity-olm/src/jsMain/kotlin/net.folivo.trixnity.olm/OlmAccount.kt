@@ -1,22 +1,19 @@
 package net.folivo.trixnity.olm
 
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 actual class OlmAccount private constructor() : WantsToBeFree {
-    internal actual val ptr: OlmAccountPointer = rethrow { js("new Olm.Account()") }.unsafeCast<OlmAccountPointer>()
+    internal actual val ptr: OlmAccountPointer = rethrow { Account() }.unsafeCast<OlmAccountPointer>()
 
     actual companion object {
-        actual suspend fun create(): OlmAccount {
-            initOlm()
+        actual fun create(): OlmAccount {
             return OlmAccount()
                 .apply { rethrow { ptr.create() } }
         }
 
-        actual suspend fun unpickle(key: String, pickle: String): OlmAccount {
-            initOlm()
+        actual fun unpickle(key: String?, pickle: String): OlmAccount {
             return OlmAccount().apply {
-                rethrow { ptr.unpickle(key, pickle) }
+                rethrow { ptr.unpickle(key ?: "", pickle) }
             }
         }
     }
@@ -28,7 +25,7 @@ actual class OlmAccount private constructor() : WantsToBeFree {
 
     actual override fun free() = ptr.free()
 
-    actual fun pickle(key: String): String = rethrow { ptr.pickle(key) }
+    actual fun pickle(key: String?): String = rethrow { ptr.pickle(key ?: "") }
 
     actual fun sign(message: String): String = rethrow { ptr.sign(message) }
 

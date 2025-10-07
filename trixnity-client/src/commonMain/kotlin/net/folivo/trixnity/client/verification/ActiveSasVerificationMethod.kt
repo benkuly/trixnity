@@ -17,7 +17,13 @@ import net.folivo.trixnity.core.model.events.m.key.verification.SasMessageAuthen
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
-import net.folivo.trixnity.olm.OlmSAS
+import net.folivo.trixnity.core.model.keys.KeyValue
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.sas.EstablishedSas
+import net.folivo.trixnity.crypto.driver.sas.Sas
+import net.folivo.trixnity.crypto.driver.useAll
+import net.folivo.trixnity.crypto.of
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveSasVerificationMethod")
 
@@ -34,7 +40,8 @@ class ActiveSasVerificationMethod private constructor(
     private val keyStore: KeyStore,
     private val keyTrustService: KeyTrustService,
     private val json: Json,
-    private val olmSas: OlmSAS,
+    private val driver: CryptoDriver,
+    private val olmSas: Sas,
 ) : ActiveVerificationMethod() {
 
     private val actualTransactionId = relatesTo?.eventId?.full
@@ -46,7 +53,7 @@ class ActiveSasVerificationMethod private constructor(
             if (weStartedVerification) OwnSasStart(startEventContent)
             else TheirSasStart(
                 startEventContent,
-                olmSas,
+                KeyValue.of(olmSas.publicKey),
                 json,
                 relatesTo,
                 transactionId,
@@ -56,9 +63,10 @@ class ActiveSasVerificationMethod private constructor(
     val state = _state.asStateFlow()
 
     private var theirCommitment: String? = null
-    private var theirPublicKey: String? = null
+    private var theirPublicKey: Curve25519KeyValue? = null
     private var theirMac: SasMacEventContent? = null
     private var ourMac: SasMacEventContent? = null
+    private var establishedSas: EstablishedSas? = null
     private var messageAuthenticationCode: SasMessageAuthenticationCode? = null
 
     companion object {
@@ -86,6 +94,7 @@ class ActiveSasVerificationMethod private constructor(
             keyStore: KeyStore,
             keyTrustService: KeyTrustService,
             json: Json,
+            driver: CryptoDriver,
         ): ActiveSasVerificationMethod? {
             return when {
                 startEventContent.keyAgreementProtocols.none { it == Curve25519HkdfSha256 } -> {
@@ -125,7 +134,8 @@ class ActiveSasVerificationMethod private constructor(
                     keyStore,
                     keyTrustService,
                     json,
-                    OlmSAS.create()
+                    driver,
+                    driver.sas(),
                 )
             }
         }
@@ -219,7 +229,13 @@ class ActiveSasVerificationMethod private constructor(
 
                 else -> {
                     theirCommitment = stepContent.commitment
-                    sendVerificationStep(SasKeyEventContent(olmSas.publicKey, relatesTo, transactionId))
+                    sendVerificationStep(
+                        SasKeyEventContent(
+                            KeyValue.of(olmSas.publicKey),
+                            relatesTo,
+                            transactionId
+                        )
+                    )
                 }
             }
         }
@@ -235,7 +251,13 @@ class ActiveSasVerificationMethod private constructor(
                 _state.value = WaitForKeys(isOurOwn)
                 if (currentState.isOurOwn != isOurOwn) {
                     if (!isOurOwn) {
-                        sendVerificationStep(SasKeyEventContent(olmSas.publicKey, relatesTo, transactionId))
+                        sendVerificationStep(
+                            SasKeyEventContent(
+                                KeyValue.of(olmSas.publicKey),
+                                relatesTo,
+                                transactionId
+                            )
+                        )
                     }
                 } else cancelUnexpectedMessage(currentState)
             }
@@ -243,33 +265,30 @@ class ActiveSasVerificationMethod private constructor(
             is WaitForKeys -> {
                 if (currentState.isOurOwn != isOurOwn) {
                     fun createComparison() {
-                        olmSas.setTheirPublicKey(
-                            theirPublicKey ?: throw IllegalArgumentException("their public key should never be null")
-                        )
-                        val ownInfo = "${ownUserId.full}|${ownDeviceId}|${olmSas.publicKey}|"
+                        val theirPublicKey = requireNotNull(theirPublicKey) {
+                            "their public key should never be null"
+                        }.value
+
+                        val ownInfo = "${ownUserId.full}|${ownDeviceId}|${olmSas.publicKey.base64}|"
                         val theirInfo = "${theirUserId.full}|${theirDeviceId}|${theirPublicKey}|"
                         val sasInfo = "MATRIX_KEY_VERIFICATION_SAS|" +
                                 (if (weStartedVerification) ownInfo + theirInfo else theirInfo + ownInfo) +
                                 actualTransactionId
                         log.trace { "generate short code from sas info: $sasInfo" }
-                        val shortCode = olmSas.generateShortCode(sasInfo, 6).map { it.toUByte() }
-                        val decimal = listOf(
-                            ((shortCode[0].toInt() shl 5) or (shortCode[1].toInt() shr 3)) + 1000,
-                            (((shortCode[1].toInt() and 0x7) shl 10) or (shortCode[2].toInt() shl 2) or (shortCode[3].toInt() shr 6)) + 1000,
-                            (((shortCode[3].toInt() and 0x3F) shl 7) or (shortCode[4].toInt() shr 1)) + 1000
-                        )
-                        val emojis = listOf(
-                            shortCode[0].toInt() shr 2,
-                            ((shortCode[0].toInt() and 0x3) shl 4) or (shortCode[1].toInt() shr 4),
-                            ((shortCode[1].toInt() and 0xF) shl 2) or (shortCode[2].toInt() shr 6),
-                            shortCode[2].toInt() and 0x3F,
-                            shortCode[3].toInt() shr 2,
-                            ((shortCode[3].toInt() and 0x3) shl 4) or (shortCode[4].toInt() shr 4),
-                            ((shortCode[4].toInt() and 0xF) shl 2) or (shortCode[5].toInt() shr 6),
-                        ).map {
-                            it to (numberToEmojiMapping[it]
-                                ?: throw IllegalStateException("Cannot find emoji for number $it."))
+
+                        val established = useAll(
+                            { olmSas },
+                            { driver.key.curve25519PublicKey(theirPublicKey) }
+                        ) { sas, theirPublicKey -> sas.diffieHellman(theirPublicKey) }
+
+                        establishedSas = established
+
+                        val (decimal, rawEmojis) = established.generateBytes(sasInfo).use {
+                            it.decimals.asList to it.emojiIndices.asList
                         }
+                        val emojis = rawEmojis.asSequence().map {
+                            it to checkNotNull(numberToEmojiMapping[it]) { "Cannot find emoji for number $it." }
+                        }.toList()
                         _state.value = ComparisonByUser(
                             decimal = decimal, emojis = emojis,
                             ownUserId = ownUserId, ownDeviceId = ownDeviceId,
@@ -278,14 +297,14 @@ class ActiveSasVerificationMethod private constructor(
                                 ?: throw IllegalArgumentException("should never be null at this step"),
                             relatesTo = relatesTo,
                             transactionId = transactionId,
-                            olmSas = olmSas,
+                            establishedSas = checkNotNull(establishedSas) { "should never be null at this step" },
                             keyStore = keyStore,
                             send = sendVerificationStep
                         ).also { log.debug { "created comparison: $it" } }
                     }
                     if (!isOurOwn) {
                         if (theirCommitment != null
-                            && createSasCommitment(stepContent.key, startEventContent, json) == theirCommitment
+                            && createSasCommitment(stepContent.key.value, startEventContent, json) == theirCommitment
                         ) {
                             theirPublicKey = stepContent.key
                             createComparison()
@@ -321,12 +340,16 @@ class ActiveSasVerificationMethod private constructor(
             when (messageAuthenticationCode) {
                 HkdfHmacSha256 -> {
                     log.trace { "checkHkdfHmacSha256Mac with old (wrong) base64" }
-                        checkHkdfHmacSha256Mac(theirMac, olmSas::calculateMac)
+                    checkHkdfHmacSha256Mac(theirMac) { input, info ->
+                        checkNotNull(establishedSas).calculateMacInvalidBase64(input, info)
+                    }
                 }
 
                 HkdfHmacSha256V2 -> {
                     log.trace { "checkHkdfHmacSha256Mac with fixed base64" }
-                        checkHkdfHmacSha256Mac(theirMac, olmSas::calculateMacFixedBase64)
+                    checkHkdfHmacSha256Mac(theirMac) { input, info ->
+                        checkNotNull(establishedSas).calculateMac(input, info).base64
+                    }
                 }
 
                 else -> {
@@ -357,7 +380,7 @@ class ActiveSasVerificationMethod private constructor(
         val info = baseInfo + "KEY_IDS"
         log.trace { "create keys mac from input $input and info $info" }
         val keys = calculateMac(input, info)
-        if (keys == theirMac.keys) {
+        if (keys == theirMac.keys.value) {
             val allKeysOfDevice = keyStore.getAllKeysFromUser<Ed25519Key>(theirUserId, theirDeviceId)
             val keysToMac = allKeysOfDevice.filter { theirMacIds.contains(it.fullId) }
             val containsMismatchedMac = keysToMac.asSequence()
@@ -386,7 +409,8 @@ class ActiveSasVerificationMethod private constructor(
     }
 
     private fun onDoneOrCancel() {
-        olmSas.free()
+        olmSas.close()
+        establishedSas?.close()
     }
 
 }

@@ -29,8 +29,7 @@ internal class ExposedAccountRepository : AccountRepository {
     override suspend fun get(key: Long): Account? = withExposedRead {
         ExposedAccount.selectAll().where { ExposedAccount.id eq key }.firstOrNull()?.let {
             Account(
-                olmPickleKey = it[ExposedAccount.olmPickleKey]
-                    ?: throw IllegalStateException("olmPickleKey not found"),
+                olmPickleKey = it[ExposedAccount.olmPickleKey],
                 baseUrl = it[ExposedAccount.baseUrl] ?: throw IllegalStateException("baseUrl not found"),
                 userId = it[ExposedAccount.userId]?.let { it1 -> UserId(it1) }
                     ?: throw IllegalStateException("userId not found"),

@@ -21,6 +21,7 @@ fun createVerificationModule() = module {
             keySecretService = get(),
             currentSyncState = get(),
             clock = get(),
+            driver = get(),
         )
     }.apply {
         bind<VerificationService>()

@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.key
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.util.*
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import net.folivo.trixnity.client.MatrixClientConfiguration
@@ -32,6 +31,7 @@ import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
 import kotlin.random.Random
 import kotlin.test.Test
 
@@ -68,7 +68,7 @@ class KeySecretServiceTest : TrixnityBaseTest() {
         keyStore.updateSecrets { existingPrivateKeys }
 
         val key = Random.nextBytes(32)
-        val secret = Random.nextBytes(32).encodeBase64()
+        val secret = Random.nextBytes(32).encodeUnpaddedBase64()
         val encryptedData = encryptAesHmacSha2(
             content = secret.encodeToByteArray(),
             key = key,

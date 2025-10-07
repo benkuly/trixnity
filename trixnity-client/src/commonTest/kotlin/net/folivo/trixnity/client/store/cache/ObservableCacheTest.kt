@@ -250,6 +250,7 @@ class ObservableCacheTest : TrixnityBaseTest() {
         cut.get("key").first() shouldBe null
         cut.set("key", "value")
         cut.get("key").first() shouldBe "value"
+        cacheStore.get("key") shouldBe "value"
     }
 
     @Test
@@ -511,6 +512,14 @@ class ObservableCacheTest : TrixnityBaseTest() {
         indexedCut.set("key", null)
         indexedCut.update("key") { "my elem" }
         myFlow.await() shouldBe "my elem"
+    }
+
+    @Test
+    fun `write » fill value with set when cache entry not present but subscribed`() = runTest {
+        indexedCut.index.subscriptionCount = 1
+        indexedCut.set("key", "value")
+        indexedCut.get("key").first() shouldBe "value"
+        cacheStore.get("key") shouldBe "value"
     }
 }
 

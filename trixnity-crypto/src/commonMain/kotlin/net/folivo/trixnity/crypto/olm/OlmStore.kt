@@ -46,7 +46,7 @@ interface OlmStore {
 
     suspend fun getOlmAccount(): String
     suspend fun updateOlmAccount(updater: suspend (String) -> String)
-    suspend fun getOlmPickleKey(): String
+    suspend fun getOlmPickleKey(): String?
     suspend fun getForgetFallbackKeyAfter(): Flow<Instant?>
     suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?)
 

@@ -76,7 +76,7 @@ class OlmStoreMock : OlmStore {
         olmAccount.update { updater(it) }
     }
 
-    override suspend fun getOlmPickleKey(): String = ""
+    override suspend fun getOlmPickleKey(): String? = null
     val forgetFallbackKeyAfter: MutableStateFlow<Instant?> = MutableStateFlow(null)
     override suspend fun getForgetFallbackKeyAfter(): Flow<Instant?> = forgetFallbackKeyAfter
     override suspend fun updateForgetFallbackKeyAfter(updater: suspend (Instant?) -> Instant?) {

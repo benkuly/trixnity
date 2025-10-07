@@ -18,6 +18,9 @@ interface OutboundMegolmSessionDao {
     @Query("SELECT * FROM OutboundMegolmSession WHERE roomId = :roomId LIMIT 1")
     suspend fun get(roomId: RoomId): RoomOutboundMegolmSession?
 
+    @Query("SELECT * FROM OutboundMegolmSession")
+    suspend fun getAll(): List<RoomOutboundMegolmSession>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: RoomOutboundMegolmSession)
 
@@ -37,6 +40,10 @@ internal class RoomOutboundMegolmSessionRepository(
     override suspend fun get(key: RoomId): StoredOutboundMegolmSession? = withRoomRead {
         dao.get(key)
             ?.let { entity -> json.decodeFromString(entity.value) }
+    }
+
+    override suspend fun getAll(): List<StoredOutboundMegolmSession> = withRoomRead {
+        dao.getAll().map { entity -> json.decodeFromString(entity.value) }
     }
 
     override suspend fun save(key: RoomId, value: StoredOutboundMegolmSession) = withRoomWrite {
