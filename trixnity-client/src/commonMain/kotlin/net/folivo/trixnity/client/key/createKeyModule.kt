@@ -38,6 +38,7 @@ fun createKeyModule() = module {
             globalAccountDataStore = get(),
             currentSyncState = get(),
             clock = get(),
+            driver = get(),
         )
     }
     singleOf(::KeySecretServiceImpl) { bind<KeySecretService>() }
@@ -58,7 +59,8 @@ fun createKeyModule() = module {
             keyBackupService = get(named<KeyBackupService>()),
             keyTrustService = get(),
             api = get(),
-            matrixClientConfiguration = get()
+            matrixClientConfiguration = get(),
+            driver = get(),
         )
     }
 

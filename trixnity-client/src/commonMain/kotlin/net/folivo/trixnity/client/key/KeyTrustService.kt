@@ -14,11 +14,12 @@ import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_USER_SIGNING
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.keys.Ed25519PublicKey
+import net.folivo.trixnity.crypto.driver.keys.Ed25519SecretKey
 import net.folivo.trixnity.crypto.key.decryptSecret
 import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.sign.*
-import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import kotlin.jvm.JvmName
 
@@ -48,6 +49,7 @@ class KeyTrustServiceImpl(
     private val globalAccountDataStore: GlobalAccountDataStore,
     private val signService: SignService,
     private val api: MatrixClientServerApiClient,
+    private val driver: CryptoDriver,
 ) : KeyTrustService {
 
     override suspend fun checkOwnAdvertisedMasterKeyAndVerifySelf(
@@ -70,10 +72,13 @@ class KeyTrustServiceImpl(
                 )
             }.getOrNull()
                 ?.let { privateKey ->
-                    freeAfter(OlmPkSigning.create(privateKey)) { it.publicKey }
+                    driver.key.ed25519SecretKey(privateKey)
+                        .use(Ed25519SecretKey::publicKey)
+                        .use(Ed25519PublicKey::base64)
                 }
         val advertisedPublicKey =
             keyStore.getCrossSigningKey(userInfo.userId, MasterKey)?.value?.signed?.get<Ed25519Key>()
+
         return if (advertisedPublicKey?.value?.value?.decodeUnpaddedBase64Bytes()
                 ?.contentEquals(decryptedPublicKey?.decodeUnpaddedBase64Bytes()) == true
         ) {
@@ -283,9 +288,9 @@ class KeyTrustServiceImpl(
                     M_CROSS_SIGNING_USER_SIGNING -> CrossSigningKeysUsage.UserSigningKey
                     else -> throw IllegalArgumentException("cannot sign with $type")
                 }
-            )?.value?.signed?.get<Ed25519Key>()?.id
+            )?.value?.signed?.get<Ed25519Key>()?.value
         requireNotNull(publicKey) { "could not find public key of $type" }
-        return SignWith.KeyPair(privateKey, publicKey)
+        return SignWith.KeyPair(privateKey, publicKey.value)
     }
 
     override suspend fun trustAndSignKeys(keys: Set<Ed25519Key>, userId: UserId) {

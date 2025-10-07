@@ -48,12 +48,17 @@ import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
+import net.folivo.trixnity.crypto.driver.keys.Curve25519SecretKey
+import net.folivo.trixnity.crypto.driver.keys.Ed25519PublicKey
+import net.folivo.trixnity.crypto.driver.keys.Ed25519SecretKey
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.pkencryption.PkDecryption
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmPkDecryption
-import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.freeAfter
-import net.folivo.trixnity.test.utils.*
+import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
@@ -66,6 +71,9 @@ import kotlin.time.Duration.Companion.seconds
 
 @OptIn(MSC3814::class)
 class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
+
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
     private val aliceDevice = "ALICEDEVICE"
@@ -88,6 +96,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
         globalAccountDataStore,
         CurrentSyncState(currentSyncState),
         testScope.testClock,
+        driver,
     )
 
     private val encryptedEvent = ToDeviceEvent(
@@ -97,13 +106,23 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
         ), bob
     )
 
-    private val _crossSigningKeys by suspendLazy { freeAfter(OlmPkSigning.create(null)) { it.publicKey to it.privateKey } }
-    private val crossSigningPublicKey by suspendLazy { _crossSigningKeys.first }
-    private val crossSigningPrivateKey by suspendLazy { _crossSigningKeys.second }
+    private val _crossSigningKeys = driver.key.ed25519SecretKey().use {
+        val privateKey = it.base64
+        val publicKey = it.publicKey.use(Ed25519PublicKey::base64)
 
-    private val _backupKeys by suspendLazy { freeAfter(OlmPkDecryption.create(null)) { it.publicKey to it.privateKey } }
-    private val keyBackupPublicKey by suspendLazy { _backupKeys.first }
-    private val keyBackupPrivateKey by suspendLazy { _backupKeys.second }
+        publicKey to privateKey
+    }
+    private val crossSigningPublicKey = _crossSigningKeys.first
+    private val crossSigningPrivateKey = _crossSigningKeys.second
+
+    private val _backupKeys = driver.pk.decryption().use {
+        val privateKey = it.secretKey.use(Curve25519SecretKey::base64)
+        val publicKey = it.publicKey.use(Curve25519PublicKey::base64)
+
+        publicKey to privateKey
+    }
+    private val keyBackupPublicKey = _backupKeys.first
+    private val keyBackupPrivateKey = _backupKeys.second
 
     private val aliceDevice2Key = Key.Ed25519Key(aliceDevice, "aliceDevice2KeyValue")
 
@@ -219,7 +238,11 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
         runTest {
             setDeviceKeys(true)
             setRequest(SecretType.M_CROSS_SIGNING_USER_SIGNING, setOf(aliceDevice))
-            setCrossSigningKeys(freeAfter(OlmPkSigning.create(null)) { it.publicKey })
+            setCrossSigningKeys(
+                driver.key.ed25519SecretKey()
+                    .use(Ed25519SecretKey::publicKey)
+                    .use(Ed25519PublicKey::base64)
+            )
             val secretEventContent = UserSigningKeyEventContent(mapOf())
             globalAccountDataStore.save(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
@@ -241,7 +264,11 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
             keyBackup.returnKeyBackupCanBeTrusted = false
             setDeviceKeys(true)
             setRequest(SecretType.M_MEGOLM_BACKUP_V1, setOf(aliceDevice))
-            returnRoomKeysVersion(freeAfter(OlmPkDecryption.create(null)) { it.publicKey })
+            returnRoomKeysVersion(
+                driver.pk.decryption()
+                    .use(PkDecryption::publicKey)
+                    .use(Curve25519PublicKey::base64)
+            )
             val secretEventContent = MegolmBackupV1EventContent(mapOf())
             globalAccountDataStore.save(GlobalAccountDataEvent(secretEventContent))
             cut.handleOutgoingKeyRequestAnswer(
@@ -757,7 +784,7 @@ class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
                     deviceData =
                         with(
                             encryptAesHmacSha2(
-                                (pickle ?: freeAfter(OlmAccount.create()) { it.pickle(null) }).encodeToByteArray(),
+                                (pickle ?: driver.olm.account().pickle()).encodeToByteArray(),
                                 key.decodeUnpaddedBase64Bytes(),
                                 DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
                             )

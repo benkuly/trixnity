@@ -23,9 +23,10 @@ import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.subscribeAsFlow
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.useAll
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.sign.SignService
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.retry
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
@@ -619,41 +620,35 @@ suspend fun MatrixClient.Companion.fromStore(
     val accountStore = di.get<AccountStore>()
     val olmCryptoStore = di.get<OlmCryptoStore>()
 
-    val account = accountStore.getAccount()
-    val baseUrl = account?.baseUrl?.let { Url(it) }
-    val userId = account?.userId
-    val deviceId = account?.deviceId
-    val olmPickleKey = account?.olmPickleKey
-    val olmAccount = olmCryptoStore.getOlmAccount()
+    val account = accountStore.getAccount() ?: return@runCatching null
+    if (olmCryptoStore.getOlmAccount() == null) return@runCatching null
 
-    if (userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
-        koinApplication.createMatrixClient(
-            baseUrl = baseUrl,
-            userId = userId,
-            deviceId = deviceId,
-            olmPickleKey = olmPickleKey,
-            json = di.get(),
-            eventContentSerializerMappings = di.get(),
-            accountStore = accountStore,
-            olmCryptoStore = olmCryptoStore,
-            config = config,
-            coroutineContext = coroutineContext,
-        ) { matrixClient ->
-            val accessToken = account.accessToken ?: onSoftLogin?.let {
-                val (identifier, password, token, loginType) = onSoftLogin()
-                matrixClient.api.authentication.login(
-                    identifier = identifier,
-                    password = password,
-                    token = token,
-                    type = loginType,
-                    deviceId = deviceId,
-                ).getOrThrow().accessToken
-                    .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
-            }
-            if (accessToken != null) matrixClient
-            else null
+    koinApplication.createMatrixClient(
+        baseUrl = Url(account.baseUrl),
+        userId = account.userId,
+        deviceId = account.deviceId,
+        olmPickleKey = account.olmPickleKey,
+        json = di.get(),
+        eventContentSerializerMappings = di.get(),
+        accountStore = accountStore,
+        olmCryptoStore = olmCryptoStore,
+        config = config,
+        coroutineContext = coroutineContext,
+    ) { matrixClient ->
+        val accessToken = account.accessToken ?: onSoftLogin?.let {
+            val (identifier, password, token, loginType) = onSoftLogin()
+            matrixClient.api.authentication.login(
+                identifier = identifier,
+                password = password,
+                token = token,
+                type = loginType,
+                deviceId = account.deviceId,
+            ).getOrThrow().accessToken
+                .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
         }
-    } else null
+        if (accessToken != null) matrixClient
+        else null
+    }
 }
 
 private suspend fun initMatrixClientKoinApplication(
@@ -718,15 +713,25 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
         syncErrorDelayConfig = config.syncErrorDelayConfig,
         coroutineContext = coroutineContext,
     )
-    val (signingKey, identityKey) = freeAfter(
-        olmCryptoStore.getOlmAccount()
-            ?.let { OlmAccount.unpickle(olmPickleKey, it) }
-            ?: OlmAccount.create()
-                .also { olmAccount -> olmCryptoStore.updateOlmAccount { olmAccount.pickle(olmPickleKey) } }
-    ) {
-        Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
-                Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
-    }
+
+    val driver = koin.get<CryptoDriver>()
+
+    val pickleKey = driver.key.pickleKey(olmPickleKey)
+
+    val (signingKey, identityKey) = (olmCryptoStore.getOlmAccount()
+        ?.let { driver.olm.account.fromPickle(it, pickleKey) }
+        ?: driver.olm.account())
+        .use { account ->
+            olmCryptoStore.updateOlmAccount { account.pickle(pickleKey) }
+
+            useAll(
+                { account.ed25519Key },
+                { account.curve25519Key }
+            ) { signingKey, identityKey ->
+                Key.of(deviceId, signingKey) to Key.of(deviceId, identityKey)
+            }
+        }
+
     modules(module {
         single { UserInfo(userId, deviceId, signingKey, identityKey) }
         single<MatrixClientServerApiClient> { api }

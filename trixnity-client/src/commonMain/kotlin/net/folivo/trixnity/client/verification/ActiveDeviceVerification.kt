@@ -12,6 +12,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Accepted
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.Timeout
 import net.folivo.trixnity.core.subscribeContent
+import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -36,6 +37,7 @@ class ActiveDeviceVerificationImpl(
     keyTrust: KeyTrustService,
     keyStore: KeyStore,
     private val clock: Clock,
+    driver: CryptoDriver,
 ) : ActiveDeviceVerification, ActiveVerificationImpl(
     request,
     requestIsOurs,
@@ -50,6 +52,7 @@ class ActiveDeviceVerificationImpl(
     keyStore,
     keyTrust,
     api.json,
+    driver,
 ) {
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }

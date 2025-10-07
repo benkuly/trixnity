@@ -18,13 +18,17 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.ToDeviceEventContent
 import net.folivo.trixnity.core.model.keys.*
-import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
-import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.crypto.SecretType
 import net.folivo.trixnity.crypto.SecretType.M_CROSS_SIGNING_SELF_SIGNING
 import net.folivo.trixnity.crypto.core.AesHmacSha2EncryptedData
 import net.folivo.trixnity.crypto.core.decryptAesHmacSha2
 import net.folivo.trixnity.crypto.core.encryptAesHmacSha2
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
+import net.folivo.trixnity.crypto.driver.keys.Ed25519PublicKey
+import net.folivo.trixnity.crypto.driver.keys.Ed25519SecretKey
+import net.folivo.trixnity.crypto.driver.useAll
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.*
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignServiceImpl
@@ -32,9 +36,6 @@ import net.folivo.trixnity.crypto.sign.SignServiceStore
 import net.folivo.trixnity.crypto.sign.SignWith.DeviceKey
 import net.folivo.trixnity.crypto.sign.SignWith.KeyPair
 import net.folivo.trixnity.crypto.sign.sign
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.retry
 import okio.ByteString.Companion.decodeBase64
 import kotlin.time.Clock
@@ -53,6 +54,7 @@ class DehydratedDeviceService(
     private val signService: SignService,
     private val clock: Clock,
     private val config: MatrixClientConfiguration,
+    private val driver: CryptoDriver,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -173,14 +175,20 @@ class DehydratedDeviceService(
                     return
                 }
                 val rehydratedUserInfo = try {
-                    freeAfter(OlmAccount.unpickle(null, olmAccountPickle)) { olmAccount ->
-                        val deviceId = olmAccount.identityKeys.curve25519
-                        UserInfo(
-                            userInfo.userId,
-                            deviceId,
-                            Ed25519Key(deviceId, olmAccount.identityKeys.ed25519),
-                            Curve25519Key(deviceId, olmAccount.identityKeys.curve25519)
-                        )
+                    driver.olm.account.fromPickle(olmAccountPickle).use { account ->
+                        useAll(
+                            { account.ed25519Key },
+                            { account.curve25519Key },
+                        ) { signingKey, identityKey ->
+                            val deviceId = identityKey.base64
+
+                            UserInfo(
+                                userInfo.userId,
+                                deviceId,
+                                Key.of(deviceId, signingKey),
+                                Key.of(deviceId, identityKey)
+                            )
+                        }
                     }
                 } catch (e: Exception) {
                     log.warn(e) { "could not load rehydrated device account" }
@@ -225,6 +233,7 @@ class DehydratedDeviceService(
                             },
                             signService = signService,
                             clock = clock,
+                            driver = driver,
                         )
                     ),
                     signService = signService,
@@ -233,7 +242,8 @@ class DehydratedDeviceService(
                             Result.failure(IllegalStateException("unsupported operation for dehydrated device"))
                     },
                     store = dehydratedDeviceOlmStore,
-                    clock = clock
+                    clock = clock,
+                    driver = driver,
                 )
                 coroutineScope {
                     olmEventHandler.startInCoroutineScope(this)
@@ -270,31 +280,35 @@ class DehydratedDeviceService(
 
     internal suspend fun tryDehydrateDevice(dehydratedDeviceKey: ByteArray) {
         try {
-            freeAfter(OlmAccount.create()) { olmAccount ->
-                val userId = userInfo.userId
-                val deviceId = olmAccount.identityKeys.curve25519
+            val userId = userInfo.userId
+
+            driver.olm.account().use { olmAccount ->
+                val deviceId = olmAccount.curve25519Key.use(Curve25519PublicKey::base64)
+                val signingKey = olmAccount.ed25519Key.use { Key.of(deviceId, it) }
+                val identityKey = olmAccount.curve25519Key.use { Key.of(deviceId, it) }
 
                 log.debug { "create new dehydrated device $deviceId" }
 
                 val dehydratedUserInfo = UserInfo(
                     userId,
                     deviceId,
-                    Ed25519Key(deviceId, olmAccount.identityKeys.ed25519),
-                    Curve25519Key(deviceId, olmAccount.identityKeys.curve25519)
+                    signingKey,
+                    identityKey,
                 )
                 val dehydratedDeviceSignService = SignServiceImpl(
                     userInfo = dehydratedUserInfo,
                     json = json,
                     store = object : SignServiceStore {
-                        override suspend fun getOlmAccount(): String = olmAccount.pickle(null)
+                        override suspend fun getOlmAccount(): String = olmAccount.pickle()
                         override suspend fun getOlmPickleKey(): String? = null
-                    }
+                    },
+                    driver = driver,
                 )
                 olmAccount.generateOneTimeKeys(olmAccount.maxNumberOfOneTimeKeys)
-                val oneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys(dehydratedDeviceSignService)
+                val oneTimeKeys = olmAccount.oneTimeKeys.toCurve25519Keys(dehydratedDeviceSignService)
                 olmAccount.generateFallbackKey()
                 val fallbackKey =
-                    olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(dehydratedDeviceSignService, true)
+                    olmAccount.fallbackKey?.let(::mapOf).toCurve25519Keys(dehydratedDeviceSignService, true)
                 olmAccount.markKeysAsPublished()
 
                 log.debug { "wait for M_CROSS_SIGNING_SELF_SIGNING private key" }
@@ -306,7 +320,8 @@ class DehydratedDeviceService(
                     return
                 }
                 val selfSigningPublicKey =
-                    freeAfter(OlmPkSigning.create(selfSigningPrivateKey)) { it.publicKey }
+                    driver.key.ed25519SecretKey(selfSigningPrivateKey).use(Ed25519SecretKey::publicKey)
+                        .use(Ed25519PublicKey::base64)
 
                 val deviceKeys = DeviceKeys(
                     userId = userId,
@@ -315,9 +330,9 @@ class DehydratedDeviceService(
                     keys = keysOf(dehydratedUserInfo.signingPublicKey, dehydratedUserInfo.identityPublicKey),
                     dehydrated = true,
                 ).let {
-                    dehydratedDeviceSignService.sign(it, DeviceKey) +
-                            dehydratedDeviceSignService.sign(it, KeyPair(selfSigningPrivateKey, selfSigningPublicKey))
-                                .signatures
+                    dehydratedDeviceSignService.sign(it, DeviceKey) + dehydratedDeviceSignService.sign(
+                        it, KeyPair(selfSigningPrivateKey, selfSigningPublicKey)
+                    ).signatures
                 }
 
                 log.debug { "upload device" }
@@ -328,7 +343,7 @@ class DehydratedDeviceService(
                         deviceId = deviceId,
                         deviceData = with(
                             encryptAesHmacSha2(
-                                content = olmAccount.pickle(null).encodeToByteArray(),
+                                content = olmAccount.pickle().encodeToByteArray(),
                                 key = dehydratedDeviceKey,
                                 name = DehydratedDeviceData.DehydrationV2Compatibility.ALGORITHM
                             )
@@ -371,12 +386,13 @@ class DehydratedDeviceService(
         }
     }
 
-    private suspend fun Map<String, String>.toCurve25519Keys(signService: SignService, fallback: Boolean? = null) =
-        Keys(this.map {
+    private suspend fun Map<String, Curve25519PublicKey>?.toCurve25519Keys(
+        signService: SignService, fallback: Boolean? = null
+    ) = this?.takeIf { it.isNotEmpty() }?.let {
+        Keys(it.map {
             signService.signCurve25519Key(
-                keyId = it.key,
-                keyValue = it.value,
-                fallback = fallback
+                keyId = it.key, keyValue = it.value.use(Curve25519PublicKey::base64), fallback = fallback
             )
-        }.toSet()).ifEmpty { null }
+        }.toSet())
+    }
 }

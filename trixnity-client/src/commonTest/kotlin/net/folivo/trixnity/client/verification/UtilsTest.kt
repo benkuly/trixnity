@@ -3,6 +3,7 @@ package net.folivo.trixnity.client.verification
 import io.kotest.matchers.shouldBe
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code
+import net.folivo.trixnity.core.model.keys.KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
