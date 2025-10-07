@@ -19,6 +19,7 @@ internal fun Route.authenticationApiRoutes(
     matrixEndpoint(json, contentMappings, handler::getMsisdnRequestTokenForRegistration)
     matrixUIAEndpoint(json, contentMappings, handler::register)
     matrixEndpoint(json, contentMappings, handler::getLoginTypes)
+    matrixEndpoint(json, contentMappings, handler::getOAuth2ServerMetadata)
     matrixEndpoint(json, contentMappings, handler::login)
     matrixEndpoint(json, contentMappings, handler::logout)
     matrixEndpoint(json, contentMappings, handler::logoutAll)

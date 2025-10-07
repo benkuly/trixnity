@@ -45,7 +45,7 @@ interface AuthenticationApiHandler {
     /**
      * @see [GetOAuth2ServerMetadata]
      */
-    suspend fun getAuthServerMetadata(context: MatrixEndpointContext<GetOAuth2ServerMetadata, Unit, OAuth2ServerMetadata>): OAuth2ServerMetadata
+    suspend fun getOAuth2ServerMetadata(context: MatrixEndpointContext<GetOAuth2ServerMetadata, Unit, OAuth2ServerMetadata>): OAuth2ServerMetadata
 
     /**
      * @see [Register]
