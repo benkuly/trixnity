@@ -18,17 +18,10 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(projects.trixnityClient)
+                implementation(projects.trixnityClient.trixnityClientRepositoryMigrationLibvodozemac)
+                implementation(projects.trixnityVodozemac)
 
-                implementation(libs.oshai.logging)
-
-                api(kotlin("test"))
-                api(libs.kotlinx.coroutines.test)
-                api(libs.kotest.assertions.core)
-            }
-        }
-        jvmMain {
-            dependencies {
-                implementation(kotlin("test-junit5"))
+                api(projects.trixnityTestUtils)
             }
         }
     }
