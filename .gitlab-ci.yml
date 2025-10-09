@@ -52,8 +52,6 @@ variables:
       path: build/reports/kover/report.xml
 
 .if-merge-request: &if-merge-request
-  - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
-    when: never
   - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
 
 .if-release: &if-release

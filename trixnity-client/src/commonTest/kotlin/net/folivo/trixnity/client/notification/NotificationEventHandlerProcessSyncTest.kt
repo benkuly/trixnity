@@ -127,13 +127,32 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
                         )
                     ),
                     room = Sync.Response.Rooms(
-                        join = updatedRooms.associateWith {
+                        join = updatedRooms.associateWith { roomId ->
+                            val receipt = receipts[roomId]
                             Sync.Response.Rooms.JoinedRoom(
-                                unreadNotifications = notificationCounts[it]?.let { notificationCount ->
+                                unreadNotifications = notificationCounts[roomId]?.let { notificationCount ->
                                     Sync.Response.Rooms.JoinedRoom.UnreadNotificationCounts(
                                         notificationCount = notificationCount
                                     )
-                                }
+                                },
+                                ephemeral = Sync.Response.Rooms.JoinedRoom.Ephemeral(
+                                    events = listOfNotNull(
+                                        if (receipt != null) ClientEvent.EphemeralEvent(
+                                            ReceiptEventContent(
+                                                mapOf(
+                                                    receipt to mapOf(
+                                                        ReceiptType.Read to mapOf(
+                                                            userId to ReceiptEventContent.Receipt(
+                                                                1
+                                                            )
+                                                        )
+                                                    )
+                                                )
+
+                                            )
+                                        ) else null
+                                    )
+                                ),
                             )
                         }.let(::RoomMap)
                     )
