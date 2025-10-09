@@ -294,14 +294,15 @@ class NotificationServiceImpl(
     override suspend fun processPending() {
         processPendingMutex.withLock {
             matrixClientStarted.first { it }
-            val hasPending = notificationStore.getAllState().first().values.any { it.first()?.isPending == true }
+            val notificationState = notificationStore.getAllState().first().values
+            val hasPending = notificationState.any { it.first()?.isPending == true }
             if (!hasPending) return
 
             api.sync.startOnce(
                 filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
                 timeout = Duration.ZERO,
             ).getOrThrow()
-            notificationStore.getAllState().flattenValues().first { states -> states.none { it.isPending } }
+            notificationState.forEach { state -> state.first { it?.isPending == null || !it.isPending } }
 
             if (config.enableExternalNotifications) {
                 notificationStore.getAllUpdates().flattenValues().first { it.isEmpty() }
