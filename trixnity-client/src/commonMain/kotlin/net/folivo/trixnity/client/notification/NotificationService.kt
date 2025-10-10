@@ -271,10 +271,16 @@ class NotificationServiceImpl(
                     it is StoredNotification.Message && it.roomId == roomId && it.eventId == eventId ||
                             it is StoredNotification.State && it.roomId == roomId && it.eventId == eventId
                 }
-            if (foundNotificationInStore) return true
+            if (foundNotificationInStore) {
+                log.debug { "skip onPush because notification found locally" }
+                return true
+            }
 
             val foundInTimeline = roomService.getTimelineEvent(roomId, eventId).first() != null
-            if (foundInTimeline) return true
+            if (foundInTimeline) {
+                log.debug { "skip onPush because event found in timeline" }
+                return true
+            }
         }
 
         notificationStore.updateState(roomId) {
@@ -283,7 +289,7 @@ class NotificationServiceImpl(
                 is StoredNotificationState.Remove,
                 is StoredNotificationState.SyncWithoutTimeline -> it
 
-                is StoredNotificationState.SyncWithTimeline -> it.copy(hasPush = true)
+                is StoredNotificationState.SyncWithTimeline -> it.copy(needsSync = true)
                 null -> StoredNotificationState.Push(roomId)
             }
         }
@@ -295,14 +301,20 @@ class NotificationServiceImpl(
         processPendingMutex.withLock {
             matrixClientStarted.first { it }
             val notificationState = notificationStore.getAllState().first().values
-            val hasPending = notificationState.any { it.first()?.isPending == true }
-            if (!hasPending) return
+            val needsSync = notificationState.any { it.first()?.needsSync == true }
+            val needsProcess = notificationState.any { it.first()?.needsProcess == true }
+            if (!needsSync && !needsProcess) {
+                log.debug { "skip process pending because no pending notifications" }
+                return
+            }
 
-            api.sync.startOnce(
-                filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
-                timeout = Duration.ZERO,
-            ).getOrThrow()
-            notificationState.forEach { state -> state.first { it?.isPending == null || !it.isPending } }
+            if (needsSync) {
+                api.sync.startOnce(
+                    filter = checkNotNull(accountStore.getAccount()?.backgroundFilterId),
+                    timeout = Duration.ZERO,
+                ).getOrThrow()
+            }
+            notificationState.forEach { state -> state.first { it == null || !it.needsProcess } }
 
             if (config.enableExternalNotifications) {
                 notificationStore.getAllUpdates().flattenValues().first { it.isEmpty() }

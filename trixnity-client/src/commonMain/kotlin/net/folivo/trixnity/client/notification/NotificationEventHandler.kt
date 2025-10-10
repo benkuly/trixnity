@@ -163,7 +163,7 @@ class NotificationEventHandler(
                             (oldState as? StoredNotificationState.SyncWithTimeline)?.readReceipts != unreadRoom.readReceipts
                         StoredNotificationState.SyncWithTimeline(
                             roomId = roomId,
-                            hasPush = false,
+                            needsSync = false,
                             readReceipts = unreadRoom.readReceipts,
                             lastEventId = lastEventId,
                             lastProcessedEventId = if (resetProcess) null else oldState.lastProcessedEventId,
@@ -290,7 +290,6 @@ class NotificationEventHandler(
                     if (notificationState is StoredNotificationState.SyncWithTimeline)
                         it.copy(
                             lastProcessedEventId = notificationState.lastEventId,
-                            hasPush = false,
                         )
                     else it
 
@@ -376,7 +375,7 @@ class NotificationEventHandler(
             coroutineScope {
                 chunk.map { async { it.firstWithContent() } }.awaitAll().asFlow()
             }
-        }.mapNotNull { it?.mergedEvent?.getOrNull() }
+        }.mapNotNull { it.mergedEvent?.getOrNull() }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

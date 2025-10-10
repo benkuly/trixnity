@@ -287,7 +287,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             notificationStates = listOf(
                 StoredNotificationState.SyncWithTimeline(
                     roomId = roomId1,
-                    hasPush = true,
+                    needsSync = true,
                     readReceipts = setOf(EventId("e0")),
                     lastEventId = EventId("e24"),
                     lastProcessedEventId = EventId("e23"),
@@ -303,7 +303,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = false,
+                needsSync = false,
                 readReceipts = setOf(EventId("e1")),
                 lastEventId = EventId("e24"),
                 lastProcessedEventId = null,
@@ -320,7 +320,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             notificationStates = listOf(
                 StoredNotificationState.SyncWithTimeline(
                     roomId = roomId1,
-                    hasPush = true,
+                    needsSync = true,
                     readReceipts = setOf(EventId("e1")),
                     lastEventId = EventId("e24"),
                     lastProcessedEventId = EventId("e23"),
@@ -336,7 +336,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = false,
+                needsSync = false,
                 readReceipts = setOf(EventId("e1")),
                 lastEventId = EventId("e24"),
                 lastProcessedEventId = EventId("e23"),
@@ -353,7 +353,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
             notificationStates = listOf(
                 StoredNotificationState.SyncWithTimeline(
                     roomId = roomId1,
-                    hasPush = true,
+                    needsSync = true,
                     readReceipts = setOf(EventId("e1")),
                     lastEventId = EventId("e24"),
                     lastProcessedEventId = EventId("e23"),
@@ -370,7 +370,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = false,
+                needsSync = false,
                 readReceipts = setOf(EventId("e1")),
                 lastEventId = EventId("e24"),
                 lastProcessedEventId = EventId("e23"),
@@ -395,7 +395,7 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = false,
+                needsSync = false,
                 readReceipts = setOf(EventId("e1")),
                 lastEventId = EventId("e24"),
                 lastProcessedEventId = null,

@@ -1678,7 +1678,7 @@ abstract class RepositoryTestSuite(
         val notificationState1 = StoredNotificationState.Push(RoomId("!room1"))
         val notificationState2 =
             StoredNotificationState.SyncWithTimeline(RoomId("!room2"), false, setOf(), EventId("\$event1"), null, null)
-        val notificationState2Copy = notificationState2.copy(hasPush = true)
+        val notificationState2Copy = notificationState2.copy(needsSync = true)
 
         rtm.writeTransaction {
             cut.save(notificationState1.roomId, notificationState1)

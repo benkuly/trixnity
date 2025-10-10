@@ -182,7 +182,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(24),
                 lastProcessedEventId = eventId(24),
@@ -197,7 +197,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = false,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(24),
                 lastProcessedEventId = eventId(24),
@@ -212,7 +212,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(24),
                 lastProcessedEventId = eventId(1),
@@ -227,7 +227,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = false,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(24),
                 lastProcessedEventId = eventId(24),
@@ -241,7 +241,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(24),
                 lastProcessedEventId = eventId(1),
@@ -256,7 +256,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         notificationStore.getAllState().first().values.map { it.first() } shouldBe listOf(
             StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = false,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(24),
                 lastProcessedEventId = eventId(24),
@@ -270,7 +270,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(24),
                 lastProcessedEventId = null,
@@ -287,7 +287,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
             processNotificationStateWith(
                 notificationState = StoredNotificationState.SyncWithTimeline(
                     roomId = roomId1,
-                    hasPush = true,
+                    needsSync = true,
                     readReceipts = setOf(eventId(0)),
                     lastEventId = eventId(3),
                     lastProcessedEventId = eventId(0),
@@ -305,7 +305,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
             processNotificationStateWith(
                 notificationState = StoredNotificationState.SyncWithTimeline(
                     roomId = roomId1,
-                    hasPush = true,
+                    needsSync = true,
                     readReceipts = setOf(eventId(0)),
                     lastEventId = eventId(3),
                     lastProcessedEventId = null,
@@ -321,7 +321,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(eventId(1)),
                 lastEventId = eventId(3),
                 lastProcessedEventId = eventId(0),
@@ -340,7 +340,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(eventId(0)),
                 lastEventId = eventId(3),
                 lastProcessedEventId = eventId(1),
@@ -359,7 +359,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(eventId(1)),
                 lastEventId = eventId(3),
                 lastProcessedEventId = eventId(0),
@@ -377,7 +377,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(eventId(0)),
                 lastEventId = eventId(3),
                 lastProcessedEventId = eventId(1),
@@ -429,7 +429,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(10),
                 lastProcessedEventId = null,
@@ -540,7 +540,7 @@ class NotificationEventHandlerProcessNotificationStateTest : TrixnityBaseTest() 
         processNotificationStateWith(
             notificationState = StoredNotificationState.SyncWithTimeline(
                 roomId = roomId1,
-                hasPush = true,
+                needsSync = true,
                 readReceipts = setOf(),
                 lastEventId = eventId(10),
                 lastProcessedEventId = null,
