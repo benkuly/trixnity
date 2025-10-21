@@ -5,11 +5,11 @@ trixnity = "4.22.5"
 ### build ###
 kotlin = "2.2.10" # https://github.com/JetBrains/kotlin/releases
 ksp = "2.2.10-2.0.2" # https://github.com/google/ksp/releases
-kotlinWrappers = "2025.8.17" # https://github.com/JetBrains/kotlin-wrappers/releases
-dokka = "2.0.0" # https://github.com/Kotlin/dokka/releases
-androidGradlePlugin = "8.10.1" # https://developer.android.com/reference/tools/gradle-api
+kotlinWrappers = "2025.9.4" # https://github.com/JetBrains/kotlin-wrappers/releases
+dokka = "2.1.0" # https://github.com/Kotlin/dokka/releases
+androidGradlePlugin = "8.12.3" # https://developer.android.com/reference/tools/gradle-api
 downloadGradlePlugin = "5.6.0" # https://github.com/michel-kraemer/gradle-download-task/releases
-kotlinxKover = "0.9.1" # https://github.com/Kotlin/kotlinx-kover/releases
+kotlinxKover = "0.9.3" # https://github.com/Kotlin/kotlinx-kover/releases
 
 ### kotlinx ###
 kotlinxCoroutines = "1.10.2" # https://github.com/Kotlin/kotlinx.coroutines/releases
@@ -19,34 +19,34 @@ kotlinxSerialization = "1.9.0" # https://github.com/Kotlin/kotlinx.serialization
 olm = "3.2.15" # https://gitlab.matrix.org/matrix-org/olm/-/releases
 trixnityOlmBinaries = "2.0.3" # https://gitlab.com/trixnity/trixnity-olm-binaries/-/releases
 trixnityOpensslBinaries = "1.0.5" # https://gitlab.com/trixnity/trixnity-openssl-binaries/-/releases
-jna = "5.17.0" # https://github.com/java-native-access/jna/tags
+jna = "5.18.1" # https://github.com/java-native-access/jna/tags
 
 ### libraries ###
-ktor = "3.2.3" # https://github.com/ktorio/ktor/releases
-koin = "4.1.0" # https://github.com/InsertKoinIO/koin/tags
+ktor = "3.3.0" # https://github.com/ktorio/ktor/releases
+koin = "4.1.1" # https://github.com/InsertKoinIO/koin/tags
 okio = "3.16.0" # https://square.github.io/okio/changelog/
 
 ### databases ###
 exposed = "0.61.0" # https://github.com/JetBrains/Exposed/releases
 hikari = "7.0.2" # https://github.com/brettwooldridge/HikariCP/tags
-h2 = "2.3.232" # https://github.com/h2database/h2database/releases
-postgres = "42.7.7" # https://github.com/pgjdbc/pgjdbc/releases
+h2 = "2.4.240" # https://github.com/h2database/h2database/releases
+postgres = "42.7.8" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.10.0" # https://github.com/JuulLabs/indexeddb/releases
-androidxRoom = "2.7.2" # https://developer.android.com/jetpack/androidx/releases/room
+androidxRoom = "2.8.2" # https://developer.android.com/jetpack/androidx/releases/room
 androidxSqlite = "2.5.2" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
 ### logging ###
 oshaiKotlinLogging = "7.0.13" # https://github.com/oshai/kotlin-logging/releases
 slf4j = "2.0.17" # https://github.com/qos-ch/slf4j/releases
-logback = "1.5.18" # https://github.com/qos-ch/logback/tags
+logback = "1.5.20" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
-kotest = "6.0.0" # https://github.com/kotest/kotest/releases
-mokkery = "2.9.0" # https://github.com/lupuuss/Mokkery/releases
-testContainers = "1.21.3" # https://github.com/testcontainers/testcontainers-java/releases
+kotest = "6.0.4" # https://github.com/kotest/kotest/releases
+mokkery = "2.10.1" # https://github.com/lupuuss/Mokkery/releases
+testContainers = "2.0.1" # https://github.com/testcontainers/testcontainers-java/releases
 androidxTestRunner = "1.7.0" # https://developer.android.com/jetpack/androidx/releases/test
 openjdkJol = "0.17" # https://github.com/openjdk/jol/tags
-robolectric = "4.15.1" # https://github.com/robolectric/robolectric/releases
+robolectric = "4.16" # https://github.com/robolectric/robolectric/releases
 
 ### android ###
 # make sure to update Dockerfile, when you change a version here!
@@ -125,8 +125,8 @@ kotest-common = { module = "io.kotest:kotest-common", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testContainers" }
-testcontainers-junitJupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testContainers" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testContainers" }
+testcontainers-junitJupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testContainers" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testContainers" }
 
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
