@@ -72,4 +72,9 @@ android {
     defaultConfig {
         minSdk = libs.versions.androidMinSdk.get().toInt()
     }
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+        }
+    }
 }
