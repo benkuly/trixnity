@@ -38,7 +38,7 @@ fun <T> retryFlow(
             emit(RetryFlowResult.Suspend) // ensure, that block is not called before a new value is requested
             emitAll(flow(block).map { RetryFlowResult.Emit(it) })
             retryCounter = 0
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
             if (error is CancellationException) throw error
 
             val retryDelay =
