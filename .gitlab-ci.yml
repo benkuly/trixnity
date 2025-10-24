@@ -285,6 +285,8 @@ pages:
   image: node:lts
   rules:
     - *if-dev-release
+    - if: '$CI_COMMIT_BRANCH =~ /^v-\d+.\d+.\d+.*/'
+      when: never
   script:
     - cd website
     - yarn install --force
