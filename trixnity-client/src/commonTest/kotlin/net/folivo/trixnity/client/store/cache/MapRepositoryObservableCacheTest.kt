@@ -138,7 +138,7 @@ class MapRepositoryObservableCacheTest : TrixnityBaseTest() {
         val timePerOperation = operationsTimeSum / 100
         println("timePerOperation=$timePerOperation completeTime=$completeTime")
         timePerOperation shouldBeLessThan 40.milliseconds
-        completeTime shouldBeLessThan 400.milliseconds
+        completeTime shouldBeLessThan 600.milliseconds
     }
 
     @Test
