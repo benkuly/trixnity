@@ -34,6 +34,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## 4.22.5
+
+### Added
+
+### Changed
+
+- Bump versions
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Fixed cache did not persist values when there were no cache entry but subscribers for an index (very rare case)
+- Fix dokka documentation generation
+
 ## 4.22.4
 
 ### Changed

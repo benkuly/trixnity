@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.ExternalNativeCleanTask
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -89,6 +92,11 @@ android {
             isDefault = true
         }
     }
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+        }
+    }
 }
 tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
     if (name.contains("jni", true)) {
@@ -110,11 +118,27 @@ kotlin {
     addAndroidTarget()
     addJsTarget(rootDir)
 
+    applyDefaultHierarchyTemplate {
+        common {
+            group("olmLibrary") {
+                group("jvmAndroid") {
+                    withJvm()
+                    withAndroidTarget()
+                }
+                group("native") {
+                    withLinux()
+                    withMingw()
+                    withApple()
+                }
+            }
+        }
+    }
+
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 
-    val nativeOlmTargets = olmNativeTargetList.map { target ->
+    olmNativeTargetList.forEach { target ->
         target.createTarget(this).apply {
             compilations {
                 "main" {
@@ -148,20 +172,20 @@ kotlin {
                 implementation(libs.oshai.logging)
             }
         }
-        val olmLibraryMain by creating {
-            dependsOn(commonMain.get())
-        }
-        jvmMain {
-            dependsOn(olmLibraryMain)
+        // TODO: proper kotlin multiplatform variant of using jna
+        val jvmAndroidMain by getting {
             dependencies {
-                implementation(libs.jna)
+                compileOnly(libs.jna)
             }
         }
-        val androidMain by getting {
-            dependsOn(olmLibraryMain)
-            kotlin.srcDirs("src/jvmMain/kotlin")
+        androidMain {
             dependencies {
-                api(libs.jna.get().toString() + "@aar")
+                implementation(libs.jna.get().toString() + "@aar")
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation(libs.jna.get().toString() + "@jar")
             }
         }
         jsMain {
@@ -171,12 +195,6 @@ kotlin {
                     "https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${libs.versions.trixnityOlmBinaries.get()}/trixnity-olm-wrapper.tgz")
                 )
             }
-        }
-        val nativeMain by creating {
-            dependsOn(olmLibraryMain)
-        }
-        nativeOlmTargets.forEach {
-            getByName(it.targetName + "Main").dependsOn(nativeMain)
         }
         commonTest {
             dependencies {
@@ -189,8 +207,13 @@ kotlin {
         }
         androidUnitTest {
             dependencies {
-                implementation(libs.jna.get().toString() + "@jar")
                 implementation(files(desktopOlmLibs))
+                implementation(libs.jna.get().toString() + "@jar")
+            }
+        }
+        androidInstrumentedTest {
+            dependencies {
+                implementation(libs.androidx.test.runner)
             }
         }
     }
