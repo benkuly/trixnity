@@ -29,12 +29,27 @@ class RetryFlowTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun shouldRetryOnError() = runTest {
+    fun shouldRetryOnException() = runTest {
         var attempts = 0
         val result = retryFlow {
             attempts++
             if (attempts < 3) {
                 throw RuntimeException("Test exception")
+            }
+            emit(attempts)
+        }.take(3).first()
+
+        result shouldBe 3
+        attempts shouldBe 3
+    }
+
+    @Test
+    fun shouldRetryOnThrowable() = runTest {
+        var attempts = 0
+        val result = retryFlow {
+            attempts++
+            if (attempts < 3) {
+                throw Throwable("Test throwable")
             }
             emit(attempts)
         }.take(3).first()
