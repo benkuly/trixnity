@@ -57,12 +57,13 @@ variables:
 .if-release: &if-release
   - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
 
-.if-main: &if-main
+.if-dev-release: &if-dev-release
   - if: '$CI_COMMIT_TAG =~ /^v\d+.\d+.\d+.*/'
     when: never
   - if: $CI_PIPELINE_SOURCE == "schedule"
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  - if: '$CI_COMMIT_BRANCH =~ /^v-\d+.\d+.\d+.*/'
 
 build:mac:
   stage: build
@@ -204,26 +205,26 @@ changelog:
         exit 1
       fi
 
-publish:mac-snapshot:
+publish:mac-dev:
   stage: publish
   tags: [ "trixnity-mac-internal" ]
   cache:
     - *cache
   rules:
-    - *if-main
+    - *if-dev-release
   script:
     - ./gradlew
       publish{IosArm64,IosSimulatorArm64,IosX64,MacosArm64,MacosX64}PublicationToGitLabRepository
       --stacktrace
 
-publish:linux-snapshot:
+publish:linux-dev:
   stage: publish
   tags: [ "saas-linux-medium-amd64" ]
   image: $BUILD_LINUX_IMAGE_NAME
   cache:
     - *cache
   rules:
-    - *if-main
+    - *if-dev-release
   artifacts:
     paths:
       - website/static/api/
@@ -283,7 +284,9 @@ pages:
   stage: website
   image: node:lts
   rules:
-    - *if-main
+    - *if-dev-release
+    - if: '$CI_COMMIT_BRANCH =~ /^v-\d+.\d+.\d+.*/'
+      when: never
   script:
     - cd website
     - yarn install --force

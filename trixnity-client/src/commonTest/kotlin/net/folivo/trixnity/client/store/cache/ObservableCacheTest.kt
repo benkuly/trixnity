@@ -16,6 +16,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimedValue
 import kotlin.time.measureTimedValue
 
 class ObservableCacheTest : TrixnityBaseTest() {
@@ -161,64 +162,83 @@ class ObservableCacheTest : TrixnityBaseTest() {
 
     @Test
     fun `write » handle massive parallel manipulation of same key`() = runTest {
-        val database = MutableSharedFlow<String?>(replay = 3000)
+        withContext(Dispatchers.Default) {
+            suspend fun operation(): TimedValue<Duration> {
+                val database = MutableSharedFlow<String?>(replay = 3000)
 
-        class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
-            override suspend fun persist(key: String, value: String?) {
-                database.emit(value)
-            }
-        }
-
-        val cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), backgroundScope, testClock)
-        val (operationsTimeSum, completeTime) =
-            measureTimedValue {
-                (0..99).map { i ->
-                    async {
-                        measureTimedValue {
-                            cut.update(
-                                key = "key",
-                                updater = { "$i" },
-                            )
-                        }.duration
+                class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
+                    override suspend fun persist(key: String, value: String?) {
+                        database.emit(value)
                     }
-                }.awaitAll().reduce { acc, duration -> acc + duration }
+                }
+
+                val cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), backgroundScope, testClock)
+
+                val result = measureTimedValue {
+                    (0..99).map { i ->
+                        async {
+                            measureTimedValue {
+                                cut.update(
+                                    key = "key",
+                                    updater = { "$i" },
+                                )
+                            }.duration
+                        }
+                    }.awaitAll().reduce { acc, duration -> acc + duration }
+                }
+                database.replayCache shouldContainAll (0..99).map { it.toString() }
+                return result
             }
-        database.replayCache shouldContainAll (0..99).map { it.toString() }
-        val timePerOperation = operationsTimeSum / 100
-        println("timePerOperation=$timePerOperation completeTime=$completeTime")
-        timePerOperation shouldBeLessThan 20.milliseconds
-        completeTime shouldBeLessThan 200.milliseconds
+
+            operation() // warmup
+            val (operationsTimeSum, completeTime) = operation()
+
+            val timePerOperation = operationsTimeSum / 100
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 10.milliseconds
+            completeTime shouldBeLessThan 100.milliseconds
+        }
     }
 
     @Test
     fun `write » handle massive parallel manipulation of different keys`() = runTest {
-        val database = MutableSharedFlow<String?>(replay = 3000)
+        withContext(Dispatchers.Default) {
 
-        class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
-            override suspend fun persist(key: String, value: String?) {
-                database.emit(key)
-            }
-        }
 
-        val cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), backgroundScope, testClock)
-        val (operationsTimeSum, completeTime) =
-            measureTimedValue {
-                (0..99).map { i ->
-                    async {
-                        measureTimedValue {
-                            cut.update(
-                                key = "$i",
-                                updater = { "value" },
-                            )
-                        }.duration
+            suspend fun operation(): TimedValue<Duration> {
+                val database = MutableSharedFlow<String?>(replay = 3000)
+
+                class InMemoryObservableCacheStoreWithHistory : InMemoryObservableCacheStore<String, String>() {
+                    override suspend fun persist(key: String, value: String?) {
+                        database.emit(key)
                     }
-                }.awaitAll().reduce { acc, duration -> acc + duration }
+                }
+
+                val cut = ObservableCache("", InMemoryObservableCacheStoreWithHistory(), backgroundScope, testClock)
+                val result = measureTimedValue {
+                    (0..99).map { i ->
+                        async {
+                            measureTimedValue {
+                                cut.update(
+                                    key = "$i",
+                                    updater = { "value" },
+                                )
+                            }.duration
+                        }
+                    }.awaitAll().reduce { acc, duration -> acc + duration }
+                }
+                database.replayCache shouldContainAll (0..99).map { it.toString() }
+                return result
             }
-        database.replayCache shouldContainAll (0..99).map { it.toString() }
-        val timePerOperation = operationsTimeSum / 100
-        println("timePerOperation=$timePerOperation completeTime=$completeTime")
-        timePerOperation shouldBeLessThan 30.milliseconds
-        completeTime shouldBeLessThan 300.milliseconds
+
+            operation() // warmup
+            val (operationsTimeSum, completeTime) = operation()
+
+            val timePerOperation = operationsTimeSum / 100
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 30.milliseconds
+            completeTime shouldBeLessThan 300.milliseconds
+        }
     }
 
     @Test

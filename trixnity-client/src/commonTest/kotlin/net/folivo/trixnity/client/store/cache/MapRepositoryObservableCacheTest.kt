@@ -11,17 +11,30 @@ import net.folivo.trixnity.client.store.repository.InMemoryMapRepository
 import net.folivo.trixnity.client.store.repository.RepositoryTransactionManager
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.test.utils.testClock
 import kotlin.test.Test
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimedValue
 import kotlin.time.measureTimedValue
 
 class MapRepositoryObservableCacheTest : TrixnityBaseTest() {
 
-    private val repository = object : InMemoryMapRepository<String, String, String>() {
+    private class TestInMemoryMapRepository : InMemoryMapRepository<String, String, String>() {
+        val continueGetFirstKey = MutableStateFlow(true)
+        override suspend fun get(firstKey: String): Map<String, String> {
+            val result = super.get(firstKey)
+            continueGetFirstKey.first { it }
+            return result
+        }
+
         override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
     }
+
+    private val repository = TestInMemoryMapRepository()
+        .also { scheduleSetup { it.deleteAll() } }
 
     private val readTransactionCalled = MutableStateFlow(0)
     private val writeTransactionCalled = MutableStateFlow(0)
@@ -36,7 +49,14 @@ class MapRepositoryObservableCacheTest : TrixnityBaseTest() {
         }
     }
 
-    private val cut = MapRepositoryObservableCache(repository, tm, testScope.backgroundScope, testScope.testClock)
+    private val cut =
+        MapRepositoryObservableCache(
+            repository = repository,
+            tm = tm,
+            cacheScope = testScope.backgroundScope,
+            clock = testScope.testClock,
+            expireDuration = 1.minutes
+        ).also { scheduleSetup { it.clear() } }
 
 
     @Test
@@ -72,73 +92,90 @@ class MapRepositoryObservableCacheTest : TrixnityBaseTest() {
 
     @Test
     fun `write » handle massive parallel manipulation of same key`() = runTest {
-        val database = MutableSharedFlow<String?>(replay = 3000)
+        withContext(Dispatchers.Default) {
+            suspend fun operation(): TimedValue<Duration> {
+                val database = MutableSharedFlow<String?>(replay = 3000)
 
-        class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
-            override suspend fun save(firstKey: String, secondKey: String, value: String) {
-                database.emit(value)
-                super.save(firstKey, secondKey, value)
-            }
-
-            override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
-        }
-
-        val cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, backgroundScope, testClock)
-        val (operationsTimeSum, completeTime) =
-            measureTimedValue {
-                (0..99).map { i ->
-                    async {
-                        measureTimedValue {
-                            cut.update(
-                                key = MapRepositoryCoroutinesCacheKey("key", "key"),
-                                updater = { "$i" },
-                            )
-                        }.duration
+                class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
+                    override suspend fun save(firstKey: String, secondKey: String, value: String) {
+                        database.emit(value)
+                        super.save(firstKey, secondKey, value)
                     }
-                }.awaitAll().reduce { acc, duration -> acc + duration }
+
+                    override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
+                }
+
+                val cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, backgroundScope, testClock)
+                val result =
+                    measureTimedValue {
+                        (0..99).map { i ->
+                            async {
+                                measureTimedValue {
+                                    cut.update(
+                                        key = MapRepositoryCoroutinesCacheKey("key", "key"),
+                                        updater = { "$i" },
+                                    )
+                                }.duration
+                            }
+                        }.awaitAll().reduce { acc, duration -> acc + duration }
+                    }
+                database.replayCache shouldContainAll (0..99).map { it.toString() }
+                return result
             }
-        database.replayCache shouldContainAll (0..99).map { it.toString() }
-        val timePerOperation = operationsTimeSum / 100
-        println("timePerOperation=$timePerOperation completeTime=$completeTime")
-        timePerOperation shouldBeLessThan 20.milliseconds
-        completeTime shouldBeLessThan 200.milliseconds
+
+            operation() // warmup
+            val (operationsTimeSum, completeTime) = operation()
+
+            val timePerOperation = operationsTimeSum / 100
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 10.milliseconds
+            completeTime shouldBeLessThan 100.milliseconds
+        }
     }
 
     @Test
     fun `write » handle massive parallel manipulation of different keys`() = runTest {
-        val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
+        withContext(Dispatchers.Default) {
+            suspend fun operation(): TimedValue<Duration> {
+                val database = MutableSharedFlow<Pair<String, String>?>(replay = 3000)
 
-        class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
-            override suspend fun save(firstKey: String, secondKey: String, value: String) {
-                database.emit(firstKey to secondKey)
-                super.save(firstKey, secondKey, value)
-            }
+                class InMemoryRepositoryWithHistory : InMemoryMapRepository<String, String, String>() {
+                    override suspend fun save(firstKey: String, secondKey: String, value: String) {
+                        database.emit(firstKey to secondKey)
+                        super.save(firstKey, secondKey, value)
+                    }
 
-            override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
-        }
-
-        val cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, backgroundScope, testClock)
-        val (operationsTimeSum, completeTime) =
-            measureTimedValue {
-                coroutineScope {
-                    (0..99).map { i ->
-                        async {
-                            measureTimedValue {
-                                cut.update(
-                                    key = MapRepositoryCoroutinesCacheKey("key", "$i"),
-                                    updater = { "value" },
-                                )
-                            }.duration
-                        }
-                    }.awaitAll().reduce { acc, duration -> acc + duration }
+                    override fun serializeKey(firstKey: String, secondKey: String): String = firstKey + secondKey
                 }
-            }
-        database.replayCache shouldContainAll (0..99).map { "key" to "$it" }
 
-        val timePerOperation = operationsTimeSum / 100
-        println("timePerOperation=$timePerOperation completeTime=$completeTime")
-        timePerOperation shouldBeLessThan 40.milliseconds
-        completeTime shouldBeLessThan 400.milliseconds
+                val cut = MapRepositoryObservableCache(InMemoryRepositoryWithHistory(), tm, backgroundScope, testClock)
+                val result =
+                    measureTimedValue {
+                        coroutineScope {
+                            (0..99).map { i ->
+                                async {
+                                    measureTimedValue {
+                                        cut.update(
+                                            key = MapRepositoryCoroutinesCacheKey("key", "$i"),
+                                            updater = { "value" },
+                                        )
+                                    }.duration
+                                }
+                            }.awaitAll().reduce { acc, duration -> acc + duration }
+                        }
+                    }
+                database.replayCache shouldContainAll (0..99).map { "key" to "$it" }
+                return result
+            }
+
+            operation() // warmup
+            val (operationsTimeSum, completeTime) = operation()
+
+            val timePerOperation = operationsTimeSum / 100
+            println("timePerOperation=$timePerOperation completeTime=$completeTime")
+            timePerOperation shouldBeLessThan 40.milliseconds
+            completeTime shouldBeLessThan 400.milliseconds
+        }
     }
 
     @Test
@@ -340,6 +377,29 @@ class MapRepositoryObservableCacheTest : TrixnityBaseTest() {
             }
         }
         cut.readByFirstKey("firstKey").filterNotNull().first() shouldHaveSize 2
+    }
+
+    @Test
+    fun `readByFirstKey » don't invalidate when subscribed`() = runTest {
+        val observeK1 = backgroundScope.async { cut.get(MapRepositoryCoroutinesCacheKey("fk1", "sk1")).collect() }
+        delay(10.milliseconds)
+        cut.set(MapRepositoryCoroutinesCacheKey("fk1", "sk1"), "v11")
+        cut.set(MapRepositoryCoroutinesCacheKey("fk1", "sk2"), "v12")
+        observeK1.cancel()
+
+        repository.continueGetFirstKey.value = false // this forces a delay in the repository (so it will return k1, k2)
+        val result = async { cut.readByFirstKey("fk1").flatten().first() }
+
+        delay(2.minutes) // invalidate cache (removes k1,k2)
+
+        cut.set(MapRepositoryCoroutinesCacheKey("fk1", "sk3"), "v13") // should not skip cache
+
+        repository.continueGetFirstKey.value = true
+        result.await() shouldBe mapOf(
+            "sk1" to "v11",
+            "sk2" to "v12",
+            "sk3" to "v13",
+        )
     }
 
     @Test
