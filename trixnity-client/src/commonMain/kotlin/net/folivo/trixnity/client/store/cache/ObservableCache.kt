@@ -133,9 +133,8 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             values.getOrPut(key) {
                 log.trace { "$name (get): no cache hit for key $key" }
                 MutableStateFlow(CacheValue.Init())
-            }.also {
-                it.get { store.get(key) }
             }
+        cacheEntry.get { store.get(key) }
         emitAll(cacheEntry.filterIsInstance<CacheValue.Value<V?>>().map { it.value })
     }
 
@@ -335,7 +334,7 @@ internal class RemoverJobExecutingIndex<K : Any, V>(
                                     || cacheValues.getIndexSubscriptionCount(key) == 0
                             )
                 }
-                // This is needed, because using Map.Entry from a mutable map is not safe to use.
+                // This is needed because, using Map.Entry from a mutable map is not safe to use.
                 partition.first.map { it.key to it.value } to partition.second.map { it.key }
             }
             coroutineScope {
