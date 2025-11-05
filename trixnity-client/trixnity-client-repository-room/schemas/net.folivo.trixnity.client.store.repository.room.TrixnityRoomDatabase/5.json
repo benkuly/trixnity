@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 5,
-    "identityHash": "efcbd63615347e5dd98d4691ce6ef48f",
+    "identityHash": "496516042532a8845c48bdeb97500c37",
     "entities": [
       {
         "tableName": "Account",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `olmPickleKey` TEXT, `baseUrl` TEXT, `userId` TEXT, `deviceId` TEXT, `accessToken` TEXT, `refreshToken` TEXT, `syncBatchToken` TEXT, `filterId` TEXT, `backgroundFilterId` TEXT, `displayName` TEXT, `avatarUrl` TEXT, `isLocked` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `olmPickleKey` TEXT, `baseUrl` TEXT, `userId` TEXT, `deviceId` TEXT, `accessToken` TEXT, `refreshToken` TEXT, `syncBatchToken` TEXT, `filterId` TEXT, `backgroundFilterId` TEXT, `displayName` TEXT, `avatarUrl` TEXT, `isLocked` INTEGER NOT NULL, `oauth2Login` INTEGER NOT NULL DEFAULT false, `oauth2ClientId` TEXT DEFAULT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -74,6 +74,19 @@
             "columnName": "isLocked",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "oauth2Login",
+            "columnName": "oauth2Login",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "false"
+          },
+          {
+            "fieldPath": "oauth2ClientId",
+            "columnName": "oauth2ClientId",
+            "affinity": "TEXT",
+            "defaultValue": "NULL"
           }
         ],
         "primaryKey": {
@@ -927,7 +940,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'efcbd63615347e5dd98d4691ce6ef48f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '496516042532a8845c48bdeb97500c37')"
     ]
   }
 }
