@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed cache did invalidate entry, because subscriptions were increased too late (full or mapping cache)
+
 ### Security
 
 ## 4.22.5
