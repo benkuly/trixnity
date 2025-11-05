@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.key.getAllKeysFromUser
 import net.folivo.trixnity.client.store.KeyStore
+import net.folivo.trixnity.core.MacValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.key.verification.*
@@ -17,7 +18,8 @@ import net.folivo.trixnity.core.model.keys.CrossSigningKeysUsage.MasterKey
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue
 import net.folivo.trixnity.core.model.keys.Keys
-import net.folivo.trixnity.olm.OlmSAS
+import net.folivo.trixnity.crypto.driver.sas.EstablishedSas
+import net.folivo.trixnity.crypto.of
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveSasVerificationState")
 
@@ -28,7 +30,7 @@ sealed interface ActiveSasVerificationState {
 
     data class TheirSasStart(
         val content: SasStartEventContent,
-        private val olmSas: OlmSAS,
+        private val sasPublicKey: KeyValue.Curve25519KeyValue,
         private val json: Json,
         private val relatesTo: RelatesTo.Reference?,
         private val transactionId: String?,
@@ -85,7 +87,7 @@ sealed interface ActiveSasVerificationState {
                 else -> {
                     send(
                         SasAcceptEventContent(
-                            commitment = createSasCommitment(olmSas.publicKey, content, json),
+                            commitment = createSasCommitment(sasPublicKey.value, content, json),
                             hash = Sha256,
                             keyAgreementProtocol = Curve25519HkdfSha256,
                             messageAuthenticationCode = content.messageAuthenticationCodes.let {
@@ -114,7 +116,7 @@ sealed interface ActiveSasVerificationState {
         private val messageAuthenticationCode: SasMessageAuthenticationCode,
         private val relatesTo: RelatesTo.Reference?,
         private val transactionId: String?,
-        private val olmSas: OlmSAS,
+        private val establishedSas: EstablishedSas,
         private val keyStore: KeyStore,
         private val send: suspend (stepContent: VerificationStep) -> Unit,
     ) : ActiveSasVerificationState {
@@ -126,12 +128,16 @@ sealed interface ActiveSasVerificationState {
             when (messageAuthenticationCode) {
                 HkdfHmacSha256 -> {
                     log.trace { "sendHkdfHmacSha256Mac with old (wrong) base64" }
-                    sendHkdfHmacSha256Mac(olmSas::calculateMac)
+                    sendHkdfHmacSha256Mac { input, info ->
+                        establishedSas.calculateMacInvalidBase64(input, info).let(::MacValue)
+                    }
                 }
 
                 HkdfHmacSha256V2 -> {
                     log.trace { "sendHkdfHmacSha256Mac with fixed base64" }
-                    sendHkdfHmacSha256Mac(olmSas::calculateMacFixedBase64)
+                    sendHkdfHmacSha256Mac { input, info ->
+                        establishedSas.calculateMac(input, info).let(MacValue::of)
+                    }
                 }
 
                 is SasMessageAuthenticationCode.Unknown -> {
@@ -147,7 +153,7 @@ sealed interface ActiveSasVerificationState {
             }
         }
 
-        private suspend fun sendHkdfHmacSha256Mac(calculateMac: (String, String) -> String) {
+        private suspend fun sendHkdfHmacSha256Mac(calculateMac: (String, String) -> MacValue) {
             val baseInfo = "MATRIX_KEY_VERIFICATION_MAC" +
                     ownUserId.full + ownDeviceId +
                     theirUserId.full + theirDeviceId +
@@ -161,7 +167,13 @@ sealed interface ActiveSasVerificationState {
                 val macs =
                     keysToMac.map {
                         log.trace { "create key mac from input $it and info ${baseInfo + it.fullId}" }
-                        it.copy(value = KeyValue.Ed25519KeyValue(calculateMac(it.value.value, baseInfo + it.fullId)))
+                        it.copy(
+                            value = KeyValue.Ed25519KeyValue(
+                                calculateMac(
+                                    it.value.value, baseInfo + it.fullId
+                                ).value
+                            )
+                        )
                     }
                 send(SasMacEventContent(keys, Keys(macs.toSet()), relatesTo, transactionId))
             } else send(

@@ -46,8 +46,9 @@ kotlin {
         }
 
         commonMain.dependencies {
-            implementation(kotlin("test"))
+            api(kotlin("test"))
             api(libs.kotlinx.coroutines.test)
+            api(libs.kotest.assertions.core)
             api(libs.oshai.logging)
         }
 
@@ -57,11 +58,11 @@ kotlin {
         }
 
         jvmMain.dependencies {
-            implementation(kotlin("test-junit5"))
+            api(kotlin("test-junit5"))
         }
 
         androidMain.dependencies {
-            implementation(kotlin("test-junit"))
+            api(kotlin("test-junit"))
         }
     }
 }

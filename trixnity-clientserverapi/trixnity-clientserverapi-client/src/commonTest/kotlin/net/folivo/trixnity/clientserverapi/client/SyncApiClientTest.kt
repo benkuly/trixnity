@@ -20,6 +20,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
 import net.folivo.trixnity.clientserverapi.model.sync.SyncResponseSerializer
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -1168,7 +1169,7 @@ class SyncApiClientTest : TrixnityBaseTest() {
             toDevice = Response.ToDevice(
                 listOf(
                     ClientEvent.ToDeviceEvent(
-                        RoomKeyEventContent(RoomId("!room:server"), "se", "sk", EncryptionAlgorithm.Megolm),
+                        RoomKeyEventContent(RoomId("!room:server"), "se", SessionKeyValue("sk"), EncryptionAlgorithm.Megolm),
                         UserId("dino", "server")
                     )
                 )

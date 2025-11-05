@@ -20,6 +20,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCanc
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnexpectedMessage
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.UnknownMethod
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStartEventContent.SasStartEventContent
+import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.utils.withReentrantLock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveVerification")
@@ -50,6 +51,7 @@ abstract class ActiveVerificationImpl(
     protected val keyStore: KeyStore,
     private val keyTrustService: KeyTrustService,
     protected val json: Json,
+    private val driver: CryptoDriver,
 ) : ActiveVerification {
     final override var theirDeviceId: String? = theirInitialDeviceId
         private set
@@ -174,6 +176,7 @@ abstract class ActiveVerificationImpl(
                         keyStore = keyStore,
                         keyTrustService = keyTrustService,
                         json = json,
+                        driver = driver,
                     )
             }
             if (method != null) // the method already called cancel

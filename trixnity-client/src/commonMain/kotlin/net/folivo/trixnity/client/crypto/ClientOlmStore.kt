@@ -82,7 +82,7 @@ class ClientOlmStore(
         updater(checkNotNull(it))
     }
 
-    override suspend fun getOlmPickleKey(): String = checkNotNull(accountStore.getAccount()?.olmPickleKey)
+    override suspend fun getOlmPickleKey(): String? = checkNotNull(accountStore.getAccount()).olmPickleKey
 
     override suspend fun getForgetFallbackKeyAfter(): Flow<Instant?> = olmCryptoStore.getForgetFallbackKeyAfter()
 

@@ -16,6 +16,7 @@ import net.folivo.trixnity.client.mocks.RoomServiceMock
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.verification.ActiveVerificationState.AcceptedByOtherDevice
 import net.folivo.trixnity.client.verification.ActiveVerificationState.Undefined
+import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -31,6 +32,8 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
@@ -40,6 +43,8 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActiveUserVerificationTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val aliceDevice = "AAAAAA"
@@ -128,7 +133,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             TimelineEvent(
                 event = MessageEvent(
                     MegolmEncryptedMessageEventContent(
-                        "cipher",
+                        MegolmMessageValue("cipher"),
                         Curve25519KeyValue(""),
                         bobDevice,
                         "session"
@@ -143,7 +148,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             MutableStateFlow( // ignore event, that is no VerificationStep
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(RoomMessageEventContent.TextBased.Text("hi")),
@@ -153,7 +158,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             MutableStateFlow( // ignore own event
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), alice, roomId, 1234
                     ),
                     content = Result.success(VerificationCancelEventContent(MismatchedSas, "", relatesTo, null)),
@@ -163,7 +168,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             MutableStateFlow( // ignore event with other relates to
                 TimelineEvent(
                     event = MessageEvent(
-                        MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
+                        MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), Curve25519KeyValue(""), bobDevice, "session"),
                         EventId("$2"), bob, roomId, 1234
                     ),
                     content = Result.success(
@@ -184,7 +189,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
         delay(500)
         cancelFlow.value = TimelineEvent(
             event = MessageEvent(
-                MegolmEncryptedMessageEventContent("cipher", Curve25519KeyValue(""), bobDevice, "session"),
+                MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), Curve25519KeyValue(""), bobDevice, "session"),
                 EventId("$2"), bob, roomId, 1234
             ),
             content = Result.success(cancelEvent),
@@ -263,6 +268,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
             clock = testClock,
+            driver = driver,
         )
         cut.startLifecycle(this)
         cut.state.first { it == AcceptedByOtherDevice } shouldBe AcceptedByOtherDevice
@@ -303,6 +309,7 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
             clock = testClock,
+            driver = driver,
         )
         cut.startLifecycle(this)
         cut.state.first { it == Undefined } shouldBe Undefined
@@ -326,5 +333,6 @@ class ActiveUserVerificationTest : TrixnityBaseTest() {
             room = roomServiceMock,
             keyTrust = KeyTrustServiceMock(),
             clock = testClock,
+            driver = driver,
         )
 }

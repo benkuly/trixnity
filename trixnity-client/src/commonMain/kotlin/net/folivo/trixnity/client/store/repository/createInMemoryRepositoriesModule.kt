@@ -36,4 +36,5 @@ fun createInMemoryRepositoriesModule() = module {
     singleOf<NotificationRepository>(::InMemoryNotificationRepository)
     singleOf<NotificationUpdateRepository>(::InMemoryNotificationUpdateRepository)
     singleOf<NotificationStateRepository>(::InMemoryNotificationStateRepository)
+    singleOf<MigrationRepository>(::InMemoryMigrationRepository)
 }

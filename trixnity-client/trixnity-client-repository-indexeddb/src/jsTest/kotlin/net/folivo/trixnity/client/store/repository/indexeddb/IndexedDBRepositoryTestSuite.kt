@@ -50,6 +50,7 @@ class IndexedDBRepositoryTestSuite : RepositoryTestSuite(
             singleOf(::IndexedDBNotificationRepository) { bind<NotificationRepository>() }
             singleOf(::IndexedDBNotificationStateRepository) { bind<NotificationStateRepository>() }
             singleOf(::IndexedDBNotificationUpdateRepository) { bind<NotificationUpdateRepository>() }
+            singleOf(::IndexedDBMigrationRepository) { bind<MigrationRepository>() }
         }
     }
 )

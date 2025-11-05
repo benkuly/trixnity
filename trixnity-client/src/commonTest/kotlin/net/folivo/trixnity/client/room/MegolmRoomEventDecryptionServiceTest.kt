@@ -12,6 +12,7 @@ import net.folivo.trixnity.client.mocks.OlmEncryptionServiceMock
 import net.folivo.trixnity.client.mocks.OutgoingRoomKeyRequestEventHandlerMock
 import net.folivo.trixnity.client.simpleRoom
 import net.folivo.trixnity.clientserverapi.model.keys.GetRoomKeysBackupVersionResponse
+import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -81,7 +82,7 @@ class MegolmRoomEventDecryptionServiceTest : TrixnityBaseTest() {
         forwardingCurve25519KeyChain = listOf(), pickled = "pickle"
     )
     private val encryptedEvent = MessageEvent(
-        MegolmEncryptedMessageEventContent("cipher cipher", sessionId = session),
+        MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher cipher"), sessionId = session),
         EventId("$1event"),
         alice,
         room,
@@ -122,7 +123,7 @@ class MegolmRoomEventDecryptionServiceTest : TrixnityBaseTest() {
 
     @Test
     fun `encrypt » encrypt`() = runTest {
-        val encryptedEvent = MegolmEncryptedMessageEventContent("cipher", sessionId = "sessionId")
+        val encryptedEvent = MegolmEncryptedMessageEventContent(MegolmMessageValue("cipher"), sessionId = "sessionId")
         olmEncyptionServiceMock.returnEncryptMegolm = Result.success(encryptedEvent)
         cut.encrypt(RoomMessageEventContent.TextBased.Text("hi"), room) shouldBe Result.success(
             encryptedEvent

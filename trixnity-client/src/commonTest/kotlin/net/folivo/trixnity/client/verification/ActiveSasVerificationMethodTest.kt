@@ -19,6 +19,7 @@ import net.folivo.trixnity.client.store.KeySignatureTrustLevel.Valid
 import net.folivo.trixnity.client.store.StoredCrossSigningKeys
 import net.folivo.trixnity.client.store.StoredDeviceKeys
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState.*
+import net.folivo.trixnity.core.MacValue
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.key.verification.*
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationCancelEventContent.Code.*
@@ -26,16 +27,21 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStar
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm.Megolm
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.invoke
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.getValue
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.suspendLazy
-import net.folivo.trixnity.olm.OlmSAS
-import net.folivo.trixnity.olm.freeAfter
 import kotlin.test.Test
 
 class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val aliceDevice = "AAAAAA"
@@ -69,6 +75,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
             keyStore = keyStore,
             keyTrustService = keyTrustService,
             json = json,
+            driver = driver,
         )!!
     }
 
@@ -95,6 +102,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
             keyStore = keyStore,
             keyTrustService = keyTrustService,
             json = json,
+            driver = driver,
         )
         method shouldBe null
         val result = sendVerificationStepFlow.first()
@@ -125,6 +133,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
             keyStore = keyStore,
             keyTrustService = keyTrustService,
             json = json,
+            driver = driver,
         )
         method shouldBe null
         val result = sendVerificationStepFlow.first()
@@ -134,11 +143,11 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
 
     @Test
     fun `handleVerificationStep » current state is OwnSasStart or TheirSasStart » cancel unexpected message SasKeyEventContent`() =
-        checkNotAllowedStateChange(SasKeyEventContent("key", null, "t"))
+        checkNotAllowedStateChange(SasKeyEventContent(Curve25519KeyValue("key"), null, "t"))
 
     @Test
     fun `handleVerificationStep » current state is OwnSasStart or TheirSasStart » cancel unexpected message SasMacEventContent`() =
-        checkNotAllowedStateChange(SasMacEventContent("keys", keysOf(), null, "t"))
+        checkNotAllowedStateChange(SasMacEventContent(MacValue("keys"), keysOf(), null, "t"))
 
     @Test
     fun `handleVerificationStep » current state is OwnSasStart or TheirSasStart » just set state when message is from us`() =
@@ -175,7 +184,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
             val result = sendVerificationStepFlow.first()
             result.shouldBeInstanceOf<SasKeyEventContent>()
             assertSoftly(result) {
-                key.shouldNotBeBlank()
+                key.value.shouldNotBeBlank()
                 relatesTo shouldBe null
                 transactionId shouldBe "t"
             }
@@ -236,7 +245,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     @Test
     fun `handleVerificationStep » current state is Accept » handle unexpected » cancel unexpected message SasMacEventContent`() =
         checkNotAllowedStateChange(
-            SasMacEventContent("keys", keysOf(), null, "t"),
+            SasMacEventContent(MacValue("keys"), keysOf(), null, "t"),
             ::currentStateIsAcceptHandleUnexpectedSetup
         )
 
@@ -244,7 +253,11 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     fun `handleVerificationStep » current state is Accept » accept from them » just set state when message is from us`() =
         runTest {
             currentStateIsAcceptAcceptFromThem(cut)
-            cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
+            cut.handleVerificationStep(
+                SasKeyEventContent(
+                    Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+                ), true
+            )
             cut.state.value shouldBe WaitForKeys(true)
         }
 
@@ -252,12 +265,16 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     fun `handleVerificationStep » current state is Accept » accept from us » send SasKeyEventContent when sender was not us`() =
         runTest {
             currentStateIsAcceptAcceptFromUs(cut)
-            cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), false)
+            cut.handleVerificationStep(
+                SasKeyEventContent(
+                    Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+                ), false
+            )
             cut.state.value shouldBe WaitForKeys(false)
             val result = sendVerificationStepFlow.first()
             result.shouldBeInstanceOf<SasKeyEventContent>()
             assertSoftly(result) {
-                key.shouldNotBeBlank()
+                key.value.shouldNotBeBlank()
                 relatesTo shouldBe null
                 transactionId shouldBe "t"
             }
@@ -267,7 +284,11 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     fun `handleVerificationStep » current state is Accept » accept from us » cancel when sender it not expected`() =
         runTest {
             currentStateIsAcceptAcceptFromUs(cut)
-            cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
+            cut.handleVerificationStep(
+                SasKeyEventContent(
+                    Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+                ), true
+            )
             val result = sendVerificationStepFlow.first()
             result.shouldBeInstanceOf<VerificationCancelEventContent>()
             result.code shouldBe UnexpectedMessage
@@ -290,7 +311,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     @Test
     fun `handleVerificationStep » current state is WaitForKeys » cancel unexpected message SasMacEventContent`() =
         checkNotAllowedStateChange(
-            SasMacEventContent("keys", keysOf(), null, "t"),
+            SasMacEventContent(MacValue("keys"), keysOf(), null, "t"),
             ::currentStateIsWaitForKeys
         )
 
@@ -299,7 +320,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
         currentStateIsWaitForKeys(cut)
         cut.handleVerificationStep(
             SasKeyEventContent(
-                "3vPVpNPsVYVYuozmCrihhndEvVZUHpoHBSb5+TdkaAA",
+                Curve25519KeyValue("3vPVpNPsVYVYuozmCrihhndEvVZUHpoHBSb5+TdkaAA"),
                 relatesTo = null,
                 transactionId = "t"
             ), false
@@ -317,7 +338,11 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     @Test
     fun `handleVerificationStep » current state is WaitForKeys » cancel when commitment does not match`() = runTest {
         currentStateIsWaitForKeys(cut)
-        cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), false)
+        cut.handleVerificationStep(
+            SasKeyEventContent(
+                Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+            ), false
+        )
         val result =
             sendVerificationStepFlow.replayCache.filterIsInstance<VerificationCancelEventContent>().first()
         result.code shouldBe MismatchedCommitment
@@ -326,7 +351,11 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     @Test
     fun `handleVerificationStep » current state is WaitForKeys » cancel when sender it not expected`() = runTest {
         currentStateIsWaitForKeys(cut)
-        cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
+        cut.handleVerificationStep(
+            SasKeyEventContent(
+                Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+            ), true
+        )
         val result =
             sendVerificationStepFlow.replayCache.filterIsInstance<VerificationCancelEventContent>().first()
         result.code shouldBe UnexpectedMessage
@@ -349,7 +378,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     @Test
     fun `handleVerificationStep » current state is ComparisonByUser » their mac not received yet » cancel unexpected message SasKeyEventContent`() =
         checkNotAllowedStateChange(
-            SasKeyEventContent("key", null, "t"),
+            SasKeyEventContent(Curve25519KeyValue("key"), null, "t"),
             ::currentStateIsComparisonByUserTheirMacNotReceivedYet
         )
 
@@ -357,7 +386,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     fun `handleVerificationStep » current state is ComparisonByUser » their mac not received yet » change state to WaitForMacs when accepted`() =
         runTest {
             currentStateIsComparisonByUserTheirMacNotReceivedYet(cut)
-            cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), true)
+            cut.handleVerificationStep(SasMacEventContent(MacValue("keys"), keysOf(), null, "t"), true)
             cut.state.value shouldBe WaitForMacs
         }
 
@@ -366,7 +395,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
         runTest {
             currentStateIsComparisonByUserTheirMacNotReceivedYet(cut)
             val oldState = cut.state.value
-            cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), false)
+            cut.handleVerificationStep(SasMacEventContent(MacValue("keys"), keysOf(), null, "t"), false)
             cut.state.value shouldBe oldState
         }
 
@@ -387,7 +416,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     @Test
     fun `handleVerificationStep » current state is ComparisonByUser » their mac already received » cancel unexpected message SasKeyEventContent`() =
         checkNotAllowedStateChange(
-            SasKeyEventContent("key", null, "t"),
+            SasKeyEventContent(Curve25519KeyValue("key"), null, "t"),
             ::currentStateIsComparisonByUserTheirMacAlreadyReceived,
         )
 
@@ -395,7 +424,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     fun `handleVerificationStep » current state is ComparisonByUser » their mac already received » check mac and send VerificationDoneEventContent when correct`() =
         runTest {
             currentStateIsComparisonByUserTheirMacAlreadyReceived(cut)
-            cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), true)
+            cut.handleVerificationStep(SasMacEventContent(MacValue("keys"), keysOf(), null, "t"), true)
             sendVerificationStepFlow.replayCache shouldContain VerificationDoneEventContent(null, "t")
         }
 
@@ -418,7 +447,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
     @Test
     fun `handleVerificationStep » current state is WaitForMacs » cancel unexpected message SasKeyEventContent`() =
         checkNotAllowedStateChange(
-            SasKeyEventContent("key", null, "t"),
+            SasKeyEventContent(Curve25519KeyValue("key"), null, "t"),
             ::currentStateIsWaitForMacs
         )
 
@@ -441,7 +470,7 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
         currentStateIsWaitForMacs(cut)
         val sasMacEventContent = sasMacFromBob
         require(sasMacEventContent is SasMacEventContent)
-        cut.handleVerificationStep(sasMacEventContent.copy(keys = "dino"), false)
+        cut.handleVerificationStep(sasMacEventContent.copy(keys = MacValue("dino")), false)
         val result =
             sendVerificationStepFlow.replayCache.filterIsInstance<VerificationCancelEventContent>().first()
         result.code shouldBe KeyMismatch
@@ -530,7 +559,11 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
                 transactionId = "t"
             ), false
         )
-        cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
+        cut.handleVerificationStep(
+            SasKeyEventContent(
+                Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+            ), true
+        )
         cut.state.value.shouldBeInstanceOf<WaitForKeys>()
     }
 
@@ -546,10 +579,14 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
                 transactionId = "t"
             ), false
         )
-        cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
         cut.handleVerificationStep(
             SasKeyEventContent(
-                "3vPVpNPsVYVYuozmCrihhndEvVZUHpoHBSb5+TdkaAA",
+                Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+            ), true
+        )
+        cut.handleVerificationStep(
+            SasKeyEventContent(
+                Curve25519KeyValue("3vPVpNPsVYVYuozmCrihhndEvVZUHpoHBSb5+TdkaAA"),
                 relatesTo = null,
                 transactionId = "t"
             ), false
@@ -619,36 +656,48 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
             )
         }
 
-        freeAfter(OlmSAS.create()) { bobOlmSas ->
-            cut.handleVerificationStep(
-                SasAcceptEventContent(
-                    "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
-                    hash = SasHash.Sha256,
-                    keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
-                    messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
-                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
-                    relatesTo = null,
-                    transactionId = "t"
-                ), true
-            )
-            cut.handleVerificationStep(
-                SasKeyEventContent(bobOlmSas.publicKey, relatesTo = null, transactionId = "t"), false
-            )
-            cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
+        val bobOlmSas = driver.sas()
 
-            val alicePublicKey = sendVerificationStepFlow.filterIsInstance<SasKeyEventContent>().first().key
-            bobOlmSas.setTheirPublicKey(alicePublicKey)
+        cut.handleVerificationStep(
+            SasAcceptEventContent(
+                "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
+                hash = SasHash.Sha256,
+                keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                relatesTo = null,
+                transactionId = "t"
+            ), true
+        )
+        cut.handleVerificationStep(
+            SasKeyEventContent(KeyValue.of(bobOlmSas.publicKey), relatesTo = null, transactionId = "t"), false
+        )
+        cut.handleVerificationStep(
+            SasKeyEventContent(
+                Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+            ), true
+        )
 
-            var sasMacFromBob: VerificationStep? = null
-            ComparisonByUser(
-                listOf(), listOf(),
-                bob, bobDevice, alice, aliceDevice,
-                SasMessageAuthenticationCode.HkdfHmacSha256,
-                null, "t",
-                bobOlmSas, keyStore
-            ) { sasMacFromBob = it }.match()
-            cut.handleVerificationStep(sasMacFromBob.shouldNotBeNull(), false)
-        }
+        val alicePublicKey = sendVerificationStepFlow.filterIsInstance<SasKeyEventContent>().first().key
+        val establishedSas = bobOlmSas.diffieHellman(
+            driver.key.curve25519PublicKey(alicePublicKey)
+        )
+
+        var sasMacFromBob: VerificationStep? = null
+        ComparisonByUser(
+            listOf(),
+            listOf(),
+            bob,
+            bobDevice,
+            alice,
+            aliceDevice,
+            SasMessageAuthenticationCode.HkdfHmacSha256,
+            null,
+            "t",
+            establishedSas,
+            keyStore
+        ) { sasMacFromBob = it }.match()
+        cut.handleVerificationStep(sasMacFromBob.shouldNotBeNull(), false)
     }
 
     private suspend fun currentStateIsWaitForMacs(cut: ActiveSasVerificationMethod) {
@@ -683,34 +732,47 @@ class ActiveSasVerificationMethodTest : TrixnityBaseTest() {
             )
         }
 
-        freeAfter(OlmSAS.create()) { bobOlmSas ->
-            cut.handleVerificationStep(
-                SasAcceptEventContent(
-                    "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
-                    hash = SasHash.Sha256,
-                    keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
-                    messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
-                    shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
-                    relatesTo = null,
-                    transactionId = "t"
-                ), true
-            )
-            cut.handleVerificationStep(
-                SasKeyEventContent(bobOlmSas.publicKey, relatesTo = null, transactionId = "t"), false
-            )
-            cut.handleVerificationStep(SasKeyEventContent("k", relatesTo = null, transactionId = "t"), true)
-            cut.handleVerificationStep(SasMacEventContent("keys", keysOf(), null, "t"), true)
-            cut.state.value shouldBe WaitForMacs
-            val alicePublicKey = sendVerificationStepFlow.filterIsInstance<SasKeyEventContent>().first().key
+        val bobOlmSas = driver.sas()
 
-            bobOlmSas.setTheirPublicKey(alicePublicKey)
-            ComparisonByUser(
-                listOf(), listOf(),
-                bob, bobDevice, alice, aliceDevice,
-                SasMessageAuthenticationCode.HkdfHmacSha256,
-                null, "t",
-                bobOlmSas, keyStore
-            ) { sasMacFromBob = it }.match()
-        }
+        cut.handleVerificationStep(
+            SasAcceptEventContent(
+                "4d8Qtr63ZuKgjhdBYdm/tZ9FiNCAAU1ZEc9HoHe6kEE",
+                hash = SasHash.Sha256,
+                keyAgreementProtocol = SasKeyAgreementProtocol.Curve25519HkdfSha256,
+                messageAuthenticationCode = SasMessageAuthenticationCode.HkdfHmacSha256,
+                shortAuthenticationString = setOf(SasMethod.Decimal, SasMethod.Emoji),
+                relatesTo = null,
+                transactionId = "t"
+            ), true
+        )
+        cut.handleVerificationStep(
+            SasKeyEventContent(KeyValue.of(bobOlmSas.publicKey), relatesTo = null, transactionId = "t"), false
+        )
+        cut.handleVerificationStep(
+            SasKeyEventContent(
+                Curve25519KeyValue("k"), relatesTo = null, transactionId = "t"
+            ), true
+        )
+        cut.handleVerificationStep(SasMacEventContent(MacValue("keys"), keysOf(), null, "t"), true)
+        cut.state.value shouldBe WaitForMacs
+        val alicePublicKey = sendVerificationStepFlow.filterIsInstance<SasKeyEventContent>().first().key
+
+        val establishedSas = bobOlmSas.diffieHellman(
+            driver.key.curve25519PublicKey(alicePublicKey)
+        )
+
+        ComparisonByUser(
+            listOf(),
+            listOf(),
+            bob,
+            bobDevice,
+            alice,
+            aliceDevice,
+            SasMessageAuthenticationCode.HkdfHmacSha256,
+            null,
+            "t",
+            establishedSas,
+            keyStore
+        ) { sasMacFromBob = it }.match()
     }
 }

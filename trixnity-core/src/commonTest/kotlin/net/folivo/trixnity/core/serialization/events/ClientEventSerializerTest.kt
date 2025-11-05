@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
+import net.folivo.trixnity.core.MegolmMessageValue
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomAliasId
 import net.folivo.trixnity.core.model.RoomId
@@ -212,7 +213,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     fun shouldSerializeMessageEventWithRelatesToAndDontCopyNewContentWhenEncrypted() {
         val content = MessageEvent(
             MegolmEncryptedMessageEventContent(
-                "ciphercipher",
+                ciphertext = MegolmMessageValue("ciphercipher"),
                 sessionId = "sessionId",
                 relatesTo = RelatesTo.Replace(
                     EventId("$1234"),
@@ -1121,7 +1122,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
     fun shouldSerializeEncryptedEventWithRelatesTo() {
         val input = MessageEvent(
             MegolmEncryptedMessageEventContent(
-                ciphertext = "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
+                ciphertext = MegolmMessageValue("jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH"),
                 senderKey = Curve25519KeyValue("YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
                 deviceId = "GNAHNGTKNL",
                 sessionId = "8798dSJJ878789dfjJKDSF",
@@ -1197,7 +1198,7 @@ class ClientEventSerializerTest : TrixnityBaseTest() {
         assertEquals(
             MessageEvent(
                 MegolmEncryptedMessageEventContent(
-                    ciphertext = "jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH",
+                    ciphertext = MegolmMessageValue("jdlskjfldjsvjJIODJKLfjdlfkjdfioj/sdfjijfDSHDUH"),
                     senderKey = Curve25519KeyValue("YWO+ZYV1tFTAFPu3A3609oHUF4VYRPDMjizgV48O2jg"),
                     deviceId = "GNAHNGTKNL",
                     sessionId = "8798dSJJ878789dfjJKDSF",

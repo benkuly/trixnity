@@ -2,11 +2,10 @@ package net.folivo.trixnity.olm
 
 actual class OlmPkEncryption private constructor() : WantsToBeFree {
     internal actual val ptr: OlmPkEncryptionPointer =
-        rethrow { js("new Olm.PkEncryption()") }.unsafeCast<OlmPkEncryptionPointer>()
+        rethrow { PkEncryption() }.unsafeCast<OlmPkEncryptionPointer>()
 
     actual companion object {
-        actual suspend fun create(recipientKey: String): OlmPkEncryption {
-            initOlm()
+        actual fun create(recipientKey: String): OlmPkEncryption {
             return OlmPkEncryption().apply {
                 rethrow { ptr.set_recipient_key(recipientKey) }
             }

@@ -9,17 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add Migration interface to run migrations registered in DI
+- Add new module trixnity-crypto-driver to allow for multiple crypto implementations (libolm, vodozemac, ...)
+- Add new module trixnity-crypto-driver-libolm for a driver based on libolm
+- Add trixnity-vodozemac implementation
+- Support for the OAuth2-based authentication API since Matrix v1.15 
+- Support for account management deep-linking (MSC4191)
+- Completely new NotificationService
+
 ### Changed
 
-- Completely new NotificationService
+- Make trixnity-olm API non suspend
+- Make trixnity-olm API accept null pickle keys
+- Add StringWrapper's for more type safety
+- Switch to trixnity-crypto-driver interface instead trixnity-olm
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
-
-- Fixed cache did invalidate entry, because subscriptions were increased too late (full or mapping cache)
 
 ### Security
 

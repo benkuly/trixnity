@@ -57,6 +57,7 @@ suspend fun createIndexedDBRepositoriesModule(
         singleOf(::IndexedDBNotificationRepository) { bind<NotificationRepository>() }
         singleOf(::IndexedDBNotificationStateRepository) { bind<NotificationStateRepository>() }
         singleOf(::IndexedDBNotificationUpdateRepository) { bind<NotificationUpdateRepository>() }
+        singleOf(::IndexedDBMigrationRepository) { bind<MigrationRepository>() }
     }
 }
 
@@ -91,6 +92,7 @@ internal val allStoreNames = arrayOf(
     IndexedDBNotificationRepository.objectStoreName,
     IndexedDBNotificationStateRepository.objectStoreName,
     IndexedDBNotificationUpdateRepository.objectStoreName,
+    IndexedDBMigrationRepository.objectStoreName,
 )
 
 internal suspend fun createDatabase(databaseName: String) =
@@ -125,4 +127,5 @@ internal suspend fun createDatabase(databaseName: String) =
         IndexedDBNotificationRepository.apply { migrate(database, oldVersion) }
         IndexedDBNotificationStateRepository.apply { migrate(database, oldVersion) }
         IndexedDBNotificationUpdateRepository.apply { migrate(database, oldVersion) }
+        IndexedDBMigrationRepository.apply { migrate(database, oldVersion) }
     }

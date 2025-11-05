@@ -10,8 +10,6 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beBlank
 import io.kotest.matchers.types.instanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -23,64 +21,61 @@ import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent.StateEvent
 import net.folivo.trixnity.core.model.events.UnsignedRoomEventData.UnsignedStateEventData
 import net.folivo.trixnity.core.model.events.m.room.NameEventContent
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
+import net.folivo.trixnity.core.model.keys.KeyValue
 import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.getOlmPublicKeys
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmPkSigning
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
-import kotlin.test.AfterTest
+import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
 
 class SignServiceTest : TrixnityBaseTest() {
 
-    val json = createMatrixEventJson()
-    lateinit var aliceSigningAccount: OlmAccount
-    val ownUserId = UserId("me", "server")
-    val alice = UserId("alice", "server")
-    val aliceDevice = "AAAAAA"
-    val bob = UserId("bob", "server")
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
-    lateinit var cut: SignServiceImpl
-    lateinit var aliceSigningAccountSignService: SignServiceImpl
+    private val ed25519SecretKey = driver.key.ed25519SecretKey
 
-    private suspend fun setup() {
-        aliceSigningAccount = OlmAccount.create()
-        val aliceOlmKeys = getOlmPublicKeys("", aliceSigningAccount.pickle(""), aliceDevice)
-        aliceSigningAccountSignService = SignServiceImpl(
-            UserInfo(alice, aliceDevice, aliceOlmKeys.signingKey, aliceOlmKeys.identityKey),
-            json,
-            object : SignServiceStore {
-                override suspend fun getOlmAccount(): String = aliceSigningAccount.pickle("")
-                override suspend fun getOlmPickleKey(): String = ""
-            },
-        )
-        val olmAccount = freeAfter(OlmAccount.create()) { it.pickle("") }
-        val olmKeys = getOlmPublicKeys("", olmAccount, aliceDevice)
-        cut = SignServiceImpl(
+    private val json = createMatrixEventJson()
+    private val aliceSigningAccount = driver.olm.account()
+    private val ownUserId = UserId("me", "server")
+    private val alice = UserId("alice", "server")
+    private val aliceDevice = "AAAAAA"
+    private val bob = UserId("bob", "server")
+    private val aliceOlmKeys = driver.getOlmPublicKeys(
+        pickledOlmAccount = aliceSigningAccount.pickle(),
+        deviceId = aliceDevice,
+    )
+
+    private val aliceSigningAccountSignService = SignServiceImpl(
+        UserInfo(alice, aliceDevice, aliceOlmKeys.signingKey, aliceOlmKeys.identityKey),
+        json,
+        object : SignServiceStore {
+            override suspend fun getOlmAccount(): String = aliceSigningAccount.pickle()
+            override suspend fun getOlmPickleKey(): String? = null
+        },
+        driver,
+    )
+    private val cut = run {
+        val olmAccount = driver.olm.account()
+        val pickled = olmAccount.pickle()
+        val olmKeys = driver.getOlmPublicKeys(pickledOlmAccount = pickled, deviceId = aliceDevice)
+        SignServiceImpl(
             UserInfo(ownUserId, "ABCDEF", olmKeys.signingKey, olmKeys.identityKey),
             json,
             object : SignServiceStore {
-                override suspend fun getOlmAccount(): String = olmAccount
-                override suspend fun getOlmPickleKey(): String = ""
+                override suspend fun getOlmAccount(): String = pickled
+                override suspend fun getOlmPickleKey(): String? = null
             },
+            driver,
         )
     }
 
-    @AfterTest
-    fun free() {
-        aliceSigningAccount.free()
-    }
-
-    private fun runTestWithSetup(block: suspend TestScope.() -> Unit) = runTest {
-        setup()
-        block()
-    }
-
     @Test
-    fun `return signatures from device key`() = runTestWithSetup {
+    fun `return signatures from device key`() = runTest {
         val result = cut.signatures(JsonObject(mapOf("key" to JsonPrimitive("value"))))
         result shouldHaveSize 1
         assertSoftly(result.entries.first()) {
@@ -96,11 +91,12 @@ class SignServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `return signatures from private and public key pair`() = runTestWithSetup {
-        val (privateKey, publicKey) = freeAfter(OlmPkSigning.create()) { it.privateKey to it.publicKey }
+    fun `return signatures from private and public key pair`() = runTest {
+        val privateKey = ed25519SecretKey()
+        val publicKey = privateKey.publicKey
         val result = cut.signatures(
             JsonObject(mapOf("key" to JsonPrimitive("value"))),
-            SignWith.KeyPair(privateKey, publicKey)
+            SignWith.KeyPair(privateKey.base64, publicKey.base64)
         )
         result shouldHaveSize 1
         assertSoftly(result.entries.first()) {
@@ -109,14 +105,14 @@ class SignServiceTest : TrixnityBaseTest() {
             assertSoftly(value.keys.first()) {
                 this shouldBe instanceOf<Ed25519Key>()
                 require(this is Ed25519Key)
-                id shouldBe publicKey
+                id shouldBe publicKey.base64
                 value.value shouldNot beBlank()
             }
         }
     }
 
     @Test
-    fun `ignore unsigned and signature field`() = runTestWithSetup {
+    fun `ignore unsigned and signature field`() = runTest {
         val result1 = cut.signatures(JsonObject(mapOf("key" to JsonPrimitive("value"))))
         val result2 = cut.signatures(
             JsonObject(
@@ -132,7 +128,7 @@ class SignServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `sign and return signed object`() = runTestWithSetup {
+    fun `sign and return signed object`() = runTest {
         val event = StateEvent(
             NameEventContent("room name"),
             EventId("\$eventId"),
@@ -156,7 +152,7 @@ class SignServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `ignore unsigned field`() = runTestWithSetup {
+    fun `ignore unsigned field`() = runTest {
         val event1 = StateEvent(
             NameEventContent("room name"),
             EventId("\$eventId"),
@@ -180,15 +176,15 @@ class SignServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `sign curve25519`() = runTestWithSetup {
+    fun `sign curve25519`() = runTest {
         cut.signCurve25519Key(
             keyId = "AAAAAQ",
             keyValue = "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
-        ).value.signatures?.size shouldBe 1
+        ).value.signatures.size shouldBe 1
     }
 
     @Test
-    fun `sign curve25519 with fallback`() = runTestWithSetup {
+    fun `sign curve25519 with fallback`() = runTest {
         cut.signCurve25519Key(
             keyId = "AAAAAQ",
             keyValue = "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
@@ -201,7 +197,7 @@ class SignServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `verify and return valid`() = runTestWithSetup {
+    fun `verify and return valid`() = runTest {
         val signedObject = aliceSigningAccountSignService.sign(
             StateEvent(
                 NameEventContent("room name"),
@@ -214,8 +210,7 @@ class SignServiceTest : TrixnityBaseTest() {
             )
         )
         cut.verify(
-            signedObject,
-            mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
+            signedObject, mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.ed25519Key.base64)))
         ) shouldBe VerifyResult.Valid
     }
 
@@ -226,18 +221,17 @@ class SignServiceTest : TrixnityBaseTest() {
     data class TestSign2(val field1: String, val field2: String)
 
     @Test
-    fun `verify and return valid with unknown fields`() = runTestWithSetup {
+    fun `verify and return valid with unknown fields`() = runTest {
         val signedObject2 = aliceSigningAccountSignService.sign(TestSign2("value1", "value2"))
         val signedJsonObject2 = json.encodeToString(signedObject2)
         val signedObject1 = json.decodeFromString<Signed<TestSign1, UserId>>(signedJsonObject2)
         cut.verify(
-            signedObject1,
-            mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
+            signedObject1, mapOf(alice to setOf(Ed25519Key(aliceDevice, KeyValue.of(aliceSigningAccount.ed25519Key))))
         ) shouldBe VerifyResult.Valid
     }
 
     @Test
-    fun `verify and return MissingSignature when no key found`() = runTestWithSetup {
+    fun `verify and return MissingSignature when no key found`() = runTest {
         val signedObject = aliceSigningAccountSignService.sign(
             StateEvent(
                 NameEventContent("room name"),
@@ -253,7 +247,7 @@ class SignServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `verify and return MissingSignature when no signature found for sigining keys`() = runTestWithSetup {
+    fun `verify and return MissingSignature when no signature found for sigining keys`() = runTest {
         val signedObject = aliceSigningAccountSignService.sign(
             StateEvent(
                 NameEventContent("room name"),
@@ -270,19 +264,18 @@ class SignServiceTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `verify SignedCurve25519Key`() = runTestWithSetup {
+    fun `verify SignedCurve25519Key`() = runTest {
         val signedObject = aliceSigningAccountSignService.signCurve25519Key(
             "AAAAAQ",
             "TbzNpSurZ/tFoTukILOTRB8uB/Ko5MtsyQjCcV2fsnc"
         ).value
         cut.verify(
-            signedObject,
-            mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
+            signedObject, mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.ed25519Key.base64)))
         ) shouldBe VerifyResult.Valid
     }
 
     @Test
-    fun `return invalid`() = runTestWithSetup {
+    fun `return invalid`() = runTest {
         val signedObject = Signed(
             StateEvent(
                 NameEventContent("room name"),
@@ -303,8 +296,7 @@ class SignServiceTest : TrixnityBaseTest() {
             )
         )
         cut.verify(
-            signedObject,
-            mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.identityKeys.ed25519)))
+            signedObject, mapOf(alice to setOf(Ed25519Key(aliceDevice, aliceSigningAccount.ed25519Key.base64)))
         ).shouldBeInstanceOf<VerifyResult.Invalid>()
     }
 }

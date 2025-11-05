@@ -18,6 +18,9 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.UserIdSerializer
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm.Unknown
 import net.folivo.trixnity.core.model.keys.KeyValue.*
+import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
+import net.folivo.trixnity.utils.encodeUnpaddedBase64
+
 
 sealed interface Key {
     val algorithm: KeyAlgorithm
@@ -60,6 +63,8 @@ sealed interface Key {
         override val value: UnknownKeyValue,
         override val algorithm: Unknown,
     ) : Key
+
+    companion object
 }
 
 sealed interface KeyValue {
@@ -96,6 +101,8 @@ sealed interface KeyValue {
         override val value: String,
         val raw: JsonElement,
     ) : KeyValue
+
+    companion object
 }
 
 abstract class UnwrapKeyValueSerializer<T : KeyValue>(

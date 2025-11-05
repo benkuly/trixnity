@@ -2,6 +2,8 @@ package net.folivo.trixnity.client.crypto
 
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.olm.*
 import net.folivo.trixnity.crypto.sign.SignService
 import net.folivo.trixnity.crypto.sign.SignServiceImpl
@@ -21,6 +23,7 @@ fun createCryptoModule() = module {
     singleOf(::OlmEncryptionServiceImpl) { bind<OlmEncryptionService>() }
     singleOf(::OlmDecrypterImpl) { bind<OlmDecrypter>() }
     single<EventHandler>(named<OlmEventHandler>()) {
-        OlmEventHandler(get(), get<MatrixClientServerApiClient>().sync, get(), get(), get(), get(), get(), get())
+        OlmEventHandler(get(), get<MatrixClientServerApiClient>().sync, get(), get(), get(), get(), get(), get(), get())
     }
+    single<CryptoDriver> { LibOlmCryptoDriver }
 }

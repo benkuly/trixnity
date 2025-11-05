@@ -17,6 +17,7 @@ kotlin {
         }
         commonMain {
             dependencies {
+                api(projects.trixnityCryptoCore)
                 api(projects.trixnityApiClient)
                 api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 

@@ -10,7 +10,7 @@ actual class OlmUtility private constructor() : WantsToBeFree {
     internal actual val ptr: OlmUtilityPointer = utility()
 
     actual companion object {
-        actual suspend fun create(): OlmUtility = OlmUtility()
+        actual fun create(): OlmUtility = OlmUtility()
     }
 
     actual override fun free() {

@@ -12,7 +12,6 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -29,23 +28,46 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.CryptoDriverException
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.olm.Account
+import net.folivo.trixnity.crypto.driver.olm.Message
 import net.folivo.trixnity.crypto.mocks.OlmDecrypterMock
 import net.folivo.trixnity.crypto.mocks.OlmEventHandlerRequestHandlerMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
 import net.folivo.trixnity.crypto.mocks.SignServiceMock
-import net.folivo.trixnity.olm.*
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
 import kotlin.test.Test
-import kotlin.time.Clock
+import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.seconds
 
 class OlmEventHandlerTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
+
+    private val account = driver.olm.account
+    private val curve25519PublicKey = driver.key.curve25519PublicKey
+    private val groupSession = driver.megolm.groupSession
+
+    private val firstSize = when (driver) {
+        is LibOlmCryptoDriver -> 51
+        else -> error("unknown driver")
+    }
+
+    private val secondSize = when (driver) {
+        is LibOlmCryptoDriver -> 75
+        else -> error("unknown driver")
+    }
+
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")
     private val roomId = RoomId("!room:server")
 
-    private val dummyPickledAccount =
-        "3/r66zrJBjq31k9A1hFSvIjAhA1PWCM1QEsOSl18NppbOMdV1pCpr+R6gJxRN7QHLYTyClCLJp5cpSEOwj8bVTP4uAAF0SEOdvo26OdV0b6dq85NyIYNmkC+lbuvFerVEhmFHqRNsAkYlr0r+XNa4STYVY9Y1ks5ZEXXqmzYf+hVx1fNRPIyPzn/z6ZxCPwo2MoAHLr7VjotOX3vgz8vGzLoS4Dc2476M45rp2Jnjo4NRVHQeSQgcw"
+    private val dummyPickledAccount = account().use(Account::pickle)
 
     private val olmStoreMock = OlmStoreMock().apply {
         olmAccount.value = dummyPickledAccount
@@ -72,7 +94,8 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
             SignServiceMock().apply { signCurve25519Key = Key.SignedCurve25519Key(null, "", signatures = mapOf()) },
             olmEventHandlerRequestHandlerMock,
             olmStoreMock,
-            Clock.System,
+            testScope.testClock,
+            driver,
         )
     }
 
@@ -86,34 +109,35 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
             val fallbackKey: String
         )
 
-        val olmInfos =
-            freeAfter(OlmAccount.create(), OlmAccount.create()) { bobAccount, aliceAccount ->
-                val bobIdentityKey = bobAccount.identityKeys.curve25519
-                bobAccount.generateFallbackKey()
-                val bobFallbackKey = bobAccount.unpublishedFallbackKey.curve25519.values.first()
-                bobAccount.markKeysAsPublished()
-                bobAccount.generateFallbackKey() // we need 2 fallback keys to forget one
-                bobAccount.markKeysAsPublished()
+        val bobAccount = account()
+        val aliceAccount = account()
 
-                val message =
-                    freeAfter(OlmSession.createOutbound(aliceAccount, bobIdentityKey, bobFallbackKey)) { aliceSession ->
-                        aliceSession.encrypt("Hello bob , this is alice!")
-                    }
+        val bobIdentityKey = bobAccount.curve25519Key
+        bobAccount.generateFallbackKey()
+        val bobFallbackKey = checkNotNull(bobAccount.fallbackKey).second
+        assertNotNull(bobFallbackKey)
+        bobAccount.markKeysAsPublished()
+        bobAccount.generateFallbackKey() // we need 2 fallback keys to forget one
+        bobAccount.markKeysAsPublished()
 
-                val decryptedMessage =
-                    freeAfter(OlmSession.createInbound(bobAccount, message.cipherText)) { bobSession ->
-                        bobSession.decrypt(message)
-                    }
+        val aliceSession = aliceAccount.createOutboundSession(
+            identityKey = bobIdentityKey, oneTimeKey = bobFallbackKey
+        )
+        val message = aliceSession.encrypt("Hello bob , this is alice!") as Message.PreKey
 
-                decryptedMessage shouldBe "Hello bob , this is alice!"
-                OlmInfos(
-                    olmAccount = bobAccount.pickle(""),
-                    fallbackKey = bobFallbackKey,
-                )
-            }
+        val (decryptedMessage, _) = bobAccount.createInboundSession(
+            preKeyMessage = message
+        )
+
+        decryptedMessage shouldBe "Hello bob , this is alice!"
+
+        val olmInfos = OlmInfos(
+            olmAccount = bobAccount.pickle(),
+            fallbackKey = bobFallbackKey.base64,
+        )
         olmStoreMock.olmAccount.value = olmInfos.olmAccount
 
-        olmStoreMock.forgetFallbackKeyAfter.value = Clock.System.now() - 1.seconds
+        olmStoreMock.forgetFallbackKeyAfter.value = testClock.now() - 1.seconds
 
         cut.forgetOldFallbackKey()
 
@@ -121,39 +145,37 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
         olmStoreMock.olmAccount.first { it != olmInfos.olmAccount }
 
-        freeAfter(
-            OlmAccount.unpickle("", checkNotNull(olmStoreMock.olmAccount.value)),
-            OlmAccount.create()
-        ) { bobAccount, aliceAccount ->
-            val bobIdentityKey = bobAccount.identityKeys.curve25519
+        val unpickledBobAccount = account.fromPickle(olmStoreMock.olmAccount.value)
+        val newAliceAccount = account()
 
-            val message =
-                freeAfter(
-                    OlmSession.createOutbound(aliceAccount, bobIdentityKey, olmInfos.fallbackKey)
-                ) { aliceSession ->
-                    aliceSession.encrypt("Hello bob , this is alice!")
-                }
+        val newBobIdentityKey = bobAccount.curve25519Key
 
-            shouldThrow<OlmLibraryException> {
-                freeAfter(OlmSession.createInbound(bobAccount, message.cipherText)) { bobSession ->
-                    bobSession.decrypt(message)
-                }
-            }.message shouldBe "BAD_MESSAGE_KEY_ID"
-        }
+        val newAliceSession = newAliceAccount.createOutboundSession(
+            identityKey = newBobIdentityKey, oneTimeKey = curve25519PublicKey(olmInfos.fallbackKey)
+        )
+
+        val newMessage = newAliceSession.encrypt("Hello bob , this is alice!") as Message.PreKey
+
+        shouldThrow<CryptoDriverException> {
+            unpickledBobAccount.createInboundSession(
+                preKeyMessage = newMessage
+            )
+        } // TODO: .message shouldBe "The pre-key message contained an unknown one-time key: ${newMessage.sessionKeys.oneTimeKey.base64}"
     }
+
 
     // ##########################
     // handleOlmKeysChange
     // ##########################
     @Test
     fun `create and upload new one time keys when server has 49 one time keys`() = runTest {
-        cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), null))
+        cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 24), null))
         cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 0), null))
 
         val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
         captureOneTimeKeys shouldHaveSize 2
-        captureOneTimeKeys[0].keys shouldHaveSize 11
-        captureOneTimeKeys[1].keys shouldHaveSize 60
+        captureOneTimeKeys[0].keys shouldHaveSize firstSize
+        captureOneTimeKeys[1].keys shouldHaveSize secondSize
 
         captureOneTimeKeys[0].keys shouldNotContainAnyOf captureOneTimeKeys[1].keys
     }
@@ -168,14 +190,14 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
                 )
             )
         shouldThrow<MatrixServerException> {
-            cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), setOf()))
+            cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 24), setOf()))
         }
         olmEventHandlerRequestHandlerMock.setOneTimeKeys = Result.success(Unit)
-        cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), setOf()))
+        cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 24), setOf()))
 
         val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
         captureOneTimeKeys shouldHaveSize 2
-        captureOneTimeKeys[0].keys shouldHaveSize 11
+        captureOneTimeKeys[0].keys shouldHaveSize firstSize
         captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
     }
 
@@ -189,7 +211,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
                 )
             )
         shouldThrow<MatrixServerException> {
-            cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 49), setOf()))
+            cut.handleOlmKeysChange(OlmKeysChange(mapOf(KeyAlgorithm.SignedCurve25519 to 24), setOf()))
         }
         olmEventHandlerRequestHandlerMock.setOneTimeKeys =
             Result.failure(
@@ -207,7 +229,7 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
         val captureOneTimeKeys = olmEventHandlerRequestHandlerMock.setOneTimeKeysParam.mapNotNull { it.first }
         captureOneTimeKeys shouldHaveSize 2
-        captureOneTimeKeys[0].keys shouldHaveSize 11
+        captureOneTimeKeys[0].keys shouldHaveSize firstSize
         captureOneTimeKeys[0].keys shouldBe captureOneTimeKeys[1].keys
     }
 
@@ -247,12 +269,10 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
     // ##########################
     @Test
     fun `store new inbound megolm session`() = runTest {
-        val outboundSession = OlmOutboundGroupSession.create()
+        val outboundSession = groupSession()
 
         val eventContent = RoomKeyEventContent(
-            roomId,
-            outboundSession.sessionId,
-            outboundSession.sessionKey,
+            roomId, outboundSession.sessionId, SessionKeyValue.of(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(
@@ -288,12 +308,10 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `store inbound megolm session when existing index higher`() = runTest {
-        val outboundSession = OlmOutboundGroupSession.create()
+        val outboundSession = groupSession()
 
         val eventContent = RoomKeyEventContent(
-            roomId,
-            outboundSession.sessionId,
-            outboundSession.sessionKey,
+            roomId, outboundSession.sessionId, SessionKeyValue.of(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(
@@ -345,12 +363,10 @@ class OlmEventHandlerTest : TrixnityBaseTest() {
 
     @Test
     fun `not store inbound megolm session when existing index lower or same`() = runTest {
-        val outboundSession = OlmOutboundGroupSession.create()
+        val outboundSession = groupSession()
 
         val eventContent = RoomKeyEventContent(
-            roomId,
-            outboundSession.sessionId,
-            outboundSession.sessionKey,
+            roomId, outboundSession.sessionId, SessionKeyValue.of(outboundSession.sessionKey),
             EncryptionAlgorithm.Megolm
         )
         val encryptedEvent = ToDeviceEvent(

@@ -18,8 +18,8 @@ import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.testClock
 import kotlin.test.Test
-import kotlin.time.Clock
 
 class ForgetRoomsTest : TrixnityBaseTest() {
 
@@ -100,8 +100,9 @@ class ForgetRoomsTest : TrixnityBaseTest() {
 
         roomOutboxMessageStore.update(room, "t1") {
             RoomOutboxMessage(
-                room, "t1", RoomMessageEventContent.TextBased.Text("hi"),
-                Clock.System.now()
+                room, "t1",
+                RoomMessageEventContent.TextBased.Text("hi"),
+                testClock.now(),
             )
         }
         notificationStore.update("notif") {

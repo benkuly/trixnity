@@ -12,6 +12,8 @@ import kotlinx.coroutines.test.runTest
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.clientserverapi.model.users.GetProfile
 import net.folivo.trixnity.clientserverapi.model.users.SearchUsers
+import net.folivo.trixnity.core.OlmMessageValue
+import net.folivo.trixnity.core.SessionKeyValue
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
@@ -241,7 +243,7 @@ class UsersApiClientTest : TrixnityBaseTest() {
                     "TLLBEANAAG" to RoomKeyEventContent(
                         roomId = RoomId("!Cuyf34gef24t:localhost"),
                         sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
-                        sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
+                        sessionKey = SessionKeyValue("AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."),
                         algorithm = Megolm
                     )
                 )
@@ -275,13 +277,13 @@ class UsersApiClientTest : TrixnityBaseTest() {
                         "TLLBEANAAG" to RoomKeyEventContent(
                             roomId = RoomId("!Cuyf34gef24t:localhost"),
                             sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
-                            sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
+                            sessionKey = SessionKeyValue("AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."),
                             algorithm = Megolm
                         ),
                         "ABLBEANAAG" to OlmEncryptedToDeviceEventContent(
                             ciphertext = mapOf(
                                 "abc" to CiphertextInfo(
-                                    "body",
+                                    OlmMessageValue("body"),
                                     CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
                                 )
                             ),
@@ -363,13 +365,13 @@ class UsersApiClientTest : TrixnityBaseTest() {
                     "TLLBEANAAG" to RoomKeyEventContent(
                         roomId = RoomId("!Cuyf34gef24t:localhost"),
                         sessionId = "X3lUlvLELLYxeTx4yOVu6UDpasGEVO0Jbu+QFnm0cKQ",
-                        sessionKey = "AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY...",
+                        sessionKey = SessionKeyValue("AgAAAADxKHa9uFxcXzwYoNueL5Xqi69IkD4sni8LlfJL7qNBEY..."),
                         algorithm = Megolm
                     ),
                     "ABLBEANAAG" to OlmEncryptedToDeviceEventContent(
                         ciphertext = mapOf(
                             "abc" to CiphertextInfo(
-                                "body",
+                                OlmMessageValue("body"),
                                 CiphertextInfo.OlmMessageType.INITIAL_PRE_KEY
                             )
                         ),

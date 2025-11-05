@@ -14,6 +14,7 @@ import net.folivo.trixnity.client.store.*
 import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
+import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ServerMetadata
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.EventHandler
@@ -23,9 +24,10 @@ import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.subscribeAsFlow
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.useAll
+import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.sign.SignService
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.retry
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
@@ -72,11 +74,17 @@ interface MatrixClient : AutoCloseable {
         LOCKED,
     }
 
+    /**
+     * If providerMetadata AND client ID is not null, this Login info is being handled as a login with the OAuth 2.0
+     * login API which is available since Matrix v1.15. For compatibility, these fields is set null by default.
+     */
     data class LoginInfo(
         val userId: UserId,
         val deviceId: String,
         val accessToken: String,
         val refreshToken: String?,
+        val providerMetadata: OAuth2ServerMetadata? = null,
+        val oauth2ClientId: String? = null
     )
 
     data class SoftLoginInfo(
@@ -498,12 +506,20 @@ suspend fun MatrixClient.Companion.loginWith(
         getLoginInfo(loginApi).getOrThrow()
     }
 
+    val isOAuth2Login = loginInfo.providerMetadata != null && loginInfo.oauth2ClientId != null
+    log.trace { "Create base API client for MatrixClient '${loginInfo.userId}' (providerMetadata=${loginInfo.providerMetadata}, oauth2ClientId=${loginInfo.oauth2ClientId})" }
+    val oauth2ClientId = if (isOAuth2Login) loginInfo.oauth2ClientId else null
     val (displayName, avatarUrl) = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
-        authProvider = MatrixAuthProvider.classicInMemory(
-            accessToken = loginInfo.accessToken,
-            refreshToken = loginInfo.refreshToken
-        ),
+        authProvider = when (isOAuth2Login) {
+            false -> MatrixAuthProvider.classicInMemory(loginInfo.accessToken, loginInfo.refreshToken)
+            true -> MatrixAuthProvider.oauth2InMemory(
+                loginInfo.accessToken,
+                loginInfo.refreshToken,
+                loginInfo.providerMetadata,
+                loginInfo.oauth2ClientId
+            )
+        },
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
         coroutineContext = finalCoroutineContext,
@@ -523,11 +539,10 @@ suspend fun MatrixClient.Companion.loginWith(
     val di = koinApplication.koin
 
     val accountStore = di.get<AccountStore>()
-    val olmPickleKey = ""
 
     accountStore.updateAccount {
         Account(
-            olmPickleKey = olmPickleKey,
+            olmPickleKey = null,
             baseUrl = baseUrl.toString(),
             accessToken = loginInfo.accessToken,
             refreshToken = loginInfo.refreshToken,
@@ -539,6 +554,8 @@ suspend fun MatrixClient.Companion.loginWith(
             filterId = null,
             syncBatchToken = null,
             isLocked = false,
+            oauth2ClientId = oauth2ClientId,
+            oauth2Login = isOAuth2Login
         )
     }
 
@@ -546,12 +563,13 @@ suspend fun MatrixClient.Companion.loginWith(
         baseUrl = baseUrl,
         userId = loginInfo.userId,
         deviceId = loginInfo.deviceId,
-        olmPickleKey = olmPickleKey,
+        olmPickleKey = null,
         json = di.get(),
         eventContentSerializerMappings = di.get(),
         accountStore = accountStore,
         olmCryptoStore = di.get(),
         coroutineContext = finalCoroutineContext,
+        providerMetadata = loginInfo.providerMetadata,
         config = config
     ) { matrixClient ->
         val keyStore = di.get<KeyStore>()
@@ -606,6 +624,7 @@ suspend fun MatrixClient.Companion.fromStore(
     mediaStoreModule: Module,
     onSoftLogin: (suspend () -> SoftLoginInfo)? = null,
     coroutineContext: CoroutineContext = Dispatchers.Default,
+    providerMetadata: OAuth2ServerMetadata? = null,
     configuration: MatrixClientConfiguration.() -> Unit = {},
 ): Result<MatrixClient?> = kotlin.runCatching {
     val config = MatrixClientConfiguration().apply(configuration)
@@ -621,41 +640,36 @@ suspend fun MatrixClient.Companion.fromStore(
     val accountStore = di.get<AccountStore>()
     val olmCryptoStore = di.get<OlmCryptoStore>()
 
-    val account = accountStore.getAccount()
-    val baseUrl = account?.baseUrl?.let { Url(it) }
-    val userId = account?.userId
-    val deviceId = account?.deviceId
-    val olmPickleKey = account?.olmPickleKey
-    val olmAccount = olmCryptoStore.getOlmAccount()
+    val account = accountStore.getAccount() ?: return@runCatching null
+    if (olmCryptoStore.getOlmAccount() == null) return@runCatching null
 
-    if (olmPickleKey != null && userId != null && deviceId != null && baseUrl != null && olmAccount != null) {
-        koinApplication.createMatrixClient(
-            baseUrl = baseUrl,
-            userId = userId,
-            deviceId = deviceId,
-            olmPickleKey = olmPickleKey,
-            json = di.get(),
-            eventContentSerializerMappings = di.get(),
-            accountStore = accountStore,
-            olmCryptoStore = olmCryptoStore,
-            config = config,
-            coroutineContext = coroutineContext,
-        ) { matrixClient ->
-            val accessToken = account.accessToken ?: onSoftLogin?.let {
-                val (identifier, password, token, loginType) = onSoftLogin()
-                matrixClient.api.authentication.login(
-                    identifier = identifier,
-                    password = password,
-                    token = token,
-                    type = loginType,
-                    deviceId = deviceId,
-                ).getOrThrow().accessToken
-                    .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
-            }
-            if (accessToken != null) matrixClient
-            else null
+    koinApplication.createMatrixClient(
+        baseUrl = Url(account.baseUrl),
+        userId = account.userId,
+        deviceId = account.deviceId,
+        olmPickleKey = account.olmPickleKey,
+        json = di.get(),
+        eventContentSerializerMappings = di.get(),
+        accountStore = accountStore,
+        olmCryptoStore = olmCryptoStore,
+        config = config,
+        coroutineContext = coroutineContext,
+        providerMetadata = providerMetadata,
+    ) { matrixClient ->
+        val accessToken = account.accessToken ?: onSoftLogin?.let {
+            val (identifier, password, token, loginType) = onSoftLogin()
+            matrixClient.api.authentication.login(
+                identifier = identifier,
+                password = password,
+                token = token,
+                type = loginType,
+                deviceId = account.deviceId,
+            ).getOrThrow().accessToken
+                .also { accountStore.updateAccount { account -> account?.copy(accessToken = it) } }
         }
-    } else null
+        if (accessToken != null) matrixClient
+        else null
+    }
 }
 
 private suspend fun initMatrixClientKoinApplication(
@@ -677,6 +691,10 @@ private suspend fun initMatrixClientKoinApplication(
         @Suppress("DEPRECATION")
         modules(config.modules ?: config.modulesFactory?.invoke() ?: config.modulesFactories.map { it.invoke() })
     }
+
+    koinApplication.koin.getAll<RepositoryMigration>()
+        .forEach { it.run() }
+
     val di = koinApplication.koin
     val rootStore = di.get<RootStore>()
     rootStore.init(di.get())
@@ -687,19 +705,40 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
     baseUrl: Url,
     userId: UserId,
     deviceId: String,
-    olmPickleKey: String,
+    olmPickleKey: String?,
     json: Json,
     eventContentSerializerMappings: EventContentSerializerMappings,
     accountStore: AccountStore,
     olmCryptoStore: OlmCryptoStore,
     config: MatrixClientConfiguration,
     coroutineContext: CoroutineContext,
+    providerMetadata: OAuth2ServerMetadata? = null,
     doFinally: suspend (MatrixClient) -> T,
 ): T {
     val api = config.matrixClientServerApiClientFactory.create(
         baseUrl = baseUrl,
-        authProvider = MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)) {
-            onLogout(it, accountStore)
+        authProvider = run {
+            val store = AccountStoreBearerAccessTokenStore(accountStore)
+            val bearerTokens = store.getBearerTokens()
+            log.debug { "Initializing auth provider of MatrixClient '$userId' (oauth2Login=${bearerTokens?.oauth2Login}, oauth2ClientId=${bearerTokens?.oauth2ClientId})" }
+            if (bearerTokens?.oauth2Login ?: false) {
+                val providerMetadata = providerMetadata
+                    ?: config.matrixClientServerApiClientFactory.create(baseUrl).use {
+                        it.authentication.getOAuth2ServerMetadata()
+                    }.getOrThrow()
+
+                MatrixAuthProvider.oauth2(
+                    store,
+                    providerMetadata,
+                    requireNotNull(bearerTokens.oauth2ClientId)
+                ) {
+                    onLogout(it, accountStore)
+                }
+            } else {
+                MatrixAuthProvider.classic(AccountStoreBearerAccessTokenStore(accountStore)) {
+                    onLogout(it, accountStore)
+                }
+            }
         },
         httpClientEngine = config.httpClientEngine,
         httpClientConfig = config.httpClientConfig,
@@ -716,15 +755,25 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
         syncErrorDelayConfig = config.syncErrorDelayConfig,
         coroutineContext = coroutineContext,
     )
-    val (signingKey, identityKey) = freeAfter(
-        olmCryptoStore.getOlmAccount()
-            ?.let { OlmAccount.unpickle(olmPickleKey, it) }
-            ?: OlmAccount.create()
-                .also { olmAccount -> olmCryptoStore.updateOlmAccount { olmAccount.pickle(olmPickleKey) } }
-    ) {
-        Key.Ed25519Key(deviceId, it.identityKeys.ed25519) to
-                Key.Curve25519Key(deviceId, it.identityKeys.curve25519)
-    }
+
+    val driver = koin.get<CryptoDriver>()
+
+    val pickleKey = driver.key.pickleKey(olmPickleKey)
+
+    val (signingKey, identityKey) = (olmCryptoStore.getOlmAccount()
+        ?.let { driver.olm.account.fromPickle(it, pickleKey) }
+        ?: driver.olm.account())
+        .use { account ->
+            olmCryptoStore.updateOlmAccount { account.pickle(pickleKey) }
+
+            useAll(
+                { account.ed25519Key },
+                { account.curve25519Key }
+            ) { signingKey, identityKey ->
+                Key.of(deviceId, signingKey) to Key.of(deviceId, identityKey)
+            }
+        }
+
     modules(module {
         single { UserInfo(userId, deviceId, signingKey, identityKey) }
         single<MatrixClientServerApiClient> { api }
@@ -743,20 +792,27 @@ private suspend fun <T : MatrixClient?> KoinApplication.createMatrixClient(
 
 private class AccountStoreBearerAccessTokenStore(
     private val accountStore: AccountStore
-) : ClassicMatrixAuthProvider.BearerTokensStore {
-    override suspend fun getBearerTokens(): ClassicMatrixAuthProvider.BearerTokens? {
+) : BearerTokensStore {
+    override suspend fun getBearerTokens(): BearerTokens? {
         val currentAccount = accountStore.getAccount()
         return if (currentAccount?.accessToken != null)
-            ClassicMatrixAuthProvider.BearerTokens(
+            BearerTokens(
                 accessToken = currentAccount.accessToken,
-                refreshToken = currentAccount.refreshToken
+                refreshToken = currentAccount.refreshToken,
+                oauth2Login = currentAccount.oauth2Login,
+                oauth2ClientId = currentAccount.oauth2ClientId,
             )
         else null
     }
 
-    override suspend fun setBearerTokens(bearerTokens: ClassicMatrixAuthProvider.BearerTokens) {
+    override suspend fun setBearerTokens(bearerTokens: BearerTokens) {
         accountStore.updateAccount {
-            it?.copy(accessToken = bearerTokens.accessToken, refreshToken = bearerTokens.refreshToken)
+            it?.copy(
+                accessToken = bearerTokens.accessToken,
+                refreshToken = bearerTokens.refreshToken,
+                oauth2Login = bearerTokens.oauth2Login,
+                oauth2ClientId = bearerTokens.oauth2ClientId
+            )
         }
     }
 }

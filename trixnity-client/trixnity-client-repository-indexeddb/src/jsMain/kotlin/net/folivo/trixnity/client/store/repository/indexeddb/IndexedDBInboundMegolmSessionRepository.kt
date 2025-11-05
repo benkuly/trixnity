@@ -65,6 +65,9 @@ internal class IndexedDBInboundMegolmSessionRepository(
     override suspend fun get(key: InboundMegolmSessionRepositoryKey): StoredInboundMegolmSession? =
         internalRepository.get(key)?.toStoredInboundMegolmSession()
 
+    override suspend fun getAll(): List<StoredInboundMegolmSession> =
+        internalRepository.getAll().map { it.toStoredInboundMegolmSession() }
+
     override suspend fun save(key: InboundMegolmSessionRepositoryKey, value: StoredInboundMegolmSession) =
         internalRepository.save(key, value.toIndexedDBInboundMegolmSession())
 

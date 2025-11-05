@@ -23,6 +23,7 @@ kotlin {
                 api(libs.koin.core)
 
                 implementation(libs.oshai.logging)
+                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
             }
         }
         commonTest {

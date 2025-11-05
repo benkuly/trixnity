@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import net.folivo.trixnity.core.ExportedSessionKeyValue
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 
 @Serializable(with = RoomKeyBackupSessionDataSerializer::class)
@@ -15,7 +16,7 @@ sealed interface RoomKeyBackupSessionData {
         @SerialName("ciphertext")
         val ciphertext: String,
         @SerialName("ephemeral")
-        val ephemeral: String,
+        val ephemeral: Curve25519KeyValue,
         @SerialName("mac")
         val mac: String,
     ) : RoomKeyBackupSessionData {
@@ -28,7 +29,7 @@ sealed interface RoomKeyBackupSessionData {
             @SerialName("sender_claimed_keys")
             val senderClaimedKeys: Keys,
             @SerialName("session_key")
-            val sessionKey: String,
+            val sessionKey: ExportedSessionKeyValue,
             @SerialName("algorithm")
             val algorithm: EncryptionAlgorithm = EncryptionAlgorithm.Megolm
         )

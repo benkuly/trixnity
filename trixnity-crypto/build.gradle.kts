@@ -20,7 +20,7 @@ kotlin {
             dependencies {
                 api(projects.trixnityCore)
                 api(projects.trixnityCryptoCore)
-                api(projects.trixnityOlm)
+                api(projects.trixnityCryptoDriver)
                 api(projects.trixnityClientserverapi.trixnityClientserverapiModel)
 
                 implementation(libs.oshai.logging)
@@ -32,6 +32,8 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotest.assertions.core)
                 implementation(projects.trixnityTestUtils)
+
+                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
             }
         }
     }

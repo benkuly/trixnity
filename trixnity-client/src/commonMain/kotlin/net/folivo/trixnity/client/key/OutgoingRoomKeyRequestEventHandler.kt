@@ -16,12 +16,12 @@ import net.folivo.trixnity.core.model.events.m.RoomKeyRequestEventContent
 import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key
 import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.invoke
 import net.folivo.trixnity.crypto.key.get
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
-import net.folivo.trixnity.olm.OlmInboundGroupSession
-import net.folivo.trixnity.olm.freeAfter
 import net.folivo.trixnity.utils.nextString
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -44,6 +44,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
     private val olmCryptoStore: OlmCryptoStore,
     private val currentSyncState: CurrentSyncState,
     private val clock: Clock,
+    private val driver: CryptoDriver,
 ) : EventHandler, OutgoingRoomKeyRequestEventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
@@ -70,11 +71,13 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                 log.warn { "received a key from $senderDeviceId, but we don't trust that device ($senderTrustLevel)" }
                 return
             }
-
+            val account = checkNotNull(accountStore.getAccount())
             val (firstKnownIndex, pickledSession) =
                 try {
-                    freeAfter(OlmInboundGroupSession.import(content.sessionKey)) {
-                        it.firstKnownIndex to it.pickle(checkNotNull(accountStore.getAccount()?.olmPickleKey))
+                    driver.megolm.inboundGroupSession.import(
+                        driver.megolm.exportedSessionKey(content.sessionKey)
+                    ).use {
+                        it.firstKnownIndex to it.pickle(driver.key.pickleKey(account.olmPickleKey))
                     }
                 } catch (exception: Exception) {
                     log.warn(exception) { "could not import olm inbound session" }
@@ -86,8 +89,7 @@ class OutgoingRoomKeyRequestEventHandlerImpl(
                 else StoredInboundMegolmSession(
                     senderKey = content.senderKey,
                     sessionId = content.sessionId,
-                    roomId = content.roomId,
-                    firstKnownIndex = firstKnownIndex,
+                    roomId = content.roomId, firstKnownIndex = firstKnownIndex.toLong(),
                     isTrusted = false, // TODO we could add more trust, if we verify the key chain
                     hasBeenBackedUp = false, // actually not known if it has been backed up
                     senderSigningKey = content.senderClaimedKey,

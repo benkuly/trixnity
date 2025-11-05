@@ -18,11 +18,12 @@ import net.folivo.trixnity.core.model.keys.EncryptionAlgorithm
 import net.folivo.trixnity.core.model.keys.Key.Ed25519Key
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
 import net.folivo.trixnity.core.model.keys.Keys
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.CryptoDriverException
+import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
+import net.folivo.trixnity.crypto.driver.useAll
+import net.folivo.trixnity.crypto.invoke
 import net.folivo.trixnity.crypto.sign.SignService
-import net.folivo.trixnity.olm.OlmAccount
-import net.folivo.trixnity.olm.OlmInboundGroupSession
-import net.folivo.trixnity.olm.OlmLibraryException
-import net.folivo.trixnity.olm.freeAfter
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 
@@ -37,6 +38,7 @@ class OlmEventHandler(
     private val requestHandler: OlmEventHandlerRequestHandler,
     private val store: OlmStore,
     private val clock: Clock,
+    private val driver: CryptoDriver,
 ) : EventHandler {
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
@@ -59,11 +61,11 @@ class OlmEventHandler(
         if (forgetFallbackKeyAfter != null && forgetFallbackKeyAfter < clock.now()) {
             log.debug { "forget old fallback key" }
             store.updateOlmAccount { pickledOlmAccount ->
-                freeAfter(
-                    OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount),
-                ) { olmAccount ->
-                    olmAccount.forgetOldFallbackKey()
-                    olmAccount.pickle(store.getOlmPickleKey())
+                val pickleKey = driver.key.pickleKey(store.getOlmPickleKey())
+
+                driver.olm.account.fromPickle(pickledOlmAccount, pickleKey).use { olmAccount ->
+                    olmAccount.forgetFallbackKey()
+                    olmAccount.pickle(pickleKey)
                 }
             }
             store.updateForgetFallbackKeyAfter { null }
@@ -78,10 +80,10 @@ class OlmEventHandler(
 
         log.debug { "handle change of own olm keys server count (oneTimeKeysCount=$oneTimeKeysCount, fallbackKeyTypes=$fallbackKeyTypes)" }
         store.updateOlmAccount { pickledOlmAccount ->
-            freeAfter(
-                OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount)
-            ) { olmAccount ->
-                newOneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys()
+            driver.olm.account.fromPickle(pickledOlmAccount, driver.key.pickleKey(store.getOlmPickleKey()))
+                .use { olmAccount ->
+
+                    newOneTimeKeys = olmAccount.oneTimeKeys.toCurve25519Keys()
                 if (newOneTimeKeys != null) log.debug { "found one time keys marked as unpublished" }
                 if (oneTimeKeysCount != null // violates the spec, but Synapse is doing it
                     && newOneTimeKeys.isNullOrEmpty()
@@ -91,14 +93,14 @@ class OlmEventHandler(
                             .coerceAtLeast(0)
                     if (generateOneTimeKeysCount > 0) {
                         val generateOneTimeKeysCountWithBuffer =
-                            generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 10
+                            generateOneTimeKeysCount + olmAccount.maxNumberOfOneTimeKeys / 4 // TODO why 4
                         log.debug { "generate $generateOneTimeKeysCountWithBuffer new one time key" }
                         olmAccount.generateOneTimeKeys(generateOneTimeKeysCountWithBuffer)
-                        newOneTimeKeys = olmAccount.oneTimeKeys.curve25519.toCurve25519Keys()
+                        newOneTimeKeys = olmAccount.oneTimeKeys.toCurve25519Keys()
                     }
                 }
 
-                newFallbackKeys = olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(fallback = true)
+                    newFallbackKeys = olmAccount.fallbackKey?.let(::mapOf)?.toCurve25519Keys(fallback = true)
                 if (newFallbackKeys != null) log.debug { "found fallback key marked as unpublished" }
                 if (newFallbackKeys.isNullOrEmpty()
                     && fallbackKeyTypes != null // violates the spec, but Synapse is doing it
@@ -106,9 +108,9 @@ class OlmEventHandler(
                 ) {
                     log.debug { "generate new fallback key" }
                     olmAccount.generateFallbackKey()
-                    newFallbackKeys = olmAccount.unpublishedFallbackKey.curve25519.toCurve25519Keys(fallback = true)
+                    newFallbackKeys = olmAccount.fallbackKey?.let(::mapOf)?.toCurve25519Keys(fallback = true)
                 }
-                olmAccount.pickle(store.getOlmPickleKey())
+                    olmAccount.pickle(driver.key.pickleKey(store.getOlmPickleKey()))
             }
         }
         if (newOneTimeKeys != null || newFallbackKeys != null) {
@@ -126,12 +128,12 @@ class OlmEventHandler(
             }
 
             store.updateOlmAccount { pickledOlmAccount ->
-                freeAfter(
-                    OlmAccount.unpickle(store.getOlmPickleKey(), pickledOlmAccount)
-                ) { olmAccount ->
+                driver.olm.account.fromPickle(
+                    pickledOlmAccount, driver.key.pickleKey(store.getOlmPickleKey())
+                ).use { olmAccount ->
                     log.debug { "mark keys as published" }
                     olmAccount.markKeysAsPublished()
-                    olmAccount.pickle(store.getOlmPickleKey())
+                    olmAccount.pickle(driver.key.pickleKey(store.getOlmPickleKey()))
                 }
             }
 
@@ -145,14 +147,14 @@ class OlmEventHandler(
         log.trace { "finished handle change of own olm keys server count" }
     }
 
-    private suspend fun Map<String, String>.toCurve25519Keys(fallback: Boolean? = null) =
-        Keys(this.map {
+    private suspend fun Map<String, Curve25519PublicKey>.toCurve25519Keys(fallback: Boolean? = null) =
+        map { (keyId, key) ->
             signService.signCurve25519Key(
-                keyId = it.key,
-                keyValue = it.value,
+                keyId = keyId, keyValue = key.use(Curve25519PublicKey::base64),
                 fallback = fallback
             )
-        }.toSet()).ifEmpty { null }
+        }.toSet().let(::Keys).ifEmpty { null }
+
 
     internal suspend fun handleOlmEncryptedRoomKeyEventContent(event: DecryptedOlmEventContainer) {
         val content = event.decrypted.content
@@ -164,10 +166,16 @@ class OlmEventHandler(
                 return
             }
             try {
-                val (firstKnownIndex, pickledSession) =
-                    freeAfter(OlmInboundGroupSession.create(content.sessionKey)) {
-                        it.firstKnownIndex to it.pickle(checkNotNull(store.getOlmPickleKey()))
-                    }
+                val (firstKnownIndex, pickledSession) = useAll(
+                    { driver.megolm.sessionKey(content.sessionKey) },
+                    { driver.megolm.inboundGroupSession(it) }) { _, inboundGroupSession ->
+                    inboundGroupSession.firstKnownIndex.toLong() to inboundGroupSession.pickle(
+                        driver.key.pickleKey(
+                            store.getOlmPickleKey()
+                        )
+                    )
+                }
+
                 store.updateInboundMegolmSession(content.sessionId, content.roomId) {
                     if (it != null && it.firstKnownIndex <= firstKnownIndex) it
                     else StoredInboundMegolmSession(
@@ -182,7 +190,7 @@ class OlmEventHandler(
                         pickled = pickledSession,
                     )
                 }
-            } catch (exception: OlmLibraryException) {
+            } catch (exception: CryptoDriverException) {
                 log.warn { "ignore inbound megolm session due to: ${exception.message}" }
                 null
             }

@@ -184,7 +184,7 @@ class OlmAccountTest : TrixnityBaseTest() {
     @Test
     fun pickleWithEmptyKey() = runTest {
         freeAfter(OlmAccount.create()) { account ->
-            account.pickle("") shouldNot beBlank()
+            account.pickle(null) shouldNot beBlank()
         }
     }
 
@@ -206,10 +206,10 @@ class OlmAccountTest : TrixnityBaseTest() {
         var keys: OlmIdentityKeys? = null
         val pickle = freeAfter(OlmAccount.create()) { account ->
             keys = account.identityKeys
-            account.pickle("")
+            account.pickle(null)
         }
         pickle shouldNot beBlank()
-        freeAfter(OlmAccount.unpickle("", pickle)) { account ->
+        freeAfter(OlmAccount.unpickle(null, pickle)) { account ->
             account.identityKeys shouldBe keys
         }
     }

@@ -20,6 +20,8 @@ data class RoomAccount(
     val displayName: String? = null,
     val avatarUrl: String? = null,
     val isLocked: Boolean = false,
+    @ColumnInfo(defaultValue = "false") val oauth2Login: Boolean = false,
+    @ColumnInfo(defaultValue = "NULL") val oauth2ClientId: String? = null
 )
 
 @Dao
@@ -46,7 +48,7 @@ internal class RoomAccountRepository(
     override suspend fun get(key: Long): Account? = withRoomRead {
         dao.get(key)?.let { entity ->
             Account(
-                olmPickleKey = entity.olmPickleKey ?: throw IllegalStateException("olmPickleKey not found"),
+                olmPickleKey = entity.olmPickleKey,
                 baseUrl = entity.baseUrl ?: throw IllegalStateException("baseUrl not found"),
                 userId = entity.userId ?: throw IllegalStateException("userId not found"),
                 deviceId = entity.deviceId ?: throw IllegalStateException("deviceId not found"),
@@ -58,6 +60,8 @@ internal class RoomAccountRepository(
                 displayName = entity.displayName,
                 avatarUrl = entity.avatarUrl,
                 isLocked = entity.isLocked,
+                oauth2ClientId = entity.oauth2ClientId,
+                oauth2Login = entity.oauth2Login,
             )
         }
     }
@@ -78,6 +82,8 @@ internal class RoomAccountRepository(
                 displayName = value.displayName,
                 avatarUrl = value.avatarUrl,
                 isLocked = value.isLocked,
+                oauth2ClientId = value.oauth2ClientId,
+                oauth2Login = value.oauth2Login
             )
         )
     }

@@ -1,0 +1,17 @@
+package net.folivo.trixnity.crypto.driver.libolm.megolm
+
+import net.folivo.trixnity.crypto.driver.megolm.MegolmMessage
+import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
+import kotlin.jvm.JvmInline
+
+@JvmInline
+value class LibOlmMegolmMessage(internal val inner: String) : MegolmMessage {
+
+    override val base64: String
+        get() = inner
+
+    override val bytes: ByteArray
+        get() = base64.decodeUnpaddedBase64Bytes()
+
+    override fun close() {}
+}

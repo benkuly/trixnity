@@ -80,13 +80,13 @@ class InMemoryOlmForgetFallbackKeyAfterRepository : OlmForgetFallbackKeyAfterRep
     InMemoryMinimalRepository<Long, Instant>()
 
 class InMemoryOlmSessionRepository : OlmSessionRepository,
-    InMemoryMinimalRepository<Curve25519KeyValue, Set<StoredOlmSession>>()
+    InMemoryFullRepository<Curve25519KeyValue, Set<StoredOlmSession>>()
 
 class InMemoryInboundMegolmMessageIndexRepository : InboundMegolmMessageIndexRepository,
     InMemoryMinimalRepository<InboundMegolmMessageIndexRepositoryKey, StoredInboundMegolmMessageIndex>()
 
 class InMemoryOutboundMegolmSessionRepository : OutboundMegolmSessionRepository,
-    InMemoryMinimalRepository<RoomId, StoredOutboundMegolmSession>()
+    InMemoryFullRepository<RoomId, StoredOutboundMegolmSession>()
 
 class InMemoryRoomUserRepository : RoomUserRepository, InMemoryMapRepository<RoomId, UserId, RoomUser>() {
     override suspend fun deleteByRoomId(roomId: RoomId) {
@@ -154,7 +154,7 @@ class InMemoryRoomKeyRequestRepository : RoomKeyRequestRepository,
     InMemoryFullRepository<String, StoredRoomKeyRequest>()
 
 class InMemoryInboundMegolmSessionRepository : InboundMegolmSessionRepository,
-    InMemoryMinimalRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>() {
+    InMemoryFullRepository<InboundMegolmSessionRepositoryKey, StoredInboundMegolmSession>() {
     override suspend fun getByNotBackedUp(): Set<StoredInboundMegolmSession> =
         content.value.values.filter { it.hasBeenBackedUp.not() }.toSet()
 }
@@ -204,3 +204,6 @@ class InMemoryKeyChainLinkRepository : KeyChainLinkRepository {
         values.value = setOf()
     }
 }
+
+class InMemoryMigrationRepository : MigrationRepository,
+    InMemoryMinimalRepository<String, String>()

@@ -23,6 +23,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMeth
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationReadyEventContent
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.VerificationRequest
+import net.folivo.trixnity.crypto.driver.CryptoDriver
 import kotlin.time.Clock
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.verification.ActiveUserVerification")
@@ -48,6 +49,7 @@ class ActiveUserVerificationImpl(
     private val room: RoomService,
     keyTrust: KeyTrustService,
     private val clock: Clock,
+    driver: CryptoDriver,
 ) : ActiveUserVerification, ActiveVerificationImpl(
     request,
     requestIsFromOurOwn,
@@ -62,6 +64,7 @@ class ActiveUserVerificationImpl(
     keyStore,
     keyTrust,
     json,
+    driver,
 ) {
     override suspend fun sendVerificationStep(step: VerificationStep) {
         log.debug { "send verification step $step" }

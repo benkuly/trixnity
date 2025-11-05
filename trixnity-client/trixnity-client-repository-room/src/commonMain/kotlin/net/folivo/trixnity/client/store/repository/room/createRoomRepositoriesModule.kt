@@ -53,4 +53,5 @@ fun createRoomRepositoriesModule(
     singleOf(::RoomNotificationRepository) { bind<NotificationRepository>() }
     singleOf(::RoomNotificationStateRepository) { bind<NotificationStateRepository>() }
     singleOf(::RoomNotificationUpdateRepository) { bind<NotificationUpdateRepository>() }
+    singleOf(::RoomMigrationRepository) { bind<MigrationRepository>() }
 }

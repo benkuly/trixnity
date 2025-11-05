@@ -56,9 +56,11 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventConte
 import net.folivo.trixnity.core.model.keys.*
 import net.folivo.trixnity.core.model.keys.Key.Curve25519Key
 import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
+import net.folivo.trixnity.crypto.driver.CryptoDriver
+import net.folivo.trixnity.crypto.driver.CryptoDriverException
+import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
-import net.folivo.trixnity.olm.OlmLibraryException
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.testClock
@@ -66,13 +68,14 @@ import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import kotlin.test.Test
 import kotlin.test.assertNotNull
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VerificationServiceTest : TrixnityBaseTest() {
+
+    private val driver: CryptoDriver = LibOlmCryptoDriver
 
     init {
         testScope.testScheduler.advanceTimeBy(10.days)
@@ -117,6 +120,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
         keySecretService = keySecretServiceMock,
         currentSyncState = CurrentSyncState(currentSyncState),
         clock = testScope.testClock,
+        driver = driver,
     ).apply {
         startInCoroutineScope(testScope.backgroundScope)
     }
@@ -387,7 +391,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
             }
         }
         olmEncryptionServiceMock.returnEncryptOlm =
-            Result.failure(OlmEncryptionService.EncryptOlmError.OlmLibraryError(OlmLibraryException("dino")))
+            Result.failure(OlmEncryptionService.EncryptOlmError.OlmLibraryError(CryptoDriverException(Exception("dino"))))
         val createdVerification = cut.createDeviceVerificationRequest(bobUserId, setOf(bobDeviceId)).getOrThrow()
         val activeDeviceVerification = cut.activeDeviceVerification.filterNotNull().first()
         createdVerification shouldBe activeDeviceVerification
@@ -444,8 +448,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                         MemberEventContent(membership = Membership.JOIN),
                         id = EventId("0"),
                         sender = bobUserId,
-                        roomId = roomId,
-                        Clock.System.now().toEpochMilliseconds(),
+                        roomId = roomId, originTimestamp = testClock.now().toEpochMilliseconds(),
                         stateKey = bobUserId.full
                     )
                 )
@@ -483,8 +486,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                             MemberEventContent(membership = Membership.LEAVE),
                             id = EventId("0"),
                             sender = bobUserId,
-                            roomId = abandonedRoom,
-                            Clock.System.now().toEpochMilliseconds(),
+                            roomId = abandonedRoom, originTimestamp = testClock.now().toEpochMilliseconds(),
                             stateKey = bobUserId.full
                         )
                     )
@@ -498,8 +500,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                             MemberEventContent(membership = Membership.JOIN),
                             id = EventId("0"),
                             sender = bobUserId,
-                            roomId = roomId,
-                            Clock.System.now().toEpochMilliseconds(),
+                            roomId = roomId, originTimestamp = testClock.now().toEpochMilliseconds(),
                             stateKey = bobUserId.full
                         )
                     )
@@ -515,7 +516,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                             roomId = roomId,
                             content = message,
                             eventId = EventId("bla"),
-                            createdAt = Clock.System.now(),
+                            createdAt = testClock.now(),
                         )
                     )
                 )
@@ -536,8 +537,7 @@ class VerificationServiceTest : TrixnityBaseTest() {
                             MemberEventContent(membership = Membership.JOIN),
                             id = EventId("0"),
                             sender = bobUserId,
-                            roomId = roomId,
-                            Clock.System.now().toEpochMilliseconds(),
+                            roomId = roomId, originTimestamp = testClock.now().toEpochMilliseconds(),
                             stateKey = bobUserId.full
                         )
                     )

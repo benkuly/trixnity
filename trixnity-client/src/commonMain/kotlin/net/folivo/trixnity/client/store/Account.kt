@@ -5,7 +5,7 @@ import net.folivo.trixnity.core.model.UserId
 
 @Serializable
 data class Account(
-    val olmPickleKey: String,
+    val olmPickleKey: String?,
     val baseUrl: String,
     val userId: UserId,
     val deviceId: String,
@@ -17,4 +17,6 @@ data class Account(
     val displayName: String?,
     val avatarUrl: String?,
     val isLocked: Boolean = false,
+    val oauth2ClientId: String? = null,
+    val oauth2Login: Boolean = false
 )

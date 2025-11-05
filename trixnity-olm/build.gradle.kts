@@ -190,7 +190,10 @@ kotlin {
         }
         jsMain {
             dependencies {
-                implementation(npm("@matrix-org/olm", libs.versions.olm.get()))
+                implementation(npm(
+                    "trixnity-olm-wrapper",
+                    "https://gitlab.com/api/v4/projects/46553592/packages/generic/build/v${libs.versions.trixnityOlmBinaries.get()}/trixnity-olm-wrapper.tgz")
+                )
             }
         }
         commonTest {

@@ -75,7 +75,7 @@ fun TrixnityBaseTest.getInMemoryAccountStore(setup: suspend AccountStore.() -> U
         init(backgroundScope)
         updateAccount {
             Account(
-                olmPickleKey = "",
+                olmPickleKey = null,
                 baseUrl = "",
                 userId = UserId("user", "server"),
                 deviceId = "",

@@ -22,6 +22,10 @@ internal class ExposedOutboundMegolmSessionRepository(private val json: Json) : 
             }
     }
 
+    override suspend fun getAll(): List<StoredOutboundMegolmSession> = withExposedRead {
+        ExposedOutboundMegolmSession.selectAll().map { json.decodeFromString(it[ExposedOutboundMegolmSession.value]) }
+    }
+
     override suspend fun save(key: RoomId, value: StoredOutboundMegolmSession): Unit = withExposedWrite {
         ExposedOutboundMegolmSession.upsert {
             it[roomId] = key.full

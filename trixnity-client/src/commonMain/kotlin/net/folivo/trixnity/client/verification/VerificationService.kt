@@ -38,6 +38,7 @@ import net.folivo.trixnity.core.model.events.m.secretstorage.DefaultSecretKeyEve
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent
 import net.folivo.trixnity.core.model.events.m.secretstorage.SecretKeyEventContent.AesHmacSha2Key
 import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.crypto.olm.OlmDecrypter
 import net.folivo.trixnity.crypto.olm.OlmEncryptionService
@@ -127,6 +128,7 @@ class VerificationServiceImpl(
     private val keySecretService: KeySecretService,
     private val currentSyncState: CurrentSyncState,
     private val clock: Clock,
+    private val driver: CryptoDriver,
 ) : VerificationService, EventHandler {
     private val ownUserId = userInfo.userId
     private val ownDeviceId = userInfo.deviceId
@@ -173,6 +175,7 @@ class VerificationServiceImpl(
                             keyStore = keyStore,
                             keyTrust = keyTrustService,
                             clock = clock,
+                            driver = driver,
                         ).cancel()
                     } else {
                         _activeDeviceVerification.getAndUpdate {
@@ -190,6 +193,7 @@ class VerificationServiceImpl(
                                 keyTrust = keyTrustService,
                                 keyStore = keyStore,
                                 clock = clock,
+                                driver = driver,
                             )
                         }?.cancel()
                     }
@@ -223,6 +227,7 @@ class VerificationServiceImpl(
                             keyTrust = keyTrustService,
                             keyStore = keyStore,
                             clock = clock,
+                            driver = driver,
                         ).cancel("already have an active device verification")
                     } else {
                         _activeDeviceVerification.value =
@@ -240,6 +245,7 @@ class VerificationServiceImpl(
                                 keyTrust = keyTrustService,
                                 keyStore = keyStore,
                                 clock = clock,
+                                driver = driver,
                             )
                     }
                 }
@@ -299,6 +305,7 @@ class VerificationServiceImpl(
             keyTrust = keyTrustService,
             keyStore = keyStore,
             clock = clock,
+            driver = driver,
         ).also { newDeviceVerification ->
             _activeDeviceVerification.getAndUpdate { newDeviceVerification }?.cancel()
         }
@@ -347,6 +354,7 @@ class VerificationServiceImpl(
                 room = roomService,
                 keyTrust = keyTrustService,
                 clock = clock,
+                driver = driver,
             ).also { auv -> _activeUserVerifications.update { it + auv } }
         }
     }
@@ -489,6 +497,7 @@ class VerificationServiceImpl(
                             room = roomService,
                             keyTrust = keyTrustService,
                             clock = clock,
+                            driver = driver,
                         ).also { auv -> _activeUserVerifications.update { it + auv } }
                     } else null
                 }

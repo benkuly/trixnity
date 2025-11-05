@@ -98,7 +98,7 @@ abstract class RepositoryTestSuite(
         val cut = di.get<AccountRepository>()
         cut.save(
             key.toLong(), Account(
-                olmPickleKey = "",
+                olmPickleKey = null,
                 baseUrl = "",
                 userId = UserId("userId"),
                 deviceId = "",
@@ -319,7 +319,7 @@ abstract class RepositoryTestSuite(
     fun `AccountRepository - save get and delete`() = runTestWithSetup {
         val cut = di.get<AccountRepository>()
         val account = Account(
-            olmPickleKey = "",
+            olmPickleKey = null,
             baseUrl = "http://host",
             userId = UserId("alice", "server"),
             deviceId = "aliceDevice",
@@ -1689,6 +1689,38 @@ abstract class RepositoryTestSuite(
             cut.get(notificationState2.roomId) shouldBe notificationState2Copy
             cut.delete(notificationState1.roomId)
             cut.get(notificationState1.roomId) shouldBe null
+        }
+    }
+
+    @Test
+    fun `MigrationRepository - save get and delete`() = runTestWithSetup {
+        val cut = di.get<MigrationRepository>()
+        val name = "myMigration"
+        val metadata1 = "myMetadata"
+        val metadata2 = "myOtherMetadata"
+        rtm.writeTransaction {
+            cut.save(name, metadata1)
+            cut.get(name) shouldBe metadata1
+            cut.save(name, metadata2)
+            cut.get(name) shouldBe metadata2
+            cut.delete(name)
+            cut.get(name) shouldBe null
+        }
+    }
+
+    @Test
+    fun `MigrationRepository - delete all`() = runTestWithSetup {
+        val cut = di.get<MigrationRepository>()
+        val data = listOf(
+            "migration1" to "metadata1",
+            "migration2" to "metadata2",
+            "migration3" to "metadata3",
+        )
+        rtm.writeTransaction {
+            data.forEach { cut.save(it.first, it.second) }
+            data.forEach { cut.get(it.first) shouldBe it.second }
+            cut.deleteAll()
+            data.forEach { cut.get(it.first) shouldBe null }
         }
     }
 }

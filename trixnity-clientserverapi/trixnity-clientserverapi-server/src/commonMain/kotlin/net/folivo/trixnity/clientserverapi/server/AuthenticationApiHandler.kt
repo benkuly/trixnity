@@ -43,6 +43,11 @@ interface AuthenticationApiHandler {
     suspend fun getMsisdnRequestTokenForRegistration(context: MatrixEndpointContext<GetMsisdnRequestTokenForRegistration, GetMsisdnRequestTokenForRegistration.Request, GetMsisdnRequestTokenForRegistration.Response>): GetMsisdnRequestTokenForRegistration.Response
 
     /**
+     * @see [GetOAuth2ServerMetadata]
+     */
+    suspend fun getOAuth2ServerMetadata(context: MatrixEndpointContext<GetOAuth2ServerMetadata, Unit, OAuth2ServerMetadata>): OAuth2ServerMetadata
+
+    /**
      * @see [Register]
      */
     suspend fun register(context: MatrixEndpointContext<Register, RequestWithUIA<Register.Request>, ResponseWithUIA<Register.Response>>): ResponseWithUIA<Register.Response>
