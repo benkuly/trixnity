@@ -33,5 +33,8 @@ fun createInMemoryRepositoriesModule() = module {
     singleOf<GlobalAccountDataRepository>(::InMemoryGlobalAccountDataRepository)
     singleOf<RoomAccountDataRepository>(::InMemoryRoomAccountDataRepository)
     singleOf<UserPresenceRepository>(::InMemoryUserPresenceRepository)
+    singleOf<NotificationRepository>(::InMemoryNotificationRepository)
+    singleOf<NotificationUpdateRepository>(::InMemoryNotificationUpdateRepository)
+    singleOf<NotificationStateRepository>(::InMemoryNotificationStateRepository)
     singleOf<MigrationRepository>(::InMemoryMigrationRepository)
 }

@@ -156,4 +156,5 @@ suspend fun RoomService.getTimelineEventsAround(
     eventsBefore.await() + startEvent + eventsAfter.await()
 }
 
-suspend fun Flow<TimelineEvent?>.firstWithContent(): TimelineEvent = filterNotNull().first { it.content != null }
+suspend fun Flow<TimelineEvent?>.firstWithContent(): TimelineEvent =
+    filterNotNull().first { it.content != null }

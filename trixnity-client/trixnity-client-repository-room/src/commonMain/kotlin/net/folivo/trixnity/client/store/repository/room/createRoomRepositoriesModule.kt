@@ -50,5 +50,8 @@ fun createRoomRepositoriesModule(
     singleOf(::RoomTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }
     singleOf(::RoomTimelineEventRepository) { bind<TimelineEventRepository>() }
     singleOf(::RoomUserPresenceRepository) { bind<UserPresenceRepository>() }
+    singleOf(::RoomNotificationRepository) { bind<NotificationRepository>() }
+    singleOf(::RoomNotificationStateRepository) { bind<NotificationStateRepository>() }
+    singleOf(::RoomNotificationUpdateRepository) { bind<NotificationUpdateRepository>() }
     singleOf(::RoomMigrationRepository) { bind<MigrationRepository>() }
 }

@@ -28,6 +28,26 @@ sealed interface ServerDefaultPushRules {
             Message,
             Encrypted
         )
+
+        fun pushRuleSet(userId: UserId) = PushRuleSet(
+            override = listOf(
+                Master.rule,
+                SuppressNotice.rule,
+                InviteForMe(userId).rule,
+                IsRoomMention.rule,
+                Tombstone.rule,
+                Reaction.rule,
+                ServerAcl.rule,
+                SuppressEdits.rule,
+            ),
+            underride = listOf(
+                Call.rule,
+                EncryptedRoomOneToOne.rule,
+                RoomOneToOne.rule,
+                Message.rule,
+                Encrypted.rule,
+            )
+        )
     }
 
     data object Master : ServerDefaultPushRules {

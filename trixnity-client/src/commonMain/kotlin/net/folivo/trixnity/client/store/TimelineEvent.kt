@@ -26,9 +26,9 @@ data class TimelineEvent(
      */
     val content: Result<RoomEventContent>? = if (event.isEncrypted) null else Result.success(event.content),
 
-    val previousEventId: EventId?,
-    val nextEventId: EventId?,
-    val gap: Gap?,
+    val previousEventId: EventId? = null,
+    val nextEventId: EventId? = null,
+    val gap: Gap? = null,
 ) {
     @OptIn(ExperimentalSerializationApi::class)
     @Serializable

@@ -55,7 +55,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Override - disabled - no match`() = runTest {
+    fun `Override - disabled - no match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
             PushRule.Override(
@@ -72,7 +72,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Override - null conditions - match`() = runTest {
+    fun `Override - null conditions - match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
             PushRule.Override(
@@ -89,7 +89,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Override - empty conditions - match`() = runTest {
+    fun `Override - empty conditions - match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
             PushRule.Override(
@@ -106,7 +106,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Override - all false conditions - no match`() = runTest {
+    fun `Override - all false conditions - no match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(false, false))
         PushRuleMatcherImpl.match(
             PushRule.Override(
@@ -123,7 +123,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Override - one false condition - no match`() = runTest {
+    fun `Override - one false condition - no match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(true, false))
         PushRuleMatcherImpl.match(
             PushRule.Override(
@@ -140,7 +140,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Override - all true condition - match`() = runTest {
+    fun `Override - all true condition - match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(true, true))
         PushRuleMatcherImpl.match(
             PushRule.Override(
@@ -157,7 +157,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Content - disabled - no match`() = runTest {
+    fun `Content - disabled - no match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Content(
                 ruleId = "rule",
@@ -171,7 +171,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Content - no RoomMessageEventContent - no match`() = runTest {
+    fun `Content - no RoomMessageEventContent - no match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Content(
                 ruleId = "rule",
@@ -185,7 +185,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Content - message - no match`() = runTest {
+    fun `Content - message - no match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Content(
                 ruleId = "rule",
@@ -199,7 +199,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Content - message - match`() = runTest {
+    fun `Content - message - match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Content(
                 ruleId = "rule",
@@ -213,7 +213,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Room - disabled - no match`() = runTest {
+    fun `Room - disabled - no match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Room(
                 roomId = roomId,
@@ -226,7 +226,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Room - no match`() = runTest {
+    fun `Room - no match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Room(
                 roomId = RoomId("!other"),
@@ -239,7 +239,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Room - match`() = runTest {
+    fun `Room - match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Room(
                 roomId = roomId,
@@ -252,7 +252,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Sender - disabled - no match`() = runTest {
+    fun `Sender - disabled - no match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Sender(
                 userId = userId,
@@ -265,7 +265,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Sender - no match`() = runTest {
+    fun `Sender - no match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Sender(
                 userId = UserId("@other:localhost"),
@@ -278,7 +278,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Sender - match`() = runTest {
+    fun `Sender - match`() = runTest {
         PushRuleMatcherImpl.match(
             PushRule.Sender(
                 userId = userId,
@@ -291,7 +291,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Underride - disabled - no match`() = runTest {
+    fun `Underride - disabled - no match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
             PushRule.Underride(
@@ -308,7 +308,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Underride - null conditions - match`() = runTest {
+    fun `Underride - null conditions - match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
             PushRule.Underride(
@@ -325,7 +325,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Underride - empty conditions - match`() = runTest {
+    fun `Underride - empty conditions - match`() = runTest {
         conditionMatcher.doesMatch.add(true)
         PushRuleMatcherImpl.match(
             PushRule.Underride(
@@ -342,7 +342,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Underride - all false conditions - no match`() = runTest {
+    fun `Underride - all false conditions - no match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(false, false))
         PushRuleMatcherImpl.match(
             PushRule.Underride(
@@ -359,7 +359,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Underride - one false condition - no match`() = runTest {
+    fun `Underride - one false condition - no match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(true, false))
         PushRuleMatcherImpl.match(
             PushRule.Underride(
@@ -376,7 +376,7 @@ class PushRuleMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Underride - all true condition - match`() = runTest {
+    fun `Underride - all true condition - match`() = runTest {
         conditionMatcher.doesMatch.addAll(listOf(true, true))
         PushRuleMatcherImpl.match(
             PushRule.Underride(

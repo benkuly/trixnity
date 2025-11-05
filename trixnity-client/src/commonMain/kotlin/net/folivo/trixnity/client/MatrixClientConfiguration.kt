@@ -61,6 +61,12 @@ data class MatrixClientConfiguration(
     var userPresenceActivityThreshold: Duration = 5.minutes,
 
     /**
+     * Enables storing a queue of notification updates locally to allow using them to update external notifications.
+     * To prevent unnecessary stored data, it should not be enabled when not needed and is disabled by default.
+     */
+    var enableExternalNotifications: Boolean = false,
+
+    /**
      * Specifies how long values are kept in the cache when not used by anyone.
      */
     var cacheExpireDurations: CacheExpireDurations = CacheExpireDurations.default(1.minutes),
@@ -192,6 +198,7 @@ data class MatrixClientConfiguration(
         val room: Duration,
         val presence: Duration,
         val media: Duration,
+        val notification: Duration,
     ) {
 
 
@@ -218,7 +225,8 @@ data class MatrixClientConfiguration(
                     roomOutboxMessage = duration / 2,
                     room = duration * 10,
                     presence = duration,
-                    media = duration / 6
+                    media = duration / 6,
+                    notification = duration,
                 )
         }
     }

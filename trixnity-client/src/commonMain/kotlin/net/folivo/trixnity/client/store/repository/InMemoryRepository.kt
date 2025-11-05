@@ -168,6 +168,22 @@ class InMemoryRoomOutboxMessageRepository : RoomOutboxMessageRepository,
     }
 }
 
+class InMemoryNotificationRepository : NotificationRepository, InMemoryFullRepository<String, StoredNotification>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterValues { it.roomId != roomId } }
+    }
+}
+
+class InMemoryNotificationUpdateRepository : NotificationUpdateRepository,
+    InMemoryFullRepository<String, StoredNotificationUpdate>() {
+    override suspend fun deleteByRoomId(roomId: RoomId) {
+        content.update { value -> value.filterValues { it.roomId != roomId } }
+    }
+}
+
+class InMemoryNotificationStateRepository : NotificationStateRepository,
+    InMemoryFullRepository<RoomId, StoredNotificationState>()
+
 class InMemoryKeyChainLinkRepository : KeyChainLinkRepository {
     private val values = MutableStateFlow<Set<KeyChainLink>>(setOf())
     override suspend fun save(keyChainLink: KeyChainLink) {

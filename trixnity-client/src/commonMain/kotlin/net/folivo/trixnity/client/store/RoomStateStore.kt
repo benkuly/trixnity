@@ -4,7 +4,6 @@ import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import net.folivo.trixnity.client.MatrixClientConfiguration
@@ -108,9 +107,10 @@ class RoomStateStore(
         stateKey: String,
     ): Flow<StateBaseEvent<C>?> {
         val eventType = findType(eventContentClass)
+        @Suppress("UNCHECKED_CAST")
         return roomStateCache.get(MapRepositoryCoroutinesCacheKey(RoomStateRepositoryKey(roomId, eventType), stateKey))
             .map { if (it?.content?.instanceOf(eventContentClass) == true) it else null }
-            .filterIsInstance()
+                as Flow<StateBaseEvent<C>?>
     }
 
     suspend fun <C : StateEventContent> getByRooms(
@@ -119,6 +119,7 @@ class RoomStateStore(
         stateKey: String,
     ): List<StateBaseEvent<C>> {
         val eventType = findType(eventContentClass)
+        @Suppress("UNCHECKED_CAST")
         return tm.readTransaction { roomStateRepository.getByRooms(roomIds, eventType, stateKey) }
             .mapNotNull { if (it.content.instanceOf(eventContentClass)) it else null }
             .filterIsInstance<StateBaseEvent<C>>()

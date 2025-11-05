@@ -251,7 +251,7 @@ class UserServiceImpl(
         val baseEventClass =
             mappings.message.find { it.kClass.isInstance(eventContent) }?.kClass
                 ?: mappings.state.find { it.kClass.isInstance(eventContent) }?.kClass
-                ?: throw IllegalArgumentException("eventContent ${eventContent::class} does not match any event in mappings")
+                ?: throw IllegalArgumentException("eventContent ${eventContent::class.simpleName} does not match any event in mappings")
         return canSendEvent(roomId, baseEventClass)
     }
 

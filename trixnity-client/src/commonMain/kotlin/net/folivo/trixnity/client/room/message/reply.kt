@@ -27,10 +27,10 @@ suspend fun MessageBuilder.reply(
 ) {
     val replyTo = RelatesTo.ReplyTo(eventId)
     val repliedTimelineEvent = roomService.getTimelineEventWithContentAndTimeout(roomId, replyTo.eventId)
-    val repliedMentions = repliedTimelineEvent.content?.getOrNull()?.let {
+    val repliedMentions = repliedTimelineEvent?.content?.getOrNull()?.let {
         if (it is MessageEventContent) it.mentions else null
     }
-    mentions = Mentions(setOf(repliedTimelineEvent.sender)) + repliedMentions + mentions
+    mentions = Mentions(setOfNotNull(repliedTimelineEvent?.sender)) + repliedMentions + mentions
     relatesTo =
         if (eventRelatesTo is RelatesTo.Thread) {
             RelatesTo.Thread(eventRelatesTo.eventId, replyTo, true)

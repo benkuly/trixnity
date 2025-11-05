@@ -76,7 +76,7 @@ class DehydratedDeviceIT {
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
 
-            val recoveryKey = withClue("bootstrap client2 second time") {
+            val recoveryKey = withCluePrintln("bootstrap client2 second time") {
                 val bootstrap = startedClient2.client.key.bootstrapCrossSigning()
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
@@ -101,7 +101,7 @@ class DehydratedDeviceIT {
                 startClient("client3", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
                     experimentalFeatures.enableMSC3814 = true
                 }
-            withClue("self verify client3") {
+            withCluePrintln("self verify client3") {
                 val client3VerificationMethods =
                     startedClient3.client.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
@@ -116,7 +116,7 @@ class DehydratedDeviceIT {
             foundContent.shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>().body shouldBe "some encrypted message"
             startedClient3.client.syncOnce().getOrThrow()
 
-            withClue("send message from client3") {
+            withCluePrintln("send message from client3") {
                 startedClient3.client.room.sendMessage(roomId) { text("hi") }
                 startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().flatMapLatest { it }
                     .firstWithTimeout {
@@ -137,7 +137,7 @@ class DehydratedDeviceIT {
                 initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
             ).getOrThrow()
 
-            val firstDehydratedDeviceId = withClue("bootstrap client2") {
+            val firstDehydratedDeviceId = withCluePrintln("bootstrap client2") {
                 startedClient2.client.key.bootstrapCrossSigning().result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
                 startedClient2.client.waitForDehydratedDevice()
@@ -150,14 +150,14 @@ class DehydratedDeviceIT {
                 startClient("client3", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
                     experimentalFeatures.enableMSC3814 = true
                 }
-            val secondDehydratedDeviceId = withClue("bootstrap client3 first time") {
+            val secondDehydratedDeviceId = withCluePrintln("bootstrap client3 first time") {
                 val bootstrap = startedClient3.client.key.bootstrapCrossSigning()
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Step<Unit>>()
                     .authenticate(Password(User("user2"), startedClient1.password)).getOrThrow()
                 startedClient3.client.waitForDehydratedDevice(shouldNotBe = firstDehydratedDeviceId)
             }
-            val recoveryKey = withClue("bootstrap client3 second time") {
+            val recoveryKey = withCluePrintln("bootstrap client3 second time") {
                 val bootstrap = startedClient3.client.key.bootstrapCrossSigning()
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Step<Unit>>()
@@ -185,7 +185,7 @@ class DehydratedDeviceIT {
                 startClient("client4", "user2", baseUrl, createExposedRepositoriesModule(newDatabase())) {
                     experimentalFeatures.enableMSC3814 = true
                 }
-            withClue("self verify client4") {
+            withCluePrintln("self verify client4") {
                 val client4VerificationMethods =
                     startedClient4.client.verification.getSelfVerificationMethods()
                         .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()
@@ -194,7 +194,7 @@ class DehydratedDeviceIT {
                     .first()
                     .verify(recoveryKey).getOrThrow()
             }
-            withClue("decrypt content in client4") {
+            withCluePrintln("decrypt content in client4") {
                 val foundContent = startedClient4.client.room.getTimelineEvent(roomId, eventId)
                     .map { it?.content?.getOrNull() }.filterNotNull()
                     .firstWithTimeout()
@@ -202,7 +202,7 @@ class DehydratedDeviceIT {
                 startedClient4.client.syncOnce()
             }
 
-            withClue("send message from client4") {
+            withCluePrintln("send message from client4") {
                 startedClient4.client.room.sendMessage(roomId) { text("hi") }
                 startedClient1.client.room.getLastTimelineEvent(roomId).filterNotNull().flatMapLatest { it }
                     .firstWithTimeout {
@@ -219,14 +219,14 @@ class DehydratedDeviceIT {
     @Test
     fun recreateDehydratedDeviceOnDeletion(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            val firstDehydratedDeviceId = withClue("bootstrap client2") {
+            val firstDehydratedDeviceId = withCluePrintln("bootstrap client2") {
                 val bootstrap = startedClient2.client.key.bootstrapCrossSigning()
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
                 startedClient2.client.waitForDehydratedDevice()
             }
             startedClient2.client.api.device.deleteDevice(firstDehydratedDeviceId).getOrThrow()
-            withClue("wait for new dehydrated device") {
+            withCluePrintln("wait for new dehydrated device") {
                 val bootstrap = startedClient2.client.key.bootstrapCrossSigning()
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Step<Unit>>()
