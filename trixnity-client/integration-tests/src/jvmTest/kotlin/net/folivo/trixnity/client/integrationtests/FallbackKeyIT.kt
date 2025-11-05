@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContainAnyOf
@@ -70,7 +69,7 @@ class FallbackKeyIT {
 
             val oneTimeKeys = startedClient2.claimAllOneTimeKeysFrom(startedClient1)
 
-            withClue("send encrypted message") {
+            withCluePrintln("send encrypted message") {
                 startedClient2.client.room.sendMessage(roomId) { text("dino") } // uses fallback key
                 delay(500.milliseconds)
                 startedClient2.client.room.waitForOutboxSent()
@@ -94,7 +93,7 @@ class FallbackKeyIT {
             } ?: fail { "could not decrypt event (maybe there was no fallback key)" }
             startedClient1.client.stopSync()
 
-            withClue("ensure, that new one time and fallback keys are generated") {
+            withCluePrintln("ensure, that new one time and fallback keys are generated") {
                 startedClient2.claimAllOneTimeKeysFrom(startedClient1)
                     .shouldHaveAtLeastSize(30)
                     .shouldNotContainAnyOf(oneTimeKeys)
@@ -109,7 +108,7 @@ class FallbackKeyIT {
 
     private suspend fun StartedClient.claimAllOneTimeKeysFrom(from: StartedClient) =
         (0..101).map { // fails at 75 without fallback key, but just to be sure we ask for more
-            withClue("claim one time keys (index=$it)") {
+            withCluePrintln("claim one time keys (index=$it)") {
                 val oneTimeKeys = claimOneTimeKeysFrom(from)[from.client.userId]
                     ?.get(from.client.deviceId)?.keys
                 oneTimeKeys.shouldNotBeNull().shouldHaveSize(1)

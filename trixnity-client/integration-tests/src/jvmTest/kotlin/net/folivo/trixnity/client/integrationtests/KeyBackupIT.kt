@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -71,18 +70,18 @@ class KeyBackupIT {
                 .firstWithTimeout()
 
             val bootstrap = startedClient1.client.key.bootstrapCrossSigning()
-            withClue("bootstrap client1") {
+            withCluePrintln("bootstrap client1") {
                 bootstrap.result.getOrThrow()
                     .shouldBeInstanceOf<UIA.Success<Unit>>()
             }
-            val roomId = withClue("user1 invites user2, so user2 gets user1s keys") {
+            val roomId = withCluePrintln("user1 invites user2, so user2 gets user1s keys") {
                 startedClient1.client.api.room.createRoom(
                     invite = setOf(startedClient2.client.userId),
                     initialState = listOf(InitialStateEvent(content = EncryptionEventContent(), ""))
                 ).getOrThrow()
             }
 
-            withClue("join and wait for join") {
+            withCluePrintln("join and wait for join") {
                 startedClient1.client.room.getById(roomId).firstWithTimeout { it != null && it.membership == JOIN }
                 startedClient2.client.api.room.joinRoom(roomId).getOrThrow()
                 startedClient2.client.room.getById(roomId).firstWithTimeout { it != null && it.membership == JOIN }
@@ -92,12 +91,12 @@ class KeyBackupIT {
                 startedClient2.client.room.getState<EncryptionEventContent>(roomId)
                     .firstWithTimeout { it != null }
             }
-            withClue("send some messages") {
+            withCluePrintln("send some messages") {
                 startedClient1.client.room.sendMessage(roomId) { text("hi from client1") }
                 delay(1_000)
                 startedClient2.client.room.sendMessage(roomId) { text("hi from client2") }
             }
-            withClue("login with another client and look if keybackup works") {
+            withCluePrintln("login with another client and look if keybackup works") {
                 val database = newDatabase()
                 val repositoriesModule = createExposedRepositoriesModule(database)
 
@@ -115,7 +114,7 @@ class KeyBackupIT {
                 client3.startSync()
                 client3.syncState.firstWithTimeout { it == SyncState.RUNNING }
 
-                withClue("self verify client3") {
+                withCluePrintln("self verify client3") {
                     val client3VerificationMethods =
                         client3.verification.getSelfVerificationMethods()
                             .filterIsInstance<SelfVerificationMethods.CrossSigningEnabled>()

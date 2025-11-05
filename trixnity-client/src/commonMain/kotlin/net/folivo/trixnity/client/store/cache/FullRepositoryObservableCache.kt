@@ -39,12 +39,9 @@ private class FullRepositoryObservableCacheIndex<K>(
             loadFromStore()
             fullyLoadedFromRepository.value = true
         }
-        emitAll(
-            allKeys.values
-                .onStart { subscribers.update { it + 1 } }
-                .onCompletion { subscribers.update { it - 1 } }
-        )
-    }
+        emitAll(allKeys.values)
+    }.onStart { subscribers.update { it + 1 } }
+        .onCompletion { subscribers.update { it - 1 } }
 
     override suspend fun collectStatistic(): ObservableCacheIndexStatistic =
         ObservableCacheIndexStatistic(

@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -96,7 +95,7 @@ class SasVerificationIT {
     @Test
     fun shouldDoSasDeviceVerificationSameUser1(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            withClue("bootstrap client3") {
+            withCluePrintln("bootstrap client3") {
                 client3.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
@@ -113,7 +112,7 @@ class SasVerificationIT {
     @Test
     fun shouldDoSasDeviceVerificationSameUser2(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            withClue("bootstrap client1") {
+            withCluePrintln("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
@@ -130,13 +129,13 @@ class SasVerificationIT {
     @Test
     fun shouldDoSasDeviceVerification(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            withClue("bootstrap client1") {
+            withCluePrintln("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
                 }
             }
-            withClue("bootstrap client2") {
+            withCluePrintln("bootstrap client2") {
                 client2.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
@@ -153,13 +152,13 @@ class SasVerificationIT {
     @Test
     fun shouldDoSasDeviceVerification2(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            withClue("bootstrap client1") {
+            withCluePrintln("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
                 }
             }
-            withClue("bootstrap client2") {
+            withCluePrintln("bootstrap client2") {
                 client2.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
@@ -177,13 +176,13 @@ class SasVerificationIT {
     @Test
     fun shouldDoSasUserVerification(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(30_000) {
-            withClue("bootstrap client1") {
+            withCluePrintln("bootstrap client1") {
                 client1.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()
                 }
             }
-            withClue("bootstrap client2") {
+            withCluePrintln("bootstrap client2") {
                 client2.key.bootstrapCrossSigning().also {
                     it.result.getOrThrow()
                         .shouldBeInstanceOf<UIA.Success<Unit>>()

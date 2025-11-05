@@ -54,6 +54,9 @@ suspend fun createIndexedDBRepositoriesModule(
         singleOf(::IndexedDBTimelineEventRelationRepository) { bind<TimelineEventRelationRepository>() }
         singleOf(::IndexedDBTimelineEventRepository) { bind<TimelineEventRepository>() }
         singleOf(::IndexedDBUserPresenceRepository) { bind<UserPresenceRepository>() }
+        singleOf(::IndexedDBNotificationRepository) { bind<NotificationRepository>() }
+        singleOf(::IndexedDBNotificationStateRepository) { bind<NotificationStateRepository>() }
+        singleOf(::IndexedDBNotificationUpdateRepository) { bind<NotificationUpdateRepository>() }
         singleOf(::IndexedDBMigrationRepository) { bind<MigrationRepository>() }
     }
 }
@@ -86,6 +89,9 @@ internal val allStoreNames = arrayOf(
     IndexedDBTimelineEventRelationRepository.objectStoreName,
     IndexedDBTimelineEventRepository.objectStoreName,
     IndexedDBUserPresenceRepository.objectStoreName,
+    IndexedDBNotificationRepository.objectStoreName,
+    IndexedDBNotificationStateRepository.objectStoreName,
+    IndexedDBNotificationUpdateRepository.objectStoreName,
     IndexedDBMigrationRepository.objectStoreName,
 )
 
@@ -118,5 +124,8 @@ internal suspend fun createDatabase(databaseName: String) =
         IndexedDBTimelineEventRelationRepository.apply { migrate(database, oldVersion) }
         IndexedDBTimelineEventRepository.apply { migrate(database, oldVersion) }
         IndexedDBUserPresenceRepository.apply { migrate(database, oldVersion) }
+        IndexedDBNotificationRepository.apply { migrate(database, oldVersion) }
+        IndexedDBNotificationStateRepository.apply { migrate(database, oldVersion) }
+        IndexedDBNotificationUpdateRepository.apply { migrate(database, oldVersion) }
         IndexedDBMigrationRepository.apply { migrate(database, oldVersion) }
     }

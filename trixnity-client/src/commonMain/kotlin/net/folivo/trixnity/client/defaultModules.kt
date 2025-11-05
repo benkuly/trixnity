@@ -41,6 +41,10 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Clock
 
+fun createMatrixClientStartedModule() = module {
+    single<MatrixClientStarted> { MatrixClientStarted() }
+}
+
 fun createClockModule() = module {
     single<Clock> { Clock.System }
 }
@@ -70,6 +74,7 @@ fun createDefaultMatrixJsonModule() = module {
 
 @Deprecated("replace with createTrixnityDefaultModuleFactories")
 fun createDefaultTrixnityModules(): List<Module> = listOf(
+    createMatrixClientStartedModule(),
     createClockModule(),
     createServerModule(),
     createDefaultEventContentSerializerMappingsModule(),
@@ -86,6 +91,7 @@ fun createDefaultTrixnityModules(): List<Module> = listOf(
 )
 
 fun createTrixnityDefaultModuleFactories(): List<ModuleFactory> = listOf(
+    ::createMatrixClientStartedModule,
     ::createClockModule,
     ::createServerModule,
     ::createDefaultEventContentSerializerMappingsModule,
@@ -111,6 +117,7 @@ fun createTrixnityDefaultModuleFactories(): List<ModuleFactory> = listOf(
  *
  */
 fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
+    ::createMatrixClientStartedModule,
     ::createClockModule,
     ::createServerModule,
     ::createDefaultEventContentSerializerMappingsModule,

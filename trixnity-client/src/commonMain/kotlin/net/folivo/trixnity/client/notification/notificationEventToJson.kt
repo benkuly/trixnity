@@ -22,7 +22,7 @@ internal fun notificationEventToJson(event: ClientEvent<*>, json: Json) =
                 json.encodeToJsonElement(it, event)
             }?.jsonObject
 
-            else -> throw IllegalStateException("event did have unexpected type ${event::class}")
+            else -> throw IllegalStateException("event did have unexpected type ${event::class.simpleName}")
         }
     } catch (exception: Exception) {
         log.warn(exception) { "could not serialize event" }

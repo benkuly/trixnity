@@ -14,7 +14,6 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.Text
 import net.folivo.trixnity.core.model.push.PushAction
 import net.folivo.trixnity.core.model.push.PushRule
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.test.utils.scheduleSetup
@@ -41,7 +40,6 @@ class EvaluatePushRulesTest : TrixnityBaseTest() {
     private val cut = EvaluatePushRulesImpl(
         pushRuleMatcher,
         createMatrixEventJson(),
-        DefaultEventContentSerializerMappings,
     )
 
     private fun messageEvent(content: MessageEventContent): ClientEvent<*> =
@@ -66,7 +64,7 @@ class EvaluatePushRulesTest : TrixnityBaseTest() {
         )
 
     @Test
-    fun `invoke - no rule match`() = runTest {
+    fun `no rule match`() = runTest {
         pushRuleMatcher.doesMatch = false
         cut.invoke(
             messageEvent(Text("Hello!")),
@@ -83,7 +81,7 @@ class EvaluatePushRulesTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `invoke - match message`() = runTest {
+    fun `match message`() = runTest {
         pushRuleMatcher.doesMatch = true
         cut.invoke(
             messageEvent(Text("Hello!")),
@@ -96,15 +94,11 @@ class EvaluatePushRulesTest : TrixnityBaseTest() {
                     "*!"
                 )
             )
-        ) shouldBe EvaluatePushRulesResult.Message(
-            roomId = roomId,
-            eventId = EventId("bla"),
-            actions = setOf(PushAction.Notify)
-        )
+        ) shouldBe setOf(PushAction.Notify)
     }
 
     @Test
-    fun `invoke - match state`() = runTest {
+    fun `match state`() = runTest {
         pushRuleMatcher.doesMatch = true
         cut.invoke(
             stateEvent(MemberEventContent(membership = Membership.JOIN), stateKey = userId.full),
@@ -117,17 +111,11 @@ class EvaluatePushRulesTest : TrixnityBaseTest() {
                     "*!"
                 )
             )
-        ) shouldBe EvaluatePushRulesResult.State(
-            roomId = roomId,
-            eventId = EventId("bla"),
-            type = "m.room.member",
-            stateKey = userId.full,
-            actions = setOf(PushAction.Notify)
-        )
+        ) shouldBe setOf(PushAction.Notify)
     }
 
     @Test
-    fun `invoke - ignore no actions`() = runTest {
+    fun `ignore no actions`() = runTest {
         pushRuleMatcher.doesMatch = true
         cut.invoke(
             messageEvent(Text("Hello!")),

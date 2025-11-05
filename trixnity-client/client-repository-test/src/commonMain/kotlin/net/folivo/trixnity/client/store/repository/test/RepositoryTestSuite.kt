@@ -5,6 +5,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -1546,6 +1547,148 @@ abstract class RepositoryTestSuite(
             cut.get(key2) shouldBe userPresence2Copy
             cut.delete(key1)
             cut.get(key1) shouldBe null
+        }
+    }
+
+    @Test
+    fun `NotificationRepository - save get and delete`() = runTestWithSetup {
+        val cut = di.get<NotificationRepository>()
+        val notification1 = StoredNotification.Message(
+            sortKey = "A",
+            roomId = RoomId("!room1"),
+            eventId = EventId("\$event1"),
+            actions = setOf()
+        )
+        val notification2 =
+            StoredNotification.State(
+                sortKey = "A",
+                roomId = RoomId("!room1"),
+                eventId = EventId("\$event2"),
+                type = "m.room.member",
+                stateKey = "@user:localhost",
+                actions = setOf()
+            )
+        val notification2Copy = notification2.copy(dismissed = true)
+
+        rtm.writeTransaction {
+            cut.save(notification1.id, notification1)
+            cut.save(notification2.id, notification2)
+            cut.get(notification1.id) shouldBe notification1
+            cut.get(notification2.id) shouldBe notification2
+            cut.save(notification2.id, notification2Copy)
+            cut.get(notification2.id) shouldBe notification2Copy
+            cut.delete(notification1.id)
+            cut.get(notification1.id) shouldBe null
+        }
+    }
+
+    @Test
+    fun `NotificationRepository - deleteByRoomId`() = runTestWithSetup {
+        val cut = di.get<NotificationRepository>()
+        val notification1 = StoredNotification.Message(
+            sortKey = "A",
+            roomId = RoomId("!room1"),
+            eventId = EventId("\$event1"),
+            actions = setOf()
+        )
+        val notification2 =
+            StoredNotification.State(
+                "A",
+                RoomId("!room1"),
+                EventId("\$event2"),
+                "m.room.member",
+                "@user:localhost",
+                setOf()
+            )
+        val notification3 = StoredNotification.Message(
+            sortKey = "A",
+            roomId = RoomId("!room2"),
+            eventId = EventId("\$event1"),
+            actions = setOf()
+        )
+
+
+        rtm.writeTransaction {
+            cut.save(notification1.id, notification1)
+            cut.save(notification2.id, notification2)
+            cut.save(notification3.id, notification3)
+            cut.deleteByRoomId(RoomId("!room1"))
+            cut.get(notification1.id) shouldBe null
+            cut.get(notification2.id) shouldBe null
+            cut.get(notification3.id) shouldNotBe null
+        }
+    }
+
+    @Test
+    fun `NotificationUpdateRepository - save get and delete`() = runTestWithSetup {
+        val cut = di.get<NotificationUpdateRepository>()
+        val notificationUpdate1 = StoredNotificationUpdate.Remove(
+            StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
+            RoomId("!room1"),
+        )
+        val notificationUpdate2 = StoredNotificationUpdate.Remove(
+            StoredNotification.State.id(RoomId("!room2"), "m.room.member", "@user:localhost"),
+            RoomId("!room2"),
+        )
+        val notificationUpdate2Copy = notificationUpdate2.copy(roomId = RoomId("!room2"))
+
+        rtm.writeTransaction {
+            cut.save(notificationUpdate1.id, notificationUpdate1)
+            cut.save(notificationUpdate2.id, notificationUpdate2)
+            cut.get(notificationUpdate1.id) shouldBe notificationUpdate1
+            cut.get(notificationUpdate2.id) shouldBe notificationUpdate2
+            cut.save(notificationUpdate2.id, notificationUpdate2Copy)
+            cut.get(notificationUpdate2.id) shouldBe notificationUpdate2Copy
+            cut.delete(notificationUpdate1.id)
+            cut.get(notificationUpdate1.id) shouldBe null
+        }
+    }
+
+    @Test
+    fun `NotificationUpdateRepository - deleteByRoomId`() = runTestWithSetup {
+        val cut = di.get<NotificationUpdateRepository>()
+        val notificationUpdate1 = StoredNotificationUpdate.Remove(
+            StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
+            RoomId("!room1"),
+        )
+        val notificationUpdate2 = StoredNotificationUpdate.Remove(
+            StoredNotification.State.id(RoomId("!room1"), "m.room.member", "@user:localhost"),
+            RoomId("!room1"),
+        )
+        val notificationUpdate3 = StoredNotificationUpdate.Remove(
+            StoredNotification.State.id(RoomId("!room2"), "m.room.member", "@user:localhost"),
+            RoomId("!room2"),
+        )
+
+
+        rtm.writeTransaction {
+            cut.save(notificationUpdate1.id, notificationUpdate1)
+            cut.save(notificationUpdate2.id, notificationUpdate2)
+            cut.save(notificationUpdate3.id, notificationUpdate3)
+            cut.deleteByRoomId(RoomId("!room1"))
+            cut.get(notificationUpdate1.id) shouldBe null
+            cut.get(notificationUpdate2.id) shouldBe null
+            cut.get(notificationUpdate3.id) shouldNotBe null
+        }
+    }
+
+    @Test
+    fun `NotificationStateRepository - save get and delete`() = runTestWithSetup {
+        val cut = di.get<NotificationStateRepository>()
+        val notificationState1 = StoredNotificationState.Push(RoomId("!room1"))
+        val notificationState2 =
+            StoredNotificationState.SyncWithTimeline(RoomId("!room2"), false, setOf(), EventId("\$event1"), null, null)
+        val notificationState2Copy = notificationState2.copy(needsSync = true)
+
+        rtm.writeTransaction {
+            cut.save(notificationState1.roomId, notificationState1)
+            cut.save(notificationState2.roomId, notificationState2)
+            cut.get(notificationState1.roomId) shouldBe notificationState1
+            cut.get(notificationState2.roomId) shouldBe notificationState2
+            cut.save(notificationState2.roomId, notificationState2Copy)
+            cut.get(notificationState2.roomId) shouldBe notificationState2Copy
+            cut.delete(notificationState1.roomId)
+            cut.get(notificationState1.roomId) shouldBe null
         }
     }
 

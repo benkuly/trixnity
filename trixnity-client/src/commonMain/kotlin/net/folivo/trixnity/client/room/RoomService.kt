@@ -298,7 +298,7 @@ class RoomServiceImpl(
                             } else null
                         }
                     }
-                    log.warn { "getTimelineEvent: could not find TimelineEvent ${eventId} in store or by fetching (timeout=${cfg.fetchTimeout})" }
+                    log.warn { "getTimelineEvent: could not find TimelineEvent $eventId in store or by fetching (timeout=${cfg.fetchTimeout})" }
                 } else {
                     val event = timelineEvent.event
                     if (cfg.decryptionTimeout > ZERO && timelineEvent.canBeDecrypted() && event is MessageEvent) {
@@ -488,7 +488,6 @@ class RoomServiceImpl(
                                     } else {
                                         log.trace { "getTimelineEvents: continue with predecessor ($predecessor) of $currentEventId" }
                                         getTimelineEvent(
-                                            // FIXME
                                             eventId = predecessor.eventId,
                                             roomId = predecessor.roomId,
                                             config = { apply(cfg) },

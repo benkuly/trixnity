@@ -65,6 +65,7 @@ interface MatrixClient : AutoCloseable {
     val initialSyncDone: StateFlow<Boolean>
 
     val loginState: StateFlow<LoginState?>
+    val started: StateFlow<Boolean>
 
     enum class LoginState {
         LOGGED_IN,
@@ -851,7 +852,7 @@ class MatrixClientImpl internal constructor(
     override val identityKey: Key.Curve25519Key = userInfo.identityPublicKey
     override val signingKey: Key.Ed25519Key = userInfo.signingPublicKey
 
-    private val started = MutableStateFlow(false)
+    override val started: MatrixClientStarted = di.get()
 
     override val displayName: StateFlow<String?> = accountStore.getAccountAsFlow().map { it?.displayName }
         .stateIn(coroutineScope, Eagerly, null)
@@ -938,7 +939,7 @@ class MatrixClientImpl internal constructor(
                 }
                 accountStore.updateAccount { it?.copy(backgroundFilterId = newFilterId) }
             }
-            started.value = true
+            started.delegate.value = true
         }
     }
 
@@ -1034,7 +1035,7 @@ class MatrixClientImpl internal constructor(
     }
 
     override fun close() {
-        started.value = false
+        started.delegate.value = false
         api.close()
         coroutineScope.cancel("stopped MatrixClient")
     }

@@ -3,7 +3,6 @@ package net.folivo.trixnity.client.store
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.cache.MapDeleteByRoomIdRepositoryObservableCache
@@ -65,15 +64,10 @@ class RoomAccountDataStore(
     ): Flow<RoomAccountDataEvent<C>?> {
         val eventType = contentMappings.roomAccountData.find { it.kClass == eventContentClass }?.type
             ?: throw IllegalArgumentException("Cannot find account data event, because it is not supported. You need to register it first.")
+        @Suppress("UNCHECKED_CAST")
         return roomAccountDataCache.get(
-            MapRepositoryCoroutinesCacheKey(
-                RoomAccountDataRepositoryKey(
-                    roomId,
-                    eventType
-                ), key
-            )
-        )
-            .map { if (it?.content?.instanceOf(eventContentClass) == true) it else null }
-            .filterIsInstance()
+            MapRepositoryCoroutinesCacheKey(RoomAccountDataRepositoryKey(roomId, eventType), key)
+        ).map { if (it?.content?.instanceOf(eventContentClass) == true) it else null }
+                as Flow<RoomAccountDataEvent<C>?>
     }
 }

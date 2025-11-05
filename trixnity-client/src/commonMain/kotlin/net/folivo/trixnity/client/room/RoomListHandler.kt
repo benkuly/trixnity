@@ -13,14 +13,10 @@ import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.UserInfo
-import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.*
 import net.folivo.trixnity.core.model.events.m.DirectEventContent
-import net.folivo.trixnity.core.model.events.m.MarkedUnreadEventContent
-import net.folivo.trixnity.core.model.events.m.ReceiptEventContent
-import net.folivo.trixnity.core.model.events.m.ReceiptType
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 import net.folivo.trixnity.utils.ConcurrentList
@@ -62,16 +58,10 @@ class RoomListHandler(
                 lastRelevantEvent = roomInfo.timeline?.events?.lastOrNull { config.lastRelevantEventFilter(it) },
                 summary = roomInfo.summary,
                 createEventContent = roomInfo.findInTimelineOrState(),
-                markedUnreadEventContent = roomInfo.findInAccountData(),
                 encryptionEventContent = roomInfo.findInTimelineOrState(),
                 tombstoneEventContent = roomInfo.findInTimelineOrState(),
                 nameEventContent = roomInfo.findInTimelineOrState(),
                 canonicalAliasEventContent = roomInfo.findInTimelineOrState(),
-                readReceipts = (roomInfo.ephemeral?.events?.find { it.content is ReceiptEventContent }?.content as? ReceiptEventContent)
-                    ?.events?.filterValues {
-                        it[ReceiptType.Read]?.get(userInfo.userId) != null
-                                || it[ReceiptType.PrivateRead]?.get(userInfo.userId) != null
-                    }?.keys?.toSet(),
             )
             roomUpdates.add(roomId, mergeRoom)
         }
@@ -82,12 +72,10 @@ class RoomListHandler(
                 lastRelevantEvent = roomInfo.timeline?.events?.lastOrNull { config.lastRelevantEventFilter(it) },
                 summary = null,
                 createEventContent = roomInfo.findInTimelineOrState(),
-                markedUnreadEventContent = roomInfo.findInAccountData(),
                 encryptionEventContent = roomInfo.findInTimelineOrState(),
                 tombstoneEventContent = roomInfo.findInTimelineOrState(),
                 nameEventContent = roomInfo.findInTimelineOrState(),
                 canonicalAliasEventContent = roomInfo.findInTimelineOrState(),
-                readReceipts = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -98,12 +86,10 @@ class RoomListHandler(
                 lastRelevantEvent = null,
                 summary = null,
                 createEventContent = roomInfo.findInState(),
-                markedUnreadEventContent = null,
                 encryptionEventContent = roomInfo.findInState(),
                 tombstoneEventContent = roomInfo.findInState(),
                 nameEventContent = roomInfo.findInState(),
                 canonicalAliasEventContent = roomInfo.findInState(),
-                readReceipts = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -114,12 +100,10 @@ class RoomListHandler(
                 lastRelevantEvent = null,
                 summary = null,
                 createEventContent = roomInfo.findInState(),
-                markedUnreadEventContent = null,
                 encryptionEventContent = roomInfo.findInState(),
                 tombstoneEventContent = roomInfo.findInState(),
                 nameEventContent = roomInfo.findInState(),
                 canonicalAliasEventContent = roomInfo.findInState(),
-                readReceipts = null,
             )
             roomUpdates.add(roomId) { mergeRoom(it) }
         }
@@ -143,16 +127,11 @@ class RoomListHandler(
         lastRelevantEvent: ClientEvent.RoomEvent<*>?,
         summary: Sync.Response.Rooms.JoinedRoom.RoomSummary?,
         createEventContent: CreateEventContent?,
-        markedUnreadEventContent: MarkedUnreadEventContent?,
         encryptionEventContent: EncryptionEventContent?,
         tombstoneEventContent: TombstoneEventContent?,
         nameEventContent: NameEventContent?,
         canonicalAliasEventContent: CanonicalAliasEventContent?,
-        readReceipts: Set<EventId>?,
     ): (Room?) -> Room {
-        val markedAsUnread =
-            (markedUnreadEventContent ?: roomAccountDataStore.get<MarkedUnreadEventContent>(roomId).first()?.content)
-                ?.unread == true
         val lastRelevantEventTimestamp = lastRelevantEvent?.originTimestamp
             ?.let { Instant.fromEpochMilliseconds(it) }
         val name =
@@ -169,8 +148,6 @@ class RoomListHandler(
                 encrypted = encryptionEventContent != null || oldRoom?.encrypted == true,
                 lastRelevantEventId = lastRelevantEvent?.id ?: oldRoom?.lastRelevantEventId,
                 lastRelevantEventTimestamp = lastRelevantEventTimestamp ?: oldRoom?.lastRelevantEventTimestamp,
-                isUnread = markedAsUnread ||
-                        (readReceipts?.contains(oldRoom?.lastEventId)?.not() ?: oldRoom?.isUnread) == true,
                 nextRoomId = tombstoneEventContent?.replacementRoom ?: oldRoom?.nextRoomId,
                 name = name ?: oldRoom?.name,
             )

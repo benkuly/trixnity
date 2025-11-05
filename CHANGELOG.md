@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add trixnity-vodozemac implementation
 - Support for the OAuth2-based authentication API since Matrix v1.15 
 - Support for account management deep-linking (MSC4191)
+- Completely new NotificationService
 
 ### Changed
 
@@ -28,9 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-
-- Fixed cache did not persist values when there were no cache entry but subscribers for an index (very rare case)
-- Add testClock for determinism to fix flaky tests
 
 ### Security
 
@@ -50,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed cache did not persist values when there were no cache entry but subscribers for an index (very rare case)
 - Fix dokka documentation generation
+- retryFlow now correctly retries on catching a Throwable
 
 ## 4.22.4
 

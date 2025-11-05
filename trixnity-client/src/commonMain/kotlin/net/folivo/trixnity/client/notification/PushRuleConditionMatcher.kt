@@ -2,7 +2,10 @@ package net.folivo.trixnity.client.notification
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import net.folivo.trixnity.client.store.RoomStateStore
 import net.folivo.trixnity.client.store.RoomStore
 import net.folivo.trixnity.client.store.RoomUserStore
@@ -21,6 +24,9 @@ import net.folivo.trixnity.core.model.push.PushCondition
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.notification.PushRuleConditionMatcher")
 
 interface PushRuleConditionMatcher {
+    /**
+     * Calculate if a [PushCondition] matches for the given event.
+     */
     suspend fun match(condition: PushCondition, event: ClientEvent<*>, eventJson: Lazy<JsonObject?>): Boolean
 }
 
@@ -32,6 +38,7 @@ class PushRuleConditionMatcherImpl(
     private val userInfo: UserInfo,
 ) : PushRuleConditionMatcher {
     companion object {
+        // TODO should use display name at position of the event
         suspend fun match(
             condition: PushCondition.ContainsDisplayName,
             event: ClientEvent<*>,
@@ -48,6 +55,7 @@ class PushRuleConditionMatcherImpl(
             } else false
         }
 
+        // TODO should use member count at position of the event
         suspend fun match(
             condition: PushCondition.RoomMemberCount,
             event: ClientEvent<*>,
@@ -61,6 +69,7 @@ class PushRuleConditionMatcherImpl(
             } ?: false
         }
 
+        // TODO should use power level at position of the event
         suspend fun match(
             condition: PushCondition.SenderNotificationPermission,
             event: ClientEvent<*>,
@@ -88,7 +97,7 @@ class PushRuleConditionMatcherImpl(
             val propertyValue =
                 (eventJson.value?.let { jsonPath(it, condition.key) } as? JsonPrimitive)?.contentOrNull
             return if (propertyValue == null) {
-                log.debug { "cannot get the event's value for key '${condition.key}' or value is 'null'" }
+                log.trace { "cannot get the event's value for key '${condition.key}' or value is 'null'" }
                 false
             } else {
                 hasGlobMatch(propertyValue, condition.pattern)
@@ -101,7 +110,7 @@ class PushRuleConditionMatcherImpl(
         ): Boolean {
             val propertyValue = eventJson.value?.let { jsonPath(it, condition.key) } as? JsonPrimitive
             return if (propertyValue == null) {
-                log.debug { "cannot get the event's value for key '${condition.key}' or value is 'null'" }
+                log.trace { "cannot get the event's value for key '${condition.key}' or value is 'null'" }
                 false
             } else {
                 propertyValue == condition.value
@@ -114,7 +123,7 @@ class PushRuleConditionMatcherImpl(
         ): Boolean {
             val propertyValue = eventJson.value?.let { jsonPath(it, condition.key) } as? JsonArray
             return if (propertyValue == null) {
-                log.debug { "cannot get the event's value for key '${condition.key}' or value is 'null'" }
+                log.trace { "cannot get the event's value for key '${condition.key}' or value is 'null'" }
                 false
             } else {
                 propertyValue.contains(condition.value)

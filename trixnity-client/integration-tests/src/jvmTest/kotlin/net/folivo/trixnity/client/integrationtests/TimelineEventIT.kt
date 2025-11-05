@@ -1,6 +1,5 @@
 package net.folivo.trixnity.client.integrationtests
 
-import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -178,22 +177,22 @@ class TimelineEventIT {
             client1.room.getById(room).firstWithTimeout { it?.lastEventId == eventIdD }
             val coroutineScope = CoroutineScope(Dispatchers.Default)
             val timelineEvent = client1.room.getTimelineEvent(room, eventIdA).filterNotNull().stateIn(coroutineScope)
-            withClue("wait for D") {
+            withCluePrintln("wait for D") {
                 timelineEvent.map { it.content?.getOrNull() }
                     .firstWithTimeout { (it as? RoomMessageEventContent.TextBased.Text)?.body == "D" }
             }
             client2.api.room.redactEvent(room, eventIdD).getOrThrow()
-            withClue("wait for C") {
+            withCluePrintln("wait for C") {
                 timelineEvent.map { it.content?.getOrNull() }
                     .firstWithTimeout { (it as? RoomMessageEventContent.TextBased.Text)?.body == "C" }
             }
             client2.api.room.redactEvent(room, eventIdC).getOrThrow()
-            withClue("wait for B") {
+            withCluePrintln("wait for B") {
                 timelineEvent.map { it.content?.getOrNull() }
                     .firstWithTimeout { (it as? RoomMessageEventContent.TextBased.Text)?.body == "B" }
             }
             client2.api.room.redactEvent(room, eventIdA).getOrThrow()
-            withClue("wait for redact") {
+            withCluePrintln("wait for redact") {
                 timelineEvent.map { it.content?.getOrNull() }
                     .firstWithTimeout { it is RedactedEventContent }
             }

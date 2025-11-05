@@ -1,12 +1,18 @@
 package net.folivo.trixnity.client.integrationtests
 
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.kotest.assertions.withClue
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.java.*
 import io.ktor.http.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.timeout
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
 import net.folivo.trixnity.client.room.RoomService
@@ -152,9 +158,24 @@ suspend fun RoomService.waitForOutboxSent() =
     getOutbox().flatten().firstWithTimeout { outbox -> outbox.all { it.sentAt != null } }
 
 @OptIn(FlowPreview::class)
-suspend fun <T> Flow<T>.firstWithTimeout(timeout: Duration = 5.seconds, predicate: suspend (T) -> Boolean): T =
-    timeout(timeout).first(predicate)
+suspend fun <T> Flow<T>.firstWithTimeout(
+    timeout: Duration = 5.seconds,
+    predicate: suspend (T) -> Boolean = { true }
+): T = channelFlow {
+    var currentValue: T? = null
+    val timeoutJob = launch {
+        delay(timeout)
+        close(CancellationException("timed out after $timeout with value $currentValue", null))
+    }
+    val result = onEach { currentValue = it }.first(predicate)
+    timeoutJob.cancel()
+    send(result)
+}.first()
 
-@OptIn(FlowPreview::class)
-suspend fun <T> Flow<T>.firstWithTimeout(timeout: Duration = 5.seconds): T =
-    timeout(timeout).first()
+val clueLog = KotlinLogging.logger("net.folivo.trixnity.client.integrationtests.clues")
+inline fun <R> withCluePrintln(clue: Any?, thunk: () -> R): R {
+    clueLog.info { ">>> $clue" }
+    val result = withClue(clue, thunk)
+    clueLog.info { "<<< $clue" }
+    return result
+}

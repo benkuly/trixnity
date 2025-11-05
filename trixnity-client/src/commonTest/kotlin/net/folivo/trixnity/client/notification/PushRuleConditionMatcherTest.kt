@@ -128,7 +128,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
         )
 
     @Test
-    fun `match - ContainsDisplayName - no match`() = runTest {
+    fun `ContainsDisplayName - no match`() = runTest {
         val event = messageEvent(Text("Hello Tina!"))
         PushRuleConditionMatcherImpl.match(
             PushCondition.ContainsDisplayName,
@@ -139,7 +139,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - ContainsDisplayName - match`() = runTest {
+    fun `ContainsDisplayName - match`() = runTest {
         val event = messageEvent(Text("Hello Bob!"))
         PushRuleConditionMatcherImpl.match(
             PushCondition.ContainsDisplayName,
@@ -150,7 +150,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - RoomMemberCount - no match`() = runTest {
+    fun `RoomMemberCount - no match`() = runTest {
         val event = messageEvent(Text("Hello!"))
         PushRuleConditionMatcherImpl.match(
             PushCondition.RoomMemberCount("2"),
@@ -160,7 +160,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - RoomMemberCount - match`() = runTest {
+    fun `RoomMemberCount - match`() = runTest {
         val event = messageEvent(Text("Hello!"))
         PushRuleConditionMatcherImpl.match(
             PushCondition.RoomMemberCount("1"),
@@ -170,7 +170,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - SenderNotificationPermission - no match`() = runTest {
+    fun `SenderNotificationPermission - no match`() = runTest {
         setUpNotificationPowerLevel(50, mapOf("dino" to 51L))
         val event = messageEvent(Text("Hello!"))
         PushRuleConditionMatcherImpl.match(
@@ -182,7 +182,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - SenderNotificationPermission - match`() = runTest {
+    fun `SenderNotificationPermission - match`() = runTest {
         setUpNotificationPowerLevel(50, mapOf("dino" to 50L))
         val event = messageEvent(Text("Hello!"))
         PushRuleConditionMatcherImpl.match(
@@ -194,7 +194,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - EventMatch - no match`() = runTest {
+    fun `Eventno match`() = runTest {
         val event = messageEvent(Text("Hello!"))
         val eventJson = lazy { notificationEventToJson(event, json) }
         PushRuleConditionMatcherImpl.match(
@@ -204,7 +204,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - EventMatch - match`() = runTest {
+    fun `Eventmatch`() = runTest {
         val event = messageEvent(Text("Hello!"))
         val eventJson = lazy { notificationEventToJson(event, json) }
         PushRuleConditionMatcherImpl.match(
@@ -214,7 +214,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - EventPropertyIs - no match`() = runTest {
+    fun `EventPropertyIs - no match`() = runTest {
         val event = messageEvent(Text("Hello!"))
         val eventJson = lazy { notificationEventToJson(event, json) }
         PushRuleConditionMatcherImpl.match(
@@ -224,7 +224,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - EventPropertyIs - match`() = runTest {
+    fun `EventPropertyIs - match`() = runTest {
         val event = messageEvent(Text("Hello!"))
         val eventJson = lazy { notificationEventToJson(event, json) }
         PushRuleConditionMatcherImpl.match(
@@ -234,7 +234,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - EventPropertyContains - no match`() = runTest {
+    fun `EventPropertyContains - no match`() = runTest {
         val event = stateEvent(CanonicalAliasEventContent(aliases = setOf(RoomAliasId("#unicorn"))))
         val eventJson = lazy { notificationEventToJson(event, json) }
         PushRuleConditionMatcherImpl.match(
@@ -244,7 +244,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - EventPropertyContains - match`() = runTest {
+    fun `EventPropertyContains - match`() = runTest {
         val event = stateEvent(CanonicalAliasEventContent(aliases = setOf(RoomAliasId("#dino"))))
         val eventJson = lazy { notificationEventToJson(event, json) }
         PushRuleConditionMatcherImpl.match(
@@ -254,7 +254,7 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `match - Unknown - no match`() = runTest {
+    fun `Unknown - no match`() = runTest {
         val event = messageEvent(Text("Hello!"))
         val eventJson = lazy { notificationEventToJson(event, json) }
         PushRuleConditionMatcherImpl(roomStore, roomStateStore, roomUserStore, canDoAction, userInfo)

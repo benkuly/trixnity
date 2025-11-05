@@ -31,6 +31,9 @@ import androidx.room.*
         RoomSecrets::class,
         RoomTimelineEventRelation::class,
         RoomTimelineEvent::class,
+        RoomNotification::class,
+        RoomNotificationState::class,
+        RoomNotificationUpdate::class,
         RoomMigration::class,
     ],
     version = 5, // tick this value when any entity classes change
@@ -78,6 +81,9 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
     abstract fun timelineEventRelation(): TimelineEventRelationDao
     abstract fun timelineEvent(): TimelineEventDao
     abstract fun userPresence(): UserPresenceDao
+    abstract fun notification(): NotificationDao
+    abstract fun notificationState(): NotificationStateDao
+    abstract fun notificationUpdate(): NotificationUpdateDao
     abstract fun migration(): MigrationDao
 }
 

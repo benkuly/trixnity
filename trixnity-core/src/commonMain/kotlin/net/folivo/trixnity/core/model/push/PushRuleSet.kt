@@ -16,3 +16,10 @@ data class PushRuleSet(
     @SerialName("underride")
     val underride: List<PushRule.Underride>? = null,
 )
+
+fun PushRuleSet.toList() =
+    override.orEmpty() +
+            content.orEmpty() +
+            room.orEmpty() +
+            sender.orEmpty() +
+            underride.orEmpty()
