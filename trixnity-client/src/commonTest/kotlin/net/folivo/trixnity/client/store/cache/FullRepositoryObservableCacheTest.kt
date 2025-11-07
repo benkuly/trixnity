@@ -108,6 +108,21 @@ class FullRepositoryObservableCacheTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun `readAll » add to index when not existing yet`() = runTest {
+        val result = cut.readAll().flattenValues().map { it.toSet() }.stateIn(backgroundScope)
+        delay(1.seconds)
+        cut.get("k1").first() shouldBe null // creates a cache entry
+        cut.set("k2", Entry("k2", "v2"))
+
+        delay(1.seconds)
+        result.value.toSet() shouldBe setOf(Entry("k2", "v2"))
+
+        cut.update("k1") { Entry("k1", "v1") } // fills cache entry
+        delay(1.seconds)
+        result.value.toSet() shouldBe setOf(Entry("k1", "v1"), Entry("k2", "v2"))
+    }
+
+    @Test
     fun `readAll » invalidate when skipped`() = runTest {
         val observeK1 = backgroundScope.async { cut.get("k1").collect() }
         delay(10.milliseconds)

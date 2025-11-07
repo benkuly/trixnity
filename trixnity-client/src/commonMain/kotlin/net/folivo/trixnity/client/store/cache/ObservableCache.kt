@@ -130,9 +130,11 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
 
     fun get(key: K): Flow<V?> = flow {
         val cacheEntry =
-            values.getOrPut(key) {
-                log.trace { "$name (get): no cache hit for key $key" }
-                MutableStateFlow(CacheValue.Init())
+            withContext(NonCancellable) {
+                values.getOrPut(key) {
+                    log.trace { "$name (get): no cache hit for key $key" }
+                    MutableStateFlow(CacheValue.Init())
+                }
             }
         cacheEntry.get { store.get(key) }
         emitAll(cacheEntry.filterIsInstance<CacheValue.Value<V?>>().map { it.value })
@@ -140,7 +142,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
 
     private suspend inline fun <V> MutableStateFlow<CacheValue<V?>>.get(
         noinline get: (suspend () -> V?),
-    ): V? {
+    ) {
         while (true) {
             val oldRawValue = value
             val oldValue = when (oldRawValue) {
@@ -149,7 +151,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
             }
             val newRawValue = CacheValue.Value(oldValue)
             if (compareAndSet(oldRawValue, newRawValue)) {
-                return oldValue
+                return
             }
         }
     }
@@ -173,7 +175,7 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                 log.trace { "$name (set): skipped cache and persist directly because there is no cache entry or subscriber for key $key" }
                 persist(value)
                 values.skipPut(key)
-                
+
                 cacheTransaction.onCommitActions.write {
                     add {
                         val cacheEntry = values.get(key)
