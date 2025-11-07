@@ -394,6 +394,22 @@ class ObservableCacheTest : TrixnityBaseTest() {
     }
 
     @Test
+    fun `update cache entry when subscriber added during transaction after transaction`() = runTest {
+        val transactionManager = TransactionManagerImpl(NoOpRepositoryTransactionManager)
+        launch {
+            transactionManager.writeTransaction {
+                indexedCut.set("key", "value")
+                cacheStore.persist("key", null) // simulate that write is only visible after transaction
+                delay(100.milliseconds)
+            }
+        }
+        delay(50.milliseconds)
+        indexedCut.index.subscriptionCount = 1
+        delay(51.milliseconds)
+        indexedCut.get("key").first() shouldBe "value"
+    }
+
+    @Test
     fun `rollback cache entry when used during transaction and failing`() = runTest {
         val transactionManager = TransactionManagerImpl(NoOpRepositoryTransactionManager)
         cut.update("key1") { "value0" }

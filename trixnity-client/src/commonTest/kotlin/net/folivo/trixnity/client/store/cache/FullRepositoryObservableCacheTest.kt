@@ -15,6 +15,7 @@ import net.folivo.trixnity.test.utils.testClock
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class FullRepositoryObservableCacheTest : TrixnityBaseTest() {
     data class Entry(
@@ -28,6 +29,13 @@ class FullRepositoryObservableCacheTest : TrixnityBaseTest() {
             val result = super.getAll()
             continueGetAll.first { it }
             return result
+        }
+
+        val continueSave = MutableStateFlow(true)
+
+        override suspend fun save(key: String, value: Entry) {
+            continueSave.first { it }
+            super.save(key, value)
         }
 
         override fun serializeKey(key: String): String = key
@@ -93,6 +101,31 @@ class FullRepositoryObservableCacheTest : TrixnityBaseTest() {
 
         repository.continueGetAll.value = true
         result.await() shouldBe setOf(
+            Entry("k1", "v1"),
+            Entry("k2", "v2"),
+            Entry("k3", "v3")
+        )
+    }
+
+    @Test
+    fun `readAll » invalidate when skipped`() = runTest {
+        val observeK1 = backgroundScope.async { cut.get("k1").collect() }
+        delay(10.milliseconds)
+        cut.set("k1", Entry("k1", "v1"))
+        cut.set("k2", Entry("k2", "v2"))
+        observeK1.cancel()
+
+        repository.continueSave.value = false // this forces a delay in the repository (so it will return k1, k2)
+        val setJob = async { cut.set("k3", Entry("k3", "v3")) } // skips cache (no subscriber yet)
+        delay(1.seconds)
+
+        cut.readAll().flattenValues().first().toSet()
+
+        repository.continueSave.value = true
+        setJob.await()
+
+        val result = cut.readAll().flattenValues().first().toSet()
+        result shouldBe setOf(
             Entry("k1", "v1"),
             Entry("k2", "v2"),
             Entry("k3", "v3")
