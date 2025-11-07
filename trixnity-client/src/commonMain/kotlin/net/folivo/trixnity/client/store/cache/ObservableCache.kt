@@ -171,15 +171,16 @@ internal open class ObservableCache<K : Any, V, S : ObservableCacheStore<K, V>>(
                 && values.getIndexSubscriptionCount(key) == 0
             ) {
                 log.trace { "$name (set): skipped cache and persist directly because there is no cache entry or subscriber for key $key" }
-                values.skipPut(key)
                 persist(value)
-
+                values.skipPut(key)
+                
                 cacheTransaction.onCommitActions.write {
                     add {
                         val cacheEntry = values.get(key)
-                        if (cacheEntry != null) {
-                            log.trace { "$name (set): skipped cache but found a cache entry and therefore filling it for key $key" }
-                            cacheEntry.set(key, value, cacheTransaction, null, forceCacheOnly = true)
+                        if (cacheEntry != null || values.getIndexSubscriptionCount(key) > 0) {
+                            log.trace { "$name (set): skipped cache but found a cache entry or subscriber and therefore filling it for key $key" }
+                            (cacheEntry ?: values.getOrPut(key) { MutableStateFlow(CacheValue.Init()) })
+                                .set(key, value, cacheTransaction, null, forceCacheOnly = true)
                                 ?.also { (oldValue, newValue) ->
                                     possiblyRemoveFromCache(oldValue, newValue, key)
                                 }
