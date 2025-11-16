@@ -341,5 +341,5 @@ abstract class CopyTar @Inject constructor(
     }
 }
 
-private fun <T, U, R> combine(left: Provider<T>, right: Provider<U>, f: (T, U) -> R) : Provider<R>
+private fun <T: Any, U: Any, R: Any> combine(left: Provider<T>, right: Provider<U>, f: (T, U) -> R) : Provider<R>
     = left.zip(right, f)
