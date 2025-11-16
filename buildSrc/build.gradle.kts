@@ -1,3 +1,5 @@
+import org.gradle.internal.jvm.Jvm
+
 plugins {
     `kotlin-dsl`
 }
@@ -17,6 +19,10 @@ repositories {
     mavenCentral()
     google()
 }
+
+// TODO: update this when kotlin supports Java 25
+val javaVersion = minOf(Jvm.current().javaVersion?.ordinal ?: 24, 24)
+kotlin.jvmToolchain(javaVersion)
 
 dependencies {
     implementation(libs.kotlin.gradle.plugin)
