@@ -109,18 +109,21 @@ class NotificationEventHandler(
             val roomId: RoomId,
             val readReceipts: Set<EventId>,
             val lastEventId: EventId?,
+            val isEncrypted: Boolean,
         )
 
         val (completelyReadRooms, unreadRooms) =
             allUpdatedRooms.map { roomId ->
                 val ownReceipts = roomUserStore.getReceipts(userInfo.userId, roomId).first()?.receipts
+                val room = roomStore.get(roomId).first()
                 RoomWithReadMarker(
                     roomId = roomId,
                     readReceipts = setOfNotNull(
                         ownReceipts?.get(ReceiptType.Read)?.eventId,
                         ownReceipts?.get(ReceiptType.PrivateRead)?.eventId
                     ),
-                    lastEventId = roomStore.get(roomId).first()?.lastEventId,
+                    lastEventId = room?.lastEventId,
+                    isEncrypted = room?.encrypted ?: false,
                 )
             }.partition {
                 it.lastEventId != null && it.readReceipts.contains(it.lastEventId)
@@ -167,8 +170,10 @@ class NotificationEventHandler(
                             readReceipts = unreadRoom.readReceipts,
                             lastEventId = lastEventId,
                             lastProcessedEventId = if (resetProcess) null else oldState.lastProcessedEventId,
-                            expectedMaxNotificationCount = syncEvents.syncResponse.room?.join?.get(roomId)?.unreadNotifications?.notificationCount
-                                ?: (oldState as? StoredNotificationState.SyncWithTimeline)?.expectedMaxNotificationCount,
+                            expectedMaxNotificationCount = if (unreadRoom.isEncrypted.not()) { // FIXME test
+                                syncEvents.syncResponse.room?.join?.get(roomId)?.unreadNotifications?.notificationCount
+                                    ?: (oldState as? StoredNotificationState.SyncWithTimeline)?.expectedMaxNotificationCount
+                            } else null,
                         )
                     } else {
                         StoredNotificationState.SyncWithoutTimeline(roomId = roomId)
@@ -352,17 +357,23 @@ class NotificationEventHandler(
         val lastEventId = notificationState.lastEventId
 
         val lastProcessedEventId = notificationState.lastProcessedEventId
-        if (lastProcessedEventId == lastEventId) return emptyFlow()
+        if (lastProcessedEventId == lastEventId) {
+            log.trace { "skip getting timeline events in $roomId, because already processed all events" }
+            return emptyFlow()
+        }
 
         val hasStoredNotifications =
             notificationStore.getAll().first().values.mapNotNull { it.first() }.any { it.roomId == roomId }
         val expectedMaxNotificationCount =
-            (notificationState.expectedMaxNotificationCount ?: 0L)
+            (notificationState.expectedMaxNotificationCount)
                 .takeIf { !hasStoredNotifications || lastProcessedEventId == null }
 
-        if (expectedMaxNotificationCount == 0L) return emptyFlow()
+        if (expectedMaxNotificationCount == 0L) {
+            log.trace { "skip getting timeline events in $roomId, because server notification count is 0" }
+            return emptyFlow()
+        }
 
-        log.debug { "process timeline events for notifications in $roomId" }
+        log.debug { "get timeline events for notifications in $roomId" }
         return roomService.getTimelineEvents(roomId, lastEventId) {
             maxSize = expectedMaxNotificationCount?.coerceAtLeast(0L)
             decryptionTimeout = 2.seconds

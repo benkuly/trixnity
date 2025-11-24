@@ -22,6 +22,7 @@ import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.StateEventContent
+import net.folivo.trixnity.core.model.events.m.Mentions
 import net.folivo.trixnity.core.model.events.m.room.*
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent.TextBased.Text
 import net.folivo.trixnity.core.model.keys.Key
@@ -249,6 +250,19 @@ class PushRuleConditionMatcherTest : TrixnityBaseTest() {
         val eventJson = lazy { notificationEventToJson(event, json) }
         PushRuleConditionMatcherImpl.match(
             PushCondition.EventPropertyContains("content.alt_aliases", JsonPrimitive("#dino")),
+            eventJson
+        ) shouldBe true
+    }
+
+    @Test
+    fun `EventPropertyContains - match glob`() = runTest {
+        val event = messageEvent(Text("hi", mentions = Mentions(users = setOf(UserId("dino", "localhost")))))
+        val eventJson = lazy { notificationEventToJson(event, json) }
+        PushRuleConditionMatcherImpl.match(
+            PushCondition.EventPropertyContains(
+                "content.m\\.mentions.user_ids",
+                JsonPrimitive(UserId("dino", "localhost").full)
+            ),
             eventJson
         ) shouldBe true
     }

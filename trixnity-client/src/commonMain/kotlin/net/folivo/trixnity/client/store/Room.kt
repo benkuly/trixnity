@@ -27,11 +27,11 @@ data class Room(
     @Transient
     val unreadMessageCount: Long = 0
 
-    @Deprecated("always null")
+    @Deprecated("always false")
     @Transient
     val markedUnread: Boolean = false
 
-    @Deprecated("always null")
+    @Deprecated("always false")
     @Transient
     val isUnread: Boolean = false
 }
