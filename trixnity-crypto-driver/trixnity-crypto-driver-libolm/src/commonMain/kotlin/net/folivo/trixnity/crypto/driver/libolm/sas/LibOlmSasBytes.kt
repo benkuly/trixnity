@@ -27,7 +27,7 @@ value class LibOlmSasBytes(private val inner: ByteArray) : SasBytes {
 
     override val emojiIndices: SasBytes.Emojis
         get() {
-            val bytes = inner.map(Byte::toULong)
+            val bytes = inner.map(Byte::toUByte).map(UByte::toULong)
 
             val num = 0UL.plus(bytes[0] shl 40).plus(bytes[1] shl 32).plus(bytes[2] shl 24).plus(bytes[3] shl 16)
                 .plus(bytes[4] shl 8).plus(bytes[5] shl 0)
