@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.driver.libolm.pkencryption
 
 import net.folivo.trixnity.crypto.driver.pkencryption.PkEncryption
-import net.folivo.trixnity.olm.OlmPkEncryption
+import net.folivo.trixnity.libolm.OlmPkEncryption
 import kotlin.jvm.JvmInline
 
 @JvmInline

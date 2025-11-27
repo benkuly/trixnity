@@ -4,7 +4,7 @@ include("trixnity-utils")
 include("trixnity-core")
 include("trixnity-crypto-core")
 include("trixnity-crypto")
-include("trixnity-olm")
+include("trixnity-libolm")
 include(
     "trixnity-vodozemac",
     "trixnity-vodozemac:trixnity-vodozemac-binaries"
@@ -13,7 +13,7 @@ include(
     "trixnity-crypto-driver",
     "trixnity-crypto-driver:driver-test",
     "trixnity-crypto-driver:trixnity-crypto-driver-libolm",
-    "trixnity-crypto-driver:trixnity-crypto-driver-libvodozemac",
+    "trixnity-crypto-driver:trixnity-crypto-driver-vodozemac",
 )
 include("trixnity-api-client")
 include("trixnity-api-server")

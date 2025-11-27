@@ -1,0 +1,13 @@
+package net.folivo.trixnity.crypto.driver.vodozemac.olm
+
+import net.folivo.trixnity.crypto.driver.olm.Message
+import net.folivo.trixnity.crypto.driver.olm.NormalMessageFactory
+import net.folivo.trixnity.vodozemac.olm.OlmMessage
+
+object VodozemacNormalMessageFactory : NormalMessageFactory {
+    override fun invoke(bytes: ByteArray): VodozemacNormalMessage =
+        VodozemacNormalMessage(OlmMessage.Normal.Text(bytes))
+
+    override fun invoke(base64: String): VodozemacNormalMessage =
+        VodozemacNormalMessage(OlmMessage.Normal.Text(base64))
+}

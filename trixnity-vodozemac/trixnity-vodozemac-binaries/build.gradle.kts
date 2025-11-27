@@ -22,7 +22,10 @@ registerLibvodozemac(
                 jvmJni = libs.versions.vodozemac.jvmJni,
                 androidJni = libs.versions.vodozemac.androidJni,
                 native = libs.versions.vodozemac.native,
-                webNpm = libs.versions.vodozemac.webNpm)))
+                webNpm = libs.versions.vodozemac.webNpm
+            )
+    )
+)
 
 kotlin {
     jvmToolchain()
@@ -81,28 +84,28 @@ data class Directories<T : OutputDirProvider>(
 
 fun registerLibvodozemacLocal(binaries: VodozemacBinaries.Local): Directories<*> {
     val downloadLibvodozemacJvmJniArchive by
-        tasks.registering(CopyTar::class) {
-            file = file("${binaries.directory}/libvodozemac-jvm-jni.tar.gz")
-            outputDir = layout.buildDirectory.dir("binaries/local/jvm")
-        }
+    tasks.registering(CopyTar::class) {
+        file = file("${binaries.directory}/libvodozemac-jvm-jni.tar.gz")
+        outputDir = layout.buildDirectory.dir("binaries/local/jvm")
+    }
 
     val downloadLibvodozemacAndroidJniArchive by
-        tasks.registering(CopyTar::class) {
-            file = file("${binaries.directory}/libvodozemac-android-jni.tar.gz")
-            outputDir = layout.buildDirectory.dir("binaries/local/android")
-        }
+    tasks.registering(CopyTar::class) {
+        file = file("${binaries.directory}/libvodozemac-android-jni.tar.gz")
+        outputDir = layout.buildDirectory.dir("binaries/local/android")
+    }
 
     val downloadLibvodozemacNativeArchive by
-        tasks.registering(CopyTar::class) {
-            file = file("${binaries.directory}/libvodozemac-native.tar.gz")
-            outputDir = layout.buildDirectory.dir("binaries/local/native")
-        }
+    tasks.registering(CopyTar::class) {
+        file = file("${binaries.directory}/libvodozemac-native.tar.gz")
+        outputDir = layout.buildDirectory.dir("binaries/local/native")
+    }
 
     val downloadLibvodozemacWebArchive by
-        tasks.registering(CopyTar::class) {
-            file = file("${binaries.directory}/libvodozemac-web-npm.tar.gz")
-            outputDir = layout.buildDirectory.dir("binaries/local/web")
-        }
+    tasks.registering(CopyTar::class) {
+        file = file("${binaries.directory}/libvodozemac-web-npm.tar.gz")
+        outputDir = layout.buildDirectory.dir("binaries/local/web")
+    }
 
     tasks
         .named { it == "jsPackageJson" }
@@ -120,31 +123,31 @@ fun registerLibvodozemacRemote(binaries: VodozemacBinaries.Remote): Directories<
     val fullUrl = binaries.version.map { "${binaries.baseUrl}/$it" }
 
     val downloadLibvodozemacJvmJniArchive by
-        tasks.registering(DownloadAndUnpack::class) {
-            url = fullUrl.map { "$it/libvodozemac-jvm-jni.tar.gz" }
-            sha256 = binaries.hashes.jvmJni
-            outputDir = layout.buildDirectory
-                .dir("binaries/remote/jvm")
-                .flatMap { it.dir(binaries.hashes.jvmJni) }
-        }
+    tasks.registering(DownloadAndUnpack::class) {
+        url = fullUrl.map { "$it/libvodozemac-jvm-jni.tar.gz" }
+        sha256 = binaries.hashes.jvmJni
+        outputDir = layout.buildDirectory
+            .dir("binaries/remote/jvm")
+            .flatMap { it.dir(binaries.hashes.jvmJni) }
+    }
 
     val downloadLibvodozemacAndroidJniArchive by
-        tasks.registering(DownloadAndUnpack::class) {
-            url = fullUrl.map { "$it/libvodozemac-android-jni.tar.gz" }
-            sha256 = binaries.hashes.androidJni
-            outputDir = layout.buildDirectory
-                .dir("binaries/remote/android")
-                .flatMap { it.dir(binaries.hashes.androidJni) }
-        }
+    tasks.registering(DownloadAndUnpack::class) {
+        url = fullUrl.map { "$it/libvodozemac-android-jni.tar.gz" }
+        sha256 = binaries.hashes.androidJni
+        outputDir = layout.buildDirectory
+            .dir("binaries/remote/android")
+            .flatMap { it.dir(binaries.hashes.androidJni) }
+    }
 
     val downloadLibvodozemacNativeArchive by
-        tasks.registering(DownloadAndUnpack::class) {
-            url = fullUrl.map { "$it/libvodozemac-native.tar.gz" }
-            sha256 = binaries.hashes.native
-            outputDir = layout.buildDirectory
-                .dir("binaries/remote/native")
-                .flatMap { it.dir(binaries.hashes.native) }
-        }
+    tasks.registering(DownloadAndUnpack::class) {
+        url = fullUrl.map { "$it/libvodozemac-native.tar.gz" }
+        sha256 = binaries.hashes.native
+        outputDir = layout.buildDirectory
+            .dir("binaries/remote/native")
+            .flatMap { it.dir(binaries.hashes.native) }
+    }
 
     return Directories(
         jvmJni = downloadLibvodozemacJvmJniArchive.flatMap { it.outputDir },
@@ -182,14 +185,14 @@ private fun registerLibvodozemac(remoteBinaries: VodozemacBinaries.Remote) {
         .configureEach { dependencies { implementation(npm("vodozemac", directories.webNpm.get())) } }
 
     val cinteropDefFile by
-        tasks.registering(WriteDefFile::class) {
-            nativeLibDir = directories.native
-            defFile = layout.buildDirectory.file("binaries/libvodozemac.def")
-            targets =
-                provider {
-                    kotlin.targets.withType<KotlinNativeTarget>().map { it.konanTarget }
-                }
-        }
+    tasks.registering(WriteDefFile::class) {
+        nativeLibDir = directories.native
+        defFile = layout.buildDirectory.file("binaries/libvodozemac.def")
+        targets =
+            provider {
+                kotlin.targets.withType<KotlinNativeTarget>().map { it.konanTarget }
+            }
+    }
 
     kotlin.sourceSets
         .named { it == "jvmMain" }
@@ -202,10 +205,10 @@ private fun registerLibvodozemac(remoteBinaries: VodozemacBinaries.Remote) {
 
     kotlin.targets.withType<KotlinNativeTarget> {
         val main by
-            compilations.getting {
-                val libvodozemac by
-                    cinterops.creating { definitionFile = cinteropDefFile.flatMap { it.defFile } }
-            }
+        compilations.getting {
+            val libvodozemac by
+            cinterops.creating { definitionFile = cinteropDefFile.flatMap { it.defFile } }
+        }
     }
 
     if (binaries is VodozemacBinaries.Local) {
@@ -219,7 +222,8 @@ private fun registerLibvodozemac(remoteBinaries: VodozemacBinaries.Remote) {
                     This is a limitation of Kotlin/Js which would require downstream users to also have a local version of libvodozemac.
                     Currently Kotlin/JS resources are not properly bundled to be retrievable via @JsModule and alike...
                     """
-                            .trimIndent())
+                            .trimIndent()
+                    )
                 }
             }
     }
@@ -253,14 +257,16 @@ abstract class WriteDefFile @Inject constructor(
         }
 
         output.parentFile.mkdirs()
-        output.writeText("""
-            package = net.folivo.trixnity.libvodozemac
+        output.writeText(
+            """
+            package = net.folivo.trixnity.vodozemac
 
             $libPaths
             $libNames
 
             linkerOpts.mingw = -lkernel32 -luser32 -lntdll
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 }
 
@@ -341,5 +347,4 @@ abstract class CopyTar @Inject constructor(
     }
 }
 
-private fun <T, U, R> combine(left: Provider<T>, right: Provider<U>, f: (T, U) -> R) : Provider<R>
-    = left.zip(right, f)
+private fun <T, U, R> combine(left: Provider<T>, right: Provider<U>, f: (T, U) -> R): Provider<R> = left.zip(right, f)

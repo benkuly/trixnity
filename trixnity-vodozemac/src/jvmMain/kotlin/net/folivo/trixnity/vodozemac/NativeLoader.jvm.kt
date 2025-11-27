@@ -27,15 +27,19 @@ internal object NativeLoader {
             "i686",
             "x86",
             "x32" -> "x86"
+
             "x64",
             "amd64",
             "x86_64",
             "x86-64" -> "x86-64"
+
             "aarch64",
             "arm64" -> "arm64"
+
             "arm",
             "armv7",
             "aarch32" -> "arm32"
+
             else -> throw IllegalStateException("Could not determine host architecture")
         }
     private val os: String =
@@ -61,14 +65,15 @@ internal object NativeLoader {
     @Suppress("UnsafeDynamicallyLoadedCode")
     private fun unpackAndLoad(name: String, ext: String = libExtension) {
         val filePath = Path("$os-$architecture") / "$libPrefix$name.$ext"
-        val targetDirectory = Path(System.getProperty("user.home")) / ".libvodozemac"
+        val targetDirectory = Path(System.getProperty("user.home")) / ".vodozemac"
         val targetPath = targetDirectory / filePath
         Files.createDirectories(targetPath.parent)
         this::class.java.getResourceAsStream("/${filePath.joinToString("/")}").use {
             Files.copy(
                 requireNotNull(it) { "Could not read JAR resource" },
                 targetPath,
-                StandardCopyOption.REPLACE_EXISTING)
+                StandardCopyOption.REPLACE_EXISTING
+            )
         }
         System.load(targetPath.pathString)
     }

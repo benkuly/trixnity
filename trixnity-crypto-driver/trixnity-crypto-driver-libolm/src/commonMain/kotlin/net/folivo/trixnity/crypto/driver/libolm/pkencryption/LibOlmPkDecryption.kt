@@ -5,7 +5,7 @@ import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519SecretKey
 import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmCurve25519SecretKeyFactory
 import net.folivo.trixnity.crypto.driver.pkencryption.PkDecryption
 import net.folivo.trixnity.crypto.driver.pkencryption.PkMessage
-import net.folivo.trixnity.olm.OlmPkDecryption
+import net.folivo.trixnity.libolm.OlmPkDecryption
 import kotlin.jvm.JvmInline
 
 @JvmInline

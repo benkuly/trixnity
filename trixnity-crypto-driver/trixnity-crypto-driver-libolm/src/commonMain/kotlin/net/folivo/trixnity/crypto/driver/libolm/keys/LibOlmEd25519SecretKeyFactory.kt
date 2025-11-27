@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.driver.libolm.keys
 
 import net.folivo.trixnity.crypto.driver.keys.Ed25519SecretKeyFactory
-import net.folivo.trixnity.olm.OlmPkSigning
+import net.folivo.trixnity.libolm.OlmPkSigning
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
 
 object LibOlmEd25519SecretKeyFactory : Ed25519SecretKeyFactory {

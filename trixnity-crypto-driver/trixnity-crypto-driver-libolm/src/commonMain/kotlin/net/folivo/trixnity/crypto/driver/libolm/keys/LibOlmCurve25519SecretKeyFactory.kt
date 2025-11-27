@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.driver.libolm.keys
 
 import net.folivo.trixnity.crypto.driver.keys.Curve25519SecretKeyFactory
-import net.folivo.trixnity.olm.OlmPkDecryption
+import net.folivo.trixnity.libolm.OlmPkDecryption
 import net.folivo.trixnity.utils.encodeUnpaddedBase64
 
 object LibOlmCurve25519SecretKeyFactory : Curve25519SecretKeyFactory {

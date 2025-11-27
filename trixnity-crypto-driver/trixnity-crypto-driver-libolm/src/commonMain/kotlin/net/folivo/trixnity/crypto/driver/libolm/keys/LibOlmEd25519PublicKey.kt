@@ -3,8 +3,8 @@ package net.folivo.trixnity.crypto.driver.libolm.keys
 import net.folivo.trixnity.crypto.driver.keys.Ed25519PublicKey
 import net.folivo.trixnity.crypto.driver.keys.Ed25519Signature
 import net.folivo.trixnity.crypto.driver.libolm.rethrow
-import net.folivo.trixnity.olm.OlmUtility
-import net.folivo.trixnity.olm.freeAfter
+import net.folivo.trixnity.libolm.OlmUtility
+import net.folivo.trixnity.libolm.freeAfter
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import kotlin.jvm.JvmInline
 

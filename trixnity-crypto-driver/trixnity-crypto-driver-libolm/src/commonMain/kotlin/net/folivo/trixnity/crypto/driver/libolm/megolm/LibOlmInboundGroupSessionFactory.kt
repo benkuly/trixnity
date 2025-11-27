@@ -6,8 +6,8 @@ import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmPickleKey
 import net.folivo.trixnity.crypto.driver.megolm.ExportedSessionKey
 import net.folivo.trixnity.crypto.driver.megolm.InboundGroupSessionFactory
 import net.folivo.trixnity.crypto.driver.megolm.SessionKey
-import net.folivo.trixnity.olm.OlmInboundGroupSession
-import net.folivo.trixnity.olm.OlmLibraryException
+import net.folivo.trixnity.libolm.OlmInboundGroupSession
+import net.folivo.trixnity.libolm.OlmLibraryException
 
 object LibOlmInboundGroupSessionFactory : InboundGroupSessionFactory {
 

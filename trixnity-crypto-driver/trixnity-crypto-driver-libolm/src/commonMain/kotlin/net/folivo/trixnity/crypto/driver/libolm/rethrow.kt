@@ -1,7 +1,7 @@
 package net.folivo.trixnity.crypto.driver.libolm
 
 import net.folivo.trixnity.crypto.driver.CryptoDriverException
-import net.folivo.trixnity.olm.OlmLibraryException
+import net.folivo.trixnity.libolm.OlmLibraryException
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract

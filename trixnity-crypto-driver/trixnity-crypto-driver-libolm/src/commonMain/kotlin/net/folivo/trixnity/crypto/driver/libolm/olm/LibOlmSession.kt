@@ -4,8 +4,8 @@ import net.folivo.trixnity.crypto.driver.keys.PickleKey
 import net.folivo.trixnity.crypto.driver.libolm.keys.LibOlmPickleKey
 import net.folivo.trixnity.crypto.driver.olm.Message
 import net.folivo.trixnity.crypto.driver.olm.Session
-import net.folivo.trixnity.olm.OlmMessage
-import net.folivo.trixnity.olm.OlmSession
+import net.folivo.trixnity.libolm.OlmMessage
+import net.folivo.trixnity.libolm.OlmSession
 import kotlin.jvm.JvmInline
 
 @JvmInline
