@@ -6,15 +6,17 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.MediaStoreModule
 import net.folivo.trixnity.utils.ByteArrayFlow
 import net.folivo.trixnity.utils.toByteArray
 import org.koin.dsl.module
 import kotlin.time.Clock
 
-@Deprecated("switch to createInMemoryMediaStoreModule", ReplaceWith("createInMemoryMediaStoreModule()"))
-class InMemoryMediaStore(
-    private val toByteArray: (suspend (uri: String, media: ByteArrayFlow, coroutineScope: CoroutineScope?, expectedSize: Long?, maxSize: Long?) -> ByteArray?)? = null,
-) : MediaStore {
+internal class InMemoryMediaStore(
+    coroutineScope: CoroutineScope,
+    configuration: MatrixClientConfiguration,
+    clock: Clock,
+) : CachedMediaStore(coroutineScope, configuration, clock) {
     val media = MutableStateFlow<Map<String, List<ByteArray>>>(mapOf())
     override suspend fun addMedia(url: String, content: ByteArrayFlow) {
         media.update { it + (url to content.toList()) }
@@ -36,12 +38,8 @@ class InMemoryMediaStore(
         }
     }
 
-    override suspend fun clearCache() {
+    override suspend fun deleteAllFromStore() {
         media.value = mapOf()
-    }
-
-    override suspend fun deleteAll() {
-        clearCache()
     }
 
     private inner class InMemoryPlatformMediaImpl(
@@ -57,36 +55,21 @@ class InMemoryMediaStore(
             expectedSize: Long?,
             maxSize: Long?
         ): ByteArray? =
-            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+            toByteArray(url, delegate, coroutineScope, expectedSize, maxSize)
                 ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 }
 
 interface InMemoryPlatformMedia : PlatformMedia
 
-internal class InMemoryCachedMediaStore(
-    coroutineScope: CoroutineScope,
-    configuration: MatrixClientConfiguration,
-    clock: Clock,
-) : CachedMediaStore(coroutineScope, configuration, clock) {
-    @Suppress("DEPRECATION")
-    private val delegate = InMemoryMediaStore(::toByteArray)
-
-    override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)
-    override suspend fun addMedia(url: String, content: ByteArrayFlow) = delegate.addMedia(url, content)
-    override suspend fun getMedia(url: String): PlatformMedia? = delegate.getMedia(url)
-    override suspend fun deleteMedia(url: String) = delegate.deleteMedia(url)
-    override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = delegate.changeMediaUrl(oldUrl, newUrl)
-    override suspend fun clearCache() = delegate.clearCache()
-    override suspend fun deleteAll() = delegate.deleteAll()
-}
-
-fun createInMemoryMediaStoreModule() = module {
-    single<MediaStore> {
-        InMemoryCachedMediaStore(
-            coroutineScope = get(),
-            configuration = get(),
-            clock = get()
-        )
+fun MediaStoreModule.Companion.inMemory() = MediaStoreModule {
+    module {
+        single<MediaStore> {
+            InMemoryMediaStore(
+                coroutineScope = get(),
+                configuration = get(),
+                clock = get()
+            )
+        }
     }
 }

@@ -9,7 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.crypto.ClientOlmStore
+import net.folivo.trixnity.client.cryptodriver.ClientOlmStore
 import net.folivo.trixnity.client.mocks.KeyServiceMock
 import net.folivo.trixnity.client.mocks.SignServiceMock
 import net.folivo.trixnity.client.store.KeySignatureTrustLevel
@@ -20,12 +20,7 @@ import net.folivo.trixnity.clientserverapi.model.devices.DehydratedDeviceData
 import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDevice
 import net.folivo.trixnity.clientserverapi.model.devices.GetDehydratedDeviceEvents
 import net.folivo.trixnity.clientserverapi.model.devices.SetDehydratedDevice
-import net.folivo.trixnity.core.ErrorResponse
-import net.folivo.trixnity.core.MSC3814
-import net.folivo.trixnity.core.MatrixServerException
-import net.folivo.trixnity.core.OlmMessageValue
-import net.folivo.trixnity.core.SessionKeyValue
-import net.folivo.trixnity.core.UserInfo
+import net.folivo.trixnity.core.*
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
 import net.folivo.trixnity.core.model.events.ClientEvent

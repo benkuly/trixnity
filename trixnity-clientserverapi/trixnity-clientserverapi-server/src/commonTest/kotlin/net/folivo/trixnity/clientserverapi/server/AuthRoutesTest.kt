@@ -10,10 +10,10 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.charsets.*
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.api.server.matrixApiServer
 import net.folivo.trixnity.clientserverapi.model.authentication.*
 import net.folivo.trixnity.clientserverapi.model.authentication.ThirdPartyIdentifier.Medium
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.*
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 import net.folivo.trixnity.core.MSC4191
@@ -95,17 +95,17 @@ class AuthRoutesTest : TrixnityBaseTest() {
     @OptIn(MSC4191::class)
     fun shouldGetOAuth2Metadata() = testApplication {
         initCut()
-        val serverMetadata = OAuth2ServerMetadata(
+        val serverMetadata = ServerMetadata(
             issuer = Url("https://auth.matrix.host"),
-            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
-            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
-            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
-            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
-            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
-            responseTypesSupported = listOf(ResponseType.Code),
-            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
-            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
-            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
+            authorizationEndpoint = Url("https://auth.matrix.host/_oauth2/authorize"),
+            registrationEndpoint = Url("https://auth.matrix.host/_oauth2/registration"),
+            revocationEndpoint = Url("https://auth.matrix.host/_oauth2/revoke"),
+            tokenEndpoint = Url("https://auth.matrix.host/_oauth2/token"),
+            codeChallengeMethodsSupported = setOf(CodeChallengeMethod.S256),
+            responseTypesSupported = setOf(ResponseType.Code),
+            responseModesSupported = setOf(ResponseMode.Query),
+            promptValuesSupported = setOf(PromptValue.Create),
+            grantTypesSupported = setOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
         )
 
         everySuspend { handlerMock.getOAuth2ServerMetadata(any()) }.returns(serverMetadata)
@@ -113,7 +113,20 @@ class AuthRoutesTest : TrixnityBaseTest() {
         assertSoftly(response) {
             this.status shouldBe HttpStatusCode.OK
             this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
-            this.body<String>() shouldBe Json.encodeToString(serverMetadata)
+            this.body<String>() shouldBe """
+                {
+                    "authorization_endpoint":"https://auth.matrix.host/_oauth2/authorize",
+                    "code_challenge_methods_supported":["S256"],
+                    "grant_types_supported":["refresh_token","authorization_code"],
+                    "issuer":"https://auth.matrix.host",
+                    "prompt_values_supported":["create"],
+                    "registration_endpoint":"https://auth.matrix.host/_oauth2/registration",
+                    "response_modes_supported":["query"],
+                    "response_types_supported":["code"],
+                    "revocation_endpoint":"https://auth.matrix.host/_oauth2/revoke",
+                    "token_endpoint":"https://auth.matrix.host/_oauth2/token"
+                }
+            """.trimToFlatJson()
         }
     }
 

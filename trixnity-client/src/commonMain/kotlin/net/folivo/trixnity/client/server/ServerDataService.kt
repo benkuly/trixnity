@@ -22,7 +22,7 @@ class ServerDataService(
 
     override fun startInCoroutineScope(scope: CoroutineScope) {
         scope.launch {
-            while (true) {
+            while (currentCoroutineContext().isActive) {
                 coroutineScope {
                     val newVersionsAsync = async {
                         api.server.getVersions()

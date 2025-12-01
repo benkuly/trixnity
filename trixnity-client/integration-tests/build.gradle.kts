@@ -23,6 +23,7 @@ kotlin {
                 implementation(projects.trixnityClient)
                 implementation(projects.trixnityClient.trixnityClientRepositoryExposed)
                 implementation(projects.trixnityClient.trixnityClientRepositoryRoom)
+                implementation(projects.trixnityClient.trixnityClientCryptodriverVodozemac)
                 implementation(libs.androidx.sqlite.bundled)
                 implementation(kotlin("test"))
                 implementation(libs.kotest.assertions.core)

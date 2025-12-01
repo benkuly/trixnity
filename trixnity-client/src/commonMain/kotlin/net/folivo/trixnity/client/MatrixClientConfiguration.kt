@@ -10,9 +10,7 @@ import net.folivo.trixnity.clientserverapi.client.sync
 import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.MSC3814
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
-import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.utils.RetryFlowDelayConfig
-import org.koin.core.module.Module
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -38,12 +36,6 @@ data class MatrixClientConfiguration(
      * Automatically join upgraded rooms.
      */
     var autoJoinUpgradedRooms: Boolean = true,
-
-    /**
-     * Delete a room, when it's membership is [Membership.LEAVE].
-     */
-    @Deprecated("Use deleteRooms enum instead", ReplaceWith("deleteRooms"), DeprecationLevel.ERROR)
-    var deleteRoomsOnLeave: Boolean = true,
 
     /**
      * How to handle left rooms. See [DeleteRooms]. Convention is [DeleteRooms.WhenNotJoined].
@@ -80,13 +72,6 @@ data class MatrixClientConfiguration(
     /**
      * Set custom delays for the sync loop.
      */
-    @Deprecated("use syncErrorDelayConfig instead")
-    @Suppress("DEPRECATION")
-    var syncLoopDelays: SyncLoopDelays = SyncLoopDelays.default(),
-
-    /**
-     * Set custom delays for the sync loop.
-     */
     var syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
 
     /**
@@ -115,30 +100,6 @@ data class MatrixClientConfiguration(
     var httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 
     /**
-     * Inject and override modules into Trixnity. You should always apply [createDefaultTrixnityModules] first.
-     *
-     * For example:
-     * ```kotlin
-     * modules = createDefaultTrixnityModules() + createCustomModule()
-     * ```
-     */
-    @Deprecated("replace with modulesFactories")
-    var modules: List<Module>? = null,
-
-    /**
-     * Inject and override modules into Trixnity. You should always apply [createDefaultTrixnityModules] first.
-     *
-     * Be aware to always create new modules because a module stores your class instances and therefore is reused, which we don't want!
-     *
-     * For example:
-     * ```kotlin
-     * modulesFactory = { createDefaultTrixnityModules() + createCustomModule() }
-     * ```
-     */
-    @Deprecated("replace with modulesFactories")
-    var modulesFactory: (() -> List<Module>)? = null,
-
-    /**
      * Inject and override modules into Trixnity. By default, this is [createDefaultTrixnityModules].
      *
      * Be aware to always create new modules because a module stores your class instances and therefore is reused, which we don't want!
@@ -162,19 +123,6 @@ data class MatrixClientConfiguration(
 
     val experimentalFeatures: ExperimentalFeatures = ExperimentalFeatures(),
 ) {
-    @Deprecated("use syncErrorDelayConfig instead")
-    data class SyncLoopDelays(
-        val syncLoopDelay: Duration,
-        val syncLoopErrorDelay: Duration
-    ) {
-        companion object {
-            @Suppress("DEPRECATION")
-            fun default() = SyncLoopDelays(
-                syncLoopDelay = 2.seconds,
-                syncLoopErrorDelay = 5.seconds
-            )
-        }
-    }
 
     data class CacheExpireDurations(
         val globalAccountDate: Duration,

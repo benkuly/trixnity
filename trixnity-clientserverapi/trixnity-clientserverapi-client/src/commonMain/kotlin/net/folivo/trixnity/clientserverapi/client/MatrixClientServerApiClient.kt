@@ -37,7 +37,7 @@ interface MatrixClientServerApiClient : AutoCloseable {
 interface MatrixClientServerApiClientFactory {
     fun create(
         baseUrl: Url? = null,
-        authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+        authProvider: MatrixClientAuthProvider<*>? = null,
         eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
         json: Json = createMatrixEventJson(eventContentSerializerMappings),
         syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
@@ -57,11 +57,13 @@ interface MatrixClientServerApiClientFactory {
             httpClientEngine = httpClientEngine,
             httpClientConfig = httpClientConfig,
         )
+
+    companion object Default : MatrixClientServerApiClientFactory
 }
 
 class MatrixClientServerApiClientImpl(
     baseUrl: Url? = null,
-    authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+    private val authProvider: MatrixClientAuthProvider<*>? = null,
     override val eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     override val json: Json = createMatrixEventJson(eventContentSerializerMappings),
     syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
@@ -86,7 +88,7 @@ class MatrixClientServerApiClientImpl(
         CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
     override val appservice: AppserviceApiClient = AppserviceApiClientImpl(baseClient)
-    override val authentication = AuthenticationApiClientImpl(baseClient, authProvider, coroutineScope)
+    override val authentication = AuthenticationApiClientImpl(baseClient, authProvider)
     override val discovery = DiscoveryApiClientImpl(baseClient)
     override val server = ServerApiClientImpl(baseClient)
     override val user = UserApiClientImpl(baseClient, eventContentSerializerMappings)

@@ -2,6 +2,7 @@ package net.folivo.trixnity.clientserverapi.server
 
 import net.folivo.trixnity.api.server.MatrixEndpointContext
 import net.folivo.trixnity.clientserverapi.model.authentication.*
+import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata
 import net.folivo.trixnity.clientserverapi.model.uia.RequestWithUIA
 import net.folivo.trixnity.clientserverapi.model.uia.ResponseWithUIA
 
@@ -45,7 +46,7 @@ interface AuthenticationApiHandler {
     /**
      * @see [GetOAuth2ServerMetadata]
      */
-    suspend fun getOAuth2ServerMetadata(context: MatrixEndpointContext<GetOAuth2ServerMetadata, Unit, OAuth2ServerMetadata>): OAuth2ServerMetadata
+    suspend fun getOAuth2ServerMetadata(context: MatrixEndpointContext<GetOAuth2ServerMetadata, Unit, ServerMetadata>): ServerMetadata
 
     /**
      * @see [Register]

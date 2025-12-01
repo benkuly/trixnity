@@ -14,16 +14,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.createTrixnityBotModuleFactories
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.room.decrypt
 import net.folivo.trixnity.client.room.encrypt
-import net.folivo.trixnity.client.roomEventEncryptionServices
-import net.folivo.trixnity.client.store.repository.createInMemoryRepositoriesModule
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
+import net.folivo.trixnity.client.store.repository.inMemory
 import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
-import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
+import net.folivo.trixnity.client.store.repository.room.room
 import net.folivo.trixnity.core.ClientEventEmitter
 import net.folivo.trixnity.core.model.events.ClientEvent.RoomEvent
 import net.folivo.trixnity.core.model.events.InitialStateEvent
@@ -60,7 +57,7 @@ class PerformanceIT {
             { baseUrl ->
                 registerAndStartClient(
                     "exposed", "exposed", baseUrl,
-                    repositoriesModule = createExposedRepositoriesModule(
+                    repositoriesModule = RepositoriesModule.exposed(
                         Database.connect("jdbc:h2:./build/tmp/test/${Random.nextString(22)};DB_CLOSE_DELAY=-1;")
                     ),
                 ).client
@@ -68,7 +65,7 @@ class PerformanceIT {
             { baseUrl ->
                 registerAndStartClient(
                     "room", "room", baseUrl,
-                    repositoriesModule = createRoomRepositoriesModule(
+                    repositoriesModule = RepositoriesModule.room(
                         Room.databaseBuilder<TrixnityRoomDatabase>("build/tmp/test/${Random.nextString(22)}.db").apply {
                             setDriver(BundledSQLiteDriver())
                         }),
@@ -98,7 +95,7 @@ class PerformanceIT {
         fun client(name: String): suspend (Url) -> MatrixClient = { baseUrl ->
             registerAndStartClient(
                 name, baseUrl = baseUrl,
-                repositoriesModule = createInMemoryRepositoriesModule(),
+                repositoriesModule = RepositoriesModule.inMemory(),
             ).client
         }
 
@@ -131,13 +128,13 @@ class PerformanceIT {
             { baseUrl ->
                 registerAndStartClient(
                     "fullClient", baseUrl = baseUrl,
-                    repositoriesModule = createExposedRepositoriesModule(matrixPostgresql1.getDatabase()),
+                    repositoriesModule = RepositoriesModule.exposed(matrixPostgresql1.getDatabase()),
                 ).client
             },
             { baseUrl ->
                 registerAndStartClient(
                     "bot", baseUrl = baseUrl,
-                    repositoriesModule = createExposedRepositoriesModule(matrixPostgresql2.getDatabase()),
+                    repositoriesModule = RepositoriesModule.exposed(matrixPostgresql2.getDatabase()),
                 ) {
                     modulesFactories = createTrixnityBotModuleFactories()
                 }.client
@@ -145,7 +142,7 @@ class PerformanceIT {
             { baseUrl ->
                 registerAndStartClient(
                     "inMemoryBot", baseUrl = baseUrl,
-                    repositoriesModule = createInMemoryRepositoriesModule(),
+                    repositoriesModule = RepositoriesModule.inMemory(),
                 ) {
                     modulesFactories = createTrixnityBotModuleFactories()
                 }.client
@@ -227,7 +224,7 @@ class PerformanceIT {
             clients.map { async { it.stopSync() } }.awaitAll()
 
             val prepareTestClients = (1..roomsCount).withLimitedParallelism { i ->
-                registerAndStartClient("prepare-$i", "prepare-$i", baseUrl, createInMemoryRepositoriesModule()) {
+                registerAndStartClient("prepare-$i", "prepare-$i", baseUrl, RepositoriesModule.inMemory()) {
                     modulesFactories = createTrixnityBotModuleFactories()
                     cacheExpireDurations = MatrixClientConfiguration.CacheExpireDurations.default(5.seconds)
                 }.client

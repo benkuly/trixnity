@@ -8,12 +8,15 @@ import io.ktor.http.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
+import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.MatrixClient.LoginState.*
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
+import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.store.Account
 import net.folivo.trixnity.client.store.AccountStore
+import net.folivo.trixnity.client.store.Authentication
+import net.folivo.trixnity.client.store.AuthenticationStore
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.Logout
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
@@ -36,7 +39,6 @@ import net.folivo.trixnity.test.utils.runTest
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.scopedMockEngine
 import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
-import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -69,131 +71,134 @@ class MatrixClientTest : TrixnityBaseTest() {
 
     private val accountPickle = driver.olm.account().use(OlmAccount::pickle)
 
+    private val cryptoDriverModule = CryptoDriverModule { module { single<CryptoDriver> { driver } } }
+
     @Test
-    fun `MatrixClientImpl displayName » get the display name and avatar URL from the profile API when initially logging in`() =
-        runTest {
-            val olmAccountRepository = InMemoryOlmAccountRepository().apply {
-                save(1, accountPickle)
+    fun `displayName » get the display name and avatar URL from the profile API when initially logging in`() = runTest {
+        val olmAccountRepository = InMemoryOlmAccountRepository().apply {
+            save(1, accountPickle)
+        }
+        val repositoriesModule =
+            RepositoriesModule {
+                val delegate = RepositoriesModule.inMemory().create()
+                module {
+                    includes(delegate)
+                    single<OlmAccountRepository> { olmAccountRepository }
+                }
             }
-            val repositoriesModule = createInMemoryRepositoriesModule().apply {
-                includes(
-                    module {
-                        single<OlmAccountRepository> { olmAccountRepository }
-                    })
-            }
-            val cut = MatrixClient.login(
-                baseUrl = Url("http://matrix.home"),
-                identifier = IdentifierType.User(userId.full),
-                password = "p4ssw0rd!",
-                repositoriesModule = repositoriesModule,
-                mediaStoreModule = createInMemoryMediaStoreModule(),
-                coroutineContext = backgroundScope.coroutineContext,
-                configuration = {
-                    httpClientEngine = scopedMockEngine(false) {
-                        addHandler { request ->
-                            when (request.url.fullPath) {
-                                "/_matrix/client/v3/login" -> {
-                                    respond(
-                                        """{"user_id":"${userId.full}","access_token":"abcdef","device_id":"deviceId"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString(),
-                                        )
+        val cut = MatrixClient.login(
+            baseUrl = Url("http://matrix.home"),
+            authProviderData = MatrixClientAuthProviderData.classic("abcdef"),
+            repositoriesModule = repositoriesModule,
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = cryptoDriverModule,
+            coroutineContext = backgroundScope.coroutineContext,
+            configuration = {
+                httpClientEngine = scopedMockEngine(false) {
+                    addHandler { request ->
+                        when (request.url.fullPath) {
+                            "/_matrix/client/v3/account/whoami" -> {
+                                respond(
+                                    """{"user_id":"${userId.full}","device_id":"deviceId"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString(),
                                     )
-                                }
+                                )
+                            }
 
-                                "/_matrix/client/v3/profile/${userId.full}" -> {
-                                    respond(
-                                        """{"displayname":"bob","avatar_url":"mxc://localhost/123456"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString(),
-                                        )
+                            "/_matrix/client/v3/profile/${userId.full}" -> {
+                                respond(
+                                    """{"displayname":"bob","avatar_url":"mxc://localhost/123456"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString(),
                                     )
-                                }
+                                )
+                            }
 
-                                "/_matrix/client/v3/keys/upload" -> {
-                                    assertEquals(HttpMethod.Post, request.method)
-                                    respond(
-                                        """{"one_time_key_counts":{"ed25519":1}}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
+                            "/_matrix/client/v3/keys/upload" -> {
+                                assertEquals(HttpMethod.Post, request.method)
+                                respond(
+                                    """{"one_time_key_counts":{"ed25519":1}}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
                                     )
-                                }
+                                )
+                            }
 
-                                "/_matrix/client/v3/user/${userId.full}/filter" -> {
-                                    assertEquals(HttpMethod.Post, request.method)
-                                    respond(
-                                        """{"filter_id":"someFilter"}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
+                            "/_matrix/client/v3/user/${userId.full}/filter" -> {
+                                assertEquals(HttpMethod.Post, request.method)
+                                respond(
+                                    """{"filter_id":"someFilter"}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
                                     )
-                                }
+                                )
+                            }
 
-                                "/_matrix/client/versions" -> {
-                                    respond(
-                                        """{}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
+                            "/_matrix/client/versions" -> {
+                                respond(
+                                    """{}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
                                     )
-                                }
+                                )
+                            }
 
-                                "/_matrix/client/v3/capabilities" -> {
-                                    respond(
-                                        """{"capabilities":{}}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
+                            "/_matrix/client/v3/capabilities" -> {
+                                respond(
+                                    """{"capabilities":{}}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
                                     )
-                                }
+                                )
+                            }
 
-                                "/_matrix/media/v3/config" -> {
-                                    respond(
-                                        """{"m.upload.size":24}""",
-                                        HttpStatusCode.OK,
-                                        headersOf(
-                                            HttpHeaders.ContentType,
-                                            ContentType.Application.Json.toString()
-                                        )
+                            "/_matrix/media/v3/config" -> {
+                                respond(
+                                    """{"m.upload.size":24}""",
+                                    HttpStatusCode.OK,
+                                    headersOf(
+                                        HttpHeaders.ContentType,
+                                        ContentType.Application.Json.toString()
                                     )
-                                }
+                                )
+                            }
 
-                                else -> {
-                                    respond(
-                                        "",
-                                        HttpStatusCode.BadRequest
-                                    )
-                                }
+                            else -> {
+                                respond(
+                                    "unknown ${request.url.fullPath}",
+                                    HttpStatusCode.BadRequest
+                                )
                             }
                         }
                     }
-                },
-            ).onSuccess { matrixClient ->
-                matrixClient.displayName.value shouldBe "bob"
-                matrixClient.avatarUrl.value shouldBe "mxc://localhost/123456"
-            }
-                .onFailure {
-                    fail(it.message, it)
                 }
-
-            cut.getOrNull()?.close()
+            },
+        ).onSuccess { matrixClient ->
+            delay(100.milliseconds)
+            matrixClient.displayName.value shouldBe "bob"
+            matrixClient.avatarUrl.value shouldBe "mxc://localhost/123456"
+        }.onFailure {
+            fail(it.message, it)
         }
 
+        cut.getOrNull()?.close()
+    }
+
     @Test
-    fun `MatrixClientImpl displayName » use the display name and avatar URL from the store when matrixClient is retrieved from the store and update when room user updates`() =
+    fun `displayName » use the display name and avatar URL from the store when matrixClient is retrieved from the store and update when room user updates`() =
         runTest {
             val accountRepository = InMemoryAccountRepository().apply {
                 save(
@@ -212,20 +217,41 @@ class MatrixClientTest : TrixnityBaseTest() {
                     )
                 )
             }
+            val authenticationRepository = InMemoryAuthenticationRepository().apply {
+                save(
+                    1, Authentication(
+                        providerId = ClassicMatrixClientAuthProviderFactory.id,
+                        providerData = Json.encodeToString(
+                            ClassicMatrixClientAuthProviderData(
+                                accessToken = "abcdef",
+                                accessTokenExpiresInMs = null,
+                                refreshToken = "ghijk",
+                            )
+                        ),
+                        logoutInfo = null,
+                    )
+                )
+            }
             val olmAccountRepository = InMemoryOlmAccountRepository().apply {
                 save(1, accountPickle)
             }
-            val repositoriesModule = createInMemoryRepositoriesModule().apply {
-                includes(
+            val repositoriesModule =
+                RepositoriesModule {
+                    val delegate = RepositoriesModule.inMemory().create()
                     module {
-                        single<AccountRepository> { accountRepository }
-                        single<OlmAccountRepository> { olmAccountRepository }
-                    })
-            }
+                        includes(module {
+                            single<AccountRepository> { accountRepository }
+                            single<AuthenticationRepository> { authenticationRepository }
+                            single<OlmAccountRepository> { olmAccountRepository }
+                        }, delegate)
+
+                    }
+                }
             val log = KotlinLogging.logger("MatrixClientImplTest")
             val cut = MatrixClient.fromStore(
                 repositoriesModule = repositoriesModule,
-                mediaStoreModule = createInMemoryMediaStoreModule(),
+                mediaStoreModule = MediaStoreModule.inMemory(),
+                cryptoDriverModule = cryptoDriverModule,
                 coroutineContext = backgroundScope.coroutineContext,
                 configuration = {
                     httpClientEngine = backgroundScope.scopedMockEngine(false) {
@@ -357,43 +383,51 @@ class MatrixClientTest : TrixnityBaseTest() {
 
 
     @Test
-    fun `MatrixClientImpl loginState » be LOGGED_IN when access token is not null`() = runTest {
+    fun `loginState » be LOGGED_IN when access token is not null`() = runTest {
         loginStateSetup().use { cut -> cut.loginState.first { it == LOGGED_IN } }
     }
 
     @Test
-    fun `MatrixClientImpl loginState » be LOGGED_OUT_SOFT when access token is null but sync batch token not`() =
+    fun `loginState » be LOGGED_OUT_SOFT when logoutInfo is locked`() =
         runTest {
             loginStateSetup().use { cut ->
-                val accountStore = cut.di.get<AccountStore>()
-                accountStore.updateAccount { it?.copy(accessToken = null) }
+                val authenticationStore = cut.di.get<AuthenticationStore>()
+                authenticationStore.updateAuthentication {
+                    it?.copy(logoutInfo = LogoutInfo(isSoft = true, isLocked = false))
+                }
                 cut.loginState.first { it == LOGGED_OUT_SOFT }
             }
         }
 
     @Test
-    fun `MatrixClientImpl loginState » be LOGGED_OUT when access token and sync batch token are null`() = runTest {
+    fun `loginState » be LOGGED_OUT when logoutInfo not null`() = runTest {
         loginStateSetup().use { cut ->
-            val accountStore = cut.di.get<AccountStore>()
-            accountStore.updateAccount { it?.copy(accessToken = null, syncBatchToken = null) }
+            val authenticationStore = cut.di.get<AuthenticationStore>()
+            authenticationStore.updateAuthentication {
+                it?.copy(logoutInfo = LogoutInfo(isSoft = false, isLocked = false))
+            }
             cut.loginState.first { it == LOGGED_OUT }
         }
     }
 
     @Test
-    fun `MatrixClientImpl loginState » be LOCKED when locked`() = runTest {
+    fun `loginState » be LOCKED when locked`() = runTest {
         loginStateSetup().use { cut ->
-            val accountStore = cut.di.get<AccountStore>()
-            accountStore.updateAccount { it?.copy(isLocked = true) }
+            val authenticationStore = cut.di.get<AuthenticationStore>()
+            authenticationStore.updateAuthentication {
+                it?.copy(logoutInfo = LogoutInfo(isSoft = false, isLocked = true))
+            }
             cut.loginState.first { it == LOCKED }
         }
     }
 
     @Test
-    fun `MatrixClientImpl loginState » be LOGGED_IN when not locked anymore`() = runTest {
+    fun `loginState » be LOGGED_IN when not locked anymore`() = runTest {
         loginStateSetup().use { cut ->
-            val accountStore = cut.di.get<AccountStore>()
-            accountStore.updateAccount { it?.copy(isLocked = true) }
+            val authenticationStore = cut.di.get<AuthenticationStore>()
+            authenticationStore.updateAuthentication {
+                it?.copy(logoutInfo = LogoutInfo(isSoft = false, isLocked = true))
+            }
             cut.loginState.first { it == LOCKED }
             delay(200.milliseconds) // give it a moment to listen to sync
             cut.syncOnce().getOrThrow()
@@ -404,11 +438,12 @@ class MatrixClientTest : TrixnityBaseTest() {
 
 
     @Test
-    fun `MatrixClientImpl logout » delete All when LOGGED_OUT_SOFT`() = runTest {
+    fun `logout » delete all when LOGGED_OUT_SOFT`() = runTest {
         var logoutCalled = false
         val cut = MatrixClient.fromStore(
             repositoriesModule = repositoriesModule(),
-            mediaStoreModule = createInMemoryMediaStoreModule(),
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = cryptoDriverModule,
             coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
@@ -420,23 +455,26 @@ class MatrixClientTest : TrixnityBaseTest() {
         ).getOrThrow().shouldNotBeNull()
 
         cut.use {
-            val accountStore = cut.di.get<AccountStore>()
-            accountStore.updateAccount { it?.copy(accessToken = null, syncBatchToken = "sync") }
+            val authenticationStore = cut.di.get<AuthenticationStore>()
+            authenticationStore.updateAuthentication {
+                it?.copy(logoutInfo = LogoutInfo(isSoft = true, isLocked = false))
+            }
             cut.loginState.first { it == LOGGED_OUT_SOFT }
             cut.logout().getOrThrow()
 
             logoutCalled shouldBe false
-            cut.userId
-            accountStore.getAccount()?.userId shouldBe null
+            cut.di.get<AccountStore>().getAccount() shouldBe null
+            authenticationStore.getAuthentication() shouldBe null
         }
     }
 
     @Test
-    fun `MatrixClientImpl logout » call api and delete all`() = runTest {
+    fun `logout » call api and delete all`() = runTest {
         var logoutCalled = false
         val cut = MatrixClient.fromStore(
             repositoriesModule = repositoriesModule(),
-            mediaStoreModule = createInMemoryMediaStoreModule(),
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = cryptoDriverModule,
             coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
@@ -458,35 +496,54 @@ class MatrixClientTest : TrixnityBaseTest() {
     }
 
     private suspend fun TestScope.loginStateSetup(): MatrixClient {
-        val account = Account(
-            olmPickleKey = null,
-            accessToken = "abcdef",
-            refreshToken = "ghijk",
-            userId = userId,
-            deviceId = "deviceId",
-            baseUrl = "http://localhost",
-            filterId = "someFilter",
-            backgroundFilterId = "backgroundFilter",
-            displayName = "bob",
-            avatarUrl = "mxc://localhost/123456",
-            syncBatchToken = "sync",
-        )
         val accountRepository = InMemoryAccountRepository().apply {
-            save(1, account)
+            save(
+                1, Account(
+                    olmPickleKey = null,
+                    userId = userId,
+                    deviceId = "deviceId",
+                    baseUrl = "http://localhost",
+                    filterId = "someFilter",
+                    backgroundFilterId = "backgroundFilter",
+                    displayName = "bob",
+                    avatarUrl = "mxc://localhost/123456",
+                    syncBatchToken = "sync",
+                )
+            )
+        }
+        val authenticationRepository = InMemoryAuthenticationRepository().apply {
+            save(
+                1, Authentication(
+                    providerId = ClassicMatrixClientAuthProviderFactory.id,
+                    providerData = Json.encodeToString(
+                        ClassicMatrixClientAuthProviderData(
+                            accessToken = "abcdef",
+                            accessTokenExpiresInMs = null,
+                            refreshToken = "ghijk",
+                        )
+                    ),
+                    logoutInfo = null,
+                )
+            )
         }
         val olmAccountRepository = InMemoryOlmAccountRepository().apply {
             save(1, accountPickle)
         }
-        val repositoriesModule = createInMemoryRepositoriesModule().apply {
-            includes(
+        val repositoriesModule =
+            RepositoriesModule {
+                val delegate = RepositoriesModule.inMemory().create()
                 module {
-                    single<AccountRepository> { accountRepository }
-                    single<OlmAccountRepository> { olmAccountRepository }
-                })
-        }
+                    includes(module {
+                        single<AccountRepository> { accountRepository }
+                        single<AuthenticationRepository> { authenticationRepository }
+                        single<OlmAccountRepository> { olmAccountRepository }
+                    }, delegate)
+                }
+            }
         return MatrixClient.fromStore(
             repositoriesModule = repositoriesModule,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = cryptoDriverModule,
             coroutineContext = backgroundScope.coroutineContext,
             configuration = {
                 httpClientEngine = backgroundScope.scopedMockEngine(false) {
@@ -574,13 +631,11 @@ class MatrixClientTest : TrixnityBaseTest() {
         ).getOrThrow().shouldNotBeNull()
     }
 
-    private suspend fun repositoriesModule(): Module {
+    private suspend fun repositoriesModule(): RepositoriesModule {
         val accountRepository = InMemoryAccountRepository().apply {
             save(
                 1, Account(
                     olmPickleKey = null,
-                    accessToken = "abcdef",
-                    refreshToken = "ghijk",
                     userId = userId,
                     deviceId = "deviceId",
                     baseUrl = "http://localhost",
@@ -592,16 +647,33 @@ class MatrixClientTest : TrixnityBaseTest() {
                 )
             )
         }
+        val authenticationRepository = InMemoryAuthenticationRepository().apply {
+            save(
+                1, Authentication(
+                    providerId = ClassicMatrixClientAuthProviderFactory.id,
+                    providerData = Json.encodeToString(
+                        ClassicMatrixClientAuthProviderData(
+                            accessToken = "abcdef",
+                            accessTokenExpiresInMs = null,
+                            refreshToken = "ghijk",
+                        )
+                    ),
+                    logoutInfo = null,
+                )
+            )
+        }
         val olmAccountRepository = InMemoryOlmAccountRepository().apply {
             save(1, accountPickle)
         }
-        return createInMemoryRepositoriesModule().apply {
-            includes(
-                module {
+        return RepositoriesModule {
+            val delegate = RepositoriesModule.inMemory().create()
+            module {
+                includes(module {
                     single<AccountRepository> { accountRepository }
+                    single<AuthenticationRepository> { authenticationRepository }
                     single<OlmAccountRepository> { olmAccountRepository }
-                }
-            )
+                }, delegate)
+            }
         }
     }
 }

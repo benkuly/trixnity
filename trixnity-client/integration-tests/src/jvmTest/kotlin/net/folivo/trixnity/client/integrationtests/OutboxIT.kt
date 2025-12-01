@@ -6,11 +6,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
+import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
 import net.folivo.trixnity.client.user.canSendEvent
+import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.classicLoginWith
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.Table
@@ -43,13 +46,16 @@ class OutboxIT {
             port = synapseDocker.firstMappedPort
         ).build()
         database = newDatabase()
-        val repositoriesModule = createExposedRepositoriesModule(database)
+        val repositoriesModule = RepositoriesModule.exposed(database)
 
-        client = MatrixClient.loginWith(
+        client = MatrixClient.login(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user", password) }
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user", password)
+            }.getOrThrow()
         ).getOrThrow()
         client.startSync()
         client.syncState.firstWithTimeout { it == SyncState.RUNNING }

@@ -8,10 +8,11 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import net.folivo.trixnity.client.RepositoriesModule
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.message.text
 import net.folivo.trixnity.client.store.eventId
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.keys.KeyAlgorithm
@@ -42,9 +43,9 @@ class FallbackKeyIT {
             port = synapseDocker.firstMappedPort
         ).build()
         startedClient1 =
-            registerAndStartClient("client1", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
-        startedClient2 = startClient("client2", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
-        startedClient3 = startClient("client3", "user1", baseUrl, createExposedRepositoriesModule(newDatabase()))
+            registerAndStartClient("client1", "user1", baseUrl, RepositoriesModule.exposed(newDatabase()))
+        startedClient2 = startClient("client2", "user1", baseUrl, RepositoriesModule.exposed(newDatabase()))
+        startedClient3 = startClient("client3", "user1", baseUrl, RepositoriesModule.exposed(newDatabase()))
     }
 
     @AfterTest

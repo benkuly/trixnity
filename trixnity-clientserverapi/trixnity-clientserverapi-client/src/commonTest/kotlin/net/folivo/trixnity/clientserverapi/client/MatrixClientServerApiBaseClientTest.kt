@@ -15,19 +15,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import net.folivo.trixnity.clientserverapi.client.oauth2.OAuth2MatrixClientAuthProvider
+import net.folivo.trixnity.clientserverapi.client.oauth2.oAuth2
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.authentication.CodeChallengeMethod
-import net.folivo.trixnity.clientserverapi.model.authentication.GrantType
-import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ErrorException
-import net.folivo.trixnity.clientserverapi.model.authentication.OAuth2ServerMetadata
-import net.folivo.trixnity.clientserverapi.model.authentication.ResponseType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationType
 import net.folivo.trixnity.clientserverapi.model.uia.MatrixUIAEndpoint
@@ -38,6 +33,8 @@ import net.folivo.trixnity.core.HttpMethodType.POST
 import net.folivo.trixnity.core.serialization.createDefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
+import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.testutils.scopedMockEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -47,9 +44,19 @@ import kotlin.time.Duration.Companion.seconds
 
 class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
+    private val baseUrl = Url("https://matrix.host")
     private val json = createMatrixEventJson()
     private val mappings = createDefaultEventContentSerializerMappings()
-    private val authProvider = MatrixAuthProvider.classicInMemory("access")
+    var onLogout: LogoutInfo? = null.also {
+        scheduleSetup { onLogout = null }
+    }
+    private val classicAuthProviderStore =
+        MatrixClientAuthProviderStore.inMemory(MatrixClientAuthProviderData.classic("access")).apply {
+            scheduleSetup {
+                setAuthData(MatrixClientAuthProviderData.classic("access"))
+            }
+        }
+    private val classicAuthProvider = ClassicMatrixClientAuthProvider(classicAuthProviderStore, { onLogout = it })
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -105,11 +112,27 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         @SerialName("requestParam") val requestParam: String,
     ) : MatrixUIAEndpoint<PostPath.Request, PostPath.Response>
 
+    private val serverMetadata =
+        """
+            {
+                "authorization_endpoint":"https://auth.matrix.host/_oauth2/authorize",
+                "code_challenge_methods_supported":["S256"],
+                "grant_types_supported":["refresh_token","authorization_code"],
+                "issuer":"https://auth.matrix.host",
+                "prompt_values_supported":["create"],
+                "registration_endpoint":"https://auth.matrix.host/_oauth2/registration",
+                "response_modes_supported":["query"],
+                "response_types_supported":["code"],
+                "revocation_endpoint":"https://auth.matrix.host/_oauth2/revoke",
+                "token_endpoint":"https://auth.matrix.host/_oauth2/token"
+            }
+        """.trimIndent()
+
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.url.fullPath shouldBe "/path/1?requestParam=2"
@@ -136,8 +159,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun itShouldNotHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe null
@@ -158,11 +181,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldNotRetryWithTokenOnNever() = runTest {
-        val testTokenStore = BearerTokensStore.InMemory()
-
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classic(testTokenStore),
+            baseUrl = baseUrl,
+            authProvider = ClassicMatrixClientAuthProvider(classicAuthProviderStore, {}),
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe null
@@ -177,8 +198,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             eventContentSerializerMappings = mappings,
         )
 
-        testTokenStore.bearerTokens = BearerTokens("access", null)
-
         cut.request(PostPathWithDisabledAuth("1", "2"), PostPath.Request(true))
             .exceptionOrNull() shouldBe
                 MatrixServerException(
@@ -189,11 +208,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldRetryWithToken() = runTest {
-        val testTokenStore = BearerTokensStore.InMemory()
-
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classic(testTokenStore),
+            baseUrl = baseUrl,
+            authProvider = ClassicMatrixClientAuthProvider(classicAuthProviderStore, {}),
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     if (request.headers[HttpHeaders.Authorization] == "Bearer access") {
@@ -215,19 +232,16 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             eventContentSerializerMappings = mappings,
         )
 
-        testTokenStore.bearerTokens = BearerTokens("access", null)
-
         cut.request(PostPathWithoutAuth("1", "2"), PostPath.Request(true))
             .getOrThrow() shouldBe PostPath.Response("ok")
     }
 
     @Test
     fun itShouldHaveOptionalAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
-        val testTokenStore = BearerTokensStore.InMemory()
-
+        classicAuthProviderStore.setAuthData(null)
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classic(testTokenStore),
+            baseUrl = baseUrl,
+            authProvider = ClassicMatrixClientAuthProvider(classicAuthProviderStore, {}),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe null
@@ -253,7 +267,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
                 PostPath.Response("ok")
 
-        testTokenStore.bearerTokens = BearerTokens("access", null)
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access"))
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
                 PostPath.Response("ok")
@@ -262,43 +276,30 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     @OptIn(MSC4191::class)
     fun `OAuth 2 - should refresh token`() = runTest {
-        val exampleServerMetadata = OAuth2ServerMetadata(
-            issuer = Url("https://auth.matrix.host"),
-            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
-            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
-            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
-            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
-            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
-            responseTypesSupported = listOf(ResponseType.Code),
-            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
-            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
-            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
-        )
-
         var refreshCalled = false
-        var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.oauth2InMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh_token",
-                serverMetadata = exampleServerMetadata,
-                clientId = "this_is_a_client_id",
-                onLogout = { onLogout = it }
-            ),
-            httpClientEngine = scopedMockEngine(false) {
-                addHandler { request ->
-                    when (request.url.fullPath) {
-                        "/_matrix/client/v1/auth_metadata" -> respond(
-                            Json.encodeToString(exampleServerMetadata),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-
-                        "/_oauth2/token" -> {
-                            refreshCalled = true
-                            respond(
-                                """
+        val oAuth2AuthProvider =
+            OAuth2MatrixClientAuthProvider(
+                baseUrl = baseUrl,
+                store = MatrixClientAuthProviderStore.inMemory(
+                    MatrixClientAuthProviderData.oAuth2(
+                        clientId = "clientId",
+                        accessToken = "access_old",
+                        accessTokenExpiresInS = null,
+                        refreshToken = "refresh"
+                    )
+                ),
+                onLogout = { onLogout = it },
+                httpClientEngine = scopedMockEngine(false) {
+                    addHandler { request ->
+                        when (request.url.toString()) {
+                            "https://auth.matrix.host/_oauth2/token" -> {
+                                refreshCalled = true
+                                request.body.toByteArray().decodeToString() shouldBe
+                                        "grant_type=refresh_token" +
+                                        "&refresh_token=refresh" +
+                                        "&client_id=clientId"
+                                respond(
+                                    """
                                     {
                                         "access_token": "access",
                                         "token_type": "Bearer",
@@ -306,11 +307,30 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                                         "refresh_token": "refresh2"
                                     }
                                 """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+
+                            "https://matrix.host/_matrix/client/v1/auth_metadata" -> respond(
+                                serverMetadata,
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
-                        }
 
+                            else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
+                        }
+                    }
+                },
+                httpClientConfig = null
+            )
+
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = baseUrl,
+            authProvider = oAuth2AuthProvider,
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
                         "/path/1?requestParam=2" -> {
                             val authHeader = request.headers[HttpHeaders.Authorization]
                             if (authHeader == "Bearer access_old") {
@@ -335,13 +355,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -354,16 +369,12 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `Lagacy - should refresh token`() = runTest {
+    fun `Classic - should refresh token`() = runTest {
         var refreshCalled = false
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                onLogout = { onLogout = it },
-            ),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -407,13 +418,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -429,48 +435,54 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     @OptIn(MSC4191::class)
     fun `OAuth 2 - should refresh token and logout`() = runTest {
-        val exampleServerMetadata = OAuth2ServerMetadata(
-            issuer = Url("https://auth.matrix.host"),
-            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
-            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
-            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
-            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
-            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
-            responseTypesSupported = listOf(ResponseType.Code),
-            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
-            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
-            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
-        )
-
         var refreshCalled = false
-        var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.oauth2InMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                serverMetadata = exampleServerMetadata,
-                clientId = "this_is_a_client_id",
+        val oAuth2AuthProvider =
+            OAuth2MatrixClientAuthProvider(
+                baseUrl = baseUrl,
+                store = MatrixClientAuthProviderStore.inMemory(
+                    MatrixClientAuthProviderData.oAuth2(
+                        clientId = "clientId",
+                        accessToken = "access_old",
+                        accessTokenExpiresInS = null,
+                        refreshToken = "refresh"
+                    )
+                ),
                 onLogout = { onLogout = it },
-            ),
+                httpClientEngine = scopedMockEngine(false) {
+                    addHandler { request ->
+                        when (request.url.toString()) {
+                            "https://auth.matrix.host/_oauth2/token" -> {
+                                refreshCalled = true
+                                request.body.toByteArray().decodeToString() shouldBe
+                                        "grant_type=refresh_token" +
+                                        "&refresh_token=refresh" +
+                                        "&client_id=clientId"
+                                respond(
+                                    "{\"error\": \"invalid_grant\"}",
+                                    HttpStatusCode.Unauthorized,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+
+                            "https://matrix.host/_matrix/client/v1/auth_metadata" -> respond(
+                                serverMetadata,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+
+                            else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
+                        }
+                    }
+                },
+                httpClientConfig = null
+            )
+
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = baseUrl,
+            authProvider = oAuth2AuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
-                        "/_matrix/client/v1/auth_metadata" -> respond(
-                            Json.encodeToString(exampleServerMetadata),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-
-                        "/_oauth2/token" -> {
-                            refreshCalled = true
-                            respond(
-                                "{\"error\": \"invalid_grant\"}",
-                                HttpStatusCode.Unauthorized,
-                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                            )
-                        }
-
                         "/path/1?requestParam=2" -> {
                             val authHeader = request.headers[HttpHeaders.Authorization]
                             if (authHeader == "Bearer access_old") {
@@ -495,7 +507,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
                 }
             },
@@ -503,24 +515,20 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             eventContentSerializerMappings = mappings,
         )
 
-        shouldThrow<OAuth2ErrorException> {
+        shouldThrow<ClientRequestException> {
             cut.request(PostPath("1", "2"), PostPath.Request(true)).getOrThrow()
-        }.error.shouldBeInstanceOf<OAuth2ErrorException.OAuth2ErrorType.InvalidGrant>()
+        }.response.status shouldBe HttpStatusCode.Unauthorized
         refreshCalled shouldBe true
         onLogout shouldBe LogoutInfo(isSoft = true, isLocked = false)
     }
 
     @Test
-    fun `Lagacy - should refresh token and logout`() = runTest {
+    fun `Classic - should refresh token and logout`() = runTest {
         var refreshCalled = false
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                onLogout = { onLogout = it },
-            ),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -564,13 +572,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -587,43 +590,30 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     @OptIn(MSC4191::class)
     fun `OAuth 2 - should refresh token and not logout`() = runTest {
-        val exampleServerMetadata = OAuth2ServerMetadata(
-            issuer = Url("https://auth.matrix.host"),
-            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
-            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
-            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
-            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
-            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
-            responseTypesSupported = listOf(ResponseType.Code),
-            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
-            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
-            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
-        )
-
         var refreshCalled = false
-        var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.oauth2InMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                serverMetadata = exampleServerMetadata,
-                clientId = "this_is_a_client_id",
+        val oAuth2AuthProvider =
+            OAuth2MatrixClientAuthProvider(
+                baseUrl = baseUrl,
+                store = MatrixClientAuthProviderStore.inMemory(
+                    MatrixClientAuthProviderData.oAuth2(
+                        clientId = "clientId",
+                        accessToken = "access_old",
+                        accessTokenExpiresInS = null,
+                        refreshToken = "refresh"
+                    )
+                ),
                 onLogout = { onLogout = it },
-            ),
-            httpClientEngine = scopedMockEngine(false) {
-                addHandler { request ->
-                    when (request.url.fullPath) {
-                        "/_matrix/client/v1/auth_metadata" -> respond(
-                            Json.encodeToString(exampleServerMetadata),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-
-                        "/_oauth2/token" -> {
-                            refreshCalled = true
-                            respond(
-                                """
+                httpClientEngine = scopedMockEngine(false) {
+                    addHandler { request ->
+                        when (request.url.toString()) {
+                            "https://auth.matrix.host/_oauth2/token" -> {
+                                refreshCalled = true
+                                request.body.toByteArray().decodeToString() shouldBe
+                                        "grant_type=refresh_token" +
+                                        "&refresh_token=refresh" +
+                                        "&client_id=clientId"
+                                respond(
+                                    """
                                     {
                                         "access_token": "access",
                                         "token_type": "Bearer",
@@ -631,11 +621,29 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                                         "refresh_token": "refresh2"
                                     }
                                 """,
+                                    HttpStatusCode.OK,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+
+                            "https://matrix.host/_matrix/client/v1/auth_metadata" -> respond(
+                                serverMetadata,
                                 HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
-                        }
 
+                            else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
+                        }
+                    }
+                },
+                httpClientConfig = null
+            )
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = baseUrl,
+            authProvider = oAuth2AuthProvider,
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
                         "/path/1?requestParam=2" -> {
                             respond(
                                 """
@@ -650,7 +658,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             )
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
                 }
             },
@@ -666,16 +674,12 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `Lagacy - should refresh token and not logout`() = runTest {
+    fun `Classic - should refresh token and not logout`() = runTest {
         var refreshCalled = false
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                onLogout = { onLogout = it },
-            ),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -709,13 +713,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             )
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -732,44 +731,31 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     @OptIn(MSC4191::class)
     fun `OAuth 2 - should refresh token with old refresh token`() = runTest {
-        val exampleServerMetadata = OAuth2ServerMetadata(
-            issuer = Url("https://auth.matrix.host"),
-            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
-            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
-            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
-            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
-            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
-            responseTypesSupported = listOf(ResponseType.Code),
-            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
-            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
-            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
-        )
-
         var refreshCalled = 0
-        var onLogout: LogoutInfo? = null
-        val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.oauth2InMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                serverMetadata = exampleServerMetadata,
-                clientId = "this_is_a_client_id",
+        val oAuth2AuthProvider =
+            OAuth2MatrixClientAuthProvider(
+                baseUrl = baseUrl,
+                store = MatrixClientAuthProviderStore.inMemory(
+                    MatrixClientAuthProviderData.oAuth2(
+                        clientId = "clientId",
+                        accessToken = "access_old",
+                        accessTokenExpiresInS = null,
+                        refreshToken = "refresh1"
+                    )
+                ),
                 onLogout = { onLogout = it },
-            ),
-            httpClientEngine = scopedMockEngine(false) {
-                addHandler { request ->
-                    when (request.url.fullPath) {
-                        "/_matrix/client/v1/auth_metadata" -> respond(
-                            Json.encodeToString(exampleServerMetadata),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-
-                        "/_oauth2/token" -> {
-                            refreshCalled++
-                            when (refreshCalled) {
-                                1 -> respond(
-                                    """
+                httpClientEngine = scopedMockEngine(false) {
+                    addHandler { request ->
+                        when (request.url.toString()) {
+                            "https://auth.matrix.host/_oauth2/token" -> {
+                                refreshCalled++
+                                request.body.toByteArray().decodeToString() shouldBe
+                                        "grant_type=refresh_token" +
+                                        "&refresh_token=refresh$refreshCalled" +
+                                        "&client_id=clientId"
+                                when (refreshCalled) {
+                                    1 -> respond(
+                                        """
                                     {
                                         "access_token": "access1",
                                         "token_type": "Bearer",
@@ -777,12 +763,12 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                                         "refresh_token": "refresh2"
                                     }
                                 """,
-                                    HttpStatusCode.OK,
-                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                                )
+                                        HttpStatusCode.OK,
+                                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                    )
 
-                                else -> respond(
-                                    """
+                                    else -> respond(
+                                        """
                                     {
                                         "access_token": "access2",
                                         "token_type": "Bearer",
@@ -790,40 +776,30 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                                         "refresh_token": "refresh3"
                                     }
                                 """,
-                                    HttpStatusCode.OK,
-                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                                )
+                                        HttpStatusCode.OK,
+                                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                    )
+                                }
                             }
+
+                            "https://matrix.host/_matrix/client/v1/auth_metadata" -> respond(
+                                serverMetadata,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+
+                            else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                         }
-
-                        "/_matrix/client/v3/refresh" -> {
-                            request.body.toByteArray().decodeToString() shouldBe """{"refresh_token":"refresh"}"""
-                            refreshCalled++
-                            when (refreshCalled) {
-                                1 -> respond(
-                                    """
-                                    {
-                                        "access_token": "access1",
-                                        "expires_in_ms": 60000
-                                    }
-                                """,
-                                    HttpStatusCode.OK,
-                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                                )
-
-                                else -> respond(
-                                    """
-                                    {
-                                        "access_token": "access2",
-                                        "expires_in_ms": 60000
-                                    }
-                                """,
-                                    HttpStatusCode.OK,
-                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                                )
-                            }
-                        }
-
+                    }
+                },
+                httpClientConfig = null
+            )
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = baseUrl,
+            authProvider = oAuth2AuthProvider,
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
                         "/path/1?requestParam=2" -> {
                             val authHeader = request.headers[HttpHeaders.Authorization]
                             if (authHeader == "Bearer access_old") {
@@ -872,13 +848,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -895,16 +866,12 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `Lagacy - should refresh token with old refresh token`() = runTest {
+    fun `Classic - should refresh token with old refresh token`() = runTest {
         var refreshCalled = 0
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                onLogout = { onLogout = it },
-            ),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -984,13 +951,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -1007,18 +969,14 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `Legacy - should refresh token with parallel requests`() = runTest {
+    fun `Classic - should refresh token with parallel requests`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         var refreshCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                onLogout = { onLogout = it },
-            ),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -1064,13 +1022,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -1097,56 +1050,62 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     @OptIn(MSC4191::class)
     fun `OAuth 2 - should refresh token with parallel requests and rethrow exceptions`() = runTest {
-        val exampleServerMetadata = OAuth2ServerMetadata(
-            issuer = Url("https://auth.matrix.host"),
-            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
-            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
-            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
-            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
-            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
-            responseTypesSupported = listOf(ResponseType.Code),
-            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
-            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
-            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
-        )
-
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
         var onLogout: LogoutInfo? = null
         var refreshCount = 0
-        val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider =  MatrixAuthProvider.oauth2InMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                serverMetadata = exampleServerMetadata,
-                clientId = "this_is_a_client_id",
+        val oAuth2AuthProvider =
+            OAuth2MatrixClientAuthProvider(
+                baseUrl = baseUrl,
+                store = MatrixClientAuthProviderStore.inMemory(
+                    MatrixClientAuthProviderData.oAuth2(
+                        clientId = "clientId",
+                        accessToken = "access_old",
+                        accessTokenExpiresInS = null,
+                        refreshToken = "refresh"
+                    )
+                ),
                 onLogout = { onLogout = it },
-            ),
-            httpClientEngine = scopedMockEngine(false) {
-                addHandler { request ->
-                    when (request.url.fullPath) {
-                        "/_matrix/client/v1/auth_metadata" -> respond(
-                            Json.encodeToString(exampleServerMetadata),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-
-                        "/_oauth2/token" -> {
-                            refreshCalled.value = true
-                            continueRefresh.first { it }
-                            refreshCount++
-                            respond(
-                                """
+                httpClientEngine = scopedMockEngine(false) {
+                    addHandler { request ->
+                        when (request.url.toString()) {
+                            "https://auth.matrix.host/_oauth2/token" -> {
+                                request.body.toByteArray().decodeToString() shouldBe
+                                        "grant_type=refresh_token" +
+                                        "&refresh_token=refresh" +
+                                        "&client_id=clientId"
+                                refreshCalled.value = true
+                                continueRefresh.first { it }
+                                refreshCount++
+                                respond(
+                                    """
                                     {
                                         "error": "server_error"
                                     }
                                 """,
-                                HttpStatusCode.InternalServerError,
+                                    HttpStatusCode.InternalServerError,
+                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                )
+                            }
+
+                            "https://matrix.host/_matrix/client/v1/auth_metadata" -> respond(
+                                serverMetadata,
+                                HttpStatusCode.OK,
                                 headersOf(HttpHeaders.ContentType, Application.Json.toString())
                             )
-                        }
 
+                            else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
+                        }
+                    }
+                },
+                httpClientConfig = null
+            )
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = baseUrl,
+            authProvider = oAuth2AuthProvider,
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
                         "/path/1?requestParam=2" -> {
                             val authHeader = request.headers[HttpHeaders.Authorization]
                             if (authHeader == "Bearer access_old") {
@@ -1164,7 +1123,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             } else fail("should never be called")
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
                 }
             },
@@ -1176,7 +1135,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             repeat(20) {
                 launch {
                     cut.request(PostPath("1", "2"), PostPath.Request(true))
-                        .exceptionOrNull().shouldBeInstanceOf<OAuth2ErrorException>()
+                        .exceptionOrNull()
+                        .shouldBeInstanceOf<ServerResponseException>().response.status shouldBe HttpStatusCode.InternalServerError
                 }
             }
             refreshCalled.first { it }
@@ -1190,18 +1150,14 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `Legacy - should refresh token with parallel requests and rethrow exceptions`() = runTest {
+    fun `Classic - should refresh token with parallel requests and rethrow exceptions`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         var refreshCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                onLogout = { onLogout = it },
-            ),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -1237,13 +1193,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             } else fail("should never be called")
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -1270,51 +1221,39 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     @OptIn(MSC4191::class)
     fun `OAuth 2 - should refresh token with parallel requests and handle request abort`() = runTest {
-        val exampleServerMetadata = OAuth2ServerMetadata(
-            issuer = Url("https://auth.matrix.host"),
-            authorizationEndpoint = Url("https://matrix.host/_oauth2/authorize"),
-            registrationEndpoint = Url("https://matrix.host/_oauth2/registration"),
-            revocationEndpoint = Url("https://matrix.host/_oauth2/revoke"),
-            tokenEndpoint = Url("https://matrix.host/_oauth2/token"),
-            codeChallengeMethodsSupported = listOf(CodeChallengeMethod.S256),
-            responseTypesSupported = listOf(ResponseType.Code),
-            responseModesSupported = listOf(OAuth2ServerMetadata.ResponseMode.Query),
-            promptValuesSupported = listOf(OAuth2ServerMetadata.PromptValue.Consent),
-            grantTypesSupported = listOf(GrantType.RefreshToken, GrantType.AuthorizationCode)
-        )
-
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
         var onLogout: LogoutInfo? = null
         var refreshCount = 0
-        val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.oauth2InMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                serverMetadata = exampleServerMetadata,
-                clientId = "this_is_a_client_id",
+        val oAuth2AuthProvider =
+            OAuth2MatrixClientAuthProvider(
+                baseUrl = baseUrl,
+                store = MatrixClientAuthProviderStore.inMemory(
+                    MatrixClientAuthProviderData.oAuth2(
+                        clientId = "clientId",
+                        accessToken = "access_old",
+                        accessTokenExpiresInS = null,
+                        refreshToken = "refresh"
+                    )
+                ),
                 onLogout = { onLogout = it },
-            ),
-            httpClientEngine = scopedMockEngine(false) {
-                addHandler { request ->
-                    when (request.url.fullPath) {
-                        "/_matrix/client/v1/auth_metadata" -> respond(
-                            Json.encodeToString(exampleServerMetadata),
-                            HttpStatusCode.OK,
-                            headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                        )
-
-                        "/_oauth2/token" -> {
-                            refreshCalled.value = true
-                            refreshCount += 1
-                            continueRefresh.first { it }
-                            if (refreshCount == 1) {
-                                delay(Duration.INFINITE)
-                                fail("should never be called")
-                            } else {
-                                respond(
-                                    """
+                httpClientEngine = scopedMockEngine(false) {
+                    addHandler { request ->
+                        when (request.url.toString()) {
+                            "https://auth.matrix.host/_oauth2/token" -> {
+                                request.body.toByteArray().decodeToString() shouldBe
+                                        "grant_type=refresh_token" +
+                                        "&refresh_token=refresh" +
+                                        "&client_id=clientId"
+                                refreshCalled.value = true
+                                refreshCount += 1
+                                continueRefresh.first { it }
+                                if (refreshCount == 1) {
+                                    delay(Duration.INFINITE)
+                                    fail("should never be called")
+                                } else {
+                                    respond(
+                                        """
                                     {
                                         "access_token": "access",
                                         "token_type": "Bearer",
@@ -1322,12 +1261,30 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                                         "refresh_token": "refresh2"
                                     }
                                 """,
-                                    HttpStatusCode.OK,
-                                    headersOf(HttpHeaders.ContentType, Application.Json.toString())
-                                )
+                                        HttpStatusCode.OK,
+                                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                                    )
+                                }
                             }
-                        }
 
+                            "https://matrix.host/_matrix/client/v1/auth_metadata" -> respond(
+                                serverMetadata,
+                                HttpStatusCode.OK,
+                                headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                            )
+
+                            else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
+                        }
+                    }
+                },
+                httpClientConfig = null
+            )
+        val cut = MatrixClientServerApiBaseClient(
+            baseUrl = baseUrl,
+            authProvider = oAuth2AuthProvider,
+            httpClientEngine = scopedMockEngine(false) {
+                addHandler { request ->
+                    when (request.url.fullPath) {
                         "/path/1?requestParam=2" -> {
                             val authHeader = request.headers[HttpHeaders.Authorization]
                             if (authHeader == "Bearer access_old") {
@@ -1352,13 +1309,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -1393,18 +1345,14 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     }
 
     @Test
-    fun `Legacy - should refresh token with parallel requests and handle request abort`() = runTest {
+    fun `Classic - should refresh token with parallel requests and handle request abort`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         var refreshCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                onLogout = { onLogout = it },
-            ),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -1455,13 +1403,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -1497,10 +1440,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldCallOnLogout() = runTest {
-        var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory("access") { onLogout = it },
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -1531,10 +1473,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldCallOnLogoutOnLocked() = runTest {
-        var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory("access") { onLogout = it },
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -1565,14 +1506,10 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldCallOnLogoutWhenRefreshingToken() = runTest {
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory(
-                accessToken = "access_old",
-                refreshToken = "refresh",
-                onLogout = { onLogout = it },
-            ),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -1606,7 +1543,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             )
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
                 }
             },
@@ -1629,8 +1566,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun uiaRequestShouldReturnSuccess() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.url.fullPath shouldBe "/path/1?requestParam=2"
@@ -1657,8 +1594,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun uiaRequestShouldReturnError() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -1684,10 +1621,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun uiaRequestShouldCallOnLogout() = runTest {
-        var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory("access") { onLogout = it },
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -1717,11 +1653,11 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun uiaRequestShouldRefresh() = runTest {
-        var onLogout: LogoutInfo? = null
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
         var refreshCalled = false
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory("access_old", "refresh") { onLogout = it },
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
                     when (request.url.fullPath) {
@@ -1765,13 +1701,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                             }
                         }
 
-                        else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
+                        else -> respond("404 NOT_FOUND ${request.url}", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -1785,10 +1716,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun uiaRequestShouldCallOnLogoutOnLock() = runTest {
-        var onLogout: LogoutInfo? = null
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory("access") { onLogout = it },
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
                     respond(
@@ -1815,9 +1745,10 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun uiaRequestShouldAuthenticate() = runTest {
         var requestCount = 0
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access", null, "refresh"))
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = MatrixAuthProvider.classicInMemory("access", "refresh"),
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (requestCount) {
@@ -1887,8 +1818,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     fun uiaRequestShouldReturnStepAndAllowAuthenticate() = runTest {
         var requestCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (requestCount) {
@@ -2003,8 +1934,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     fun uiaRequestShouldReturnErrorAndAllowAuthenticate() = runTest {
         var requestCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = Url("https://matrix.host"),
-            authProvider = authProvider,
+            baseUrl = baseUrl,
+            authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     when (requestCount) {

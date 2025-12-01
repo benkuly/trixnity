@@ -1,7 +1,6 @@
 package net.folivo.trixnity.client.store
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
@@ -22,19 +21,7 @@ data class Room(
     val membership: Membership = Membership.JOIN,
     val membersLoaded: Boolean = false,
     val nextRoomId: RoomId? = null,
-) {
-    @Deprecated("will always return 0, use NotificationService instead")
-    @Transient
-    val unreadMessageCount: Long = 0
-
-    @Deprecated("always false")
-    @Transient
-    val markedUnread: Boolean = false
-
-    @Deprecated("always false")
-    @Transient
-    val isUnread: Boolean = false
-}
+)
 
 val Room.previousRoomId: RoomId? get() = createEventContent?.predecessor?.roomId
 val Room.type: CreateEventContent.RoomType? get() = createEventContent?.type

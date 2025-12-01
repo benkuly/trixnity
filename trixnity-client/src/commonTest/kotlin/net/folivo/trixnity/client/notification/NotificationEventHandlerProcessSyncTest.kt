@@ -404,32 +404,6 @@ class NotificationEventHandlerProcessSyncTest : TrixnityBaseTest() {
         )
     }
 
-
-    @Test
-    fun `with timeline - encrypted - ignore notification count`() = runTest {
-        roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, lastEventId = EventId("e24"), encrypted = true) }
-        processSyncWith(
-            updatedRooms = setOf(roomId1),
-            notificationStates = listOf(),
-            notificationCounts = mapOf(roomId1 to 1)
-        )
-
-        notificationStore.getAll().first().values.mapNotNull { it.first() } shouldBe listOf(
-            notification1,
-            notification2
-        )
-        notificationStore.getAllState().first().values.mapNotNull { it.first() } shouldBe listOf(
-            StoredNotificationState.SyncWithTimeline(
-                roomId = roomId1,
-                needsSync = false,
-                readReceipts = setOf(EventId("e1")),
-                lastEventId = EventId("e24"),
-                lastProcessedEventId = null,
-                expectedMaxNotificationCount = null,
-            )
-        )
-    }
-
     @Test
     fun `no timeline - add to state`() = runTest {
         roomStore.update(roomId1) { simpleRoom.copy(roomId = roomId1, lastEventId = null) }

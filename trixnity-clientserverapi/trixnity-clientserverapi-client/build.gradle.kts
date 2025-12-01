@@ -24,7 +24,8 @@ kotlin {
                 implementation(libs.ktor.client.auth)
                 implementation(libs.ktor.client.contentNegotiation)
                 implementation(libs.ktor.client.resources)
-
+                implementation(libs.ktor.serialization.kotlinx.json)
+                
                 implementation(libs.oshai.logging)
             }
         }

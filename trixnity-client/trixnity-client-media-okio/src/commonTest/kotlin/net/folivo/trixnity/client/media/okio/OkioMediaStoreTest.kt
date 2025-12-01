@@ -2,23 +2,21 @@ package net.folivo.trixnity.client.media.okio
 
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.runTest
-import net.folivo.trixnity.utils.toByteArray
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.utils.toByteArrayFlow
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.time.Clock
 
 class OkioMediaStoreTest {
 
-    lateinit var cut: OkioMediaStore
+    private lateinit var cut: OkioMediaStore
     lateinit var fileSystem: FakeFileSystem
     lateinit var coroutineScope: CoroutineScope
 
@@ -30,8 +28,14 @@ class OkioMediaStoreTest {
     @BeforeTest
     fun beforeTest() {
         fileSystem = FakeFileSystem()
-        cut = OkioMediaStore(basePath, fileSystem)
         coroutineScope = CoroutineScope(Dispatchers.Default)
+        cut = OkioMediaStore(
+            basePath = basePath,
+            fileSystem = fileSystem,
+            coroutineScope = coroutineScope,
+            configuration = MatrixClientConfiguration(),
+            clock = Clock.System
+        )
     }
 
     @AfterTest
@@ -141,6 +145,7 @@ class OkioMediaStoreTest {
         fileSystem.write(tmpPath.resolve("tmp_file_1")) { writeUtf8("hi") }
         fileSystem.listOrNull(tmpPath)?.size shouldBe 1
         coroutineScope.cancel()
+        coroutineScope.coroutineContext.job.join()
         fileSystem.listOrNull(tmpPath)?.size shouldBe null
     }
 

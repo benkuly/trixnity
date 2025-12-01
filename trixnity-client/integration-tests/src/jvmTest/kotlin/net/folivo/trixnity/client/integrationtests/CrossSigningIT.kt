@@ -11,9 +11,10 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.folivo.trixnity.client.*
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
 import net.folivo.trixnity.client.key.KeyService
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.media.inMemory
+import net.folivo.trixnity.client.store.repository.exposed.exposed
 import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveSasVerificationState
@@ -21,8 +22,7 @@ import net.folivo.trixnity.client.verification.ActiveVerificationState
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.AesHmacSha2RecoveryKey
 import net.folivo.trixnity.client.verification.SelfVerificationMethod.CrossSignedDeviceVerification
 import net.folivo.trixnity.client.verification.VerificationService.SelfVerificationMethods
-import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.client.UIA
+import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.uia.AuthenticationRequest
 import net.folivo.trixnity.core.model.events.InitialStateEvent
@@ -65,35 +65,48 @@ class CrossSigningIT {
         database1 = newDatabase()
         database2 = newDatabase()
         database3 = newDatabase()
-        val repositoriesModule1 = createExposedRepositoriesModule(database1)
-        val repositoriesModule2 = createExposedRepositoriesModule(database2)
-        val repositoriesModule3 = createExposedRepositoriesModule(database3)
+        val repositoriesModule1 = RepositoriesModule.exposed(database1)
+        val repositoriesModule2 = RepositoriesModule.exposed(database2)
+        val repositoriesModule3 = RepositoriesModule.exposed(database3)
 
-        client1 = MatrixClient.loginWith(
+        client1 = MatrixClient.login(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user1", password) }
-        ) {
-            name = "client1"
-        }.getOrThrow()
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user1", password)
+            }.getOrThrow(),
+            configuration = {
+                name = "client1"
+            },
+        ).getOrThrow()
         client2 = MatrixClient.login(
             baseUrl = baseUrl,
-            identifier = IdentifierType.User("user1"),
-            password = password,
             repositoriesModule = repositoriesModule2,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-        ) {
-            name = "client2"
-        }.getOrThrow()
-        client3 = MatrixClient.loginWith(
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLogin(
+                baseUrl = baseUrl,
+                identifier = IdentifierType.User("user1"),
+                password = password,
+            ).getOrThrow(),
+            configuration = {
+                name = "client2"
+            },
+        ).getOrThrow()
+        client3 = MatrixClient.login(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule3,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user3", password) }
-        ) {
-            name = "client3"
-        }.getOrThrow()
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user3", password)
+            }.getOrThrow(),
+            configuration = {
+                name = "client3"
+            },
+        ).getOrThrow()
         client1.startSync()
         client2.startSync()
         client3.startSync()

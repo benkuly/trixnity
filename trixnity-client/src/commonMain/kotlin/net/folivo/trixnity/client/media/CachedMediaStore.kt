@@ -43,6 +43,17 @@ abstract class CachedMediaStore(
             }
     }
 
+    abstract suspend fun deleteAllFromStore()
+
+    final override suspend fun clearCache() {
+        deleteAllFromStore()
+        mediaCache.removeAll()
+    }
+
+    final override suspend fun deleteAll() {
+        clearCache()
+    }
+
     protected suspend fun toByteArray(
         uri: String,
         media: ByteArrayFlow,

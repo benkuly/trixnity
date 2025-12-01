@@ -41,7 +41,8 @@ include(
     "trixnity-client:trixnity-client-repository-exposed",
     "trixnity-client:trixnity-client-repository-indexeddb",
     "trixnity-client:trixnity-client-repository-room",
-    "trixnity-client:trixnity-client-repository-migration-libvodozemac"
+    "trixnity-client:trixnity-client-cryptodriver-libolm",
+    "trixnity-client:trixnity-client-cryptodriver-vodozemac",
 )
 include("trixnity-applicationservice")
 include("trixnity-test-utils")

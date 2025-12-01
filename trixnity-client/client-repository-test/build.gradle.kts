@@ -17,8 +17,6 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(projects.trixnityClient)
-                implementation(projects.trixnityClient.trixnityClientRepositoryMigrationLibvodozemac)
-                implementation(projects.trixnityVodozemac)
 
                 api(projects.trixnityTestUtils)
             }

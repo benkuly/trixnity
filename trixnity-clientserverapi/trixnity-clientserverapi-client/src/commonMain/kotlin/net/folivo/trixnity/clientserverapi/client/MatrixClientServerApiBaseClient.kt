@@ -13,11 +13,13 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.*
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.api.client.MatrixApiClient
+import net.folivo.trixnity.clientserverapi.client.oauth2.OAuth2MatrixClientAuthProvider
 import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.uia.*
 import net.folivo.trixnity.core.*
@@ -28,21 +30,12 @@ import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappi
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiBaseClient")
 
+@Serializable
 data class LogoutInfo(
     val isSoft: Boolean,
     val isLocked: Boolean,
 )
 
-interface MatrixAuthProvider : AuthProvider {
-    /**
-     * Invoke authentication provider specific behaviour when logging out.
-     *
-     * @return The result if the logout is implemented, null if no logout was implemented by the authentication provider
-     */
-    suspend fun logout(authApiClient: AuthenticationApiClient): Result<Unit>? = null
-
-    companion object
-}
 
 /**
  * Plugin to fully disable auth for requests with AuthRequired set to NEVER
@@ -62,7 +55,7 @@ private class UIAInterception(val body: JsonObject, val errorResponse: ErrorResp
 
 class MatrixClientServerApiBaseClient(
     val baseUrl: Url? = null,
-    private val authProvider: MatrixAuthProvider = MatrixAuthProvider.classicInMemory(),
+    private val authProvider: MatrixClientAuthProvider<*>? = null,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientEngine: HttpClientEngine? = null,
@@ -78,7 +71,7 @@ class MatrixClientServerApiBaseClient(
 
         install(SkipAuthenticationIfDisabled)
         install(Auth) {
-            providers.add(authProvider)
+            authProvider?.let { providers.add(it) }
         }
         install(createClientPlugin("UIAInterception") {
             on(Send) { request ->
@@ -152,7 +145,7 @@ class MatrixClientServerApiBaseClient(
         responseSerializer: KSerializer<RESPONSE>,
         jsonRequest: suspend (body: JsonObject) -> JsonObject
     ): Result<UIA<RESPONSE>> = kotlin.runCatching {
-        if (authProvider is OAuth2AuthProvider) {
+        if (authProvider is OAuth2MatrixClientAuthProvider) {
             throw IllegalStateException("Unable to perform UIA request when OAuth 2.0 is used as auth provider")
         }
 

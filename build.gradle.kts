@@ -104,6 +104,8 @@ dependencies {
     dokka(projects.trixnityClient.trixnityClientRepositoryExposed)
     dokka(projects.trixnityClient.trixnityClientRepositoryIndexeddb)
     dokka(projects.trixnityClient.trixnityClientRepositoryRoom)
+    dokka(projects.trixnityClient.trixnityClientCryptodriverLibolm)
+    dokka(projects.trixnityClient.trixnityClientCryptodriverVodozemac)
     dokka(projects.trixnityApplicationservice)
 }
 

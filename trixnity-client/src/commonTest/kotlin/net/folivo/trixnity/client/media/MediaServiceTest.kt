@@ -13,6 +13,9 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.Application.OctetStream
 import io.ktor.http.ContentType.Text.Plain
 import io.ktor.utils.io.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getInMemoryMediaCacheMapping
 import net.folivo.trixnity.client.getInMemoryServerDataStore
 import net.folivo.trixnity.client.mockMatrixClientServerApiClient
@@ -20,18 +23,22 @@ import net.folivo.trixnity.client.store.MediaCacheMapping
 import net.folivo.trixnity.core.model.events.m.room.EncryptedFile
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.toByteArrayFlow
 import kotlin.test.Test
+import kotlin.time.Clock
 
 class MediaServiceTest : TrixnityBaseTest() {
 
     private val mediaCacheMappingStore = getInMemoryMediaCacheMapping()
     private val serverDataStore = getInMemoryServerDataStore()
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
 
-    @Suppress("DEPRECATION")
-    private val mediaStore = InMemoryMediaStore()
+    private val mediaStore = InMemoryMediaStore(coroutineScope, MatrixClientConfiguration(), Clock.System).apply {
+        scheduleSetup { deleteAll() }
+    }
 
     private val apiConfig = PortableMockEngineConfig()
     private val api = mockMatrixClientServerApiClient(apiConfig)
@@ -98,7 +105,7 @@ class MediaServiceTest : TrixnityBaseTest() {
             }
         }
         cut.getEncryptedMedia(encryptedFile).getOrThrow().toByteArray()?.decodeToString() shouldBe "test"
-        mediaStore.getMedia(mxcUri)?.toByteArray() shouldBe rawFile
+        mediaStore.media.value[mxcUri] shouldBe listOf(rawFile)
     }
 
     @Test

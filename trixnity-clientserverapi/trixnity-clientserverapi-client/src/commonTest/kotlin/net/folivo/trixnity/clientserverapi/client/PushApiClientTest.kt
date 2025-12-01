@@ -3,7 +3,6 @@ package net.folivo.trixnity.clientserverapi.client
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import net.folivo.trixnity.clientserverapi.model.push.*
@@ -265,28 +264,6 @@ class PushApiClientTest : TrixnityBaseTest() {
                     "default": true,
                     "enabled": true,
                     "rule_id": ".m.rule.suppress_notices"
-                  },
-                  {
-                    "rule_id": ".m.rule.is_user_mention",
-                    "default": true,
-                    "enabled": true,
-                    "conditions": [
-                      {
-                        "kind": "event_property_contains",
-                        "key": "content.m\\.mentions.user_ids",
-                        "value": "@test:example.org"
-                      }
-                    ],
-                    "actions": [
-                      "notify",
-                      {
-                        "set_tweak": "sound",
-                        "value": "default"
-                      },
-                      {
-                        "set_tweak": "highlight"
-                      }
-                    ]
                   }
                 ],
                 "content": [
@@ -500,22 +477,6 @@ class PushApiClientTest : TrixnityBaseTest() {
                             default = true,
                             enabled = true,
                             ruleId = ".m.rule.suppress_notices"
-                        ),
-                        PushRule.Override(
-                            ruleId = ".m.rule.is_user_mention",
-                            default = true,
-                            enabled = true,
-                            conditions = setOf(
-                                EventPropertyContains(
-                                    key = "content.m\\.mentions.user_ids",
-                                    value = JsonPrimitive("@test:example.org"),
-                                ),
-                            ),
-                            actions = setOf(
-                                Notify,
-                                SetSoundTweak("default"),
-                                SetHighlightTweak(),
-                            ),
                         )
                     ),
                     underride = listOf(

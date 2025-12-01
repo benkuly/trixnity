@@ -8,9 +8,9 @@ import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.FlowCollector
 import net.folivo.trixnity.client.MatrixClientConfiguration
+import net.folivo.trixnity.client.MediaStoreModule
 import net.folivo.trixnity.client.media.CachedMediaStore
 import net.folivo.trixnity.client.media.MediaStore
-import net.folivo.trixnity.client.media.PlatformMedia
 import net.folivo.trixnity.utils.*
 import org.koin.dsl.module
 import web.blob.Blob
@@ -24,11 +24,12 @@ import web.window.window
 import kotlin.random.Random
 import kotlin.time.Clock
 
-@Deprecated("switch to createIndexedDBMediaStoreModule", ReplaceWith("createIndexedDBMediaStoreModule(databaseName)"))
-class IndexedDBMediaStore(
-    val databaseName: String = "trixnity_media",
-    private val toByteArray: (suspend (uri: String, media: ByteArrayFlow, coroutineScope: CoroutineScope?, expectedSize: Long?, maxSize: Long?) -> ByteArray?)? = null,
-) : MediaStore {
+internal class IndexedDBMediaStore(
+    private val databaseName: String,
+    coroutineScope: CoroutineScope,
+    configuration: MatrixClientConfiguration,
+    clock: Clock,
+) : CachedMediaStore(coroutineScope, configuration, clock) {
     companion object {
         const val MEDIA_OBJECT_STORE_NAME = "media"
         const val TMP_MEDIA_OBJECT_STORE_NAME = "tmp"
@@ -60,10 +61,8 @@ class IndexedDBMediaStore(
             GlobalScope.promise { clearTmp() }
         }
     }
-
-    override suspend fun clearCache() = deleteAll()
-
-    override suspend fun deleteAll() {
+    
+    override suspend fun deleteAllFromStore() {
         database.writeTransaction(MEDIA_OBJECT_STORE_NAME, TMP_MEDIA_OBJECT_STORE_NAME) {
             objectStore(MEDIA_OBJECT_STORE_NAME).clear()
             objectStore(TMP_MEDIA_OBJECT_STORE_NAME).clear()
@@ -126,7 +125,7 @@ class IndexedDBMediaStore(
             expectedSize: Long?,
             maxSize: Long?
         ): ByteArray? =
-            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+            toByteArray(url, delegate, coroutineScope, expectedSize, maxSize)
                 ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
@@ -153,7 +152,7 @@ class IndexedDBMediaStore(
             expectedSize: Long?,
             maxSize: Long?
         ): ByteArray? =
-            toByteArray?.invoke(url, delegate, coroutineScope, expectedSize, maxSize)
+            toByteArray(url, delegate, coroutineScope, expectedSize, maxSize)
                 ?: if (maxSize != null) delegate.toByteArray(maxSize) else delegate.toByteArray()
     }
 
@@ -184,31 +183,15 @@ class IndexedDBMediaStore(
     }
 }
 
-internal class IndexedDBCachedMediaStore(
-    databaseName: String = "trixnity_media",
-    coroutineScope: CoroutineScope,
-    configuration: MatrixClientConfiguration,
-    clock: Clock,
-) : CachedMediaStore(coroutineScope, configuration, clock) {
-    @Suppress("DEPRECATION")
-    private val delegate = IndexedDBMediaStore(databaseName, ::toByteArray)
-
-    override suspend fun init(coroutineScope: CoroutineScope) = delegate.init(coroutineScope)
-    override suspend fun addMedia(url: String, content: ByteArrayFlow) = delegate.addMedia(url, content)
-    override suspend fun getMedia(url: String): PlatformMedia? = delegate.getMedia(url)
-    override suspend fun deleteMedia(url: String) = delegate.deleteMedia(url)
-    override suspend fun changeMediaUrl(oldUrl: String, newUrl: String) = delegate.changeMediaUrl(oldUrl, newUrl)
-    override suspend fun clearCache() = delegate.clearCache()
-    override suspend fun deleteAll() = delegate.deleteAll()
-}
-
-fun createIndexedDBMediaStoreModule(databaseName: String = "trixnity_media") = module {
-    single<MediaStore> {
-        IndexedDBCachedMediaStore(
-            databaseName = databaseName,
-            coroutineScope = get(),
-            configuration = get(),
-            clock = get()
-        )
+fun MediaStoreModule.Companion.indexedDB(databaseName: String = "trixnity_media") = MediaStoreModule {
+    module {
+        single<MediaStore> {
+            IndexedDBMediaStore(
+                databaseName = databaseName,
+                coroutineScope = get(),
+                configuration = get(),
+                clock = get()
+            )
+        }
     }
 }

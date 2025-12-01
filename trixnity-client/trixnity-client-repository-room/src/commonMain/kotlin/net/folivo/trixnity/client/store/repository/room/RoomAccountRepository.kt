@@ -59,9 +59,6 @@ internal class RoomAccountRepository(
                 backgroundFilterId = entity.backgroundFilterId,
                 displayName = entity.displayName,
                 avatarUrl = entity.avatarUrl,
-                isLocked = entity.isLocked,
-                oauth2ClientId = entity.oauth2ClientId,
-                oauth2Login = entity.oauth2Login,
             )
         }
     }
@@ -81,9 +78,6 @@ internal class RoomAccountRepository(
                 backgroundFilterId = value.backgroundFilterId,
                 displayName = value.displayName,
                 avatarUrl = value.avatarUrl,
-                isLocked = value.isLocked,
-                oauth2ClientId = value.oauth2ClientId,
-                oauth2Login = value.oauth2Login
             )
         )
     }

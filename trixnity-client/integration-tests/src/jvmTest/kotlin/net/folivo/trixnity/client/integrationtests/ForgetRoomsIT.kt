@@ -5,14 +5,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.*
 import net.folivo.trixnity.client.MatrixClientConfiguration.DeleteRooms
-import net.folivo.trixnity.client.loginWith
-import net.folivo.trixnity.client.media.createInMemoryMediaStoreModule
-import net.folivo.trixnity.client.room
+import net.folivo.trixnity.client.cryptodriver.vodozemac.vodozemac
+import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.room.message.text
-import net.folivo.trixnity.client.store.repository.exposed.createExposedRepositoriesModule
+import net.folivo.trixnity.client.store.repository.exposed.exposed
+import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.clientserverapi.client.classicLoginWith
 import net.folivo.trixnity.core.model.events.InitialStateEvent
 import net.folivo.trixnity.core.model.events.m.room.EncryptionEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership.INVITE
@@ -47,26 +48,34 @@ class ForgetRoomsIT {
         database1 = newDatabase()
         database2 = newDatabase()
 
-        val repositoriesModule1 = createExposedRepositoriesModule(database1)
-        val repositoriesModule2 = createExposedRepositoriesModule(database2)
+        val repositoriesModule1 = RepositoriesModule.exposed(database1)
+        val repositoriesModule2 = RepositoriesModule.exposed(database2)
 
-        client1 = MatrixClient.loginWith(
+        client1 = MatrixClient.login(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user1", password) }
-        ) {
-            name = "client1"
-        }.getOrThrow()
-        client2 = MatrixClient.loginWith(
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user1", password)
+            }.getOrThrow(),
+            configuration = {
+                name = "client1"
+            },
+        ).getOrThrow()
+        client2 = MatrixClient.login(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
-            mediaStoreModule = createInMemoryMediaStoreModule(),
-            getLoginInfo = { it.register("user2", password) },
-        ) {
-            name = "client2"
-            deleteRooms = DeleteRooms.WhenNotJoined // <--
-        }.getOrThrow()
+            mediaStoreModule = MediaStoreModule.inMemory(),
+            cryptoDriverModule = CryptoDriverModule.vodozemac(),
+            authProviderData = MatrixClientAuthProviderData.classicLoginWith(baseUrl) {
+                it.register("user2", password)
+            }.getOrThrow(),
+            configuration = {
+                name = "client2"
+                deleteRooms = DeleteRooms.WhenNotJoined // <--
+            },
+        ).getOrThrow()
         client1.startSync()
         client2.startSync()
         client1.syncState.firstWithTimeout { it == SyncState.RUNNING }

@@ -22,7 +22,6 @@ internal object ExposedAccount : LongIdTable("account") {
     val backgroundFilterId = text("background_filter_id").nullable()
     val displayName = text("display_name").nullable()
     val avatarUrl = text("avatar_url").nullable()
-    val isLocked = bool("is_locked").nullable()
 }
 
 internal class ExposedAccountRepository : AccountRepository {
@@ -41,7 +40,6 @@ internal class ExposedAccountRepository : AccountRepository {
                 backgroundFilterId = it[ExposedAccount.backgroundFilterId],
                 displayName = it[ExposedAccount.displayName],
                 avatarUrl = it[ExposedAccount.avatarUrl],
-                isLocked = it[ExposedAccount.isLocked] ?: false,
             )
         }
     }
@@ -60,7 +58,6 @@ internal class ExposedAccountRepository : AccountRepository {
             it[backgroundFilterId] = value.backgroundFilterId
             it[displayName] = value.displayName
             it[avatarUrl] = value.avatarUrl
-            it[isLocked] = value.isLocked
         }
     }
 
