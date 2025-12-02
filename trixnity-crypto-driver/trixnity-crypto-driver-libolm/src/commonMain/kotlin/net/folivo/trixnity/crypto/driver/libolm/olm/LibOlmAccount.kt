@@ -26,7 +26,7 @@ value class LibOlmAccount(
         get() = LibOlmCurve25519PublicKey(inner.identityKeys.curve25519)
 
     override val maxNumberOfOneTimeKeys: Int
-        get() = inner.maxNumberOfOneTimeKeys.toInt()
+        get() = inner.maxNumberOfOneTimeKeys.toInt() / 2 // adapted to vodozemac behavior (recommendation how many keys to upload)
 
     override val storedOneTimeKeyCount: Int
         get() = inner.oneTimeKeys.curve25519.size

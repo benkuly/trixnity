@@ -44,8 +44,8 @@ import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.SecretType.M_MEGOLM_BACKUP_V1
 import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.driver.keys.Curve25519SecretKey
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.driver.pkencryption.PkDecryption
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -61,7 +61,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class KeyBackupServiceTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val ownUserId = UserId("alice", "server")
     private val ownDeviceId = "DEV"

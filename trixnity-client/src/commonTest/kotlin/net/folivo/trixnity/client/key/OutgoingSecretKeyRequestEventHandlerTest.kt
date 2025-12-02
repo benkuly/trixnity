@@ -53,8 +53,8 @@ import net.folivo.trixnity.crypto.driver.keys.Curve25519PublicKey
 import net.folivo.trixnity.crypto.driver.keys.Curve25519SecretKey
 import net.folivo.trixnity.crypto.driver.keys.Ed25519PublicKey
 import net.folivo.trixnity.crypto.driver.keys.Ed25519SecretKey
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.driver.pkencryption.PkDecryption
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.olm.DecryptedOlmEventContainer
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
@@ -72,7 +72,7 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(MSC3814::class)
 class OutgoingSecretKeyRequestEventHandlerTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")

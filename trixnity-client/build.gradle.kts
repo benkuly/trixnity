@@ -29,7 +29,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(projects.ktorTestUtils)
-                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
+                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverVodozemac)
 
                 implementation(libs.ktor.client.mock)
 

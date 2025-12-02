@@ -26,7 +26,7 @@ import net.folivo.trixnity.core.model.keys.Signed
 import net.folivo.trixnity.core.model.keys.keysOf
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.driver.CryptoDriver
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.of
 import net.folivo.trixnity.crypto.olm.getOlmPublicKeys
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
@@ -35,7 +35,7 @@ import kotlin.test.Test
 
 class SignServiceTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val ed25519SecretKey = driver.key.ed25519SecretKey
 

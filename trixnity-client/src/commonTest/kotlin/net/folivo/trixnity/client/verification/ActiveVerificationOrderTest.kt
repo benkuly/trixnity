@@ -13,7 +13,7 @@ import net.folivo.trixnity.core.model.events.m.key.verification.VerificationStep
 import net.folivo.trixnity.core.model.keys.Keys
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.crypto.driver.CryptoDriver
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
 import kotlin.test.Test
@@ -21,7 +21,7 @@ import kotlin.test.assertEquals
 
 class ActiveVerificationOrderTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val alice = UserId("alice", "server")
     private val aliceDevice = "AAAAAA"
@@ -47,7 +47,7 @@ class ActiveVerificationOrderTest : TrixnityBaseTest() {
         val macEvent = SasMacEventContent(MacValue("k"), Keys(), cut.relatesTo, cut.transactionId)
         cut.sendAndHandleVerificationStep(macEvent)
         assertEquals(
-            expected =  listOf(macEvent, VerificationDoneEventContent(cut.relatesTo, cut.transactionId)),
+            expected = listOf(macEvent, VerificationDoneEventContent(cut.relatesTo, cut.transactionId)),
             actual = handledEvents,
         )
     }
@@ -57,7 +57,7 @@ class ActiveVerificationOrderTest : TrixnityBaseTest() {
         val macEvent = SasMacEventContent(MacValue("k"), Keys(), cut.relatesTo, cut.transactionId)
         cut.sendAndHandleVerificationStep(macEvent)
         assertEquals(
-            expected =  listOf(macEvent, VerificationDoneEventContent(cut.relatesTo, cut.transactionId)),
+            expected = listOf(macEvent, VerificationDoneEventContent(cut.relatesTo, cut.transactionId)),
             actual = sentEvents,
         )
     }

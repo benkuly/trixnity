@@ -30,9 +30,9 @@ import net.folivo.trixnity.core.model.keys.KeyValue.Curve25519KeyValue
 import net.folivo.trixnity.core.model.keys.KeyValue.Ed25519KeyValue
 import net.folivo.trixnity.crypto.driver.CryptoDriver
 import net.folivo.trixnity.crypto.driver.CryptoDriverException
-import net.folivo.trixnity.crypto.driver.libolm.LibOlmCryptoDriver
 import net.folivo.trixnity.crypto.driver.olm.Account
 import net.folivo.trixnity.crypto.driver.olm.Message
+import net.folivo.trixnity.crypto.driver.vodozemac.VodozemacCryptoDriver
 import net.folivo.trixnity.crypto.mocks.OlmDecrypterMock
 import net.folivo.trixnity.crypto.mocks.OlmEventHandlerRequestHandlerMock
 import net.folivo.trixnity.crypto.mocks.OlmStoreMock
@@ -47,21 +47,15 @@ import kotlin.time.Duration.Companion.seconds
 
 class OlmEventHandlerTest : TrixnityBaseTest() {
 
-    private val driver: CryptoDriver = LibOlmCryptoDriver
+    private val driver: CryptoDriver = VodozemacCryptoDriver
 
     private val account = driver.olm.account
     private val curve25519PublicKey = driver.key.curve25519PublicKey
     private val groupSession = driver.megolm.groupSession
 
-    private val firstSize = when (driver) {
-        is LibOlmCryptoDriver -> 51
-        else -> error("unknown driver")
-    }
-
-    private val secondSize = when (driver) {
-        is LibOlmCryptoDriver -> 75
-        else -> error("unknown driver")
-    }
+    // You may wonder why these magic numbers? See handleOlmKeysChange.
+    private val firstSize = 51
+    private val secondSize = 75
 
     private val alice = UserId("alice", "server")
     private val bob = UserId("bob", "server")

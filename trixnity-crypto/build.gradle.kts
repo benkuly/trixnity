@@ -33,7 +33,7 @@ kotlin {
                 implementation(libs.kotest.assertions.core)
                 implementation(projects.trixnityTestUtils)
 
-                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverLibolm)
+                implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverVodozemac)
             }
         }
     }
