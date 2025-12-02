@@ -147,6 +147,7 @@ class NotificationIT {
                     encryptedRoomWithoutNotifications
                 )
             }
+            val roomsWithNotifications = 2
 
             withCluePrintln("send invites") {
                 rooms.forEach { room ->
@@ -155,9 +156,9 @@ class NotificationIT {
             }
 
             withCluePrintln("state notifications") {
-                checkNotifications { it.size == 2 }.forEach { notification ->
+                checkNotifications { it.size == roomsWithNotifications }.forEach { notification ->
                     val stateEvent = notification.shouldBeInstanceOf<Notification.State>().stateEvent
-                    stateEvent.roomId shouldBeIn rooms.take(2)
+                    stateEvent.roomId shouldBeIn rooms.take(roomsWithNotifications)
                     stateEvent.content.shouldBeInstanceOf<MemberEventContent>().displayName shouldBe "user2"
                 }
             }
@@ -185,7 +186,12 @@ class NotificationIT {
             }
 
             withCluePrintln("send message and redact notification") {
-                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, ::checkNotifications)
+                val notificationMessages = sendMessageAndReceiveNotifications(
+                    rooms = rooms,
+                    roomsWithNotifications = roomsWithNotifications,
+                    helloMessage = helloMessage,
+                    checkNotifications = ::checkNotifications
+                )
 
                 withCluePrintln("send redact") {
                     rooms.forEachIndexed { index, room ->
@@ -199,7 +205,12 @@ class NotificationIT {
             }
 
             withCluePrintln("send message and replace without notification") {
-                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, ::checkNotifications)
+                val notificationMessages = sendMessageAndReceiveNotifications(
+                    rooms = rooms,
+                    roomsWithNotifications = roomsWithNotifications,
+                    helloMessage = helloMessage,
+                    checkNotifications = ::checkNotifications
+                )
 
                 withCluePrintln("send replace") {
                     rooms.forEachIndexed { index, room ->
@@ -219,28 +230,36 @@ class NotificationIT {
             }
 
             val notificationMessages = withCluePrintln("send message and replace notification") {
-                val notificationMessages = sendMessageAndReceiveNotifications(rooms, helloMessage, ::checkNotifications)
+                val notificationMessages = sendMessageAndReceiveNotifications(
+                    rooms = rooms,
+                    roomsWithNotifications = roomsWithNotifications,
+                    helloMessage = helloMessage,
+                    checkNotifications = ::checkNotifications
+                )
 
-                withCluePrintln("send replace") {
-                    rooms.forEachIndexed { index, room ->
+                val replaceMessages = withCluePrintln("send replace") {
+                    rooms.mapIndexed { index, room ->
                         startedClient1.client.room.sendMessage(room) {
                             text("$helloMessage!!")
                             replace(notificationMessages[index])
                             mentions(startedClient2.client.userId)
+                        }.let { transactionId ->
+                            startedClient1.client.room.getOutbox(room).flatten()
+                                .mapNotNull { it.find { it.transactionId == transactionId }?.eventId }
+                                .firstWithTimeout()
                         }
                     }
-                    startedClient1.client.room.waitForOutboxSent()
                 }
 
                 withCluePrintln("receive replaced notifications") {
                     checkNotifications {
-                        it.size == 2 && it.any {
+                        it.size == roomsWithNotifications && it.any {
                             val content = (it as? Notification.Message)?.timelineEvent?.content?.getOrNull()
                             (content as? RoomMessageEventContent.TextBased.Text)?.body == "$helloMessage!!"
                         }
                     }
                 }
-                notificationMessages
+                replaceMessages
             }
 
             withCluePrintln("send message and remove notification when read") {
@@ -250,7 +269,7 @@ class NotificationIT {
                     }
                 }
 
-                withCluePrintln("receive redacted notifications") {
+                withCluePrintln("receive removed notifications") {
                     checkNotifications { it.isEmpty() }
                 }
             }
@@ -259,6 +278,7 @@ class NotificationIT {
 
     private suspend inline fun sendMessageAndReceiveNotifications(
         rooms: List<RoomId>,
+        roomsWithNotifications: Int,
         helloMessage: String,
         checkNotifications: suspend (check: (List<Notification>) -> Boolean) -> List<Notification>
     ): List<EventId> {
@@ -277,10 +297,10 @@ class NotificationIT {
         log.debug { "sent messages $notificationMessages" }
 
         withCluePrintln("receive notifications") {
-            checkNotifications { it.size == 2 }.also {
+            checkNotifications { it.size == roomsWithNotifications }.also {
                 it.forEach { notification ->
                     val messageNotification = notification.shouldBeInstanceOf<Notification.Message>().timelineEvent
-                    messageNotification.eventId shouldBeIn notificationMessages.take(2)
+                    messageNotification.eventId shouldBeIn notificationMessages.take(roomsWithNotifications)
                     messageNotification.content?.getOrNull()
                         .shouldBeInstanceOf<RoomMessageEventContent.TextBased.Text>()
                         .body shouldBe helloMessage

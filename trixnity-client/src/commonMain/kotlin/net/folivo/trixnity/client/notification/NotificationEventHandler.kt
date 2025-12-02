@@ -170,7 +170,7 @@ class NotificationEventHandler(
                             readReceipts = unreadRoom.readReceipts,
                             lastEventId = lastEventId,
                             lastProcessedEventId = if (resetProcess) null else oldState.lastProcessedEventId,
-                            expectedMaxNotificationCount = if (unreadRoom.isEncrypted.not()) { // FIXME test
+                            expectedMaxNotificationCount = if (unreadRoom.isEncrypted.not()) {
                                 syncEvents.syncResponse.room?.join?.get(roomId)?.unreadNotifications?.notificationCount
                                     ?: (oldState as? StoredNotificationState.SyncWithTimeline)?.expectedMaxNotificationCount
                             } else null,
@@ -365,7 +365,7 @@ class NotificationEventHandler(
         val hasStoredNotifications =
             notificationStore.getAll().first().values.mapNotNull { it.first() }.any { it.roomId == roomId }
         val expectedMaxNotificationCount =
-            (notificationState.expectedMaxNotificationCount)
+            notificationState.expectedMaxNotificationCount
                 .takeIf { !hasStoredNotifications || lastProcessedEventId == null }
 
         if (expectedMaxNotificationCount == 0L) {
