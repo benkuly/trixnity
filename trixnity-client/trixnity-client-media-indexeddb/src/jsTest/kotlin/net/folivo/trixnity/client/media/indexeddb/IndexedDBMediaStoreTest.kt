@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.MEDIA_OBJECT_STORE_NAME
 import net.folivo.trixnity.client.media.indexeddb.IndexedDBMediaStore.Companion.TMP_MEDIA_OBJECT_STORE_NAME
 import net.folivo.trixnity.utils.nextString
@@ -20,6 +21,7 @@ import web.blob.Blob
 import web.blob.arrayBuffer
 import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 class IndexedDBMediaStoreTest {
@@ -32,10 +34,11 @@ class IndexedDBMediaStoreTest {
     private val file2 = "file2"
 
     private suspend fun beforeTest() {
-        cut = IndexedDBMediaStore(Random.nextString(22))
         coroutineScope = CoroutineScope(Dispatchers.Default)
+        val databaseName = Random.nextString(12)
+        cut = IndexedDBMediaStore(databaseName, coroutineScope, MatrixClientConfiguration(), Clock.System)
         cut.init(coroutineScope)
-        database = openDatabase(cut.databaseName, 2) { _, _, _ -> }
+        database = openDatabase(databaseName, 2) { _, _, _ -> }
     }
 
     private fun afterTest() {

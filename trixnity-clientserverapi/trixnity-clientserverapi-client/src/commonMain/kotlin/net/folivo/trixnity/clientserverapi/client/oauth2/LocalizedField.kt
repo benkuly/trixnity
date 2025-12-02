@@ -14,7 +14,8 @@ abstract class LocalizedObjectSerializer<T>(delegate: KSerializer<T>) :
     private val localizedFields =
         buildSet {
             repeat(delegate.descriptor.elementsCount) { index ->
-                if (delegate.descriptor.getElementDescriptor(index).serialName == LocalizedField::class.qualifiedName) {
+                val elementDescriptor = delegate.descriptor.getElementDescriptor(index)
+                if (elementDescriptor.serialName.substringAfterLast('.') == LocalizedField::class.simpleName) {
                     add(delegate.descriptor.getElementName(index))
                 }
             }

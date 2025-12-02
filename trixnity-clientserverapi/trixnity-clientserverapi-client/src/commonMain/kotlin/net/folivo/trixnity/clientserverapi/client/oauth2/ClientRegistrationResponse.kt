@@ -14,7 +14,7 @@ internal data class ClientRegistrationResponse(
     val clientMetadata: ClientMetadata,
 )
 
-internal class ClientRegistrationResponseSerializer : KSerializer<ClientRegistrationResponse> {
+internal object ClientRegistrationResponseSerializer : KSerializer<ClientRegistrationResponse> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ClientRegistrationResponse")
 
     override fun deserialize(decoder: Decoder): ClientRegistrationResponse {

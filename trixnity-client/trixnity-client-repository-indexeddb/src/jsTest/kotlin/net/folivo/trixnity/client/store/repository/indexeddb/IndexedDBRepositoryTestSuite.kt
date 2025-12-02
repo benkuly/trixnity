@@ -15,10 +15,11 @@ class IndexedDBRepositoryTestSuite : RepositoryTestSuite(
     repositoriesModule = RepositoriesModule {
         val delegate = RepositoriesModule.indexedDB(Random.nextString(22)).create()
         module {
-            includes(delegate)
-            single<RepositoryTransactionManager> {
-                IndexedDBRepositoryTransactionManager(get(), allStoreNames, testMode = true)
-            }
+            includes(module {
+                single<RepositoryTransactionManager> {
+                    IndexedDBRepositoryTransactionManager(get(), allStoreNames, testMode = true)
+                }
+            }, delegate)
         }
     }
 )

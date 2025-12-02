@@ -26,6 +26,7 @@ fun RepositoriesModule.Companion.indexedDB(databaseName: String = "trixnity"): R
         }
         single<RepositoryTransactionManager> { IndexedDBRepositoryTransactionManager(get(), allStoreNames) }
         singleOf(::IndexedDBAccountRepository) { bind<AccountRepository>() }
+        singleOf(::IndexedDBAuthenticationRepository) { bind<AuthenticationRepository>() }
         singleOf(::IndexedServerDataRepository) { bind<ServerDataRepository>() }
         singleOf(::IndexedDBCrossSigningKeysRepository) { bind<CrossSigningKeysRepository>() }
         singleOf(::IndexedDBDeviceKeysRepository) { bind<DeviceKeysRepository>() }
@@ -61,6 +62,7 @@ fun RepositoriesModule.Companion.indexedDB(databaseName: String = "trixnity"): R
 
 internal val allStoreNames = arrayOf(
     IndexedDBAccountRepository.objectStoreName,
+    IndexedDBAuthenticationRepository.objectStoreName,
     IndexedServerDataRepository.objectStoreName,
     IndexedDBCrossSigningKeysRepository.objectStoreName,
     IndexedDBDeviceKeysRepository.objectStoreName,
@@ -96,6 +98,7 @@ internal val allStoreNames = arrayOf(
 internal suspend fun createDatabase(databaseName: String) =
     openDatabase(databaseName, 9) { database, oldVersion, _ ->
         IndexedDBAccountRepository.apply { migrate(database, oldVersion) }
+        IndexedDBAuthenticationRepository.apply { migrate(database, oldVersion) }
         IndexedServerDataRepository.apply { migrate(database, oldVersion) }
         IndexedDBCrossSigningKeysRepository.apply { migrate(database, oldVersion) }
         IndexedDBDeviceKeysRepository.apply { migrate(database, oldVersion) }
