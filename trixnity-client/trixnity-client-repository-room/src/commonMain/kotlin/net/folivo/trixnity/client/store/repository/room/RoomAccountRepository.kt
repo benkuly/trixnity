@@ -65,6 +65,7 @@ internal class RoomAccountRepository(
 
     override suspend fun save(key: Long, value: Account) = withRoomWrite {
         dao.insert(
+            @Suppress("DEPRECATION")
             RoomAccount(
                 id = key,
                 olmPickleKey = value.olmPickleKey,

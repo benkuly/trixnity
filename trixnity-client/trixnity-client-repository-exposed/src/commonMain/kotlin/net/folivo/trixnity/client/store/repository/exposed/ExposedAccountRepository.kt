@@ -45,6 +45,7 @@ internal class ExposedAccountRepository : AccountRepository {
     }
 
     override suspend fun save(key: Long, value: Account): Unit = withExposedWrite {
+        @Suppress("DEPRECATION")
         ExposedAccount.upsert {
             it[id] = key
             it[olmPickleKey] = value.olmPickleKey
