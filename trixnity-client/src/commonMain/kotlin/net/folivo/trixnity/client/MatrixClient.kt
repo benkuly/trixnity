@@ -158,109 +158,113 @@ suspend fun MatrixClient.Companion.create(
     val coroutineScope =
         CoroutineScope(finalCoroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
-    val koinApplication = createKoinApplication(
-        config = config,
-        coroutineScope = coroutineScope,
-    )
+    try {
+        val koinApplication = createKoinApplication(
+            config = config,
+            coroutineScope = coroutineScope,
+        )
 
-    val di = koinApplication.koin
+        val di = koinApplication.koin
 
-    val authProviderFactory =
-        requireNotNull(
-            di.getAll<MatrixClientAuthProviderFactory>()
-                .find { it.supports == authProviderData::class }) {
-            "authProviderData of type ${authProviderData::class} is not supported. " +
-                    "Supported types: ${di.getAll<MatrixClientAuthProviderFactory>().map { it.supports }}"
-        }
+        val authProviderFactory =
+            requireNotNull(
+                di.getAll<MatrixClientAuthProviderFactory>()
+                    .find { it.supports == authProviderData::class }) {
+                "authProviderData of type ${authProviderData::class} is not supported. " +
+                        "Supported types: ${di.getAll<MatrixClientAuthProviderFactory>().map { it.supports }}"
+            }
 
-    val (userId, deviceId) = config.matrixClientServerApiClientFactory.create(
-        baseUrl = baseUrl,
-        authProvider = authProviderFactory.create(
+        val (userId, deviceId) = config.matrixClientServerApiClientFactory.create(
             baseUrl = baseUrl,
-            store = MatrixClientAuthProviderStore.inMemory(),
+            authProvider = authProviderFactory.create(
+                baseUrl = baseUrl,
+                store = MatrixClientAuthProviderStore.inMemory(),
+                initialData = authProviderData,
+                onLogout = { },
+                httpClientEngine = config.httpClientEngine,
+                httpClientConfig = config.httpClientConfig
+            ),
+            httpClientEngine = config.httpClientEngine,
+            httpClientConfig = config.httpClientConfig,
+            json = di.get(),
+            eventContentSerializerMappings = di.get(),
+            coroutineContext = finalCoroutineContext,
+        ).use {
+            it.authentication.whoAmI().getOrThrow()
+        }
+        requireNotNull(deviceId) { "deviceId must not be null" }
+        val loginInfo = MatrixClient.LoginInfo(userId, deviceId)
+
+        koinApplication.modules(
+            repositoriesModuleFactory(loginInfo).create(),
+            mediaStoreModuleFactory(loginInfo).create(),
+            cryptoDriverModule.create(),
+        )
+        runMigrationsAndInitStores(di)
+
+        val authenticationStore = di.get<AuthenticationStore>()
+        val accountStore = di.get<AccountStore>()
+
+        val authProvider = authProviderFactory.create(
+            baseUrl = baseUrl,
+            store = AuthenticationStoreMatrixClientAuthProviderStore(authProviderFactory.id, authenticationStore),
             initialData = authProviderData,
-            onLogout = { },
+            onLogout = { onLogout(it, authenticationStore) },
             httpClientEngine = config.httpClientEngine,
             httpClientConfig = config.httpClientConfig
-        ),
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig,
-        json = di.get(),
-        eventContentSerializerMappings = di.get(),
-        coroutineContext = finalCoroutineContext,
-    ).use {
-        it.authentication.whoAmI().getOrThrow()
-    }
-    requireNotNull(deviceId) { "deviceId must not be null" }
-    val loginInfo = MatrixClient.LoginInfo(userId, deviceId)
+        )
 
-    koinApplication.modules(
-        repositoriesModuleFactory(loginInfo).create(),
-        mediaStoreModuleFactory(loginInfo).create(),
-        cryptoDriverModule.create(),
-    )
-    runMigrationsAndInitStores(di)
+        val api = config.matrixClientServerApiClientFactory.create(
+            baseUrl = baseUrl,
+            authProvider = authProvider,
+            httpClientEngine = config.httpClientEngine,
+            httpClientConfig = config.httpClientConfig,
+            json = di.get(),
+            eventContentSerializerMappings = di.get(),
+            syncBatchTokenStore = AccountStoreSyncBatchTokenStore(accountStore),
+            syncErrorDelayConfig = config.syncErrorDelayConfig,
+            coroutineContext = finalCoroutineContext,
+        )
+        try {
+            val (displayName, avatarUrl) = api.user.getProfile(userId).getOrThrow()
+            accountStore.updateAccount {
+                Account(
+                    olmPickleKey = null,
+                    baseUrl = baseUrl.toString(),
+                    userId = userId,
+                    deviceId = deviceId,
+                    displayName = displayName,
+                    avatarUrl = avatarUrl,
+                    backgroundFilterId = null,
+                    filterId = null,
+                    syncBatchToken = null,
+                )
+            }
 
-    val authenticationStore = di.get<AuthenticationStore>()
-    val accountStore = di.get<AccountStore>()
+            val userInfo = getUserInfo(userId, deviceId, di)
 
-    val authProvider = authProviderFactory.create(
-        baseUrl = baseUrl,
-        store = AuthenticationStoreMatrixClientAuthProviderStore(authProviderFactory.id, authenticationStore),
-        initialData = authProviderData,
-        onLogout = { onLogout(it, authenticationStore) },
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig
-    )
+            koinApplication.modules(module {
+                single { userInfo }
+                single<MatrixClientServerApiClient> { api }
+            })
 
-    val api = config.matrixClientServerApiClientFactory.create(
-        baseUrl = baseUrl,
-        authProvider = authProvider,
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig,
-        json = di.get(),
-        eventContentSerializerMappings = di.get(),
-        syncBatchTokenStore = AccountStoreSyncBatchTokenStore(accountStore),
-        syncErrorDelayConfig = config.syncErrorDelayConfig,
-        coroutineContext = finalCoroutineContext,
-    )
-    try {
-        val (displayName, avatarUrl) = api.user.getProfile(userId).getOrThrow()
-        accountStore.updateAccount {
-            Account(
-                olmPickleKey = null,
-                baseUrl = baseUrl.toString(),
-                userId = userId,
-                deviceId = deviceId,
-                displayName = displayName,
-                avatarUrl = avatarUrl,
-                backgroundFilterId = null,
-                filterId = null,
-                syncBatchToken = null,
-            )
+            val keyStore = di.get<KeyStore>()
+
+            val selfSignedDeviceKeys = di.get<SignService>().getSelfSignedDeviceKeys()
+            api.key.setKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
+            selfSignedDeviceKeys.signed.keys.forEach {
+                keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value.value))
+            }
+            keyStore.updateOutdatedKeys { it + userId }
+
+            log.trace { "finished create MatrixClient" }
+            MatrixClientImpl(baseUrl, di)
+        } catch (t: Throwable) {
+            api.close()
+            throw t
         }
-
-        val userInfo = getUserInfo(userId, deviceId, di)
-
-        koinApplication.modules(module {
-            single { userInfo }
-            single<MatrixClientServerApiClient> { api }
-        })
-
-        val keyStore = di.get<KeyStore>()
-
-        val selfSignedDeviceKeys = di.get<SignService>().getSelfSignedDeviceKeys()
-        api.key.setKeys(deviceKeys = selfSignedDeviceKeys).getOrThrow()
-        selfSignedDeviceKeys.signed.keys.forEach {
-            keyStore.saveKeyVerificationState(it, KeyVerificationState.Verified(it.value.value))
-        }
-        keyStore.updateOutdatedKeys { it + userId }
-
-        log.trace { "finished create MatrixClient" }
-        MatrixClientImpl(baseUrl, di)
     } catch (t: Throwable) {
-        api.close()
-        di.get<CoroutineScope>().cancel()
+        coroutineScope.cancel()
         throw t
     }
 }
@@ -278,127 +282,132 @@ suspend fun MatrixClient.Companion.load(
     val coroutineScope =
         CoroutineScope(finalCoroutineContext + SupervisorJob(coroutineContext[Job]) + coroutineExceptionHandler)
 
-    val koinApplication = createKoinApplication(
-        config = config,
-        coroutineScope = coroutineScope,
-        extraModules = listOf(
-            repositoriesModule.create(),
-            mediaStoreModule.create(),
-            cryptoDriverModule.create(),
-        )
-    )
-
-    val di = koinApplication.koin
-    runMigrationsAndInitStores(di)
-
-    val authenticationStore = di.get<AuthenticationStore>()
-    val accountStore = di.get<AccountStore>()
-    val authentication =
-        checkNotNull(authenticationStore.getAuthentication()) { "store did not contain authentication" }
-    val account = checkNotNull(accountStore.getAccount()) { "store did not contain account" }
-    val baseUrl = Url(account.baseUrl)
-    val userId = account.userId
-    val deviceId = account.deviceId
-    val legacyAuthProviderData = account.takeIf { it.accessToken != null }
-        ?.let {
-            @Suppress("DEPRECATION")
-            ClassicMatrixClientAuthProviderData(
-                accessToken = checkNotNull(it.accessToken),
-                accessTokenExpiresInMs = null,
-                refreshToken = it.refreshToken
+    try {
+        val koinApplication = createKoinApplication(
+            config = config,
+            coroutineScope = coroutineScope,
+            extraModules = listOf(
+                repositoriesModule.create(),
+                mediaStoreModule.create(),
+                cryptoDriverModule.create(),
             )
-        }
+        )
 
-    val authProviderFactory = when {
-        authProviderData != null -> {
-            authenticationStore.updateAuthentication { it?.copy(logoutInfo = null) }
-            requireNotNull(
-                di.getAll<MatrixClientAuthProviderFactory>()
-                    .find { it.supports == authProviderData::class }) {
-                "authProviderData of type ${authProviderData::class} is not supported. " +
-                        "Supported types: ${di.getAll<MatrixClientAuthProviderFactory>().map { it.supports }}"
-            }
-        }
+        val di = koinApplication.koin
+        runMigrationsAndInitStores(di)
 
-        legacyAuthProviderData != null -> {
-            requireNotNull(
-                di.getAll<MatrixClientAuthProviderFactory>()
-                    .find { it.supports == ClassicMatrixClientAuthProviderData::class }) {
-                "authProviderData of type ${ClassicMatrixClientAuthProviderData::class} is needed for migration. " +
-                        "Supported types: ${di.getAll<MatrixClientAuthProviderFactory>().map { it.supports }}"
-            }
-        }
-
-        else -> {
-            requireNotNull(
-                di.getAll<MatrixClientAuthProviderFactory>()
-                    .find { it.id == authentication.providerId }) {
-                "authProviderId ${authentication.providerId} is not supported. " +
-                        "Supported types: ${di.getAll<MatrixClientAuthProviderFactory>().map { it.id }}"
-            }
-        }
-    }
-
-    if (authProviderData != null) {
-        config.matrixClientServerApiClientFactory.create(
-            baseUrl = baseUrl,
-            authProvider = authProviderFactory.create(
-                baseUrl = baseUrl,
-                store = MatrixClientAuthProviderStore.inMemory(),
-                initialData = authProviderData,
-                onLogout = { },
-                httpClientEngine = config.httpClientEngine,
-                httpClientConfig = config.httpClientConfig
-            ),
-            httpClientEngine = config.httpClientEngine,
-            httpClientConfig = config.httpClientConfig,
-            json = di.get(),
-            eventContentSerializerMappings = di.get(),
-            coroutineContext = finalCoroutineContext,
-        ).use {
-            val (newUserId, newDeviceId) = it.authentication.whoAmI().getOrThrow()
-            if (newUserId != userId || newDeviceId != deviceId) {
-                throw IllegalArgumentException(
-                    "newly authenticated userId ($newUserId) and deviceId ($newDeviceId) " +
-                            "must match stored authenticated userId ($userId) and deviceId ($deviceId). "
+        val authenticationStore = di.get<AuthenticationStore>()
+        val accountStore = di.get<AccountStore>()
+        val authentication =
+            checkNotNull(authenticationStore.getAuthentication()) { "store did not contain authentication" }
+        val account = checkNotNull(accountStore.getAccount()) { "store did not contain account" }
+        val baseUrl = Url(account.baseUrl)
+        val userId = account.userId
+        val deviceId = account.deviceId
+        val legacyAuthProviderData = account.takeIf { it.accessToken != null }
+            ?.let {
+                @Suppress("DEPRECATION")
+                ClassicMatrixClientAuthProviderData(
+                    accessToken = checkNotNull(it.accessToken),
+                    accessTokenExpiresInMs = null,
+                    refreshToken = it.refreshToken
                 )
             }
+
+        val authProviderFactory = when {
+            authProviderData != null -> {
+                authenticationStore.updateAuthentication { it?.copy(logoutInfo = null) }
+                requireNotNull(
+                    di.getAll<MatrixClientAuthProviderFactory>()
+                        .find { it.supports == authProviderData::class }) {
+                    "authProviderData of type ${authProviderData::class} is not supported. " +
+                            "Supported types: ${di.getAll<MatrixClientAuthProviderFactory>().map { it.supports }}"
+                }
+            }
+
+            legacyAuthProviderData != null -> {
+                requireNotNull(
+                    di.getAll<MatrixClientAuthProviderFactory>()
+                        .find { it.supports == ClassicMatrixClientAuthProviderData::class }) {
+                    "authProviderData of type ${ClassicMatrixClientAuthProviderData::class} is needed for migration. " +
+                            "Supported types: ${di.getAll<MatrixClientAuthProviderFactory>().map { it.supports }}"
+                }
+            }
+
+            else -> {
+                requireNotNull(
+                    di.getAll<MatrixClientAuthProviderFactory>()
+                        .find { it.id == authentication.providerId }) {
+                    "authProviderId ${authentication.providerId} is not supported. " +
+                            "Supported types: ${di.getAll<MatrixClientAuthProviderFactory>().map { it.id }}"
+                }
+            }
         }
-    }
 
-    val authProvider = authProviderFactory.create(
-        baseUrl = baseUrl,
-        store = AuthenticationStoreMatrixClientAuthProviderStore(authProviderFactory.id, authenticationStore),
-        initialData = authProviderData ?: legacyAuthProviderData,
-        onLogout = { onLogout(it, authenticationStore) },
-        httpClientEngine = config.httpClientEngine,
-        httpClientConfig = config.httpClientConfig
-    )
-    if (legacyAuthProviderData != null) {
-        accountStore.updateAccount { it?.copy(accessToken = null, refreshToken = null) }
-    }
-
-    val userInfo = getUserInfo(userId, deviceId, di)
-
-    koinApplication.modules(module {
-        single { userInfo }
-        single<MatrixClientServerApiClient> {
+        if (authProviderData != null) {
             config.matrixClientServerApiClientFactory.create(
                 baseUrl = baseUrl,
-                authProvider = authProvider,
+                authProvider = authProviderFactory.create(
+                    baseUrl = baseUrl,
+                    store = MatrixClientAuthProviderStore.inMemory(),
+                    initialData = authProviderData,
+                    onLogout = { },
+                    httpClientEngine = config.httpClientEngine,
+                    httpClientConfig = config.httpClientConfig
+                ),
                 httpClientEngine = config.httpClientEngine,
                 httpClientConfig = config.httpClientConfig,
                 json = di.get(),
                 eventContentSerializerMappings = di.get(),
-                syncBatchTokenStore = AccountStoreSyncBatchTokenStore(accountStore),
-                syncErrorDelayConfig = config.syncErrorDelayConfig,
                 coroutineContext = finalCoroutineContext,
-            )
+            ).use {
+                val (newUserId, newDeviceId) = it.authentication.whoAmI().getOrThrow()
+                if (newUserId != userId || newDeviceId != deviceId) {
+                    throw IllegalArgumentException(
+                        "newly authenticated userId ($newUserId) and deviceId ($newDeviceId) " +
+                                "must match stored authenticated userId ($userId) and deviceId ($deviceId). "
+                    )
+                }
+            }
         }
-    })
 
-    log.trace { "finished create MatrixClient" }
-    MatrixClientImpl(baseUrl, di)
+        val authProvider = authProviderFactory.create(
+            baseUrl = baseUrl,
+            store = AuthenticationStoreMatrixClientAuthProviderStore(authProviderFactory.id, authenticationStore),
+            initialData = authProviderData ?: legacyAuthProviderData,
+            onLogout = { onLogout(it, authenticationStore) },
+            httpClientEngine = config.httpClientEngine,
+            httpClientConfig = config.httpClientConfig
+        )
+        if (legacyAuthProviderData != null) {
+            accountStore.updateAccount { it?.copy(accessToken = null, refreshToken = null) }
+        }
+
+        val userInfo = getUserInfo(userId, deviceId, di)
+
+        koinApplication.modules(module {
+            single { userInfo }
+            single<MatrixClientServerApiClient> {
+                config.matrixClientServerApiClientFactory.create(
+                    baseUrl = baseUrl,
+                    authProvider = authProvider,
+                    httpClientEngine = config.httpClientEngine,
+                    httpClientConfig = config.httpClientConfig,
+                    json = di.get(),
+                    eventContentSerializerMappings = di.get(),
+                    syncBatchTokenStore = AccountStoreSyncBatchTokenStore(accountStore),
+                    syncErrorDelayConfig = config.syncErrorDelayConfig,
+                    coroutineContext = finalCoroutineContext,
+                )
+            }
+        })
+
+        log.trace { "finished create MatrixClient" }
+        MatrixClientImpl(baseUrl, di)
+    } catch (t: Throwable) {
+        coroutineScope.cancel()
+        throw t
+    }
 }
 
 private class AuthenticationStoreMatrixClientAuthProviderStore(
