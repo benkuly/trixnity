@@ -1,3 +1,5 @@
+rootProject.name = "trixnity-buildSrc"
+
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
