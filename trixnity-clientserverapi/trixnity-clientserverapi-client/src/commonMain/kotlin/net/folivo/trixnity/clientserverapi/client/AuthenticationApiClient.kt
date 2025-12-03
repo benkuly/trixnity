@@ -317,8 +317,10 @@ class AuthenticationApiClientImpl(
             )
         )
 
-    override suspend fun logout(asUserId: UserId?): Result<Unit> =
-        authProvider?.logout() ?: baseClient.request(Logout(asUserId))
+    override suspend fun logout(asUserId: UserId?): Result<Unit> = runCatching {
+        authProvider?.logout()?.getOrThrow()
+        baseClient.request(Logout(asUserId)).getOrThrow()
+    }
 
     override suspend fun logoutAll(asUserId: UserId?): Result<Unit> =
         baseClient.request(LogoutAll(asUserId))
