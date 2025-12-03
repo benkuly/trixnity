@@ -146,8 +146,8 @@ suspend fun MatrixClient.Companion.create(
 
 suspend fun MatrixClient.Companion.create(
     baseUrl: Url,
-    repositoriesModuleFactory: (MatrixClient.LoginInfo) -> RepositoriesModule,
-    mediaStoreModuleFactory: (MatrixClient.LoginInfo) -> MediaStoreModule,
+    repositoriesModuleFactory: suspend (MatrixClient.LoginInfo) -> RepositoriesModule,
+    mediaStoreModuleFactory: suspend (MatrixClient.LoginInfo) -> MediaStoreModule,
     cryptoDriverModule: CryptoDriverModule,
     authProviderData: MatrixClientAuthProviderData,
     coroutineContext: CoroutineContext = Dispatchers.Default,
