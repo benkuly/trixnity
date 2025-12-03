@@ -88,7 +88,7 @@ class TimelineEventIT {
         val repositoriesModule1 = RepositoriesModule.exposed(database1)
         val repositoriesModule2 = RepositoriesModule.exposed(database2)
 
-        client1 = MatrixClient.login(
+        client1 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStoreModule = MediaStoreModule.inMemory(),
@@ -100,7 +100,7 @@ class TimelineEventIT {
                 name = "client1"
             },
         ).getOrThrow()
-        client2 = MatrixClient.login(
+        client2 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStoreModule = MediaStoreModule.inMemory(),
@@ -247,7 +247,7 @@ class TimelineEventIT {
     fun shouldSaveUnencryptedTimelineEvent(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(180_000) {
             val database = newDatabase()
-            val client = MatrixClient.login(
+            val client = MatrixClient.create(
                 baseUrl = baseUrl,
                 repositoriesModule = RepositoriesModule.exposed(database),
                 mediaStoreModule = MediaStoreModule.inMemory(),
@@ -294,7 +294,7 @@ class TimelineEventIT {
     fun shouldNotSaveUnencryptedTimelineEvent(): Unit = runBlocking(Dispatchers.Default) {
         withTimeout(180_000) {
             val database = newDatabase()
-            val client = MatrixClient.login(
+            val client = MatrixClient.create(
                 baseUrl = baseUrl,
                 repositoriesModule = RepositoriesModule.exposed(database),
                 mediaStoreModule = MediaStoreModule.inMemory(),
@@ -361,7 +361,7 @@ class TimelineEventIT {
                 host = synapseDocker.host,
                 port = synapseDocker.firstMappedPort
             ).build()
-            val client3 = MatrixClient.login(
+            val client3 = MatrixClient.create(
                 baseUrl = baseUrl,
                 repositoriesModule = RepositoriesModule.inMemory(),
                 mediaStoreModule = MediaStoreModule.inMemory(),

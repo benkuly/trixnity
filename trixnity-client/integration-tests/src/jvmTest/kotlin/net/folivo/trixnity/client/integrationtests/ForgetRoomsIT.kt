@@ -51,7 +51,7 @@ class ForgetRoomsIT {
         val repositoriesModule1 = RepositoriesModule.exposed(database1)
         val repositoriesModule2 = RepositoriesModule.exposed(database2)
 
-        client1 = MatrixClient.login(
+        client1 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStoreModule = MediaStoreModule.inMemory(),
@@ -63,7 +63,7 @@ class ForgetRoomsIT {
                 name = "client1"
             },
         ).getOrThrow()
-        client2 = MatrixClient.login(
+        client2 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStoreModule = MediaStoreModule.inMemory(),

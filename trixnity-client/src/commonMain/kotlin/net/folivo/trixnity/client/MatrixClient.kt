@@ -126,7 +126,7 @@ fun interface CryptoDriverModule {
     companion object
 }
 
-suspend fun MatrixClient.Companion.login(
+suspend fun MatrixClient.Companion.create(
     baseUrl: Url,
     repositoriesModule: RepositoriesModule,
     mediaStoreModule: MediaStoreModule,
@@ -134,7 +134,7 @@ suspend fun MatrixClient.Companion.login(
     authProviderData: MatrixClientAuthProviderData,
     coroutineContext: CoroutineContext = Dispatchers.Default,
     configuration: MatrixClientConfiguration.() -> Unit = {},
-): Result<MatrixClient> = login(
+): Result<MatrixClient> = create(
     baseUrl = baseUrl,
     authProviderData = authProviderData,
     repositoriesModuleFactory = { repositoriesModule },
@@ -144,7 +144,7 @@ suspend fun MatrixClient.Companion.login(
     configuration = configuration,
 )
 
-suspend fun MatrixClient.Companion.login(
+suspend fun MatrixClient.Companion.create(
     baseUrl: Url,
     repositoriesModuleFactory: (MatrixClient.LoginInfo) -> RepositoriesModule,
     mediaStoreModuleFactory: (MatrixClient.LoginInfo) -> MediaStoreModule,
@@ -265,7 +265,7 @@ suspend fun MatrixClient.Companion.login(
     }
 }
 
-suspend fun MatrixClient.Companion.fromStore(
+suspend fun MatrixClient.Companion.load(
     repositoriesModule: RepositoriesModule,
     mediaStoreModule: MediaStoreModule,
     cryptoDriverModule: CryptoDriverModule,

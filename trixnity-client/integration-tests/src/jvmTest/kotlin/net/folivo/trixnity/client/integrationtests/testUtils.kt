@@ -90,7 +90,7 @@ suspend fun registerAndStartClient(
     repositoriesModule: RepositoriesModule,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
-    val client = MatrixClient.login(
+    val client = MatrixClient.create(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStoreModule = MediaStoreModule.inMemory(),
@@ -116,7 +116,7 @@ suspend fun startClient(
     repositoriesModule: RepositoriesModule,
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
-    val client = MatrixClient.login(
+    val client = MatrixClient.create(
         baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStoreModule = MediaStoreModule.inMemory(),

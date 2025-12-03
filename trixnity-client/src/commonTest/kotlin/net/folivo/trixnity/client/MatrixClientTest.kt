@@ -86,7 +86,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                     single<OlmAccountRepository> { olmAccountRepository }
                 }
             }
-        val cut = MatrixClient.login(
+        val cut = MatrixClient.create(
             baseUrl = Url("http://matrix.home"),
             authProviderData = MatrixClientAuthProviderData.classic("abcdef"),
             repositoriesModule = repositoriesModule,
@@ -248,7 +248,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                     }
                 }
             val log = KotlinLogging.logger("MatrixClientImplTest")
-            val cut = MatrixClient.fromStore(
+            val cut = MatrixClient.load(
                 repositoriesModule = repositoriesModule,
                 mediaStoreModule = MediaStoreModule.inMemory(),
                 cryptoDriverModule = cryptoDriverModule,
@@ -440,7 +440,7 @@ class MatrixClientTest : TrixnityBaseTest() {
     @Test
     fun `logout » delete all when LOGGED_OUT_SOFT`() = runTest {
         var logoutCalled = false
-        val cut = MatrixClient.fromStore(
+        val cut = MatrixClient.load(
             repositoriesModule = repositoriesModule(),
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = cryptoDriverModule,
@@ -471,7 +471,7 @@ class MatrixClientTest : TrixnityBaseTest() {
     @Test
     fun `logout » call api and delete all`() = runTest {
         var logoutCalled = false
-        val cut = MatrixClient.fromStore(
+        val cut = MatrixClient.load(
             repositoriesModule = repositoriesModule(),
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = cryptoDriverModule,
@@ -540,7 +540,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                     }, delegate)
                 }
             }
-        return MatrixClient.fromStore(
+        return MatrixClient.load(
             repositoriesModule = repositoriesModule,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = cryptoDriverModule,

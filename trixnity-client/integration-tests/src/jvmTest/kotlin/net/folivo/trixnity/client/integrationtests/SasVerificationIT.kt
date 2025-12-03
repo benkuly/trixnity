@@ -55,7 +55,7 @@ class SasVerificationIT {
         val repositoriesModule2 = RepositoriesModule.exposed(database2)
         val repositoriesModule3 = RepositoriesModule.exposed(database3)
 
-        client1 = MatrixClient.login(
+        client1 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStoreModule = MediaStoreModule.inMemory(),
@@ -67,7 +67,7 @@ class SasVerificationIT {
                 name = "client1"
             },
         ).getOrThrow()
-        client2 = MatrixClient.login(
+        client2 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStoreModule = MediaStoreModule.inMemory(),
@@ -79,7 +79,7 @@ class SasVerificationIT {
                 name = "client2"
             },
         ).getOrThrow()
-        client3 = MatrixClient.login(
+        client3 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule3,
             mediaStoreModule = MediaStoreModule.inMemory(),

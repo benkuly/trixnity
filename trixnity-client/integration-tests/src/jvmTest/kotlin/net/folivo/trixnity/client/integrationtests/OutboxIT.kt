@@ -48,7 +48,7 @@ class OutboxIT {
         database = newDatabase()
         val repositoriesModule = RepositoriesModule.exposed(database)
 
-        client = MatrixClient.login(
+        client = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = repositoriesModule,
             mediaStoreModule = MediaStoreModule.inMemory(),

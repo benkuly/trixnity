@@ -58,7 +58,7 @@ class EncryptionIT {
             port = synapseDocker.firstMappedPort
         ).build()
 
-        client1 = MatrixClient.login(
+        client1 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = RepositoriesModule.inMemory(),
             mediaStoreModule = MediaStoreModule.inMemory(),
@@ -70,7 +70,7 @@ class EncryptionIT {
                 name = "client1"
             },
         ).getOrThrow()
-        client2 = MatrixClient.login(
+        client2 = MatrixClient.create(
             baseUrl = baseUrl,
             repositoriesModule = RepositoriesModule.inMemory(),
             mediaStoreModule = MediaStoreModule.inMemory(),
@@ -164,7 +164,7 @@ class EncryptionIT {
 
 
             val clientFromStoreDatabase = newDatabase()
-            MatrixClient.login(
+            MatrixClient.create(
                 baseUrl = baseUrl,
                 repositoriesModule = RepositoriesModule.exposed(clientFromStoreDatabase),
                 mediaStoreModule = MediaStoreModule.inMemory(),
@@ -183,7 +183,7 @@ class EncryptionIT {
             }
             val clientFromLogin = run {
                 val database = newDatabase()
-                MatrixClient.login(
+                MatrixClient.create(
                     baseUrl = baseUrl,
                     repositoriesModule = RepositoriesModule.exposed(database),
                     mediaStoreModule = MediaStoreModule.inMemory(),
@@ -212,7 +212,7 @@ class EncryptionIT {
                 """.trimIndent()
                 )
                 val clientFromStore = run {
-                    MatrixClient.fromStore(
+                    MatrixClient.load(
                         repositoriesModule = RepositoriesModule.exposed(clientFromStoreDatabase),
                         mediaStoreModule = MediaStoreModule.inMemory(),
                         cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -223,7 +223,7 @@ class EncryptionIT {
                     coroutineScope {
                         launch {
                             repeat(messageCount) { i ->
-                                MatrixClient.login(
+                                MatrixClient.create(
                                     baseUrl = baseUrl,
                                     repositoriesModule = RepositoriesModule.inMemory(),
                                     mediaStoreModule = MediaStoreModule.inMemory(),

@@ -108,7 +108,7 @@ class KeyBackupIT {
                     host = synapseDocker.host,
                     port = synapseDocker.firstMappedPort
                 ).build()
-                val client3 = MatrixClient.login(
+                val client3 = MatrixClient.create(
                     baseUrl = baseUrl,
                     repositoriesModule = repositoriesModule,
                     mediaStoreModule = MediaStoreModule.inMemory(),
