@@ -206,7 +206,7 @@ interface AuthenticationApiClient {
 
 class AuthenticationApiClientImpl(
     private val baseClient: MatrixClientServerApiBaseClient,
-    private val authProvider: MatrixClientAuthProvider<*>?,
+    private val authProvider: MatrixClientAuthProvider,
 ) : AuthenticationApiClient {
     override suspend fun whoAmI(asUserId: UserId?): Result<WhoAmI.Response> =
         baseClient.request(WhoAmI(asUserId))
@@ -266,7 +266,7 @@ class AuthenticationApiClientImpl(
 
     override fun getSsoUrl(redirectUrl: String, idpId: String?): String =
         URLBuilder().apply {
-            baseClient.baseUrl?.let { takeFrom(it) }
+            takeFrom(authProvider.baseUrl)
             path(*listOfNotNull("/_matrix/client/v3/login/sso/redirect", idpId).toTypedArray())
             parameters.append("redirectUrl", redirectUrl)
         }.toString()
@@ -318,7 +318,7 @@ class AuthenticationApiClientImpl(
         )
 
     override suspend fun logout(asUserId: UserId?): Result<Unit> = runCatching {
-        authProvider?.logout()?.getOrThrow()
+        authProvider.logout()?.getOrThrow()
         baseClient.request(Logout(asUserId)).getOrThrow()
     }
 

@@ -54,8 +54,7 @@ internal val IsUIA = AttributeKey<Unit>("IsUIA")
 private class UIAInterception(val body: JsonObject, val errorResponse: ErrorResponse?) : RuntimeException()
 
 class MatrixClientServerApiBaseClient(
-    val baseUrl: Url? = null,
-    private val authProvider: MatrixClientAuthProvider<*>? = null,
+    private val authProvider: MatrixClientAuthProvider,
     eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
     json: Json = createMatrixEventJson(eventContentSerializerMappings),
     httpClientEngine: HttpClientEngine? = null,
@@ -66,12 +65,12 @@ class MatrixClientServerApiBaseClient(
     httpClientEngine,
     {
         install(DefaultRequest) {
-            if (baseUrl != null) url.takeFrom(baseUrl)
+            url.takeFrom(authProvider.baseUrl)
         }
 
         install(SkipAuthenticationIfDisabled)
         install(Auth) {
-            authProvider?.let { providers.add(it) }
+            providers.add(authProvider)
         }
         install(createClientPlugin("UIAInterception") {
             on(Send) { request ->
@@ -159,8 +158,7 @@ class MatrixClientServerApiBaseClient(
             val state = json.decodeFromJsonElement<UIAState>(responseObject)
             val getFallbackUrl: (AuthenticationType) -> Url = { authenticationType ->
                 URLBuilder().apply {
-                    val localBaseUlr = baseUrl
-                    if (localBaseUlr != null) takeFrom(localBaseUlr)
+                    takeFrom(authProvider.baseUrl)
                     encodedPath += "_matrix/client/v3/auth/${authenticationType.name}/fallback/web"
                     state.session?.let { parameters.append("session", it) }
                 }.build()

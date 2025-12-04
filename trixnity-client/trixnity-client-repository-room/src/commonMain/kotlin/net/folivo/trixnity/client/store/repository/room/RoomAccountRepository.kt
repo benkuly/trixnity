@@ -49,7 +49,7 @@ internal class RoomAccountRepository(
         dao.get(key)?.let { entity ->
             Account(
                 olmPickleKey = entity.olmPickleKey,
-                baseUrl = entity.baseUrl ?: throw IllegalStateException("baseUrl not found"),
+                baseUrl = entity.baseUrl,
                 userId = entity.userId ?: throw IllegalStateException("userId not found"),
                 deviceId = entity.deviceId ?: throw IllegalStateException("deviceId not found"),
                 accessToken = entity.accessToken,

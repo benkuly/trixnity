@@ -51,12 +51,13 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         scheduleSetup { onLogout = null }
     }
     private val classicAuthProviderStore =
-        MatrixClientAuthProviderStore.inMemory(MatrixClientAuthProviderData.classic("access")).apply {
+        MatrixClientAuthProviderDataStore.inMemory(MatrixClientAuthProviderData.classic(baseUrl, "access")).apply {
             scheduleSetup {
-                setAuthData(MatrixClientAuthProviderData.classic("access"))
+                setAuthData(MatrixClientAuthProviderData.classic(baseUrl, "access"))
             }
         }
-    private val classicAuthProvider = ClassicMatrixClientAuthProvider(classicAuthProviderStore, { onLogout = it })
+    private val classicAuthProvider =
+        ClassicMatrixClientAuthProvider(baseUrl, classicAuthProviderStore, { onLogout = it })
 
     @Serializable
     @Resource("/path/{pathParam}")
@@ -131,7 +132,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun itShouldHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
@@ -159,7 +159,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun itShouldNotHaveAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
@@ -182,8 +181,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun itShouldNotRetryWithTokenOnNever() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
-            authProvider = ClassicMatrixClientAuthProvider(classicAuthProviderStore, {}),
+            authProvider = ClassicMatrixClientAuthProvider(baseUrl, classicAuthProviderStore, {}),
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe null
@@ -209,8 +207,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun itShouldRetryWithToken() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
-            authProvider = ClassicMatrixClientAuthProvider(classicAuthProviderStore, {}),
+            authProvider = ClassicMatrixClientAuthProvider(baseUrl, classicAuthProviderStore, {}),
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
                     if (request.headers[HttpHeaders.Authorization] == "Bearer access") {
@@ -240,8 +237,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     fun itShouldHaveOptionalAuthenticationTokenIncludedAndDoNormalRequest() = runTest {
         classicAuthProviderStore.setAuthData(null)
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
-            authProvider = ClassicMatrixClientAuthProvider(classicAuthProviderStore, {}),
+            authProvider = ClassicMatrixClientAuthProvider(baseUrl, classicAuthProviderStore, {}),
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
                     request.headers[HttpHeaders.Authorization] shouldBe null
@@ -267,7 +263,7 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
                 PostPath.Response("ok")
 
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access"))
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic(baseUrl, "access"))
 
         cut.request(PostPathWithOptionalAuth("1", "2"), PostPath.Request(true)).getOrThrow() shouldBe
                 PostPath.Response("ok")
@@ -280,8 +276,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         val oAuth2AuthProvider =
             OAuth2MatrixClientAuthProvider(
                 baseUrl = baseUrl,
-                store = MatrixClientAuthProviderStore.inMemory(
+                store = MatrixClientAuthProviderDataStore.inMemory(
                     MatrixClientAuthProviderData.oAuth2(
+                        baseUrl = baseUrl,
                         clientId = "clientId",
                         accessToken = "access_old",
                         accessTokenExpiresInS = null,
@@ -326,7 +323,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             )
 
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = oAuth2AuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -371,9 +367,15 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun `Classic - should refresh token`() = runTest {
         var refreshCalled = false
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -439,8 +441,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         val oAuth2AuthProvider =
             OAuth2MatrixClientAuthProvider(
                 baseUrl = baseUrl,
-                store = MatrixClientAuthProviderStore.inMemory(
+                store = MatrixClientAuthProviderDataStore.inMemory(
                     MatrixClientAuthProviderData.oAuth2(
+                        baseUrl = baseUrl,
                         clientId = "clientId",
                         accessToken = "access_old",
                         accessTokenExpiresInS = null,
@@ -478,7 +481,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
             )
 
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = oAuth2AuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -525,9 +527,15 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun `Classic - should refresh token and logout`() = runTest {
         var refreshCalled = false
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -594,8 +602,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         val oAuth2AuthProvider =
             OAuth2MatrixClientAuthProvider(
                 baseUrl = baseUrl,
-                store = MatrixClientAuthProviderStore.inMemory(
+                store = MatrixClientAuthProviderDataStore.inMemory(
                     MatrixClientAuthProviderData.oAuth2(
+                        baseUrl = baseUrl,
                         clientId = "clientId",
                         accessToken = "access_old",
                         accessTokenExpiresInS = null,
@@ -639,7 +648,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                 httpClientConfig = null
             )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = oAuth2AuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -676,9 +684,15 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun `Classic - should refresh token and not logout`() = runTest {
         var refreshCalled = false
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -735,8 +749,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         val oAuth2AuthProvider =
             OAuth2MatrixClientAuthProvider(
                 baseUrl = baseUrl,
-                store = MatrixClientAuthProviderStore.inMemory(
+                store = MatrixClientAuthProviderDataStore.inMemory(
                     MatrixClientAuthProviderData.oAuth2(
+                        baseUrl = baseUrl,
                         clientId = "clientId",
                         accessToken = "access_old",
                         accessTokenExpiresInS = null,
@@ -795,7 +810,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                 httpClientConfig = null
             )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = oAuth2AuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -868,9 +882,15 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun `Classic - should refresh token with old refresh token`() = runTest {
         var refreshCalled = 0
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -972,10 +992,16 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     fun `Classic - should refresh token with parallel requests`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         var refreshCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -1057,8 +1083,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         val oAuth2AuthProvider =
             OAuth2MatrixClientAuthProvider(
                 baseUrl = baseUrl,
-                store = MatrixClientAuthProviderStore.inMemory(
+                store = MatrixClientAuthProviderDataStore.inMemory(
                     MatrixClientAuthProviderData.oAuth2(
+                        baseUrl = baseUrl,
                         clientId = "clientId",
                         accessToken = "access_old",
                         accessTokenExpiresInS = null,
@@ -1101,7 +1128,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                 httpClientConfig = null
             )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = oAuth2AuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -1153,10 +1179,16 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     fun `Classic - should refresh token with parallel requests and rethrow exceptions`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         var refreshCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -1228,8 +1260,9 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
         val oAuth2AuthProvider =
             OAuth2MatrixClientAuthProvider(
                 baseUrl = baseUrl,
-                store = MatrixClientAuthProviderStore.inMemory(
+                store = MatrixClientAuthProviderDataStore.inMemory(
                     MatrixClientAuthProviderData.oAuth2(
+                        baseUrl = baseUrl,
                         clientId = "clientId",
                         accessToken = "access_old",
                         accessTokenExpiresInS = null,
@@ -1280,7 +1313,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                 httpClientConfig = null
             )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = oAuth2AuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -1348,10 +1380,16 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     fun `Classic - should refresh token with parallel requests and handle request abort`() = runTest {
         val refreshCalled = MutableStateFlow(false)
         val continueRefresh = MutableStateFlow(false)
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         var refreshCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -1441,7 +1479,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun itShouldCallOnLogout() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
@@ -1474,7 +1511,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun itShouldCallOnLogoutOnLocked() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
@@ -1506,9 +1542,15 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun itShouldCallOnLogoutWhenRefreshingToken() = runTest {
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -1566,7 +1608,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun uiaRequestShouldReturnSuccess() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler { request ->
@@ -1594,7 +1635,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun uiaRequestShouldReturnError() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
@@ -1622,7 +1662,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun uiaRequestShouldCallOnLogout() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
@@ -1653,10 +1692,16 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
     @Test
     fun uiaRequestShouldRefresh() = runTest {
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access_old", null, "refresh"))
+        classicAuthProviderStore.setAuthData(
+            MatrixClientAuthProviderData.classic(
+                baseUrl,
+                "access_old",
+                null,
+                "refresh"
+            )
+        )
         var refreshCalled = false
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(withDefaultResponse = false) {
                 addHandler { request ->
@@ -1717,7 +1762,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun uiaRequestShouldCallOnLogoutOnLock() = runTest {
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine {
                 addHandler {
@@ -1745,9 +1789,8 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     @Test
     fun uiaRequestShouldAuthenticate() = runTest {
         var requestCount = 0
-        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic("access", null, "refresh"))
+        classicAuthProviderStore.setAuthData(MatrixClientAuthProviderData.classic(baseUrl, "access", null, "refresh"))
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -1818,7 +1861,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     fun uiaRequestShouldReturnStepAndAllowAuthenticate() = runTest {
         var requestCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->
@@ -1934,7 +1976,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
     fun uiaRequestShouldReturnErrorAndAllowAuthenticate() = runTest {
         var requestCount = 0
         val cut = MatrixClientServerApiBaseClient(
-            baseUrl = baseUrl,
             authProvider = classicAuthProvider,
             httpClientEngine = scopedMockEngine(false) {
                 addHandler { request ->

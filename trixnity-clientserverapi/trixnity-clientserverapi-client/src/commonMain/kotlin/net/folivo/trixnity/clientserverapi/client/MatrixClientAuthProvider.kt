@@ -4,11 +4,17 @@ import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.http.*
-import kotlinx.serialization.KSerializer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
-import kotlin.reflect.KClass
+import net.folivo.trixnity.core.serialization.createMatrixEventJson
+import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
+import net.folivo.trixnity.utils.RetryFlowDelayConfig
+import kotlin.coroutines.CoroutineContext
 
-interface MatrixClientAuthProvider<T : MatrixClientAuthProviderData> : AuthProvider {
+interface MatrixClientAuthProvider : AuthProvider {
+    val baseUrl: Url
+
     /**
      * Invoke authentication-provider-specific behavior when logging out.
      *
@@ -18,69 +24,63 @@ interface MatrixClientAuthProvider<T : MatrixClientAuthProviderData> : AuthProvi
 }
 
 /**
- * Provides methods to retrieve and store arbitrary (usually JSON-encoded) authentication data.
+ * Provides methods to retrieve and store arbitrary authentication data.
  */
-interface MatrixClientAuthProviderStore {
-    suspend fun getAuthData(): String?
-    suspend fun setAuthData(authData: String?)
+interface MatrixClientAuthProviderDataStore {
+    suspend fun getAuthData(): MatrixClientAuthProviderData?
+    suspend fun setAuthData(authData: MatrixClientAuthProviderData?)
 
     companion object {
-        fun inMemory(initialValue: String? = null) = object : MatrixClientAuthProviderStore {
+        fun inMemory(initialValue: MatrixClientAuthProviderData? = null) = object : MatrixClientAuthProviderDataStore {
             var authData = initialValue
 
-            override suspend fun getAuthData(): String? = authData
+            override suspend fun getAuthData(): MatrixClientAuthProviderData? = authData
 
-            override suspend fun setAuthData(authData: String?) {
+            override suspend fun setAuthData(authData: MatrixClientAuthProviderData?) {
                 this.authData = authData
             }
         }
-
-        inline fun <reified T : MatrixClientAuthProviderData> inMemory(initialValue: T) =
-            inMemory(matrixClientAuthProviderStoreJson.encodeToString(initialValue))
     }
 }
 
-@PublishedApi
-internal val matrixClientAuthProviderStoreJson = Json {
-    ignoreUnknownKeys = true
-    encodeDefaults = true
-    explicitNulls = false
-}
-
-suspend fun <T : MatrixClientAuthProviderData> MatrixClientAuthProviderStore.getAuthData(serializer: KSerializer<T>): T? =
-    getAuthData()?.let { matrixClientAuthProviderStoreJson.decodeFromString<T>(serializer, it) }
-
-suspend fun <T : MatrixClientAuthProviderData> MatrixClientAuthProviderStore.setAuthData(
-    serializer: KSerializer<T>,
-    authData: T
-) = setAuthData(matrixClientAuthProviderStoreJson.encodeToString(serializer, authData))
-
-suspend inline fun <reified T : MatrixClientAuthProviderData> MatrixClientAuthProviderStore.getAuthData(): T? =
-    getAuthData()?.let { matrixClientAuthProviderStoreJson.decodeFromString<T>(it) }
-
-suspend inline fun <reified T : MatrixClientAuthProviderData> MatrixClientAuthProviderStore.setAuthData(authData: T) =
-    setAuthData(matrixClientAuthProviderStoreJson.encodeToString(authData))
+@Suppress("UNCHECKED_CAST")
+suspend inline fun <T : MatrixClientAuthProviderData> MatrixClientAuthProviderDataStore.getAuthData(): T? =
+    getAuthData()?.let { it as T }
 
 interface MatrixClientAuthProviderData {
+    val baseUrl: Url
+
+    fun createAuthProvider(
+        store: MatrixClientAuthProviderDataStore,
+        onLogout: suspend (LogoutInfo) -> Unit,
+        httpClientEngine: HttpClientEngine?,
+        httpClientConfig: (HttpClientConfig<*>.() -> Unit)?
+    ): MatrixClientAuthProvider
+
     companion object
 }
 
-interface MatrixClientAuthProviderFactory {
-    /**
-     * Is used to identify the authentication provider. It must never be changed without a migration.
-     */
-    val id: String
-
-    /**
-     * Is used to identify the authentication provider.
-     */
-    val supports: KClass<out MatrixClientAuthProviderData>
-    suspend fun create(
-        baseUrl: Url,
-        store: MatrixClientAuthProviderStore,
-        initialData: MatrixClientAuthProviderData?,
-        onLogout: suspend (LogoutInfo) -> Unit,
-        httpClientEngine: HttpClientEngine?,
-        httpClientConfig: (HttpClientConfig<*>.() -> Unit)?,
-    ): MatrixClientAuthProvider<*>
-}
+suspend fun <T> MatrixClientAuthProviderData.useApi(
+    eventContentSerializerMappings: EventContentSerializerMappings = DefaultEventContentSerializerMappings,
+    json: Json = createMatrixEventJson(eventContentSerializerMappings),
+    syncBatchTokenStore: SyncBatchTokenStore = SyncBatchTokenStore.inMemory(),
+    syncErrorDelayConfig: RetryFlowDelayConfig = RetryFlowDelayConfig.sync,
+    coroutineContext: CoroutineContext = Dispatchers.Default,
+    httpClientEngine: HttpClientEngine? = null,
+    httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
+    block: suspend (MatrixClientServerApiClient) -> T
+): T = MatrixClientServerApiClientImpl(
+    authProvider = createAuthProvider(
+        store = MatrixClientAuthProviderDataStore.inMemory(this),
+        onLogout = {},
+        httpClientEngine = httpClientEngine,
+        httpClientConfig = httpClientConfig,
+    ),
+    eventContentSerializerMappings = eventContentSerializerMappings,
+    json = json,
+    syncBatchTokenStore = syncBatchTokenStore,
+    syncErrorDelayConfig = syncErrorDelayConfig,
+    coroutineContext = coroutineContext,
+    httpClientEngine = httpClientEngine,
+    httpClientConfig = httpClientConfig,
+).use { block(it) }

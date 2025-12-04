@@ -6,7 +6,8 @@ import net.folivo.trixnity.core.model.UserId
 @Serializable
 data class Account(
     val olmPickleKey: String?,
-    val baseUrl: String,
+    @Deprecated("has been moved to Authentication, will be removed after a migration period")
+    val baseUrl: String? = null,
     val userId: UserId,
     val deviceId: String,
     @Deprecated("has been moved to Authentication, will be removed after a migration period")

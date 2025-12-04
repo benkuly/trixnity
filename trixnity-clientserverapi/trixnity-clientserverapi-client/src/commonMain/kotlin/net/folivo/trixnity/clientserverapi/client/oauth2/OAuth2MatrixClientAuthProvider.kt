@@ -14,45 +14,17 @@ import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ResponseM
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.ServerMetadata
 import net.folivo.trixnity.core.AuthRequired
 import okio.ByteString.Companion.toByteString
-import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.oauth2.OAuth2MatrixAuthProvider")
 
-object OAuth2MatrixClientAuthProviderFactory : MatrixClientAuthProviderFactory {
-    override val id: String = "OAuth2MatrixClientAuthProvider" // never change!
-    override val supports: KClass<out MatrixClientAuthProviderData> = OAuth2MatrixClientAuthProviderData::class
-
-    override suspend fun create(
-        baseUrl: Url,
-        store: MatrixClientAuthProviderStore,
-        initialData: MatrixClientAuthProviderData?,
-        onLogout: suspend (LogoutInfo) -> Unit,
-        httpClientEngine: HttpClientEngine?,
-        httpClientConfig: (HttpClientConfig<*>.() -> Unit)?
-    ): MatrixClientAuthProvider<*> {
-        if (initialData != null) {
-            require(initialData is OAuth2MatrixClientAuthProviderData) { "initialData must be of type OAuth2MatrixClientAuthProviderData" }
-            store.setAuthData(initialData)
-        }
-        return OAuth2MatrixClientAuthProvider(
-            baseUrl = baseUrl,
-            store = store,
-            onLogout = onLogout,
-            httpClientEngine = httpClientEngine,
-            httpClientConfig = httpClientConfig
-        )
-    }
-}
-
 class OAuth2MatrixClientAuthProvider(
-    private val baseUrl: Url,
-    private val store: MatrixClientAuthProviderStore,
+    override val baseUrl: Url,
+    private val store: MatrixClientAuthProviderDataStore,
     private val onLogout: suspend (LogoutInfo) -> Unit,
     private val httpClientEngine: HttpClientEngine?,
     private val httpClientConfig: (HttpClientConfig<*>.() -> Unit)?,
 ) : BearerClientAuthProvider<OAuth2MatrixClientAuthProviderData>(
     store = store,
-    dataSerializer = OAuth2MatrixClientAuthProviderData.serializer(),
     onLogout = onLogout
 ) {
 
@@ -96,6 +68,7 @@ class OAuth2MatrixClientAuthProvider(
         }.fold(
             onSuccess = { refreshResponse ->
                 return OAuth2MatrixClientAuthProviderData(
+                    baseUrl = bearerTokens.baseUrl,
                     accessToken = refreshResponse.accessToken,
                     accessTokenExpiresInS = refreshResponse.expiresIn,
                     refreshToken = refreshResponse.refreshToken ?: refreshToken,
@@ -124,12 +97,14 @@ class OAuth2MatrixClientAuthProvider(
 }
 
 fun MatrixClientAuthProviderData.Companion.oAuth2(
+    baseUrl: Url,
     clientId: String,
     accessToken: String,
     accessTokenExpiresInS: Long? = null,
     refreshToken: String? = null,
     scope: Set<String>? = null,
 ): OAuth2MatrixClientAuthProviderData = OAuth2MatrixClientAuthProviderData(
+    baseUrl = baseUrl,
     accessToken = accessToken,
     accessTokenExpiresInS = accessTokenExpiresInS,
     refreshToken = refreshToken,
@@ -169,6 +144,7 @@ fun MatrixClientAuthProviderData.Companion.oAuth2Login(
 
 @Serializable
 data class OAuth2MatrixClientAuthProviderData(
+    override val baseUrl: Url,
     override val accessToken: String,
     val accessTokenExpiresInS: Long?,
     override val refreshToken: String?,
@@ -185,4 +161,16 @@ data class OAuth2MatrixClientAuthProviderData(
                 ")"
 
     private fun String.tokenHash() = "<hash:" + encodeToByteArray().toByteString().sha256().hex().take(6) + ">"
+    override fun createAuthProvider(
+        store: MatrixClientAuthProviderDataStore,
+        onLogout: suspend (LogoutInfo) -> Unit,
+        httpClientEngine: HttpClientEngine?,
+        httpClientConfig: (HttpClientConfig<*>.() -> Unit)?
+    ): MatrixClientAuthProvider = OAuth2MatrixClientAuthProvider(
+        baseUrl = baseUrl,
+        store = store,
+        onLogout = onLogout,
+        httpClientEngine = httpClientEngine,
+        httpClientConfig = httpClientConfig
+    )
 }

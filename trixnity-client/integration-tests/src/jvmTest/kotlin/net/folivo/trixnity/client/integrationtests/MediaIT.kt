@@ -43,7 +43,6 @@ class MediaIT {
         val repositoriesModule1 = RepositoriesModule.exposed(database)
 
         client = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),

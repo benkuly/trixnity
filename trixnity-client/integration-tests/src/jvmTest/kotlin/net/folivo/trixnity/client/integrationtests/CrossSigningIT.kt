@@ -70,7 +70,6 @@ class CrossSigningIT {
         val repositoriesModule3 = RepositoriesModule.exposed(database3)
 
         client1 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -82,7 +81,6 @@ class CrossSigningIT {
             },
         ).getOrThrow()
         client2 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -96,7 +94,6 @@ class CrossSigningIT {
             },
         ).getOrThrow()
         client3 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = repositoriesModule3,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),

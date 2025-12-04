@@ -89,7 +89,6 @@ class TimelineEventIT {
         val repositoriesModule2 = RepositoriesModule.exposed(database2)
 
         client1 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -101,7 +100,6 @@ class TimelineEventIT {
             },
         ).getOrThrow()
         client2 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -248,7 +246,6 @@ class TimelineEventIT {
         withTimeout(180_000) {
             val database = newDatabase()
             val client = MatrixClient.create(
-                baseUrl = baseUrl,
                 repositoriesModule = RepositoriesModule.exposed(database),
                 mediaStoreModule = MediaStoreModule.inMemory(),
                 cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -295,7 +292,6 @@ class TimelineEventIT {
         withTimeout(180_000) {
             val database = newDatabase()
             val client = MatrixClient.create(
-                baseUrl = baseUrl,
                 repositoriesModule = RepositoriesModule.exposed(database),
                 mediaStoreModule = MediaStoreModule.inMemory(),
                 cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -362,7 +358,6 @@ class TimelineEventIT {
                 port = synapseDocker.firstMappedPort
             ).build()
             val client3 = MatrixClient.create(
-                baseUrl = baseUrl,
                 repositoriesModule = RepositoriesModule.inMemory(),
                 mediaStoreModule = MediaStoreModule.inMemory(),
                 cryptoDriverModule = CryptoDriverModule.vodozemac(),

@@ -4,6 +4,7 @@ import io.kotest.assertions.nondeterministic.continuallyConfig
 import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.common.KotestInternal
 import io.kotest.common.NonDeterministicTestVirtualTimeEnabled
+import io.ktor.http.*
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -57,8 +58,9 @@ fun TrixnityBaseTest.mockMatrixClientServerApiClient(
             portableConfig = config
         ),
         authProvider = ClassicMatrixClientAuthProvider(
-            MatrixClientAuthProviderStore.inMemory(
-                MatrixClientAuthProviderData.classic("access_token")
+            Url("http://matrix.home"),
+            MatrixClientAuthProviderDataStore.inMemory(
+                MatrixClientAuthProviderData.classic(Url("http://matrix.home"), "access_token")
             ), {}
         ),
         syncBatchTokenStore = syncBatchTokenStore,

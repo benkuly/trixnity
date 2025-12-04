@@ -4,7 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.ktor.http.*
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import net.folivo.trixnity.clientserverapi.client.*
 import net.folivo.trixnity.clientserverapi.model.rooms.CreateRoom
 import net.folivo.trixnity.core.ErrorResponse
 import net.folivo.trixnity.core.MatrixServerException
@@ -14,6 +14,7 @@ import net.folivo.trixnity.core.serialization.createDefaultEventContentSerialize
 import net.folivo.trixnity.core.serialization.createMatrixEventJson
 import net.folivo.trixnity.test.utils.TrixnityBaseTest
 import net.folivo.trixnity.test.utils.runTest
+import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.testutils.matrixJsonEndpoint
 import net.folivo.trixnity.testutils.scopedMockEngineWithEndpoints
 import kotlin.test.Test
@@ -24,10 +25,21 @@ class ApplicationServiceRoomServiceTest : TrixnityBaseTest() {
     private val mappings = createDefaultEventContentSerializerMappings()
     private val roomAlias = RoomAliasId("alias", "server")
     private val roomId = RoomId("!room:server")
+    private val baseUrl = Url("https://matrix.host")
+
+    private val classicAuthProviderStore =
+        MatrixClientAuthProviderDataStore.inMemory(MatrixClientAuthProviderData.classic(baseUrl, "access")).apply {
+            scheduleSetup {
+                setAuthData(MatrixClientAuthProviderData.classic(baseUrl, "access"))
+            }
+        }
+    private val classicAuthProvider =
+        ClassicMatrixClientAuthProvider(baseUrl, classicAuthProviderStore, {})
 
     @Test
     fun `should create and save room`() = runTest {
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(CreateRoom()) { requestBody ->
@@ -51,6 +63,7 @@ class ApplicationServiceRoomServiceTest : TrixnityBaseTest() {
     @Test
     fun `should have error when creation fails`() = runTest {
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(CreateRoom()) {
@@ -73,6 +86,7 @@ class ApplicationServiceRoomServiceTest : TrixnityBaseTest() {
     @Test
     fun `should have error when saving by room service fails`() = runTest {
         val api = MatrixClientServerApiClientImpl(
+            authProvider = classicAuthProvider,
             json = json,
             httpClientEngine = scopedMockEngineWithEndpoints(json, mappings) {
                 matrixJsonEndpoint(CreateRoom()) {

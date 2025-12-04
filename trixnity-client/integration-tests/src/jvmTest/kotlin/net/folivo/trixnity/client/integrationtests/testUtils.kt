@@ -73,7 +73,7 @@ suspend fun MatrixClientServerApiClient.register(
         .shouldBeInstanceOf<UIA.Success<Register.Response>>()
     val (_, _, accessToken, expiresIn, refreshToken) = registerResult.value
     requireNotNull(accessToken)
-    return ClassicMatrixClientAuthProviderData(accessToken, expiresIn, refreshToken)
+    return ClassicMatrixClientAuthProviderData(baseUrl, accessToken, expiresIn, refreshToken)
 }
 
 fun newDatabase() = Database.connect("jdbc:h2:mem:${Random.nextString(22)};DB_CLOSE_DELAY=-1;")
@@ -91,7 +91,6 @@ suspend fun registerAndStartClient(
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
     val client = MatrixClient.create(
-        baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStoreModule = MediaStoreModule.inMemory(),
         cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -117,7 +116,6 @@ suspend fun startClient(
     configuration: MatrixClientConfiguration.() -> Unit = {}
 ): StartedClient {
     val client = MatrixClient.create(
-        baseUrl = baseUrl,
         repositoriesModule = repositoriesModule,
         mediaStoreModule = MediaStoreModule.inMemory(),
         cryptoDriverModule = CryptoDriverModule.vodozemac(),

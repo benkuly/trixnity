@@ -25,11 +25,8 @@ import net.folivo.trixnity.client.store.createStoreModule
 import net.folivo.trixnity.client.user.*
 import net.folivo.trixnity.client.verification.VerificationService
 import net.folivo.trixnity.client.verification.createVerificationModule
-import net.folivo.trixnity.clientserverapi.client.ClassicMatrixClientAuthProviderFactory
-import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderFactory
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.client.SyncApiClient
-import net.folivo.trixnity.clientserverapi.client.oauth2.OAuth2MatrixClientAuthProviderFactory
 import net.folivo.trixnity.core.EventHandler
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
@@ -75,9 +72,8 @@ fun createDefaultMatrixJsonModule() = module {
     }
 }
 
-fun createDefaultMatrixAuthProviderFactoriesModule() = module {
-    single<MatrixClientAuthProviderFactory>(named<ClassicMatrixClientAuthProviderFactory>()) { ClassicMatrixClientAuthProviderFactory }
-    single<MatrixClientAuthProviderFactory>(named<OAuth2MatrixClientAuthProviderFactory>()) { OAuth2MatrixClientAuthProviderFactory }
+fun createDefaultMatrixClientAuthProviderSerializerMappings() = module {
+    single<MatrixClientAuthProviderDataSerializerMappings> { MatrixClientAuthProviderDataSerializerMappings.default() }
 }
 
 fun createCurrentSyncStateModule() = module {
@@ -91,7 +87,7 @@ fun createTrixnityDefaultModuleFactories(): List<ModuleFactory> = listOf(
     ::createDefaultEventContentSerializerMappingsModule,
     ::createDefaultOutboxMessageMediaUploaderMappingsModule,
     ::createDefaultMatrixJsonModule,
-    ::createDefaultMatrixAuthProviderFactoriesModule,
+    ::createDefaultMatrixClientAuthProviderSerializerMappings,
     ::createCurrentSyncStateModule,
     ::createStoreModule,
     ::createRoomModule,
@@ -119,7 +115,7 @@ fun createTrixnityBotModuleFactories(): List<ModuleFactory> = listOf(
     ::createDefaultEventContentSerializerMappingsModule,
     ::createDefaultOutboxMessageMediaUploaderMappingsModule,
     ::createDefaultMatrixJsonModule,
-    ::createDefaultMatrixAuthProviderFactoriesModule,
+    ::createDefaultMatrixClientAuthProviderSerializerMappings,
     ::createCurrentSyncStateModule,
     ::createStoreModule,
     ::createKeyModule,

@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.core.AuthRequired
 import net.folivo.trixnity.core.ErrorResponse
@@ -21,10 +20,9 @@ import net.folivo.trixnity.core.decodeErrorResponse
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.BearerMatrixAuthProvider")
 
 abstract class BearerClientAuthProvider<T : BearerTokens>(
-    private val store: MatrixClientAuthProviderStore,
-    private val dataSerializer: KSerializer<T>,
+    private val store: MatrixClientAuthProviderDataStore,
     private val onLogout: suspend (LogoutInfo) -> Unit,
-) : MatrixClientAuthProvider<T> {
+) : MatrixClientAuthProvider {
     private val isRefreshingToken = MutableStateFlow(false)
     private val refreshTokenMutex = Mutex()
 
@@ -49,7 +47,7 @@ abstract class BearerClientAuthProvider<T : BearerTokens>(
             it.not()
         }
 
-        val token = store.getAuthData(dataSerializer) ?: run {
+        val token = store.getAuthData<T>() ?: run {
             log.warn { "no bearer tokens found even after waiting for refresh" }
             return
         }
@@ -64,12 +62,12 @@ abstract class BearerClientAuthProvider<T : BearerTokens>(
     }
 
     override suspend fun refreshToken(response: HttpResponse): Boolean {
-        val oldTokens = store.getAuthData(dataSerializer) ?: return false
+        val oldTokens = store.getAuthData<T>() ?: return false
         refreshTokenMutex.withLock {
             try {
                 isRefreshingToken.value = true
 
-                if (oldTokens != store.getAuthData(dataSerializer)) return true
+                if (oldTokens != store.getAuthData<T>()) return true
 
                 // Call onLogout when refresh token is not available
                 val refreshToken = oldTokens.refreshToken
@@ -83,7 +81,7 @@ abstract class BearerClientAuthProvider<T : BearerTokens>(
                             } else {
                                 log.trace { "start refresh tokens oldTokens=$oldTokens" }
                                 val newTokens = refreshTokens(oldTokens, response.call.client)
-                                store.setAuthData(dataSerializer, newTokens)
+                                store.setAuthData(newTokens)
                                 log.debug { "finish refresh tokens oldTokens=$oldTokens, newTokens=$newTokens" }
                                 return true
                             }

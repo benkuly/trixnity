@@ -59,7 +59,6 @@ class EncryptionIT {
         ).build()
 
         client1 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = RepositoriesModule.inMemory(),
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -71,7 +70,6 @@ class EncryptionIT {
             },
         ).getOrThrow()
         client2 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = RepositoriesModule.inMemory(),
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -165,7 +163,6 @@ class EncryptionIT {
 
             val clientFromStoreDatabase = newDatabase()
             MatrixClient.create(
-                baseUrl = baseUrl,
                 repositoriesModule = RepositoriesModule.exposed(clientFromStoreDatabase),
                 mediaStoreModule = MediaStoreModule.inMemory(),
                 cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -184,7 +181,6 @@ class EncryptionIT {
             val clientFromLogin = run {
                 val database = newDatabase()
                 MatrixClient.create(
-                    baseUrl = baseUrl,
                     repositoriesModule = RepositoriesModule.exposed(database),
                     mediaStoreModule = MediaStoreModule.inMemory(),
                     cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -212,7 +208,7 @@ class EncryptionIT {
                 """.trimIndent()
                 )
                 val clientFromStore = run {
-                    MatrixClient.load(
+                    MatrixClient.create(
                         repositoriesModule = RepositoriesModule.exposed(clientFromStoreDatabase),
                         mediaStoreModule = MediaStoreModule.inMemory(),
                         cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -224,7 +220,6 @@ class EncryptionIT {
                         launch {
                             repeat(messageCount) { i ->
                                 MatrixClient.create(
-                                    baseUrl = baseUrl,
                                     repositoriesModule = RepositoriesModule.inMemory(),
                                     mediaStoreModule = MediaStoreModule.inMemory(),
                                     cryptoDriverModule = CryptoDriverModule.vodozemac(),

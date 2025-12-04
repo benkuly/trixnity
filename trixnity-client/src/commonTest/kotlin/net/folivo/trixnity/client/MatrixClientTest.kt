@@ -16,7 +16,10 @@ import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.Authentication
 import net.folivo.trixnity.client.store.AuthenticationStore
 import net.folivo.trixnity.client.store.repository.*
-import net.folivo.trixnity.clientserverapi.client.*
+import net.folivo.trixnity.clientserverapi.client.ClassicMatrixClientAuthProviderData
+import net.folivo.trixnity.clientserverapi.client.LogoutInfo
+import net.folivo.trixnity.clientserverapi.client.MatrixClientAuthProviderData
+import net.folivo.trixnity.clientserverapi.client.classic
 import net.folivo.trixnity.clientserverapi.model.authentication.Logout
 import net.folivo.trixnity.clientserverapi.model.sync.Sync
 import net.folivo.trixnity.clientserverapi.model.sync.Sync.Response.Rooms.RoomMap.Companion.roomMapOf
@@ -75,20 +78,9 @@ class MatrixClientTest : TrixnityBaseTest() {
 
     @Test
     fun `displayName » get the display name and avatar URL from the profile API when initially logging in`() = runTest {
-        val olmAccountRepository = InMemoryOlmAccountRepository().apply {
-            save(1, accountPickle)
-        }
-        val repositoriesModule =
-            RepositoriesModule {
-                val delegate = RepositoriesModule.inMemory().create()
-                module {
-                    includes(delegate)
-                    single<OlmAccountRepository> { olmAccountRepository }
-                }
-            }
+        val repositoriesModule = RepositoriesModule.inMemory()
         val cut = MatrixClient.create(
-            baseUrl = Url("http://matrix.home"),
-            authProviderData = MatrixClientAuthProviderData.classic("abcdef"),
+            authProviderData = MatrixClientAuthProviderData.classic(Url("http://matrix.home"), "abcdef"),
             repositoriesModule = repositoriesModule,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = cryptoDriverModule,
@@ -220,9 +212,10 @@ class MatrixClientTest : TrixnityBaseTest() {
             val authenticationRepository = InMemoryAuthenticationRepository().apply {
                 save(
                     1, Authentication(
-                        providerId = ClassicMatrixClientAuthProviderFactory.id,
+                        providerId = "classic",
                         providerData = Json.encodeToString(
                             ClassicMatrixClientAuthProviderData(
+                                baseUrl = Url("http://localhost"),
                                 accessToken = "abcdef",
                                 accessTokenExpiresInMs = null,
                                 refreshToken = "ghijk",
@@ -248,7 +241,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                     }
                 }
             val log = KotlinLogging.logger("MatrixClientImplTest")
-            val cut = MatrixClient.load(
+            val cut = MatrixClient.create(
                 repositoriesModule = repositoriesModule,
                 mediaStoreModule = MediaStoreModule.inMemory(),
                 cryptoDriverModule = cryptoDriverModule,
@@ -436,11 +429,10 @@ class MatrixClientTest : TrixnityBaseTest() {
         }
     }
 
-
     @Test
     fun `logout » delete all when LOGGED_OUT_SOFT`() = runTest {
         var logoutCalled = false
-        val cut = MatrixClient.load(
+        val cut = MatrixClient.create(
             repositoriesModule = repositoriesModule(),
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = cryptoDriverModule,
@@ -471,7 +463,7 @@ class MatrixClientTest : TrixnityBaseTest() {
     @Test
     fun `logout » call api and delete all`() = runTest {
         var logoutCalled = false
-        val cut = MatrixClient.load(
+        val cut = MatrixClient.create(
             repositoriesModule = repositoriesModule(),
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = cryptoDriverModule,
@@ -514,9 +506,10 @@ class MatrixClientTest : TrixnityBaseTest() {
         val authenticationRepository = InMemoryAuthenticationRepository().apply {
             save(
                 1, Authentication(
-                    providerId = ClassicMatrixClientAuthProviderFactory.id,
+                    providerId = "classic",
                     providerData = Json.encodeToString(
                         ClassicMatrixClientAuthProviderData(
+                            baseUrl = Url("http://localhost"),
                             accessToken = "abcdef",
                             accessTokenExpiresInMs = null,
                             refreshToken = "ghijk",
@@ -540,7 +533,7 @@ class MatrixClientTest : TrixnityBaseTest() {
                     }, delegate)
                 }
             }
-        return MatrixClient.load(
+        return MatrixClient.create(
             repositoriesModule = repositoriesModule,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = cryptoDriverModule,
@@ -650,9 +643,10 @@ class MatrixClientTest : TrixnityBaseTest() {
         val authenticationRepository = InMemoryAuthenticationRepository().apply {
             save(
                 1, Authentication(
-                    providerId = ClassicMatrixClientAuthProviderFactory.id,
+                    providerId = "classic",
                     providerData = Json.encodeToString(
                         ClassicMatrixClientAuthProviderData(
+                            baseUrl = Url("http://localhost"),
                             accessToken = "abcdef",
                             accessTokenExpiresInMs = null,
                             refreshToken = "ghijk",

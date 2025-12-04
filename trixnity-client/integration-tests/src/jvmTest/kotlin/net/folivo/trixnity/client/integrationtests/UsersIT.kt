@@ -52,7 +52,6 @@ class UsersIT {
         val repositoriesModule2 = RepositoriesModule.exposed(database2)
 
         client1 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = repositoriesModule1,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),
@@ -64,7 +63,6 @@ class UsersIT {
             },
         ).getOrThrow()
         client2 = MatrixClient.create(
-            baseUrl = baseUrl,
             repositoriesModule = repositoriesModule2,
             mediaStoreModule = MediaStoreModule.inMemory(),
             cryptoDriverModule = CryptoDriverModule.vodozemac(),

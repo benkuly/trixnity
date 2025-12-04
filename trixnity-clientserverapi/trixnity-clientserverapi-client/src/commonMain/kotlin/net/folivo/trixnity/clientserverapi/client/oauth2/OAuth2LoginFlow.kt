@@ -167,6 +167,7 @@ class OAuth2LoginFlowImpl(
         }.getOrThrow()
 
         OAuth2MatrixClientAuthProviderData(
+            baseUrl = baseUrl,
             accessToken = tokenResponse.accessToken,
             accessTokenExpiresInS = tokenResponse.expiresIn,
             refreshToken = tokenResponse.refreshToken,
