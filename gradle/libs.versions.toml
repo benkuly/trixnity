@@ -44,7 +44,7 @@ androidxSqlite = "2.5.2" # https://developer.android.com/jetpack/androidx/releas
 ### logging ###
 oshaiKotlinLogging = "7.0.13" # https://github.com/oshai/kotlin-logging/releases
 slf4j = "2.0.17" # https://github.com/qos-ch/slf4j/releases
-logback = "1.5.20" # https://github.com/qos-ch/logback/tags
+logback = "1.5.22" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
 kotest = "6.0.7" # https://github.com/kotest/kotest/releases
