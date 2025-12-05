@@ -30,11 +30,8 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
-                implementation(libs.ktor.server.testHost)
-                implementation(libs.kotest.assertions.core)
-                implementation(libs.kotlinx.coroutines.test)
                 implementation(projects.trixnityTestUtils)
+                implementation(libs.ktor.server.testHost)
             }
         }
     }
