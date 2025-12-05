@@ -48,7 +48,7 @@ logback = "1.5.22" # https://github.com/qos-ch/logback/tags
 
 ### testing ###
 kotest = "6.0.7" # https://github.com/kotest/kotest/releases
-mokkery = "2.10.1" # https://github.com/lupuuss/Mokkery/releases
+mokkery = "3.0.0" # https://github.com/lupuuss/Mokkery/releases
 testContainers = "2.0.2" # https://github.com/testcontainers/testcontainers-java/releases
 androidxTestRunner = "1.7.0" # https://developer.android.com/jetpack/androidx/releases/test
 openjdkJol = "0.17" # https://github.com/openjdk/jol/tags

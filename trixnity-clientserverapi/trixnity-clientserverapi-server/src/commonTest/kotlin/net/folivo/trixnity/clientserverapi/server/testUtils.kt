@@ -1,12 +1,12 @@
 package net.folivo.trixnity.clientserverapi.server
 
-import dev.mokkery.matcher.ArgMatchersScope
-import dev.mokkery.matcher.matching
+import dev.mokkery.matcher.MokkeryMatcherScope
+import dev.mokkery.matcher.matches
 
 fun String.trimToFlatJson() = this.trimIndent().lines().joinToString("") { it.replace(": ", ":").trim() }
 
-inline fun <reified T> ArgMatchersScope.assert(crossinline assertionBlock: (T) -> Unit): T =
-    matching(
+inline fun <reified T> MokkeryMatcherScope.assert(crossinline assertionBlock: (T) -> Unit): T =
+    matches(
         toString = { "assert" },
         predicate = {
             try {
