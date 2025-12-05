@@ -23,21 +23,21 @@ interface OAuth2LoginFlow {
      * This method generates an authentication request containing a URL and associated metadata
      * necessary when the app has been killed during the authentication process.
      */
-    suspend fun authenticate(): Result<AuthenticateData>
+    suspend fun createAuthRequest(): Result<AuthRequestData>
 
     /**
      * Represents the data required for initiating an OAuth 2.0 authentication process.
      * It includes the URL for the authentication request and serializable state information to continue authentication after the app has been killed.
      */
-    data class AuthenticateData(
-        val authenticationRequestUrl: String,
-        val clientState: ClientState,
+    data class AuthRequestData(
+        val url: String,
+        val state: State,
     ) {
         /**
          * Represents the state information used during an OAuth 2.0 authentication flow.
          */
         @Serializable
-        data class ClientState(
+        data class State(
             val clientId: String,
             val state: String,
             val codeVerifier: String,
@@ -50,7 +50,6 @@ interface OAuth2LoginFlow {
     suspend fun onCallback(callbackUri: String): Result<OAuth2MatrixClientAuthProviderData>
 }
 
-// FIXME test
 class OAuth2LoginFlowImpl(
     private val baseUrl: Url,
     private val applicationType: ApplicationType,
@@ -62,17 +61,17 @@ class OAuth2LoginFlowImpl(
     private val policyUri: LocalizedField<String>? = null,
     private val tosUri: LocalizedField<String>? = null,
     private val promptValue: PromptValue? = null,
-    initialClientState: OAuth2LoginFlow.AuthenticateData.ClientState? = null,
+    initialState: OAuth2LoginFlow.AuthRequestData.State? = null,
     private val httpClientEngine: HttpClientEngine? = null,
     private val httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : OAuth2LoginFlow {
-    private var clientId: String? = initialClientState?.clientId
+    private var clientId: String? = initialState?.clientId
     private val deviceId = SecureRandom.nextString(10)
 
     @OptIn(ExperimentalUuidApi::class)
-    private val state = initialClientState?.state
+    private val state = initialState?.state
         ?: Uuid.fromByteArray(SecureRandom.nextBytes(Uuid.SIZE_BYTES)).toHexDashString()
-    private val codeVerifier = initialClientState?.codeVerifier
+    private val codeVerifier = initialState?.codeVerifier
         ?: SecureRandom.nextString(64)
     private val codeChallenge = codeVerifier.encodeToByteArray().toByteString().sha256().base64Url()
 
@@ -91,7 +90,7 @@ class OAuth2LoginFlowImpl(
         }
     }
 
-    override suspend fun authenticate(): Result<OAuth2LoginFlow.AuthenticateData> = runCatching {
+    override suspend fun createAuthRequest(): Result<OAuth2LoginFlow.AuthRequestData> = runCatching {
         OAuth2ApiClient(
             serverMetadata = getServerMetadata(),
             httpClientEngine = httpClientEngine,
@@ -128,9 +127,9 @@ class OAuth2LoginFlowImpl(
                 promptValue?.let { parameters.append("prompt", it.value) }
             }.build().toString()
             clientId = clientMetadata.clientId
-            OAuth2LoginFlow.AuthenticateData(
-                authenticationRequestUrl = authenticationRequestUrl,
-                clientState = OAuth2LoginFlow.AuthenticateData.ClientState(
+            OAuth2LoginFlow.AuthRequestData(
+                url = authenticationRequestUrl,
+                state = OAuth2LoginFlow.AuthRequestData.State(
                     clientId = clientMetadata.clientId,
                     state = state,
                     codeVerifier = codeVerifier,

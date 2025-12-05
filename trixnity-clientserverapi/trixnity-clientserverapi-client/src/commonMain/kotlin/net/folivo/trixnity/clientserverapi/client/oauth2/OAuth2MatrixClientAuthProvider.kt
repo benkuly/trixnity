@@ -123,7 +123,7 @@ fun MatrixClientAuthProviderData.Companion.oAuth2Login(
     policyUri: LocalizedField<String>? = null,
     tosUri: LocalizedField<String>? = null,
     promptValue: PromptValue? = null,
-    initialClientState: OAuth2LoginFlow.AuthenticateData.ClientState? = null,
+    initialState: OAuth2LoginFlow.AuthRequestData.State? = null,
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ): OAuth2LoginFlow = OAuth2LoginFlowImpl(
@@ -137,7 +137,7 @@ fun MatrixClientAuthProviderData.Companion.oAuth2Login(
     policyUri = policyUri,
     tosUri = tosUri,
     promptValue = promptValue,
-    initialClientState = initialClientState,
+    initialState = initialState,
     httpClientEngine = httpClientEngine,
     httpClientConfig = httpClientConfig
 )
