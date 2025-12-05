@@ -556,7 +556,6 @@ class TimelineEventIT {
         return when (val event = event) {
             is MessageEvent -> copy(event = event.copy(unsigned = null))
             is StateEvent -> copy(event = (event as StateEvent<Nothing>).copy(unsigned = null))
-            else -> this
         }
     }
 }
