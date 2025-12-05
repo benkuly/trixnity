@@ -30,7 +30,7 @@ vodozemac-webNpm = "2d5ea6a09aa87ec8416a804ac7ccb4377631083a"
 ### libraries ###
 ktor = "3.3.3" # https://github.com/ktorio/ktor/releases
 koin = "4.1.1" # https://github.com/InsertKoinIO/koin/tags
-okio = "3.16.0" # https://square.github.io/okio/changelog/
+okio = "3.16.4" # https://square.github.io/okio/changelog/
 
 ### databases ###
 exposed = "0.61.0" # https://github.com/JetBrains/Exposed/releases
