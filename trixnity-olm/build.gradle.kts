@@ -126,9 +126,9 @@ kotlin {
                     withAndroidTarget()
                 }
                 group("native") {
-                    withLinux()
-                    withMingw()
-                    withApple()
+                    group("linux")
+                    group("mingw")
+                    group("apple")
                 }
             }
         }

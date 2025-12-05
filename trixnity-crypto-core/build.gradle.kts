@@ -1,3 +1,6 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
@@ -65,42 +68,16 @@ kotlin {
         }
     }
 
+    applyDefaultHierarchyTemplate {
+        common {
+            group("openssl") {
+                group("linux")
+                group("mingw")
+            }
+        }
+    }
+
     sourceSets {
-
-        val opensslMain by creating {
-            dependsOn(commonMain.get())
-        }
-        val linuxMain by creating {
-            dependsOn(opensslMain)
-        }
-        val linuxX64Main by getting {
-            dependsOn(linuxMain)
-        }
-        val mingwMain by creating {
-            dependsOn(opensslMain)
-        }
-        val mingwX64Main by getting {
-            dependsOn(mingwMain)
-        }
-
-        val appleMain by creating {
-            dependsOn(commonMain.get())
-        }
-        val macosX64Main by getting {
-            dependsOn(appleMain)
-        }
-        val macosArm64Main by getting {
-            dependsOn(appleMain)
-        }
-        val iosArm64Main by getting {
-            dependsOn(appleMain)
-        }
-        val iosSimulatorArm64Main by getting {
-            dependsOn(appleMain)
-        }
-        val iosX64Main by getting {
-            dependsOn(appleMain)
-        }
 
         configureEach {
             languageSettings.optIn("kotlin.RequiresOptIn")

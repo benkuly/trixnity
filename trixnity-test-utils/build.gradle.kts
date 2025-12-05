@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     id("com.android.library")
     kotlin("multiplatform")
@@ -6,44 +10,32 @@ plugins {
 
 kotlin {
     jvmToolchain()
-    applyDefaultHierarchyTemplate()
-
-    addJsTarget(rootDir)
-    val desktopTargets = addNativeDesktopTargets()
-
     addJvmTarget()
+    addJsTarget(rootDir)
     addAndroidTarget()
+    addNativeDesktopTargets()
     addNativeAppleTargets()
+
+    applyDefaultHierarchyTemplate {
+        common {
+            group("logback") {
+                withAndroidTarget()
+                withJvm()
+            }
+
+            group("direct") {
+                group("linux")
+                group("mingw")
+                group("web") { withJs() }
+            }
+        }
+    }
 
     sourceSets {
         all {
             languageSettings.optIn("kotlin.time.ExperimentalTime")
         }
-        val commonMain by getting
-        val directMain by creating {
-            dependsOn(commonMain)
-        }
-        val logbackMain by creating {
-            dependsOn(commonMain)
-        }
-        val jvmMain by getting {
-            dependsOn(logbackMain)
-        }
-        val androidMain by getting {
-            dependsOn(logbackMain)
-        }
-        val nativeDesktopMain by creating {
-            dependsOn(directMain)
-        }
-        val jsMain by getting {
-            dependsOn(directMain)
-        }
-
-        desktopTargets.forEach {
-            getByName("${it.targetName}Main") {
-                dependsOn(nativeDesktopMain)
-            }
-        }
+        val logbackMain by getting
 
         commonMain.dependencies {
             api(kotlin("test"))
