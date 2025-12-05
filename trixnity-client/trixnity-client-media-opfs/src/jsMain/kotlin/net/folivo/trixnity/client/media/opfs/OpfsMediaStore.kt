@@ -2,6 +2,7 @@ package net.folivo.trixnity.client.media.opfs
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import js.buffer.ArrayBuffer
+import js.iterable.asFlow
 import js.iterable.iterator
 import js.typedarrays.Uint8Array
 import kotlinx.coroutines.*
@@ -59,7 +60,7 @@ class OpfsMediaStore(
     override suspend fun clearCache() = deleteAll()
 
     override suspend fun deleteAll() {
-        for (entry in basePath.values()) {
+        basePath.values().asFlow().collect { entry ->
             basePath.removeEntry(entry.name, FileSystemRemoveOptions(recursive = true))
         }
     }
