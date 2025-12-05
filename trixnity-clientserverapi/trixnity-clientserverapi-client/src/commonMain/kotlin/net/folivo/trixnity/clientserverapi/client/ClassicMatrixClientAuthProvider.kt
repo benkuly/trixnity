@@ -117,6 +117,7 @@ suspend fun MatrixClientAuthProviderData.Companion.classicLogin(
     loginType: LoginType = LoginType.Password,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
+    refreshToken: Boolean? = null,
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ): Result<ClassicMatrixClientAuthProviderData> =
@@ -132,6 +133,7 @@ suspend fun MatrixClientAuthProviderData.Companion.classicLogin(
             type = loginType,
             deviceId = deviceId,
             initialDeviceDisplayName = initialDeviceDisplayName,
+            refreshToken = refreshToken
         ).getOrThrow().let { login ->
             ClassicMatrixClientAuthProviderData(
                 baseUrl = baseUrl,
@@ -148,6 +150,7 @@ suspend fun MatrixClientAuthProviderData.Companion.classicLoginWithPassword(
     password: String,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
+    refreshToken: Boolean? = null,
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ): Result<ClassicMatrixClientAuthProviderData> =
@@ -159,6 +162,7 @@ suspend fun MatrixClientAuthProviderData.Companion.classicLoginWithPassword(
         loginType = LoginType.Password,
         deviceId = deviceId,
         initialDeviceDisplayName = initialDeviceDisplayName,
+        refreshToken = refreshToken,
         httpClientEngine = httpClientEngine,
         httpClientConfig = httpClientConfig,
     )
@@ -169,6 +173,7 @@ suspend fun MatrixClientAuthProviderData.Companion.classicLoginWithToken(
     token: String,
     deviceId: String? = null,
     initialDeviceDisplayName: String? = null,
+    refreshToken: Boolean? = null,
     httpClientEngine: HttpClientEngine? = null,
     httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ): Result<ClassicMatrixClientAuthProviderData> =
@@ -180,6 +185,7 @@ suspend fun MatrixClientAuthProviderData.Companion.classicLoginWithToken(
         loginType = LoginType.Token(),
         deviceId = deviceId,
         initialDeviceDisplayName = initialDeviceDisplayName,
+        refreshToken = refreshToken,
         httpClientEngine = httpClientEngine,
         httpClientConfig = httpClientConfig,
     )
