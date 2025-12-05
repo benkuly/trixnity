@@ -38,7 +38,7 @@ hikari = "7.0.2" # https://github.com/brettwooldridge/HikariCP/tags
 h2 = "2.4.240" # https://github.com/h2database/h2database/releases
 postgres = "42.7.8" # https://github.com/pgjdbc/pgjdbc/releases
 juulLabsIndexeddb = "0.10.0" # https://github.com/JuulLabs/indexeddb/releases
-androidxRoom = "2.8.2" # https://developer.android.com/jetpack/androidx/releases/room
+androidxRoom = "2.8.4" # https://developer.android.com/jetpack/androidx/releases/room
 androidxSqlite = "2.6.2" # https://developer.android.com/jetpack/androidx/releases/sqlite
 
 ### logging ###
