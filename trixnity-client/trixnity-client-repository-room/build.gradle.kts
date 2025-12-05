@@ -16,6 +16,7 @@ kotlin {
 
     sourceSets {
         all {
+            compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
             languageSettings.optIn("kotlin.RequiresOptIn")
             languageSettings.optIn("kotlin.time.ExperimentalTime")
         }

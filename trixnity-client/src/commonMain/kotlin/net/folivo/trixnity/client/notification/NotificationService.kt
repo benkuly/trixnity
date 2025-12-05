@@ -47,12 +47,14 @@ interface NotificationService {
     )
 
     @Deprecated("use the new notification system instead")
+    @Suppress("DEPRECATION")
     fun getNotifications(
         decryptionTimeout: Duration = 5.seconds,
         syncResponseBufferSize: Int = 4
     ): Flow<Notification>
 
     @Deprecated("use the new notification system instead")
+    @Suppress("DEPRECATION")
     fun getNotifications(
         response: Sync.Response,
         decryptionTimeout: Duration = 5.seconds,
@@ -130,6 +132,7 @@ class NotificationServiceImpl(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Deprecated("use the new notification system instead")
+    @Suppress("DEPRECATION")
     override fun getNotifications(
         decryptionTimeout: Duration,
         syncResponseBufferSize: Int
@@ -138,6 +141,7 @@ class NotificationServiceImpl(
             .flatMapConcat { syncEvents -> getNotifications(syncEvents.syncResponse, decryptionTimeout) }
 
     @Deprecated("use the new notification system instead")
+    @Suppress("DEPRECATION")
     override fun getNotifications(
         response: Sync.Response,
         decryptionTimeout: Duration
@@ -182,6 +186,7 @@ class NotificationServiceImpl(
         }
     }.toDeprecatedNotifications()
 
+    @Suppress("DEPRECATION")
     private fun Flow<NotificationUpdate?>.toDeprecatedNotifications(): Flow<NotificationService.Notification> =
         filterNotNull().mapNotNull { update ->
             when (update) {

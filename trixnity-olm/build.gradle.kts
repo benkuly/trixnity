@@ -160,10 +160,11 @@ kotlin {
     }
 
     sourceSets {
-        all {
+        configureEach {
             languageSettings.optIn("kotlin.RequiresOptIn")
-            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+            if (isNativeOnly) languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
+
         commonMain {
             dependencies {
                 implementation(projects.trixnityCryptoCore)

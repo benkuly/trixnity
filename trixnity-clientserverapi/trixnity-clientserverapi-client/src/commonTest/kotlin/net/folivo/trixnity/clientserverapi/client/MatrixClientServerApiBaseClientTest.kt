@@ -339,11 +339,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     }
                 }
             },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
-                }
-            },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -409,11 +404,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
                         else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -568,11 +558,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     }
                 }
             },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
-                }
-            },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -711,11 +696,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
                         else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -876,11 +856,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     }
                 }
             },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
-                }
-            },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -988,11 +963,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     }
                 }
             },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
-                }
-            },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -1066,11 +1036,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
                         else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -1241,11 +1206,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     }
                 }
             },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
-                }
-            },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -1356,11 +1316,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
                     }
                 }
             },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
-                }
-            },
             json = json,
             eventContentSerializerMappings = mappings,
         )
@@ -1457,11 +1412,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
                         else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,
@@ -1767,11 +1717,6 @@ class MatrixClientServerApiBaseClientTest : TrixnityBaseTest() {
 
                         else -> respond("404 NOT_FOUND", HttpStatusCode.NotFound)
                     }
-                }
-            },
-            httpClientConfig = {
-                install(SaveBodyPlugin) {
-                    disabled = true
                 }
             },
             json = json,

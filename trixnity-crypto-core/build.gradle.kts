@@ -66,17 +66,6 @@ kotlin {
     }
 
     sourceSets {
-        all {
-            languageSettings.optIn("kotlin.RequiresOptIn")
-            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
-        }
-        commonMain {
-            dependencies {
-                api(projects.trixnityUtils)
-
-                implementation(libs.oshai.logging)
-            }
-        }
 
         val opensslMain by creating {
             dependsOn(commonMain.get())
@@ -111,6 +100,19 @@ kotlin {
         }
         val iosX64Main by getting {
             dependsOn(appleMain)
+        }
+
+        configureEach {
+            languageSettings.optIn("kotlin.RequiresOptIn")
+            if (isNativeOnly) languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+        }
+
+        commonMain {
+            dependencies {
+                api(projects.trixnityUtils)
+
+                implementation(libs.oshai.logging)
+            }
         }
 
         commonTest {

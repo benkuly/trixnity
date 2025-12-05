@@ -18,6 +18,7 @@ import kotlin.test.Test
 
 class OkioMediaStoreTest {
 
+    @Suppress("DEPRECATION")
     lateinit var cut: OkioMediaStore
     lateinit var fileSystem: FakeFileSystem
     lateinit var coroutineScope: CoroutineScope
@@ -30,6 +31,7 @@ class OkioMediaStoreTest {
     @BeforeTest
     fun beforeTest() {
         fileSystem = FakeFileSystem()
+        @Suppress("DEPRECATION")
         cut = OkioMediaStore(basePath, fileSystem)
         coroutineScope = CoroutineScope(Dispatchers.Default)
     }
