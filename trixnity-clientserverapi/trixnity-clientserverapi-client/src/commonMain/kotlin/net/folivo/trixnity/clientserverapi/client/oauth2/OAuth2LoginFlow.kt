@@ -47,7 +47,7 @@ interface OAuth2LoginFlow {
     /**
      * Handles the callback from the OAuth2 authorization server.
      */
-    suspend fun onCallback(callbackUri: String): Result<OAuth2MatrixClientAuthProviderData>
+    suspend fun onCallback(callbackUri: Url): Result<OAuth2MatrixClientAuthProviderData>
 }
 
 class OAuth2LoginFlowImpl(
@@ -138,11 +138,10 @@ class OAuth2LoginFlowImpl(
         }
     }
 
-    override suspend fun onCallback(callbackUri: String): Result<OAuth2MatrixClientAuthProviderData> = runCatching {
-        val callback = Url(callbackUri)
+    override suspend fun onCallback(callbackUri: Url): Result<OAuth2MatrixClientAuthProviderData> = runCatching {
         val parameters = when (responseMode) {
-            ResponseMode.Query -> callback.parameters
-            ResponseMode.Fragment -> parseQueryString(callback.fragment)
+            ResponseMode.Query -> callbackUri.parameters
+            ResponseMode.Fragment -> parseQueryString(callbackUri.fragment)
             is ResponseMode.Unknown -> throw IllegalStateException("unsupported response mode")
         }
         val callbackCode = requireNotNull(parameters["code"]) { "code is missing" }
