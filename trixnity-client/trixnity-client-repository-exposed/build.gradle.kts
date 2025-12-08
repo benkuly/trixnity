@@ -23,7 +23,7 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
+                implementation(projects.trixnityTestUtils)
                 implementation(projects.trixnityClient.clientRepositoryTest)
             }
         }

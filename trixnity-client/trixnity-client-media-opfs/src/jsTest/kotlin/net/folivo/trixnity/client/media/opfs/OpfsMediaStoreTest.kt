@@ -23,6 +23,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class OpfsMediaStoreTest {
 
+    @Suppress("DEPRECATION")
     lateinit var cut: OpfsMediaStore
     lateinit var basePath: FileSystemDirectoryHandle
     lateinit var tmpPath: FileSystemDirectoryHandle
@@ -31,6 +32,7 @@ class OpfsMediaStoreTest {
     fun test(testBody: suspend TestScope.() -> Unit): TestResult = runTest {
         basePath = navigator.storage.getDirectory()
         tmpPath = basePath.getDirectoryHandle("tmp", FileSystemGetDirectoryOptions(create = true))
+        @Suppress("DEPRECATION")
         cut = OpfsMediaStore(basePath)
         coroutineScope = CoroutineScope(Dispatchers.Default)
         try {

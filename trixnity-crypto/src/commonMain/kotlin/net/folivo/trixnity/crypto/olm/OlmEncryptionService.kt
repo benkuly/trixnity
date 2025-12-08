@@ -181,14 +181,10 @@ class OlmEncryptionServiceImpl(
     private val ownEd25519Key: Ed25519Key = userInfo.signingPublicKey
     private val ownCurve25519Key: Curve25519Key = userInfo.identityPublicKey
 
-    @OptIn(ExperimentalContracts::class)
     private suspend fun withStoredSessions(
         identityKey: Curve25519KeyValue,
         block: suspend (Set<StoredOlmSession>?) -> StoredOlmSession
     ) {
-        contract {
-            callsInPlace(block, InvocationKind.AT_MOST_ONCE)
-        }
         store.updateOlmSessions(identityKey) { storedSessions ->
             val newStoredSession = block(storedSessions)
             storedSessions.addOrUpdateNewAndRemoveOldSessions(newStoredSession)

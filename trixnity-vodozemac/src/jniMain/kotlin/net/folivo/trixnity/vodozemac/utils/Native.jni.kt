@@ -110,6 +110,7 @@ private class CleanableImpl(managed: Managed, action: Runnable, cleaner: Cleaner
     PhantomReference<Managed>(managed, cleaner.queue), Cleanable {
 
     override var prev: Cleanable? = this
+    @Suppress("PROPERTY_HIDES_JAVA_FIELD")
     override var next: Cleanable? = this
 
     private val list: Cleanable = cleaner.list

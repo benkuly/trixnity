@@ -22,10 +22,5 @@ kotlin {
                 implementation(libs.ktor.resources)
             }
         }
-        commonTest {
-            dependencies {
-                implementation(kotlin("test"))
-            }
-        }
     }
 }

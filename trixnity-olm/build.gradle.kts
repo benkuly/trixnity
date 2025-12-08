@@ -126,9 +126,9 @@ kotlin {
                     withAndroidTarget()
                 }
                 group("native") {
-                    withLinux()
-                    withMingw()
-                    withApple()
+                    group("linux")
+                    group("mingw")
+                    group("apple")
                 }
             }
         }
@@ -160,10 +160,11 @@ kotlin {
     }
 
     sourceSets {
-        all {
+        configureEach {
             languageSettings.optIn("kotlin.RequiresOptIn")
-            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+            if (isNativeOnly) languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
+
         commonMain {
             dependencies {
                 implementation(projects.trixnityCryptoCore)
@@ -198,10 +199,6 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
-                implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.kotest.assertions.core)
-
                 implementation(projects.trixnityTestUtils)
             }
         }

@@ -24,6 +24,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class IndexedDBMediaStoreTest {
 
+    @Suppress("DEPRECATION")
     private lateinit var cut: IndexedDBMediaStore
     private lateinit var database: Database
     private lateinit var coroutineScope: CoroutineScope
@@ -32,6 +33,7 @@ class IndexedDBMediaStoreTest {
     private val file2 = "file2"
 
     private suspend fun beforeTest() {
+        @Suppress("DEPRECATION")
         cut = IndexedDBMediaStore(Random.nextString(22))
         coroutineScope = CoroutineScope(Dispatchers.Default)
         cut.init(coroutineScope)

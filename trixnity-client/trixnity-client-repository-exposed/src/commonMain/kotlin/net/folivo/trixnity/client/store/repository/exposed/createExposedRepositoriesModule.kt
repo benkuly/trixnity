@@ -52,6 +52,7 @@ suspend fun createExposedRepositoriesModule(
             ExposedNotificationUpdate,
             ExposedMigration,
         )
+        @Suppress("DEPRECATION")
         SchemaUtils.createMissingTablesAndColumns(*allTables)
     }
     log.debug { "finished create missing tables and columns" }

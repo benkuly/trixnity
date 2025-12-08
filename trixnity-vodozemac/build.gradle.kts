@@ -39,7 +39,9 @@ kotlin {
 
     sourceSets {
         val webMain = named("webMain")
-        all { languageSettings.optIn("kotlin.native.SymbolNameIsInternal") }
+        configureEach {
+            if (isNativeOnly) languageSettings.optIn("kotlin.native.SymbolNameIsInternal")
+        }
 
         commonMain.dependencies {
             implementation(projects.trixnityVodozemac.trixnityVodozemacBinaries)
