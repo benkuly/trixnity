@@ -13,135 +13,107 @@ class LocalizedObjectSerializerTest {
     @Serializable(with = TestClassSerializer::class)
     @KeepGeneratedSerializer
     data class TestClass(
-        val primitive: String = "primitive",
+        val Trixnity: String = "Trixnity",
         val objekt: Map<String, String> = mapOf(
-            "key" to "primitive"
+            "key" to "Trixnity"
         ),
-        val localizedPrimitive: LocalizedField<String> = LocalizedField(
-            default = "primitive",
+        val localizedTrixinity: LocalizedField<String> = LocalizedField(
+            default = "Trixnity",
             translations = mapOf(
-                "de" to "Primitiv",
-                "en" to "primitive"
+                "de" to "Trixinity",
+                "en" to "Trixnity"
             )
         ),
         val localizedObjekt: LocalizedField<Map<String, String>> = LocalizedField(
             default = mapOf(
-                "key" to "primitive"
+                "key" to "Trixnity"
             ),
             translations = mapOf(
-                "de" to mapOf("key" to "Primitiv"),
-                "en" to mapOf("key" to "primitive")
+                "de" to mapOf("key" to "Trixinity"),
+                "en" to mapOf("key" to "Trixnity")
             )
         ),
-        val localizedPrimitiveNullDefault: LocalizedField<String?> = LocalizedField(
+        val localizedTrixinityNull: LocalizedField<String>? = null,
+        val localizedTrixinityNullDefault: LocalizedField<String?>? = LocalizedField(
             default = null,
             translations = mapOf(
-                "de" to "Primitiv",
-                "en" to "primitive"
+                "de" to "Trixinity",
+                "en" to "Trixnity"
             )
         ),
-        val localizedObjektNullDefault: LocalizedField<Map<String, String>> = LocalizedField(
+        val localizedObjektNull: LocalizedField<Map<String, String>>? = null,
+        val localizedObjektNullDefault: LocalizedField<Map<String, String>>? = LocalizedField(
             default = null,
             translations = mapOf(
-                "de" to mapOf("key" to "Primitiv"),
-                "en" to mapOf("key" to "primitive")
+                "de" to mapOf("key" to "Trixinity"),
+                "en" to mapOf("key" to "Trixnity")
             )
         ),
-        val localizedPrimitiveNullTranslations: LocalizedField<String?> = LocalizedField(
-            default = "primitive",
+        val localizedTrixinityNullTranslations: LocalizedField<String?> = LocalizedField(
+            default = "Trixnity",
             translations = null
         ),
         val localizedObjektNullTranslations: LocalizedField<Map<String, String>> = LocalizedField(
             default = mapOf(
-                "key" to "primitive"
+                "key" to "Trixnity"
             ),
             translations = null
         ),
     )
 
     @OptIn(InternalSerializationApi::class)
-    object TestClassSerializer : LocalizedObjectSerializer<TestClass>(TestClass.generatedSerializer())
+    internal object TestClassSerializer : LocalizedObjectSerializer<TestClass>(TestClass.generatedSerializer())
 
     val json = Json {
+        explicitNulls = true
         encodeDefaults = true
         prettyPrint = true
     }
 
-    @Test
-    fun serialize() {
-        json.encodeToString(TestClass()) shouldBe """
+    private val testClassString = """
             {
-                "primitive": "primitive",
+                "Trixnity": "Trixnity",
                 "objekt": {
-                    "key": "primitive"
+                    "key": "Trixnity"
                 },
-                "localizedPrimitive": "primitive",
-                "localizedPrimitive#de": "Primitiv",
-                "localizedPrimitive#en": "primitive",
+                "localizedTrixinity": "Trixnity",
+                "localizedTrixinity#de": "Trixinity",
+                "localizedTrixinity#en": "Trixnity",
                 "localizedObjekt": {
-                    "key": "primitive"
+                    "key": "Trixnity"
                 },
                 "localizedObjekt#de": {
-                    "key": "Primitiv"
+                    "key": "Trixinity"
                 },
                 "localizedObjekt#en": {
-                    "key": "primitive"
+                    "key": "Trixnity"
                 },
-                "localizedPrimitiveNullDefault": null,
-                "localizedPrimitiveNullDefault#de": "Primitiv",
-                "localizedPrimitiveNullDefault#en": "primitive",
+                "localizedTrixinityNull": null,
+                "localizedTrixinityNullDefault": null,
+                "localizedTrixinityNullDefault#de": "Trixinity",
+                "localizedTrixinityNullDefault#en": "Trixnity",
+                "localizedObjektNull": null,
                 "localizedObjektNullDefault": null,
                 "localizedObjektNullDefault#de": {
-                    "key": "Primitiv"
+                    "key": "Trixinity"
                 },
                 "localizedObjektNullDefault#en": {
-                    "key": "primitive"
+                    "key": "Trixnity"
                 },
-                "localizedPrimitiveNullTranslations": "primitive",
+                "localizedTrixinityNullTranslations": "Trixnity",
                 "localizedObjektNullTranslations": {
-                    "key": "primitive"
+                    "key": "Trixnity"
                 }
             }
         """.trimIndent()
+
+    @Test
+    fun serialize() {
+        json.encodeToString(TestClass()) shouldBe testClassString
     }
 
     @Test
     fun deserialize() {
-        json.decodeFromString<TestClass>(
-            """
-            {
-                "primitive": "primitive",
-                "objekt": {
-                    "key": "primitive"
-                },
-                "localizedPrimitive": "primitive",
-                "localizedPrimitive#de": "Primitiv",
-                "localizedPrimitive#en": "primitive",
-                "localizedObjekt": {
-                    "key": "primitive"
-                },
-                "localizedObjekt#de": {
-                    "key": "Primitiv"
-                },
-                "localizedObjekt#en": {
-                    "key": "primitive"
-                },
-                "localizedPrimitiveNullDefault": null,
-                "localizedPrimitiveNullDefault#de": "Primitiv",
-                "localizedPrimitiveNullDefault#en": "primitive",
-                "localizedObjektNullDefault": null,
-                "localizedObjektNullDefault#de": {
-                    "key": "Primitiv"
-                },
-                "localizedObjektNullDefault#en": {
-                    "key": "primitive"
-                },
-                "localizedPrimitiveNullTranslations": "primitive",
-                "localizedObjektNullTranslations": {
-                    "key": "primitive"
-                }
-            }
-        """.trimIndent()
-        ) shouldBe TestClass()
+        json.decodeFromString<TestClass>(testClassString) shouldBe TestClass()
     }
 }

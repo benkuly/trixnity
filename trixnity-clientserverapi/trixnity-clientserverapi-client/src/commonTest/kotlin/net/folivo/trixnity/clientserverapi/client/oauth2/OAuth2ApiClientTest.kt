@@ -3,9 +3,10 @@ package net.folivo.trixnity.clientserverapi.client.oauth2
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
+import io.ktor.utils.io.charsets.*
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import net.folivo.trixnity.clientserverapi.client.trimToFlatJson
+import net.folivo.trixnity.clientserverapi.model.authentication.TokenTypeHint
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.*
 import net.folivo.trixnity.core.MSC4191
 import net.folivo.trixnity.testutils.scopedMockEngine
@@ -37,7 +38,7 @@ class OAuth2ApiClientTest {
             grantTypes = setOf(GrantType.RefreshToken, GrantType.AuthorizationCode),
             responseTypes = setOf(ResponseType.Code),
             tokenEndpointAuthMethod = TokenEndpointAuthMethod.None,
-            clientName = LocalizedField("Trixnity")
+            clientName = LocalizedField("Trixnity", mapOf("de" to "Trixinity"))
         )
 
         val matrixRestClient = OAuth2ApiClient(
@@ -48,9 +49,6 @@ class OAuth2ApiClientTest {
                     request.body.toByteArray().decodeToString() shouldBe """
                         {
                             "application_type": "web",
-                            "client_name": {
-                                "default": "Trixnity"
-                            },
                             "client_uri": "https://client.example.com",
                             "grant_types": [
                                 "refresh_token",
@@ -62,9 +60,12 @@ class OAuth2ApiClientTest {
                             "response_types": [
                                 "code"
                             ],
-                            "token_endpoint_auth_method": "none"
+                            "token_endpoint_auth_method": "none",
+                            "client_name": "Trixnity",
+                            "client_name#de": "Trixinity"
                         }
                     """.trimToFlatJson()
+                    request.body.contentType shouldBe ContentType.Application.Json
                     request.method shouldBe HttpMethod.Post
 
                     respond(
@@ -72,9 +73,6 @@ class OAuth2ApiClientTest {
                             {
                                 "client_id": "clientId",
                                 "application_type": "web",
-                                "client_name": {
-                                    "default": "Trixnity"
-                                },
                                 "client_uri": "https://client.example.com",
                                 "grant_types": [
                                     "refresh_token",
@@ -86,7 +84,9 @@ class OAuth2ApiClientTest {
                                 "response_types": [
                                     "code"
                                 ],
-                                "token_endpoint_auth_method": "none"
+                                "token_endpoint_auth_method": "none",
+                                "client_name": "Trixnity",
+                                "client_name#de": "Trixinity"
                             }
                         """.trimIndent(),
                         HttpStatusCode.OK,
@@ -105,17 +105,6 @@ class OAuth2ApiClientTest {
     @Test
     @OptIn(MSC4191::class)
     fun shouldGetToken() = runTest {
-        println(
-            Json.encodeToString(
-                TokenResponse(
-                    accessToken = "access",
-                    refreshToken = "refresh",
-                    tokenType = "Bearer",
-                    expiresIn = 3600,
-                    scope = setOf("scope1", "scope2")
-                )
-            )
-        )
         val matrixRestClient = OAuth2ApiClient(
             serverMetadata = serverMetadata,
             httpClientEngine = scopedMockEngine {
@@ -126,6 +115,7 @@ class OAuth2ApiClientTest {
                             "&redirect_uri=trixnity%3A%2F%2Fsso" +
                             "&client_id=clientId" +
                             "&code_verifier=CODE_VERIFIER"
+                    request.body.contentType shouldBe ContentType.Application.FormUrlEncoded.withCharset(Charsets.UTF_8)
                     request.method shouldBe HttpMethod.Post
 
                     respond(
@@ -162,17 +152,6 @@ class OAuth2ApiClientTest {
     @Test
     @OptIn(MSC4191::class)
     fun shouldRefreshToken() = runTest {
-        println(
-            Json.encodeToString(
-                TokenResponse(
-                    accessToken = "access",
-                    refreshToken = "refresh",
-                    tokenType = "Bearer",
-                    expiresIn = 3600,
-                    scope = setOf("scope1", "scope2")
-                )
-            )
-        )
         val matrixRestClient = OAuth2ApiClient(
             serverMetadata = serverMetadata,
             httpClientEngine = scopedMockEngine {
@@ -182,6 +161,7 @@ class OAuth2ApiClientTest {
                             "grant_type=refresh_token" +
                             "&refresh_token=refresh" +
                             "&client_id=clientId"
+                    request.body.contentType shouldBe ContentType.Application.FormUrlEncoded.withCharset(Charsets.UTF_8)
                     request.method shouldBe HttpMethod.Post
 
                     respond(
@@ -211,5 +191,35 @@ class OAuth2ApiClientTest {
             expiresIn = 3600,
             scope = setOf("scope1", "scope2")
         )
+    }
+
+    @Test
+    @OptIn(MSC4191::class)
+    fun shouldRevokeToken() = runTest {
+        val matrixRestClient = OAuth2ApiClient(
+            serverMetadata = serverMetadata,
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    request.url.toString() shouldBe "https://auth.matrix.host/revoke"
+                    request.body.toByteArray().decodeToString() shouldBe
+                            "token=refresh" +
+                            "&token_type_hint=refresh_token" +
+                            "&client_id=clientId"
+                    request.body.contentType shouldBe ContentType.Application.FormUrlEncoded.withCharset(Charsets.UTF_8)
+                    request.method shouldBe HttpMethod.Post
+
+                    respond(
+                        "",
+                        HttpStatusCode.OK,
+                    )
+                }
+            }
+        )
+
+        matrixRestClient.revokeToken(
+            token = "refresh",
+            tokenTypeHint = TokenTypeHint.RefreshToken,
+            clientId = "clientId",
+        ).getOrThrow()
     }
 }
