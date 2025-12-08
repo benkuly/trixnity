@@ -9,7 +9,10 @@ import net.folivo.trixnity.clientserverapi.client.trimToFlatJson
 import net.folivo.trixnity.clientserverapi.model.authentication.TokenTypeHint
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.*
 import net.folivo.trixnity.core.MSC4191
+import net.folivo.trixnity.crypto.core.SecureRandom
 import net.folivo.trixnity.testutils.scopedMockEngine
+import net.folivo.trixnity.utils.nextString
+import okio.ByteString.Companion.toByteString
 import kotlin.test.Test
 
 class OAuth2ApiClientTest {
@@ -221,5 +224,13 @@ class OAuth2ApiClientTest {
             tokenTypeHint = TokenTypeHint.RefreshToken,
             clientId = "clientId",
         ).getOrThrow()
+    }
+
+    @Test
+    fun test() {
+        val codeVerifier = SecureRandom.nextString(64)
+        println(codeVerifier)
+        val codeChallenge = codeVerifier.encodeToByteArray().toByteString().sha256().base64Url()
+        println(codeChallenge)
     }
 }

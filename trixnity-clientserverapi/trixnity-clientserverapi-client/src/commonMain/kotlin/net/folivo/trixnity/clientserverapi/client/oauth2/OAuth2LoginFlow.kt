@@ -7,8 +7,10 @@ import kotlinx.serialization.Serializable
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.model.authentication.oauth2.*
 import net.folivo.trixnity.crypto.core.SecureRandom
+import net.folivo.trixnity.crypto.core.Sha256
 import net.folivo.trixnity.utils.nextString
-import okio.ByteString.Companion.toByteString
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.Base64.PaddingOption.ABSENT
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -66,14 +68,17 @@ class OAuth2LoginFlowImpl(
     private val httpClientConfig: (HttpClientConfig<*>.() -> Unit)? = null,
 ) : OAuth2LoginFlow {
     private var clientId: String? = initialState?.clientId
-    private val deviceId = SecureRandom.nextString(10)
+    private val deviceId = SecureRandom.nextString(10, alphabet = ('a'..'z') + ('A'..'Z'))
 
     @OptIn(ExperimentalUuidApi::class)
     private val state = initialState?.state
         ?: Uuid.fromByteArray(SecureRandom.nextBytes(Uuid.SIZE_BYTES)).toHexDashString()
     private val codeVerifier = initialState?.codeVerifier
         ?: SecureRandom.nextString(64)
-    private val codeChallenge = codeVerifier.encodeToByteArray().toByteString().sha256().base64Url()
+    private val codeChallenge = Sha256().use {
+        it.update(codeVerifier.encodeToByteArray())
+        Base64.UrlSafe.withPadding(ABSENT).encode(it.digest())
+    }
 
     private val getServerMetadata = object {
         private var cachedValue: ServerMetadata? = null

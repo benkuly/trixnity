@@ -2,10 +2,10 @@ package net.folivo.trixnity.utils
 
 import kotlin.random.Random
 
-private val defaultAlphabet = ('a'..'z') + ('A'..'Z')
+private val defaultAlphabet = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 
 /**
- * Returns a string between a-Z.
+ * Returns a string using an alphabet between a-z, A-Z and 0-9.
  */
 fun Random.nextString(length: Int, alphabet: List<Char> = defaultAlphabet): String =
     buildString(length) {
