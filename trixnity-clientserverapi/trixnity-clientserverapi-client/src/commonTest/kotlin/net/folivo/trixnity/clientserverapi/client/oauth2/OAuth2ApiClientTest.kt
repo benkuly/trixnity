@@ -38,7 +38,7 @@ class OAuth2ApiClientTest {
             grantTypes = setOf(GrantType.RefreshToken, GrantType.AuthorizationCode),
             responseTypes = setOf(ResponseType.Code),
             tokenEndpointAuthMethod = TokenEndpointAuthMethod.None,
-            clientName = LocalizedField("Trixnity", mapOf("de" to "Trixinity"))
+            clientName = LocalizedField("Trixnity", mapOf("de" to "Trixinity")),
         )
 
         val matrixRestClient = OAuth2ApiClient(

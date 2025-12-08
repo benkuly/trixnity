@@ -17,9 +17,9 @@ internal data class ClientMetadata(
     @SerialName("grant_types") val grantTypes: Set<GrantType>? = null,
     @SerialName("logo_uri") val logoUri: LocalizedField<String>? = null,
     @SerialName("policy_uri") val policyUri: LocalizedField<String>? = null,
-    @SerialName("redirect_uris") val redirectUris: Set<String>,
-    @SerialName("response_types") val responseTypes: Set<ResponseType>,
-    @SerialName("token_endpoint_auth_method") val tokenEndpointAuthMethod: TokenEndpointAuthMethod,
+    @SerialName("redirect_uris") val redirectUris: Set<String>? = null,
+    @SerialName("response_types") val responseTypes: Set<ResponseType>? = null,
+    @SerialName("token_endpoint_auth_method") val tokenEndpointAuthMethod: TokenEndpointAuthMethod? = null,
     @SerialName("tos_uri") val tosUri: LocalizedField<String>? = null,
 )
 
