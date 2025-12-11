@@ -5,6 +5,7 @@ import kotlinx.coroutines.*
 import net.folivo.trixnity.client.store.ServerData
 import net.folivo.trixnity.client.store.ServerDataStore
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
+import net.folivo.trixnity.clientserverapi.client.oauth2.OAuth2MatrixClientAuthProvider
 import net.folivo.trixnity.clientserverapi.model.media.GetMediaConfig
 import net.folivo.trixnity.core.EventHandler
 import kotlin.time.Duration.Companion.days
@@ -37,24 +38,32 @@ class ServerDataService(
                     }
                     val newVersions = newVersionsAsync.await()
                     val newMediaConfigAsync = async {
-                        if (newVersions != null) {
-                            if (newVersions.versions.contains(MATRIX_SPEC_1_11)) {
-                                api.media.getConfig()
-                            } else {
-                                @Suppress("DEPRECATION")
-                                api.media.getConfigLegacy().map { GetMediaConfig.Response(it.maxUploadSize) }
-                            }.onFailure { log.warn(it) { "failed get media config" } }
-                                .getOrNull()
-                        } else null
+                        if (newVersions == null) return@async null
+                        if (newVersions.versions.contains(MATRIX_SPEC_1_11)) {
+                            api.media.getConfig()
+                        } else {
+                            @Suppress("DEPRECATION")
+                            api.media.getConfigLegacy().map { GetMediaConfig.Response(it.maxUploadSize) }
+                        }.onFailure { log.warn(it) { "failed get media config" } }
+                            .getOrNull()
+                    }
+                    val newOAuth2ServerMetadataAsync = async {
+                        if (api.authProviderType != OAuth2MatrixClientAuthProvider::class) return@async null
+                        api.authentication.getOAuth2ServerMetadata()
+                            .onFailure {
+                                log.warn(it) { "failed get oAuth2ServerMetadata" }
+                            }.getOrNull()
                     }
                     val newMediaConfig = newMediaConfigAsync.await()
                     val newCapabilities = newCapabilitiesAsync.await()
+                    val newOAuth2ServerMetadata = newOAuth2ServerMetadataAsync.await()
                     if (newVersions != null && newMediaConfig != null && newCapabilities != null) {
                         serverDataStore.setServerData(
                             ServerData(
-                                newVersions,
-                                newMediaConfig,
-                                newCapabilities,
+                                versions = newVersions,
+                                mediaConfig = newMediaConfig,
+                                capabilities = newCapabilities,
+                                auth = newOAuth2ServerMetadata
                             )
                         )
                         delay(1.days)

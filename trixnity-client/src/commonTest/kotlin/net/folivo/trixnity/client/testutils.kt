@@ -100,7 +100,7 @@ fun TrixnityBaseTest.getInMemoryServerDataStore(setup: suspend ServerDataStore.(
         scheduleSetup {
             save(
                 1,
-                ServerData(GetVersions.Response(listOf("v1.11"), mapOf()), GetMediaConfig.Response(10_000))
+                ServerData(GetVersions.Response(listOf("v1.11"), mapOf()), GetMediaConfig.Response(10_000), null)
             )
         }
     },

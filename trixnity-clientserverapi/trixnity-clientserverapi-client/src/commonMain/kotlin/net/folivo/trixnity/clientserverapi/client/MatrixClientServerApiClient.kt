@@ -11,12 +11,14 @@ import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializ
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.utils.RetryFlowDelayConfig
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient")
 
 interface MatrixClientServerApiClient : AutoCloseable {
     val baseUrl: Url
     val baseClient: MatrixClientServerApiBaseClient
+    val authProviderType: KClass<out MatrixClientAuthProvider>
     val appservice: AppserviceApiClient
     val authentication: AuthenticationApiClient
     val discovery: DiscoveryApiClient
@@ -120,6 +122,8 @@ class MatrixClientServerApiClientImpl(
         httpClientEngine = httpClientEngine,
         httpClientConfig = httpClientConfig
     )
+
+    override val authProviderType: KClass<out MatrixClientAuthProvider> = authProvider::class
 
     private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) { "There was an unexpected exception in sync. This should never happen!!!" }
