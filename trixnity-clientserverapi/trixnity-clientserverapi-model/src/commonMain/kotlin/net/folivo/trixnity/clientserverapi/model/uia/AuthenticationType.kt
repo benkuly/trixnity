@@ -12,52 +12,57 @@ import kotlinx.serialization.encoding.Encoder
 sealed interface AuthenticationType {
     val name: String
 
-    @Serializable(with = PasswordAuthenticationSerializer::class)
+    @Serializable(with = PasswordAuthenticationTypeSerializer::class)
     data object Password : AuthenticationType {
         override val name = "m.login.password"
     }
 
-    @Serializable(with = RecaptchaAuthenticationSerializer::class)
+    @Serializable(with = RecaptchaAuthenticationTypeSerializer::class)
     data object Recaptcha : AuthenticationType {
         override val name = "m.login.recaptcha"
     }
 
-    @Serializable(with = SSOAuthenticationSerializer::class)
+    @Serializable(with = SSOAuthenticationTypeSerializer::class)
     data object SSO : AuthenticationType {
         override val name = "m.login.sso"
     }
 
-    @Serializable(with = TermsOfServiceAuthenticationSerializer::class)
+    @Serializable(with = TermsOfServiceAuthenticationTypeSerializer::class)
     data object TermsOfService : AuthenticationType {
         override val name = "m.login.terms"
     }
 
-    @Serializable(with = EmailIdentityAuthenticationSerializer::class)
+    @Serializable(with = EmailIdentityAuthenticationTypeSerializer::class)
     data object EmailIdentity : AuthenticationType {
         override val name = "m.login.email.identity"
     }
 
-    @Serializable(with = MsisdnAuthenticationSerializer::class)
+    @Serializable(with = MsisdnAuthenticationTypeSerializer::class)
     data object Msisdn : AuthenticationType {
         override val name = "m.login.msisdn"
     }
 
-    @Serializable(with = DummyAuthenticationSerializer::class)
+    @Serializable(with = DummyAuthenticationTypeSerializer::class)
     data object Dummy : AuthenticationType {
         override val name = "m.login.dummy"
     }
 
-    @Serializable(with = RegistrationTokenAuthenticationSerializer::class)
+    @Serializable(with = RegistrationTokenAuthenticationTypeSerializer::class)
     data object RegistrationToken : AuthenticationType {
         override val name = "m.login.registration_token"
     }
 
-    @Serializable(with = UnknownAuthenticationSerializer::class)
+    @Serializable(with = OAuth2AuthenticationTypeSerializer::class)
+    data object OAuth2 : AuthenticationType {
+        override val name = "m.oauth"
+    }
+
+    @Serializable(with = UnknownAuthenticationTypeSerializer::class)
     data class Unknown(
         override val name: String
     ) : AuthenticationType
 
-    object PasswordAuthenticationSerializer : KSerializer<Password> {
+    object PasswordAuthenticationTypeSerializer : KSerializer<Password> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("PasswordAuthenticationSerializer", PrimitiveKind.STRING)
 
@@ -70,7 +75,7 @@ sealed interface AuthenticationType {
         }
     }
 
-    object RecaptchaAuthenticationSerializer : KSerializer<Recaptcha> {
+    object RecaptchaAuthenticationTypeSerializer : KSerializer<Recaptcha> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("RecaptchaAuthenticationSerializer", PrimitiveKind.STRING)
 
@@ -83,7 +88,7 @@ sealed interface AuthenticationType {
         }
     }
 
-    object SSOAuthenticationSerializer : KSerializer<SSO> {
+    object SSOAuthenticationTypeSerializer : KSerializer<SSO> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("SSOAuthenticationSerializer", PrimitiveKind.STRING)
 
@@ -96,7 +101,7 @@ sealed interface AuthenticationType {
         }
     }
 
-    object TermsOfServiceAuthenticationSerializer : KSerializer<TermsOfService> {
+    object TermsOfServiceAuthenticationTypeSerializer : KSerializer<TermsOfService> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("TermsOfServiceAuthenticationSerializer", PrimitiveKind.STRING)
 
@@ -109,7 +114,7 @@ sealed interface AuthenticationType {
         }
     }
 
-    object EmailIdentityAuthenticationSerializer : KSerializer<EmailIdentity> {
+    object EmailIdentityAuthenticationTypeSerializer : KSerializer<EmailIdentity> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("EmailIdentityAuthenticationSerializer", PrimitiveKind.STRING)
 
@@ -122,7 +127,7 @@ sealed interface AuthenticationType {
         }
     }
 
-    object MsisdnAuthenticationSerializer : KSerializer<Msisdn> {
+    object MsisdnAuthenticationTypeSerializer : KSerializer<Msisdn> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("MsisdnAuthenticationSerializer", PrimitiveKind.STRING)
 
@@ -135,7 +140,7 @@ sealed interface AuthenticationType {
         }
     }
 
-    object DummyAuthenticationSerializer : KSerializer<Dummy> {
+    object DummyAuthenticationTypeSerializer : KSerializer<Dummy> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("DummyAuthenticationSerializer", PrimitiveKind.STRING)
 
@@ -148,7 +153,7 @@ sealed interface AuthenticationType {
         }
     }
 
-    object RegistrationTokenAuthenticationSerializer : KSerializer<RegistrationToken> {
+    object RegistrationTokenAuthenticationTypeSerializer : KSerializer<RegistrationToken> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("RegistrationTokenAuthenticationSerializer", PrimitiveKind.STRING)
 
@@ -161,7 +166,20 @@ sealed interface AuthenticationType {
         }
     }
 
-    object UnknownAuthenticationSerializer : KSerializer<Unknown> {
+    object OAuth2AuthenticationTypeSerializer : KSerializer<OAuth2> {
+        override val descriptor: SerialDescriptor =
+            PrimitiveSerialDescriptor("OAuth2AuthenticationSerializer", PrimitiveKind.STRING)
+
+        override fun deserialize(decoder: Decoder): OAuth2 {
+            return OAuth2
+        }
+
+        override fun serialize(encoder: Encoder, value: OAuth2) {
+            encoder.encodeString(value.name)
+        }
+    }
+
+    object UnknownAuthenticationTypeSerializer : KSerializer<Unknown> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("UnknownAuthenticationSerializer", PrimitiveKind.STRING)
 

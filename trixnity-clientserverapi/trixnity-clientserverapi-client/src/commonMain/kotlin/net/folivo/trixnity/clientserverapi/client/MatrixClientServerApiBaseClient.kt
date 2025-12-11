@@ -19,7 +19,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.serializer
 import net.folivo.trixnity.api.client.MatrixApiClient
-import net.folivo.trixnity.clientserverapi.client.oauth2.OAuth2MatrixClientAuthProvider
 import net.folivo.trixnity.clientserverapi.model.media.Media
 import net.folivo.trixnity.clientserverapi.model.uia.*
 import net.folivo.trixnity.core.*
@@ -144,10 +143,6 @@ class MatrixClientServerApiBaseClient(
         responseSerializer: KSerializer<RESPONSE>,
         jsonRequest: suspend (body: JsonObject) -> JsonObject
     ): Result<UIA<RESPONSE>> = kotlin.runCatching {
-        if (authProvider is OAuth2MatrixClientAuthProvider) {
-            throw IllegalStateException("Unable to perform UIA request when OAuth 2.0 is used as auth provider")
-        }
-
         val jsonBody = json.encodeToJsonElement(requestSerializer, requestBody)
         require(jsonBody is JsonObject)
         try {

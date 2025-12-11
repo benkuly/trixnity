@@ -64,6 +64,12 @@ sealed interface AuthenticationRequest {
     }
 
     @Serializable
+    data object OAuth2 : AuthenticationRequest {
+        @SerialName("type")
+        override val type = AuthenticationType.OAuth2
+    }
+
+    @Serializable
     data object Fallback : AuthenticationRequest {
         @SerialName("type")
         override val type: AuthenticationType? = null
@@ -83,7 +89,9 @@ object AuthenticationRequestSerializer : KSerializer<AuthenticationRequest> {
         val jsonObject = decoder.decodeJsonElement()
         if (jsonObject !is JsonObject) throw SerializationException("auth should be a json object")
         val type =
-            jsonObject["type"]?.let { if (it !is JsonPrimitive) throw SerializationException("type should be a string") else it }?.content
+            jsonObject["type"]?.let {
+                it as? JsonPrimitive ?: throw SerializationException("type should be a string")
+            }?.content
         return when (type) {
             AuthenticationType.Password.name -> decoder.json.decodeFromJsonElement<Password>(jsonObject)
             AuthenticationType.Recaptcha.name -> decoder.json.decodeFromJsonElement<Recaptcha>(jsonObject)
@@ -92,6 +100,8 @@ object AuthenticationRequestSerializer : KSerializer<AuthenticationRequest> {
             AuthenticationType.Dummy.name -> decoder.json.decodeFromJsonElement<Dummy>(jsonObject)
             AuthenticationType.RegistrationToken.name ->
                 decoder.json.decodeFromJsonElement<RegistrationToken>(jsonObject)
+
+            AuthenticationType.OAuth2.name -> decoder.json.decodeFromJsonElement<OAuth2>(jsonObject)
 
             null -> {
                 if (jsonObject.size == 1) decoder.json.decodeFromJsonElement<Fallback>(jsonObject)
@@ -111,6 +121,7 @@ object AuthenticationRequestSerializer : KSerializer<AuthenticationRequest> {
             is Msisdn -> encoder.json.encodeToJsonElement(value)
             is Dummy -> encoder.json.encodeToJsonElement(value)
             is RegistrationToken -> encoder.json.encodeToJsonElement(value)
+            is OAuth2 -> encoder.json.encodeToJsonElement(value)
             is Fallback -> encoder.json.encodeToJsonElement(value)
             is Unknown -> encoder.json.encodeToJsonElement(JsonObject(buildMap {
                 putAll(value.raw)
