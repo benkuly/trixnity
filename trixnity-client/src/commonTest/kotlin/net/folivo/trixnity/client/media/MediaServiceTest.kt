@@ -15,6 +15,7 @@ import io.ktor.http.ContentType.Text.Plain
 import io.ktor.utils.io.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.getInMemoryMediaCacheMapping
 import net.folivo.trixnity.client.getInMemoryServerDataStore
@@ -27,6 +28,8 @@ import net.folivo.trixnity.test.utils.scheduleSetup
 import net.folivo.trixnity.testutils.PortableMockEngineConfig
 import net.folivo.trixnity.utils.decodeUnpaddedBase64Bytes
 import net.folivo.trixnity.utils.toByteArrayFlow
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.time.Clock
 
@@ -34,19 +37,31 @@ class MediaServiceTest : TrixnityBaseTest() {
 
     private val mediaCacheMappingStore = getInMemoryMediaCacheMapping()
     private val serverDataStore = getInMemoryServerDataStore()
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+    private lateinit var coroutineScope: CoroutineScope
 
-    private val mediaStore = InMemoryMediaStore(coroutineScope, MatrixClientConfiguration(), Clock.System).apply {
-        scheduleSetup { deleteAll() }
-    }
+    private lateinit var mediaStore: InMemoryMediaStore
 
     private val apiConfig = PortableMockEngineConfig()
     private val api = mockMatrixClientServerApiClient(apiConfig)
 
-    private val cut = MediaServiceImpl(api, mediaStore, serverDataStore, mediaCacheMappingStore)
+    private lateinit var cut: MediaService
 
     private val mxcUri = "mxc://example.com/abc"
     private val cacheUri = "upload://some-string"
+
+    @BeforeTest
+    fun beforeTest() {
+        coroutineScope = CoroutineScope(Dispatchers.Default)
+        mediaStore = InMemoryMediaStore(coroutineScope, MatrixClientConfiguration(), Clock.System).apply {
+            scheduleSetup { deleteAll() }
+        }
+        cut = MediaServiceImpl(api, mediaStore, serverDataStore, mediaCacheMappingStore)
+    }
+
+    @AfterTest
+    fun afterTest() {
+        coroutineScope.cancel()
+    }
 
     @Test
     fun `getMedia » is mxc uri » prefer cache`() = runTest {
