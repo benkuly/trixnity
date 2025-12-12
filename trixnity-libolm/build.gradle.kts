@@ -97,11 +97,6 @@ android {
             excludes += "META-INF/INDEX.LIST"
         }
     }
-    testOptions {
-        unitTests.all {
-            it.useJUnitPlatform()
-        }
-    }
 }
 tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
     if (name.contains("jni", true)) {
