@@ -8,8 +8,8 @@ import net.folivo.trixnity.client.store.repository.test.RepositoryTestSuite
 class RoomRepositoryTestSuite : RepositoryTestSuite(
     repositoriesModule =
         RepositoriesModule.room(
-            inMemoryDatabaseBuilder().apply { setDriver(BundledSQLiteDriver()) }
+            randomDatabaseBuilder().apply { setDriver(BundledSQLiteDriver()) }
         )
 )
 
-expect fun inMemoryDatabaseBuilder(): RoomDatabase.Builder<TrixnityRoomDatabase>
+expect fun randomDatabaseBuilder(): RoomDatabase.Builder<TrixnityRoomDatabase>
