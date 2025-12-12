@@ -7,10 +7,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.MediaStoreModule
+import net.folivo.trixnity.client.RepositoriesModule
 import net.folivo.trixnity.client.createDefaultEventContentSerializerMappingsModule
 import net.folivo.trixnity.client.createDefaultMatrixJsonModule
-import net.folivo.trixnity.client.media.inMemory
 import net.folivo.trixnity.client.store.repository.*
 import net.folivo.trixnity.crypto.olm.StoredInboundMegolmSession
 import net.folivo.trixnity.crypto.olm.StoredOlmSession
@@ -26,113 +25,115 @@ import org.koin.dsl.module
 import kotlin.test.Test
 import net.folivo.trixnity.client.store.Account as StoredAccount
 
-@Test
-fun testVodozemacMigration() = runTest {
-    val repositoriesModule = MediaStoreModule.inMemory().create()
-    val app = koinApplication {
-        modules(
-            listOf(
-                repositoriesModule,
-                module {
-                    single { MatrixClientConfiguration(storeTimelineEventContentUnencrypted = true) }
-                    single { backgroundScope }
-                    single<RepositoryMigration> {
-                        VodozemacRepositoryMigration(get(), get(), get(), get(), get(), get(), get())
-                    }
-                },
-                createDefaultEventContentSerializerMappingsModule(),
-                createDefaultMatrixJsonModule()
+class MigrationTest {
+    @Test
+    fun testVodozemacMigration() = runTest {
+        val repositoriesModule = RepositoriesModule.inMemory().create()
+        val app = koinApplication {
+            modules(
+                listOf(
+                    repositoriesModule,
+                    module {
+                        single { MatrixClientConfiguration(storeTimelineEventContentUnencrypted = true) }
+                        single { backgroundScope }
+                        single<RepositoryMigration> {
+                            VodozemacRepositoryMigration(get(), get(), get(), get(), get(), get(), get())
+                        }
+                        single<RepositoryTransactionManager> { NoOpRepositoryTransactionManager }
+                    },
+                    createDefaultEventContentSerializerMappingsModule(),
+                    createDefaultMatrixJsonModule()
+                )
             )
-        )
+        }
+
+        val json = app.koin.get<Json>()
+
+        val oldDb = json.decodeFromString<Database>(oldDatabase)
+        val newDb = json.decodeFromString<Database>(newDatabase)
+
+        app.applyDatabase(oldDb)
+        app.koin.get<RepositoryMigration>().run()
+        val db = app.getDatabase()
+
+        db shouldBe newDb
+
+        shouldNotThrowAny { Account.fromPickle(db.olmAccount) }
+        shouldNotThrowAny { Session.fromPickle(db.olmSession.pickled) }
+        shouldNotThrowAny { GroupSession.fromPickle(db.groupSession.pickled) }
+        shouldNotThrowAny { InboundGroupSession.fromPickle(db.inboundGroupSession.pickled) }
     }
 
-    val json = app.koin.get<Json>()
+    private suspend fun KoinApplication.applyDatabase(db: Database) {
+        val members = koin.members
 
-    val oldDb = json.decodeFromString<Database>(oldDatabase)
-    val newDb = json.decodeFromString<Database>(newDatabase)
-
-    app.applyDatabase(oldDb)
-    app.koin.get<RepositoryMigration>().run()
-    val db = app.getDatabase()
-
-    db shouldBe newDb
-
-    shouldNotThrowAny { Account.fromPickle(db.olmAccount) }
-    shouldNotThrowAny { Session.fromPickle(db.olmSession.pickled) }
-    shouldNotThrowAny { GroupSession.fromPickle(db.groupSession.pickled) }
-    shouldNotThrowAny { InboundGroupSession.fromPickle(db.inboundGroupSession.pickled) }
-}
-
-private suspend fun KoinApplication.applyDatabase(db: Database) {
-    val members = koin.members
-
-    members.transaction.writeTransaction {
-        members.accountRepository.save(key = 1, value = db.account)
-        members.olmAccountRepository.save(key = 1, value = db.olmAccount)
-        members.olmSessionRepository.save(key = db.olmSession.senderKey, value = setOf(db.olmSession))
-        members.outboundMegolmSessionRepository.save(key = db.groupSession.roomId, value = db.groupSession)
-        members.inboundMegolmSessionRepository.save(
-            key = InboundMegolmSessionRepositoryKey(
-                roomId = db.inboundGroupSession.roomId,
-                sessionId = db.inboundGroupSession.sessionId,
-            ),
-            value = db.inboundGroupSession,
-        )
-    }
-}
-
-private suspend fun KoinApplication.getDatabase(): Database {
-    val members = koin.members
-
-    val db = members.transaction.readTransaction {
-        val account = members.accountRepository.get(key = 1).shouldNotBeNull()
-        val olmAccount = members.olmAccountRepository.get(key = 1).shouldNotBeNull()
-        val olmSession = members.olmSessionRepository.getAll().flatten().apply { size shouldBe 1 }.first()
-        val groupSession = members.outboundMegolmSessionRepository.getAll().apply { size shouldBe 1 }.first()
-        val inboundGroupSession = members.inboundMegolmSessionRepository.getAll().apply { size shouldBe 1 }.first()
-
-        Database(
-            account = account,
-            olmAccount = olmAccount,
-            olmSession = olmSession,
-            groupSession = groupSession,
-            inboundGroupSession = inboundGroupSession,
-        )
+        members.transaction.writeTransaction {
+            members.accountRepository.save(key = 1, value = db.account)
+            members.olmAccountRepository.save(key = 1, value = db.olmAccount)
+            members.olmSessionRepository.save(key = db.olmSession.senderKey, value = setOf(db.olmSession))
+            members.outboundMegolmSessionRepository.save(key = db.groupSession.roomId, value = db.groupSession)
+            members.inboundMegolmSessionRepository.save(
+                key = InboundMegolmSessionRepositoryKey(
+                    roomId = db.inboundGroupSession.roomId,
+                    sessionId = db.inboundGroupSession.sessionId,
+                ),
+                value = db.inboundGroupSession,
+            )
+        }
     }
 
-    return db
-}
+    private suspend fun KoinApplication.getDatabase(): Database {
+        val members = koin.members
 
-private data class KoinMembers(
-    val transaction: RepositoryTransactionManager,
-    val accountRepository: AccountRepository,
-    val olmAccountRepository: OlmAccountRepository,
-    val olmSessionRepository: OlmSessionRepository,
-    val outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
-    val inboundMegolmSessionRepository: InboundMegolmSessionRepository,
-)
+        val db = members.transaction.readTransaction {
+            val account = members.accountRepository.get(key = 1).shouldNotBeNull()
+            val olmAccount = members.olmAccountRepository.get(key = 1).shouldNotBeNull()
+            val olmSession = members.olmSessionRepository.getAll().flatten().apply { size shouldBe 1 }.first()
+            val groupSession = members.outboundMegolmSessionRepository.getAll().apply { size shouldBe 1 }.first()
+            val inboundGroupSession = members.inboundMegolmSessionRepository.getAll().apply { size shouldBe 1 }.first()
 
-private val Koin.members: KoinMembers
-    get() =
-        KoinMembers(
-            transaction = get(),
-            accountRepository = get(),
-            olmAccountRepository = get(),
-            olmSessionRepository = get(),
-            outboundMegolmSessionRepository = get(),
-            inboundMegolmSessionRepository = get(),
-        )
+            Database(
+                account = account,
+                olmAccount = olmAccount,
+                olmSession = olmSession,
+                groupSession = groupSession,
+                inboundGroupSession = inboundGroupSession,
+            )
+        }
 
-@Serializable
-private data class Database(
-    val account: StoredAccount,
-    val olmAccount: String,
-    val olmSession: StoredOlmSession,
-    val groupSession: StoredOutboundMegolmSession,
-    val inboundGroupSession: StoredInboundMegolmSession,
-)
+        return db
+    }
 
-//  // Generated with
+    private data class KoinMembers(
+        val transaction: RepositoryTransactionManager,
+        val accountRepository: AccountRepository,
+        val olmAccountRepository: OlmAccountRepository,
+        val olmSessionRepository: OlmSessionRepository,
+        val outboundMegolmSessionRepository: OutboundMegolmSessionRepository,
+        val inboundMegolmSessionRepository: InboundMegolmSessionRepository,
+    )
+
+    private val Koin.members: KoinMembers
+        get() =
+            KoinMembers(
+                transaction = get(),
+                accountRepository = get(),
+                olmAccountRepository = get(),
+                olmSessionRepository = get(),
+                outboundMegolmSessionRepository = get(),
+                inboundMegolmSessionRepository = get(),
+            )
+
+    @Serializable
+    private data class Database(
+        val account: StoredAccount,
+        val olmAccount: String,
+        val olmSession: StoredOlmSession,
+        val groupSession: StoredOutboundMegolmSession,
+        val inboundGroupSession: StoredInboundMegolmSession,
+    )
+
+    //  // Generated with
 //
 //  val alice = OlmAccount.create()
 //  val bob = OlmAccount.create()
@@ -196,7 +197,7 @@ private data class Database(
 //  )
 //
 //  println(json.encodeToString(pickles))
-private val oldDatabase = """
+    private val oldDatabase = """
     {
       "account": {
         "olmPickleKey": "",
@@ -235,7 +236,7 @@ private val oldDatabase = """
     }
 """.trimIndent()
 
-private val newDatabase = """
+    private val newDatabase = """
     {
       "account": {
         "baseUrl": "baseUrl",
@@ -273,3 +274,4 @@ private val newDatabase = """
       }
     }
 """.trimIndent()
+}
