@@ -22,10 +22,7 @@ registerLibvodozemac(
                 jvmJni = libs.versions.vodozemac.jvmJni,
                 androidJni = libs.versions.vodozemac.androidJni,
                 native = libs.versions.vodozemac.native,
-                webNpm = libs.versions.vodozemac.webNpm
-            )
-    )
-)
+                webNpm = libs.versions.vodozemac.webNpm)))
 
 kotlin {
     jvmToolchain()
@@ -347,4 +344,5 @@ abstract class CopyTar @Inject constructor(
     }
 }
 
-private fun <T, U, R> combine(left: Provider<T>, right: Provider<U>, f: (T, U) -> R): Provider<R> = left.zip(right, f)
+private fun <T: Any, U: Any, R: Any> combine(left: Provider<T>, right: Provider<U>, f: (T, U) -> R) : Provider<R>
+    = left.zip(right, f)

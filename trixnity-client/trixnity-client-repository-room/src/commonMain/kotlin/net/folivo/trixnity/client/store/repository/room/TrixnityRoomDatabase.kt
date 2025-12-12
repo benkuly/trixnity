@@ -91,7 +91,7 @@ abstract class TrixnityRoomDatabase : RoomDatabase() {
 }
 
 // The Room compiler generates the `actual` implementations.
-@Suppress("NO_ACTUAL_FOR_EXPECT")
+@Suppress("KotlinNoActualForExpect")
 expect object TrixnityRoomDatabaseConstructor : RoomDatabaseConstructor<TrixnityRoomDatabase> {
     override fun initialize(): TrixnityRoomDatabase
 }

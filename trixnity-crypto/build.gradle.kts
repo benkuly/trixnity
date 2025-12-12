@@ -28,9 +28,6 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
-                implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.kotest.assertions.core)
                 implementation(projects.trixnityTestUtils)
 
                 implementation(projects.trixnityCryptoDriver.trixnityCryptoDriverVodozemac)

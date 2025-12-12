@@ -1110,6 +1110,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
             handlerMock.joinRoom(assert {
                 it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
                 it.endpoint.via shouldBe setOf("server1.com", "server2.com")
+                @Suppress("DEPRECATION")
                 it.endpoint.serverNames shouldBe setOf("server1.com", "server2.com")
                 it.requestBody shouldBe JoinRoom.Request(
                     thirdPartySigned = Signed(
@@ -1149,6 +1150,7 @@ class RoomsRoutesTest : TrixnityBaseTest() {
             handlerMock.knockRoom(assert {
                 it.endpoint.roomIdOrRoomAliasId shouldBe "!room:server"
                 it.endpoint.via shouldBe setOf("server1.com", "server2.com")
+                @Suppress("DEPRECATION")
                 it.endpoint.serverNames shouldBe setOf("server1.com", "server2.com")
                 it.requestBody shouldBe KnockRoom.Request("reason")
             })

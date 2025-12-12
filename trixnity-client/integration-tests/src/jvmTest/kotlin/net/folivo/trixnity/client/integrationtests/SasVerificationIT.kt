@@ -213,6 +213,7 @@ class SasVerificationIT {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun checkSasVerification(
         client1: MatrixClient,
         client2: MatrixClient,

@@ -34,8 +34,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed cache timing issues (full or mapping cache)
 - Fixed cache cancellation issues (full or mapping cache)
+- Fixed gradle warnings
+- Fix joining upgraded room, when not invited to it
 
 ### Security
+
+## 4.22.7
+
+### Fixed
+
+- Fixed cache timing issues (full or mapping cache)
+- Fixed cache cancellation issues (full or mapping cache)
 
 ## 4.22.6
 

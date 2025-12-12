@@ -29,12 +29,9 @@ kotlin {
         }
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
+                implementation(projects.trixnityTestUtils)
                 implementation(projects.ktorTestUtils)
                 implementation(libs.ktor.server.testHost)
-                implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.kotest.assertions.core)
-                implementation(projects.trixnityTestUtils)
             }
         }
     }

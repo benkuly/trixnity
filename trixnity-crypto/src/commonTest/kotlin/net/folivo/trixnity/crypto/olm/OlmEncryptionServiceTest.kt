@@ -675,7 +675,9 @@ class OlmEncryptionServiceTest : TrixnityBaseTest() {
         val outboundSession = groupSession.fromPickle(storedOutboundSession.pickled)
 
         assertSoftly(result) {
+            @Suppress("DEPRECATION")
             this.senderKey shouldBe aliceCurveKey.value
+            @Suppress("DEPRECATION")
             this.deviceId shouldBe aliceDeviceId
             this.sessionId shouldBe outboundSession.sessionId
             this.relatesTo shouldBe this@OlmEncryptionServiceTest.relatesTo.copy(newContent = null)

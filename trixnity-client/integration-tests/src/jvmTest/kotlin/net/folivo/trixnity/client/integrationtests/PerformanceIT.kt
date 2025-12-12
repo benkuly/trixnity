@@ -33,7 +33,7 @@ import net.folivo.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
 import org.openjdk.jol.info.GraphStats
 import org.testcontainers.containers.Network
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -364,7 +364,7 @@ class PerformanceIT {
             )
         }
 
-    private fun PostgreSQLContainer<out PostgreSQLContainer<*>>.getDatabase(): Database {
+    private fun PostgreSQLContainer.getDatabase(): Database {
         val config = HikariConfig().apply {
             jdbcUrl = this@getDatabase.getJdbcUrl()
             driverClassName = "org.postgresql.Driver"

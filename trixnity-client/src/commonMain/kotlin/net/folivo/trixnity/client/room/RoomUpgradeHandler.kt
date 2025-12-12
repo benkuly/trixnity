@@ -5,12 +5,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.store.RoomStore
-import net.folivo.trixnity.client.store.previousRoomId
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.core.ClientEventEmitter.Priority
 import net.folivo.trixnity.core.EventHandler
+import net.folivo.trixnity.core.MatrixServerException
+import net.folivo.trixnity.core.model.events.ClientEvent
 import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.subscribe
+import net.folivo.trixnity.core.model.events.m.room.TombstoneEventContent
+import net.folivo.trixnity.core.subscribeEventList
 import net.folivo.trixnity.core.unsubscribeOnCompletion
 
 private val log = KotlinLogging.logger("net.folivo.trixnity.client.room.RoomUpgradeHandler")
@@ -21,19 +23,22 @@ class RoomUpgradeHandler(
     private val configuration: MatrixClientConfiguration,
 ) : EventHandler {
     override fun startInCoroutineScope(scope: CoroutineScope) {
-        api.sync.subscribe(Priority.AFTER_DEFAULT, ::joinUpgradedRooms).unsubscribeOnCompletion(scope)
+        api.sync.subscribeEventList(Priority.AFTER_DEFAULT, ::joinUpgradedRooms).unsubscribeOnCompletion(scope)
     }
 
-    internal suspend fun joinUpgradedRooms() {
-        if (configuration.autoJoinUpgradedRooms.not()) return
+    internal suspend fun joinUpgradedRooms(tombstones: List<ClientEvent.RoomEvent.StateEvent<TombstoneEventContent>>) {
+        if (configuration.autoJoinUpgradedRooms.not() || tombstones.isEmpty()) return
 
-        val allRooms = roomStore.getAll().first().mapValues { it.value.first() }
-        allRooms.values.filterNotNull().filter { it.membership == Membership.INVITE }.forEach { room ->
-            val previousRoom = room.previousRoomId?.let { allRooms[it] }
-            if (previousRoom?.nextRoomId == room.roomId && previousRoom.membership == Membership.JOIN) {
-                api.room.joinRoom(room.roomId).onFailure {
-                    log.warn(it) { "Failed to automatically join upgraded room. It will be tried again after the next sync." }
-                }
+        for (tombstone in tombstones) {
+            val upgradedRoomId = tombstone.content.replacementRoom
+            val room = roomStore.get(upgradedRoomId).first()
+            if (room != null && room.membership != Membership.INVITE) {
+                log.debug { "skip join of upgraded room, because it is already known and not invited" }
+                continue
+            }
+            api.room.joinRoom(upgradedRoomId).onFailure {
+                if (it !is MatrixServerException) throw it
+                log.warn(it) { "Failed to automatically join upgraded room. It will be tried again in the next sync or when iterating through timeline." }
             }
         }
     }

@@ -51,6 +51,7 @@ fun RepositoriesModule.Companion.exposed(database: Database): RepositoriesModule
             ExposedNotificationUpdate,
             ExposedMigration,
         )
+        @Suppress("DEPRECATION")
         SchemaUtils.createMissingTablesAndColumns(*allTables)
     }
     log.debug { "finished create missing tables and columns" }

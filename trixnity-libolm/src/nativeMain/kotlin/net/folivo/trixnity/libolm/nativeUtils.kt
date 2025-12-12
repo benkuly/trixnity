@@ -17,4 +17,5 @@ internal inline fun <T : CPointed> genericInit(
     }
 }
 
+@Suppress("NOTHING_TO_INLINE")
 internal inline fun ByteArray.usize(): ULong = this.size.toULong()
