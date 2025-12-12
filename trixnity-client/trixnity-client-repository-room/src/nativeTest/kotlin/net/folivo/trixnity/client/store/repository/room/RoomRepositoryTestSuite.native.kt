@@ -6,4 +6,4 @@ import net.folivo.trixnity.utils.nextString
 import kotlin.random.Random
 
 actual fun inMemoryDatabaseBuilder(): RoomDatabase.Builder<TrixnityRoomDatabase> =
-    Room.databaseBuilder<TrixnityRoomDatabase>("${Random.nextString(12)}.db")
+    Room.databaseBuilder<TrixnityRoomDatabase>("build/tmp/test/${Random.nextString(12)}.db")
