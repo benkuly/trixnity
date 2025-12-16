@@ -78,13 +78,18 @@ class OutboxIT {
             val room = client.api.room.createRoom().getOrThrow()
             client.user.canSendEvent<RoomMessageEventContent>(room).firstWithTimeout() shouldBe true
 
-            repeat(30) {
-                client.room.sendMessage(room) { text("message $it") }
+            withCluePrintln("send messages") {
+                repeat(30) {
+                    client.room.sendMessage(room) { text("message $it") }
+                }
             }
-
-            client.room.getOutbox().flatten()
-                .firstWithTimeout(60.seconds) { outbox -> outbox.none { it.sentAt != null } }
-            client.room.getOutbox().flatten().firstWithTimeout(90.seconds) { it.isEmpty() }
+            withCluePrintln("wait for sent") {
+                client.room.getOutbox().flatten()
+                    .firstWithTimeout(60.seconds) { outbox -> outbox.none { it.sentAt != null } }
+            }
+            withCluePrintln("wait for empty outbox") {
+                client.room.getOutbox().flatten().firstWithTimeout(90.seconds) { it.isEmpty() }
+            }
             client.closeSuspending()
 
             val exposedRoomOutbox = object : Table("room_outbox_2") {
@@ -92,8 +97,10 @@ class OutboxIT {
                 val roomId = varchar("roomId", length = 255)
                 override val primaryKey = PrimaryKey(roomId, transactionId)
             }
-            newSuspendedTransaction(Dispatchers.IO, database) {
-                exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
+            withCluePrintln("check empty database") {
+                newSuspendedTransaction(Dispatchers.IO, database) {
+                    exposedRoomOutbox.selectAll().map { it[exposedRoomOutbox.transactionId] } shouldBe emptyList()
+                }
             }
         }
     }
