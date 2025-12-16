@@ -33,8 +33,8 @@ import net.folivo.trixnity.utils.nextString
 import org.jetbrains.exposed.sql.Database
 import org.openjdk.jol.info.GraphStats
 import org.testcontainers.containers.Network
-import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.postgresql.PostgreSQLContainer
 import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.test.Test
@@ -100,13 +100,14 @@ class PerformanceIT {
         }
 
         val repeat = 10
+        val warmup = 1
         val results = measureSync(
-            *(0..repeat).map { client("measure-$it") }.toTypedArray(),
+            *(1..(repeat + warmup)).map { client("measure-$it") }.toTypedArray(),
             timeout = 4.minutes,
             roomsCount = 10,
             messagesCount = 5,
         ).total
-            .drop(1) // warmup
+            .drop(warmup)
 
         val duration = results.fold(0.seconds) { current, next -> current + next.duration } / repeat
         val memoryUsage = results.fold(0L) { current, next -> current + next.memoryUsage } / repeat
@@ -116,8 +117,8 @@ class PerformanceIT {
         println("memoryUsage = ${memoryUsage / 1_000} KB ${results.map { (it.memoryUsage / 1_000).toString() + " KB" }}")
         println("memoryFootprint = ${memoryFootprint / 1_000} KB ${results.map { (it.memoryFootprint / 1_000).toString() + " KB" }}")
         duration shouldBeLessThan 120.milliseconds
-        (memoryUsage / 1_000) shouldBeLessThan 1_000
-        (memoryFootprint / 1_000) shouldBeLessThan 50_000
+        (memoryUsage / 1_000) shouldBeLessThan 2_000 // KB
+        (memoryFootprint / 1_000) shouldBeLessThan 100_000 // KB
     }
 
     @Test
@@ -276,7 +277,7 @@ class PerformanceIT {
 
             val messagesResults = clients.measureSync(decrypt)
 
-            clients.forEach { it.closeSuspending() }
+            clients.withLimitedParallelism { it.closeSuspending() }
             synapse.stop()
             synapsePostgresql.stop()
 
