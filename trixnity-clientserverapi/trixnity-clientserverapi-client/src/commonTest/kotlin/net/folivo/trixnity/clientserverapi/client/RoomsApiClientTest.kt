@@ -1873,7 +1873,6 @@ class RoomsApiClientTest : TrixnityBaseTest() {
 
     @Test
     fun shouldReportRoom() = runTest {
-        val response = SendEventResponse(EventId("event"))
         val matrixRestClient = MatrixClientServerApiClientImpl(
             baseUrl = Url("https://matrix.host"),
             httpClientEngine = scopedMockEngine {
@@ -1888,7 +1887,7 @@ class RoomsApiClientTest : TrixnityBaseTest() {
                         request.body.toByteArray().decodeToString()
                     )
                     respond(
-                        json.encodeToString(response),
+                        "{}",
                         HttpStatusCode.OK,
                         headersOf(HttpHeaders.ContentType, Application.Json.toString())
                     )

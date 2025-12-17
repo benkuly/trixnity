@@ -594,4 +594,32 @@ class UsersApiClientTest : TrixnityBaseTest() {
                     )
                 )
     }
+
+    @Test
+    fun shouldReportUser() = runTest {
+        val matrixRestClient = MatrixClientServerApiClientImpl(
+            baseUrl = Url("https://matrix.host"),
+            httpClientEngine = scopedMockEngine {
+                addHandler { request ->
+                    assertEquals(
+                        "/_matrix/client/v3/users/@user:server/report",
+                        request.url.fullPath
+                    )
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals(
+                        """{"reason":"someReason"}""",
+                        request.body.toByteArray().decodeToString()
+                    )
+                    respond(
+                        "{}",
+                        HttpStatusCode.OK,
+                        headersOf(HttpHeaders.ContentType, Application.Json.toString())
+                    )
+                }
+            })
+        matrixRestClient.user.reportUser(
+            userId = UserId("@user:server"),
+            reason = "someReason",
+        ).getOrThrow()
+    }
 }

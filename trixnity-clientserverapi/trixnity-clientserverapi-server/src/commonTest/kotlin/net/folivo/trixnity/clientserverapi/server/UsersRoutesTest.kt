@@ -476,4 +476,28 @@ class UsersRoutesTest : TrixnityBaseTest() {
             })
         }
     }
+
+    @Test
+    fun shouldReportUser() = testApplication {
+        initCut()
+        everySuspend { handlerMock.reportUser(any()) }
+            .returns(Unit)
+        val response =
+            client.post("/_matrix/client/v3/users/@user:server/report") {
+                bearerAuth("token")
+                contentType(ContentType.Application.Json)
+                setBody("""{"reason":"someReason"}""")
+            }
+        assertSoftly(response) {
+            this.status shouldBe HttpStatusCode.OK
+            this.contentType() shouldBe ContentType.Application.Json.withCharset(Charsets.UTF_8)
+            this.body<String>() shouldBe "{}"
+        }
+        verifySuspend {
+            handlerMock.reportUser(assert {
+                it.endpoint.userId shouldBe UserId("@user:server")
+                it.requestBody shouldBe ReportUser.Request("someReason")
+            })
+        }
+    }
 }
